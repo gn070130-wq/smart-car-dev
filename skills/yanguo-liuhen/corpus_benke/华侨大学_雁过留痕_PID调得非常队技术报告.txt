@@ -1,0 +1,302 @@
+
+第二十一届全国大学生智能汽车竞赛技术报告
+
+
+学    校：华侨大学
+队伍名称：PID调得非常队
+参赛队员：邱锦浩 林剑腾 施淇元
+带队老师：晏来成 张勇
+
+关于技术报告和研究论文使用授权的说明
+本人完全了解全国大学生智能汽车竞赛关保留、使用技术报告和研究论文的规定，即：参赛作品著作权归参赛者本人，比赛组委会可以在相关主页上收录并公开参赛作品的设计方案、技术报告以及参赛模型车的视频、图像资料，并将相关内容编纂收录在组委会出版论文集中。
+
+       参赛队员签名：邱锦浩 林剑腾 施淇元
+                          带队教师签名：    晏来成 张勇   
+                                 日	      期：     2026.8.15    
+
+   
+                                    
+
+
+
+
+第二十一届全国大学生智能汽车竞赛
+目  录
+关于技术报告和研究论文使用授权的说明	2
+第一章 引言	6
+第二章 机械结构设计及布局	6
+2.1 整车布局	6
+2.2 舵机安装及转向机构	7
+2.3 传感器与执行器安装	8
+2.4 负压风扇与底盘加固	9
+第三章 硬件电路设计与优化	9
+3.1 硬件电路整体架构	9
+3.2 拓展板	10
+3.3 电机与负压驱动	11
+3.4 留痕激光头驱动	12
+第四章 软件设计及其优化	13
+4.1 软件整体流程	13
+4.2 圆靶识别与留痕控制	14
+4.3 赛道边界与中线提取	15
+4.4 元素识别与路径修正	16
+4.5 PID控制算法	16
+第五章 软件开发环境	17
+5.1 工程与编译环境	17
+5.2 调试方法	17
+第六章 车模主要参数说明	18
+第七章 总结	19
+参考文献	20
+附录A 程序源代码	21
+
+
+
+第一章 引言
+本文围绕第二十一届全国大学生智能汽车竞赛雁过留痕组的任务要求，介绍本队智能车的机械结构、硬件电路、软件算法、开发调试环境以及主要技术参数。雁过留痕组在循迹竞速基础上增加圆靶识别与留痕任务，因此系统既要保证车辆稳定高速行驶，也要在目标进入可照射区域时完成准确触发。
+本车以STC32G144K246为主控，使用MT9V03X灰度摄像头获取赛道图像，IMU660RA提供陀螺仪数据，左右编码器用于速度闭环。执行机构包括转向舵机、左右直流电机、两路负压风扇以及九路留痕激光头。
+本文共分为七章。第一章为引言；第二章介绍机械结构设计及布局；第三章介绍硬件电路设计与优化；第四章分析软件设计及其优化；第五章说明软件开发环境；第六章列出车模主要参数；第七章总结设计成果。
+第二章 机械结构设计及布局
+2.1 整车布局
+整车布局以紧凑、低重心、布线清晰为原则。负压风扇、电池和调试接口尽量布置在车体中部，摄像头安装在车体前端上方，保证能观察到前方赛道边界和留痕圆靶区域。
+          
+
+图2.1-2.3 车模俯视图、前视图、侧视图
+2.2 舵机安装及转向机构
+转向机构由前轮转向结构和舵机构成，舵机PWM频率设置为200Hz，INIT_ANGLE为87。程序中通过SERVO_DUTY(angle)将角度换算为PWM占空比，并在舵机控制中对输出角度进行限幅，避免机械结构撞限。
+
+图2.4 舵机安装与前桥转向机构
+2.3 传感器与执行器安装
+图像传感器选用MT9V03X灰度摄像头，分辨率为188×120。摄像头用于赛道边界、圆靶和斑马线等目标识别。左右编码器安装在驱动轮侧，用于5ms速度采样。
+留痕执行器为激光头，分别连接LASER_HEAD_PIN_1至LASER_HEAD_PIN_9。安装时需要逐路校准光斑位置，使图像中的ring_center_x分区能够对应实际落点。
+                  
+  
+                  
+图2.5-2.6 摄像头、激光头、姿态传感器安装照片
+2.4 负压风扇与底盘加固
+本车使用两路无刷电机作为负压风扇，PWM通道为PWMF_CH1_PA1和PWMF_CH2_PA3。底盘结构需要保证风扇工作时不发生明显形变。
+
+图2.7 负压风扇安装与底盘加固照片
+第三章 硬件电路设计与优化
+3.1 硬件电路整体架构
+车模硬件系统包括STC32G144K246主控、MT9V03X摄像头、IMU660RA、左右编码器、左右直流电机驱动、舵机、两路负压风扇、激光头、IPS200显示屏、按键和蜂鸣器。系统时钟初始化为96MHz，控制任务由多个PIT定时器分配执行。
+
+图3.1 硬件电路整体架构框图
+3.2 拓展板
+拓展板集成了所有DC电源模块，电源接口以及所有外设的接口，拨码开关和五向按键方便调试。
+     
+
+            
+                                      
+图3.2 主控板、扩展板或接口分配图
+3.3 电机与负压驱动
+左右直流电机PWM频率为17kHz，方向引脚固定为前进方向，速度通过占空比调节。电机控制中断每5ms读取编码器，进行目标速度规划和增量式PID计算。负压风扇使用50Hz PWM，基础输出base_brush_out为760，输出上限brush_out_MAX为780。
+
+
+
+图3.3 电机驱动与负压风扇驱动电路
+3.4 留痕激光头驱动
+激光头分别由GPIO控制，system_init()中统一初始化为推挽输出低电平。触发逻辑在ring_target_detect()中完成：当圆靶中心纵坐标达到触发区域后，根据圆心横坐标选择对应通道。element_count()在ring_flag置位后计时，短时间后关闭全部激光头，避免过度照射。
+图3.4 激光头驱动电路示意图
+第四章 软件设计及其优化
+4.1 软件整体流程
+软件采用前后台结构。主循环等待摄像头完成一帧图像采集后，依次执行参考点计算、参考列搜索、边界搜索、圆靶检测、元素识别、斑马线分析、中线计算、环岛和路障处理以及前瞻偏差计算。控制类任务由PIT中断执行。
+
+图4.1 主程序流程图
+4.2 圆靶识别与留痕控制
+ring_target_detect()在图像下半部分设置搜索窗口，按GapCol跳列扫描圆靶边缘高度ring_distance，通过高度突变寻找左右点，再取平均得到ring_center_x和ring_center_y。当圆心进入触发区域后，程序根据ring_center_x选择九路激光头之一。若车辆横向误差Err较大，则先对ring_center_x进行±7像素补偿。
+图4.3 圆靶识别与激光触发调试截图
+4.3 赛道边界与中线提取
+图像处理首先在图像近端选取参考区域，计算reference_point，并由WhiteMaxMul和WhiteMinMul生成动态白点阈值。随后Search_reference_col()获取参考列，Search_line()按行搜索左右边界。Get_midline()通常取左右边界平均值；在环岛等状态下，会根据单侧边界和赛道半宽表修正中线。
+4.4 元素识别与路径修正
+元素处理模块主要包括十字、环岛、路障、斑马线和断路停车。cross_analysis()通过双侧边界丢失和上下点补线处理十字；circle_handle()在环岛状态下根据单侧边界和Half_Road_Wide修正中线；barrier_analysis()通过边界连续性变化和宽度突变识别路障，barrier_handle()将中线向远离障碍的一侧偏移。
+zebra_analysis()利用圆靶检测中统计到的jump_point_time辅助斑马线判断。break_road()统计图像底部中间区域黑点数量，当blackpoint_count超过阈值时置位stop_flag，电机中断进入制动状态。
+4.5 PID控制算法
+舵机控制使用PD、非线性P和陀螺仪前馈组合。servo_pid_calculate()先根据circle_mode和cross_flag选择参数，再由摄像头偏差计算比例项、非线性比例项和微分项，并加入gyro_x前馈。输出经SERVO_CHANGE_MAX和舵机机械范围双重限幅。
+电机速度控制采用增量式PID。speed_control()根据SERVO_SUM规划左右轮目标速度，转弯时以内侧轮减速为主；motor_control()读取编码器速度，分别计算左右电机PWM占空比。检测到stop_flag时，Motor_contorl_handler()进入反接制动状态机，实现快速停车。
+第五章 软件开发环境
+5.1 工程与编译环境
+本工程基于逐飞STC32G库开发，工程位于project/mdk/seekfree.uvproj，目标芯片为STC32G144K246，工具链为Keil C251/MCS-251。用户代码主要位于project/user/main.c和project/code目录。
+5.2 调试方法
+调试时使用IPS200显示摄像头图像、左右边界、中线和关键状态变量；必要时使用SeekFree Assistant图传发送图像和边界数组；逐飞助手可用于串口参数解析和波形观察。按键用于发车和负压风扇开关，蜂鸣器用于状态提示。
+图5.1 上位机调试界面截图
+第六章 车模主要参数说明
+
+
+
+图6.1 车模主要参数与外观检查照片
+第七章 总结
+本文按照雁过留痕组任务要求，完成了基于STC32G144K246的智能车系统设计。机械结构方面，整车采用紧凑布局、负压风扇和九路留痕执行器；硬件方面，完成摄像头、IMU、编码器、电机、舵机、风扇和激光头接口集成；软件方面，实现了动态阈值、边界搜索、中线提取、元素识别、圆靶定位、激光分区触发、速度闭环和停车制动。
+
+参考文献
+[1]	卓晴. 全国大学生智能汽车竞赛技术报告编写指南[EB/OL].
+[2]	第21届全国大学生智能汽车竞赛雁过留痕组比赛规则[EB/OL].
+[3]	邵贝贝. 单片机嵌入式应用的在线开发方法[M]. 北京: 清华大学出版社, 2004.
+[4]	谭浩强. C程序设计[M]. 北京: 清华大学出版社, 2003.
+[5]	刘金琨. 先进PID控制MATLAB仿真[M]. 北京: 电子工业出版社, 2019.
+[6]	冈萨雷斯. 数字图像处理[M]. 北京: 电子工业出版社, 2020.
+
+附录A 程序源代码
+A.1 主程序核心流程
+void main(void)
+{
+    clock_init(SYSTEM_CLOCK_96M);
+    debug_init();
+    system_init();
+    pit_all_init();
+
+    while(1)
+    {
+        if(key3_can())
+        {
+            key3_count++;
+            brush_flag = 1;
+            if(key3_count >= 2)
+            {
+                brush_flag = 0;
+                key3_count = 0;
+            }
+        }
+
+        if(brush_flag == 1)
+        {
+            pwm_set_duty(PWM_Brushless_motor_R, 600);
+            pwm_set_duty(PWM_Brushless_motor_L, 600);
+        }
+        else
+        {
+            pwm_set_duty(PWM_Brushless_motor_R, 0);
+            pwm_set_duty(PWM_Brushless_motor_L, 0);
+        }
+
+        if(key1_can())
+        {
+            motor_enable = 1;
+            encoder_speed_clear();
+            T_start_flag = 2;
+            break;
+        }
+    }
+
+    while(1)
+    {
+        if(mt9v03x_finish_flag)
+        {
+            Get_reference_point(mt9v03x_image[0]);
+            Search_reference_col(mt9v03x_image[0]);
+            Search_line(mt9v03x_image[0]);
+            ring_target_detect(mt9v03x_image[0]);
+            element_search();
+            zebra_analysis();
+            Get_midline();
+            circle_handle();
+            barrier_handle();
+            break_road();
+            Err = Get_err();
+            reference_blackpoint = white_min_point;
+        }
+    }
+}
+A.2 舵机控制核心代码
+int servo_pid_calculate(int camera_err, int gyro_z)
+{
+    int error = -camera_err;
+    int p_term, d_term, nonlinear_p;
+    int imu_control;
+    int output;
+    const servo_pid_params_t *p;
+
+    servo_select_params(circle_mode);
+    if(cross_flag == 1)
+        servo_select_params(7);
+    p = servo_control.params;
+
+    p_term = (p->kp * error) / PID_KP_SCALE;
+    nonlinear_p = (error * my_abs(error) / PID_FABS_SCALE)
+                  * p->kp_2 / PID_KP2_SCALE;
+    imu_control = ((gyro_z / PID_GYRO_SCALE) * p->kd_g) / PID_GKD_SCALE;
+    d_term = (p->kd * (error - servo_control.prev_error)) / PID_KD_SCALE
+             + imu_control;
+
+    servo_control.pd_sum = p_term + nonlinear_p + d_term;
+    SERVO_SUM = servo_control.pd_sum;
+    if(SERVO_SUM < -SERVO_CHANGE_MAX) SERVO_SUM = -SERVO_CHANGE_MAX;
+    if(SERVO_SUM >  SERVO_CHANGE_MAX) SERVO_SUM =  SERVO_CHANGE_MAX;
+
+    output = INIT_ANGLE + servo_control.pd_sum;
+    if(output < servo_control.out_min) output = servo_control.out_min;
+    if(output > servo_control.out_max) output = servo_control.out_max;
+    servo_control.prev_error = error;
+    return (int16)output;
+}
+A.3 电机控制与制动核心代码
+void Motor_contorl_handler(void)
+{
+    if (motor_enable == 0)
+    {
+        pwm_set_duty(PWM_R, 0);
+        pwm_set_duty(PWM_L, 0);
+        pwm_set_duty(PWM_Brushless_motor_R, 0);
+        pwm_set_duty(PWM_Brushless_motor_L, 0);
+        if (motor_brake_state != MOTOR_RUN)
+            motor_brake_reset();
+        return;
+    }
+
+    encoder_speed_get();
+    if (stop_flag == 1)
+    {
+        if (motor_brake_state == MOTOR_RUN)
+            motor_brake_start();
+        motor_brake_control();
+        encoder_speed_clear();
+        return;
+    }
+
+    if (motor_brake_state != MOTOR_RUN)
+        motor_brake_reset();
+
+    motor_control();
+    encoder_speed_clear();
+}
+A.4 留痕圆靶触发核心代码
+if (ring_center_x != 0 && ring_center_y != 0)
+{
+    if(ring_center_y >= 80)
+    {
+        if      (ring_center_x < 65)  gpio_set_level(LASER_HEAD_PIN_1, 1);
+        else if (ring_center_x < 75)  gpio_set_level(LASER_HEAD_PIN_2, 1);
+        else if (ring_center_x < 85)  gpio_set_level(LASER_HEAD_PIN_3, 1);
+        else if (ring_center_x < 92)  gpio_set_level(LASER_HEAD_PIN_4, 1);
+        else if (ring_center_x < 98)  gpio_set_level(LASER_HEAD_PIN_5, 1);
+        else if (ring_center_x < 105) gpio_set_level(LASER_HEAD_PIN_6, 1);
+        else if (ring_center_x < 115) gpio_set_level(LASER_HEAD_PIN_7, 1);
+        else if (ring_center_x < 125) gpio_set_level(LASER_HEAD_PIN_8, 1);
+        else                          gpio_set_level(LASER_HEAD_PIN_9, 1);
+        ring_flag = 1;
+    }
+}
+A.5 增量式PID代码
+int increment_pid_solve(pid_param_t *pid, int error)
+{
+    pid->out_d = MINMAX(pid->kd * (error - 2 * pid->pre_error
+                          + pid->pre_pre_error), -pid->d_max, pid->d_max);
+    pid->out_p = MINMAX(pid->kp * (error - pid->pre_error),
+                        -pid->p_max, pid->p_max);
+    pid->out_i = MINMAX((pid->ki * error) / 100,
+                        -pid->i_max, pid->i_max);
+
+    pid->pre_pre_error = pid->pre_error;
+    pid->pre_error = error;
+    return pid->out_p + pid->out_i + pid->out_d;
+}
+车模基本参数 | 长 | 310mm
+车模基本参数 | 宽 | 255mm
+车模基本参数 | 高 | 350mm
+车模基本参数 | 车重 | 1426g
+功耗 | 待机 | 2.5W
+功耗 | 带载 | 180W
+电容总容量 | 电容总容量 | 2093uF
+传感器 | 编码器 | 2个
+传感器 | 总钻风摄像头 | 1个
+传感器 | 陀螺仪IMU660RA | 1个
+除了车模原有的驱动电机、舵机之外伺服电机个数 | 除了车模原有的驱动电机、舵机之外伺服电机个数 | 0
+赛道信息检测 | 视野范围： | 200cm

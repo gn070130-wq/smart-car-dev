@@ -1,0 +1,1194 @@
+第二十一届全国大学生
+智能汽车竞赛
+
+
+技  术  报  告
+
+
+
+
+学    校：南昌大学科学技术学院
+队伍名称：创世一队
+参赛队员：李盛超 杨佳豪 邓毅锋
+          蔡  迪 黄嘉翔
+指导教师：王  斌 吴  敏
+
+关于技术报告和研究论文使用授权的说明
+本人完全了解全国大学生智能汽车竞赛关保留、使用的规定，即：参赛作品著作权归参赛者本人，比赛组委会可以在相关主页上收录并公开参赛作品的设计方案、技术报告以及参赛模型车的视频、图像资料，并将相关内容编纂收录在组委会出版论文集中。
+
+参赛队员签名：_______________
+
+带队教师签名：_______________
+日    期：_______________
+
+
+
+引 言
+智能汽车竞赛背景
+全国大学生智能汽车竞赛是由教育部高等教育司委托，教育部高等学校自动化类专业教学指导委员会主办的一项重要A类学科竞赛。该赛事自2006年创办以来，已历经二十年的发展历程。随着电子技术的快速迭代，竞赛组别与赛题复杂度逐年提升，已逐步扩展至涵盖智能视觉、智慧工厂、智慧医疗、robotaxi等多个细分方向。这一演变过程不仅反映了嵌入式系统从单核控制向异构多核并行处理的架构进化，也体现了赛事始终紧跟工业界对人工智能及自动控制技术人才需求的育人导向。[1][2]
+在具体的竞赛任务要求方面，参赛队伍需要独立完成底层硬件电路的设计、嵌入式实时操作系统的搭建以及运动控制策略的编写。考核的核心在于车辆能否在复杂且带有动态干扰的赛道上，实现自主路径识别、高精度速度控制以及特定功能（如障碍物绕行、交通标志判定）的准确执行。任务细节涉及对传感器（如摄像头、编码器、陀螺仪）数据的实时处理与融合。
+在当前实际运用中，针对比赛中高实时性目标的检测需求与复杂多变的赛道拓扑结构，部分新赛题已明确要求基于高性能边缘计算平台进行AI模型的部署。本报告所述的RK3588S异构计算平台结合PP-YOLOE轻量化目标检测模型及PP-LiteSeg语义分割算法则是针对此类复杂赛道任务给出的工程化解决方案，旨在满足竞赛对系统多任务并行处理与决策优化的实际应用要求，体现了赛事鼓励技术代际演进与场景创新的一贯宗旨。
+方案总体介绍
+根据赛规相关规定，本次设计采用典型的“上位机+下位机”主从分布式架构。其中，上位机选用百度公司规定的香橙派5计算平台，该平台搭载瑞芯微RK3588S处理器，集成了6 TOPS算力的神经网络处理单元（NPU），能够满足轻量化神经网络模型在嵌入式平台的实时推理需求，从而完成对道路上障碍物、金币以及交通指示牌的感知[3]。下位机选用英飞凌AURIX™ SAK-TC264D双核微控制器，其具备的高阶定时器单元（GTM）及大容量的CAN/串口收发能力，能够提供可靠的电机速度闭环控制和舵机转向角度调节。
+在视觉处理算法方面，上层依赖PP-YOLOE轻量化目标检测模型与PP-LiteSeg轻量化语义分割模型，实现对前向视野中目标物体的定位与可行使区域的提取。在运动控制层面，系统采用阿克曼转向模型进行几何运动学建模，结合纯追踪算法实现期望路径的跟踪，底层则通过增量式PID控制算法完成对直流电机转速的调节[4]。本文所论述的各核心功能模块均通过异步多线程及跨板UART通信实现数据交互。
+本文结构
+本文的组织结构如下：第一章针对智能车的机械结构安装与几何参数调节进行阐述；第二章详细分析系统电路设计方案与电源管理策略；第三章阐述视觉模型在RK3588S平台的训练过程及量化优化方法；第四章基于代码实现，重点剖析状态机调度、纯追踪控制及PID调速的数学模型与工程应用；第五章分享在VS Code、AURIX Development Studio(ADS) 、X11 VNC及Orange Pi OS环境下的开发调试经验；第六章提出对现有系统的改进思路；第七章列出车模的技术参数；第八章对全文工作进行总结。
+
+关键词：人工智能；语义分割；目标检测；多线程并发；纯追踪算法
+
+机械结构
+1.1 车模要求
+人工智能模型组开放自制车模
+1.2 整体结构
+1.2.1 整车方案的选择
+经过筛选，我们最终选择了赛事常用的，由博思威龙生产的C型车模。该车模采用后轮驱动、前轮转向的阿克曼转向几何结构，配合后轮双电机，转弯时提供内外后轮差速，使得四个车轮的旋转轴线交于瞬时转向中心，从而减小轮胎的侧滑摩擦损耗，并实现较低的机械转弯半径，提升过弯性能[5]，来方便控制算法的实现，从而进一步方便赛道任务的实现。
+该车模后轮自带两个直流有刷电机，配合齿轮减速，将电机的扭矩传递给车轮。虽然该电机工作时发热较大，但是有刷电机控制方式简单，开发难度小，可以大幅度减少开发时间，专注于赛道任务的实现，所以我们决定不改装原车模电机。
+1.2.2 电路板及电池的安装
+为降低重心，增强弯道性能，我们将车辆的大部分器件安装在车模的后部，同时全车器件（除摄像头外）安装的离地高度不超过10厘米，以降低重心并将整车重心集中在车后部，减少载荷过度向前轴转移，以提升弯道性能。为此我们设计了电路板及电池安装板模型并使用3D打印进行生产，如图1-2-1所示，其中上部的开槽可穿过扎带，以固定电池；两侧的开槽可穿过电机电源线。最终安装如图1-2-2所示。
+图1-2-1 电路板及电池安装板
+图1-2-2 安装实物图
+  
+
+电路设计
+本系统电路采用模块化设计方式。主要包括单片机、电源模块、电机驱动模块、串口等部分。
+2.1单片机模块
+本设计下位机控制器采用英飞凌公司推出的TC264D单片机（型号为TC264D-40F200W）。该芯片是英飞凌AURIX™ TC26xD系列中的一款32位车规级微控制器。该芯片采用双核TriCore™架构，时钟频率200MHz。其程序存储空间为2.5MB闪存，数据存储空间包含240KB RAM与96KB EEPROM。芯片采用144引脚LQFP封装，提供88个可用I/O口。TC264D集成了多种外设接口，包括CAN（含CAN FD）、以太网、I2C、SPI、LIN等通信接口，保障了与上位机的数据交换速率。芯片满足汽车级宽温与抗电磁干扰标准，适合在多车高频瞬态切换及电机启停产生的复杂电磁环境中稳定运行，维持车辆驱动和转向的可靠性。此外还包含48通道DMA、通用定时器模块（GTM）以及PWM输出模块等。
+2.2 电源模块
+整个系统的工作基础由电源供电的可靠性决定，电源供电的不稳定会引起电池损耗，单片机复位、上位机关机、传感器损毁等严重问题，因此电源的设计是最重要的硬件电路设计部分之一。
+2.2.1 电池
+系统采用3S 2200mAh航模锂电池作为总电源，其额定电压为11.1V，满电电压可达12.6V，放电倍率30C。该电池容量与放电能力可满足智能车竞赛中电机、舵机及上下位机在较长时间内持续运行的功耗需求。
+2.2.2 电源转换器
+整车采用由芯洲科技生产的SCT2450集成DC-DC转换器作为主要供电模块。其输入电压范围为3.8V至36V，可兼容3S电池满电及放电末期的电压波动。该器件持续输出电流能力为5A，内置45mΩ高侧MOSFET和20mΩ低侧MOSFET，采用峰值电流模式控制。电池电源经过PMOS管开关接入后经三路SCT2450集成DC-DC同步降压转换器分别降压输出。三路SCT2450分别用于主板（5V）、上位机（5V）和转向舵机（7V）供电，各路的输出电压通过外部反馈电阻配置。芯片支持100kHz至1.1MHz的可编程开关频率，并具备过流保护、过温保护和输入欠压锁定等保护功能。
+输出电压由反馈（FB）引脚的电阻分压器设定。数据手册建议FB下分压电阻R6取10.2kΩ，上分压电阻R5的计算公式为：
+
+                       R5=[(VOUT/VREF)−1]×R6	（公式2-2-1）
+
+其中，VREF为FB引脚参考电压，典型值为0.8V
+原理图如图2-2-1所示。
+图2-2-1 SCT2450原理图
+编码器与串口通信模块需3.3V供电，由RT9013-33GB低压差线性稳压器提供。该器件为固定3.3V输出，最大输出电流500mA。其输入电压范围为2.2V至5.5V，可从SCT2450输出的5V母线取电。RT9013-33GB在500mA负载条件下的典型压差为250mV，静态电流典型值为25μA，具备使能控制、限流保护和热关断功能。该器件采用SOT-23-5封装，输入输出仅需1μF陶瓷电容即可稳定工作，适合编码器与CH340G串口芯片的供电需求。
+其原理图如图2-2-2所示。
+图2-2-2 RT9013-33GB原理图
+2.3 电机驱动器
+我们采用由德州仪器生产的DRV8701E作为电机驱动芯片。该驱动器是德州仪器（TI）推出的一款单H桥栅极驱动器，用于驱动四颗外部N沟道MOSFET，主要面向12V至24V双向有刷直流电机应用。其工作电源电压范围为5.9V至45V，可兼容3S电池满电及放电末期的电压波动。芯片提供PH/EN控制接口，PH引脚控制电机转动方向（高低电平），EN引脚输入PWM信号控制转速。栅极驱动电流通过IDRIVE引脚外接单一电阻配置，拉电流范围为6mA至150mA，灌电流范围为12.5mA至300mA。芯片支持1.8V、3.3V和5V逻辑输入，可直接连接TC264D的3.3V PWM与IO输出。芯片内置20V/V分流放大器与集成PWM电流调节功能，可用于限制电机浪涌电流。
+在选择MOSFET时，主要考虑其耐受电压、内阻以及封装。由于我们选择12v电池作为供电电源，在考虑电机的再发电情况，所以我们将耐压限定在25v以上。权衡功率、大小和价格之后，我们选择了由东芝公司生产的TPH1R403NL N沟道MOSFET，其漏源电压Vdss为30V，栅源电压Vgss为20V，漏极持续电流Id为60A，符合要求。
+驱动部分原理图如2-3-1所示。
+图2-3-1 电机驱动器原理图
+为了防止驱动部分电流电压对PWM信号产生影响，使用了由德州仪器生产的缓冲芯片SN74HC125PWR，该芯片为四路独立三态输出缓冲器，工作电压范围2V至6V。该器件可接受3.3V或5V逻辑输入，输出高电平与低电平电流均为7.8mA。缓冲器在信号路径中起到整形与隔离作用，降低控制器I/O口直接驱动栅极驱动器可能引入的干扰。
+其原理图如2-3-2所示。
+图2-3-2 缓冲器原理图
+2.4 串口通信
+串口通信作为上下位机通信的重要模块，需要确保数据传输的稳定性、易用性与高性能。我们选择了由沁恒微电子生产的CH340G串口芯片。该芯片是南京沁恒微电子推出的一款USB总线转接芯片，主要实现USB与UART异步串口之间的双向数据转换。芯片内部集成USB协议控制器和串口接口电路，可自动完成USB信号与TTL电平串口信号的互转。该芯片支持全速USB 2.0协议，数据传输速率为12Mbps。串口端波特率范围覆盖50bps至2Mbps，支持5、6、7、8位数据位，1或2位停止位以及多种校验方式。芯片提供硬件全双工串口并内置收发缓冲区，同时支持RTS、CTS、DTR、DSR、RI、DCD等常用MODEM联络信号。
+CH340G支持Windows、Linux和Mac OS操作系统，通过安装驱动程序可实现即插即用。该芯片在单片机系统、嵌入式开发板中常用于实现USB与串口设备之间的通信。在本系统中，CH340G由RT9013-33GB输出的3.3V供电，实现上位机与主控板之间的串口通信连接。
+其原理图如图2-4-1所示。
+图2-4-1 串口通信原理图
+2.5 扩展I/O接口
+为防止调试过程中新加入其他元件导致主控板I/O接口不足，我们将TC264D的P0及P2的部分接口单独引出，一定程度上缓解了I/O接口不足的问题。
+其原理图如图2-5-1所示。
+图2-5-1 扩展接口原理图
+
+模型训练及优化
+视觉感知模块是智能车获取环境信息的主要途径。本系统采用了PP-YOLOE目标检测模型和PP-LiteSeg语义分割模型。PP-YOLOE在实时检测算法中具备较强的精度与推理速度平衡能力，其轻量化版本能在RK3588S的NPU上实现高帧率运行。PP-LiteSeg则采用了包含编码器-解码器结构的轻量级网络，满足对路径边界的快速分割需求。
+模型网络结构
+常用的视觉模型普遍采用多个卷积神经网络(CNN)级联的方式，本系统采用的PP-YOLOE与PP-LiteSeg均采用了类似结构。
+3.1.1 PP-YOLOE网络结构
+PP-YOLOE在PP-YOLOv2基础上进行了多项改进。网络采用无锚框（anchor-free）范式，简化了锚框参数调优过程。骨干网络与颈部网络基于RepResBlock重新设计，融合了残差连接与密集连接。网络引入任务对齐学习（TAL）和高效任务对齐头（ET-head），前者包含动态标签分配与任务对齐损失，用于缓解分类置信度与定位精度不一致的问题。训练过程中采用Varifocal Loss和Distribution Focal Loss，前者根据目标得分对正样本加权，优先优化高质量样本；后者将焦点损失从离散标签扩展至连续标签，提升模型对数据分布的表征能力。PP-YOLOE提供s/m/l/x四种不同宽深比例的缩放版本，以适应不同算力硬件。在COCO test-dev上，PP-YOLOE-l达到51.4% mAP。
+其网络结构如图3-1-1所示。
+图3-1-1 PP-YOLOE的网络结构
+3.1.2 PP-LiteSeg网络结构
+PP-LiteSeg采用编码器-解码器架构，包含三个核心模块。编码器采用STDCNet作为轻量级骨干网络。灵活轻量级解码器（FLD）在解码过程中随特征分辨率提升逐渐减少通道数量，以此平衡编码器与解码器之间的计算成本。统一注意力融合模块（UAFM）利用空间注意力与通道注意力生成融合权重，将输入特征与该权重融合，增强多尺度特征表示。简单金字塔池化模块（SPPM）以较低计算成本聚合全局上下文信息。在Cityscapes测试集上，PP-LiteSeg-T1达到72.0% mIoU，推理速度为273.6 FPS；PP-LiteSeg-B2达到77.5% mIoU。
+网络结构如图3-1-2所示。
+图3-1-2 PP-LiteSeg的网络结构
+模型训练
+模型训练使用AutoDL云服务器作为计算卡基础，Paddlepaddle2.6.2作为框架，采用从gitee克隆并编译的PaddleDetection和PaddleSeg套件进行训练。数据集则采集自由百度发布的赛场环境。数据增强策略采用马赛克增强（Mosaic）、随机裁剪、图像色彩抖动等多种手段，以提升模型在复杂光照及相似背景条件下的泛化能力。
+3.2.1 数据集制作
+通过录制车模在赛道运行时的第一视角，得到视频后使用ffmpeg工具进行抽帧，随后使用数据标注工具进行数据集标注。
+本次标注采用AutoLabel数据标注工具，该工具支持AI全自动数据标注，使用该工具制作自动标注模型时仅需要提前标注少量数据集即可开始训练，使用训练完成的模型进行全自动标注。该工具节省了大量的数据集制作时间，使标注效率显著提升。
+3.2.2 模型训练
+AutoDL云服务器使用JupyterLab开发环境，该开发环境是一款开源的，基于Notebook的轻量化开发环境。
+在配置好数据集加载路径、使用的模型、阅读器和优化器后，使用套件中的脚本进行训练，过程如图3-2-1所示。
+图3-2-1 训练过程
+3.3 量化及部署
+训练完成后，利用RKNN-Toolkit工具将基于深度学习框架训练的浮点模型转化为适配RK3588S NPU特性的RKNN量化模型。量化过程将网络权重和激活值从FP32压缩至INT8，降低模型推理时的内存带宽占用，并提升NPU的并行运算效率。在模型后处理阶段加入非极大值抑制（NMS），结合预设的置信度阈值，过滤冗余重叠的检测框，以提高目标位置检测的有效性。
+多线程推理优化
+上位机软件设计中采用了双线程异步推理架构。代码中，inferenceLoop 函数独立负责PP-YOLOE模型的推理；segInferenceLoop 函数独立负责PP-LiteSeg模型的推理。两个推理线程共享同一份摄像头原始帧数据，利用条件变量实现线程间的同步与唤醒。推理完成后，目标检测结果通过非极大值抑制流程进行过滤。该流程根据交并比阈值剔除重叠度较高的冗余检测框，将有效目标信息传入状态机模块。针对后处理中存在的循环遍历操作，系统利用OpenMP并行库对运算密集的循环进行了并行化，提高了整体程序在Linux环境下的执行效率。
+部分代码如下：
+void inferenceLoop()
+    {
+        while (!stopFlag)
+        {
+            cv::Mat img;
+            {
+                unique_lock<mutex> lock(mtxImg);
+                cvImg.wait(lock, [this] { return readyImg.load() || stopFlag; });
+                if (stopFlag) break;
+                img = imgShare.clone();
+                readyImg = false;
+            }
+            std::vector<DetectResult> res;
+            try
+            {
+                double det_ms = 0.0;
+                {
+                    // 互斥锁已注释，允许与分割并行
+                    // std::lock_guard<std::mutex> npu_lock(npuMutex);
+                    auto t0 = chrono::steady_clock::now();
+                    res = detection->inference(img);
+                    auto t1 = chrono::steady_clock::now();
+                    det_ms = chrono::duration<double, milli>(t1 - t0).count();
+                }
+                {
+                    lock_guard<mutex> lock(printMutex);
+                    det_infer_time_total_ += det_ms;
+                    det_infer_count_++;
+                    if (det_infer_count_ >= 10)
+                    {
+                        double avg = det_infer_time_total_ / det_infer_count_;
+                        // cout << "[计时] 目标检测平均耗时: " << avg << " ms (最近10次)" << endl;
+                        det_infer_time_total_ = 0.0;
+                        det_infer_count_ = 0;
+                    }
+                }
+            }
+            catch (const exception& e)
+            {
+                cerr << "目标检测线程异常: " << e.what() << endl;
+                continue;
+            }
+            {
+                lock_guard<mutex> lock(mtxRes);
+                latestDetectionResults = std::move(res);
+                newResultReady = true;
+            }
+            cvRes.notify_one();
+        }
+        if (det_infer_count_ > 0)
+        {
+            lock_guard<mutex> lock(printMutex);
+            double avg = det_infer_time_total_ / det_infer_count_;
+            // cout << "[计时] 目标检测最终平均耗时: " << avg << " ms (剩余" << det_infer_count_ << "次)" << endl;
+        }
+    }
+    void segInferenceLoop()
+    {
+        while (!segStopFlag)
+        {
+            cv::Mat img;
+            {
+                unique_lock<mutex> lock(mtxSegImg);
+                cvSegImg.wait(lock, [this] { return segReadyImg.load() || segStopFlag; });
+                if (segStopFlag) break;
+                img = segImgShare.clone();
+                segReadyImg = false;
+            }
+            try
+            {
+                ArrowInfo info;
+                cv::Mat mask;
+                double seg_ms = 0.0;
+                {
+                    // 互斥锁已注释，允许与检测并行
+                    // std::lock_guard<std::mutex> npu_lock(npuMutex);
+                    auto t0 = chrono::steady_clock::now();
+                    info = seg_infer->infer(img);
+                    mask = seg_infer->getBinaryMask().clone();
+                    auto t1 = chrono::steady_clock::now();
+                    seg_ms = chrono::duration<double, milli>(t1 - t0).count();
+                }
+                {
+                    lock_guard<mutex> lock(printMutex);
+                    seg_infer_time_total_ += seg_ms;
+                    seg_infer_count_++;
+                    if (seg_infer_count_ >= 10)
+                    {
+                        double avg = seg_infer_time_total_ / seg_infer_count_;
+                        // cout << "[计时] 语义分割平均耗时: " << avg << " ms (最近10次)" << endl;
+                        seg_infer_time_total_ = 0.0;
+                        seg_infer_count_ = 0;
+                    }
+                }
+                {
+                    lock_guard<mutex> lock(mtxSegRes);
+                    segResultInfo = info;
+                    segBinaryMask = mask;
+                    segNewResultReady = true;
+                }
+                cvSegRes.notify_one();
+            }
+            catch (const exception& e)
+            {
+                cerr << "分割推理线程异常: " << e.what() << endl;
+            }
+        }
+        if (seg_infer_count_ > 0)
+        {
+            lock_guard<mutex> lock(printMutex);
+            double avg = seg_infer_time_total_ / seg_infer_count_;
+            // cout << "[计时] 语义分割最终平均耗时: " << avg << " ms (剩余" << seg_infer_count_ << "次)" << endl;
+        }
+}
+
+软件设计
+控制算法承担着连接环境感知与车辆动作执行的功能。在感知层将环境信息转化为可用的数据结构后，控制算法需依据预设的逻辑做出决策，并驱动底层电机与舵机完成对应的运动。本系统的控制策略采用上位机与下位机分层协作的实现方式。上位机负责图像数据的获取、模型推理、决策调度与运动学计算，下位机负责执行最终的速度闭环反馈与舵机PWM控制。
+4.1 软件运行逻辑
+系统控制流程的组织建立在多线程并发及有限状态机架构之上。上位机软件启动后，利用独立线程分别完成图像采集、目标检测模型推理及语义分割模型推理。主循环周期性地从上述线程获取最新的检测结果与分割掩膜，将其转化为供决策依据的参数。决策层由一个嵌套调用的有限状态机构成，根据优先级依次对“右转信号”、“避障目标”和“金币目标”进行处理。运动控制层则在状态机的支配下，采用纯追踪算法计算转向角度，并经由UART串口将控制指令下发至下位机。
+软件基本运行逻辑如图4-1-1。
+图4-1-1 软件基本运行逻辑
+4.2 环境识别
+该功能封装在主程序 TrackDetection 类及对应的图像处理模块中。该模块首先对摄像头获取的原始图像进行降采样及逆透视变换（IPM）处理，将前向视角的图像映射为鸟瞰视角。在鸟瞰视角下，算法逐行扫描左侧赛道边界，通过分析相邻两帧边界点间的水平差值判断是否存在岔路口。当差值超过预设的跳跃阈值（JUMP_THRESHOLD = 75）时，判定存在岔口，随即提取右边界。在此基础上，系统根据边界点坐标计算误差值。误差计算公式表述如下：
+
+                         Eraw=X目标−X中心					 （公式4-2-1）
+
+其中 
+X目标为算法设定的循迹目标点横坐标，X中心为图像中心横坐标。为了减小杂波干扰，误差值通过长度为2的滑动窗口进行均值滤波处理。此外，模块中增加了基于赛道底部坐标的车身回正校正逻辑，根据预设的赛道宽度推算出当前车辆的侧向偏移量，以修正目标点的纵坐标，从而改善车辆在弯道中的行驶姿态。
+部分代码如下
+* @brief 获取轮廓的最高点（经过中心修正）
+ */
+Point getTopPoint(const vector<Point>& contour, const Mat& roi_bin) {
+    if (contour.empty()) return Point(-1, -1);
+    // 找最高点（y最小）
+    Point top_point = contour[0];
+    for (const auto& p : contour) {
+        if (p.y < top_point.y) top_point = p;
+    }    
+    // 修正最高点为中心点（在同一行上找左右边界）
+    int right = -1;
+    for (int x = top_point.x; x < roi_bin.cols; x++) {
+        if (roi_bin.at<uchar>(top_point.y, x) == 255) {
+            right = x;
+        } else {
+            break;
+        }
+    }
+    int left = -1;
+    for (int x = top_point.x; x >= 0; x--) {
+        if (roi_bin.at<uchar>(top_point.y, x) == 255) {
+            left = x;
+        } else {
+            break;
+        }
+    } 
+    if (left != -1 && right != -1) {
+        top_point.x = (left + right) / 2;
+    }
+    return top_point;
+}
+/**
+ * @brief 控制中心计算
+ *
+ * @param params
+ */
+void TrackDetection::fitting( cv::Mat& debug_img, std::shared_ptr<Params> params) {
+    if (params->config.yuchuli.empty()) 
+   {cout <<"params->config.yuchuli为空"<<endl;
+    return;}
+    int mu_x=0;
+    int mu_y=0;
+if (params->mode == FsmMode::AVOID) {
+     mu_x = params->ctrl.mubiaoni.x;
+    }
+// 直接从 params 获取预处理好的二值图
+    cv::Mat binary = params->config.yuchuli;
+    if (binary.empty()) return;
+    // 调用函数提取左边界并计算误差
+    BoundaryResult result = extractLeftBoundaryAndError(binary,params);
+    float deviation;
+    deviation = static_cast<float>(result.error);
+params->ctrl.jichucenter = deviation;
+4.3 模型推理
+模型推理采用异步并行架构，分别在独立的 inferenceThread 与 segInferenceThread 线程中运行。上位机主循环接收到一帧新的图像后，使用互斥锁及条件变量唤醒推理线程。目标检测线程向NPU传入图像，执行PP-YOLOE推理流程，获取图像中检测物体的坐标、类别与置信度；语义分割线程执行PP-LiteSeg推理，输出箭头的状态信息及二值掩膜。各推理线程在完成计算后，将结果存入对应的共享缓存区并置位标志，主循环在后续周期中读取已更新的缓存数据以进行决策。此设计利用共享内存的方式，使得图像采集与模型推理过程互不阻塞，提高了整个系统处理图像的吞吐率。
+前文已提及部分代码，遂此处不再展示。
+4.4 串口通信
+上位机与下位机之间的信息交互基于定制化的UART通信协议。协议规定的数据包长度固定为10字节，其结构依次包含帧头、设备地址、数据长度、有效载荷、校验和等字段。上位机发送至下位机的内容主要包含 received_speed（期望速度）与 received_servo（期望舵机角度）。下位机在 uart_rx_interrupt_handler 中断服务程序中接收字节，并将其放入FIFO缓冲区。在主循环中通过 parse_uart_data 函数对缓冲区中的数据进行解析和校验。
+校验计算的数学逻辑是：对数据包除校验位外的所有字节进行累加，如果累加和与最后一个字节的数据一致，则认为数据包有效。有效的数据包被转换为浮点型速度与整型舵机角度，并用于驱动底层控制逻辑。下位机同样以固定周期向上位机发送包含电机转速与按键信息的传感器数据，用于调试界面的状态监控。
+    // 验证帧头
+    if(buffer[0] != USB_FRAME_HEAD)
+        return 0;
+    // 验证地址
+    if(buffer[1] != CAR_ADDRESS)
+        return 0;
+    // 验证长度
+    if(buffer[2] != PACKET_SIZE)
+        return 0;
+    // 计算校验和
+    uint8 check = 0;
+    for(int i = 0; i < PACKET_SIZE - 1; i++)
+    {
+        check += buffer[i];
+    }
+    // 验证校验和
+    if(check != buffer[PACKET_SIZE - 1])
+        return 0;
+    return 1;
+4.5 状态机决策
+状态机决策模块是连接环境感知与运动控制的中间环节，负责依据视觉模型输出的离散信息做出适时响应。在控制理论与嵌入式应用领域，有限状态机算法将控制对象的离散行为抽象为一组有限的状态集合、输入事件集合以及状态转移规则的组合。本系统的状态机设计沿用了该理论框架，依据检测目标的类别及置信度，依次触发对应状态并维持相应动作。
+状态机决策逻辑集中在程序的 runFsm 函数中，并在 FsmAvoid、FsmTurnRight 与 FsmGold 三个子模块中实现具体的策略。系统设置了明确的优先级序列：路牌右转的优先级高于避障，避障的优先级高于金币追踪。
+路牌右转模式：当视觉模块检测到面积足够的交通标志时，车辆停止并触发底层OCR模型识别。系统设定了持续5秒的模式超时机制，并在识别为“右转”后，强制设置 go_right 标志位持续10秒，同时将舵机PWM锁定至右转特定值持续1秒。
+避障模式：避障逻辑针对车辆和行人分别进行处理。车辆检测依据目标底部高度 bottom_y 是否超过 OBSTACLE_TRIGGER_Y 进行判断。为避免由单帧偶然检测引发的动作跳动，系统设置了防抖计数器 countRec。在连续8帧识别到目标后，系统锁定避障状态。若目标连续丢失一定帧数后，系统自动退出避障状态。
+金币追踪模式：该模式提取图像中面积最大且位于下半部分的金币，利用NMS过滤后得到金币的几何中心。若连续丢失特定帧数，则切换回正常循迹模式。
+为防止车辆因感知逻辑受阻而陷入状态死锁，各状态子模块均设有独立的超时复位逻辑。避障状态设有总时长 5 秒的最大持续时间限制。若超过该时限后传感器仍未检测到预期目标，系统强制复位所有避障标志位。路牌模式同样具备超时保护，在模式生效超过预设时限时自动退出。上述超时机制为系统的长时间无故障运行提供了额外的逻辑保障。
+4.6 运动控制
+比例、积分、微分控制，简称 PID 控制。PID控制器问世至今已有近 70 年历史，其有着结构简单、稳定性好、工作可靠、调整方便等优点，现已成为工 业控制领域的主要技术之一。当被控对象的结构和参数不能完全掌握，或得不到精确的数学模型时，控制理 论的其它技术难以采用，系统控制器的结构和参数必须依靠经验和现场调试 来确定，此时应用 PID 控制技术是最为方便的。 PID 控制在实际中也有 PI 和 PD 控制。PID 控制器是一种线性的控制器，其根据给定值与实际输出值构成控制偏差。将偏差的比例(P)、积分(I)和微分(D) 通过线性组合构成控制量，对被控对象进行控制，故称为 PID 控制器，其原理框图如图4-6-1所示。
+图4-6-1  PID原理系统框图
+运动控制的数学模型建立在阿克曼转向几何与增量式PID控制之上。在轨迹跟踪方面，上位机基于目标点相对车辆的距离与角度，计算后轮的转向角。具体计算公式采用纯追踪（Pure Pursuit）模型：
+
+δ=arctan(2Lsin(α)/Ld)			（公式4-6-1）
+
+其中 δ 表示期望的前轮转向角，L 为车辆轴距，α 为目标点相对车头朝向的夹角，Ld为预瞄距离。上位机将计算出的弧度 rad 转化为舵机的PWM偏差值，并通过限幅函数将其限制在舵机允许的物理行程范围之内。
+在电机控制方面，下位机采用增量式PID算法实现速度闭环。其控制量输出的递推公式为：
+
+Δu(k)=Kp[e(k)−e(k−1)]+Kie(k)+Kd[e(k)−2e(k−1)+e(k−2)] （公式4-6-2）
+
+e(k) 为当前周期内的速度偏差值。为防止车辆在赛道遭遇障碍或夹死时电机烧毁，代码中集成了堵转保护逻辑。当PID输出值超过预设的堵转电流阈值，且编码器反馈的转速低于最小转动阈值时，持续一定周期后，系统会对电机输出幅值进行限幅，将其降至额定值的30%。此措施在保护电机与控制电路的同时，也避免了因强行输出电流造成的不稳定工况。
+4.7 控制实时性优化
+为保证车辆在30帧以上的运行帧率下不致出现响应延迟，控制流程中对耗时较大的操作进行了降频或分流处理。例如，语义分割推理因模型较复杂，仅在间隔帧或特定条件下触发。异常规避方面，系统在运行中会持续监测串口通信的心跳信号，若超过一定时间未接收到下位机的反馈数据，车辆自动执行制动操作。同时，在发生避障超时（超过5秒）或路口转向模式超时等特殊情况时，状态机内部的强制复位逻辑将介入，使车辆退出当前异常状态并恢复到安全的正常循迹模式，以提升车辆在复杂多变赛道下的稳定运行能力。
+
+第五章 开发环境介绍及调试过程
+5.1 开发环境简介
+下位机TC264D微控制器采用Aurix Development Studio（ADS）作为集成开发环境。ADS基于Eclipse平台，集成了针对TriCore内核架构的C/C++编译器和调试器。项目工程中包含了底层的硬件抽象层（HAL）库与符合AUTOSAR标准的外设驱动配置文件。代码编写完成后，编译工具链负责将源程序转换为烧录所需的ELF文件及HEX文件。烧录与调试过程通过DAP仿真器完成，其将计算机的USB接口转为TC264D芯片的JTAG接口。调试过程中可设置软件断点以暂停程序运行，在断点触发时观察寄存器数值及内存变量的实时状态，从而排查电机控制和串口中断服务程序中的运行异常。
+上位机视觉与决策软件运行于Orange Pi OS系统。开发与编译工作基于VS Code代码编辑器进行。操作人员通过SSH协议建立从宿主机到开发板的远程连接，在本地界面完成代码编写与修改。版本管理采用Git工具对每次变更进行记录。工程编译使用CMake工具链管理依赖库与目标二进制文件的生成。编译完成的程序通过SFTP传输至开发板指定目录并授予可执行权限。在运行阶段，上位机程序通过标准输出打印调试信息，为判断图像处理与决策逻辑的完整性提供依据。
+车载视觉系统的图像处理结果无法直接通过本地屏幕输出。为解决此问题，在Orange Pi OS中配置了X11 VNC服务端。操作人员使用VNC客户端连接至开发板，获取远程桌面环境。在该图形化界面中，可调用OpenCV的显示窗口直接查看摄像头采集的原始画面、逆透视变换（IPM）后的鸟瞰图以及目标检测模型绘制的锚框与置信度标注。通过界面反馈的实时信息，对目标检测的置信度阈值、语义分割的灰度图生成效果以及路径边界提取的采样行位置进行直观的参数微调，逐步收敛至预期的处理效果。
+PCB设计使用嘉立创EDA。嘉立创EDA是一款国产免费的电子设计工具，支持原理图设计、PCB布局、电路仿真及生产制造全流程，尤其适合学生、创客和中小企业。它提供云端+本地双模式，内置海量元件库，并可直接对接嘉立创的低价PCB打样和贴片服务，实现从设计到生产的一站式解决方案。相比国外EDA软件，它中文友好、零成本、本土化服务完善，是快速开发电子项目的实用选择。
+5.2 调试过程
+通过前面的理论分析、算法构思和代码实现，我们就可以开始调车。独立编译完成后，系统进入联调阶段。下位机通过UART串口以固定周期向上位机发送包含编码器计数、当前占空比输出的监测数据；上位机则依据视觉感知结果向下位机下发期望速度与舵机PWM值。在场地测试中，基于车辆在直线路段与弯道路段的实际运行状况，逐步微调纯追踪算法的预瞄距离比例系数与增量式PID控制器的比例增益、积分增益和微分增益。避障响应中防抖计数器的帧数阈值也在该阶段进行适配调整，最终使车辆在不同线型与障碍物场景下能够维持稳定的行驶轨迹。
+
+第六章 系统主要技术参数说明
+
+
+第七章 结论
+我们队伍基于RK3588S与SAK-TC264D异构架构的智能车系统的设计方案，成功开发了一套智能汽车系统。系统采用阿克曼机械结构，结合3D打印技术对机械结构的科学布局、构建独立供电与隔离的电路设计，包括高效的DC-DC电源模块、高性能的计算平台和高性能的单片机，搭建了稳定的物理与硬件平台。
+在软件层面，基于PP-YOLOE与PP-LiteSeg模型完成了嵌入式视觉感知系统的构建，并利用状态机实现了任务调度与避障决策。在控制层面，结合阿克曼转向数学模型、纯追踪算法、基于图像边界误差提取的规划算法以及底层的增量式PID控制，实现了车辆在各种赛道地形上的稳定循迹与任务执行。
+我们能顺利完成车模的制作与赛题任务的实现离不开团队的配合、交流，也离不开各大高校的大佬们我们的交流。在车模制作的过程中不断学习相关知识，积累了丰富的实践经验。
+
+参  考  文  献
+[1] 卓晴, 黄开胜, 杨华. 全国大学生智能汽车竞赛及技术探索[M]. 北京: 清华大学出版社, 2019.
+[2] 王长松, 李一鸣. 嵌入式智能车辆视觉导航与控制关键技术综述[J]. 电子技术应用, 2021, 47(10): 12-17.
+[3] 瑞芯微电子. RK3588S 系统芯片技术规格书[Z]. 2022.
+[4] 王政, 陈亮, 刘强. 基于纯追踪模型的智能车路径跟踪控制研究[J]. 计算机工程与设计, 2021, 42(12): 3452-3458.
+[5] 刘静, 张明宇. 基于视觉导航的阿克曼转向智能车控制策略分析[J]. 电子技术应用, 2020, 46(11): 95-99.
+[6] 高云鹏, 赵卫国. 嵌入式控制系统硬件接口与电路设计[M]. 北京: 电子工业出版社, 2020.
+[7] 刘晓辉, 孙鹏. 基于神经网络模型剪枝的嵌入式目标检测优化研究[J]. 单片机与嵌入式系统应用, 2023, 23(4): 45-49.
+[8] 高云鹏, 赵卫国. 嵌入式控制系统硬件接口与电路设计[M]. 北京: 电子工业出版社, 2020.
+[9] 芯洲科技. SCT2450 规格书[Z]. 2023.
+
+附录
+附录A:程序主要源代码
+int target=0;
+// 堵转保护参数
+#define STALL_OUTPUT_THRESHOLD  2500    // 输出超过此值才算"在使劲"
+#define STALL_SPEED_THRESHOLD   5       // 编码器计数低于此值才算"没转"
+#define STALL_COUNT_MAX         50      // 连续堵转次数阈值(50×2ms=100ms)
+#define STALL_LIMIT_RATIO       0.3f    // 堵转时输出限制到30%
+static uint16_t stall_counter1 = 0;
+static uint16_t stall_counter2 = 0;
+void ControlSpeed(void)
+{
+    int16_t target_speed = 0;
+    int16_t target_servo = 0;
+
+    // 决策：遥控优先，其次有效视觉指令，否则停车
+    if (remote_active)
+    {
+        target_speed = remote_speed;
+        target_servo = remote_servo;
+    }
+    else if(vision_valid)
+    {
+        target_speed = received_speed;
+        target_servo = received_servo;
+    }
+    else
+    {
+        target_speed = 0;
+        motor_Set1=0;
+        motor_Set2=0;
+        target_servo = 740;
+    }
+
+   if(!remote_active&&!vision_valid)
+   {   motor_Set1=0;
+       motor_Set2=0;
+       SpeedPid1.voltage=0;
+       SpeedPid2.voltage=0;
+       stall_counter1 = 0;
+       stall_counter2 = 0;
+    }
+   else
+   {
+
+    motor_Set1=Speed_pid1((float)gpt1,(float)target_speed,  220 , 8);//received_speed
+    motor_Set2=Speed_pid2((float)gpt2,(float)target_speed,  220 ,  8);//received_speed
+    // 堵转检测：输出大但编码器不转
+     if(motor_Set1 > STALL_OUTPUT_THRESHOLD && gpt1 < STALL_SPEED_THRESHOLD && gpt1 > -STALL_SPEED_THRESHOLD)
+     {
+         stall_counter1++;
+     }
+     else
+     {
+         stall_counter1 = 0;
+     }
+     if(stall_counter1 > STALL_COUNT_MAX)
+     {
+         motor_Set1 = (int)(motor_Set1 * STALL_LIMIT_RATIO);
+     }
+
+     if(motor_Set2 > STALL_OUTPUT_THRESHOLD && gpt2 < STALL_SPEED_THRESHOLD && gpt2 > -STALL_SPEED_THRESHOLD)
+     {
+         stall_counter2++;
+     }
+     else
+     {
+         stall_counter2 = 0;
+     }
+     if(stall_counter2 > STALL_COUNT_MAX)
+     {
+         motor_Set2 = (int)(motor_Set2 * STALL_LIMIT_RATIO);
+     }
+    }
+
+    if(motor_Set1<0)
+    {   gpio_set_level(MOTOR_DIR1, 1);
+        motor_Set1=-motor_Set1;
+    }
+    else
+    {
+        gpio_set_level(MOTOR_DIR1, 0);
+    }
+    if(motor_Set2<0)
+    {   gpio_set_level(MOTOR_DIR2, 1);
+        motor_Set2=-motor_Set2;
+    }
+    else
+    {
+        gpio_set_level(MOTOR_DIR2, 0);
+    }
+
+    if(motor_Set1>PWM_MAX)
+    {
+        motor_Set1=PWM_MAX;
+    }
+    else if(motor_Set1<-PWM_MAX)
+    {
+        motor_Set1=-PWM_MAX;
+    }
+
+    if(motor_Set2>PWM_MAX)
+    {
+        motor_Set2=PWM_MAX;
+    }
+    else if(motor_Set2<-PWM_MAX)
+    {
+        motor_Set2=-PWM_MAX;
+    }
+
+    motor_control( motor_Set1,motor_Set2,target_servo);
+}
+
+void swap(uint8 *a,uint8 *b)
+{
+    uint8 t;
+  t=*a;
+  *a=*b;
+  *b=t;
+    }
+
+void key_solve(void)
+{
+    if(KEY_CHECK(1,SINGLE)==1)
+    {  target=12;
+        //swap(&key_data1,&key_data1_start);
+    }
+    if(KEY_CHECK(2,SINGLE)==1)
+    { target=0;
+       // swap(&key_data2,&key_data2_save);
+    }
+}
+
+float received_speed = 0;
+uint16 received_servo = 0;
+uint8 received_buzzer = 0;
+uint8 received_buzzer_last = 0;
+volatile uint8 packet_received = 0;
+
+uint8 receive_buffer[PACKET_SIZE];
+uint8 receive_index = 0;
+uint8 receiving_packet = 0;
+
+
+uint8 uart_get_data[128];           // 串口接收数据缓冲区（增大缓冲区）
+uint8 fifo_get_data[128];           // fifo 输出读出缓冲区
+uint32 fifo_data_count = 0;         // fifo 数据个数
+fifo_struct uart_data_fifo;
+
+
+void uart_rx_interrupt_handler(void)
+{
+    uint8 get_data;
+
+    if(uart_query_byte(UART_1, &get_data))
+      {   heartbeat_timer = 0;
+          fifo_write_buffer(&uart_data_fifo, &get_data, 1);    //把get_data数据写进uart_data_fifo缓冲区内
+      }
+
+}
+
+
+uint8 verify_packet(uint8* buffer)
+{
+    // 验证帧头
+    if(buffer[0] != USB_FRAME_HEAD)
+        return 0;
+    // 验证地址
+    if(buffer[1] != CAR_ADDRESS)
+        return 0;
+    // 验证长度
+    if(buffer[2] != PACKET_SIZE)
+        return 0;
+    // 计算校验和
+    uint8 check = 0;
+    for(int i = 0; i < PACKET_SIZE - 1; i++)
+    {
+        check += buffer[i];
+    }
+    // 验证校验和
+    if(check != buffer[PACKET_SIZE - 1])
+        return 0;
+
+    return 1;
+}
+// 在主循环中解析UART数据
+void parse_uart_data(void)
+{
+    uint8 get_data;
+    fifo_state_enum read_result;
+    // 从FIFO中读取所有可用数据
+    fifo_data_count = fifo_used(&uart_data_fifo);
+    // 逐个字节处理 - 使用 fifo_read_element 替代 fifo_read_byte
+       while(fifo_data_count > 0)
+       {
+           // 使用 FIFO_READ_AND_CLEAN 标志读取并清除数据
+           read_result = fifo_read_element(&uart_data_fifo, &get_data, FIFO_READ_AND_CLEAN);
+
+           if(read_result != FIFO_SUCCESS)
+           {
+               break; // 读取失败，退出循环
+           }
+
+           fifo_data_count--; // 减少剩余计数
+
+           // 寻找包头
+           if(!receiving_packet && get_data == USB_FRAME_HEAD)
+           {
+               receiving_packet = 1;
+               receive_index = 0;
+               receive_buffer[receive_index++] = get_data;
+           }
+           // 接收数据
+           else if(receiving_packet && receive_index < PACKET_SIZE)
+           {
+               receive_buffer[receive_index++] = get_data;
+
+               // 检查是否接收到完整数据包
+               if(receive_index == PACKET_SIZE)
+               {
+                   if(verify_packet(receive_buffer))
+                   {
+                       // 解析数据
+                       Bit32Union speed_union;
+                       speed_union.buff[0] = receive_buffer[3];
+                       speed_union.buff[1] = receive_buffer[4];
+                       speed_union.buff[2] = receive_buffer[5];
+                       speed_union.buff[3] = receive_buffer[6];
+                       received_speed = speed_union.float32;
+
+                       Bit16Union servo_union;
+                       servo_union.buff[0] = receive_buffer[7];
+                       servo_union.buff[1] = receive_buffer[8];
+                       received_servo = servo_union.uint16;
+
+
+                       received_buzzer = receive_buffer[9];
+
+
+                       packet_received = 1;
+                   }
+                   receiving_packet = 0;
+               }
+           }
+           else
+           {
+               // 接收错误，重置状态
+               receiving_packet = 0;
+               receive_index = 0;
+           }
+       }
+   }
+
+uint8_t CalculateChecksum(const uint8_t* data, uint8_t length)
+{
+    uint8_t sum = 0;
+    for (uint8_t i = 0; i < length; i++)
+    {
+        sum += data[i];
+    }
+    return sum;
+}
+
+// 发送传感器数据
+bool UART_SendData(const SensorData_t* sensor_data)
+{
+    uint8_t frame[FRAME_LENGTH];
+    uint8_t checksum = 0;
+
+    // 构建数据帧
+    frame[0] = USB_FRAME_HEAD;     // 帧头
+    frame[1] = USB_ADDR_SENSOR;    // 地址
+    frame[2] = FRAME_LENGTH;       // 帧长度
+
+    // 陀螺仪数据 (int16, 小端格式)
+    frame[3] = (uint8_t)(sensor_data->gyro_data & 0xFF);        // 低字节
+    frame[4] = (uint8_t)((sensor_data->gyro_data >> 8) & 0xFF); // 高字节
+
+    // 键值数据
+    frame[5] = sensor_data->key_data1;  // 按键数据1
+    frame[6] = sensor_data->key_data2;  // 按键数据2
+
+    frame[7] = (uint8_t)(sensor_data->distance & 0xFF);
+    frame[8] = (uint8_t)((sensor_data->distance >> 8) & 0xFF);
+    // 计算校验和 (累加前7个字节)
+    checksum = CalculateChecksum(frame, FRAME_LENGTH - 1);
+    frame[9] = checksum;
+
+    // 使用逐飞科技的串口发送函数，批量发送整个数据帧
+    uart_write_buffer(UART_1, frame, FRAME_LENGTH);
+    return true;
+}
+
+using namespace cv;
+using namespace std;
+
+class Icar
+{
+private:
+    struct FsmFactory
+    {
+        shared_ptr<FsmGold> gold;
+        shared_ptr<FsmAvoid> avoid;
+        shared_ptr<FsmTurnRight> turnright;
+    };
+
+    string model_path  = "/home/orangepi/Desktop/xcar/model/0818detect_320.rknn";
+    string labels_path = "/home/orangepi/Desktop/xcar/model/label_list.txt";
+
+    FsmFactory fsmFactory;
+    std::shared_ptr<RK3588Detection> detection;
+    std::shared_ptr<PPSegInfer> seg_infer;
+    std::shared_ptr<Params> params;
+    std::shared_ptr<Motion> motion;
+    std::shared_ptr<Uart> uart;
+    std::shared_ptr<ArFusionFrameReader> reader;
+    std::shared_ptr<RoadSignRecognizer> roadSign;
+    std::shared_ptr<ImagePreprocessor> preprocessor;
+
+    // 独立图像采集线程
+    thread captureThread;
+    atomic<bool> captureStop{false};
+    cv::Mat latestARFrame;
+    mutex mtxLatestFrame;
+    atomic<bool> newFrameAvailable{false};
+
+    // 目标检测异步线程
+    thread inferenceThread;
+    atomic<bool> stopFlag{false};
+    cv::Mat imgShare;
+    mutex mtxImg;
+    condition_variable cvImg;
+    atomic<bool> readyImg{false};
+    mutex mtxRes;
+    condition_variable cvRes;
+    bool newResultReady = false;
+    std::vector<DetectResult> latestDetectionResults;
+
+    // 语义分割异步线程
+    thread segInferenceThread;
+    atomic<bool> segStopFlag{false};
+    cv::Mat segImgShare;
+    mutex mtxSegImg;
+    condition_variable cvSegImg;
+    atomic<bool> segReadyImg{false};
+    mutex mtxSegRes;
+    condition_variable cvSegRes;
+    atomic<bool> segNewResultReady{false};
+    ArrowInfo segResultInfo;
+    cv::Mat segBinaryMask;
+
+    // NPU 互斥锁（本次测试注释掉，允许并行）
+    std::mutex npuMutex;
+
+    // 计时器
+    chrono::steady_clock::time_point startTime;
+    atomic<bool> speedChanged{false};
+
+    // 推理计时统计
+    double det_infer_time_total_ = 0.0;
+    int det_infer_count_ = 0;
+    double seg_infer_time_total_ = 0.0;
+    int seg_infer_count_ = 0;
+    std::mutex printMutex;
+
+    void captureLoop()
+    {
+        cv::Mat frame;
+        int fps_cnt = 0;
+        auto t_start = std::chrono::steady_clock::now();
+        while (!captureStop)
+        {
+            if(reader->readFrame(frame))
+            {
+                fps_cnt++;
+                auto now = std::chrono::steady_clock::now();
+                double sec = std::chrono::duration<double>(now - t_start).count();
+                if(sec >= 1.0)
+                {
+                    fps_cnt = 0;
+                    t_start = now;
+                }
+
+                {
+                    std::lock_guard<std::mutex> lock(mtxLatestFrame);
+                    latestARFrame = frame.clone();
+                    newFrameAvailable = true;
+                }
+            }
+            else
+            {
+                std::this_thread::yield();
+            }
+        }
+    }
+
+    bool getNewestARFrame(cv::Mat& outFrame)
+    {
+        std::lock_guard<std::mutex> lock(mtxLatestFrame);
+        if(newFrameAvailable)
+        {
+            outFrame = latestARFrame.clone();
+            newFrameAvailable = false;
+            return true;
+        }
+        return false;
+    }
+
+    void inferenceLoop()
+    {
+        while (!stopFlag)
+        {
+            cv::Mat img;
+            {
+                unique_lock<mutex> lock(mtxImg);
+                cvImg.wait(lock, [this] { return readyImg.load() || stopFlag; });
+                if (stopFlag) break;
+                img = imgShare.clone();
+                readyImg = false;
+            }
+
+            std::vector<DetectResult> res;
+            try
+            {
+                double det_ms = 0.0;
+                {
+                    // 互斥锁已注释，允许与分割并行
+                    // std::lock_guard<std::mutex> npu_lock(npuMutex);
+                    auto t0 = chrono::steady_clock::now();
+                    res = detection->inference(img);
+                    auto t1 = chrono::steady_clock::now();
+                    det_ms = chrono::duration<double, milli>(t1 - t0).count();
+                }
+
+                {
+                    lock_guard<mutex> lock(printMutex);
+                    det_infer_time_total_ += det_ms;
+                    det_infer_count_++;
+                    if (det_infer_count_ >= 10)
+                    {
+                        double avg = det_infer_time_total_ / det_infer_count_;
+                        // cout << "[计时] 目标检测平均耗时: " << avg << " ms (最近10次)" << endl;
+                        det_infer_time_total_ = 0.0;
+                        det_infer_count_ = 0;
+                    }
+                }
+            }
+            catch (const exception& e)
+            {
+                cerr << "目标检测线程异常: " << e.what() << endl;
+                continue;
+            }
+
+            {
+                lock_guard<mutex> lock(mtxRes);
+                latestDetectionResults = std::move(res);
+                newResultReady = true;
+            }
+            cvRes.notify_one();
+        }
+
+        if (det_infer_count_ > 0)
+        {
+            lock_guard<mutex> lock(printMutex);
+            double avg = det_infer_time_total_ / det_infer_count_;
+            // cout << "[计时] 目标检测最终平均耗时: " << avg << " ms (剩余" << det_infer_count_ << "次)" << endl;
+        }
+    }
+
+    void segInferenceLoop()
+    {
+        while (!segStopFlag)
+        {
+            cv::Mat img;
+            {
+                unique_lock<mutex> lock(mtxSegImg);
+                cvSegImg.wait(lock, [this] { return segReadyImg.load() || segStopFlag; });
+                if (segStopFlag) break;
+                img = segImgShare.clone();
+                segReadyImg = false;
+            }
+
+            try
+            {
+                ArrowInfo info;
+                cv::Mat mask;
+                double seg_ms = 0.0;
+                {
+                    // 互斥锁已注释，允许与检测并行
+                    // std::lock_guard<std::mutex> npu_lock(npuMutex);
+                    auto t0 = chrono::steady_clock::now();
+                    info = seg_infer->infer(img);
+                    mask = seg_infer->getBinaryMask().clone();
+                    auto t1 = chrono::steady_clock::now();
+                    seg_ms = chrono::duration<double, milli>(t1 - t0).count();
+                }
+
+                {
+                    lock_guard<mutex> lock(printMutex);
+                    seg_infer_time_total_ += seg_ms;
+                    seg_infer_count_++;
+                    if (seg_infer_count_ >= 10)
+                    {
+                        double avg = seg_infer_time_total_ / seg_infer_count_;
+                        // cout << "[计时] 语义分割平均耗时: " << avg << " ms (最近10次)" << endl;
+                        seg_infer_time_total_ = 0.0;
+                        seg_infer_count_ = 0;
+                    }
+                }
+
+                {
+                    lock_guard<mutex> lock(mtxSegRes);
+                    segResultInfo = info;
+                    segBinaryMask = mask;
+                    segNewResultReady = true;
+                }
+                cvSegRes.notify_one();
+            }
+            catch (const exception& e)
+            {
+                cerr << "分割推理线程异常: " << e.what() << endl;
+            }
+        }
+
+        if (seg_infer_count_ > 0)
+        {
+            lock_guard<mutex> lock(printMutex);
+            double avg = seg_infer_time_total_ / seg_infer_count_;
+            // cout << "[计时] 语义分割最终平均耗时: " << avg << " ms (剩余" << seg_infer_count_ << "次)" << endl;
+        }
+    }
+
+    void triggerDetection(const cv::Mat& img)
+    {
+        if (img.empty()) return;
+        {
+            lock_guard<mutex> lock(mtxImg);
+            imgShare = img.clone();
+            readyImg = true;
+        }
+        cvImg.notify_one();
+    }
+
+    void triggerSegDetection(const cv::Mat& img)
+    {
+        if (img.empty()) return;
+        {
+            lock_guard<mutex> lock(mtxSegImg);
+            segImgShare = img.clone();
+            segReadyImg = true;
+        }
+        cvSegImg.notify_one();
+    }
+
+    bool getLatestDetectionResult()
+    {
+        std::lock_guard<std::mutex> lock(mtxRes);
+        if (newResultReady)
+        {
+            params->results = latestDetectionResults;
+            newResultReady = false;
+            return true;
+        }
+        return false;
+    }
+
+    bool getLatestSegResult(ArrowInfo& info, cv::Mat& mask)
+    {
+        std::lock_guard<std::mutex> lock(mtxSegRes);
+        if (segNewResultReady && !segBinaryMask.empty())
+        {
+            info = segResultInfo;
+            mask = segBinaryMask.clone();
+            segNewResultReady = false;
+            return true;
+        }
+        return false;
+    }
+
+    void runFsm(Mat &img)
+    {
+        fsmFactory.turnright->run(img);
+        params->mode = fsmFactory.turnright->getMode();
+        if (params->mode != FsmMode::TURN_RIGHT)
+        {
+            fsmFactory.avoid->run(img);
+            params->mode = fsmFactory.avoid->getMode();
+        }
+        if (params->mode == FsmMode::NORMAL || params->mode == FsmMode::GOLD)
+        {
+            fsmFactory.gold->run(img);
+            params->mode = fsmFactory.gold->getMode();
+        }
+    }
+
+    void checkTimer()
+    {
+        if (!speedChanged.load())
+        {
+            auto currentTime = chrono::steady_clock::now();
+            auto elapsed = chrono::duration_cast<chrono::seconds>(currentTime - startTime).count();
+            if (elapsed >= 30)
+            {
+                params->ctrl.speed = params->config.velHigh;
+                cout << "计时器：30秒已到，速度设置为15" << endl;
+                speedChanged.store(true);
+            }
+        }
+    }
+
+    void checkOpenMP()
+    {
+#ifdef _OPENMP
+        std::cout << "OpenMP 已启用，最大线程数: " << omp_get_max_threads() << std::endl;
+#else
+        std::cout << "OpenMP 未启用！检测后处理将是单线程。" << std::endl;
+#endif
+    }
+
+public:
+    Icar()
+    {
+        roadSign = make_shared<RoadSignRecognizer>("/home/orangepi/Desktop/xcar/car_server.py");
+        params = make_shared<Params>();
+        uart = make_shared<Uart>();
+        motion = make_shared<Motion>();
+
+        int ret = uart->open("/dev/ttyUSB0");
+        if (ret != 0)
+        {
+            printf("[Error] Uart Open failed!\n");
+        }
+        else
+        {
+            printf(" Uart Open !\n");
+        }
+
+        checkOpenMP();
+
+        reader = make_shared<ArFusionFrameReader>();
+        detection = make_shared<RK3588Detection>(model_path, labels_path,
+                                                 cv::Size(320, 320),
+                                                 params->config.score,
+                                                 0.15f,
+                                                 4);
+        seg_infer = make_shared<PPSegInfer>(
+            "/home/orangepi/Desktop/xcar/model/yuyi8_18/pp_liteseg(1).rknn",
+            0,
+            0.5f
+        );
+
+        if (!reader->open("shm_ar_video"))
+        {
+            cerr << "无法连接共享内存！" << endl;
+        }
+
+        captureStop.store(false);
+        captureThread = thread(&Icar::captureLoop, this);
+
+        inferenceThread = thread(&Icar::inferenceLoop, this);
+        segInferenceThread = thread(&Icar::segInferenceLoop, this);
+
+        preprocessor = std::make_shared<ImagePreprocessor>(params);
+
+        startTime = chrono::steady_clock::now();
+        speedChanged.store(false);
+        cout << "计时器已启动，30秒后将自动设置速度为15" << endl;
+
+        std::vector<cv::Point2f> image_pts = {
+            cv::Point2f(280, 0),
+            cv::Point2f(430, 0),
+            cv::Point2f(630, 186),
+            cv::Point2f(200, 187)
+        };
+        float world_width  = 25.0f;
+        float world_height = 40.0f;
+        float bottom_width_pixels = 630.0f - 200.0f;
+        float pixel_per_cm = bottom_width_pixels / world_width;
+        int output_width = static_cast<int>(world_width * pixel_per_cm);
+        int output_height = static_cast<int>(world_height * pixel_per_cm);
+        std::vector<cv::Point2f> world_pts = {
+            cv::Point2f(0, 0),
+            cv::Point2f(output_width - 1, 0),
+            cv::Point2f(output_width - 1, output_height - 1),
+            cv::Point2f(0, output_height - 1)
+        };
+        preprocessor->computeIPM(image_pts, world_pts,
+                                 cv::Size(output_width, output_height));
+        preprocessor->enableIPM(true);
+
+        params->config.yuchuli = cv::Mat::zeros(350, 1000, CV_8UC1);
+
+        fsmFactory.gold = make_shared<FsmGold>(params);
+        fsmFactory.avoid = make_shared<FsmAvoid>(params);
+        fsmFactory.turnright = make_shared<FsmTurnRight>(params, roadSign);
+    }
+
+    ~Icar()
+    {
+        captureStop = true;
+        if(captureThread.joinable())
+            captureThread.join();
+
+        stopFlag = true;
+        cvImg.notify_all();
+        if (inferenceThread.joinable())
+            inferenceThread.join();
+
+        segStopFlag = true;
+        cvSegImg.notify_all();
+        if (segInferenceThread.joinable())
+            segInferenceThread.join();
+    }
+
+    void running()
+    {
+        cv::Mat ARimg, resize_frame,ARimg2;
+        TrackDetection detector(320, 120);
+        cv::Size origSize(320, 120);
+        cv::Size dstSize(500, 175);
+        Mapping mapper(origSize, dstSize);
+
+        bool ok = getNewestARFrame(ARimg);
+        if (!ok || ARimg.empty())
+        {
+            return;
+        }
+        ARimg2=ARimg;
+        cv::resize(ARimg, ARimg, cv::Size(), 0.5, 0.5, cv::INTER_NEAREST);
+        resize_frame = ARimg;
+        cv::Mat birdEyeView;
+        cv::Mat cs3;
+
+        static int frame_cnt = 0;
+        frame_cnt++;
+        // 改为每帧都触发检测，减少滞后
+        triggerDetection(ARimg);
+        getLatestDetectionResult();
+
+        cs3 = resize_frame(Rect(0, 240 * 0.5, 320, 240 * 0.5));
+        mapper.homography(cs3, birdEyeView);
+
+        if (params->config.yuyi)
+        {
+            static int seg_frame_cnt = 0;
+            seg_frame_cnt++;
+            if (seg_frame_cnt % 2 == 0)
+            {
+                triggerSegDetection(ARimg);
+            }
+
+            ArrowInfo segInfo;
+            cv::Mat segMask;
+            bool gotSeg = getLatestSegResult(segInfo, segMask);
+
+            if (gotSeg)
+            {
+                segMask = segMask(Rect(0, 240 * 0.5, 320, 240 * 0.5));
+                mapper.homography(segMask, params->config.yuchuli);
+            }
+        }
+        else
+        {
+            cs3 = resize_frame(Rect(0, 240 * 0.5, 320, 240 * 0.5));
+            mapper.homography(cs3, birdEyeView);
+            params->config.yuchuli = preprocessor->process(birdEyeView, params);
+        }
+
+        int white_pixel_count = cv::countNonZero(params->config.yuchuli);
+        params->ctrl.out_of_boundary = (white_pixel_count < 1000);
+
+        cv::Mat display = ARimg.clone();
+        if (display.empty())
+        {
+            cerr << "显示图像为空" << endl;
+            return;
+        }
+        if (display.type() != CV_8UC3)
+        {
+            cv::cvtColor(display, display, cv::COLOR_GRAY2BGR);
+        }
+
+        if (!params->results.empty())
+        {
+            detection->drawResults(display, params->results);
+            params->ctrl.mubiaoni = cv::Point(0, 0);
+            runFsm(ARimg2);
+        }
+        params->ctrl.mubiaoni = mapper.homography(params->ctrl.mubiao);
+
+        detector.fitting(birdEyeView, params);
+
+        if (params->config.debug)
+        {
+            cv::circle(birdEyeView, params->ctrl.mubiaoni, 4, cv::Scalar(0, 0, 255), -1);
+            cv::imshow("原图逆二值化", params->config.yuchuli);
+            cv::imshow("逆透视结果", birdEyeView);
+            cv::imshow("目标", display);
+            cv::waitKey(1);
+        }
+
+        motion->poseControl(params);
+        motion->speedControl(params);
+        uart->carControl(params->ctrl.speed, params->ctrl.servo, 1);
+
+        // checkTimer();
+    }
+};
+
+===== TABLE 1 =====
+模型车基本参数 | 长 | 25.5cm
+模型车基本参数 | 宽 | 18cm
+模型车基本参数 | 高 | 12cm
+模型车基本参数 | 车重 | 约894g
+功耗 | 空载 | 2W
+功耗 | 带载 | 约55W
+传感器 | 编码器 | 2个
+传感器 | 摄像头 | 1个
+赛道信息检测 | 视野范围（近瞻/远瞻） | 0/28cm
+赛道信息检测 | 精度(近/远) | 2/8mm
+赛道信息检测 | 频率 | 100Hz

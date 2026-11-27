@@ -1,0 +1,2828 @@
+
+
+
+
+关于技术报告和研究论文使用授权的说明
+
+本人完全了解第全国大学生智能汽车竞赛关保留、使用技术报告和研究论文的规定，即：参赛作品著作权归参赛者本人，比赛组委会可以在相关主页上收录并公开参赛作品的设计方案、技术报告以及参赛模型车的视频、图像资料，并将相关内容编纂收录在组委会出版论文集中。
+
+参赛队员签名：
+参赛老师签名：               
+    日        期：2026年8月18 日   
+
+
+
+
+
+
+
+摘要
+本文详细介绍了沈阳理工大学 “远征” 在第二十一届全国大学生智能汽车竞赛中卡丁快跑的系统方案。本次比赛采用统一车模，以英飞凌公司生产的 32 位单片机 TC264 为核心控制器，要求卡丁车依次完成自动驾驶泊车、语音人车交互、迷宫路径记忆复现多项竞赛科目，依托惯性导航获取车体位姿信息，以最快的速度完成各个科目。整套小车依靠惯性导航单元为主感知模块获取赛道环境与车体状态；通过编码器、陀螺仪检测卡丁车的实时速度，角度与坐标信息，使用 PID 控制算法调节电机的转速与差速，实现车模在运动过程中速度和方向的闭环控制；为了提高模型车的速度和稳定性，使用上位机、按键、屏幕模块等调试工具，进行了大量硬件与软件测试。实验结果表明，该系统设计方案确实可行。
+关键词：TC264；惯性导航；PID；
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+第一章 绪论
+1.1智能车研究背景
+智能小车属于多学科交叉融合的高新智能载体，以汽车电子技术作为底层基础，横跨自动控制、模式识别、传感检测、电子电路、机械结构、嵌入式计算机等诸多专业领域，是综合性较强的工程创新设计。设备一般由环境路径感知、车速信息采集、航向角度调控、运动速度闭环控制等功能模块搭建而成，可以实现自主循迹行驶、车速动态调节、道路环境识别等智能化功能，同样也是当下智能车载电子领域十分重要的研究方向。
+国内为培育高校学生的工程实操、科研创新以及团队协作综合能力，由教育部牵头，自动化专业教学指导委员会主办一年一度的全国大学生智能汽车竞赛。赛事依托官方提供的标准化模型车硬件平台，参赛队伍选用主流 32 位嵌入式单片机作为主控核心，自主搭建道路传感检测模块、电机驱动硬件电路，编写嵌入式控制程序、完成整车装配调试，打造一台具备自主感知能力的智能模型车。车辆需要在赛前未知的赛道环境当中自主行进，赛事以赛道全程完成耗时作为主要评判标准，以此锻炼学生对于车载智能控制系统的开发能力
+1.2方案总体介绍
+本次卡丁快跑竞赛场地为开阔的室外场地，赛场内设置多处锥桶用来划分行驶路线、泊车区域、语音交互区以及迷宫跟随通道，各行驶通道间距充足，赛道沿途包含自动驾驶泊车、语音指令执行、迷宫路径记忆复现等多项竞技科目。场地内锥桶作为道路标识，小车行驶途中需要依照任务规则绕开锥桶完成指定动作，不同功能分区之间留有充足的通行空间，场地不存在硬性的物理围墙边界。赛场内还设有门洞通道、动作执行区、倒车停车库等特殊任务点位，需要小车依靠惯性导航完成无引导标识路段的位姿推算与自主行驶。
+根据竞赛规则相关规定，本卡丁车系统采用赛事官方统一标准车模，自主选配高性能32位微控制器TC264作为核心控制器，在ADS(AURIX™ Development Studio)开发环境中完成全套软件开发与算法调试。系统搭载IMU963RA惯性导航传感器采集车体航向、加速度等运动数据，通过编码器测量速度并记录里程，将实时位姿信息传输至主控芯片，经过融合解算获取卡丁车当前坐标、偏航角度及运动姿态等关键行驶信息；车辆加装后轮编码器与转向电机编码器，通过单片机对编码器脉冲信号进行解码，精准解算车辆实时行驶速度、行进路程及转向角度信息。车体整车速度与转向姿态均采用PID闭环控制算法，通过PWM信号调节驱动电路输出功率，动态调整电机运行状态。车辆目标车速结合基础默认参数、行车安全约束策略以及惯性导航位姿数据优化算法进行动态自适应调节，保障卡丁车在自动驾驶、人车交互、迷宫跟随等多个竞赛科目中稳定、精准、高效运行
+
+机械结构设计
+2.1整车布局
+本组采用赛事官方统一卡丁快跑标准车模，整车保留原厂底盘、动力电机与电池结构，保证原车稳定的传动性能与行驶基础特性。为优化整车布局、规整硬件安装空间，本车在原装电池保护罩上方、驾驶座后方位置加装固定平板，将主控PCB板、IMU惯性传感器等核心传感与电路模块统一固定至后置平板区域。后轮编码器固定于原装电机减速器内部，不该改变传动比，该改装方式不改动原车动力结构和传动比，最大程度保证了编码器所获得数据的精确性，同时集中整合车载硬件，降低线路杂乱带来的干扰，并对各个核心传感器起到了保护作用，提升整车结构稳定性与传感器采样精度，满足卡丁快跑多科目稳定运行的需求。
+
+2.2编码器的固定
+为精准采集卡丁车车速与转向角度信息，本车在保留原装驱动电机与减速箱传动结构的基础上，将编码器内置安装于电机减速箱内部。为保证编码器安装牢固、并且可避免运动干涉，在不改变原车减速箱传动比、不改动核心传动结构的前提下，依据原厂减速箱外形尺寸重新设计了减速箱外壳与编码器专用固定支架。全新结构能够将编码器稳定限位在减速箱内部，有效降低测速抖动与安装间隙带来的数据误差。该改装方案结构紧凑、兼容性强，在完全保留原车动力特性的基础上，实现了速度采集，为后续PID速度闭环控制与惯性导航位姿解算提供了可靠的数据支撑。固定方式如图二-1与图二-2所示
+   
+图 二-1                                图 二-2
+
+
+硬件电路设计说明
+3.1单片机系统设计
+单片机最小系统是智能车系统的核心控制部件。我们采用了了英飞凌的32位的TC264芯片。在主板上集成了取反、降压、稳压、运放、功放及各种传感器接口。
+电路图如图所示
+
+
+
+3.3电机驱动电路
+该电机驱动采用两片BTN7971B半桥芯片搭建H桥实现直流电机控制，芯片内部集成功率MOS管、栅极驱动与有源续流，无需复杂自举、电荷泵外围电路，硬件简洁，拥有较大的持续与峰值输出电流，适配机器人智能车大功率电机场景。芯片自带过流、过热、短路、欠压全套保护，堵转短路时可自我保护，IS引脚支持电流采样，同时支持高频PWM调速，开关噪声小；搭配SN74HC125缓冲芯片匹配3.3V单片机IO，增强信号驱动能力，配合板上电源滤波、状态指示电路，整体系统可靠性高，抗干扰能力强。
+
+
+3.4传感器的选择
+3.4.1编码器
+后轮测速采用1024线带方向编码器将输出轴上的机械几何位移量转换成脉冲，其获取信息准确、精度高、应用简单。
+转向电机编码器采用单圈绝对值编码器，使用spi通信，可以将当前的绝对角度返回，避免了增量式编码器积分计角度无法掉电保存。
+3.4.2姿态传感器
+本车搭载IMU963RA九轴惯性测量单元，可高频稳定输出加速度、角速度、航向姿态等车体运动数据，采样频率可调且全程数据平稳、抖动量小。该传感器具备动态滤波与噪声抑制能力，能够自动滤除车体震动、电机干扰带来的高频噪声，适配赛场复杂环境。同时可通过程序配置采样参数与滤波系数，实时校准姿态数据，无需断电复位，能够持续稳定输出精准位姿信息，满足卡丁快跑惯性导航、路径复现、姿态闭环控制的使用需求。
+3.4.3摄像头
+采用scc8660，在户外色块识别中的优势主要体现在灵活的光照控制与高效的色彩处理上。它支持手动曝光与白平衡锁定，避免自动调节引起的亮度、色温波动，配合可调PCLK分频和多种分辨率/帧率选项，能适应阳光直射、阴影等复杂户外环境；同时，RGB565输出结合HSV色彩空间转换，使色调在光照变化中保持相对稳定，而硬件DMA采集和中断机制则保障了低延迟、高可靠的实时跟踪，非常适合嵌入式户外视觉任务。
+
+
+
+第四章软件控制设计
+4.1惯性导航姿态解算及数据优化处理
+4.1.1 原始惯性数据特点
+主控芯片通过外设接口实时采集IMU963RA惯性测量单元的原始运动数据，为车辆姿态解算与位姿推算提供基础数据源。卡丁车在行驶过程中存在车体颠簸、电机振动、路面抖动以及外界电磁干扰等影响，导致传感器输出的原始加速度与角速度数据存在高频噪声与微小漂移，直接使用原始数据会造成姿态角度偏移、位姿计算不准等问题。因此软件端需要对惯性数据进行滤波校正与姿态解算处理，精准解算车体运动状态，为自动驾驶、迷宫路径复现、断路惯性行驶等科目提供稳定可靠的姿态与位置信息。
+本系统采集的惯性导航核心数据主要包括：三轴角速度数据、三轴加速度数据、车体方位偏航角、俯仰角及横滚旋转角等姿态信息。IMU963RA传感器输出的原始数据为高频实时采样数据，数据更新速率快、动态响应灵敏，但受机械震动影响存在瞬时波动，无法直接用于闭环控制。为消除误差影响，系统通过软件滤波算法对原始数据进行平滑处理，剔除异常抖动数据，保证姿态解算的稳定性与连续性。
+
+4.1.2 四元数姿态解算算法
+为实现高精度、低延迟的车体姿态求解，本系统采用四元数姿态解算算法对IMU963RA采集的原始惯性数据进行融合解算，替代传统欧拉角解算方式，有效避免了姿态解算过程中的万向锁问题，提升动态行驶下的姿态求解精度。
+基于四元数姿态融合算法，核心采用改进型Mahony互补滤波，通过加速度计与陀螺仪数据融合实时估计载体姿态。其关键设计在于动态比例增益和泄漏积分机制：程序实时计算加速度模长与角速度幅值，动态评估加速度计的可信度，在剧烈运动或离心干扰（如高速转弯）时自动降低加速度修正权重，同时利用泄漏积分防止静态误差累积，兼顾了静态稳定性与动态响应性。此外，陀螺仪零漂自动补偿、一阶低通滤波和死区处理进一步抑制了传感器噪声，确保了姿态解算的平滑性和长期漂移抑制能力，非常适合户外高速运动场景下的姿态跟踪。
+
+4.1.3 车体姿态与航向计算
+通过四元数解算得到稳定的车体姿态信息后，系统可精准获取卡丁车实时航向角度与姿态状态，并将姿态偏移量作为核心控制量引入PID闭环控制。系统根据解算得到的车辆偏航角偏差，结合后轮编码器速度数据完成位姿融合，动态计算车体航向偏移误差。控制程序根据姿态偏差量实时调节左右电机转速差，完成车体转向纠偏与姿态稳定控制，实现车辆姿态自稳、定向直行、轨迹复刻以及断路惯性行驶等功能，满足卡丁快跑多科目稳定运行的控制需求。
+在卡丁快跑赛事的特殊工况中，场地无固定引导线、迷宫路径随机可变、断路区域无视觉参照，传统视觉识别方案完全失效，惯性导航系统成为车辆自主行驶的核心保障。本系统依托IMU963RA持续输出的姿态与运动数据，结合积分运算实时推算车辆行驶位移与全局坐标，精准记录车辆行驶轨迹，为迷宫科目路径记忆、复现功能提供完整的数据支撑。同时，针对车辆启停、转向、颠簸带来的瞬时姿态突变问题，软件端增设动态权重融合策略，优化加速度计与陀螺仪数据配比，低速状态下侧重加速度计姿态校准，高速状态下依托陀螺仪稳定航向数据，有效抑制姿态抖动与角度漂移。该套惯性导航控制方案，完美适配自动驾驶泊车、语音交互精准对位、迷宫轨迹复现、等全部竞赛科目，大幅提升了卡丁车复杂场地环境下的行驶稳定性与任务完成精度。
+
+4.2语音识别
+4.2.1 原始语音信号特点
+在卡丁快跑战场救护人车交互科目中，小车需要通过硅麦传感器实时采集赛场环境语音指令。赛场环境存在环境风噪、场地回声、人员走动杂音以及电机运行噪音等干扰，导致原始语音信号掺杂大量无效噪声，直接识别极易出现指令误判、漏判、识别不准等问题。同时参赛人员发音语速、音量差异较大，进一步增加了语音指令的识别难度。因此软件端需要对原始语音信号进行降噪处理、语义拆分与精准匹配，有效过滤环境干扰，保证小车对灯光控制、鸣笛控制、门洞通行、车体运动等语音指令的准确识别与执行。
+本系统语音识别核心采集与处理内容主要包括：环境语音信号采集、噪声过滤、云端语音文本转换、指令语义分割、关键词得分匹配、对应车体动作指令输出。为提升复杂赛场环境下的识别鲁棒性，本车采用WiFi联网通信方案，将采集到的原始语音数据上传至云端AI语音模型进行解析，相比本地识别，具备抗干扰能力强、识别精度高、适配指令种类多等优势，能够适配比赛全部人机交互口令任务。
+
+4.2.2 语音语义分割算法
+参考低二十届南京信息工程大学极速越野语音识别的开源方案进行改进。
+本系统通过WiFi联网完成语音转文字后，针对返回的文本语句采用语义分割算法进行解析处理，拆解完整语句中的有效指令信息，剔除语气词、杂音转化无效字符、多余修饰词汇等干扰内容。语义分割算法核心流程如下：
+（1）将云端转换得到的文本数据进行预处理，清洗无效字符、过滤乱码与冗余信息，得到纯净指令文本；
+（2）根据比赛既定语音指令库的词汇特征，对文本内容进行分词拆分，精准提取动作关键词、时长关键词、模式关键词等核心语义信息；
+（3）区分灯光控制、鸣笛控制、门洞通行、车体运动四大类任务语义特征，完成指令初步分类，为后续得分匹配提供数据基础。
+
+4.2.3 语句得分匹配算法
+参考低二十届南京信息工程大学极速越野语音识别的开源方案进行改进。系统提前建立完整比赛语音指令特征库，将分割后的语义关键词与标准指令库进行逐一比对，通过字符相似度、关键词匹配度、语序特征权重进行综合打分。程序设定固定匹配阈值，当语句综合得分高于阈值时，判定指令匹配成功并输出对应控制指令；若得分低于阈值则判定为干扰语音，不执行任何动作，有效规避赛场噪音、误发音带来的误操作问题。
+通过WiFi云端解析、语义分割与得分匹配的组合方案，本系统能够精准识别赛场全部语音交互指令，稳定完成灯光切换、不同时长与模式鸣笛、多方位门洞通行、车体姿态运动等复杂任务，极大提升了卡丁快跑人车交互科目的执行准确率与稳定性
+4.3PID控制算法介绍
+在工程实际中，应用最为广泛的调节器控制规律为比例、积分、微分控制，简称PID控制，又称PID调节。PID控制器问世至今已有近70年历史，它以其结构简单、稳定性好、工作可靠、调整方便而成为工业控制的主要技术之一。当被控对象的结构和参数不能完全掌握，或得不到精确的数学模型时，控制理论的其它技术难以采用时，系统控制器的结构和参数必须依靠经验和现场调试来确定，这时应用PID控制技术最为方便。即当我们不完全了解一个系统和被控对象，或不能通过有效的测量手段来获得系统参数时，最适合用PID控制技术。PID控制，实际中也有PI和PD控制。
+PID控制器是一种线性控制器，它根据给定值与实际输出值构成控制偏差。将偏差的比例(P)、积分(I)和微分(D)通过线性组合构成控制量，对被控对象进行控制，故称PID控制器，原理框图如图      所示。
+
+图    PID控制器原理框图
+在计算机控制系统中，使用的是数字PID控制器，控制规律为：
+                                    (公式)
+          (公式)
+式中
+k——采样序号，k = 0，1，2…；       r(k)——第k次给定值；
+c(k)——第k次实际输出值；           u(k)—— 第k次输出控制量；
+e(k)—— 第k次偏差；                e(k-1)—— 第k-1次偏差；
+KP——比例系数；                    TI——积分时间常数；
+TD——微分时间常数；                T——采样周期。
+简单说来，PID控制器各校正环节的作用如下：
+比例环节：及时成比例地反映控制系统的偏差信号，偏差一旦产生，控制器立即产生控制作用，以减少偏差。
+积分环节：主要用于消除静差，提高系统的无差度。积分作用的强弱取决于积分时间常数，越大，积分作用越弱，反之则越强。
+微分环节：能反映偏差信号的变化趋势(变化速率)，并能在该偏差信号变得太大之前，在系统中引入一个有效的早期修正信号，从而加快系统的动作速度，减小调节时间。
+数字PID控制算法通常分为位置式PID控制算法和增量式PID控制算法。
+
+4.3.1位置式
+位置式PID中，由于计算机输出的u (k) 直接去控制执行机构(如阀门)，u(k)的值和执行机构的位置(如阀门开度)是一一对应的，所以通常称公式(4.2)为位置式PID控制算法。
+位置式PID控制算法的缺点是：由于全量输出，所以每次输出均与过去的状态有关，计算时要对过去e(k)进行累加，计算机工作量大；而且因为计算机输出的u(k)对应的是执行机构的实际位置，如计算机出现故障，u(k)的大幅度变化，会引起执行机构位置的大幅度变化，这种情况往往是生产实践中不允许的，在某些场合，还可能造成严重的生产事故。因而产生了增量式PID 控制的控制算法，所谓增量式PID 是指数字控制器的输出只是控制量的增量△u(k)。
+4.3.2增量式
+当执行机构需要的是控制量的增量(例如：驱动步进电机)时，可由式(4.2)推导出提供增量的PID控制算式。由式(4.2)可以推出式(4.3)，式(4.2)减去式(4.3)可得式(4.4)。
+      (公式4.3)
+   (公式4.4)
+式中；；
+公式(4.4)称为增量式PID控制算法，可以看出由于一般计算机控制系统采用恒定的采样周期T，一旦确定了KP、TI 、TD，只要使用前后三次测量值的偏差，即可由式(4.4)求出控制增量。
+增量式PID具有以下优点：
+(1) 由于计算机输出增量，所以误动作时影响小，必要时可用逻辑判断的方法关掉。
+(2) 手动/自动切换时冲击小，便于实现无扰动切换。此外，当计算机发生故障时，由于输出通道或执行装置具有信号的锁存作用，故能保持原值。
+(3) 算式中不需要累加。控制增量△u(k)的确定仅与最近k次的采样值有关，所以较容易通过加权处理而获得比较好的控制效果。
+但增量式PID也有其不足之处：积分截断效应大，有静态误差；溢出的影响大。使用时，常选择带死区、积分分离等改进PID控制算法。
+4.3.3 后轮驱动增量式PID参数整定
+本车左右驱动电机相互独立，分别搭建增量式PID速度闭环控制，依靠后轮编码器实时采集两轮转速脉冲，独立计算左右轮实际车速并完成闭环调速。相较于位置式PID，增量式PID仅输出本次控制增量，累积误差小、输出变化平缓，非常适合电机持续调速、动态加减速的行驶场景。通过左右两轮独立调速，可根据航向偏差实时生成合理速度差，实现柔性差速转向，大幅减小转弯半径，提升车辆机动性能。
+参数整定遵循先比例、后积分、再微分的调试逻辑。比例系数P主要决定车速响应快慢，P值偏小时左右轮提速滞后、跟随性差，弯道动力不足；P值过大则容易出现速度超调、车轮打滑、车身抖动。积分系数I用于消除稳态速度误差，修正左右轮动力输出不一致带来的直行跑偏问题，但积分作用过强易造成速度累积饱和，导致启停抖动。微分系数D用于抑制路面颠簸、电机负载波动带来的速度震荡，有效平滑车速突变。
+在实车调试中，针对卡丁快跑直行巡航、低速泊车、迷宫轨迹复现等不同工况，对左右轮PID参数进行微差适配，保证直行时两轮转速一致、车身端正；转向时左右轮合理速差，实现小半径平稳过弯，兼顾车辆行驶速度与姿态稳定性。
+4.3.3 前轮转向增量式PID参数整定
+前轮转向电机采用增量式PID控制方式，以转向编码器采集的实际转角与IMU解算的航向偏差作为输入，直接输出对应角度控制量，实现转向角度精准定位。位置式PID具备控制精度高、定点稳态性好的特点，适合转向角度定点纠偏、姿态保持的控制场景，能够稳定维持车辆航向姿态。
+转向PID整定以纠偏精准度和姿态平稳性为核心指标。比例系数P决定转向响应灵敏度，P值过小会导致航向修正滞后、轨迹偏移量大，无法精准复刻迷宫路径；P值过大会造成转向过冲、车身左右晃动，姿态稳定性下降。积分环节主要用于消除转向机械虚位带来的静态角度偏差，避免长时间行驶出现航向累积偏移，因此积分参数取值偏小，仅做微量误差修正。微分环节用于抑制快速纠偏过程中的角度震荡，缓冲转向动作，使车头姿态过渡平滑，避免急转抖动。
+结合卡丁快跑赛事需求，最终整定的增量式转向PID可实现小偏差精细纠偏、大偏差快速修正的效果，配合后轮增量式差速PID调速策略，车辆能够在断路惯性行驶、迷宫轨迹复现、精准泊车等科目中保持优异的轨迹跟随能力与行驶稳定性。
+
+4.4 摄像头色块识别算法介绍
+为减少光照、阴影和相近背景色（如红色跑道、木地板）的干扰，本算法采用HSV颜色空间与连通域生长策略，稳定提取色块中心位置，为后轮差速和转向PID提供可靠视觉反馈。
+4.4.1 颜色距离变换与种子选取
+将RGB565图像转为HSV，根据标定的目标色H/S/V区间生成灰度距离图（0~255）：色调不符置0，相符但饱和度或亮度超限适度惩罚，完全匹配置255。在灰度图上按步长搜索，通过十字校验筛选高灰度点，取最高灰度候选的平均位置作为种子点，确保种子落于目标中心。
+4.4.2 区域生长与边框平滑
+从种子出发，利用自适应强阈值（依据全图最高灰度动态调整）进行连通域生长，并补入边缘弱灰度像素，完整提取色块。对包围框进行少量腐蚀去除毛刺；对框位置做加权平滑，并设置跳变确认（连续多帧大幅位移才更新），保证输出平稳抗闪烁。
+4.4.3 质量门禁、曝光辅助与系统联动
+输出前检查框内平均饱和度和色调偏差，防止误识别；短时丢失时允许沿用上一帧结果（最多5帧）。同时，根据跟踪框内亮度自动调节摄像头曝光（无框时回退全图统计），使目标始终处于适宜亮度。本算法在5ms定时中断中输出色块坐标，与编码器速度、IMU航向角结合，驱动后轮增量式PID差速和前轮转向PID，已在卡丁快跑等任务中验证了实时性与鲁棒性。
+第五章系统调试
+5.1开发调试工具
+AURIX™ Development Studio（ADS）是专为英飞凌 AURIX 系列单片机开发的集成开发环境，该软件适配多核架构芯片开发调试，集成编译、下载、在线调试、工程管理等全套开发功能，具备高效的代码编译性能与完善的程序纠错机制，能够满足本车模底层驱动、姿态解算、控制算法代码的开发与调试需求，为本系统程序开发、功能迭代与稳定性优化提供可靠的软件平台支撑
+5.2人机交互工具
+在系统调试过程中，为快速整定控制参数、灵活调整程序变量，本系统采用IPS200液晶屏幕搭配独立按键的调试方案，该模块不仅可满足日常调试的参数修改、数据观测需求，也可在正式比赛过程中实时完成参数适配与方案切换，实用性与适配性极强。本系统搭载的IPS200显示屏具备可视面积大、显示分辨率高、画质清晰、可视角度优异等优势，能够清晰直观地展示车体速度、姿态数据、控制参数及运行状态。同时，设备配置五枚功能按键，分工明确、操作便捷，可独立完成参数整定、数据显示、控制方案切换、功能启停等调试操作，极大提升了整车程序调试效率，为赛车多场景、多科目稳定运行提供了可靠的调试保障。
+
+
+第七章核心算法子程序及电路原理
+
+图7-1 灯板原理图及电路图
+
+图7-2 灯板驱动原理图及电路图
+
+图7-3 单路电机驱动原理图及电路图
+
+图7-4 双路电机驱动原理图及电路图
+
+图7-5 主板原理图及电路图
+核心算法子程序：
+#include "zf_common_headfile.h"
+#pragma section all "cpu0_dsram"
+// 将本语句与#pragma section all restore语句之间的全局变量都放在CPU0的RAM中
+
+// **************************** 代码区域 ****************************
+
+int core0_main(void)
+{
+    clock_init();                   // 获取时钟频率<务必保留>
+    debug_init();                   // 初始化默认调试串口（串口0）
+    // 此处编写用户代码 例如外设初始化代码等
+    key_init(10);//按键初始化
+    Encoder_init();//编码器初始化
+    pid_init();//pid初始化
+//    gnss_init(TAU1201);//gnss初始化（串口3）
+    imu963ra_init();//imu初始化
+    scc8660_init();//摄像头初始化
+    mottor_init();//电机初始化
+    buzzer_init();//蜂鸣器初始化
+//    LED_init();//led初始化
+    SBUS_init();//S.BUS初始化（串口1）
+    pit_ms_init(CCU60_CH1, 1);//imu
+    pit_ms_init(CCU61_CH1, 10);//按键
+    pit_ms_init(CCU60_CH0, 5);//控制
+    imu_offset_init();//imu获取零漂值
+    data_read_params();//读取参数
+    ips200_init(IPS200_TYPE_SPI);//屏幕初始化
+    dot_matrix_screen_init();//点阵屏初始化（串口2）
+//    menu_init();//菜单初始化
+    Start_menu();//发车菜单
+    // 此处编写用户代码 例如外设初始化代码等
+    cpu_wait_event_ready();         // 等待所有核心初始化完毕
+
+    beep_ms(200);
+    system_delay_ms(50);
+    beep_ms(200);
+//    dot_matrix_screen_set_brightness(8000);
+//    dot_matrix_screen_show_string("SYL");
+
+    while (TRUE)
+    {
+        if(menu_on_flag == 1)
+        {
+//            menu_loop();
+            Start_menu_loop();
+        }
+    }
+}
+
+#pragma section all restore
+// **************************** 代码区域 ****************************
+#include "SBUS.h"
+
+uint8 usart_buf[USART_BUF_SIZE];
+uint8 sbus_rx_head = 0;               // 发现起始字节 0x0F
+uint8 sbus_rx_sta = 0;                // sbus 接收状态，0：未完成，1：已完成一帧接收
+uint8 sbus_rx_index;                  // 接收字节计数
+uint8 sbus_rx_buf[SBUS_DATA_SIZE];    // 接收sbus数据缓冲区
+
+struct SBUS_t sbus;
+
+int SBUS_sw[20];
+
+void SBUS_init(void)
+{
+    uart_sbus_init(UART_1, 100000, UART1_TX_P11_12, UART1_RX_P11_10);
+}
+
+void SbusParseTask(void)
+{
+    if(sbus_rx_sta == 1)                          // 接收完一帧
+    {
+        sbus.head = sbus_rx_buf[0];               // 首部
+        sbus.flag = sbus_rx_buf[23];              // 标志符
+        sbus.end  = sbus_rx_buf[24];              // 结尾
+
+        if(sbus.head != 0x0F || sbus.end != 0x00)
+        {
+            sbus_rx_sta = 0;
+            sbus_rx_head = 0;
+            sbus_rx_index = 0;
+            return;
+        }
+
+        sbus.ch[1]  = ((sbus_rx_buf[2] << 8)  + (sbus_rx_buf[1])) & 0x07ff;
+//        sbus.ch[2]  = ((sbus_rx_buf[3] << 5)  + (sbus_rx_buf[2] >> 3)) & 0x07ff;
+        sbus.ch[3]  = ((sbus_rx_buf[5] << 10) + (sbus_rx_buf[4] << 2) + (sbus_rx_buf[3] >> 6)) & 0x07ff;
+//        sbus.ch[4]  = ((sbus_rx_buf[6] << 7)  + (sbus_rx_buf[5] >> 1)) & 0x07ff;
+//        sbus.ch[5]  = ((sbus_rx_buf[7] << 4)  + (sbus_rx_buf[6] >> 4)) & 0x07ff;
+        sbus.ch[6]  = ((sbus_rx_buf[9] << 9)  + (sbus_rx_buf[8] << 1) + (sbus_rx_buf[7] >> 7)) & 0x07ff;
+//        sbus.ch[7]  = ((sbus_rx_buf[10] << 6) + (sbus_rx_buf[9] >> 2)) & 0x07ff;
+        sbus.ch[8]  = ((sbus_rx_buf[11] << 3) + (sbus_rx_buf[10] >> 5)) & 0x07ff;
+        sbus.ch[9]  = ((sbus_rx_buf[13] << 8)  + sbus_rx_buf[12]) & 0x07ff;
+        sbus.ch[10] = ((sbus_rx_buf[14] << 5)  + (sbus_rx_buf[13] >> 3)) & 0x07ff;
+//        sbus.ch[11] = ((sbus_rx_buf[16] << 10) + (sbus_rx_buf[15] << 2) + (sbus_rx_buf[14] >> 6)) & 0x07ff;
+//        sbus.ch[12] = ((sbus_rx_buf[17] << 7)  + (sbus_rx_buf[16] >> 1)) & 0x07ff;
+//        sbus.ch[13] = ((sbus_rx_buf[18] << 4)  + (sbus_rx_buf[17] >> 4)) & 0x07ff;
+//        sbus.ch[14] = ((sbus_rx_buf[20] << 9)  + (sbus_rx_buf[19] << 1) + (sbus_rx_buf[18] >> 7)) & 0x07ff;
+//        sbus.ch[15] = ((sbus_rx_buf[21] << 6)  + (sbus_rx_buf[20] >> 2)) & 0x07ff;
+//        sbus.ch[16] = ((sbus_rx_buf[22] << 3)  + (sbus_rx_buf[21] >> 5)) & 0x07ff;
+
+        sbus.state = (0x04 == (sbus.flag & 0x04)) ? 0 : 1;
+
+        sbus_rx_sta = 0;
+    }
+}
+void SBUS_callback(uart_index_enum uartn)
+{
+    uint8_t chr;
+
+    chr = uart_read_byte(uartn);
+
+    if (sbus_rx_sta == 0)                                           // 接收未完成
+    {
+        if ((chr == 0x0F) || sbus_rx_head)                          // 找到首字节或已经找到首字节
+        {
+            sbus_rx_head = 1;                                       // 标明已经找到首字母
+            if (sbus_rx_index < SBUS_DATA_SIZE)                     // 未接收到25个字符
+            {
+                sbus_rx_buf[sbus_rx_index] = chr;                   // 不断接收
+                sbus_rx_index ++;
+            }
+            else                                                    // 接收到25个字符了
+            {
+                sbus_rx_sta = 1;                                    // 接收完成
+                SbusParseTask();
+                sbus_rx_head = 0;                                   // 清零，准备下一次接收
+                sbus_rx_index = 0;
+            }
+        }
+    }
+}
+
+void SBUS_show(void)
+{
+    ips200_show_string(0, 16*2, "CH1:");
+    ips200_show_int(40, 16*2, sbus.ch[1], 4);
+//    ips200_show_string(0, 16*3, "CH2:");
+//    ips200_show_int(40, 16*3, SBUS_sw[2], 4);
+    ips200_show_string(0, 16*4, "CH3:");
+    ips200_show_int(40, 16*4, sbus.ch[3], 4);
+//    ips200_show_string(0, 16*5, "CH4:");
+//    ips200_show_int(40, 16*5, SBUS_sw[4], 4);
+//    ips200_show_string(0, 16*6, "CH5:");
+//    ips200_show_int(40, 16*6, SBUS_sw[5], 4);
+    ips200_show_string(0, 16*7, "CH6:");
+    ips200_show_int(40, 16*7, sbus.ch[6], 4);
+//    ips200_show_string(0, 16*8, "CH7:");
+//    ips200_show_int(40, 16*8, SBUS_sw[7], 4);
+//    ips200_show_string(0, 16*9, "CH8:");
+//    ips200_show_int(40, 16*9, SBUS_sw[8], 4);
+    ips200_show_string(120, 16*2, "CH9:");
+    ips200_show_int(160, 16*2, sbus.ch[9], 4);
+    ips200_show_string(120, 16*3, "CH10:");
+    ips200_show_int(160, 16*3, sbus.ch[10], 4);
+//    ips200_show_string(120, 16*4, "CH11:");
+//    ips200_show_int(160, 16*4, SBUS_sw[11], 4);
+//    ips200_show_string(120, 16*5, "CH12:");
+//    ips200_show_int(160, 16*5, SBUS_sw[12], 4);
+//    ips200_show_string(120, 16*6, "CH13:");
+//    ips200_show_int(160, 16*6, SBUS_sw[13], 4);
+//    ips200_show_string(120, 16*7, "CH14:");
+//    ips200_show_int(160, 16*7, SBUS_sw[14], 4);
+//    ips200_show_string(120, 16*8, "CH15:");
+//    ips200_show_int(160, 16*8, SBUS_sw[15], 4);
+//    ips200_show_string(120, 16*9, "CH16:");
+//    ips200_show_int(160, 16*9, SBUS_sw[16], 4);
+    ips200_show_string(0, 16*11, "state:");
+    ips200_show_uint(60, 16*11, sbus.state, 4);
+}
+#include "VOFA.h"
+
+JustFloat UploadDataJF;
+
+void VOFA_init(uart_index_enum uart_n, uint32 baud, uart_tx_pin_enum tx_pin, uart_rx_pin_enum rx_pin)
+{
+    uart_init(uart_n, baud, tx_pin, rx_pin);
+}
+
+void VOFA_print_str(uart_index_enum uart_n, const char *str)
+{
+    while(*str)
+    {
+        uart_write_byte(uart_n, *str++);
+    }
+}
+
+void VOFA_JustFloat(uart_index_enum uart_n, JustFloat* sendbuffer)
+{
+    uint8 Tail[4] = { 0x00, 0x00, 0x80, 0x7f };
+    uart_write_buffer(uart_n, (uint8*)sendbuffer->CH_Data, sizeof(float) * JFCH_COUNT);
+    uart_write_buffer(uart_n, Tail, sizeof(Tail));
+}
+
+void VOFA_FireWater(uart_index_enum uart_n, uint8 ch_count, const char *str[])
+{
+    uint8 i;
+
+    for(i = 0;i < ch_count; i++)
+    {
+        VOFA_print_str(uart_n,str[i]);
+        VOFA_print_str(uart_n, (i == ch_count - 1) ? "\r\n" : ",");
+    }
+}
+
+const char* float_to_str(float data)
+{
+    static char f_buffer[20];
+    sprintf(f_buffer,"%f", data);
+    return f_buffer;
+}
+
+const char* int_to_str(int data)
+{
+    static char i_buffer[20];
+    sprintf(i_buffer,"%d", data);
+    return i_buffer;
+}
+
+void vofa_send_JF(uart_index_enum uart_n)
+{
+//    UploadDataJF.CH_Data[0] = eulerAngle.pitch;
+//    UploadDataJF.CH_Data[1] = eulerAngle.roll;
+//    UploadDataJF.CH_Data[2] = eulerAngle.yaw;
+    UploadDataJF.CH_Data[3] = tspeed;
+    UploadDataJF.CH_Data[4] = mottor2_speed;
+    UploadDataJF.CH_Data[5] = encoder2_speed;
+    UploadDataJF.CH_Data[6] = mottor1_speed;
+    UploadDataJF.CH_Data[7] = encoder1_speed;
+//    UploadDataJF.CH_Data[8] = ;
+//    UploadDataJF.CH_Data[9] = ;
+    VOFA_JustFloat(uart_n, &UploadDataJF);
+}
+
+void VOFA_send_FW(uart_index_enum uart_n)
+{
+    const char *data[3];    //传递参数数量
+
+    data[0] = float_to_str  (eulerAngle.pitch);
+    VOFA_print_str(uart_n,data[0]);
+    VOFA_print_str(uart_n,",");
+    data[1] = float_to_str  (eulerAngle.roll);
+    VOFA_print_str(uart_n,data[1]);
+    VOFA_print_str(uart_n,",");
+    data[2] = float_to_str  (eulerAngle.yaw);
+    VOFA_print_str(uart_n,data[2]);
+//    VOFA_print_str(uart_n,",");
+//    data[3] = float_to_str  ();
+//    VOFA_print_str(uart_n,data[0]);
+//    VOFA_print_str(uart_n,",");
+//    data[4] = float_to_str  ();
+//    VOFA_print_str(uart_n,data[0]);
+//    VOFA_print_str(uart_n,",");
+//    data[5] = float_to_str  ();
+//    VOFA_print_str(uart_n,data[0]);
+//    VOFA_print_str(uart_n,",");
+//    data[6] = float_to_str  ();
+//    VOFA_print_str(uart_n,data[0]);
+//    VOFA_print_str(uart_n,",");
+
+    VOFA_print_str(uart_n,"\n");
+}
+#include "mottor.h"
+
+//1-left    2-right
+int16 mottor1_speed = 0;
+int16 mottor2_speed = 0;
+int16 target1_speed = 0;
+int16 target2_speed = 0;
+float yaw_error = 0;
+float angle_error = 0;
+int16 servo_angle = 0;
+
+int test_speed = 0;
+
+void mottor_init(void)
+{
+    pwm_init(ATOM1_CH1_P21_3, 16000, 0);//转向电机
+    pwm_init(ATOM1_CH0_P21_2, 16000, 0);//转向电机
+
+    pwm_init(ATOM1_CH4_P02_4, 16000, 0);//电机1
+    pwm_init(ATOM1_CH5_P02_5, 16000, 0);//电机1
+    pwm_init(ATOM1_CH6_P02_6, 16000, 0);//电机2
+    pwm_init(ATOM1_CH7_P02_7, 16000, 0);//电机2
+}
+
+void mottor1_set(int speed)//left
+{
+    if(speed > 9500) speed = 9500;
+    if(speed < -9500) speed = -9500;
+
+    if(speed > 0)
+    {
+        pwm_set_duty(ATOM1_CH4_P02_4, 0);
+        pwm_set_duty(ATOM1_CH5_P02_5, speed);
+    }
+    else if(speed < 0)
+    {
+        pwm_set_duty(ATOM1_CH4_P02_4, -speed);
+        pwm_set_duty(ATOM1_CH5_P02_5, 0);
+    }
+    else
+    {
+        pwm_set_duty(ATOM1_CH4_P02_4, 0);
+        pwm_set_duty(ATOM1_CH5_P02_5, 0);
+    }
+}
+
+void mottor2_set(int speed)//right
+{
+    if(speed > 9500) speed = 9500;
+    if(speed < -9500) speed = -9500;
+
+    if(speed > 0)
+    {
+        pwm_set_duty(ATOM1_CH7_P02_7, 0);
+        pwm_set_duty(ATOM1_CH6_P02_6, speed);
+    }
+    else if(speed < 0)
+    {
+        pwm_set_duty(ATOM1_CH7_P02_7, -speed);
+        pwm_set_duty(ATOM1_CH6_P02_6, 0);
+    }
+    else
+    {
+        pwm_set_duty(ATOM1_CH7_P02_7, 0);
+        pwm_set_duty(ATOM1_CH6_P02_6, 0);
+    }
+}
+
+void set_diff_speed(int16 avg_speed, float steer_angle_deg)//目标速度，转向角度
+{
+    float kp = 1.8f;
+//    if(back_flag == 1)  kp = 1.8f;
+//    else kp = 1.0f;
+    float deg = kp*steer_angle_deg;
+
+    if (fabs(deg) < 0.5f)
+    {
+        target1_speed = avg_speed;
+        target2_speed = avg_speed;
+        return;
+    }
+
+    float steer_rad = deg * (PI / 180.0f);
+
+    float R = WHEELBASE / tanf(steer_rad);
+
+    float left_speed  = avg_speed * (1.0f - (TRACK_WIDTH / (2.0f * R)));
+    float right_speed = avg_speed * (1.0f + (TRACK_WIDTH / (2.0f * R)));
+
+    const int16 max_speed = 270;
+    const int16 min_speed = 1;
+
+    if (left_speed > max_speed)     left_speed  = max_speed;
+    else if (left_speed < -max_speed)    left_speed  = -max_speed;
+    if (left_speed > 0 && left_speed < min_speed)     left_speed  = min_speed;
+    else if (left_speed < 0 && left_speed > -min_speed)    left_speed  = -min_speed;
+    if (right_speed > max_speed)    right_speed = max_speed;
+    else if (right_speed < -max_speed)   right_speed = -max_speed;
+    if (right_speed > 0 && right_speed < min_speed)     right_speed  = min_speed;
+    else if (right_speed < 0 && right_speed > -min_speed)    right_speed  = -min_speed;
+
+    target1_speed = (int16)left_speed;   // 左轮
+    target2_speed = (int16)right_speed;  // 右轮
+}
+
+void servo_set(int angle)//控制转向电机，延用舵机函数
+{
+    if(angle > 9000) angle = 9000;
+    else if(angle < -9000) angle = -9000;
+
+    if(angle > 0)
+    {
+        pwm_set_duty(ATOM1_CH1_P21_3, 0);
+        pwm_set_duty(ATOM1_CH0_P21_2, angle);
+    }
+    else if(angle < 0)
+    {
+        pwm_set_duty(ATOM1_CH1_P21_3, -angle);
+        pwm_set_duty(ATOM1_CH0_P21_2, 0);
+    }
+    else
+    {
+        pwm_set_duty(ATOM1_CH1_P21_3, 0);
+        pwm_set_duty(ATOM1_CH0_P21_2, 0);
+    }
+}
+
+#include "menu.h"
+
+#pragma section all "cpu0_dsram"
+static uint16 gray_visual_row[SCC8660_W];
+#pragma section all restore
+
+uint8 menu_on_flag = 0;
+uint8 arrow_position_flag = 2;
+uint8 ud_flag = 0;
+uint8 lr_flag = 0;//1:l  2:r
+uint8 arrow_next_flag = 0;
+uint8 menu_level_flag = 0;
+uint8 menu_page_flag = 0;
+uint8 menu_position_flag = 0;
+uint8 draw_square_flag = 1;
+InsPointType menu_ins = ifcq;
+
+uint8 arrow_scan(void)
+{
+    uint8 r;
+    if(key_flag == 1 || key_flag == 10)
+    {
+        ud_flag = 1;
+        arrow_next_flag = arrow_position_flag;
+        arrow_position_flag -= 1;
+        if(arrow_position_flag < 2 && draw_square_flag == 1) arrow_position_flag = 18;
+        draw_square(0, 16*arrow_next_flag, 120, 16, RGB565_WHITE);
+        system_delay_ms(20);
+        key_flag = 0;
+    }
+    else if(key_flag == 3 || key_flag == 30)
+    {
+        ud_flag = 2;
+        arrow_next_flag = arrow_position_flag;
+        arrow_position_flag += 1;
+        if(arrow_position_flag > 18 && draw_square_flag == 1) arrow_position_flag = 2;
+        draw_square(0, 16*arrow_next_flag, 120, 16, RGB565_WHITE);
+        system_delay_ms(20);
+        key_flag = 0;
+    }
+    else
+    {
+        ud_flag = 0;
+    }
+
+    if(key_flag == 5 || key_flag == 50)
+    {
+        lr_flag = 1;
+        system_delay_ms(20);
+        key_flag = 0;
+    }
+    else if(key_flag == 6 || key_flag == 60)
+    {
+        lr_flag = 2;
+        system_delay_ms(20);
+        key_flag = 0;
+    }
+    else
+    {
+        lr_flag = 0;
+    }
+
+    if(key_flag == 2)
+    {
+        r = 1;
+        system_delay_ms(20);
+        key_flag = 0;
+    }
+    else if(key_flag == 4)
+    {
+        r = 2;
+        system_delay_ms(20);
+        key_flag = 0;
+    }
+    else
+    {
+        r = 0;
+    }
+
+    return r;
+}
+
+void draw_square(uint16 x, uint16 y, uint16 longg, uint16 widee, const uint16 color)
+{
+    ips200_draw_line(x, y, x+longg, y, color);
+    ips200_draw_line(x, y, x, y+widee, color);
+    ips200_draw_line(x+longg, y, x+longg, y+widee, color);
+    ips200_draw_line(x, y+widee, x+longg, y+widee, color);
+}
+
+void Start_menu(void)
+{
+    ips200_show_string(12, 8, "SYUL_YZ_GaoSY");
+    ips200_show_string(8, 16*2, "|TASK1");
+    ips200_show_string(8, 16*3, "|TASK2");
+    ips200_show_string(8, 16*4, "|TASK3");
+    ips200_show_string(8, 16*5, "|CAMERA");
+    ips200_show_string(8, 16*6, "|TASK1_READY");
+    ips200_show_string(8, 16*7, "|TASK2_READY");
+//    ips200_show_string(8, 16*8, "|TASK3_READY");
+    ips200_show_string(8, 16*9, "|Check");
+    ips200_show_string(8, 16*10, "|Hardware");
+    menu_ON();
+}
+
+void Start_submenu_1(void)        //静态
+{
+    ips200_show_string(8, 8, "TASK1");
+    ips200_show_string(8, 16*2, "|repeat");
+    ips200_show_string(8, 16*3, "|speed");
+    ips200_show_string(8, 16*4, "|pre_step");
+    ips200_show_string(8, 16*5, "|back_ins_speed");
+    ips200_show_string(8, 16*6, "|back_preview_step");
+    ips200_show_string(8, 16*7, "|imu_redress");
+    ips200_show_string(8, 16*8, "|comp_factor");
+    ips200_show_string(8, 16*9, "|l_comp_factor");
+    ips200_show_string(8, 16*16, "path_length");
+    task_flag = 1;
+}
+
+void Start_submenu1_Param(void)   //动态
+{
+    static uint32 ins_save_i = 4;
+
+    ips200_show_int(120, 16*3, ins_speed, 3);
+    ips200_show_int(120, 16*4, preview_step, 3);
+    ips200_show_int(120, 16*5, back_ins_speed, 3);
+    ips200_show_int(120, 16*6, back_preview_step, 3);
+    ips200_show_int(120, 16*7, imu_redress_flag, 1);
+    ips200_show_float(120, 16*8, comp_factor, 1, 2);
+    ips200_show_float(120, 16*9, l_comp_factor, 1, 2);
+    ips200_show_int(120, 16*16, ins_state.path_length, 5);
+
+    if(ins_save_i == 4)         ips200_show_int(120, 16*2, 1, 1);
+    else if(ins_save_i == 6)    ips200_show_int(120, 16*2, 2, 1);
+    else if(ins_save_i == 8)    ips200_show_int(120, 16*2, 3, 1);
+
+    if(menu_level_flag == 1)
+    {
+        switch(arrow_position_flag)
+        {
+            case 2:
+                if(repeat_flag == 1)
+                {
+                    repeat_flag = 0;
+                }
+                else
+                {
+                    ins_read(ins_save_i);
+                    lateral_shift_path_varying(&ins_state, comp_factor,4);
+                    longitudinal_shift_path_varying(&ins_state, l_comp_factor,4);
+                    beep_ms(500);
+                    IMU_ResetOrientation();
+                    IMU_SetYaw(start_yaw);
+                    encoder1_distance = 0;
+                    encoder2_distance = 0;
+                    encoder3_distance = 0;
+                    ins_state.current_pose.x = 0.0f;
+                    ins_state.current_pose.y = 0.0f;
+                    ins_state.current_pose.theta = 0.0f;
+                    ins_state.last_left_ticks = encoder1_distance;
+                    ins_state.last_right_ticks = encoder2_distance;
+                    repeat_flag = 1;
+                }
+                break;
+            case 7:
+                if(imu_redress_flag == 0)   imu_redress_flag = 1;
+                else                        imu_redress_flag = 0;
+                break;
+        }
+    }
+
+    if(lr_flag == 1 && arrow_position_flag == 2)
+    {
+        ins_save_i -= 2;
+        if(ins_save_i < 4) ins_save_i = 4;
+    }
+    else if(lr_flag == 2 && arrow_position_flag == 2)
+    {
+        ins_save_i += 2;
+        if(ins_save_i > 8) ins_save_i = 8;
+    }
+    if     (lr_flag == 1 && arrow_position_flag == 3)   ins_speed -= 5;
+    else if(lr_flag == 2 && arrow_position_flag == 3)   ins_speed += 5;
+    if     (lr_flag == 1 && arrow_position_flag == 5)   dis_compensation -= 0.000001;
+    else if(lr_flag == 2 && arrow_position_flag == 5)   dis_compensation += 0.000001;
+    if     (lr_flag == 1 && arrow_position_flag == 4)
+    {
+        preview_step -= 1;
+    }
+    else if(lr_flag == 2 && arrow_position_flag == 4)
+    {
+        preview_step += 1;
+    }
+
+    if     (lr_flag == 1 && arrow_position_flag == 5)   back_ins_speed -= 5;
+    else if(lr_flag == 2 && arrow_position_flag == 5)   back_ins_speed += 5;
+    if     (lr_flag == 1 && arrow_position_flag == 6)
+    {
+        back_preview_step -= 1;
+    }
+    else if(lr_flag == 2 && arrow_position_flag == 6)
+    {
+        back_preview_step += 1;
+    }
+    if     (lr_flag == 1 && arrow_position_flag == 8)   comp_factor -= 0.05;
+    else if(lr_flag == 2 && arrow_position_flag == 8)   comp_factor += 0.05;
+    if     (lr_flag == 1 && arrow_position_flag == 9)   l_comp_factor -= 0.05;
+    else if(lr_flag == 2 && arrow_position_flag == 9)   l_comp_factor += 0.05;
+}
+
+void Start_submenu_2(void)        //静态
+{
+    ips200_show_string(8, 8, "TASK2");
+//    scc8660_capture_clear();
+    camera_show_flag = 0;
+    camera_use_flag = 0;
+    memset(handle, 0, sizeof(handle));
+    task_flag = 2;
+    my_audio_init();
+    dot_matrix_screen_show_string("   ");
+}
+
+void Start_submenu2_Param(void)   //动态
+{
+    static uint32 save_i = 1;
+    my_audio_loop();
+
+    ips200_show_int(150, 16*2, save_i, 1);
+    ips200_show_string(8, 16*6, "|comp_factor");
+    ips200_show_float(120, 16*6, comp_factor, 1, 2);
+    ips200_show_string(8, 16*7, "|speed");
+    ips200_show_int(120, 16*7, target_gnss_speed, 3);
+    ips200_show_string(8, 16*8, "|swiych_ins/gnss");
+    if(track_use_flag == 0) ips200_show_string(150, 16*8, "gnss");
+    else if(track_use_flag == 1) ips200_show_string(150, 16*8, "ins ");
+    ips200_show_string(8, 16*9, "|set_point");
+    ips200_show_string(8, 16*13, "x");
+    ips200_show_string(8, 16*14, "y");
+    ips200_show_string(8, 16*15, "yaw");
+    ips200_show_float(120, 16*13, ins_state.current_pose.x, 2, 3);
+    ips200_show_float(120, 16*14, ins_state.current_pose.y, 2, 3);
+    ips200_show_float(120, 16*15, eulerAngle.yaw, 3, 1);
+
+    if(menu_level_flag == 1)
+    {
+        read_ins_point(save_i);
+    }
+    if(menu_level_flag == 2)
+    {
+        audio_ready_flag = 0;
+    }
+
+    if(lr_flag == 1 && arrow_position_flag == 2)
+    {
+        save_i -= 1;
+        if(save_i < 1) save_i = 1;
+    }
+    else if(lr_flag == 2 && arrow_position_flag == 2)
+    {
+        save_i += 1;
+        if(save_i > 3) save_i = 3;
+    }
+    else if(lr_flag == 2 && arrow_position_flag == 9)
+    {
+        ips200_clear();
+        ins_state.current_pose.x = ins_audio_point[8].x;
+        ins_state.current_pose.y = ins_audio_point[8].y;
+    }
+    if     (lr_flag == 1 && arrow_position_flag == 8)   track_use_flag = 0;
+    else if(lr_flag == 2 && arrow_position_flag == 8)   track_use_flag = 1;
+    if     (lr_flag == 1 && arrow_position_flag == 6)   comp_factor -= 0.05;
+    else if(lr_flag == 2 && arrow_position_flag == 6)   comp_factor += 0.05;
+    if     (lr_flag == 1 && arrow_position_flag == 7)   target_gnss_speed -= 5;
+    else if(lr_flag == 2 && arrow_position_flag == 7)   target_gnss_speed += 5;
+
+}
+
+uint16 wb_value = 0x65;
+uint16 bright_value = 280;
+uint16 bright_auto = 170;
+uint8 Color_show_flag = 0;
+
+void Start_submenu_3(void)        //静态
+{
+    arrow_position_flag = 10;
+    camera_show_flag = 1;
+    camera_use_flag = 1;
+    scc8660_set_white_balance(wb_value);
+//    scc8660_set_brightness(bright_value);
+//    ips200_show_string(0, 16*8, "x");
+//    ips200_show_string(120, 16*8, "y");
+    ips200_show_string(8, 16*8, "|Color_show");
+    ips200_show_string(8, 16*9, "|set_condi");
+    ips200_show_string(8, 16*10, "|ins_collect");
+    ips200_show_string(8, 16*11, "|ins_speed");
+    ips200_show_string(8, 16*12, "|preview_step");
+    ips200_show_string(8, 16*13, "|comp_factor");
+    ips200_show_string(8, 16*14, "|l_comp_factor");
+    ips200_show_string(8, 16*15, "|slip_k");
+    ips200_show_string(8, 16*16, "path_length");
+    ips200_show_string(8, 16*17, "|track_speed");
+    ips200_show_string(8, 16*18, "|track_angle");
+    task_flag = 3;
+}
+
+uint8 restop_flag = 0;
+
+void Start_submenu3_Param(void)   //动态
+{
+    ips200_show_int(180, 16*1, target_pos_out.x, 3);
+    ips200_show_int(180, 16*2, target_pos_out.y, 3);
+    ips200_show_int(180, 16*3, camera_error, 3);
+    ips200_show_int(180, 16*4, camera_werror, 3);
+    ips200_show_int(120, 16*8, Color_show_flag, 1);
+    ips200_show_int(120, 16*11, ins_speed, 3);
+    ips200_show_int(120, 16*12, preview_step, 3);
+    ips200_show_float(120, 16*13, comp_factor, 1, 2);
+    ips200_show_float(120, 16*14, l_comp_factor, 1, 2);
+    ips200_show_float(120, 16*15, slip_k, 1, 4);
+    ips200_show_int(120, 16*16, ins_state.path_length, 5);
+    ips200_show_float(120, 16*17, KP_SPEED, 2,1);
+    ips200_show_float(120, 16*18, KP_ANGLE, 2,1);
+
+    if(ins_save_flag == 1)    ips200_show_string(120, 16*10, "ON ");
+    else                      ips200_show_string(120, 16*10, "OFF");
+
+    // 显示图像
+    if(camera_show_flag == 1)
+    {
+        if(Color_show_flag)    ips200_displayimage8660((const uint16 *)scc8660_image, SCC8660_W, SCC8660_H);
+        else
+        {
+            uint16 y_gray;
+            for(y_gray = 0; y_gray < SCC8660_H; y_gray++)
+            {
+                color_tracer_get_visual_row((uint8)y_gray, gray_visual_row);
+                ips200_show_rgb565_image(0, y_gray, gray_visual_row, SCC8660_W, 1, SCC8660_W, 1, 1);
+            }
+        }
+
+        if(color_trace_flag)
+        {
+            ips200_draw_line((uint16)0, (uint16)(target_pos_out.y), (uint16)(SCC8660_W - 1), (uint16)(target_pos_out.y), RGB565_RED);
+            ips200_draw_line((uint16)(target_pos_out.x), (uint16)0, (uint16)(target_pos_out.x), (uint16)(SCC8660_H - 1), RGB565_RED);
+            uint16 x0 = (uint16)(target_pos_out.x - target_pos_out.w/2);
+            uint16 x1 = (uint16)(target_pos_out.x + target_pos_out.w/2);
+            uint16 y0 = (uint16)(target_pos_out.y - target_pos_out.h/2);
+            uint16 y1 = (uint16)(target_pos_out.y + target_pos_out.h/2);
+            ips200_draw_line(x0, y0,     x1, y0,     RGB565_BLUE);
+            ips200_draw_line(x0, y0 + 1, x1, y0 + 1, RGB565_BLUE);
+            ips200_draw_line(x0, y1,     x1, y1,     RGB565_BLUE);
+            ips200_draw_line(x0, y1 - 1, x1, y1 - 1, RGB565_BLUE);
+            ips200_draw_line(x0,     y0, x0,     y1, RGB565_BLUE);
+            ips200_draw_line(x0 + 1, y0, x0 + 1, y1, RGB565_BLUE);
+            ips200_draw_line(x1,     y0, x1,     y1, RGB565_BLUE);
+            ips200_draw_line(x1 - 1, y0, x1 - 1, y1, RGB565_BLUE);
+        }
+    }
+
+    if(repeat_flag == 0 && restop_flag == 1)
+    {
+        restop_flag = 0;
+        camera_show_flag = 0;
+        camera_use_flag = 0;
+        menu_level_flag = 0;              // 关键：防止同周期导航分支再次处理
+        menu_page_flag  = 0;              // 与从主菜单进入菜单2时保持一致
+        ips200_clear();
+        menu_page_flag = 1;
+        arrow_position_flag = 2;          // 箭头落到菜单2第一项
+        menu_position_flag = 2;
+        Start_submenu_2();                // 静态初始化：标题、task_flag、音频
+    }
+
+    if(menu_level_flag == 1)
+    {
+       switch(arrow_position_flag)
+       {
+           case 8:
+               if(Color_show_flag == 1) Color_show_flag = 0;
+               else Color_show_flag = 1;
+               break;
+           case 9:
+               // 通过图像中心数据设置色块识别阈值
+               set_color_target_condi(scc8660_image[SCC8660_H / 2][SCC8660_W / 2], &target_color_condi);
+               break;
+           case 10:
+               if(ins_save_flag == 1)
+               {
+                   ins_save_flag = 0;
+                   camera_trace_flag = 0;
+                   camera_show_flag = 0;
+                   camera_use_flag = 0;
+
+                   reverse_path(&ins_state);
+                   first_back_point = -1;
+                   ins_state.current_target_idx = 0;
+                   lateral_shift_path_varying(&ins_state, comp_factor,4);
+                   longitudinal_shift_path_varying(&ins_state, l_comp_factor,4);
+                   encoder1_distance = 0;
+                   encoder2_distance = 0;
+                   encoder3_distance = 0;
+                   ins_state.current_pose.x = 0.0f;
+                   ins_state.current_pose.y = 0.0f;
+//                   ins_state.current_pose.theta = 0.0f;
+                   ins_state.last_left_ticks = encoder1_distance;
+                   ins_state.last_right_ticks = encoder2_distance;
+
+//                   record_avg_speed = record_speed_sum / record_speed_count;
+//                   ins_speed = 1.15 * record_avg_speed;
+//                   preview_step = (uint8)(ins_speed / 10) ;
+
+                   restop_flag = 1;
+//                   reverse_flag = 1;
+                   repeat_flag = 1;
+               }
+               else
+               {
+                   IMU_ResetOrientation();
+//                   IMU_SetYaw(start_yaw);
+                   encoder1_distance = 0;
+                   encoder2_distance = 0;
+                   encoder3_distance = 0;
+                   ins_state_init(&ins_state);
+                   ins_save_flag = 1;
+                   camera_trace_flag = 1;
+               }
+               break;
+       }
+    }
+
+    if     (lr_flag == 1 && arrow_position_flag == 11)   ins_speed -= 5;
+    else if(lr_flag == 2 && arrow_position_flag == 11)   ins_speed += 5;
+    if     (lr_flag == 1 && arrow_position_flag == 12)
+    {
+        preview_step -= 1;
+    }
+    else if(lr_flag == 2 && arrow_position_flag == 12)
+    {
+        preview_step += 1;
+    }
+    if     (lr_flag == 1 && arrow_position_flag == 13)   comp_factor -= 0.05;
+    else if(lr_flag == 2 && arrow_position_flag == 13)   comp_factor += 0.05;
+    if     (lr_flag == 1 && arrow_position_flag == 14)   l_comp_factor -= 0.05;
+    else if(lr_flag == 2 && arrow_position_flag == 14)   l_comp_factor += 0.05;
+    if     (lr_flag == 1 && arrow_position_flag == 15)   slip_k -= 0.0001;
+    else if(lr_flag == 2 && arrow_position_flag == 15)   slip_k += 0.0001;
+    if     (lr_flag == 1 && arrow_position_flag == 17)   KP_SPEED -= 0.1;
+    else if(lr_flag == 2 && arrow_position_flag == 17)   KP_SPEED += 0.1;//KP_ANGLE
+    if     (lr_flag == 1 && arrow_position_flag == 18)   KP_ANGLE -= 0.1;
+    else if(lr_flag == 2 && arrow_position_flag == 18)   KP_ANGLE += 0.1;
+}
+
+void Start_submenu_4(void)        //静态
+{
+    arrow_position_flag = 8;
+    camera_show_flag = 1;
+    camera_use_flag = 1;
+    ips200_show_string(8, 16*8, "|set_condi");
+    ips200_show_string(8, 16*9, "|wb_value");
+    ips200_show_string(8, 16*10, "|bright_value");
+}
+
+void Start_submenu4_Param(void)   //动态
+{
+    ips200_show_int(180, 16*1, fps, 3);
+    ips200_show_int(180, 16*2, color_trace_flag, 3);//bright_value
+    ips200_show_int(180, 16*3, target_pos_out.x, 3);
+    ips200_show_int(180, 16*4, target_pos_out.y, 3);
+//    ips200_show_int(180, 16*5, camera_error, 3);
+//    ips200_show_int(180, 16*6, camera_werror, 3);
+    ips200_show_int(180, 16*5, bright_value, 3);
+    // 显示图像
+    if(camera_show_flag == 1)
+    {
+        if(Color_show_flag)    ips200_displayimage8660((const uint16 *)scc8660_image, SCC8660_W, SCC8660_H);
+        else
+        {
+            uint16 y_gray;
+            for(y_gray = 0; y_gray < SCC8660_H; y_gray++)
+            {
+                color_tracer_get_visual_row((uint8)y_gray, gray_visual_row);
+                ips200_show_rgb565_image(0, y_gray, gray_visual_row, SCC8660_W, 1, SCC8660_W, 1, 1);
+            }
+        }
+
+        if(color_trace_flag)
+        {
+            ips200_draw_line((uint16)0, (uint16)(target_pos_out.y), (uint16)(SCC8660_W - 1), (uint16)(target_pos_out.y), RGB565_RED);
+            ips200_draw_line((uint16)(target_pos_out.x), (uint16)0, (uint16)(target_pos_out.x), (uint16)(SCC8660_H - 1), RGB565_RED);
+            uint16 x0 = (uint16)(target_pos_out.x - target_pos_out.w/2);
+            uint16 x1 = (uint16)(target_pos_out.x + target_pos_out.w/2);
+            uint16 y0 = (uint16)(target_pos_out.y - target_pos_out.h/2);
+            uint16 y1 = (uint16)(target_pos_out.y + target_pos_out.h/2);
+            ips200_draw_line(x0, y0,     x1, y0,     RGB565_BLUE);
+            ips200_draw_line(x0, y0 + 1, x1, y0 + 1, RGB565_BLUE);
+            ips200_draw_line(x0, y1,     x1, y1,     RGB565_BLUE);
+            ips200_draw_line(x0, y1 - 1, x1, y1 - 1, RGB565_BLUE);
+            ips200_draw_line(x0,     y0, x0,     y1, RGB565_BLUE);
+            ips200_draw_line(x0 + 1, y0, x0 + 1, y1, RGB565_BLUE);
+            ips200_draw_line(x1,     y0, x1,     y1, RGB565_BLUE);
+            ips200_draw_line(x1 - 1, y0, x1 - 1, y1, RGB565_BLUE);
+        }
+    }
+
+    ips200_show_int(120, 16*9, wb_value, 4);
+    ips200_show_int(120, 16*10, bright_auto, 4);
+
+    if(menu_level_flag == 1)
+    {
+       switch(arrow_position_flag)
+       {
+           case 7:
+               if(Color_show_flag == 1) Color_show_flag = 0;
+               else Color_show_flag = 1;
+               break;
+           case 8:
+               // 通过图像中心数据设置色块识别阈值
+               set_color_target_condi(scc8660_image[SCC8660_H / 2][SCC8660_W / 2], &target_color_condi);
+               break;
+       }
+    }
+
+    if     (lr_flag == 1 && arrow_position_flag == 9)
+    {
+        wb_value -= 5;
+        wb_value -= 5;
+        if (wb_value < 0x65) wb_value = 0x65;
+        scc8660_set_white_balance(wb_value);
+    }
+    else if(lr_flag == 2 && arrow_position_flag == 9)
+    {
+        wb_value += 5;
+        if (wb_value > 0xA0) wb_value = 0xA0;
+        scc8660_set_white_balance(wb_value);
+    }
+
+    if     (lr_flag == 1 && arrow_position_flag == 10)
+    {
+        bright_auto -= 5;
+        if (bright_auto > 256) bright_auto = 0;
+//        scc8660_set_brightness(bright_value);
+    }
+    else if(lr_flag == 2 && arrow_position_flag == 10)
+    {
+        bright_auto += 5;
+        if (bright_auto > 255) bright_auto = 255;
+//        scc8660_set_brightness(bright_value);
+    }
+
+}
+
+void Start_submenu_5(void)        //静态
+{
+    ips200_show_string(8, 8, "TASK1_get");
+    ips200_show_string(8, 16*2, "|ins_collect");
+    ips200_show_string(8, 16*3, "|ins_save");
+    ips200_show_string(8, 16*4, "|imu_redress");
+    ips200_show_string(8, 16*5, "|set_start_yaw");
+    ips200_show_string(8, 16*13, "path_length");
+    ips200_show_string(8, 16*14, "x");
+    ips200_show_string(8, 16*15, "y");
+    ips200_show_string(8, 16*16, "yaw");
+}
+
+void Start_submenu5_Param(void)   //动态
+{
+    static uint32 ins_save_i = 4;
+
+    if(ins_save_i == 4)         ips200_show_int(120, 16*3, 1, 1);
+    else if(ins_save_i == 6)    ips200_show_int(120, 16*3, 2, 1);
+    else if(ins_save_i == 8)    ips200_show_int(120, 16*3, 3, 1);
+
+    if(ins_save_flag == 1)    ips200_show_string(120, 16*2, "ON ");
+    else                      ips200_show_string(120, 16*2, "OFF");
+
+    ips200_show_int(120, 16*4, imu_redress_flag, 1);
+    ips200_show_float(120, 16*5, start_yaw, 3, 3);
+    ips200_show_int(120, 16*13, ins_state.path_length, 5);
+    ips200_show_float(120, 16*14, ins_state.current_pose.x, 2, 3);
+    ips200_show_float(120, 16*15, ins_state.current_pose.y, 2, 3);
+    ips200_show_float(120, 16*16, eulerAngle.yaw, 3, 3);
+
+    if(menu_level_flag == 1)
+    {
+        switch(arrow_position_flag)
+        {
+            case 2:
+                if(ins_save_flag == 1)
+                {
+                    ins_save_flag = 0;
+                    record_avg_speed = record_speed_sum / record_speed_count;
+                    ins_speed = 1.15 * record_avg_speed + 20;
+                    preview_step = (uint8)(ins_speed / 10);
+
+                }
+                else
+                {
+                    IMU_ResetOrientation();
+                    IMU_SetYaw(start_yaw);
+                    encoder1_distance = 0;
+                    encoder2_distance = 0;
+                    ins_state_init(&ins_state);
+                    ins_save_flag = 1;
+                }
+                break;
+            case 3:
+                ins_save(ins_save_i);
+                system_delay_ms(500);
+                ips200_clear();
+                Start_submenu_5();
+                break;
+            case 4:
+                if(imu_redress_flag == 0)   imu_redress_flag = 1;
+                else                        imu_redress_flag = 0;
+                break;
+            case 5:
+                ips200_clear();
+                Start_submenu_5();
+                start_yaw = eulerAngle.yaw;
+                data_save_params();
+                break;
+        }
+    }
+
+    if(lr_flag == 1 && arrow_position_flag == 3)
+    {
+        ins_save_i -= 4;
+        if(ins_save_i < 4) ins_save_i = 4;
+    }
+    else if(lr_flag == 2 && arrow_position_flag == 3)
+    {
+        ins_save_i += 4;
+        if(ins_save_i > 6) ins_save_i = 6;
+    }
+}
+
+void Start_submenu_6(void)        //静态
+{
+    ips200_show_string(8, 8, "TASK2_get");
+    ips200_show_string(8, 16*2, "|get");
+    ips200_show_string(8, 16*3, "|delete");
+    ips200_show_string(8, 16*4, "|save");
+    ips200_show_string(8, 16*14, "x");
+    ips200_show_string(8, 16*15, "y");
+    ips200_show_string(8, 16*16, "NUM");
+    if(ins_get_flag == 0)
+    {
+        IMU_ResetOrientation();
+        IMU_SetYaw(start_yaw);
+        encoder1_distance = 0;
+        encoder2_distance = 0;
+        ins_state_init(&ins_state);
+        ins_get_flag = 1;
+    }
+}
+
+void Start_submenu6_Param(void)   //动态
+{
+    static uint32 save_i = 1;
+
+    ips200_show_int(120, 16*4, save_i, 1);
+    ips200_show_int(120, 16*16, INS_NUM, 1);
+
+    switch(menu_ins)
+    {
+        case iPOINT_START:
+
+            break;
+        case iPOINT_MIDDLE:
+
+            break;
+        case iPOINT_END:
+
+            break;
+        case imd1l:
+            ips200_show_string(150, 16*2, "md1l");
+            break;
+        case imd1:
+            ips200_show_string(150, 16*2, "md1 ");
+            break;
+        case imd2:
+            ips200_show_string(150, 16*2, "md2 ");
+            break;
+        case imd3:
+            ips200_show_string(150, 16*2, "md3 ");
+            break;
+        case imd3r:
+            ips200_show_string(150, 16*2, "md3r");
+            break;
+        case idzq:
+            ips200_show_string(150, 16*2, "dzq ");
+            break;
+        case ifcq:
+            ips200_show_string(150, 16*2, "fcq ");
+            break;
+        case itcq:
+            ips200_show_string(150, 16*2, "tcq ");
+            break;
+        case idzgd:
+            ips200_show_string(150, 16*2, "dzgd");
+            break;
+        case itcgd:
+            ips200_show_string(150, 16*2, "tcgd");
+            break;
+        case ifcgd:
+            ips200_show_string(150, 16*2, "fcgd");
+            break;
+    }
+
+    ips200_show_float(120, 16*14, ins_state.current_pose.x, 2, 3);
+    ips200_show_float(120, 16*15, ins_state.current_pose.y, 2, 3);
+
+    if(menu_level_flag == 1)
+    {
+        switch(arrow_position_flag)
+        {
+            case 2:
+                INS_GET(&menu_ins);
+                menu_ins++;
+                if(menu_ins > 12)   menu_ins = 3;
+                ips200_clear();
+                Start_submenu_6();
+                break;
+            case 3:
+                INS_DET();
+                menu_ins--;
+                if(menu_ins < 3)  menu_ins = 12;
+                ips200_clear();
+                Start_submenu_6();
+                break;
+            case 4:
+                simplify_ins();
+                save_ins_point(save_i);
+                system_delay_ms(500);
+                ips200_clear();
+                Start_submenu_6();
+                break;
+        }
+    }
+
+    if (lr_flag == 1 && arrow_position_flag == 2)
+    {
+        menu_ins--;
+        if(menu_ins < 3)  menu_ins = 13;
+    }
+    else if(lr_flag == 2 && arrow_position_flag == 2)
+    {
+        menu_ins++;
+        if(menu_ins > 13)   menu_ins = 3;
+    }
+    if(lr_flag == 1 && arrow_position_flag == 4)
+    {
+        save_i -= 1;
+        if(save_i < 1) save_i = 1;
+    }
+    else if(lr_flag == 2 && arrow_position_flag == 4)
+    {
+        save_i += 1;
+        if(save_i > 3) save_i = 3;
+    }
+    if(menu_level_flag == 2)    ins_get_flag = 0;
+}
+void Start_submenu_7(void)        //静态
+{
+
+}
+
+void Start_submenu7_Param(void)   //动态
+{
+
+
+}
+
+void Start_submenu_8(void)        //静态
+{
+    ips200_show_string(8, 8, "Check");
+    ips200_show_string(8, 16*2, "yaw:");
+    ips200_show_string(8, 16*3, "speed1:");
+    ips200_show_string(8, 16*4, "speed2:");
+    ips200_show_string(8, 16*2, "angle:");
+}
+
+void Start_submenu8_Param(void)   //动态
+{
+    ips200_show_float(80, 16*2, eulerAngle.yaw, 3, 1);
+//    ips200_show_float(160, 16*2, enc_yaw.yaw_deg, 3, 1);
+    ips200_show_int(80, 16*3, target1_speed, 3);
+    ips200_show_int(160, 16*3, encoder1_speed, 3);
+    ips200_show_int(80, 16*4, target2_speed, 3);
+    ips200_show_int(160, 16*4, encoder2_speed, 3);
+    ips200_show_int(80, 16*5, abs_location, 4);
+    ips200_show_int(160, 16*5, encoder_angle, 4);
+    ips200_show_int(40, 16*6, encoder1_distance, 10);
+    ips200_show_int(120, 16*6, encoder2_distance, 10);
+    ips200_show_int(120, 16*8, encoder3_distance, 10);
+}
+
+uint32 PWM_F = 10000, PWM_D = 4200;
+
+void Start_submenu_9(void)        //静态
+{
+    ips200_show_string(8, 8, "Hardware");
+    ips200_show_string(8, 16*2, "PWM_F");
+    ips200_show_string(8, 16*3, "PWM_D");
+    gpio_init(P21_5, GPO, GPIO_LOW, GPO_PUSH_PULL);
+    pwm_init(ATOM0_CH2_P21_4, PWM_F, PWM_D);//ATOM0_CH3_P21_5
+}
+
+void Start_submenu9_Param(void)   //动态
+{
+    ips200_show_int(120, 16*2, PWM_F, 8);
+    ips200_show_int(120, 16*3, PWM_D, 8);
+    if(lr_flag == 1 && arrow_position_flag == 2)
+    {
+        PWM_F -= 5000;
+        if(PWM_F < 0) PWM_F = 0;
+    }
+    else if(lr_flag == 2 && arrow_position_flag == 2)
+    {
+        PWM_F += 5000;
+        if(PWM_F > 500000) PWM_F = 500000;
+    }
+    if(lr_flag == 1 && arrow_position_flag == 3)
+    {
+        PWM_D -= 100;
+        if(PWM_D < 0) PWM_D = 0;
+    }
+    else if(lr_flag == 2 && arrow_position_flag == 3)
+    {
+        PWM_D += 100;
+        if(PWM_D > 10000) PWM_D = 10000;
+    }
+    if(menu_level_flag == 1)
+    {
+        pwm_init(ATOM0_CH2_P21_4, PWM_F, PWM_D);
+    }
+
+}
+
+void Start_menu_loop(void)
+{
+    menu_level_flag = arrow_scan();
+    if(draw_square_flag == 1)   draw_square(0, 16*arrow_position_flag, 120, 16, RGB565_BLUE);
+    ips200_show_uint(224, 0, arrow_position_flag - 1, 2);
+    if(menu_level_flag > 50) menu_level_flag = 0;
+    if(menu_page_flag > 50) menu_page_flag = 0;
+
+    switch(menu_position_flag)
+    {
+        case 1:
+            Start_submenu1_Param();
+            break;
+        case 2:
+            Start_submenu2_Param();
+            break;
+        case 3:
+            Start_submenu3_Param();
+            break;
+        case 4:
+            Start_submenu4_Param();
+            break;
+        case 5:
+            Start_submenu5_Param();
+            break;
+        case 6:
+            Start_submenu6_Param();
+            break;
+        case 7:
+            Start_submenu7_Param();
+            break;
+        case 8:
+            Start_submenu8_Param();
+            break;
+        case 9:
+            Start_submenu9_Param();
+            break;
+//        case 10:
+//            Start_submenu10_Param();
+//            break;
+//        case 11:
+//            Start_submenu11_Param();
+//            break;
+//        case 12:
+//            Start_submenu12_Param();
+//            break;
+//        case 13:
+//            Start_submenu13_Param();
+//            break;
+//        case 14:
+//            Start_submenu14_Param();
+//            break;
+//        case 15:
+//            Start_submenu15_Param();
+//            break;
+//        case 16:
+//            Start_submenu16_Param();
+//            break;
+//        case 17:
+//            Start_submenu17_Param();
+//            break;
+    }
+
+    if(menu_level_flag == 2)
+    {
+        menu_level_flag = 0;
+        menu_page_flag -= 1;
+        if(menu_page_flag < 0)  menu_page_flag = 0;
+        if(menu_page_flag == 0)  menu_position_flag = 0;
+        arrow_position_flag = 2;
+        ips200_clear();
+        switch(menu_position_flag)
+        {
+            case 0:
+                Start_menu();
+                break;
+            case 1:
+                Start_submenu_1();
+                break;
+            case 2:
+                Start_submenu_2();
+                break;
+            case 3:
+                Start_submenu_3();
+                break;
+            case 4:
+                Start_submenu_4();
+                break;
+            case 5:
+                Start_submenu_5();
+                break;
+            case 6:
+                Start_submenu_6();
+                break;
+            case 7:
+                Start_submenu_7();
+                break;
+            case 8:
+                Start_submenu_8();
+                break;
+            case 9:
+                Start_submenu_9();
+                break;
+//            case 10:
+//                Start_submenu_10();
+//                break;
+//            case 11:
+//                Start_submenu_11();
+//                break;
+//            case 12:
+//                Start_submenu_12();
+//                break;
+//            case 13:
+//                Start_submenu_13();
+//                break;
+//            case 14:
+//                Start_submenu_14();
+//                break;
+//            case 15:
+//                Start_submenu_15();
+//                break;
+//            case 16:
+//                Start_submenu_16();
+//                break;
+//            case 17:
+//                Start_submenu_17();
+//                break;
+        }
+    }
+
+    if(menu_level_flag == 1 && menu_page_flag == 0)
+    {
+        menu_level_flag = 0;
+        ips200_clear();
+        switch(arrow_position_flag)
+        {
+            case 2:
+                arrow_position_flag = 2;
+                menu_position_flag = 1;
+                Start_submenu_1();
+                break;
+            case 3:
+                arrow_position_flag = 2;
+                menu_position_flag = 2;
+                Start_submenu_2();
+                break;
+            case 4:
+                arrow_position_flag = 2;
+                menu_position_flag = 3;
+                Start_submenu_3();
+                break;
+            case 5:
+                arrow_position_flag = 2;
+                menu_position_flag = 4;
+                Start_submenu_4();
+                break;
+            case 6:
+                arrow_position_flag = 2;
+                menu_position_flag = 5;
+                Start_submenu_5();
+                break;
+            case 7:
+                arrow_position_flag = 2;
+                menu_position_flag = 6;
+                Start_submenu_6();
+                break;
+            case 8:
+                arrow_position_flag = 2;
+                menu_position_flag = 7;
+                Start_submenu_7();
+                break;
+            case 9:
+                arrow_position_flag = 2;
+                menu_position_flag = 8;
+                Start_submenu_8();
+                break;
+            case 10:
+                arrow_position_flag = 2;
+                menu_position_flag = 9;
+                Start_submenu_9();
+                break;
+//            case 11:
+//                arrow_position_flag = 2;
+//                menu_position_flag = 10;
+//                Start_submenu_10();
+//                break;
+//            case 12:
+//                arrow_position_flag = 2;
+//                menu_position_flag = 11;
+//                Start_submenu_11();
+//                break;
+//            case 13:
+//                arrow_position_flag = 2;
+//                menu_position_flag = 12;
+//                Start_submenu_12();
+//                break;
+//            case 14:
+//                arrow_position_flag = 2;
+//                menu_position_flag = 13;
+//                Start_submenu_13();
+//                break;
+//            case 15:
+//                arrow_position_flag = 2;
+//                menu_position_flag = 14;
+//                Start_submenu_14();
+//                break;
+//            case 16:
+//                arrow_position_flag = 2;
+//                menu_position_flag = 15;
+//                Start_submenu_15();
+//                break;
+//            case 17:
+//                arrow_position_flag = 2;
+//                menu_position_flag = 16;
+//                Start_submenu_16();
+//                break;
+//            case 18:
+//                arrow_position_flag = 2;
+//                menu_position_flag = 17;
+//                Start_submenu_17();
+//                break;
+        }
+        menu_page_flag += 1;
+    }
+}
+
+void menu_init(void)
+{
+    ips200_show_string(12, 8, "SYUL_YZ_GaoSY");
+    ips200_show_string(8, 16*2, "|Get_Point");
+    ips200_show_string(8, 16*3, "|IMU_show");
+    ips200_show_string(8, 16*4, "|GNSS_show");
+    ips200_show_string(8, 16*5, "|S.BUS");
+    ips200_show_string(8, 16*6, "|Mottor_test");
+    ips200_show_string(8, 16*7, "|Gnss_track");
+    ips200_show_string(8, 16*8, "|INS");
+    ips200_show_string(8, 16*9, "|PID_set");
+    ips200_show_string(8, 16*10, "|Set_Point");
+    ips200_show_string(8, 16*11, "|GPS_Path");
+    ips200_show_string(8, 16*12, "|Audio");
+    ips200_show_string(8, 16*13, "|INS_Path");
+    ips200_show_string(8, 16*14, "|Drive");
+    ips200_show_string(8, 16*15, "|Camera");
+    ips200_show_string(8, 16*16, "|INS_GET");
+//    ips200_show_string(8, 16*17, "|test16");
+//    ips200_show_string(8, 16*18, "|test17");
+    menu_ON();
+}
+
+void menu_OFF(void)
+{
+    menu_on_flag = 0;
+}
+
+void menu_ON(void)
+{
+    menu_on_flag = 1;
+}
+
+void submenu_1(void)        //静态
+{
+    ips200_show_string(8, 8, "Get_point");
+//    dot_matrix_screen_show_string("GET");
+    ips200_show_string(8, 16*2, "|get");
+    ips200_show_string(8, 16*3, "|delete");
+    ips200_show_string(8, 16*15, "|simplify");
+}
+
+
+PointType menu = fcq;
+void submenu1_Param(void)   //动态
+{
+    switch(menu)
+    {
+        case POINT_START:
+
+            break;
+        case POINT_MIDDLE:
+
+            break;
+        case POINT_END:
+
+            break;
+        case md1l:
+            ips200_show_string(150, 16*2, "md1l");
+            break;
+        case md1:
+            ips200_show_string(150, 16*2, "md1 ");
+            break;
+        case md2:
+            ips200_show_string(150, 16*2, "md2 ");
+            break;
+        case md3:
+            ips200_show_string(150, 16*2, "md3 ");
+            break;
+        case md3r:
+            ips200_show_string(150, 16*2, "md3r");
+            break;
+        case dzq:
+            ips200_show_string(150, 16*2, "dzq ");
+            break;
+        case fcq:
+            ips200_show_string(150, 16*2, "fcq ");
+            break;
+        case tcq:
+            ips200_show_string(150, 16*2, "tcq ");
+            break;
+        case dzgd:
+            ips200_show_string(150, 16*2, "dzgd");
+            break;
+        case tcgd:
+            ips200_show_string(150, 16*2, "tcgd");
+            break;
+    }
+
+    show_Point();
+    if(menu_level_flag == 1)
+    {
+        switch(arrow_position_flag)
+        {
+            case 2:
+                GPS_GET(menu);
+                ips200_clear();
+                submenu_1();
+                break;
+            case 3:
+                GPS_DET();
+                ips200_clear();
+                submenu_1();
+                break;
+            case 15:
+                simplify_path_points();
+                ips200_clear();
+                submenu_1();
+                break;
+        }
+    }
+    if (lr_flag == 1 && arrow_position_flag == 2)
+    {
+        menu--;
+        if(menu < 3)  menu = 10;
+    }
+    else if(lr_flag == 2 && arrow_position_flag == 2)
+    {
+        menu++;
+        if(menu > 10)   menu = 3;
+    }
+    else if(lr_flag == 1 && arrow_position_flag == 4)   set_speed -= 10;
+    else if(lr_flag == 2 && arrow_position_flag == 4)   set_speed += 10;
+//    if(menu_level_flag == 2)    dot_matrix_screen_show_string("SYL");
+}
+
+void submenu_2(void)    //静态
+{
+    ips200_show_string(8, 8, "IMU_show");
+    ips200_show_string(8, 16*2, "|set_N");
+    ips200_show_string(8, 16*12, "|adjust");
+}
+
+void submenu2_Param(void)   //动态
+{
+    IMU_show();
+    ips200_show_int(120, 16*12, calib_collecting, 1);
+    if(menu_level_flag == 1)
+    {
+        switch(arrow_position_flag)
+        {
+            case 2:
+                IMU_ResetOrientation();
+                break;
+            case 12:
+                if(calib_collecting == 0)   IMU_Mag_Calibrate_Start();
+                else if(calib_collecting == 1)   IMU_Mag_Calibrate_Finish();
+                break;
+        }
+    }
+//    if(menu_level_flag == 1)    IMU_ResetOrientation();
+}
+
+void submenu_3(void)    //静态
+{
+    ips200_show_string(8, 8, "GNSS_show");
+}
+
+void submenu3_Param(void)   //动态
+{
+    GPS_show();
+}
+
+void submenu_4(void)    //静态
+{
+    ips200_show_string(8, 8, "SBUS_show");
+}
+
+void submenu4_Param(void)   //动态
+{
+    SBUS_show();
+}
+
+void submenu_5(void)    //静态
+{
+    test_mottor_flag = 1;
+    ips200_show_string(8, 8, "MOTTOR_TEST");
+    ips200_show_string(8, 16*2, "motto1_speed");
+    ips200_show_string(8, 16*3, "ture_speed1");
+    ips200_show_string(8, 16*5, "motto2_speed");
+    ips200_show_string(8, 16*6, "ture_speed2");
+    ips200_show_string(8, 16*10, "test_speed");
+    ips200_show_string(8, 16*12, "abs_location");
+    ips200_show_string(8, 16*13, "target_angle");
+    ips200_show_string(8, 16*16, "target1_speed");
+    ips200_show_string(8, 16*17, "target2_speed");
+}
+
+void submenu5_Param(void)   //动态
+{
+    ips200_show_int(120, 16*2, target1_speed, 5);
+    ips200_show_int(180, 16*2, mottor1_speed, 5);
+    ips200_show_int(120, 16*3, encoder1_speed, 10);
+    ips200_show_int(120, 16*4, encoder1_distance, 10);
+    ips200_show_int(120, 16*5, target2_speed, 5);
+    ips200_show_int(180, 16*5, mottor2_speed, 5);
+    ips200_show_int(120, 16*6, encoder2_speed, 10);
+    ips200_show_int(120, 16*7, encoder2_distance, 10);
+    ips200_show_int(120, 16*10, test_speed, 10);
+    ips200_show_int(120, 16*11, encoder_angle, 10);
+    ips200_show_int(120, 16*12, abs_location, 10);
+    ips200_show_int(120, 16*13, target_angle, 10);
+    ips200_show_int(120, 16*14, angle_error, 10);
+    ips200_show_int(120, 16*16, target1_speed, 10);
+    ips200_show_int(120, 16*17, target2_speed, 10);
+
+
+    if     (lr_flag == 1 && arrow_position_flag == 10)   test_speed -= 500;
+    else if(lr_flag == 2 && arrow_position_flag == 10)   test_speed += 500;
+    else if(lr_flag == 1 && arrow_position_flag == 2)   target1_speed -= 500;
+    else if(lr_flag == 2 && arrow_position_flag == 2)   target1_speed += 500;
+    else if(lr_flag == 1 && arrow_position_flag == 3)   target2_speed -= 500;
+    else if(lr_flag == 2 && arrow_position_flag == 3)   target2_speed += 500;
+    else if(lr_flag == 1 && arrow_position_flag == 13)   target_angle -= 10;
+    else if(lr_flag == 2 && arrow_position_flag == 13)   target_angle += 10;
+    if(menu_level_flag == 2)    test_mottor_flag = 0;
+}
+
+/*
+ * 发车前准备
+ *   1.可以使用|Point_dis调整切换点的距离
+ *   2.使用|speed、|all_speed调整单独点位和全部点位速度
+ *   3.*务必将车头朝向正北使用|set_N重置陀螺仪角度
+ *   使用|gnss_track，在后面两位数字均为1时开始循迹
+ */
+
+void submenu_6(void)    //静态
+{
+    ips200_show_string(8, 8, "Gnss_track");
+    ips200_show_string(8, 16*2, "|gnss_track");
+    ips200_show_string(8, 16*3, "|set_N");
+    ips200_show_string(8, 16*4, "ERROR");
+    ips200_show_string(8, 16*5, "dx");
+    ips200_show_string(120, 16*5, "dy");
+    ips200_show_string(8, 16*6, "x");
+    ips200_show_string(120, 16*6, "y");
+    ips200_show_string(8, 16*7, "F_NUM");
+    ips200_show_string(8, 16*8, "tz");
+    ips200_show_string(8, 16*9, "|Point_dis");
+    ips200_show_string(8, 16*10, "|speed");
+    ips200_show_string(8, 16*11, "|all_speed");
+}
+
+uint8 i_speed = 0;
+void submenu6_Param(void)   //动态
+{
+    if(i_speed > P_NUM-1)   i_speed = 0;
+    else if(i_speed > 100)    i_speed = 0;
+
+    ips200_show_int(120, 16*2, gnss_track_flag, 3);
+    ips200_show_int(160, 16*2, gnss_ready_flag, 3);
+    ips200_show_float(120, 16*4, ERROR, 3, 2);
+    ips200_show_float(40, 16*5, dx, 2, 2);
+    ips200_show_float(160, 16*5, dy, 2, 2);
+    ips200_show_float(40, 16*6, gps.x, 2, 2);
+    ips200_show_float(160, 16*6, gps.y, 2, 2);
+    ips200_show_int(60, 16*7, F_NUM, 2);
+    ips200_show_float(60, 16*8, target_az, 2, 2);
+    ips200_show_float(100, 16*9, Point_dis, 2, 2);
+    ips200_show_int(60, 16*10, i_speed, 5);
+    ips200_show_int(100, 16*10, track_speed[i_speed], 5);
+
+    if(menu_level_flag == 1)
+    {
+        switch(arrow_position_flag)
+        {
+            case 2:
+                gnss_ready();
+                break;
+            case 3:
+                ips200_clear();
+                submenu_6();
+                IMU_ResetOrientation();
+                break;
+            case 10:
+                i_speed+=1;
+                break;
+        }
+    }
+
+    if(lr_flag == 1 && arrow_position_flag == 10)        track_speed[i_speed] -= 10;
+    else if(lr_flag == 2 && arrow_position_flag == 10)   track_speed[i_speed] += 10;
+    else if(lr_flag == 1 && arrow_position_flag == 11)
+    {
+        for(int k = 0; k<P_NUM; k++)
+        {
+            track_speed[k] -= 10;
+        }
+    }
+    else if(lr_flag == 2 && arrow_position_flag == 11)
+    {
+        for(int k = 0; k<P_NUM; k++)
+        {
+            track_speed[k] += 10;
+        }
+    }
+    else if(lr_flag == 1 && arrow_position_flag == 9)   Point_dis -= 0.1f;
+    else if(lr_flag == 2 && arrow_position_flag == 9)   Point_dis += 0.1f;
+}
+
+void submenu_7(void)    //静态
+{
+    ips200_show_string(8, 8, "INS");
+//    dot_matrix_screen_show_string("INS");
+    ips200_show_string(8, 16*2, "|ins_save");
+    ips200_show_string(8, 16*3, "|repeat");
+    ips200_show_string(8, 16*4, "|ins_speed");
+    ips200_show_string(8, 16*5, "|reverse_path");
+    ips200_show_string(8, 16*6, "|dis_com");
+    ips200_show_string(8, 16*7, "|pre_step");
+    ips200_show_string(8, 16*8, "|start_yaw");
+    ips200_show_string(8, 16*9, "|reverse_yaw");
+    ips200_show_string(8, 16*12, "repect_point");
+    ips200_show_string(8, 16*13, "path_length");
+    ips200_show_string(8, 16*14, "x");
+    ips200_show_string(8, 16*15, "y");
+    ips200_show_string(8, 16*16, "yaw");
+    ips200_show_string(8, 16*17, "gnss_yaw");
+}
+
+void submenu7_Param(void)   //动态
+{
+    ips200_show_int(120, 16*2, ins_save_flag, 1);
+    ips200_show_int(120, 16*3, repeat_flag, 1);
+    ips200_show_int(120, 16*4, ins_speed, 3);
+    ips200_show_int(120, 16*5, reverse_flag, 1);
+    ips200_show_int(120, 16*7, preview_step, 3);
+    ips200_show_float(180, 16*7, preview_Kp, 1, 1);
+    ips200_show_float(120, 16*6, dis_compensation, 1, 6);
+    ips200_show_float(120, 16*8, start_yaw, 3, 3);
+    ips200_show_float(120, 16*9, reverse_yaw, 3, 3);
+    ips200_show_int(120, 16*12, ins_state.current_target_idx, 3);
+    ips200_show_int(120, 16*13, ins_state.path_length, 5);
+    ips200_show_float(120, 16*14, ins_state.current_pose.x, 2, 3);
+    ips200_show_float(120, 16*15, ins_state.current_pose.y, 2, 3);
+    ips200_show_float(120, 16*16, eulerAngle.yaw, 3, 3);
+    ips200_show_float(120, 16*17, new_direction, 3, 3);
+
+    if(menu_level_flag == 1)
+    {
+        switch(arrow_position_flag)
+        {
+            case 2:
+                if(ins_save_flag == 1)
+                {
+                    ins_save_flag = 0;
+                }
+                else
+                {
+                    IMU_ResetOrientation();
+//                    IMU_SetYaw(start_yaw);
+                    encoder1_distance = 0;
+                    encoder2_distance = 0;
+                    ins_state_init(&ins_state);
+                    ins_save_flag = 1;
+                }
+                break;
+            case 3:
+                if(repeat_flag == 1)
+                {
+                    repeat_flag = 0;
+                }
+                else
+                {
+                    IMU_ResetOrientation();
+//                    IMU_SetYaw(start_yaw);
+                    encoder1_distance = 0;
+                    encoder2_distance = 0;
+                    ins_state.current_pose.x = 0.0f;
+                    ins_state.current_pose.y = 0.0f;
+                    ins_state.current_pose.theta = 0.0f;
+                    ins_state.last_left_ticks = encoder1_distance;
+                    ins_state.last_right_ticks = encoder2_distance;
+                    repeat_flag = 1;
+                }
+                break;
+            case 5:
+                reverse_path(&ins_state);
+                first_back_point = 0;
+//                IMU_ResetOrientation();
+//                IMU_SetYaw(reverse_yaw);
+                encoder1_distance = 0;
+                encoder2_distance = 0;
+                ins_state.current_pose.x = 0.0f;
+                ins_state.current_pose.y = 0.0f;
+                ins_state.current_pose.theta = 0.0f;
+                ins_state.last_left_ticks = encoder1_distance;
+                ins_state.last_right_ticks = encoder2_distance;
+                reverse_flag = 1;
+                break;
+            case 8:
+                ips200_clear();
+                submenu_7();
+                start_yaw = eulerAngle.yaw;
+                data_save_params();
+//                IMU_ResetOrientation();
+//                ins_state.current_pose.x = 0.0f;
+//                ins_state.current_pose.y = 0.0f;
+//                ins_state.current_pose.theta = 0.0f;
+                break;
+            case 9:
+                ips200_clear();
+                submenu_7();
+                reverse_yaw = eulerAngle.yaw;
+                data_save_params();
+                break;
+//            case 10:
+//                path_gen_snake(&ins_state, 6.0f, 1.1f, 6.0f, eulerAngle.yaw, 0.2f, 2.0f);
+//                break;
+        }
+    }
+
+    if     (lr_flag == 1 && arrow_position_flag == 4)   ins_speed -= 5;
+    else if(lr_flag == 2 && arrow_position_flag == 4)   ins_speed += 5;
+    if     (lr_flag == 1 && arrow_position_flag == 6)   dis_compensation -= 0.000001;
+    else if(lr_flag == 2 && arrow_position_flag == 6)   dis_compensation += 0.000001;
+    if     (lr_flag == 1 && arrow_position_flag == 7)
+    {
+        preview_step -= 1;
+        preview_Kp -= 0.1f;
+    }
+    else if(lr_flag == 2 && arrow_position_flag == 7)
+    {
+        preview_step += 1;
+        preview_Kp += 0.1f;
+    }
+//    if(menu_level_flag == 2)    dot_matrix_screen_show_string("SYL");
+}
+
+void submenu_8(void)    //静态//PID
+{
+    ips200_show_string(8, 8, "PID");
+}
+
+void submenu8_Param(void)   //动态
+{
+    pid_show();
+
+    switch(arrow_position_flag)
+    {
+        case 3:
+            if(lr_flag == 1) speed1_pid.Kp -= 0.1;
+            else if(lr_flag == 2) speed1_pid.Kp += 0.1;
+            break;
+        case 4:
+            if(lr_flag == 1) speed1_pid.Ki -= 0.1;
+            else if(lr_flag == 2) speed1_pid.Ki += 0.1;
+            break;
+        case 5:
+            if(lr_flag == 1) speed1_pid.Kd -= 0.01;
+            else if(lr_flag == 2) speed1_pid.Kd += 0.01;
+            break;
+        case 8:
+            if(lr_flag == 1) turn_pid.Kp -= 0.1;
+            else if(lr_flag == 2) turn_pid.Kp += 0.1;
+            break;
+        case 9:
+            if(lr_flag == 1) turn_pid.Ki -= 0.1;
+            else if(lr_flag == 2) turn_pid.Ki += 0.1;
+            break;
+        case 10:
+            if(lr_flag == 1) turn_pid.Kd -= 0.1;
+            else if(lr_flag == 2) turn_pid.Kd += 0.1;
+            break;
+        case 13:
+            if(lr_flag == 1) angle_pid.Kp -= 0.1;
+            else if(lr_flag == 2) angle_pid.Kp += 0.1;
+            break;
+        case 14:
+            if(lr_flag == 1) angle_pid.Ki -= 0.1;
+            else if(lr_flag == 2) angle_pid.Ki += 0.1;
+            break;
+        case 15:
+            if(lr_flag == 1) angle_pid.Kd -= 0.1;
+            else if(lr_flag == 2) angle_pid.Kd += 0.1;
+            break;
+    }
+
+    if(menu_level_flag == 2)    pid_save_params();
+}
+
+void submenu_9(void)    //静态
+{
+    ips200_show_string(8, 8, "SET_POINT");
+
+    ips200_show_string(8, 16*2, "|gnss_save");
+    ips200_show_string(8, 16*3, "|gnss_read");
+    ips200_show_string(8, 16*5, "|ins_save");
+    ips200_show_string(8, 16*6, "|ins_read");
+    ips200_show_string(8, 16*8, "|ins_point_save");
+    ips200_show_string(8, 16*9, "|ins_point_read");
+}
+
+void submenu9_Param(void)   //动态
+{
+    static uint32 gnss_save_i = 1;
+    static uint32 ins_save_i = 4;
+
+    ips200_show_int(120, 16*2, gnss_save_i, 1);
+    ips200_show_int(120, 16*3, gnss_save_i, 1);
+    ips200_show_int(120, 16*5, ins_save_i, 1);
+    ips200_show_int(120, 16*6, ins_save_i, 1);
+
+    if(menu_level_flag == 1)
+    {
+        switch(arrow_position_flag)
+        {
+            case 2:
+                save_point(gnss_save_i);
+                ips200_clear();
+                submenu_9();
+                break;
+            case 3:
+                read_point(gnss_save_i);
+                ips200_clear();
+                submenu_9();
+                break;
+            case 5:
+                ins_save(ins_save_i);
+                system_delay_ms(500);
+                ips200_clear();
+                submenu_9();
+                break;
+            case 6:
+                ins_read(ins_save_i);
+                system_delay_ms(500);
+                ips200_clear();
+                submenu_9();
+                break;
+            case 8:
+                save_ins_point(gnss_save_i);
+                system_delay_ms(500);
+                ips200_clear();
+                submenu_9();
+                break;
+            case 9:
+                read_ins_point(gnss_save_i);
+                system_delay_ms(500);
+                ips200_clear();
+                submenu_9();
+                break;
+
+        }
+    }
+
+    if     (lr_flag == 1 && (arrow_position_flag == 2 || arrow_position_flag == 3 || arrow_position_flag == 8 || arrow_position_flag == 9))
+    {
+        gnss_save_i -= 1;
+        if(gnss_save_i < 1) gnss_save_i = 1;
+    }
+    else if(lr_flag == 2 && (arrow_position_flag == 2 || arrow_position_flag == 3 || arrow_position_flag == 8 || arrow_position_flag == 9))
+    {
+        gnss_save_i += 1;
+        if(gnss_save_i > 3) gnss_save_i = 3;
+    }
+    else if(lr_flag == 1 && (arrow_position_flag == 5 || arrow_position_flag == 6))
+    {
+        ins_save_i -= 2;
+        if(ins_save_i < 4) ins_save_i = 4;
+    }
+    else if(lr_flag == 2 && (arrow_position_flag == 5 || arrow_position_flag == 6))
+    {
+        ins_save_i += 2;
+        if(ins_save_i > 8) ins_save_i = 8;
+    }
+
+}
+
+void submenu_10(void)   //静态
+{
+    ips200_clear();
+    draw_square_flag = 0;
+}
+
+/*
+ * gps画线使用说明
+ * 进入gps画线后，右上角显示当前点序号（从1开始）
+ * 使用上下键切换点位
+ * 确定键选择点位，选中点位后右下角显示“Select”
+ * 在选中点位的情况下使用上下左右键调整点位（每次0.1m）
+ * 再次按确定或返回退出选中
+ */
+uint8 point_amend_flag = 0;
+void submenu10_Param(void)   //动态
+{
+    ips200_show_string(8, 0, "GPS Path Display");
+    ips200_show_string(180, 16*17, "       ");
+    GPS_draw_path();
+    if(arrow_position_flag > P_NUM+1)   arrow_position_flag = P_NUM + 1;
+    else if(arrow_position_flag > 50 || arrow_position_flag < 2)   arrow_position_flag = 2;
+    ips200_show_string(160, 16*1, "x:");
+    ips200_show_string(160, 16*2, "y:");
+    ips200_show_float(180, 16*1, audio_point[arrow_position_flag - 2].x, 3, 2);
+    ips200_show_float(180, 16*2, audio_point[arrow_position_flag - 2].y, 3, 2);
+    GPS_select_point(arrow_position_flag - 2);
+
+    switch(audio_point[arrow_position_flag - 2].type)
+    {
+        case POINT_START:
+
+            break;
+        case POINT_MIDDLE:
+
+            break;
+        case POINT_END:
+
+            break;
+        case md1l:
+            ips200_show_string(150, 16*3, "md1l");
+            break;
+        case md1:
+            ips200_show_string(150, 16*3, "md1 ");
+            break;
+        case md2:
+            ips200_show_string(150, 16*3, "md2 ");
+            break;
+        case md3:
+            ips200_show_string(150, 16*3, "md3 ");
+            break;
+        case md3r:
+            ips200_show_string(150, 16*3, "md3r");
+            break;
+        case dzq:
+            ips200_show_string(150, 16*3, "dzq ");
+            break;
+        case fcq:
+            ips200_show_string(150, 16*3, "fcq ");
+            break;
+        case tcq:
+            ips200_show_string(150, 16*3, "tcq ");
+            break;
+        case dzgd:
+            ips200_show_string(150, 16*2, "dzgd");
+            break;
+        case tcgd:
+            ips200_show_string(150, 16*2, "tcgd");
+            break;
+    }
+
+    if(menu_level_flag == 1)
+    {
+        point_amend_flag = 1;
+        ips200_clear();
+    }
+
+    while(point_amend_flag == 1)
+    {
+        ips200_show_string(180, 16*18, "Select");
+        GPS_draw_path();
+        ips200_show_string(160, 16*1, "x:");
+        ips200_show_string(160, 16*2, "y:");
+        ips200_show_float(180, 16*1, audio_point[arrow_position_flag - 2].x, 3, 2);
+        ips200_show_float(180, 16*2, audio_point[arrow_position_flag - 2].y, 3, 2);
+        GPS_select_point(arrow_position_flag - 2);
+        switch(key_flag)
+        {
+            case 1:
+                audio_point[arrow_position_flag - 2].y += 0.1;
+                ips200_clear();
+                break;
+            case 10:
+                audio_point[arrow_position_flag - 2].y += 0.1;
+                ips200_clear();
+                system_delay_ms(50);
+                break;
+            case 2:
+                point_amend_flag = 0;
+                ips200_clear();
+                break;
+            case 3:
+                audio_point[arrow_position_flag - 2].y -= 0.1;
+                ips200_clear();
+                break;
+            case 30:
+                audio_point[arrow_position_flag - 2].y -= 0.1;
+                ips200_clear();
+                system_delay_ms(50);
+                break;
+            case 4:
+                point_amend_flag = 0;
+                ips200_clear();
+                break;
+            case 5:
+                audio_point[arrow_position_flag - 2].x -= 0.1;
+                ips200_clear();
+                break;
+            case 50:
+                audio_point[arrow_position_flag - 2].x -= 0.1;
+                ips200_clear();
+                system_delay_ms(50);
+                break;
+            case 6:
+                audio_point[arrow_position_flag - 2].x += 0.1;
+                ips200_clear();
+                break;
+            case 60:
+                audio_point[arrow_position_flag - 2].x += 0.1;
+                ips200_clear();
+                system_delay_ms(50);
+                break;
+        }
+    }
+    if(menu_level_flag == 2)    draw_square_flag = 1;
+}
+
+void submenu_11(void)   //静态
+{
+    ips200_show_string(8, 0, "Audio");
+    dot_matrix_screen_show_string("   ");
+    my_audio_init();
+
+//    menu_on_flag = 0;
+//    audio_ready_flag = 1;
+}
+
+void submenu11_Param(void)   //动态
+{
+    my_audio_loop();
+
+    ips200_show_int(8, 16*7, audio_gnss_flag, 1);
+    ips200_show_int(80, 16*7, gnss_track_flag, 1);
+    ips200_show_int(150, 16*7, task_speed, 3);
+    ips200_show_int(0, 16*8, F_NUM, 3);
+    ips200_show_int(150, 16*8, P_NUM, 3);
+    ips200_show_string(8, 16*10, "|swiych_ins/gnss");
+    if(track_use_flag == 0) ips200_show_string(150, 16*10, "gnss");
+    else if(track_use_flag == 1) ips200_show_string(150, 16*10, "ins ");
+    ips200_show_string(8, 16*12, "speed");
+    ips200_show_int(120, 16*12, target_gnss_speed, 3);
+    ips200_show_float(80, 16*15, eulerAngle.yaw, 3, 1);
+    if(menu_level_flag == 2)
+    {
+        audio_ready_flag = 0;
+    }
+
+    if     (lr_flag == 1 && arrow_position_flag == 10)   track_use_flag = 0;
+    else if(lr_flag == 2 && arrow_position_flag == 10)   track_use_flag = 1;
+    if     (lr_flag == 1 && arrow_position_flag == 12)   target_gnss_speed -= 5;
+    else if(lr_flag == 2 && arrow_position_flag == 12)   target_gnss_speed += 5;
+}
+
+void submenu_12(void)   //静态
+{
+    ips200_show_string(8, 0, "INS_PATH");
+}
+
+void submenu12_Param(void)   //动态
+{
+    draw_recorded_path(&ins_state);
+}
+
+void submenu_13(void)   //静态
+{
+    ips200_show_string(8, 0, "DRIVE");
+    ips200_show_string(8, 16*2, "driver_mode");
+    ips200_show_string(8, 16*3, "driver_speed");
+    ips200_show_string(8, 16*5, "Brake");
+    ips200_show_string(120, 16*5, "Acc");
+    ips200_show_string(8, 16*6, "Mode_switch");
+}
+
+void submenu13_Param(void)   //动态
+{
+    ips200_show_int(120, 16*2, drive_flag, 1);
+    ips200_show_int(120, 16*3, drive_speed, 3);
+    ips200_show_int(60, 16*5, gpio_get_level(Brake), 1);
+    ips200_show_int(150, 16*5, gpio_get_level(Accelerate), 1);
+    ips200_show_int(150, 16*6, gpio_get_level(Mode_switch), 1);
+    if(menu_level_flag == 1)
+    {
+        switch(arrow_position_flag)
+        {
+            case 2:
+                if(drive_flag == 0) drive_flag = 1;
+                else                drive_flag = 0;
+                break;
+        }
+    }
+    if     (lr_flag == 1 && arrow_position_flag == 3)   drive_speed -= 5;
+    else if(lr_flag == 2 && arrow_position_flag == 3)   drive_speed += 5;
+}
+
+void submenu_14(void)   //静态
+{
+    camera_use_flag = 1;
+    camera_show_flag = 1;
+    arrow_position_flag = 10;
+    ips200_show_string(8, 16*10, "set_condi");
+}
+
+void submenu14_Param(void)   //动态
+{
+    // 显示图像
+    if(camera_show_flag == 1)
+    {
+        ips200_displayimage8660((const uint16 *)scc8660_image, SCC8660_W, SCC8660_H);
+        if(color_trace_flag)
+        {
+            // 识别到目标后将目标框出来
+            ips200_draw_line((target_pos_out.x - target_pos_out.w/2), (target_pos_out.y - target_pos_out.h/2), (target_pos_out.x + target_pos_out.w/2), (target_pos_out.y - target_pos_out.h/2), RGB565_WHITE);
+            ips200_draw_line((target_pos_out.x - target_pos_out.w/2), (target_pos_out.y - target_pos_out.h/2), (target_pos_out.x - target_pos_out.w/2), (target_pos_out.y + target_pos_out.h/2), RGB565_WHITE);
+            ips200_draw_line((target_pos_out.x - target_pos_out.w/2), (target_pos_out.y + target_pos_out.h/2), (target_pos_out.x + target_pos_out.w/2), (target_pos_out.y + target_pos_out.h/2), RGB565_WHITE);
+            ips200_draw_line((target_pos_out.x + target_pos_out.w/2), (target_pos_out.y - target_pos_out.h/2), (target_pos_out.x + target_pos_out.w/2), (target_pos_out.y + target_pos_out.h/2), RGB565_WHITE);
+        }
+    }
+
+    if(menu_level_flag == 1)
+    {
+        switch(arrow_position_flag)
+        {
+            case 10:
+                // 通过图像中心数据设置色块识别阈值
+                set_color_target_condi(scc8660_image[SCC8660_H / 2][SCC8660_W / 2], &target_color_condi);
+                break;
+        }
+    }
+    if(menu_level_flag == 2)    camera_show_flag = 0;
+}
+
+void submenu_15(void)   //静态
+{
+    ips200_show_string(8, 8, "Get_INS");
+//    dot_matrix_screen_show_string("GET");
+    ips200_show_string(8, 16*2, "|get");
+    ips200_show_string(8, 16*3, "|delete");
+    ips200_show_string(8, 16*14, "x");
+    ips200_show_string(8, 16*15, "y");
+    ips200_show_string(8, 16*5, "|simplify");
+    if(ins_get_flag == 0)
+    {
+        IMU_ResetOrientation();
+        encoder1_distance = 0;
+        encoder2_distance = 0;
+        ins_state_init(&ins_state);
+        ins_get_flag = 1;
+    }
+}
+
+void submenu15_Param(void)   //动态
+{
+    switch(menu_ins)
+    {
+        case iPOINT_START:
+
+            break;
+        case iPOINT_MIDDLE:
+
+            break;
+        case iPOINT_END:
+
+            break;
+        case imd1l:
+            ips200_show_string(150, 16*2, "md1l");
+            break;
+        case imd1:
+            ips200_show_string(150, 16*2, "md1 ");
+            break;
+        case imd2:
+            ips200_show_string(150, 16*2, "md2 ");
+            break;
+        case imd3:
+            ips200_show_string(150, 16*2, "md3 ");
+            break;
+        case imd3r:
+            ips200_show_string(150, 16*2, "md3r");
+            break;
+        case idzq:
+            ips200_show_string(150, 16*2, "dzq ");
+            break;
+        case ifcq:
+            ips200_show_string(150, 16*2, "fcq ");
+            break;
+        case itcq:
+            ips200_show_string(150, 16*2, "tcq ");
+            break;
+        case idzgd:
+            ips200_show_string(150, 16*2, "dzgd");
+            break;
+        case itcgd:
+            ips200_show_string(150, 16*2, "tcgd");
+            break;
+        case ifcgd:
+            ips200_show_string(150, 16*2, "fcgd");
+            break;
+    }
+
+    ips200_show_float(120, 16*14, ins_state.current_pose.x, 2, 3);
+    ips200_show_float(120, 16*15, ins_state.current_pose.y, 2, 3);
+
+    if(menu_level_flag == 1)
+    {
+        switch(arrow_position_flag)
+        {
+            case 2:
+                INS_GET(&menu_ins);
+                menu_ins++;
+                if(menu_ins > 12)   menu_ins = 3;
+                ips200_clear();
+                submenu_15();
+                break;
+            case 3:
+                INS_DET();
+                menu_ins--;
+                if(menu_ins < 3)  menu_ins = 12;
+                ips200_clear();
+                submenu_15();
+                break;
+            case 5:
+                simplify_ins();
+                ips200_clear();
+                submenu_15();
+                break;
+        }
+    }
+    if (lr_flag == 1 && arrow_position_flag == 2)
+    {
+        menu_ins--;
+        if(menu_ins < 3)  menu_ins = 12;
+    }
+    else if(lr_flag == 2 && arrow_position_flag == 2)
+    {
+        menu_ins++;
+        if(menu_ins > 12)   menu_ins = 3;
+    }
+
+    if(menu_level_flag == 2)    ins_get_flag = 0;
+}
+
+void submenu_16(void)   //静态
+{
+
+}
+
+void submenu16_Param(void)   //动态
+{
+
+}
+
+void submenu_17(void)   //静态
+{
+
+}
+
+void submenu17_Param(void)   //动态
+{
+
+}
+
+void menu_loop(void)
+{
+    menu_level_flag = arrow_scan();
+    if(draw_square_flag == 1)   draw_square(0, 16*arrow_position_flag, 120, 16, RGB565_BLUE);
+    ips200_show_uint(224, 0, arrow_position_flag - 1, 2);
+    if(menu_level_flag > 50) menu_level_flag = 0;
+    if(menu_page_flag > 50) menu_page_flag = 0;
+
+    switch(menu_position_flag)
+    {
+        case 1:
+            submenu1_Param();
+            break;
+        case 2:
+            submenu2_Param();
+            break;
+        case 3:
+            submenu3_Param();
+            break;
+        case 4:
+            submenu4_Param();
+            break;
+        case 5:
+            submenu5_Param();
+            break;
+        case 6:
+            submenu6_Param();
+            break;
+        case 7:
+            submenu7_Param();
+            break;
+        case 8:
+            submenu8_Param();
+            break;
+        case 9:
+            submenu9_Param();
+            break;
+        case 10:
+            submenu10_Param();
+            break;
+        case 11:
+            submenu11_Param();
+            break;
+        case 12:
+            submenu12_Param();
+            break;
+        case 13:
+            submenu13_Param();
+            break;
+        case 14:
+            submenu14_Param();
+            break;
+        case 15:
+            submenu15_Param();
+            break;
+        case 16:
+            submenu16_Param();
+            break;
+        case 17:
+            submenu17_Param();
+            break;
+    }
+
+    if(menu_level_flag == 2)
+    {
+        menu_level_flag = 0;
+        menu_page_flag -= 1;
+        if(menu_page_flag < 0)  menu_page_flag = 0;
+        if(menu_page_flag == 0)  menu_position_flag = 0;
+        arrow_position_flag = 2;
+        ips200_clear();
+        switch(menu_position_flag)
+        {
+            case 0:
+                menu_init();
+                break;
+            case 1:
+                submenu_1();
+                break;
+            case 2:
+                submenu_2();
+                break;
+            case 3:
+                submenu_3();
+                break;
+            case 4:
+                submenu_4();
+                break;
+            case 5:
+                submenu_5();
+                break;
+            case 6:
+                submenu_6();
+                break;
+            case 7:
+                submenu_7();
+                break;
+            case 8:
+                submenu_8();
+                break;
+            case 9:
+                submenu_9();
+                break;
+            case 10:
+                submenu_10();
+                break;
+            case 11:
+                submenu_11();
+                break;
+            case 12:
+                submenu_12();
+                break;
+            case 13:
+                submenu_13();
+                break;
+            case 14:
+                submenu_14();
+                break;
+            case 15:
+                submenu_15();
+                break;
+            case 16:
+                submenu_16();
+                break;
+            case 17:
+                submenu_17();
+                break;
+        }
+    }
+
+    if(menu_level_flag == 1 && menu_page_flag == 0)
+    {
+        menu_level_flag = 0;
+        ips200_clear();
+        switch(arrow_position_flag)
+        {
+            case 2:
+                arrow_position_flag = 2;
+                menu_position_flag = 1;
+                submenu_1();
+                break;
+            case 3:
+                arrow_position_flag = 2;
+                menu_position_flag = 2;
+                submenu_2();
+                break;
+            case 4:
+                arrow_position_flag = 2;
+                menu_position_flag = 3;
+                submenu_3();
+                break;
+            case 5:
+                arrow_position_flag = 2;
+                menu_position_flag = 4;
+                submenu_4();
+                break;
+            case 6:
+                arrow_position_flag = 2;
+                menu_position_flag = 5;
+                submenu_5();
+                break;
+            case 7:
+                arrow_position_flag = 2;
+                menu_position_flag = 6;
+                submenu_6();
+                break;
+            case 8:
+                arrow_position_flag = 2;
+                menu_position_flag = 7;
+                submenu_7();
+                break;
+            case 9:
+                arrow_position_flag = 2;
+                menu_position_flag = 8;
+                submenu_8();
+                break;
+            case 10:
+                arrow_position_flag = 2;
+                menu_position_flag = 9;
+                submenu_9();
+                break;
+            case 11:
+                arrow_position_flag = 2;
+                menu_position_flag = 10;
+                submenu_10();
+                break;
+            case 12:
+                arrow_position_flag = 2;
+                menu_position_flag = 11;
+                submenu_11();
+                break;
+            case 13:
+                arrow_position_flag = 2;
+                menu_position_flag = 12;
+                submenu_12();
+                break;
+            case 14:
+                arrow_position_flag = 2;
+                menu_position_flag = 13;
+                submenu_13();
+                break;
+            case 15:
+                arrow_position_flag = 2;
+                menu_position_flag = 14;
+                submenu_14();
+                break;
+            case 16:
+                arrow_position_flag = 2;
+                menu_position_flag = 15;
+                submenu_15();
+                break;
+            case 17:
+                arrow_position_flag = 2;
+                menu_position_flag = 16;
+                submenu_16();
+                break;
+            case 18:
+                arrow_position_flag = 2;
+                menu_position_flag = 17;
+                submenu_17();
+                break;
+        }
+        menu_page_flag += 1;
+    }
+}
+
+
+
+结论
+自参与全国大学生智能汽车竞赛以来，团队依次完成资料调研、结构设计、车模装配与程序开发等工作，逐步完成系统迭代优化，最终达成设计目标，确定了本文智能卡丁车的整体设计方案。
+本文完整介绍了本次备赛的整体设计方案，主要包含机械结构、硬件电路与控制算法三部分核心内容。机械方面，团队优化车辆转向机构，有效提升了车辆转向精度与稳定性。电路方面采用模块化设计，对主控最小系统、电机驱动、电源等关键模块进行反复调试，确定了稳定可靠的硬件方案。软件基于C语言开发，经过多次研讨迭代，形成了稳定通用的控制程序；算法结合赛场工况实现自适应调速，通过直道加速、弯道减速的控制逻辑，兼顾车辆行驶稳定性与竞速效率。
+备赛期间，团队攻克多项技术难题，通过多次实战测试完成系统优化升级，积累了丰富的工程实践经验。在此，衷心感谢学校与学院提供的场地、经费等资源支持，感谢各位领导、指导老师与学长的悉心指导，同时感谢竞赛组委会搭建的科创实践平台，有效锻炼了团队的创新能力与协作能力。
+
+
+
+
+
+
+
+
+参考文献
+[1] 胡寿松。自动控制原理 (第七版)[M]. 北京：科学出版社，2020.
+[2] 秦永元。惯性导航 (第二版)[M]. 北京：科学出版社，2014.
+[3] 第 21 届全国大学生智能汽车竞赛组委会。第二十一届全国大学生智能汽车竞赛竞赛规则手册 [Z].2026.
+[4] 逐飞科技.IMU963RA 九轴惯性传感器应用手册 [Z].2025.
+[5]专刊预告|先进惯性导航方法研究 [J]. 中国惯性技术学报, 2026, 34
+[6]薛雁,黄乾,孙文浩. 北斗卫星导航系统在大型喷灌机行走中的应用 [J]. 山东水利, 2026
+
+
+===== TABLE 1 =====
+第二十一届全国大学生 智能汽车竞赛  技 术 报 告  附录：  学    校：沈阳理工大学 队伍名称：远征 参赛队员：高松岩 王志阳 袁林栗 梁紫宁 李博宇 带队教师：曾鹏飞 蔡玲

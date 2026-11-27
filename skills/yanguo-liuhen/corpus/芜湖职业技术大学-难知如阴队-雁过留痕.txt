@@ -1,0 +1,771 @@
+第二十一届全国大学生
+智能汽车竞赛
+
+技 术 报 告
+
+
+学    校：芜湖职业技术大学
+队伍名称：难知如阴队
+参赛队员：孙  皓  
+        黄健美  
+         胡佳欣
+带队老师：郎璐红 杨会伟
+
+
+
+
+摘要
+本文针对第二十一届全国大学生智能汽车竞赛，设计并实现了一套以灰度视觉为核心的自动循迹智能车系统。系统选用 STC32G144K246 作为主控芯片，工作主频 96 MHz，搭配逐飞130灰度无畸变摄像头完成赛道图像采集。软件层面通过 MT9V03X 驱动获取原始图像后，将其压缩为 80 x 60 的灰度阵列供后续算法处理。整车控制以摄像头帧完成中断为时序基准，在一帧之内依次完成图像预处理、赛道边界提取、中线生成、元素类型判别、偏差计算以及转向与速度输出。
+关键词：STC32G144K246，逐飞130灰度摄像头，边线提取，双PD控制，差速驱动
+
+
+
+第一章  系统整体设计
+1.1 系统概述
+本系统的核心目标是在竞赛赛道上实现稳定、高速的自主循迹行驶。整车以灰度视觉闭环控制为主要工作模式：摄像头每完成一帧图像采集后，主程序从 80 x 60 的灰度阵列中搜索赛道左右边界，并据此计算出中线位置和横向偏差。与此同时，系统会判断当前所处赛道元素的类型——包括直道、左右弯道、左右环岛、斑马线、十字路口、小 S 弯以及障碍物等。在获取偏差和元素状态后，系统分别更新舵机转向输出、左右电机目标转速以及无刷电调的启停状态。若检测到出界或满足停车条件，则触发安全停车流程。
+该系统总共包括 7 个子系统：电源模块、主控制器模块、赛道采集模块、伺服器（舵机）控制模块、电机控制模块、调试模块、姿态传感器模块。从功能层面看，可划分为感知、决策、执行和人机交互四个层次，各层之间通过明确的接口耦合，便于独立调试和模块替换。
+
+图 1-1  系统硬件与信息流总体框图
+表 1-1  系统软件模块与主要接口
+系统上电后按照固定顺序完成各外设初始化：首先配置系统时钟和定时器，随后依次初始化显示屏、按键模块、舵机、电机驱动、IMU、编码器，最后启动摄像头。初始化完成后进入调试界面，操作者可通过按键修改停车模式、目标车速、相机帧率等参数。参数确认后系统初始化双路无刷电调，此后主循环进入帧驱动模式：每当摄像头帧完成标志置位时，触发一轮完整的感知-决策-控制流程。
+
+图 1-2  主程序运行与单帧控制流
+
+
+第二章  机械系统设计与实现
+2.1 前轮定位
+前轮定位参数对车模的高速行驶性能有显著影响。尽管竞赛车模尺寸较小，主销后倾、主销内倾和前轮前束三项参数的合理配置仍不可忽视。良好的前轮定位应当保证车模在直道行驶时阻力较小，且舵机转动时不会产生过大的垂直于地面的附加力，否则车模的极限速度将受到严重制约。
+
+图 2.1车模前视图
+
+图 2.2 车模侧视图
+
+图 2.3车模俯视图
+2.1.1 主销后倾
+主销是指前轮围绕其旋转的轴线，前轴载荷通过主销传递至转向轮。当主销向后倾斜时，主销轴线与地面垂线在车辆纵向平面内形成的夹角即为主销后倾角。由于主销后倾使得前轮重心偏离轮胎接地点，行驶中产生离心力效应，这一效应有助于维持直线行驶的稳定性并辅助车轮自动回正。
+
+图2.4 主销后倾
+2.1.2 主销内倾
+主销在车辆横向平面内向内倾斜的角度称为主销内倾角。其作用机理在于：当转向轮受外力发生偏转时，主销内倾会使车头前部被抬升一定高度，外力消失后重力驱动车轮回到中立位置，从而实现自动回正。但内倾角过大会导致转弯时轮胎与赛道之间产生较大滑动，增加摩擦阻力和轮胎磨损。经过多轮试验，本队将主销内倾角设定为约 5 度。
+
+
+图2.5主销内倾
+2.1.3 前轮前束
+前轮外倾角是指车轮平面与车辆横向平面交线相对于地面垂线的夹角。前轮外倾可部分抵消车身重力导致的车轮内倾趋势，减轻机械磨损。前束则是指两前轮前端间距小于后端间距的内八字状态。由于外倾角使轮胎滚动类似圆锥，有向外滚开的趋势，而拉杆约束阻止了这种外滚，导致轮胎出现边滚边向内划的现象。采用内八字前束可以使车模在直道行驶中更好地贴合赛道中线。
+图2.6前轮前束
+2.2 车模重心
+重心位置直接影响加减速性能、转向特性和稳定性。本队采用在四个轮胎下方放置电子秤的方法测量各轮载荷，进而推算重心位置。重心调整包括高度和前后位置两个维度：重心越低，高速过弯时贴地性越好，侧翻风险越低，因此在底盘高度、舵机安装和电路板布局上应尽量降低重心。前后方向上，重心前移增加转向负荷但提升制动稳定性，重心后移则提高转向灵敏度但削弱制动性能，综合权衡后本队将重心设置在靠近后轴的位置。
+2.3 车模底盘高度
+底盘高度需要在重心和通过性之间取得平衡。底盘过高会抬升重心不利于高速过弯，过低则可能在坡道处发生托底。此外，在舵机支架和前轮固定架下方增加垫片会改变底板倾角，影响涵道效果。经过实际测试，本队选择保持原车模的底盘状态不做额外调整。
+2.4 伺服器（舵机）安装
+舵机安装方式分为立式和卧式两种。经过大量对比测试，本队选用立式安装方案，主要基于以下三方面考虑：其一，立式舵机的响应速度明显优于卧式，对弯道转向性能提升显著；其二，立式舵机的伺服中值更易标定，便于故障后的快速恢复；其三，当舵机臂长度与转角臂长度相等时，卧式安装会导致内外侧轮转角不符合阿克曼几何关系，而立式安装能更好地逼近理想阿克曼转角。
+2.5 速度传感器（编码器）安装
+编码器是获取车速反馈的关键器件。本队采用有向增量式编码器，通过齿轮与差速器大齿轮咬合的方式安装。相比要求编码器轴与后轴严格同轴的光电编码方案，齿轮咬合方式安装更便捷，同时能较准确地反映电机实际转速。两路编码器分别接入 PWMA 和 PWMC 编码器接口，为速度闭环提供反馈信号。
+2.6 摄像头固定
+摄像头安装位置和姿态直接决定赛道信息采集的准确性。本队在保证结构强度和简洁性的前提下，严格控制摄像头的安装角度和高度。为提升空间利用率并便于现场维护，将负压涵道与摄像头支架一体化设计，使摄像头具备调节、拆卸和维修的便捷性，满足赛场快速保障需求。
+2.7 电池的固定
+电池位置对整车重心分布有重要影响，同时需兼顾拆卸便捷性。本队设计了专用电池仓进行固定，确保车模在大向心力工况下电池仍能保持稳定，且便于更换充电。
+2.8 负压的实现
+为提升原 C 车模的高速性能，本队在车底盘中央偏前位置安装了一套负压装置。该装置采用逐飞RS-2205 无刷电机驱动 3.5 寸六叶透明桨叶，桨叶安装于黑色壳体内。壳体的设计具有双重作用：一方面通过负压引导气流在车顶加速下压，使车底形成局部低压区，从而增加下压力、提高轮胎抓地力；另一方面对高速旋转的桨叶形成物理隔离，防止异物飞入并提升运行安全性。无刷电机上方安装有独立电调板，通过排线与主控驱动板连接，启动时执行缓升初始化以避免瞬时大电流冲击。
+图2.8 负压实物图
+
+第三章  硬件系统设计及实现
+本章介绍智能车硬件系统的整体架构和各功能模块的设计方案。硬件设计以 STC32G144K246 主控为核心，围绕电源管理、电机驱动、调试交互三大功能板块展开，注重稳定性和可维护性。
+3.1 硬件电路整体架构
+整车硬件由主控板、驱动板和交互板三部分组成。主控芯片 STC32G144K246 通过排针排母直插于驱动板上，交互板通过排线与驱动板连接。这种分离式架构使各板可独立调试和更换，降低了维修难度。主控以 SYSTEM_CLOCK_96M 模式运行，主频 96 MHz，为图像处理和控制算法提供充足的算力裕量。
+
+图 3.1  硬件电路整体架构框图
+3.2 主控拓展电路
+主控芯片选用 STC32G144K246，Keil 。为主控设计了包含滤波电容、电池电压检测、无线串口转接和 Type-C 接口的外围电路，便于程序烧录和在线调试。参数持久化方面，程序利用 IAP 页 0 存储运行参数，上电时从 flash_buff 加载；可保存项包括相机帧率、常规与直道速度、舵机中值、停车目标及若干延时参数。现场调参后须通过菜单写入 IAP，否则断电后参数丢失。
+
+图 3.2  主板原理图和实物图
+3.3 电源电路设计
+系统电源以 12.4V 锂电池为源头，通过多路 DC-DC 和 LDO 降压为各模块供电。各路电源并联接入电池正极，避免相互干扰。具体方案如下：舵机供电采用 TPS5450 将 12.4V 降压至 7.4V，该芯片具备快速瞬态响应和低噪声特性，可满足舵机快速打角时的瞬时大电流需求；摄像头和部分外设供电先由 TPS5430 将 12.4V 降至 5V，再经 RT9080 线性稳压至 3.3V；主控及 3.3V 外设由 RT9080 输出供电；电机驱动直接使用电池电压。
+图3.3 电源电路原理图
+
+3.4 电机驱动模块设计
+电机驱动采用两片德州仪器 DRV8701E 配合分立 MOS 管构建两路 H 桥驱动电路。双路有刷电机通道均以"方向 GPIO + PWM"方式控制：第一路方向引脚 P74、PWM 引脚 P75，第二路方向引脚 P76、PWM 引脚 P77，PWM 初始化频率 17 kHz。为隔离电机驱动产生的反冲信号、保护主控 IO，在 PWM 信号路径上串联了 SN74HC125PWR 信号缓冲器。
+编码器方面，两路有向增量编码器分别接入 PWMA 和 PWMC 接口：第一路脉冲 P60、方向 P62，第二路脉冲 P40、方向 P42。编码器反馈值送入 motor1_pid 与 motor2_pid 闭环。转向舵机占用 PWME_CH1P_PA0 通道，PWM 频率 200 Hz，默认中值 3230，软件限幅范围 2910 至 3580。系统另初始化两路无刷电调 PWM 通道，在停车或出界时关闭输出。
+表 3-1  驱动、转向与速度反馈引脚分配
+3.5 调试交互电路设计
+交互板独立设置于车尾电机上方，集成显示、按键、拨码和状态指示功能。显示选用 IPS200 模块，实际分辨率为 240 x 320 竖屏，功耗低且支持彩色显示。调试时灰度图以 80 x 60 尺寸显示在坐标 (160, 260) 附近。
+按键输入占用 PB2、PB3、PB4 和 P32 四路 GPIO，PB0、PB1 两路拨码开关用于停车模式选择。蜂鸣器由 P65 推挽输出驱动，TIM0 定时器以 100 ms 周期运行提示音和计时停车逻辑。五路激光输出分别占用 P67、P01、P00、P02、P03，高电平点亮，用于激光打靶功能中的靶标瞄准，在斑马线处理和停车状态下自动关闭。此外，系统增加了一颗 LED 配合电池电压检测电路显示剩余电量，防止锂电池过放。
+
+图 3.8  按键电路原理图
+
+
+图 3.9  IPS200 接口原理图
+
+3.6 电路板设计
+3.6.1 驱动板电路设计
+驱动板承载电源管理、主控连接器、按键和串口等核心电路。设计中需统筹考虑电流路径、模拟地与数字地的隔离——本队以磁珠连接两种地网络以抑制相互干扰——以及整体布局的美观与布线可行性。舵机、摄像头和串口等对外接口的位置参照整车机械结构布置，便于接线和维护。电路板外形和尺寸根据车模底盘定制，固定孔位呈长方形排布。
+
+
+图 3.10  驱动板与PCB
+3.6.2 交互板电路设计
+交互板后置于电机上方，主要考量人机交互便利性、车身重心后移和布线空间。交互板与驱动板分离的设计显著降低了故障排查和更换难度，同时将车身重心适当后移以提升转向灵活性。
+3.6.3 电调电路设计
+竞赛规则允许使用赞助商芯片制作无刷电调。本队选用 STC32G128K 芯片作为电调主控，驱动负压风扇用无刷电机。系统在启动时对电调执行缓升初始化，在出界或停车标志置位时立即关闭无刷输出。
+
+
+
+图 3.12  无刷电调原理图与 PCB
+3.7 硬件部分的总结
+硬件设计以稳定性和实用性为首要目标。在一年来的迭代中，本队从使用经典电源方案和分模块标准电路起步，逐步融入自主设计思路。实践中发现，电路板固定松动是导致复位的主要原因之一——大电容等器件的机械松动会引起接触不良。因此硬件不仅需要电性能稳定，机械安装同样关键。最终方案经过原理图绘制、PCB 制板和上车验证的多次循环后定型。
+在 EMC 设计方面，PCB 布局时将大电流功率回路与敏感信号线路在物理空间上分离布置，关键信号走线尽量短直并远离功率器件。DRV8701E 驱动芯片的 PWM 输入端通过 SN74HC125PWR 缓冲器隔离，有效阻断了电机换相时产生的电压尖峰向主控 IO 端的反向传导。这些设计思路借鉴了赛事中其他参赛队伍在电调与分电板中采用的"信号-功率"垂直隔离叠板架构理念，在有限的 PCB 面积内实现了较好的电磁兼容性。
+
+
+第四章  软件系统设计及实现
+软件系统的目标是在竞赛规则约束下控制车模以最高效率完成赛道循迹。整体设计遵循"稳定优先、兼顾速度"的原则，功能上划分为图像采集、灰度处理、边线提取与中线拟合、赛道元素识别、激光打靶控制、转向与速度闭环控制以及安全停车处理等模块。
+4.1 软件控制程序的整体思路
+视觉输入采用逐飞130灰度无畸变摄像头，工程通过 zf_device_mt9v03x 驱动与其通信，main.c 中循环调用 mt9v03x_init 直至初始化成功。算法层不直接使用传感器原始阵列尺寸，而是将图像统一压缩为 80 x 60 灰度阵列（Image_X=80，Image_Y=60），以降低后续处理的数据量。默认帧率设为 100 fps，用户可通过按键菜单在 50 至 200 fps 范围内调整 MT9V03X_FPS 参数。
+单帧处理流水线如下：Process_Image 将原始图像转换为供循迹使用的 Find_Line_Image；Get_Information 从图像下部起始点出发，通过 Dir_Labyrinth_5 策略完成左右边线的爬取；Get_Border 将爬线结果整理为 L_Border 与 R_Border 数组；Get_Middle_Line 由左右边界计算中线 C_Line；最后 Get_Straight_Deviation_Value 得到偏差值 Deviation_Value。显示函数 ips200_show_gray_image 和 Draw_Border_Points_1 仅在调试流程中调用，绘制灰度图、边线和中线叠加效果。
+
+图 4.1  视觉控制数据链
+表 4-1  单帧软件处理链路
+4.2 灰度图像处理思路
+灰度图像处理的第一步是将每个像素与给定阈值比较，判定为黑或白，生成灰度数组供后续处理。单一阈值法的优点是计算量小、实现简单，但受限于摄像头安装高度较低，不同区域光照不均时固定阈值可能失效。
+
+
+图 4.2  灰度图处理与边线提取结果
+4.3 基本循迹扫线思路
+起点搜索以图像底部行为基准行，通过相邻像素灰度差比和阈值检测左右起始点。边线提取采用左右独立的爬线数组，分别记录坐标和生长方向，能够处理边线点数超过图像高度的回弯情形。
+扫线策略采用中心扫线与元素自适应起始点扫线相结合的方式。中心扫线从上一行中线位置出发，向左右搜索黑线边界，对环境光线依赖较小，但计算量偏大且在环岛等特殊元素处容易产生偏差。元素自适应起始点扫线则根据当前元素类型动态确定下一行的搜索方向和起始位置——例如十字路口可由前拐点处直线斜率推算远处跳变点的搜索方向，环岛可根据阶段特征点确定搜索路径。这种策略减少了无效遍历，体现了"可行性剪枝"和"记忆化搜索"的思想。
+
+图 4.3  左右边线提取效果
+4.4 赛道中线的拟合
+在正确提取左右边线的基础上，通过计算左右边界点的中值生成赛道中线。中线拟合的质量直接决定后续偏差计算的准确性，因此系统在边线缺失或异常时会根据上一帧中线趋势进行预测修补，保证控制信号的连续性。
+
+图 4.4  左右边线与赛道中线提取效果及控制框图
+4.5 特殊元素识别及处理
+元素判定模块综合左右边线数量、生长方向、相遇点位置和边界形态等信息，将当前帧归类为直道、左右弯道、左右环岛、斑马线、十字、小 S 弯或障碍物，主循环据此进入对应的处理分支。其中环岛元素识别后系统切换至靶环速度（RING_SPEED），以确保入环和环内行驶的稳定性和速度匹配。此外，系统还集成了激光打靶功能：当赛道中出现靶标时，系统通过图像识别靶标位置并控制五路激光进行瞄准打靶，打靶完成后恢复正常循迹。
+环岛处理将整个过程划分为三个状态：状态一以一侧直线另一侧出现拐点为判据，初步判定进入环岛并拉出参考线；状态二确认环岛入口；状态三为环内行驶阶段，执行正常扫线不做特殊处理。十字处理设置帧计数器和偏差阈值作为退出条件。障碍处理采用单边巡线或预设中线修补策略维持可用轨迹。斑马线计数与停车模式共同决定是否置位停车标志。该设计将单帧视觉识别与跨帧状态机结合，有效降低了特殊元素中瞬时边线缺失对控制的影响。
+
+
+图 4.5  环岛三状态识别与处理
+4.6 控制思路
+4.6.1 舵机控制策略
+转向控制采用双 PD 结构。比例通道包含线性偏差项和与偏差绝对值相关的二次项：小偏差时纠偏力度柔和，大偏差时提供更强的纠偏力度。微分通道包含偏差变化率和 IMU660RA 陀螺仪 Z 轴角速度两项，前者抑制直线摆振，后者限制弯道中的快速摆舵。控制结果经 servoMax/servoMin 限幅后叠加到舵机中值 3230，最终写入 PWME_CH1P_PA0 通道（200 Hz）。
+由于不同赛道元素对转向特性的要求不同，系统为各元素类型配置了独立的 PD 参数组。基本规律为：直道 PD 增益较小以避免抖动；弯道 PD 增益较大以保证转向连续；S 型弯道 P 较小 D 略大以兼顾中线跟踪和平滑过渡。
+4.6.2 速度控制策略
+速度环使用两个独立 PI 实例分别控制左右电机。根据当前目标速度和舵机输出，speed_diff 函数计算差速量并分别写入两路电机的目标值。直道满足偏差条件时选用 straight_target_speed，弯道和环岛采用 normal_target_speed 或 RING_SPEED，打靶模式下切换至 TARGET_SPEED 低速以确保激光瞄准精度，第二圈及特定停车模式使用独立的圈速参数。
+入弯减速采用"减速场数"策略：根据当前车速给出减速场数指标，场数高时目标速度低，场数低时目标速度高，并随场数递减使目标速度平滑过渡至弯道速度，避免"猛加猛减"造成的失稳。电机控制采用增量式 PI，I 项加速响应，P 项减小稳态误差。不同元素的 PI 参数遵循"直道 PI 大、弯道 PI 小"的规律。
+4.6.3 安全停车与异常处理
+当出界标志 Out_Bound_Flag 置 1 或停车标志 stop_flag 达到 2 时，speed_control 将两路电机目标速度强制归零、关闭无刷电调输出，同时保留陀螺仪参与的舵机更新以维持姿态。蜂鸣器 PIT 服务函数以 100 ms 周期运行，在停车后维护提示音节拍、延时停车计时以及激光打靶关闭逻辑。该机制确保停车状态下所有执行输出被完整关闭，避免因部分输出残留导致平台异常运动。
+第五章  智能车调试说明
+5.1 参数整定与核验
+调试初期应首先验证 IPS200 在 240 x 320 竖屏画布上正确显示 80 x 60 灰度图及红蓝黄边线叠加。相机帧率建议从 100 fps 起步，根据光照条件、赛道速度和主循环余量在 50 至 200 fps 范围内调整，每次修改后须写入 IAP 再断电复测以验证持久化。
+舵机整定遵循从机械到控制、从低维到高维的顺序：第一步确认 PA0 舵机输出、机械中位和代码中的 servo_pwm_mid（默认 3230，限幅 2910-3580）一致；第二步在低速直道上调整线性比例项，使车辆具备基本纠偏能力；第三步逐步引入偏差二次项以增强大偏差场景下的转向力度；第四步加入偏差微分项抑制直线摆振；最后引入陀螺仪 Z 轴阻尼项限制弯道中的快速摆舵。每步调整后须检查是否触及舵机限幅边界。
+两路电机的方向极性与编码器反馈符号必须成对核验。代码中正负 PWM 占空比通过方向 GPIO 电平切换电机旋向，编码器通过 P60/P62 和 P40/P42 读取速度和方向。若反馈符号错误，PI 会将减速误判为加速导致输出饱和。推荐在抬轮条件下分别记录左右轮正转和反转时 encoder_data_dir_1/2 的符号，确认后再设置速度环极性参数。
+5.2 现场调试
+表 5-1  现场接线与功能核验清单
+调试原则：依次完成相机方向、边线提取、舵机中位和编码器极性四项基础检查后方可提升目标速度。未初始化的 Wi-Fi 或 TOF 模块不应纳入调试依赖链。
+在参数整定方法论上，本队借鉴了赛事中飞跃雷区组别队伍采用的分层调试策略，将调试过程分为三个阶段。第一阶段为基础验证阶段：确认各传感器零偏和方向极性，在低速条件下完成直道纠偏和基本停车功能验证；第二阶段为元素适配阶段：逐步提升车速，针对弯道、环岛、十字等特殊元素分别整定独立的 PD 参数组和速度策略，记录每次修改前后的赛道表现和单帧处理耗时；第三阶段为极限优化阶段：在保证稳定性的前提下逐步提高目标速度，通过入弯减速场数参数的微调寻找速度与稳定性的最佳平衡点。
+在问题闭环方面，本队建立了"现象-原因-措施-验证"的四步排查流程。每发现一个异常行为，首先在 IPS200 上截取当时的灰度图和边线叠加图，记录偏差值和元素状态；然后分析可能的软件原因（如扫线起始点偏移、元素误判、PD 增益不匹配）或硬件原因（如编码器松动、舵机虚位、电池电压不足）；针对性地修改参数或代码后，在同一赛道位置反复验证直至问题消除。这一方法论有效缩短了调试周期，避免了盲目修改参数导致的回归问题。
+第六章  车模技术参数说明
+6.1 车模主要技术参数
+表 6-1  车模部分主要技术参数
+6.2 电路中芯片的种类及数量
+表 6-2  芯片种类及数量
+
+
+第七章  总结
+本报告系统梳理了智能车工程的硬件平台与软件运行架构。主控选用 STC32G144K246，96 MHz 主频运行；视觉感知采用逐飞130灰度无畸变摄像头与 MT9V03X 驱动，算法图像统一压缩为 80 x 60，默认帧率 100 fps；显示模块为 IPS200 240 x 320 竖屏。通过图像边线提取、元素状态机、偏差双 PD 融合 IMU 陀螺仪阻尼以及编码器速度闭环，系统构建了从视觉感知到执行输出的完整控制链路。
+硬件方面，驱动板与交互板分离的设计兼顾了可维护性和重心优化；电源系统分为舵机 7.4V、MCU 3.3V、电机电池直供和外设 5V 四路独立供电；电机驱动采用 DRV8701E H 桥配合 SN74HC125PWR 信号缓冲。机械方面，通过前轮定位参数调整、重心后移、舵机卧式安装和负压设计，有效提升了车模的操控上限和高速稳定性。
+软件方面，采用中心扫线与元素自适应起始点扫线相结合的策略提取赛道边界和中线，能够有效识别直道、弯道、环岛、十字、斑马线等元素。转向控制以偏差双 PD 叠加陀螺仪角速度阻尼，速度控制以差速目标分配和入弯减速场数策略实现平滑变速。
+报告同时明确了实际已启用的激光打靶、蜂鸣器、按键、拨码、IAP 参数持久化、双路有刷电机和无刷电调等外设，并将注释状态的 Wi-Fi、上位机图传和 DL1B/TOF 模块从现役配置中排除。后续更换摄像头、显示屏或主控时，可依照第五章核验清单和附录硬件速查表逐项复核，确保硬件接线、驱动配置与控制参数的一致性。
+
+
+
+ 参考文献
+
+卓晴，黄开胜，邵贝贝 学做智能车 北京-北京航空航天大学出版社，2007
+
+王威 HCS12 微控制器原理及应用 北京-北京航空航天大学出版社，2007
+
+李宁，刘启新 电机自动控制系统 北京-机械工业出版社，2003
+
+潘松，黄继业 现代数字电路基础教程 北京-科学出版社 ，2008
+
+魏彪，盛新志 激光原理及应用 重庆-重庆大学出版社， 2007
+
+赵先奎， 汽车前轮定位 黑龙江 黑龙江出入境检验检疫局，2008
+
+
+附录
+附录A  实际启用硬件速查表
+表 A-1  实际启用硬件速查表
+附录B  车模技术检查表
+表 B-1  车模技术检查表
+
+附录三C 代码参考
+
+边线提取
+void Dir_Labyrinth_5(uint16 Break_Flag, uint8(*image)[Image_X], uint8(*l_line)[2], uint8(*r_line)[2], int8* l_dir, int8* r_dir, uint16* l_stastic, uint16* r_stastic, uint8* x_meet, uint8* y_meet,
+    uint8 l_start_x, uint8 l_start_y, uint8 r_start_x, uint8 r_start_y, uint8 clip_value)
+{
+    uint8 j = 0;
+
+
+    //左边变量
+    uint8 L_Center_Point[2] = { 0 };     //存放每次找到的XY坐标
+    uint16 L_Data_Statics = 0;          //统计左边找到的边线点的个数
+
+    uint8  L_Front_Value = 0;           //左侧 面向的前方点的灰度值
+    uint8  L_Front_L_Value = 0;         //左侧 面向的左前方点的灰度值
+
+    uint8  L_Dir = 0;                   //此参数用于转向
+    uint8  L_Turn_Num = 0;              //记录转向次数，若中心点前后左右都是黑色像素，就会在一个点转向四次，记录到四次时退出循环防止卡死程序
+    uint16 L_Pixel_Value_Sum = 0;       //中心点与周围24个点的像素值和
+    uint16 L_Thres = 0;                 //局部阈值,即L_Pixel_Value_Sum / 25
+
+    //右边变量
+    uint8  R_Center_Point[2] = { 0 };     //存放每次找到的XY坐标
+    uint16 R_Data_Statics = 0;          //统计右边找到的边线点的个数
+
+    uint8  R_Front_Value = 0;           //右侧 面向的前方点的灰度值
+    uint8  R_Front_R_Value = 0;         //右侧 面向的左前方点的灰度值
+
+    uint8  R_Dir = 0;                   //此参数用于转向
+    uint8  R_Turn_Num = 0;              //记录转向次数，若中心点前后左右都是黑色像素，就会在一个点转向四次，记录到四次时退出循环防止卡死程序
+    uint16 R_Pixel_Value_Sum = 0;       //中心点与周围24个点的像素值和
+    uint16 R_Thres = 0;                 //局部阈值
+
+    //第一次更新坐标点  将找到的起点值传进来
+    L_Center_Point[0] = l_start_x + 1; //x
+    L_Center_Point[1] = l_start_y; //y
+    R_Center_Point[0] = r_start_x - 1;//x
+    R_Center_Point[1] = r_start_y;//y
+
+    L_Stop_Flag = 0;  // 0:继续爬线    1：进入死区，停止爬线
+    R_Stop_Flag = 0;
+
+    //开启方向迷宫循环
+    while (Break_Flag--)
+    {
+        //左边
+       //判定出死区后，挂出停止标志位，单侧爬线停止。
+        if (L_Stop_Flag == 0)
+        {
+            l_line[L_Data_Statics][0] = L_Center_Point[0];  //找到的中心点X坐标计入左边线数组
+            l_line[L_Data_Statics][1] = L_Center_Point[1];  //找到的中心点Y坐标计入左边线数组
+
+            if (L_Data_Statics != 0)
+            {
+                switch (l_dir[L_Data_Statics - 1])  //下面这一坨可以根据上一个点的生长方向大幅优化爬线时间
+                {
+                    //从第二个点开始，第一个点的阈值要25个点全部加一遍
+                    //当横向或纵向生长时，将原先的25次加法运算简化为十次计算
+                    //当斜向生长时，将原先的25次加法计算简化为十八次运算
+                    //可以画出图来，跟着代码走几遍，就可以很快速的理解
+                case 1:
+                {
+                    L_Pixel_Value_Sum = L_Pixel_Value_Sum - image[L_Center_Point[1] + 3][L_Center_Point[0] + 2] - image[L_Center_Point[1] + 3][L_Center_Point[0] + 1]
+                        - image[L_Center_Point[1] + 3][L_Center_Point[0] + 0] - image[L_Center_Point[1] + 3][L_Center_Point[0] - 1]
+                        - image[L_Center_Point[1] + 3][L_Center_Point[0] - 2]
+                        + image[L_Center_Point[1] - 2][L_Center_Point[0] + 2] + image[L_Center_Point[1] - 2][L_Center_Point[0] + 1]
+                        + image[L_Center_Point[1] - 2][L_Center_Point[0] + 0] + image[L_Center_Point[1] - 2][L_Center_Point[0] - 1]
+                        + image[L_Center_Point[1] - 2][L_Center_Point[0] - 2];
+                    break;
+                }
+                case -2:
+                {
+                    L_Pixel_Value_Sum = L_Pixel_Value_Sum - image[L_Center_Point[1] - 1][L_Center_Point[0] + 3] - image[L_Center_Point[1] - 0][L_Center_Point[0] + 3]
+                        - image[L_Center_Point[1] + 1][L_Center_Point[0] + 3] - image[L_Center_Point[1] + 2][L_Center_Point[0] + 3]
+                        - image[L_Center_Point[1] + 3][L_Center_Point[0] + 3] - image[L_Center_Point[1] + 3][L_Center_Point[0] + 2]
+                        - image[L_Center_Point[1] + 3][L_Center_Point[0] + 1] - image[L_Center_Point[1] + 3][L_Center_Point[0] - 0]
+                        - image[L_Center_Point[1] + 3][L_Center_Point[0] - 1]
+                        + image[L_Center_Point[1] + 2][L_Center_Point[0] - 2] + image[L_Center_Point[1] + 1][L_Center_Point[0] - 2]
+                        + image[L_Center_Point[1] + 0][L_Center_Point[0] - 2] + image[L_Center_Point[1] - 1][L_Center_Point[0] - 2]
+                        + image[L_Center_Point[1] - 2][L_Center_Point[0] - 2] + image[L_Center_Point[1] - 2][L_Center_Point[0] - 1]
+                        + image[L_Center_Point[1] - 2][L_Center_Point[0] - 0] + image[L_Center_Point[1] - 2][L_Center_Point[0] + 1]
+                        + image[L_Center_Point[1] - 2][L_Center_Point[0] + 2];
+                    break;
+                }
+                case -3:
+                {
+                    L_Pixel_Value_Sum = L_Pixel_Value_Sum - image[L_Center_Point[1] - 2][L_Center_Point[0] + 3] - image[L_Center_Point[1] - 1][L_Center_Point[0] + 3]
+                        - image[L_Center_Point[1] + 0][L_Center_Point[0] + 3] - image[L_Center_Point[1] + 1][L_Center_Point[0] + 3]
+                        - image[L_Center_Point[1] + 2][L_Center_Point[0] + 3]
+                        + image[L_Center_Point[1] - 2][L_Center_Point[0] - 2] + image[L_Center_Point[1] - 1][L_Center_Point[0] - 2]
+                        + image[L_Center_Point[1] - 0][L_Center_Point[0] - 2] + image[L_Center_Point[1] + 1][L_Center_Point[0] - 2]
+                        + image[L_Center_Point[1] + 2][L_Center_Point[0] - 2];
+                    break;
+                }
+                case -4:
+                {
+                    L_Pixel_Value_Sum = L_Pixel_Value_Sum - image[L_Center_Point[1] - 3][L_Center_Point[0] - 1] - image[L_Center_Point[1] - 3][L_Center_Point[0] + 0]
+                        - image[L_Center_Point[1] - 3][L_Center_Point[0] + 1] - image[L_Center_Point[1] - 3][L_Center_Point[0] + 2]
+                        - image[L_Center_Point[1] - 3][L_Center_Point[0] + 3] - image[L_Center_Point[1] - 2][L_Center_Point[0] + 3]
+                        - image[L_Center_Point[1] - 1][L_Center_Point[0] + 3] - image[L_Center_Point[1] + 0][L_Center_Point[0] + 3]
+                        - image[L_Center_Point[1] + 1][L_Center_Point[0] + 3]
+                        + image[L_Center_Point[1] - 2][L_Center_Point[0] - 2] + image[L_Center_Point[1] - 1][L_Center_Point[0] - 2]
+                        + image[L_Center_Point[1] + 0][L_Center_Point[0] - 2] + image[L_Center_Point[1] + 1][L_Center_Point[0] - 2]
+                        + image[L_Center_Point[1] + 2][L_Center_Point[0] - 2] + image[L_Center_Point[1] + 2][L_Center_Point[0] - 1]
+                        + image[L_Center_Point[1] + 2][L_Center_Point[0] - 0] + image[L_Center_Point[1] + 2][L_Center_Point[0] + 1]
+                        + image[L_Center_Point[1] + 2][L_Center_Point[0] + 2];
+                    break;
+                }
+                case -1:
+                {
+                    L_Pixel_Value_Sum = L_Pixel_Value_Sum - image[L_Center_Point[1] - 3][L_Center_Point[0] - 2] - image[L_Center_Point[1] - 3][L_Center_Point[0] - 1]
+                        - image[L_Center_Point[1] - 3][L_Center_Point[0] + 0] - image[L_Center_Point[1] - 3][L_Center_Point[0] + 1]
+                        - image[L_Center_Point[1] - 3][L_Center_Point[0] + 2]
+                        + image[L_Center_Point[1] + 2][L_Center_Point[0] - 2] + image[L_Center_Point[1] + 2][L_Center_Point[0] - 1]
+                        + image[L_Center_Point[1] + 2][L_Center_Point[0] + 0] + image[L_Center_Point[1] + 2][L_Center_Point[0] + 1]
+                        + image[L_Center_Point[1] + 2][L_Center_Point[0] + 2];
+                    break;
+                }
+                case 2:
+                {
+                    L_Pixel_Value_Sum = L_Pixel_Value_Sum - image[L_Center_Point[1] + 1][L_Center_Point[0] - 3] - image[L_Center_Point[1] + 0][L_Center_Point[0] - 3]
+                        - image[L_Center_Point[1] - 1][L_Center_Point[0] - 3] - image[L_Center_Point[1] - 2][L_Center_Point[0] - 3]
+                        - image[L_Center_Point[1] - 3][L_Center_Point[0] - 3] - image[L_Center_Point[1] - 3][L_Center_Point[0] - 2]
+                        - image[L_Center_Point[1] - 3][L_Center_Point[0] - 1] - image[L_Center_Point[1] - 3][L_Center_Point[0] + 0]
+                        - image[L_Center_Point[1] - 3][L_Center_Point[0] + 1]
+                        + image[L_Center_Point[1] - 2][L_Center_Point[0] + 2] + image[L_Center_Point[1] - 1][L_Center_Point[0] + 2]
+                        + image[L_Center_Point[1] - 0][L_Center_Point[0] + 2] + image[L_Center_Point[1] + 1][L_Center_Point[0] + 2]
+                        + image[L_Center_Point[1] + 2][L_Center_Point[0] + 2] + image[L_Center_Point[1] + 2][L_Center_Point[0] + 1]
+                        + image[L_Center_Point[1] + 2][L_Center_Point[0] + 0] + image[L_Center_Point[1] + 2][L_Center_Point[0] - 1]
+                        + image[L_Center_Point[1] + 2][L_Center_Point[0] - 2];
+                    break;
+                }
+                case 3:
+                {
+                    L_Pixel_Value_Sum = L_Pixel_Value_Sum - image[L_Center_Point[1] + 2][L_Center_Point[0] - 3] - image[L_Center_Point[1] + 1][L_Center_Point[0] - 3]
+                        - image[L_Center_Point[1] - 0][L_Center_Point[0] - 3] - image[L_Center_Point[1] - 1][L_Center_Point[0] - 3]
+                        - image[L_Center_Point[1] - 2][L_Center_Point[0] - 3]
+                        + image[L_Center_Point[1] + 2][L_Center_Point[0] + 2] + image[L_Center_Point[1] + 1][L_Center_Point[0] + 2]
+                        + image[L_Center_Point[1] + 0][L_Center_Point[0] + 2] + image[L_Center_Point[1] - 1][L_Center_Point[0] + 2]
+                        + image[L_Center_Point[1] - 2][L_Center_Point[0] + 2];
+                    break;
+                }
+                case 4:
+                {
+                    L_Pixel_Value_Sum = L_Pixel_Value_Sum - image[L_Center_Point[1] + 3][L_Center_Point[0] + 1] - image[L_Center_Point[1] + 3][L_Center_Point[0] - 0]
+                        - image[L_Center_Point[1] + 3][L_Center_Point[0] - 1] - image[L_Center_Point[1] + 3][L_Center_Point[0] - 2]
+                        - image[L_Center_Point[1] + 3][L_Center_Point[0] - 3] - image[L_Center_Point[1] + 2][L_Center_Point[0] - 3]
+                        - image[L_Center_Point[1] + 1][L_Center_Point[0] - 3] - image[L_Center_Point[1] - 0][L_Center_Point[0] - 3]
+                        - image[L_Center_Point[1] - 1][L_Center_Point[0] - 3]
+                        + image[L_Center_Point[1] + 2][L_Center_Point[0] + 2] + image[L_Center_Point[1] + 1][L_Center_Point[0] + 2]
+                        + image[L_Center_Point[1] - 0][L_Center_Point[0] + 2] + image[L_Center_Point[1] - 1][L_Center_Point[0] + 2]
+                        + image[L_Center_Point[1] - 2][L_Center_Point[0] + 2] + image[L_Center_Point[1] - 2][L_Center_Point[0] + 1]
+                        + image[L_Center_Point[1] - 2][L_Center_Point[0] + 0] + image[L_Center_Point[1] - 2][L_Center_Point[0] - 1]
+                        + image[L_Center_Point[1] - 2][L_Center_Point[0] - 2];
+                    break;
+                }
+                }
+            }
+            else
+            {
+                for (j = 0; j < 25; j++)    //第一个阈值将25个点全部加一遍，后续点的阈值根据生长方向计算
+                {
+                    L_Pixel_Value_Sum += image[L_Center_Point[1] + Square_0[j][1]][L_Center_Point[0] + Square_0[j][0]];
+                }
+            }
+
+            L_Thres = (L_Pixel_Value_Sum + Thres_Interfere) / Thres_Num_Interfere;   //阈值为25个点灰度值的平均值
+            L_Thres -= clip_value;              //将得到的灰度阈值减去一个经验值，用来优化判定
+
+            //这里为反向平滑滤波（不知网上是否有这种算法，此处为本人原创），用于适应由较暗到（局部）高亮区域，或反之的光线情况。后续详细讲解原理
+//            if (Thres_Filiter_Flag_1 == 1 || Thres_Filiter_Flag_2 == 1)
+//            {
+//                if (L_Data_Statics > 3)
+//                {
+//                    L_Thres = L_Thres * 1.3f - L_Thres_Record[L_Data_Statics - 1] * 0.2f - L_Thres_Record[L_Data_Statics - 2] * 0.1f;
+//                }
+//            }
+
+            L_Thres_Record[L_Data_Statics] = L_Thres;
+            L_Data_Statics++;                   //每找到一个点统计个数+1
+
+        L_Judge_Again:    //L_Judge_Again 与 goto 配合使用
+            if (L_Stop_Flag == 0)
+            {
+                L_Front_Value = image[L_Center_Point[1] + L_Face_Dir[L_Dir][1]][L_Center_Point[0] + L_Face_Dir[L_Dir][0]];          //记录面向的前方点的灰度值
+                L_Front_L_Value = image[L_Center_Point[1] + L_Face_Dir_L[L_Dir][1]][L_Center_Point[0] + L_Face_Dir_L[L_Dir][0]];    //记录面向的左前方点的灰度值
+                if (L_Front_Value < L_Thres)     //面向的前方点是黑色
+                {
+                    L_Dir = (L_Dir + 1) % 4;    //需右转一次
+                    L_Turn_Num++;
+                    if (L_Turn_Num == 4)        //死区处理
+                    {
+                        L_Stop_Flag = 1;       //当前后左右都是黑色时，进入死区，停止左侧爬线
+                    }
+                    goto L_Judge_Again;
+                }
+                else if (L_Front_L_Value < L_Thres)   //左前方点是黑色，前方点是白色
+                {
+
+                    // 【新增】先计算下一步的坐标
+                    // int next_x = L_Center_Point[0] + L_Face_Dir[L_Dir][0];
+                    // int next_y = L_Center_Point[1] + L_Face_Dir[L_Dir][1];
+
+                    // 【新增】边界判断：如果下一步超出图像范围，停止爬线
+                    // 注意：Image_X 是图像宽度，Image_Y 是图像高度，请替换为你代码中的实际宏定义
+                    if (L_Center_Point[0] + L_Face_Dir[L_Dir][0] < 3 || L_Center_Point[0] + L_Face_Dir[L_Dir][0] >= 77 || L_Center_Point[1] + L_Face_Dir[L_Dir][1] < 2 || L_Center_Point[1] + L_Face_Dir[L_Dir][1] >= 58)
+                    {
+                        L_Stop_Flag = 1;
+                    }
+                    else if (L_Center_Point[1] + L_Face_Dir[R_Dir][1] <= 4 && L_Center_Point[0] + L_Face_Dir[R_Dir][0] > 38)
+                    {
+                        L_Stop_Flag = 1;
+                    }
+                    else {
+                        L_Center_Point[0] += L_Face_Dir[L_Dir][0];
+                        L_Center_Point[1] += L_Face_Dir[L_Dir][1];      //向前走一步
+                        l_dir[L_Data_Statics - 1] = (L_Face_Dir[L_Dir][0] * 3) - L_Face_Dir[L_Dir][1];
+                        L_Turn_Num = 0;
+                    }
+
+                }
+                else        //左前方和前方都是白色点
+                {
+
+                    // 【新增】先计算下一步的坐标
+                    // int next_x = L_Center_Point[0] + L_Face_Dir[L_Dir][0];
+                    // int next_y = L_Center_Point[1] + L_Face_Dir[L_Dir][1];
+
+                    // 【新增】边界判断：如果下一步超出图像范围，停止爬线
+                    // 注意：Image_X 是图像宽度，Image_Y 是图像高度，请替换为你代码中的实际宏定义
+                    if (L_Center_Point[0] + L_Face_Dir[L_Dir][0] < 3 || L_Center_Point[0] + L_Face_Dir[L_Dir][0] >= 77 || L_Center_Point[1] + L_Face_Dir[L_Dir][1] < 2 || L_Center_Point[1] + L_Face_Dir[L_Dir][1] >= 58)
+                    {
+                        L_Stop_Flag = 1;
+                    }
+                    else if (L_Center_Point[1] + L_Face_Dir[R_Dir][1] <= 4 && L_Center_Point[0] + L_Face_Dir[R_Dir][0] >38)
+                    {
+                        L_Stop_Flag = 1;
+                    }
+                    else {
+                        L_Center_Point[0] += L_Face_Dir_L[L_Dir][0];
+                        L_Center_Point[1] += L_Face_Dir_L[L_Dir][1];        //向左前方走一步
+                        l_dir[L_Data_Statics - 1] = (L_Face_Dir_L[L_Dir][0] * 3) - L_Face_Dir_L[L_Dir][1];
+                        L_Dir = (L_Dir + 3) % 4;        //左转一次
+                        L_Turn_Num = 0;
+                    }
+
+                }
+                if (L_Data_Statics >= 5)     //O环处理，即转了一圈后回到原处，也是一种死区，当立即停止爬线
+                {
+                    if (l_line[L_Data_Statics - 1][0] == l_line[L_Data_Statics - 5][0] &&
+                        l_line[L_Data_Statics - 1][1] == l_line[L_Data_Statics - 5][1])
+                    {
+                        L_Stop_Flag = 1;
+                    }
+                }
+            }
+        }
+
+        //右侧与左侧同理，代码也类似，理解左侧后右侧就很简单
+        if (R_Stop_Flag == 0)
+        {
+            r_line[R_Data_Statics][0] = R_Center_Point[0];
+            r_line[R_Data_Statics][1] = R_Center_Point[1];
+
+            if (R_Data_Statics != 0)
+            {
+                switch (r_dir[R_Data_Statics - 1])
+                {
+                case 1:
+                {
+                    R_Pixel_Value_Sum = R_Pixel_Value_Sum - image[R_Center_Point[1] + 3][R_Center_Point[0] + 2] - image[R_Center_Point[1] + 3][R_Center_Point[0] + 1]
+                        - image[R_Center_Point[1] + 3][R_Center_Point[0] + 0] - image[R_Center_Point[1] + 3][R_Center_Point[0] - 1]
+                        - image[R_Center_Point[1] + 3][R_Center_Point[0] - 2]
+                        + image[R_Center_Point[1] - 2][R_Center_Point[0] + 2] + image[R_Center_Point[1] - 2][R_Center_Point[0] + 1]
+                        + image[R_Center_Point[1] - 2][R_Center_Point[0] + 0] + image[R_Center_Point[1] - 2][R_Center_Point[0] - 1]
+                        + image[R_Center_Point[1] - 2][R_Center_Point[0] - 2];
+                    break;
+                }
+                case -2:
+                {
+                    R_Pixel_Value_Sum = R_Pixel_Value_Sum - image[R_Center_Point[1] - 1][R_Center_Point[0] + 3] - image[R_Center_Point[1] - 0][R_Center_Point[0] + 3]
+                        - image[R_Center_Point[1] + 1][R_Center_Point[0] + 3] - image[R_Center_Point[1] + 2][R_Center_Point[0] + 3]
+                        - image[R_Center_Point[1] + 3][R_Center_Point[0] + 3] - image[R_Center_Point[1] + 3][R_Center_Point[0] + 2]
+                        - image[R_Center_Point[1] + 3][R_Center_Point[0] + 1] - image[R_Center_Point[1] + 3][R_Center_Point[0] - 0]
+                        - image[R_Center_Point[1] + 3][R_Center_Point[0] - 1]
+                        + image[R_Center_Point[1] + 2][R_Center_Point[0] - 2] + image[R_Center_Point[1] + 1][R_Center_Point[0] - 2]
+                        + image[R_Center_Point[1] + 0][R_Center_Point[0] - 2] + image[R_Center_Point[1] - 1][R_Center_Point[0] - 2]
+                        + image[R_Center_Point[1] - 2][R_Center_Point[0] - 2] + image[R_Center_Point[1] - 2][R_Center_Point[0] - 1]
+                        + image[R_Center_Point[1] - 2][R_Center_Point[0] - 0] + image[R_Center_Point[1] - 2][R_Center_Point[0] + 1]
+                        + image[R_Center_Point[1] - 2][R_Center_Point[0] + 2];
+                    break;
+                }
+                case -3:
+                {
+                    R_Pixel_Value_Sum = R_Pixel_Value_Sum - image[R_Center_Point[1] - 2][R_Center_Point[0] + 3] - image[R_Center_Point[1] - 1][R_Center_Point[0] + 3]
+                        - image[R_Center_Point[1] + 0][R_Center_Point[0] + 3] - image[R_Center_Point[1] + 1][R_Center_Point[0] + 3]
+                        - image[R_Center_Point[1] + 2][R_Center_Point[0] + 3]
+                        + image[R_Center_Point[1] - 2][R_Center_Point[0] - 2] + image[R_Center_Point[1] - 1][R_Center_Point[0] - 2]
+                        + image[R_Center_Point[1] - 0][R_Center_Point[0] - 2] + image[R_Center_Point[1] + 1][R_Center_Point[0] - 2]
+                        + image[R_Center_Point[1] + 2][R_Center_Point[0] - 2];
+                    break;
+                }
+                case -4:
+                {
+                    R_Pixel_Value_Sum = R_Pixel_Value_Sum - image[R_Center_Point[1] - 3][R_Center_Point[0] - 1] - image[R_Center_Point[1] - 3][R_Center_Point[0] + 0]
+                        - image[R_Center_Point[1] - 3][R_Center_Point[0] + 1] - image[R_Center_Point[1] - 3][R_Center_Point[0] + 2]
+                        - image[R_Center_Point[1] - 3][R_Center_Point[0] + 3] - image[R_Center_Point[1] - 2][R_Center_Point[0] + 3]
+                        - image[R_Center_Point[1] - 1][R_Center_Point[0] + 3] - image[R_Center_Point[1] + 0][R_Center_Point[0] + 3]
+                        - image[R_Center_Point[1] + 1][R_Center_Point[0] + 3]
+                        + image[R_Center_Point[1] - 2][R_Center_Point[0] - 2] + image[R_Center_Point[1] - 1][R_Center_Point[0] - 2]
+                        + image[R_Center_Point[1] + 0][R_Center_Point[0] - 2] + image[R_Center_Point[1] + 1][R_Center_Point[0] - 2]
+                        + image[R_Center_Point[1] + 2][R_Center_Point[0] - 2] + image[R_Center_Point[1] + 2][R_Center_Point[0] - 1]
+                        + image[R_Center_Point[1] + 2][R_Center_Point[0] - 0] + image[R_Center_Point[1] + 2][R_Center_Point[0] + 1]
+                        + image[R_Center_Point[1] + 2][R_Center_Point[0] + 2];
+                    break;
+                }
+                case -1:
+                {
+                    R_Pixel_Value_Sum = R_Pixel_Value_Sum - image[R_Center_Point[1] - 3][R_Center_Point[0] - 2] - image[R_Center_Point[1] - 3][R_Center_Point[0] - 1]
+                        - image[R_Center_Point[1] - 3][R_Center_Point[0] + 0] - image[R_Center_Point[1] - 3][R_Center_Point[0] + 1]
+                        - image[R_Center_Point[1] - 3][R_Center_Point[0] + 2]
+                        + image[R_Center_Point[1] + 2][R_Center_Point[0] - 2] + image[R_Center_Point[1] + 2][R_Center_Point[0] - 1]
+                        + image[R_Center_Point[1] + 2][R_Center_Point[0] + 0] + image[R_Center_Point[1] + 2][R_Center_Point[0] + 1]
+                        + image[R_Center_Point[1] + 2][R_Center_Point[0] + 2];
+                    break;
+                }
+                case 2:
+                {
+                    R_Pixel_Value_Sum = R_Pixel_Value_Sum - image[R_Center_Point[1] + 1][R_Center_Point[0] - 3] - image[R_Center_Point[1] + 0][R_Center_Point[0] - 3]
+                        - image[R_Center_Point[1] - 1][R_Center_Point[0] - 3] - image[R_Center_Point[1] - 2][R_Center_Point[0] - 3]
+                        - image[R_Center_Point[1] - 3][R_Center_Point[0] - 3] - image[R_Center_Point[1] - 3][R_Center_Point[0] - 2]
+                        - image[R_Center_Point[1] - 3][R_Center_Point[0] - 1] - image[R_Center_Point[1] - 3][R_Center_Point[0] + 0]
+                        - image[R_Center_Point[1] - 3][R_Center_Point[0] + 1]
+                        + image[R_Center_Point[1] - 2][R_Center_Point[0] + 2] + image[R_Center_Point[1] - 1][R_Center_Point[0] + 2]
+                        + image[R_Center_Point[1] - 0][R_Center_Point[0] + 2] + image[R_Center_Point[1] + 1][R_Center_Point[0] + 2]
+                        + image[R_Center_Point[1] + 2][R_Center_Point[0] + 2] + image[R_Center_Point[1] + 2][R_Center_Point[0] + 1]
+                        + image[R_Center_Point[1] + 2][R_Center_Point[0] + 0] + image[R_Center_Point[1] + 2][R_Center_Point[0] - 1]
+                        + image[R_Center_Point[1] + 2][R_Center_Point[0] - 2];
+                    break;
+                }
+                case 3:
+                {
+                    R_Pixel_Value_Sum = R_Pixel_Value_Sum - image[R_Center_Point[1] + 2][R_Center_Point[0] - 3] - image[R_Center_Point[1] + 1][R_Center_Point[0] - 3]
+                        - image[R_Center_Point[1] - 0][R_Center_Point[0] - 3] - image[R_Center_Point[1] - 1][R_Center_Point[0] - 3]
+                        - image[R_Center_Point[1] - 2][R_Center_Point[0] - 3]
+                        + image[R_Center_Point[1] + 2][R_Center_Point[0] + 2] + image[R_Center_Point[1] + 1][R_Center_Point[0] + 2]
+                        + image[R_Center_Point[1] + 0][R_Center_Point[0] + 2] + image[R_Center_Point[1] - 1][R_Center_Point[0] + 2]
+                        + image[R_Center_Point[1] - 2][R_Center_Point[0] + 2];
+                    break;
+                }
+                case 4:
+                {
+                    R_Pixel_Value_Sum = R_Pixel_Value_Sum - image[R_Center_Point[1] + 3][R_Center_Point[0] + 1] - image[R_Center_Point[1] + 3][R_Center_Point[0] - 0]
+                        - image[R_Center_Point[1] + 3][R_Center_Point[0] - 1] - image[R_Center_Point[1] + 3][R_Center_Point[0] - 2]
+                        - image[R_Center_Point[1] + 3][R_Center_Point[0] - 3] - image[R_Center_Point[1] + 2][R_Center_Point[0] - 3]
+                        - image[R_Center_Point[1] + 1][R_Center_Point[0] - 3] - image[R_Center_Point[1] - 0][R_Center_Point[0] - 3]
+                        - image[R_Center_Point[1] - 1][R_Center_Point[0] - 3]
+                        + image[R_Center_Point[1] + 2][R_Center_Point[0] + 2] + image[R_Center_Point[1] + 1][R_Center_Point[0] + 2]
+                        + image[R_Center_Point[1] - 0][R_Center_Point[0] + 2] + image[R_Center_Point[1] - 1][R_Center_Point[0] + 2]
+                        + image[R_Center_Point[1] - 2][R_Center_Point[0] + 2] + image[R_Center_Point[1] - 2][R_Center_Point[0] + 1]
+                        + image[R_Center_Point[1] - 2][R_Center_Point[0] + 0] + image[R_Center_Point[1] - 2][R_Center_Point[0] - 1]
+                        + image[R_Center_Point[1] - 2][R_Center_Point[0] - 2];
+                    break;
+                }
+                }
+            }
+            else
+            {
+                for (j = 0; j < 25; j++)
+                {
+                    R_Pixel_Value_Sum += image[R_Center_Point[1] + Square_0[j][1]][R_Center_Point[0] + Square_0[j][0]];
+                }
+            }
+
+            R_Thres = (R_Pixel_Value_Sum + Thres_Interfere) / Thres_Num_Interfere;
+            R_Thres -= clip_value;
+
+//            if (Thres_Filiter_Flag_1 == 1 || Thres_Filiter_Flag_2 == 1)
+//            {
+//                if (R_Data_Statics > 3)
+//                {
+//                    R_Thres = R_Thres * 1.3f - R_Thres_Record[R_Data_Statics - 1] * 0.2f - R_Thres_Record[R_Data_Statics - 2] * 0.1f;
+//                }
+//            }
+
+            R_Thres_Record[R_Data_Statics] = R_Thres;
+
+            R_Data_Statics++;
+
+        R_Judgme_Again:
+            if (R_Stop_Flag == 0)
+            {
+                R_Front_Value = image[R_Center_Point[1] + R_Face_Dir[R_Dir][1]][R_Center_Point[0] + R_Face_Dir[R_Dir][0]];
+                R_Front_R_Value = image[R_Center_Point[1] + R_Face_Dir_R[R_Dir][1]][R_Center_Point[0] + R_Face_Dir_R[R_Dir][0]];
+                if (R_Front_Value < R_Thres)
+                {
+                    R_Dir = (R_Dir + 3) % 4;
+                    R_Turn_Num++;
+                    if (R_Turn_Num == 4)
+                    {
+                        R_Stop_Flag = 1;
+                    }
+                    goto R_Judgme_Again;
+                }
+                else if (R_Front_R_Value < R_Thres)
+                {
+                    // 【新增】先计算下一步的坐标（向前）
+                    // int next_x = R_Center_Point[0] + R_Face_Dir[R_Dir][0];
+                    // int next_y = R_Center_Point[1] + R_Face_Dir[R_Dir][1];
+
+                    // 【新增】边界判断
+                    if (R_Center_Point[0] + R_Face_Dir[R_Dir][0] < 3 || R_Center_Point[0] + R_Face_Dir[R_Dir][0] >= 77 || R_Center_Point[1] + R_Face_Dir[R_Dir][1] < 2 || R_Center_Point[1] + R_Face_Dir[R_Dir][1] >= 58)
+                    {
+                        R_Stop_Flag = 1;
+                    }
+                    else if (R_Center_Point[1] + R_Face_Dir[R_Dir][1] <=4  &&  R_Center_Point[0] + R_Face_Dir[R_Dir][0] < 42)
+                    {
+                        R_Stop_Flag = 1;
+                    }
+                    else {
+                        R_Center_Point[0] += R_Face_Dir[R_Dir][0];
+                        R_Center_Point[1] += R_Face_Dir[R_Dir][1];
+                        r_dir[R_Data_Statics - 1] = R_Face_Dir[R_Dir][0] * 3 - R_Face_Dir[R_Dir][1];
+                        R_Turn_Num = 0;
+                    }
+
+                }
+                else
+                {
+
+                    // 【新增】先计算下一步的坐标（向前）
+                    // int next_x = R_Center_Point[0] + R_Face_Dir[R_Dir][0];
+                    // int next_y = R_Center_Point[1] + R_Face_Dir[R_Dir][1];
+
+                    // 【新增】边界判断
+                    if (R_Center_Point[0] + R_Face_Dir[R_Dir][0] < 3 || R_Center_Point[0] + R_Face_Dir[R_Dir][0] >= 77 || R_Center_Point[1] + R_Face_Dir[R_Dir][1] < 2 || R_Center_Point[1] + R_Face_Dir[R_Dir][1] >= 58)
+                    {
+                        R_Stop_Flag = 1;
+                    }
+                    else if (R_Center_Point[1] + R_Face_Dir[R_Dir][1] <= 4 && R_Center_Point[0] + R_Face_Dir[R_Dir][0] < 42)
+                    {
+                        R_Stop_Flag = 1;
+                    }
+                    else {
+                        R_Center_Point[0] += R_Face_Dir_R[R_Dir][0];
+                        R_Center_Point[1] += R_Face_Dir_R[R_Dir][1];
+                        r_dir[R_Data_Statics - 1] = R_Face_Dir_R[R_Dir][0] * 3 - R_Face_Dir_R[R_Dir][1];
+                        R_Dir = (R_Dir + 1) % 4;
+                        R_Turn_Num = 0;
+                    }
+
+                }
+                if (R_Data_Statics >= 5)
+                {
+                    if (r_line[R_Data_Statics - 1][0] == r_line[R_Data_Statics - 5][0] &&
+                        r_line[R_Data_Statics - 1][1] == r_line[R_Data_Statics - 5][1])
+                    {
+                        R_Stop_Flag = 1;
+                    }
+                }
+            }
+        }
+
+        if (L_Stop_Flag == 0 && R_Stop_Flag == 0)
+        {
+            if ((My_ABS(r_line[R_Data_Statics - 1][0] - l_line[L_Data_Statics - 1][0]) <= 3)
+                && (My_ABS(r_line[R_Data_Statics - 1][1] - l_line[L_Data_Statics - 1][1]) <= 3))        //两侧爬线相遇，退出循环，一张图像爬线结束
+            {
+                *y_meet = (r_line[R_Data_Statics - 1][1] + l_line[L_Data_Statics - 1][1]) >> 1;  //记录相遇点Y
+                *x_meet = (r_line[R_Data_Statics - 1][0] + l_line[L_Data_Statics - 1][0]) >> 1;  //记录相遇点X
+                break;
+            }
+        }
+        //有一侧存在死区时，对相遇点的判定放宽松一些，防止实际相遇但没有判定出，导致爬线紊乱的情况
+        else
+        {
+            if ((My_ABS(r_line[R_Data_Statics - 1][0] - l_line[L_Data_Statics - 1][0]) <= 5)
+                && (My_ABS(r_line[R_Data_Statics - 1][1] - l_line[L_Data_Statics - 1][1]) <= 5))        //两侧爬线相遇，退出循环，一张图像爬线结束
+            {
+                *y_meet = (r_line[R_Data_Statics - 1][1] + l_line[L_Data_Statics - 1][1]) >> 1;  //记录相遇点Y
+                *x_meet = (r_line[R_Data_Statics - 1][0] + l_line[L_Data_Statics - 1][0]) >> 1;  //记录相遇点X
+                break;
+            }
+        }
+    }
+    L_Stop_Flag = 0;
+    R_Stop_Flag = 0;
+    *l_stastic = L_Data_Statics;    //记录左侧边线点个数
+    *r_stastic = R_Data_Statics;    //记录右侧边线点个数
+}
+
+
+===== TABLE 1 =====
+模块 | 输入 | 主要输出 | 软件入口
+视觉感知 | MT9V03X 帧数据 | 80 x 60 灰度图与帧完成标志 | mt9v03x_init / mt9v03x_finish_flag
+路径理解 | Find_Line_Image | 边界、中线、偏差、元素状态 | Process_Image / Get_Information
+姿态与速度 | IMU660RA、双编码器 | 陀螺仪角速度与速度反馈 | imu660ra_get_gyro / encoder_init
+执行控制 | 偏差、元素、目标速度 | 舵机、电机 PWM、无刷电调 | servo_update / speed_control
+人机与参数 | 按键、拨码 | 显示、参数保存、停车模式 | button_control / parking_parameters_load
+
+===== TABLE 2 =====
+功能 | 接口/引脚 | 参数或逻辑 | 备注
+电机 1 | P74 DIR；P75 PWM | 17 kHz；占空比符号决定方向 | 有刷通道
+电机 2 | P76 DIR；P77 PWM | 17 kHz；占空比符号决定方向 | 有刷通道
+编码器 1 | P60 PULSE；P62 DIR | PWMA 有向编码器 | 速度反馈
+编码器 2 | P40 PULSE；P42 DIR | PWMC 有向编码器 | 速度反馈
+转向舵机 | PWME_CH1P_PA0 | 200 Hz；中值 3230；2910-3580 限幅 | 已启用
+无刷电调 | 左右各一路 PWM | 启动时缓升；停车时关闭 | 引脚由驱动宏定义
+
+===== TABLE 3 =====
+阶段 | 核心函数 | 输出/状态 | 设计目的
+帧同步 | mt9v03x_finish_flag | 允许进入本帧处理 | 避免撕裂与重复处理
+图像处理 | Process_Image | Find_Line_Image | 生成统一灰度处理输入
+路径提取 | Get_Information / Get_Middle_Line | 边界、中线、偏差 | 为控制提供几何量
+元素处理 | Element_Judgement / Circle_Process | 元素状态与特殊轨迹 | 适配特殊赛道
+转向控制 | servo_update | servo_pid.servo_out | 偏差与陀螺仪融合
+速度控制 | speed_control / PI_Update | 两路目标速度与 PWM | 差速闭环
+
+===== TABLE 4 =====
+检查项 | 通过标准 | 源码关联
+主控时钟 | 系统按 96 MHz 运行，串口/定时器节拍正常 | clock_init(SYSTEM_CLOCK_96M)
+相机帧率 | 菜单可显示、修改并保存 50-200 fps | camera_fps_apply / IAP
+图像显示 | 80 x 60 灰度与边线叠加位置正确 | ips200_show_gray_image
+舵机中位 | 3230 附近机械直行，未超过 2910-3580 | servo_control
+编码器 | 左右轮前进反馈方向正确 | encoder_dir_init
+停车保护 | 出界或停车条件下电机目标归零、无刷关闭 | speed_control / brushless_stop
+
+===== TABLE 5 =====
+名称 | 参数值
+车模总质量（无电池） | 约 1200g
+车模长度 | 280mm
+车模宽度 | 290mm
+车模高度 | 520mm
+电机配置 | 有刷电机 x 2，无刷电机 x 1
+传感器配置 | 有向编码器 x 2，逐飞130灰度摄像头 x 1，IMU660RA x 1
+赛道检测精度 | 约 22.5mm
+赛道检测频率 | 100 次/秒（默认帧率）
+
+===== TABLE 6 =====
+芯片型号 | 数量 | 功能说明
+STC32G144K246 | 1 | 系统主控单片机
+TPS5450 | 2 | DC-DC 开关电源（舵机供电）
+RT9080 | 1 | LDO 线性稳压（3.3V）
+DRV8701E | 2 | H 桥电机驱动
+CH340 | 1 | USB 转 TTL 串口
+SN74HC125PWR | 1 | PWM 信号缓冲器
+AI8051 | 1 | 无刷电调主控
+
+===== TABLE 7 =====
+类别 | 名称 | 关键参数
+主控 | STC32G144K246 | 工程目标；SYSTEM_CLOCK_96M
+摄像头 | 逐飞130灰度无畸变摄像头 | MT9V03X 驱动；80 x 60；默认 100 fps
+显示 | IPS200 | 240 x 320 竖屏；tft180 为兼容宏
+姿态 | IMU660RA | gyro Z 辅助转向阻尼
+速度反馈 | 双路有向编码器 | P60/P62；P40/P42
+转向 | 舵机 | PA0；200 Hz；中值 3230；限幅 2910-3580
+驱动 | 双路有刷 PWM | P75/P77 PWM，17 kHz；P74/P76 方向
+交互/提示 | 蜂鸣器/五路激光打靶/按键拨码 | P65；P67/P01/P00/P02/P03；PB2-PB4/P32、PB0/PB1
+
+===== TABLE 8 =====
+检查项目 | 规格要求 | 实际状态 | 是否合格
+车模尺寸 | 长 280mm x 宽 290mm x 高 520mm | 符合 | 是
+车模质量 | 不超过赛事规定上限 | 约 1200g（无电池） | 是
+主控芯片 | STC32G144K246 | 已安装并验证 | 是
+摄像头 | 逐飞130灰度无畸变摄像头 | 已安装并验证 | 是
+舵机 | S-U400 | PA0 通道 200 Hz | 是
+电机 | 有刷电机 x 2 | 17 kHz PWM 驱动 | 是
+编码器 | 1024线正交编码器 | PWMA / PWMC 接口 | 是
+电源 | 12.4V 锂电池 | 四路独立供电 | 是
+显示模块 | IPS200 240 x 320 | 竖屏模式 | 是
+陀螺仪 | IMU660RA | gyro Z 已启用 | 是

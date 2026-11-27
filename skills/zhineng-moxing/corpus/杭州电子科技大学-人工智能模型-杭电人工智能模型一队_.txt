@@ -1,0 +1,3060 @@
+第二十一届全国大学生智能汽车竞赛
+
+技 术 报 告
+
+学    校：杭州电子科技大学
+队伍名称：杭电人工智能模型一队
+参赛队员：周锦文、刘妙玲、俞壹、杨文宇、王子晨
+带队教师：黄继业、陈张平
+
+关于技术报告和研究论文使用授权的说明
+本人完全了解第二十一届全国大学生智能汽车竞赛关于保留、使用技术报告和研究论文的规定，即：参赛作品著作权归参赛者本人；比赛组委会和恩智浦半导体公司可以在相关主页收录并公开参赛作品的设计方案、技术报告以及参赛模型车的视频、图像资料，并将相关内容编纂收录于组委会出版的论文集中。
+
+参赛队员签名：			     
+带队教师签名：			     
+
+日        期：	 2026.8.16   	     
+
+
+
+
+
+第一章 引言
+1.1 概述
+全国大学生智能汽车竞赛以“立足培养、重在参与、鼓励探索、追求卓越”为指导思想，涉及机械、模式识别、电子、电气、传感技术、计算机、自动化控制和汽车理论等多个领域，充分体现了大学生综合运用所学知识与探索创新的精神。该赛事由教育部高等教育司委托（教高司函〔2005〕201号），由教育部高等学校自动化专业教学指导分委员会（以下简称“自动化分教指委”）主办，是一项全国性、多学科交叉、兼具趣味性与创新性的赛事，旨在培养大学生的实践能力与团队合作精神，促进高等教育改革。竞赛规则透明、评价标准客观，并坚持公开、公平、公正的原则，从而保障赛事健康、广泛、持续发展。
+学校积极响应教育部关于加强大学生实践能力、合作精神和创新能力培养的号召，组建智能车队伍参赛。我们参加第二十一届全国大学生智能汽车竞赛人工智能模型组，并进行了充分、认真的准备。根据本届竞赛规则，人工智能模型组允许自制车模，因此我们在符合规则的前提下完成了车模设计与制作。
+技术方面，我们选用德国 Infineon Technologies AG 公司的 TC264D40F200W 微控制器作为核心控制单元，并从零开始设计控制方案，涵盖传感器信号采集与处理、电机驱动以及控制算法软件开发。
+在软件算法方面，我们以传统 PID 算法为主要控制方法。为保证智能车在高速行驶和急转弯工况下的动力性能与稳定性，我们借鉴往届队伍的经验，并持续优化车模机械结构。
+
+本技术报告详细记录了第二十一届全国大学生智能汽车竞赛杭电人工智能模型一队的智能车开发过程，内容涵盖机械与硬件设计、TC264D40F200W 单片机应用、PID 算法研究，以及车模机械结构参数的调整与优化。
+1.2 整车设计
+1.2.1  车辆布局
+结构上保留传统 C 车模的前、后桥，并对底盘进行改进，以便安装板卡、主板等部件。板卡和主板通过塑料柱架高，避免与底盘接触而导致短路。
+为提高车辆稳定性，我们下移了车身重心，并将电池布置在车辆右后侧，以平衡左侧板卡的重量。该布局有助于改善整车配重，提高过弯灵活性，并降低高速过弯时发生侧翻的风险。
+杭电人工智能模型一队车模主要由以下部分组成：
+1）底盘及附属部件，包括驱动电机、电池等；
+2）官方 RK3588S 板卡；
+3）龙邱编码器测速模块；
+4）单片机最小系统板，包括电源处理与检波电路；
+5）机械结构件、摄像头支架及摄像头传感器；
+6）IPS 显示屏。
+
+
+
+1.2.2  控制简述
+上位机部分的总体思路与百度官方方案一致：首先利用 PPseg 语义分割模型识别赛道，再对分割得到的黑白图像进行传统扫线，拟合赛道中线以实现循迹。对于赛道元素，则部署 YOLO 模型进行识别，并针对不同类别分别处理，例如车辆避让和行人避让；对于路牌元素，先通过百度开源 OCR 模型识别文字，再调用大模型 API 进行语义判断。
+上、下位机之间采用串口通信。上位机将扫线计算得到的偏差发送至主板，再由主板完成相应的 PID 控制。
+在人工智能模型组的控制方案中，我们采用周期为 5 ms 的模糊 PID 舵机控制环实现转向，并采用周期为 2 ms 的速度环进行闭环控制，以提高速度控制精度。由于本组别需要处理多种赛道元素，我们还为各元素区段分别设置 PD 参数，以更好地完成赛题任务。
+1.3 小结
+本章介绍了杭电人工智能模型一队的总体设计思路与车辆布局，为后续机械、硬件和软件系统的详细说明奠定基础。
+第二章 机械设计与修改
+2.1 主板与驱动板的摆放
+主板通过塑料柱架高并布置在车辆左侧，驱动板安装在后桥上方。该布局使车辆结构更加紧凑，也便于快速更换主板或驱动板，减少因局部元器件损坏而造成的长时间停修。
+
+2.2 电池和官方定位固定模块
+为平衡车辆重心，并避免高速运行时电池位移影响控制，我们为电池设计了 3D 打印固定件，使其能够可靠固定；固定件上方同时预留开孔，用于安装官方定位模块。
+
+图2.1 电池和定位模块的固定件
+
+2.3 摄像头支架
+由于板卡自带摄像头，且整体车模限高 15 cm，因此我们将摄像头安装高度控制在约 14 cm。
+
+
+
+
+
+
+
+
+图2.3 摄像头支架
+2.4 板卡支架
+为便于板卡与主板连接和供电，我们将板卡布置在车辆左侧，并使用 4 个塑料支柱固定，避免其在高速运行过程中发生位移。
+
+
+
+
+
+
+
+
+
+
+
+图2.4 板卡支架
+
+第三章 系统硬件电路设计
+3.1 硬件电路整体架构设计
+
+图3.1 杭电人工智能模型一队硬件结构示意图
+系统整体结构如图3.1 ，硬件设计采用模块化架构，分为​​主板设计​​、​​电机驱动设计和电源降压设计​三大核心模块，确保系统高效协同运行。
+​​主板设计​​作为主控核心，涵盖引脚分配、电源管理及外设集成。引脚分配优化信号传输路径；电源模块为各部件提供稳定电压；外设部分集成无线串口（远程调试）、陀螺仪（姿态检测）、编码器（速度反馈）、PWM隔离（驱动保护）及IPS彩屏（实时调试），形成完整的数据采集与交互链路。
+​​电机驱动设计​​聚焦电机驱动控制，通过引脚分配实现信号对接，电路设计包含栅极驱动供电（功率放大）、H桥电路（电机驱动），保障电机高响应与可靠性。
+电源降压设计包括TPS5450降压电路，为板卡提供稳定供电。
+整体架构层次清晰，为智能车在人工智能模型组任务场景下的稳定运行奠定了硬件基础。
+
+3.2 单片机最小系统电路设计
+TC264D40F200W单片机最小系统电路设计主要包括电源电路、时钟电路、复位电路和调试接口四个关键部分。电源电路采用3.3V供电方案，使用LDO稳压芯片将输入电压稳定在3.3V，在电源输入端并联100μF电解电容和0.1μF陶瓷电容进行滤波，在MCU每个电源引脚附近放置0.1μF去耦电容。时钟电路采用外部20MHz无源晶振配合两个22pF负载电容，晶振尽量靠近MCU的XTAL1和XTAL2引脚布局。复位电路采用10kΩ上拉电阻和100nF电容组成RC复位网络，同时预留手动复位按钮，复位引脚通过0.1μF电容滤波。调试接口采用10pin SWD标准接口，包含SWDIO、SWCLK和GND信号，并预留UART串口通信引脚用于调试输出。所有未使用的IO口通过10kΩ电阻上拉或下拉处理，避免悬空状态。PCB布局时电源走线加粗处理，数字地和模拟地单点连接，晶振电路下方禁止走线，高速信号线尽量缩短走线长度。在电源入口处放置TVS二极管进行过压保护，关键信号线上串联33Ω电阻抑制信号反射。为方便扩展，所有GPIO口通过排针引出，重要电源测试点预留测试焊盘。该最小系统设计经过实际测试验证，能够稳定运行并满足智能车控制系统的需求，后续可根据具体应用场景扩展CAN总线、PWM输出、ADC采样等外围电路功能。特别注意TC264D40F200W的BOOT0和BOOT1引脚需要通过10kΩ电阻固定到适当电平以确定启动模式，在调试阶段预留跳线帽以便灵活切换启动方式。
+ 
+3.3 PWM隔离设计
+
+
+图3.2 隔离电路
+该模块基于 SN74LVC245APWR 8 位总线收发器实现 4 路 PWM 信号的缓冲隔离与方向可控传输，输入端通过 GH1.25 连接器 U9 引入 PWM1~PWM4 信号至芯片 A 侧，经内部缓冲后由 B 侧输出至后端网络；芯片采用 VCC5V 供电，方向控制引脚 DIR 接排针 H4 引入的 PWMS1 信号，用于配置数据传输方向，输出使能端 OE# 控制缓冲器的开关状态；电路通过总线收发器实现前后级电气缓冲隔离，增强 PWM 信号的驱动能力与抗干扰性能，防止后端负载对前端控制器产生不良影响，适用于多路 PWM 控制信号的隔离转发与电平兼容场景。
+
+3.4 电源管理电路设计
+系统稳定运行的基础在于电源设计，本方案采用两级供电架构：第一级通过TI的TPS5450 DC-DC转换器将16.8V电池电压直接降压至5V，该芯片集成高性能MOSFET，支持36V宽输入范围，可提供持续稳定的5V输出；第二级采用两个RT9048 LDO稳压器，分别从5V降压为3.3V，为摄像头和MCU等核心外设提供独立供电。所有电源电路均严格遵循芯片厂商推荐的设计规范，包括外围元件选型、PCB布局和去耦电容配置等关键参数，确保各供电节点纹波控制在允许范围内。这种分级供电方案既保证了电源转换效率，又实现了不同功能模块之间的电源隔离，有效避免了相互干扰。具体电路实现细节可参考各芯片的官方设计手册，在此不再赘述。
+
+3.5 主板与板卡通信
+
+图3.3 USB转串口电路
+该模块采用 CH340N USB 转串口芯片，通过 USB A 型母座 实现主板与板卡之间的 USB-UART 通信转换；USB 差分信号 D+/D- 接入 CH340N 的 UD+/UD- 引脚，经芯片内部转换后由 RXD、TXD 引脚输出 TTL 电平串口信号至后端板卡，VCC 供电端配合 C29、C30 退耦电容稳定芯片工作，V3 引脚外接 100nF 电容为内部 3.3V 稳压输出提供滤波，整体电路简洁、即插即用，适用于主板通过 USB 接口与板卡进行串口数据交互的场景。
+
+3.6 主板设计
+本设计将电源管理模块与单片机最小系统高度集成于主控主板。主板设置电池 XT30 供电接口及各类外设连接器，并集成完整的电源转换电路。接口电路板的机械结构经过优化，通过合理布置螺丝孔位，确保其能够稳固安装在车模上，避免运行过程中发生位移。主板与外围设备之间采用 GH1.25 和 GH2.54 接口连接；五向按键作为独立模块插接于 H5 排针，并通过 M5 孔固定。该一体化设计兼顾系统稳定性、安装便利性与集成度。各电路模块采用紧凑布局，在保证电气性能的同时尽量减小整体体积。主板如图 3.4 所示。
+
+图3.4 主板
+
+3.7 电机驱动电路设计
+该模块为 4 路半桥电机驱动电路，采用 IR2104STRPBF 半桥栅极驱动器配合 TPH1R403NL N 沟道 MOSFET 组成四组独立的半桥功率级，由 VCC12V 供电；每路通道中，IR2104 通过自举电路（SS54 二极管与 1μF 电容）生成高侧驱动电压，分别输出 HO/LO 信号驱动上下桥臂 MOSFET，栅极串接 10Ω 电阻抑制振铃，并辅以 4.7kΩ 下拉电阻防止误导通，输出端并联 SS54 续流二极管吸收反电动势；PWM1~PWM4 信号经连接器输入，分别控制四路半桥的开关时序，模块配备输入滤波电容、电源指示灯及安装孔，整体可驱动多路直流电机、组合成 H 桥驱动步进电机或用于其他功率开关场景。
+3.8 电源降压板设计
+该模块基于 TI TPS5450DDAG4 降压芯片，将 12V 输入（经 XT30 接口 CN7 接入）转换为稳定的 5V 输出（VCC5V），通过 XT30 接口 CN9 及 USB Type-C 座 U12 为板卡和外设供电。电路中，L1（10μH）为功率电感，D2 为续流二极管，R70（12kΩ）与 R71（3.9kΩ）组成反馈分压网络将输出电压设定在约 5V；输入端设有 220μF 电解电容及陶瓷电容进行滤波，并配备 F1（2A 自恢复保险丝）和 D3（SMAJ13A TVS 管）实现过流与浪涌保护；USB Type-C 的 CC 引脚经 5.1kΩ 电阻下拉，标识本端口为 UFP 受电设备。整体电路结构简洁，具备宽压输入、高效率输出及完善的输入保护特性，适用于从 12V 总线获取 5V 电源的嵌入式供电场景。
+
+图3.5电源降压板原理图
+
+图3.6电源降压板PCB图
+3.9 总结
+硬件电路设计必须确保高可靠性和强抗干扰能力，核心原则是"稳定压倒一切"。单片机供电系统需特别加强，通过增加大容量储能电容（如1000μF电解电容配合0.1μF陶瓷电容）来应对电调启动时的瞬时电流冲击，防止电压跌落引发系统复位。电路板开发采用严格的迭代流程：初期手工制板进行72小时不间断压力测试验证基础稳定性；通过验证后依据优化后的原理图进行专业PCB布线，交由正规PCB厂生产首版样品；对样品实施全面检测，未达标的板卡（存在纹波超标、布局不合理或性能缺陷等问题）必须重新设计制作，直至各项参数完全符合要求。硬件作为智能车系统的根基，其品质直接决定后续软件开发的可能性，必须坚持"一次做对"的工程理念，在电路设计、元件选型和制板工艺每个环节都执行最高标准。
+
+
+第四章 软件系统设计
+4.1  软件控制的总体思路
+软件系统是智能车的核心组成部分。板卡首先完成语义分割与 YOLO 模型识别，再通过路径规划拟合循迹路线；随后，板卡经串口将偏差发送至主板，由主板进行 PID 计算并控制车辆循迹，最终完成比赛任务。
+4.2  基础巡线
+赛题发布初期，我们采用传统巡线方案，即使用 OpenCV 进行图像处理并拟合中线完成循迹。但该方案鲁棒性较弱，容易受到与赛道颜色相近物体的干扰。参考官方提供的思路后，我们改用语义分割模型获得二值化赛道图像，再结合传统扫线方法进行循迹。改进后的方案鲁棒性更高，也更不易受外界环境干扰。
+4.3  元素识别
+由于本届赛题中的模型与往届差异较大，仅依靠传统图像处理难以准确区分各类元素。考虑到本届采用的 RK3588S 板卡具有足够的计算性能，我们选用 YOLO 模型进行元素识别，以兼顾识别准确率与处理速度，更好地满足赛题要求。
+
+
+
+
+
+4.4  特殊元素的处理
+4.4.1 车辆的处理
+通过 YOLO 模型识别车辆类别后，根据目标在图像中的位置进行路径规划。例如，当目标车辆位于赛道左侧时，将规划线向右侧偏移，使本车能够正常避让。
+
+4.4.2 行人处理
+通过 YOLO 模型识别行人位置，并依据其图像坐标判断是否处于赛道内。当行人进入设定阈值范围时，车辆强制停车；待行人离开赛道后，车辆继续循迹。
+
+4.4.3 路牌处理
+首先通过 YOLO 模型判断目标是否为路牌，再利用 OCR 模型识别路牌文字；随后通过 API 将识别结果提交给远程大模型进行语义判断，以确定车辆应直行还是右转进入岔路。
+
+4.5 PID控制算法
+在工程实际中，应用最为广泛的调节器控制规律为比例、积分、微分控制，简称PID 控制，又称PID调节。PID控制器问世至今已有近70年历史，它以其结构简单、稳定性好、工作可靠、调整方便而成为工业控制的主要技术之一。当被控对象的结构和参数不能完全掌握，或得不到精确的数学模型时，控制理论的其它技术难以采用时，系统控制器的结构和参数必须依靠经验和现场调试来确定，这时应用PID控制技术最为方便。即当我们不完全了解一个系统和被控对象，或不能通过有效的测量手段来获得系统参数时，最适合用PID 控制技术。PID控制，实际中也有PI和PD控制。PID控制器是一种线性控制器，它根据给定值与实际输出值构成控制偏差。将偏差的比例(P)、积分(I)和微分(D)通过线性组合构成控制量，对被控对象进行控制，故称PID控制器。
+
+图4.16：PID控制原理
+在计算机控制系统中，使用的是数字PID控制器，控制规律为：
+	e(k)r(k)c(k)	(公式4.1)
+u(k)  K P{e(k) T k TD [e(k) e(k 1)]} e( j)
+	TI j0	T
+简单说来，PID控制器各校正环节的作用如下：比例环节：及时成比例地反映控制系统的偏差信号，偏差一旦产生，控制器立即产生控制作用，以减少偏差。
+积分环节：主要用于消除静差，提高系统的无差度。积分作用的强弱取决于积分时间常数，越大，积分作用越弱，反之则越强。
+微分环节：能反映偏差信号的变化趋势(变化速率)，并能在该偏差信号变得太大之前，在系统中引入一个有效的早期修正信号，从而加快系统的动作速度，减小调节时间。
+4.5.1 位置式PID
+位置式PID中，由于计算机输出的u(k) 直接去控制执行机构(如阀门)，u(k)的值和执行机构的位置(如阀门开度)是一一对应的，所以通常称公式(4.2)为位置式PID控制算法。
+位置式PID控制算法的缺点是：由于全量输出，所以每次输出均与过去的状态有关，计算时要对过去e(k)进行累加，计算机工作量大；而且因为计算机输出的u(k)对应的是执行机构的实际位置，如计算机出现故障，u(k)的大幅度变化，会引起执行机构位置的大幅度变化，这种情况往往是生产实践中不允许的，在某些场合，还可能造成严重的生产事故。因而产生了增量式PID 控制的控制算法，所谓增量式PID 是指数字控制器的输出只是控制量的增量△u(k)。
+4.5.2 增量式PID
+当执行机构需要的是控制量的增量(例如：驱动步进电机)时，可由式(4.2)推导出提供增量的PID控制算式。由式(4.2)可以推出式(4.3)，式(4.2)减去式(4.3)可得式(4.4)。
+      (公式4.3)
+   (公式4.4)
+式中；；
+
+公式(4.4)称为增量式PID控制算法，可以看出由于一般计算机控制系统采用恒定的采样周期T，一旦确定了KP、TI 、TD，只要使用前后三次测量值的偏差，即可由式(4.4)求出控制增量。
+增量式PID具有以下优点：
+由于计算机输出增量，所以误动作时影响小，必要时可用逻辑判断的方法关掉。
+手动/自动切换时冲击小，便于实现无扰动切换。此外，当计算机发生故障时，由于输出通道或执行装置具有信号的锁存作用，故能保持原值。
+算式中不需要累加。控制增量△u(k)的确定仅与最近k次的采样值有关，所以较容易通过加权处理而获得比较好的控制效果。
+但增量式PID也有其不足之处：积分截断效应大，有静态误差；溢出的影响大。使用时，常选择带死区、积分分离等改进PID控制算法。
+
+
+4.6 速度环控制
+由于行人可能在车辆距离较近时才进入识别范围，为避免碰撞，系统需要执行紧急制动。接收到制动指令后，立即将速度环目标速度设为负值，以实现快速减速；当编码器反馈值降至较小范围、车辆接近静止时，再将目标速度设为 0。该方法能够缩短停车距离，并减少速度超调。
+第五章 开发工具、调试过程说明
+前几章主要介绍系统方案及其细化设计，而系统的最终完善仍依赖现场调试。各功能模块涉及较多参数，其确定需要开展软硬件联合调试，因此必须配备完整的开发与调试环境，包括源代码编辑与编译环境、参数调节和设定工具等。
+我们主要的开发环境是 AURIX™ Development Studio，版本是 1.10.2，主要使用的编码语言是 C 语言。
+5.1 现场调试
+基本程序完成后，仍需在现场进行微调。为此，我们自制了按键和 IPS 模块。比赛现场，操作队员根据赛道状况和智能车循迹表现，通过按键调整程序参数，主要包括：
+1）不同类型赛道的速度参数；
+2）方向环 PD 控制的 Kp、Kd 等参数。方向环控制参数显示在 IPS 屏幕上，并通过主板按键进行增减调节。
+为确定适用于不同赛道的参数，我们投入了大量时间完成赛道绘制、车辆测试和参数整定。尽管调试过程较为曲折和辛苦，但车辆性能持续提升也让团队的付出更具价值。
+5.2 调试中遇到的问题及解决过程
+赛车即使在相同赛道上运行，其实际轨迹也可能存在差异，因此仅依靠预设状态难以覆盖全部情况，需要建立完善的实时监控方案。为此，我们使用了插件驱动、自由度较高的 VOFA+ 上位机，以降低图形化调试门槛。其主要特点包括：
+保留了传统字节流调试助手风格的数据收发功能，以应对非图形化调试需求；
+通过直观极简的协议设计和方便快捷的命令绑定，硬件工程师无需处理复杂的协议逻辑，只需以面向串口助手的编程方式，就能获得强大的数据可视化、数据分析、使用控件发送指令的能力；
+拥有一个可裁剪的系统，"丰俭由人"。通过添加控件的方式，工程师可以定制一个无限丰富的调试界面；
+拥有一个开放、开源的插件系统：
+用户可以定制符合自己需求的协议和控件；
+通过开源社区的力量，VOFA+的调试生态可以不断发展繁荣。
+
+图5.1 VOFA+优势
+
+图5.1 VOFA+调试截图
+除使用 VOFA+ 调试外，我们还通过 IPS 屏幕复现车辆轨迹，并将其与预定轨迹进行对比，再根据实际情况调整参数，使实际轨迹逐步逼近预定轨迹。
+
+
+第六章 车模技术参数说明
+
+
+
+第七章 结论
+本报告详细介绍了杭电人工智能模型一队为第二十一届全国大学生智能汽车竞赛设计的智能车系统方案，包括主板、驱动板、基于 PID 的转向控制以及速度控制算法。通过对整车系统的分析与优化，我们在车模硬件和软件方面均进行了改进。系统主要具有以下特点：
+1）采用 IMU 和编码器作为传感器，并通过编码器反馈实现速度闭环控制；
+2）主板和驱动板采用塑料柱与胶带固定，在保证稳定性的同时便于快速更换；
+3）根据实际需求定制主板和驱动板，较高的集成度有效减轻了重量、缩小了体积，并便于机械布局；
+4）增加按键与 IPS 辅助调试电路，便于现场快速调整参数，增强车辆对赛道的适应能力；
+5）根据实际需求调整车模前桥、后桥及重心位置，降低通过特殊元素时的侧翻风险，并提高转弯灵活性。
+程序控制部分仅启用一个定时中断，控制流程简洁，便于调试。整体系统仍有进一步优化空间，我们将在后续测试中持续改进。
+
+参考文献
+
+[1] 杨东轩，王嵩  《ARM Cortex-M4 自学笔记——基于 Kinetis K60》  北京-北京航空航天大学出版社
+[2] 邵贝贝. 单片机嵌入式应用的在线开发方法. 北京-清华大学出版 社 2004  年 10 月第1版
+[3] 卓晴，黄开胜，邵贝贝 学做智能车 北京-北京航空航天大学出版 社 2007
+[4] 王威 HCS12 微控制器原理及应用 北京-北京航空航天大学出版 社 2007
+[5] 李宁， 刘启新 电机自动控制系统 北京-机械工业出版社， 2003 [6]  谭浩强 C++ 程序设计 北京-清华大学出版社 2004
+[7]  潘松，黄继业 现代数字电路基础教程 北京-科学出版社 2008
+[8]  王水平 开关稳压电源原理及设计 北京-人民邮电出版社 2008 [9] TI 公司 Use of Rail-to-Rail Operational Amplifiers / Application Report 1999
+[10] 钱江一号 第六届 "飞思卡尔" 杯全国大学生智能车大赛技术报告杭州电子科技大学 2011
+[11] 钱江六号 第五届 "飞思卡尔" 杯全国大学生智能车大赛技术报告杭州电子科技大学 2010
+[12] 钱江六号 第五届 "飞思卡尔”杯全国大学生智能车大赛技术报告杭州电子科技大学 2010
+[13] 韩绍坤，许向阳，王晓华编。《自动控制原理》。北京：北京理工大学出版社，2009。
+[14] PCB LAYOUT 高速信号走线指南（CSDN 博客）：https://blog.csdn.net/weixin_48518775/article/details/129620351。
+[15] 郭景华，罗禹贡，李克强。《智能车辆运动控制系统协同设计》。
+
+
+
+附录 A 部分主板原理图
+
+
+图  A-1
+
+附录 B 部分程序源代码
+/*
+ * menu.c
+ *
+ *  Created on:
+ *      Author: 34921
+ */
+
+#include "zf_common_headfile.h"
+#include "navi_flash.h"
+#if NAVIGATION_ENABLE
+#include "navi_menu.h"
+#endif
+
+//-----------------------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+#define     menu_show_string(_x_, _y_, __string__)          ( ips200_show_string((_x_), (_y_), (__string__) ))
+
+#define     menu_show_char(_x_, _y_, _char_)                ( ips200_show_char((_x_), (_y_),(_char_)) )
+
+#define     menu_show_int(_x_, _y_, _int_, _len_)           ( ips200_show_int((_x_), (_y_), (_int_), (_len_) ))
+
+#define     menu_show_float(_x_, _y_, _float_, _len_z_, _len_x_)    ( ips200_show_float((_x_), (_y_), (_float_), (_len_z_), (_len_x_)  ))
+
+
+
+
+
+
+#define     FONT_W                  (8)
+#define     FONT_H                  (16)
+#define     SHOW_STAR_Y             (0)
+#define     COLS_SUM_LEN            (29)
+#define     FOLDER_NAME_LEN         (10)
+#define     FOLDER_NUMBER_LEN       (7)
+#define     EVERY_FOLDER_NUMBER     (19)
+
+#define SETUP_LEN               (7)
+#define SETUP_NUMBER_LEN        (7)
+
+#define     INS_MAP_W               (240)
+#define     INS_MAP_H               (240)
+#define     INS_MAP_MARGIN          (8)
+#define     INS_MENU_Y              (240)
+#define     INS_MENU_ROWS           (5)
+
+#define     INS_COLOR_BLACK         (0x0000)
+#define     INS_COLOR_WHITE         (0xFFFF)
+#define     INS_COLOR_GREEN         (0x07E0)
+#define     INS_COLOR_RED           (0xF800)
+#define     INS_COLOR_YELLOW        (0xFFE0)
+#define     INS_COLOR_CYAN          (0x07FF)
+#define     INS_COLOR_MAGENTA       (0xF81F)
+#define     INS_COLOR_ORANGE        (0xFD20)
+
+
+static float SetupNumber[SETUP_LEN] = {0.001, 0.01, 0.1, 1, 10, 100, 1000};
+static uint8_t SetupIndex = 3;
+
+
+
+
+
+
+Folder_Menu root;       //菜单的根节点
+
+Folder_Menu *key_menu_p = NULL; //菜单索引
+
+
+bool is_test =false;                //是否开启测试
+bool wireless_flag = false;         //是否开启无线串口
+bool test_rel = false;              //测试的速度是否为闭环的
+
+bool flash_save_all = false;        //是否存储所有
+bool flash_load_all = false;        //是否加载所有参数
+#if NAVIGATION_ENABLE
+bool navi_mode = false;             //是否启动惯导
+bool navi_reset_flag = false;       //是否reset惯导
+bool flash_save_navi = false;       //是否把惯导保存到flash
+bool flash_load_navi = false;       //是否从flash里面读取惯导
+
+#endif
+
+bool is_imucheck = false;           //是否开始校准陀螺仪
+
+
+
+bool is_check_dist = false;         //是否开始测量距离
+bool check_zero = false;            //是否给测量距离清零
+
+
+bool text_speed_pi =false;          //是否开始调速度环
+int16_t text_run_time = 3000;       //跑的时间
+int16_t text_stop_time = 4000;      //停止时间
+int16_t text_speed = 20;            //测试的速度
+
+
+
+bool left_test = false;             //左轮开始给pwm
+bool right_test = false;            //右轮给pwm
+bool fuzzy_pid = true;              //是否启动模糊pid
+int16_t test_left_speed = 0;        //左轮测试速度
+int16_t test_right_speed = 0;       //右轮测试速度
+
+float menu_yaw = 0.0;               //菜单上显示的yaw角度
+static int16_t normal_speed_lookahead = 0;
+static int16_t fast_speed_lookahead = 0;
+static bool lookahead_send = false;
+
+
+
+uint8_t ins_mode_select = 0;            //0正常上位机巡线，1记录赛道，2惯导前馈，辅助速度和pd切换，3纯惯导保底完赛，4在2的基础上加上路径修正
+
+#if INS_NAV_ENABLE
+
+bool flash_save_ins = false;
+bool flash_load_ins = false;
+
+static uint16_t ins_menu_lap1_end = 0;
+static uint16_t ins_menu_lap2_end = 0;
+static uint16_t ins_menu_lap3_end = 0;
+
+static bool ins_split_confirm = false;
+static bool ins_split_menu_initialized = false;                     // 当前分圈菜单的可调参数是否已经赋过初值
+
+
+static uint8_t ins_display_lap = 1;                                 //选择需要渲染的圈
+static uint16_t ins_map_cursor = 0;                                 //当前显示圈的点光标下标
+
+
+static bool ins_map_need_redraw = true;
+
+static float ins_map_scale = 1.0f;
+static float ins_map_center_x = 0.0f;
+static float ins_map_center_y = 0.0f;
+
+
+typedef struct
+{
+    int16_t target_speed;
+    bool use_pd;
+    float zone_kp;
+    float zone_kd;
+} INS_MANUAL_ZONE_DEFAULT;
+
+static uint16_t ins_zone_start = 0;
+static uint16_t ins_zone_end = 0;
+static uint8_t ins_zone_select_state = 0; // 0 idle, 1 select start, 2 select end, 3 wait save/cancel
+static bool ins_zone_quick_edit = false;
+static bool ins_zone_quick_active = false;
+
+static Folder_Menu *ins_menu_folder = NULL;
+static Folder_Menu *ins_setup_folder = NULL;
+static Folder_Menu *ins_map_folder = NULL;
+static Folder_Menu *ins_auto_default_folder = NULL;
+static Folder_Menu *ins_zone_default_folder = NULL;
+static Folder_Menu *ins_zone_folder = NULL;
+
+static uint8_t ins_zone_id = 0;
+static uint8_t ins_zone_last_id = 0xFF;
+static uint8_t ins_zone_last_lap = 0xFF;
+
+static INS_MANUAL_ZONE_DEFAULT ins_zone_default =
+{
+    .target_speed = 25,
+    .use_pd = true,
+    .zone_kp = 0.79f,
+    .zone_kd = 1.44f
+};
+
+static INS_MANUAL_ZONE ins_zone_edit = {0};
+
+static bool ins_zone_delete = false;
+static bool ins_zone_delete_confirm = false;
+
+
+
+#endif
+
+
+
+//============================================================//
+
+
+
+//-------------------------------------------------------------------------------------------------------------------
+// 函数简介       创建车辆调参菜单的全部目录和参数节点
+// 参数简介       无
+// 返回参数       void                     无返回值
+// 备注信息       仅在本文件内部调用。
+//-------------------------------------------------------------------------------------------------------------------
+static void my_create_Menus(void)
+{
+    /* --------------------------------------------- */
+
+//名字不要取一样的，flash会乱
+//=============================Root items=====================================================
+    // Flash management folder (profile-based save/load)
+    Folder_Menu* flash_folder = dynamicCreate_Menu_Folder(&root, "Flash");
+    dynamicCreate_Menu_LimitNumberBox(flash_folder, "save_p", &target_save_profile, uint8_Box, 0, PROFILE_MAX - 1);
+    dynamicCreate_Menu_NumberBox(flash_folder, "SAVE", &flash_save_all, bool_Box);
+    dynamicCreate_Menu_LimitNumberBox(flash_folder, "load_p", &target_load_profile, uint8_Box, 0, PROFILE_MAX - 1);
+    dynamicCreate_Menu_NumberBox(flash_folder, "LOAD", &flash_load_all, bool_Box);
+
+    dynamicCreate_Menu_NumberBox(&root, "imucheck", &is_imucheck, bool_Box);
+    Folder_Menu* pid_folder = dynamicCreate_Menu_Folder(&root , "PID");
+    Folder_Menu* speed_folder = dynamicCreate_Menu_Folder(&root , "Speed");
+    Folder_Menu* receive_folder = dynamicCreate_Menu_Folder(&root , "re_fg");
+    Folder_Menu* test_folder = dynamicCreate_Menu_Folder(&root , "test");
+    Folder_Menu* testpi_folder = dynamicCreate_Menu_Folder(&root , "pi");
+    dynamicCreate_Menu_NumberBox(&root,"wirele",&wireless_flag,bool_Box);
+    dynamicCreate_Menu_NumberBox(&root,"yaw",&menu_yaw,float_Box);
+
+    Folder_Menu* dist_folder = dynamicCreate_Menu_Folder(&root, "dist");
+#if NAVIGATION_ENABLE
+    // Navi folder
+    Folder_Menu* navi_folder = dynamicCreate_Menu_Folder(&root, "Navi");
+    dynamicCreate_Menu_NumberBox(navi_folder, "mode", &navi_mode, bool_Box);
+    dynamicCreate_Menu_NumberBox(navi_folder, "save", &flash_save_navi, bool_Box);
+    dynamicCreate_Menu_NumberBox(navi_folder, "load", &flash_load_navi, bool_Box);
+    dynamicCreate_Menu_NumberBox(navi_folder, "reset", &navi_reset_flag, bool_Box);
+    dynamicCreate_Menu_NumberBox(navi_folder, "record", (void *)&navi_record_enable, bool_Box);
+    dynamicCreate_Menu_NumberBox(navi_folder, "use", (void *)&navi_use_enable, bool_Box);
+    dynamicCreate_Menu_NumberBox(navi_folder, "auto_sp", (void *)&navi_auto_speed_enable, bool_Box);
+    dynamicCreate_Menu_NumberBox(navi_folder, "branch", (void *)&navi_branch_record_enable, bool_Box);
+    dynamicCreate_Menu_NumberBox(navi_folder, "next_e", (void *)&navi_next_element, int16_Box);
+    dynamicCreate_Menu_NumberBox(navi_folder, "next_b", (void *)&navi_next_branch, int16_Box);
+    dynamicCreate_Menu_NumberBox(navi_folder, "adv_sp", (void *)&navi_advice_speed, int16_Box);
+    dynamicCreate_Menu_NumberBox(navi_folder, "nv_base", (void *)&navi_speed_base, int16_Box);
+    dynamicCreate_Menu_NumberBox(navi_folder, "nv_near", (void *)&navi_speed_near, int16_Box);
+    dynamicCreate_Menu_NumberBox(navi_folder, "nv_coin", (void *)&navi_speed_coin, int16_Box);
+    dynamicCreate_Menu_NumberBox(navi_folder, "nv_car", (void *)&navi_speed_car, int16_Box);
+    dynamicCreate_Menu_NumberBox(navi_folder, "nv_ped", (void *)&navi_speed_ped, int16_Box);
+    dynamicCreate_Menu_NumberBox(navi_folder, "nv_light", (void *)&navi_speed_light, int16_Box);
+    dynamicCreate_Menu_NumberBox(navi_folder, "nv_limit", (void *)&navi_speed_limit, int16_Box);
+    dynamicCreate_Menu_NumberBox(navi_folder, "nv_warn", (void *)&navi_speed_warn, int16_Box);
+    dynamicCreate_Menu_NumberBox(navi_folder, "nv_start", (void *)&navi_speed_start, int16_Box);
+    dynamicCreate_Menu_NumberBox(navi_folder, "nv_finish", (void *)&navi_speed_finish, int16_Box);
+    dynamicCreate_Menu_NumberBox(navi_folder, "corr_on", (void *)&navi_correct_enable, bool_Box);
+    dynamicCreate_Menu_NumberBox(navi_folder, "corr_win", (void *)&navi_correct_window_cm, int16_Box);
+    dynamicCreate_Menu_NumberBox(navi_folder, "ped_gap", (void *)&navi_ped_min_gap_cm, int16_Box);
+    dynamicCreate_Menu_NumberBox(navi_folder, "car_gap", (void *)&navi_car_min_gap_cm, int16_Box);
+    dynamicCreate_Menu_NumberBox(navi_folder, "cur_seg", (void *)&navi_current_interval, int16_Box);
+    dynamicCreate_Menu_NumberBox(navi_folder, "seg_idx", (void *)&navi_interval_index, int16_Box);
+    dynamicCreate_Menu_NumberBox(navi_folder, "seg_sp", (void *)&navi_interval_speed, int16_Box);
+    dynamicCreate_Menu_NumberBox(navi_folder, "pts", (void *)&navi_trace_point_count, int16_Box);
+#endif
+//=======================================================================================
+
+//============================pid_folder================================================
+    Folder_Menu* servo_pid = dynamicCreate_Menu_Folder(pid_folder , "ser_pd");
+    Folder_Menu* speed_pid = dynamicCreate_Menu_Folder(pid_folder , "sp_pi");
+    Folder_Menu* element_pid = dynamicCreate_Menu_Folder(pid_folder , "el_pd");
+
+//=======================================================================================
+
+//============================speed_folder===============================================
+
+    Folder_Menu* set_speed = dynamicCreate_Menu_Folder(speed_folder , "set_sp");
+    Folder_Menu* see_speed = dynamicCreate_Menu_Folder(speed_folder, "rel_sp");
+    Folder_Menu* ahead_folder = dynamicCreate_Menu_Folder(speed_folder, "Ahead");
+    dynamicCreate_Menu_LimitNumberBox_Save(ahead_folder, "pre_norm", &normal_speed_lookahead, int16_Box, 0, 256);
+    dynamicCreate_Menu_LimitNumberBox_Save(ahead_folder, "pre_fast", &fast_speed_lookahead, int16_Box, 0, 256);
+    dynamicCreate_Menu_NumberBox(ahead_folder, "pre_send", &lookahead_send, bool_Box);
+
+
+//=======================================================================================
+
+//=============================see_speed=================================================
+    dynamicCreate_Menu_NumberBox(see_speed,"left",&motor_left.real_speed,float_Box);
+    dynamicCreate_Menu_NumberBox(see_speed,"right",&motor_right.real_speed,float_Box);
+    dynamicCreate_Menu_NumberBox(see_speed,"eleft",&motor_left.encoder_speed,int16_Box);
+    dynamicCreate_Menu_NumberBox(see_speed,"eright",&motor_right.encoder_speed,int16_Box);
+
+//=======================================================================================
+
+//================================receive_flag===========================================
+    dynamicCreate_Menu_NumberBox(receive_folder,"error",(void *)(uint32_t)&receive_data.error,float_Box);
+    dynamicCreate_Menu_NumberBox(receive_folder,"stop",(void *)(uint32_t)&receive_data.flag_stop,uint8_Box);
+    dynamicCreate_Menu_NumberBox(receive_folder,"save",(void *)(uint32_t)&receive_data.flag_protect,uint8_Box);
+    dynamicCreate_Menu_NumberBox(receive_folder,"buzzer",(void *)(uint32_t)&receive_data.flag_buzzer,uint8_Box);
+    dynamicCreate_Menu_NumberBox(receive_folder,"start",(void *)(uint32_t)&receive_data.flag_start_car,uint8_Box);
+    dynamicCreate_Menu_NumberBox(receive_folder,"r_br",(void *)(uint32_t)&receive_data.flag_branch_dir,uint8_Box);
+//=======================================================================================
+
+//==================================servo_pid============================================
+    dynamicCreate_Menu_NumberBox(servo_pid, "is_fpid", &fuzzy_pid, bool_Box);
+    Folder_Menu* common_pid = dynamicCreate_Menu_Folder(servo_pid, "common");
+    Folder_Menu* fuzzy_pid_folder = dynamicCreate_Menu_Folder(servo_pid, "fuzzy");
+    Folder_Menu* fuzzy_later_folder = dynamicCreate_Menu_Folder(servo_pid, "fuzzy23");
+    Folder_Menu* gyro_pid = dynamicCreate_Menu_Folder(servo_pid, "gyro");
+
+//======================================servo_pid=============================================
+    dynamicCreate_Menu_NumberBox(common_pid, "common_kp", &menu_edit_pid.common_kp, float_Box);
+    dynamicCreate_Menu_NumberBox(common_pid, "common_kd", &menu_edit_pid.common_kd, float_Box);
+
+
+    dynamicCreate_Menu_NumberBox(common_pid, "speed", &car_using.base_speed, int16_Box);
+
+    dynamicCreate_Menu_NumberBox(gyro_pid, "gzraw", (void *)&imu_gyro_z_live, float_Box);
+    dynamicCreate_Menu_NumberBox(gyro_pid, "gzpeak", (void *)&imu_gyro_z_abs_peak, float_Box);
+    dynamicCreate_Menu_NumberBox(gyro_pid, "gzclr", (void *)&imu_gyro_z_peak_clear, bool_Box);
+
+//=============================================================================================
+
+//=======================================speed_pid=============================================
+    dynamicCreate_Menu_NumberBox_Save(speed_pid, "l_kp", &left_pi.kp, float_Box);
+    dynamicCreate_Menu_NumberBox_Save(speed_pid, "l_ki", &left_pi.ki, float_Box);
+    dynamicCreate_Menu_NumberBox_Save(speed_pid, "R_kp", &right_pi.kp, float_Box);
+    dynamicCreate_Menu_NumberBox_Save(speed_pid, "R_ki", &right_pi.ki, float_Box);
+    dynamicCreate_Menu_NumberBox_Save(speed_pid, "s_kp", &stop_pi.kp, float_Box);
+    dynamicCreate_Menu_NumberBox_Save(speed_pid, "s_ki", &stop_pi.ki, float_Box);
+
+//==============================================================================================
+
+//==================================test_folder=========================================================
+    dynamicCreate_Menu_NumberBox(test_folder,"is_b",&is_test,bool_Box);
+    dynamicCreate_Menu_NumberBox(test_folder,"isrel",&test_rel,bool_Box);
+    dynamicCreate_Menu_NumberBox(test_folder,"left",&left_test,bool_Box);
+    dynamicCreate_Menu_NumberBox(test_folder,"right",&right_test,bool_Box);
+    dynamicCreate_Menu_NumberBox(test_folder,"ser_m",&Servo_Mide,int16_Box);
+    dynamicCreate_Menu_NumberBox(test_folder,"left",&test_left_speed,int16_Box);
+    dynamicCreate_Menu_NumberBox(test_folder,"right",&test_right_speed,int16_Box);
+
+//===============================================================================================
+
+//=====================================set_speed=====================================================
+    dynamicCreate_Menu_NumberBox(set_speed, "base", &car_using.base_speed, int16_Box);
+    dynamicCreate_Menu_NumberBox(set_speed, "max", &car_using.max_speed, int16_Box);
+    dynamicCreate_Menu_NumberBox(set_speed, "stop", &car_using.need_stop, int16_Box);
+    dynamicCreate_Menu_NumberBox(set_speed, "quick", &car_using.accelerate, int16_Box);
+    dynamicCreate_Menu_NumberBox(set_speed, "slow", &car_using.slow_speed, int16_Box);
+    dynamicCreate_Menu_NumberBox(set_speed, "sparse", &car_using.sparse_acc, int16_Box);
+    dynamicCreate_Menu_NumberBox(set_speed, "base23", &car_using.later_base_speed, int16_Box);
+    dynamicCreate_Menu_NumberBox(set_speed, "sparse23", &car_using.later_sparse_acc, int16_Box);
+    dynamicCreate_Menu_NumberBox(set_speed, "stone", &car_using.stone_sp, int16_Box);
+    dynamicCreate_Menu_NumberBox(set_speed, "coin", &car_using.coin_sp, int16_Box);
+    dynamicCreate_Menu_NumberBox(set_speed, "car", &car_using.car_sp, int16_Box);
+    dynamicCreate_Menu_NumberBox(set_speed, "ped_sp", &car_using.ped_straight_acc, int16_Box);
+    dynamicCreate_Menu_NumberBox(set_speed, "realign", &car_using.fast_realign_sp, int16_Box);
+    dynamicCreate_Menu_NumberBox(set_speed, "return", &car_using.return_track_sp, int16_Box);
+//================================================================================================
+//=====================================fuzzy_pid_folder=======================================
+    dynamicCreate_Menu_NumberBox(fuzzy_pid_folder, "kp1", &kp_table_menu[0], float_Box);
+    dynamicCreate_Menu_NumberBox(fuzzy_pid_folder, "kp2", &kp_table_menu[1], float_Box);
+    dynamicCreate_Menu_NumberBox(fuzzy_pid_folder, "kp3", &kp_table_menu[2], float_Box);
+    dynamicCreate_Menu_NumberBox(fuzzy_pid_folder, "kp4", &kp_table_menu[3], float_Box);
+    dynamicCreate_Menu_NumberBox(fuzzy_pid_folder, "kp5", &kp_table_menu[4], float_Box);
+    dynamicCreate_Menu_NumberBox(fuzzy_pid_folder, "kp6", &kp_table_menu[5], float_Box);
+    dynamicCreate_Menu_NumberBox(fuzzy_pid_folder, "kp7", &kp_table_menu[6], float_Box);
+
+    dynamicCreate_Menu_NumberBox(fuzzy_pid_folder, "kd1", &kd_table_menu[0], float_Box);
+    dynamicCreate_Menu_NumberBox(fuzzy_pid_folder, "kd2", &kd_table_menu[1], float_Box);
+    dynamicCreate_Menu_NumberBox(fuzzy_pid_folder, "kd3", &kd_table_menu[2], float_Box);
+    dynamicCreate_Menu_NumberBox(fuzzy_pid_folder, "kd4", &kd_table_menu[3], float_Box);
+    dynamicCreate_Menu_NumberBox(fuzzy_pid_folder, "kd5", &kd_table_menu[4], float_Box);
+    dynamicCreate_Menu_NumberBox(fuzzy_pid_folder, "kd6", &kd_table_menu[5], float_Box);
+    dynamicCreate_Menu_NumberBox(fuzzy_pid_folder, "kd7", &kd_table_menu[6], float_Box);
+
+    dynamicCreate_Menu_NumberBox(fuzzy_later_folder, "kp1_23", &kp_table_later_menu[0], float_Box);
+    dynamicCreate_Menu_NumberBox(fuzzy_later_folder, "kp2_23", &kp_table_later_menu[1], float_Box);
+    dynamicCreate_Menu_NumberBox(fuzzy_later_folder, "kp3_23", &kp_table_later_menu[2], float_Box);
+    dynamicCreate_Menu_NumberBox(fuzzy_later_folder, "kp4_23", &kp_table_later_menu[3], float_Box);
+    dynamicCreate_Menu_NumberBox(fuzzy_later_folder, "kp5_23", &kp_table_later_menu[4], float_Box);
+    dynamicCreate_Menu_NumberBox(fuzzy_later_folder, "kp6_23", &kp_table_later_menu[5], float_Box);
+    dynamicCreate_Menu_NumberBox(fuzzy_later_folder, "kp7_23", &kp_table_later_menu[6], float_Box);
+    dynamicCreate_Menu_NumberBox(fuzzy_later_folder, "kd1_23", &kd_table_later_menu[0], float_Box);
+    dynamicCreate_Menu_NumberBox(fuzzy_later_folder, "kd2_23", &kd_table_later_menu[1], float_Box);
+    dynamicCreate_Menu_NumberBox(fuzzy_later_folder, "kd3_23", &kd_table_later_menu[2], float_Box);
+    dynamicCreate_Menu_NumberBox(fuzzy_later_folder, "kd4_23", &kd_table_later_menu[3], float_Box);
+    dynamicCreate_Menu_NumberBox(fuzzy_later_folder, "kd5_23", &kd_table_later_menu[4], float_Box);
+    dynamicCreate_Menu_NumberBox(fuzzy_later_folder, "kd6_23", &kd_table_later_menu[5], float_Box);
+    dynamicCreate_Menu_NumberBox(fuzzy_later_folder, "kd7_23", &kd_table_later_menu[6], float_Box);
+//================================================================================================================
+    dynamicCreate_Menu_NumberBox(dist_folder,"is_c",&is_check_dist,bool_Box);
+    dynamicCreate_Menu_NumberBox(dist_folder,"to_0",&check_zero,bool_Box);
+    dynamicCreate_Menu_NumberBox(dist_folder,"dist",&real_dist,float_Box);
+
+//===============================================================================================================
+    dynamicCreate_Menu_NumberBox(testpi_folder,"is_on",&text_speed_pi,bool_Box);
+    dynamicCreate_Menu_NumberBox(testpi_folder,"r_tim",&text_run_time,int16_Box);
+    dynamicCreate_Menu_NumberBox(testpi_folder,"s_tim",&text_stop_time,int16_Box);
+    dynamicCreate_Menu_NumberBox(testpi_folder,"sp",&text_speed,int16_Box);
+//================================================================================================================
+
+//====================================element_pid=================================================================
+    Folder_Menu* common_s = dynamicCreate_Menu_Folder(element_pid , "common");
+    Folder_Menu* stop_s = dynamicCreate_Menu_Folder(element_pid , "stop");
+    Folder_Menu* mode_s = dynamicCreate_Menu_Folder(element_pid , "mode");
+    Folder_Menu* slow_s = dynamicCreate_Menu_Folder(element_pid , "slow");
+    Folder_Menu* acc_s = dynamicCreate_Menu_Folder(element_pid , "acc");
+    Folder_Menu* stone_s = dynamicCreate_Menu_Folder(element_pid , "stone");
+    Folder_Menu* coin_s = dynamicCreate_Menu_Folder(element_pid , "coin");
+    Folder_Menu* ped_s = dynamicCreate_Menu_Folder(element_pid , "ped");
+    Folder_Menu* realign_s = dynamicCreate_Menu_Folder(element_pid , "realign");
+    Folder_Menu* coin_side_s = dynamicCreate_Menu_Folder(element_pid , "coin_side");
+    Folder_Menu* return_s = dynamicCreate_Menu_Folder(element_pid , "return");
+    Folder_Menu* close_car_s = dynamicCreate_Menu_Folder(element_pid , "close_car");
+    Folder_Menu* leave_car_s = dynamicCreate_Menu_Folder(element_pid , "leave_car");
+
+    dynamicCreate_Menu_NumberBox_Save(common_s, "com_u", &state_pd[uart_common].use_pd, bool_Box);
+    dynamicCreate_Menu_NumberBox_Save(common_s, "comkp", &state_pd[uart_common].kp, float_Box);
+    dynamicCreate_Menu_NumberBox_Save(common_s, "comkd", &state_pd[uart_common].kd, float_Box);
+    dynamicCreate_Menu_NumberBox_Save(common_s, "com_du", &state_pd[uart_common].use_diff, bool_Box);
+    dynamicCreate_Menu_NumberBox_Save(common_s, "com_dp", &state_pd[uart_common].diff_kp, float_Box);
+    dynamicCreate_Menu_NumberBox_Save(common_s, "com_dd", &state_pd[uart_common].diff_kd, float_Box);
+
+    dynamicCreate_Menu_NumberBox_Save(stop_s, "stop_u", &state_pd[uart_stop].use_pd, bool_Box);
+    dynamicCreate_Menu_NumberBox_Save(stop_s, "stopkp", &state_pd[uart_stop].kp, float_Box);
+    dynamicCreate_Menu_NumberBox_Save(stop_s, "stopkd", &state_pd[uart_stop].kd, float_Box);
+    dynamicCreate_Menu_NumberBox_Save(stop_s, "stop_du", &state_pd[uart_stop].use_diff, bool_Box);
+    dynamicCreate_Menu_NumberBox_Save(stop_s, "stop_dp", &state_pd[uart_stop].diff_kp, float_Box);
+    dynamicCreate_Menu_NumberBox_Save(stop_s, "stop_dd", &state_pd[uart_stop].diff_kd, float_Box);
+
+    dynamicCreate_Menu_NumberBox_Save(mode_s, "mode_u", &state_pd[uart_mode].use_pd, bool_Box);
+    dynamicCreate_Menu_NumberBox_Save(mode_s, "modekp", &state_pd[uart_mode].kp, float_Box);
+    dynamicCreate_Menu_NumberBox_Save(mode_s, "modekd", &state_pd[uart_mode].kd, float_Box);
+    dynamicCreate_Menu_NumberBox_Save(mode_s, "mode_du", &state_pd[uart_mode].use_diff, bool_Box);
+    dynamicCreate_Menu_NumberBox_Save(mode_s, "mode_dp", &state_pd[uart_mode].diff_kp, float_Box);
+    dynamicCreate_Menu_NumberBox_Save(mode_s, "mode_dd", &state_pd[uart_mode].diff_kd, float_Box);
+
+    dynamicCreate_Menu_NumberBox_Save(slow_s, "slow_u", &state_pd[uart_slow].use_pd, bool_Box);
+    dynamicCreate_Menu_NumberBox_Save(slow_s, "slowkp", &state_pd[uart_slow].kp, float_Box);
+    dynamicCreate_Menu_NumberBox_Save(slow_s, "slowkd", &state_pd[uart_slow].kd, float_Box);
+    dynamicCreate_Menu_NumberBox_Save(slow_s, "slow_du", &state_pd[uart_slow].use_diff, bool_Box);
+    dynamicCreate_Menu_NumberBox_Save(slow_s, "slow_dp", &state_pd[uart_slow].diff_kp, float_Box);
+    dynamicCreate_Menu_NumberBox_Save(slow_s, "slow_dd", &state_pd[uart_slow].diff_kd, float_Box);
+
+    dynamicCreate_Menu_NumberBox_Save(acc_s, "acc_u", &state_pd[uart_acc].use_pd, bool_Box);
+    dynamicCreate_Menu_NumberBox_Save(acc_s, "acckp", &state_pd[uart_acc].kp, float_Box);
+    dynamicCreate_Menu_NumberBox_Save(acc_s, "acckd", &state_pd[uart_acc].kd, float_Box);
+    dynamicCreate_Menu_NumberBox_Save(acc_s, "acc_du", &state_pd[uart_acc].use_diff, bool_Box);
+    dynamicCreate_Menu_NumberBox_Save(acc_s, "acc_dp", &state_pd[uart_acc].diff_kp, float_Box);
+    dynamicCreate_Menu_NumberBox_Save(acc_s, "acc_dd", &state_pd[uart_acc].diff_kd, float_Box);
+
+    dynamicCreate_Menu_NumberBox_Save(stone_s, "stone_u", &state_pd[uart_fork].use_pd, bool_Box);
+    dynamicCreate_Menu_NumberBox_Save(stone_s, "stonekp", &state_pd[uart_fork].kp, float_Box);
+    dynamicCreate_Menu_NumberBox_Save(stone_s, "stonekd", &state_pd[uart_fork].kd, float_Box);
+    dynamicCreate_Menu_NumberBox_Save(stone_s, "stone_du", &state_pd[uart_fork].use_diff, bool_Box);
+    dynamicCreate_Menu_NumberBox_Save(stone_s, "stone_dp", &state_pd[uart_fork].diff_kp, float_Box);
+    dynamicCreate_Menu_NumberBox_Save(stone_s, "stone_dd", &state_pd[uart_fork].diff_kd, float_Box);
+
+    dynamicCreate_Menu_NumberBox_Save(coin_s, "coin_u", &state_pd[uart_coin].use_pd, bool_Box);
+    dynamicCreate_Menu_NumberBox_Save(coin_s, "coinkp", &state_pd[uart_coin].kp, float_Box);
+    dynamicCreate_Menu_NumberBox_Save(coin_s, "coinkd", &state_pd[uart_coin].kd, float_Box);
+    dynamicCreate_Menu_NumberBox_Save(coin_s, "coin_du", &state_pd[uart_coin].use_diff, bool_Box);
+    dynamicCreate_Menu_NumberBox_Save(coin_s, "coin_dp", &state_pd[uart_coin].diff_kp, float_Box);
+    dynamicCreate_Menu_NumberBox_Save(coin_s, "coin_dd", &state_pd[uart_coin].diff_kd, float_Box);
+
+    dynamicCreate_Menu_NumberBox_Save(ped_s, "ped_u", &state_pd[uart_ped_stright].use_pd, bool_Box);
+    dynamicCreate_Menu_NumberBox_Save(ped_s, "pedkp", &state_pd[uart_ped_stright].kp, float_Box);
+    dynamicCreate_Menu_NumberBox_Save(ped_s, "pedkd", &state_pd[uart_ped_stright].kd, float_Box);
+    dynamicCreate_Menu_NumberBox_Save(ped_s, "ped_du", &state_pd[uart_ped_stright].use_diff, bool_Box);
+    dynamicCreate_Menu_NumberBox_Save(ped_s, "ped_dp", &state_pd[uart_ped_stright].diff_kp, float_Box);
+    dynamicCreate_Menu_NumberBox_Save(ped_s, "ped_dd", &state_pd[uart_ped_stright].diff_kd, float_Box);
+
+    dynamicCreate_Menu_NumberBox_Save(realign_s, "r9_u", &state_pd[uart_fast_realign].use_pd, bool_Box);
+    dynamicCreate_Menu_NumberBox_Save(realign_s, "r9_kp", &state_pd[uart_fast_realign].kp, float_Box);
+    dynamicCreate_Menu_NumberBox_Save(realign_s, "r9_kd", &state_pd[uart_fast_realign].kd, float_Box);
+    dynamicCreate_Menu_NumberBox_Save(realign_s, "r9_du", &state_pd[uart_fast_realign].use_diff, bool_Box);
+    dynamicCreate_Menu_NumberBox_Save(realign_s, "r9_dp", &state_pd[uart_fast_realign].diff_kp, float_Box);
+    dynamicCreate_Menu_NumberBox_Save(realign_s, "r9_dd", &state_pd[uart_fast_realign].diff_kd, float_Box);
+
+    dynamicCreate_Menu_NumberBox_Save(coin_side_s, "side_u", &state_pd[uart_coin_side].use_pd, bool_Box);
+    dynamicCreate_Menu_NumberBox_Save(coin_side_s, "sidekp", &state_pd[uart_coin_side].kp, float_Box);
+    dynamicCreate_Menu_NumberBox_Save(coin_side_s, "sidekd", &state_pd[uart_coin_side].kd, float_Box);
+    dynamicCreate_Menu_NumberBox_Save(coin_side_s, "side_du", &state_pd[uart_coin_side].use_diff, bool_Box);
+    dynamicCreate_Menu_NumberBox_Save(coin_side_s, "side_dp", &state_pd[uart_coin_side].diff_kp, float_Box);
+    dynamicCreate_Menu_NumberBox_Save(coin_side_s, "side_dd", &state_pd[uart_coin_side].diff_kd, float_Box);
+
+    dynamicCreate_Menu_NumberBox_Save(return_s, "r10_u", &state_pd[uart_return_track].use_pd, bool_Box);
+    dynamicCreate_Menu_NumberBox_Save(return_s, "r10_kp", &state_pd[uart_return_track].kp, float_Box);
+    dynamicCreate_Menu_NumberBox_Save(return_s, "r10_kd", &state_pd[uart_return_track].kd, float_Box);
+    dynamicCreate_Menu_NumberBox_Save(return_s, "r10_du", &state_pd[uart_return_track].use_diff, bool_Box);
+    dynamicCreate_Menu_NumberBox_Save(return_s, "r10_dp", &state_pd[uart_return_track].diff_kp, float_Box);
+    dynamicCreate_Menu_NumberBox_Save(return_s, "r10_dd", &state_pd[uart_return_track].diff_kd, float_Box);
+
+    // Keep the legacy car_* names so existing saved car parameters restore into the close-car state.
+    dynamicCreate_Menu_NumberBox_Save(close_car_s, "car_u", &state_pd[uart_close_car].use_pd, bool_Box);
+    dynamicCreate_Menu_NumberBox_Save(close_car_s, "carkp", &state_pd[uart_close_car].kp, float_Box);
+    dynamicCreate_Menu_NumberBox_Save(close_car_s, "carkd", &state_pd[uart_close_car].kd, float_Box);
+    dynamicCreate_Menu_NumberBox_Save(close_car_s, "car_du", &state_pd[uart_close_car].use_diff, bool_Box);
+    dynamicCreate_Menu_NumberBox_Save(close_car_s, "car_dp", &state_pd[uart_close_car].diff_kp, float_Box);
+    dynamicCreate_Menu_NumberBox_Save(close_car_s, "car_dd", &state_pd[uart_close_car].diff_kd, float_Box);
+
+    dynamicCreate_Menu_NumberBox_Save(leave_car_s, "leave_u", &state_pd[uart_leave_car].use_pd, bool_Box);
+    dynamicCreate_Menu_NumberBox_Save(leave_car_s, "leavekp", &state_pd[uart_leave_car].kp, float_Box);
+    dynamicCreate_Menu_NumberBox_Save(leave_car_s, "leavekd", &state_pd[uart_leave_car].kd, float_Box);
+    dynamicCreate_Menu_NumberBox_Save(leave_car_s, "leave_du", &state_pd[uart_leave_car].use_diff, bool_Box);
+    dynamicCreate_Menu_NumberBox_Save(leave_car_s, "leave_dp", &state_pd[uart_leave_car].diff_kp, float_Box);
+    dynamicCreate_Menu_NumberBox_Save(leave_car_s, "leave_dd", &state_pd[uart_leave_car].diff_kd, float_Box);
+//================================================================================================================
+#if INS_NAV_ENABLE
+    ins_menu_folder = dynamicCreate_Menu_Folder(&root, "InsNav");
+    ins_setup_folder = dynamicCreate_Menu_Folder(ins_menu_folder, "Setup");
+    ins_map_folder = dynamicCreate_Menu_Folder(ins_menu_folder, "Map");
+    ins_auto_default_folder =dynamicCreate_Menu_Folder(ins_menu_folder, "AutoDef");
+    ins_zone_default_folder =dynamicCreate_Menu_Folder(ins_menu_folder, "ZoneDef");
+
+    dynamicCreate_Menu_NumberBox_Save(ins_auto_default_folder,
+                                      "car_sp",
+                                      &ins_auto_car_speed,
+                                      int16_Box);
+    dynamicCreate_Menu_NumberBox_Save(ins_auto_default_folder,
+                                      "ped_sp",
+                                      &ins_auto_ped_speed,
+                                      int16_Box);
+
+    dynamicCreate_Menu_LimitNumberBox(ins_setup_folder,"mode",&ins_mode_select,uint8_Box,ins_mode_vision,ins_mode_auto_switch);
+
+    dynamicCreate_Menu_LimitNumberBox(ins_setup_folder,"lap",&ins_assist_test_lap,uint8_Box,0,3);
+
+    dynamicCreate_Menu_LimitNumberBox(ins_setup_folder, "step", &ins_record_step,float_Box, 1.0f, 20.0f);
+    dynamicCreate_Menu_LimitNumberBox(ins_setup_folder, "lap_cm", &ins_normal_lap,float_Box, 1.0f, 3000.0f);
+    dynamicCreate_Menu_LimitNumberBox(ins_setup_folder,"car_pre",&ins_car_pre_cm,float_Box,0.0f,300.0f);
+
+    dynamicCreate_Menu_LimitNumberBox(ins_setup_folder,"ped_pre",&ins_ped_pre_cm,float_Box,0.0f,300.0f);
+    dynamicCreate_Menu_NumberBox(ins_setup_folder,"save_map",&flash_save_ins,bool_Box);
+    dynamicCreate_Menu_NumberBox(ins_setup_folder,"load_map",&flash_load_ins,bool_Box);
+
+
+
+
+
+    dynamicCreate_Menu_NumberBox(ins_map_folder, "all_cm", &menu_total_disx2,float_Box);
+
+    dynamicCreate_Menu_LimitNumberBox(ins_map_folder, "L1_end",&ins_menu_lap1_end,uint16_Box, 0, 4096);
+
+    dynamicCreate_Menu_LimitNumberBox(ins_map_folder, "L2_end",&ins_menu_lap2_end,uint16_Box, 0, 4096);
+
+    dynamicCreate_Menu_LimitNumberBox(ins_map_folder, "L3_end",&ins_menu_lap3_end,uint16_Box, 0, 4096);
+
+    dynamicCreate_Menu_NumberBox(ins_map_folder, "split",&ins_split_confirm,bool_Box);
+
+    dynamicCreate_Menu_LimitNumberBox(ins_map_folder,"show_lap",&ins_display_lap,uint8_Box,1,3);
+    dynamicCreate_Menu_LimitNumberBox(ins_map_folder,"point",&ins_map_cursor,uint16_Box,0,4095);
+    dynamicCreate_Menu_NumberBox(ins_map_folder,"edit",&ins_zone_quick_edit,bool_Box);
+
+    dynamicCreate_Menu_NumberBox_Save(ins_zone_default_folder,
+                                      "speed",
+                                      &ins_zone_default.target_speed,
+                                      int16_Box);
+    dynamicCreate_Menu_NumberBox_Save(ins_zone_default_folder,
+                                      "use_pd",
+                                      &ins_zone_default.use_pd,
+                                      bool_Box);
+    dynamicCreate_Menu_NumberBox_Save(ins_zone_default_folder,
+                                      "kp",
+                                      &ins_zone_default.zone_kp,
+                                      float_Box);
+    dynamicCreate_Menu_NumberBox_Save(ins_zone_default_folder,
+                                      "kd",
+                                      &ins_zone_default.zone_kd,
+                                      float_Box);
+
+    ins_zone_folder =dynamicCreate_Menu_Folder(ins_map_folder, "Zone");
+
+    dynamicCreate_Menu_LimitNumberBox(ins_zone_folder,"zone_id",&ins_zone_id,uint8_Box, 0,INS_NAV_MANUAL_ZONE_MAX - 1);
+    dynamicCreate_Menu_NumberBox(ins_zone_folder,"speed",&ins_zone_edit.target_speed,int16_Box);
+    dynamicCreate_Menu_NumberBox(ins_zone_folder,"use_pd",&ins_zone_edit.use_pd, bool_Box);
+    dynamicCreate_Menu_NumberBox(ins_zone_folder,"kp",&ins_zone_edit.zone_kp,float_Box);
+    dynamicCreate_Menu_NumberBox(ins_zone_folder,"kd",&ins_zone_edit.zone_kd,float_Box);
+    dynamicCreate_Menu_NumberBox(ins_zone_folder,"delete",&ins_zone_delete,bool_Box);
+    dynamicCreate_Menu_NumberBox(ins_zone_folder,"confirm",&ins_zone_delete_confirm,bool_Box);
+
+
+#endif
+
+
+
+
+
+
+    /* ----------------------------------------------------- */
+}
+
+
+static void Menu_InsZoneSetDefault(void)
+{
+    ins_zone_edit.start_index = 0;
+    ins_zone_edit.end_index = 0;
+    ins_zone_edit.target_speed =ins_zone_default.target_speed;
+    ins_zone_edit.use_pd =ins_zone_default.use_pd;
+    ins_zone_edit.zone_kp =ins_zone_default.zone_kp;
+    ins_zone_edit.zone_kd =ins_zone_default.zone_kd;
+}
+
+static void Menu_InsZoneReset(void)
+{
+    ins_zone_id = 0;
+    ins_zone_last_id = 0xFF;
+    ins_zone_last_lap = 0xFF;
+
+    ins_zone_quick_edit = false;
+    ins_zone_quick_active = false;
+    ins_zone_delete = false;
+    ins_zone_delete_confirm = false;
+
+    ins_zone_start = 0;
+    ins_zone_end = 0;
+    ins_zone_select_state = 0;
+
+    Menu_InsZoneSetDefault();
+}
+
+//-------------------------------------------------------------------------------------------------------------------
+// 函数简介     Flash加载成功后重置惯导地图菜单的临时状态
+// 参数说明     void
+// 返回参数     void
+// 使用示例     Menu_InsNavOnFlashLoaded();
+// 备注信息     正式轨迹和区段已经由Flash模块写入惯导核心
+//-------------------------------------------------------------------------------------------------------------------
+void Menu_InsNavOnFlashLoaded(void)
+{
+    ins_split_menu_initialized = false;
+    ins_split_confirm = false;
+    ins_display_lap = 1;
+    ins_map_cursor = 0;
+    ins_map_need_redraw = true;
+    Menu_InsZoneReset();
+}
+
+static void Menu_InsZoneLoad(uint8_t lap)
+{
+    uint8_t count;
+
+    if(lap >= 3 ||INS_NAV_is_split_ready() == false)
+    {
+        return;
+    }
+
+    count = INS_NAV_get_manual_count(lap);
+
+    if(count >= INS_NAV_MANUAL_ZONE_MAX)
+    {
+        if(ins_zone_id >= count)
+        {
+            ins_zone_id = count - 1;
+        }
+    }
+    else if(ins_zone_id > count)
+    {
+        // 不允许在count后面产生空洞。
+        ins_zone_id = count;
+    }
+
+    if(ins_zone_id < count &&INS_NAV_get_manual_zone(lap,ins_zone_id,&ins_zone_edit))
+    {
+        // 已有区段。
+        ins_zone_start =ins_zone_edit.start_index;
+        ins_zone_end =ins_zone_edit.end_index;
+
+        ins_zone_select_state = 3;
+        ins_map_cursor = ins_zone_start;
+    }
+    else
+    {
+        // ins_zone_id == count，表示新区段。
+        Menu_InsZoneSetDefault();
+
+        ins_zone_start = 0;
+        ins_zone_end = 0;
+        ins_zone_select_state = 0;
+    }
+
+    ins_zone_last_lap = lap;
+    ins_zone_last_id = ins_zone_id;
+
+    ins_zone_delete = false;
+    ins_zone_delete_confirm = false;
+
+    ins_map_need_redraw = true;
+}
+
+//-------------------------------------------------------------------------------------------------------------------
+// 函数简介       将快速地图编辑步长限制为不小于一个轨迹点
+// 参数简介       无
+// 返回参数       void                     无返回值
+// 备注信息       直接复用公共SetupNumber和SetupIndex，不建立第二套步长。
+//-------------------------------------------------------------------------------------------------------------------
+static void Menu_InsZoneClampStep(void)
+{
+    while(SetupNumber[SetupIndex] < 1.0f)
+    {
+        MenuNumber_SetupCtrl_Plus();
+    }
+}
+
+//-------------------------------------------------------------------------------------------------------------------
+// 函数简介       增大快速地图编辑使用的公共步长
+// 参数简介       无
+// 返回参数       void                     无返回值
+// 备注信息       公共步长从1000回绕后会被修正到1。
+//-------------------------------------------------------------------------------------------------------------------
+static void Menu_InsZoneStepPlus(void)
+{
+    MenuNumber_SetupCtrl_Plus();
+    Menu_InsZoneClampStep();
+}
+
+//-------------------------------------------------------------------------------------------------------------------
+// 函数简介       减小快速地图编辑使用的公共步长
+// 参数简介       无
+// 返回参数       void                     无返回值
+// 备注信息       步长为1时继续减小仍保持1。
+//-------------------------------------------------------------------------------------------------------------------
+static void Menu_InsZoneStepSub(void)
+{
+    MenuNumber_SetupCtrl_Sub();
+    Menu_InsZoneClampStep();
+}
+
+//-------------------------------------------------------------------------------------------------------------------
+// 函数简介       开始当前显示物理圈的手动区域快速编辑
+// 参数简介       lap                      当前显示物理圈，范围0~2
+// 返回参数       bool                     验证通过并进入编辑时返回true
+// 备注信息       新区域只复制ZoneDef参数，不修改任何已有区域。
+//-------------------------------------------------------------------------------------------------------------------
+static bool Menu_InsZoneQuickBegin(uint8_t lap)
+{
+    uint8_t manual_count;
+    uint16_t lap_point_count;
+
+    if(lap >= 3 ||INS_NAV_is_split_ready() == false)
+    {
+        return false;
+    }
+
+    manual_count = INS_NAV_get_manual_count(lap);
+    lap_point_count = INS_NAV_get_lap_point_count(lap);
+
+    if(manual_count >= INS_NAV_MANUAL_ZONE_MAX ||lap_point_count == 0)
+    {
+        return false;
+    }
+
+    if(ins_map_cursor >= lap_point_count)
+    {
+        ins_map_cursor = lap_point_count - 1u;
+    }
+
+    ins_zone_id = manual_count;
+    Menu_InsZoneSetDefault();
+
+    ins_zone_start = ins_map_cursor;
+    ins_zone_end = ins_map_cursor;
+    ins_zone_select_state = 1;
+    ins_zone_quick_active = true;
+    ins_zone_delete = false;
+    ins_zone_delete_confirm = false;
+    ins_zone_last_lap = lap;
+    ins_zone_last_id = ins_zone_id;
+
+    Menu_InsZoneClampStep();
+    ins_map_need_redraw = true;
+    return true;
+}
+
+//-------------------------------------------------------------------------------------------------------------------
+// 函数简介       按公共步长移动快速编辑地图光标
+// 参数简介       direction                正数向上增加下标，负数向下减小下标
+// 返回参数       void                     无返回值
+// 备注信息       终点选择阶段不允许光标小于已经锁定的起点。
+//-------------------------------------------------------------------------------------------------------------------
+static void Menu_InsZoneQuickMove(int8_t direction)
+{
+    uint16_t lap_point_count;
+    uint16_t min_index;
+    uint16_t max_index;
+    uint16_t step;
+    uint8_t lap;
+
+    if(ins_zone_quick_active == false ||
+       ins_zone_select_state == 0 ||
+       ins_zone_select_state == 3 ||
+       ins_display_lap < 1 ||
+       ins_display_lap > 3)
+    {
+        return;
+    }
+
+    lap = (uint8_t)(ins_display_lap - 1u);
+    lap_point_count = INS_NAV_get_lap_point_count(lap);
+
+    if(lap_point_count == 0)
+    {
+        return;
+    }
+
+    Menu_InsZoneClampStep();
+    step = (uint16_t)SetupNumber[SetupIndex];
+    min_index = (ins_zone_select_state == 2) ? ins_zone_start : 0u;
+    max_index = lap_point_count - 1u;
+
+    if(direction > 0)
+    {
+        if(ins_map_cursor >= max_index ||
+           step >= max_index - ins_map_cursor)
+        {
+            ins_map_cursor = max_index;
+        }
+        else
+        {
+            ins_map_cursor += step;
+        }
+    }
+    else
+    {
+        if(ins_map_cursor <= min_index ||
+           step >= ins_map_cursor - min_index)
+        {
+            ins_map_cursor = min_index;
+        }
+        else
+        {
+            ins_map_cursor -= step;
+        }
+    }
+
+    ins_map_need_redraw = true;
+}
+
+//-------------------------------------------------------------------------------------------------------------------
+// 函数简介       处理快速地图编辑的中键状态切换
+// 参数简介       无
+// 返回参数       void                     无返回值
+// 备注信息       第一次锁定起点，第二次锁定终点，等待状态不响应中键。
+//-------------------------------------------------------------------------------------------------------------------
+static void Menu_InsZoneQuickMid(void)
+{
+    if(ins_zone_quick_active == false)
+    {
+        return;
+    }
+
+    if(ins_zone_select_state == 1)
+    {
+        ins_zone_start = ins_map_cursor;
+        ins_zone_end = ins_map_cursor;
+        ins_zone_select_state = 2;
+        ins_map_need_redraw = true;
+    }
+    else if(ins_zone_select_state == 2)
+    {
+        ins_zone_end = ins_map_cursor;
+        ins_zone_edit.start_index = ins_zone_start;
+        ins_zone_edit.end_index = ins_zone_end;
+        ins_zone_select_state = 3;
+        ins_map_need_redraw = true;
+    }
+}
+
+//-------------------------------------------------------------------------------------------------------------------
+// 函数简介       取消当前快速地图区域选择
+// 参数简介       无
+// 返回参数       void                     无返回值
+// 备注信息       不调用INS_NAV_set_manual_zone，因此不会写入手动区域表。
+//-------------------------------------------------------------------------------------------------------------------
+static void Menu_InsZoneQuickCancel(void)
+{
+    ins_zone_quick_active = false;
+    ins_zone_quick_edit = false;
+    ins_zone_select_state = 0;
+    ins_zone_start = 0;
+    ins_zone_end = 0;
+    ins_zone_last_lap = 0xFF;
+    ins_zone_last_id = 0xFF;
+    ins_map_need_redraw = true;
+}
+
+//-------------------------------------------------------------------------------------------------------------------
+// 函数简介       保存当前快速地图选择形成的新手动区域
+// 参数简介       无
+// 返回参数       void                     无返回值
+// 备注信息       保存统一通过INS_NAV_set_manual_zone完成，失败时保留等待状态。
+//-------------------------------------------------------------------------------------------------------------------
+static void Menu_InsZoneQuickSave(void)
+{
+    uint8_t lap;
+
+    if(ins_zone_quick_active == false ||
+       ins_zone_select_state != 3 ||
+       ins_display_lap < 1 ||
+       ins_display_lap > 3)
+    {
+        return;
+    }
+
+    lap = (uint8_t)(ins_display_lap - 1u);
+    ins_zone_edit.start_index = ins_zone_start;
+    ins_zone_edit.end_index = ins_zone_end;
+
+    if(INS_NAV_set_manual_zone(lap,
+                               ins_zone_id,
+                               &ins_zone_edit))
+    {
+        ins_zone_quick_active = false;
+        ins_zone_quick_edit = false;
+        ins_zone_select_state = 0;
+        ins_zone_last_lap = lap;
+        ins_zone_last_id = ins_zone_id;
+        ins_zone_delete = false;
+        ins_zone_delete_confirm = false;
+        ins_map_need_redraw = true;
+    }
+}
+//-------------------------------------------------------------------------------------------------------------------
+// 函数简介       初始化三圈的终点
+// 参数简介       无
+// 返回参数       void                     无返回值
+// 备注信息       画图完成后进行调用
+//-------------------------------------------------------------------------------------------------------------------
+void Menu_InsNavTask(void)
+{
+#if INS_NAV_ENABLE
+    uint8_t lap;
+    uint8_t manual_count;
+
+    if(INS_NAV_is_preview_ready() == false)
+    {
+        if(ins_split_menu_initialized)
+        {
+            ins_map_need_redraw = true;
+        }
+
+        ins_menu_lap1_end = 0;
+        ins_menu_lap2_end = 0;
+        ins_menu_lap3_end = 0;
+        ins_split_confirm = false;
+        ins_split_menu_initialized = false;
+        ins_map_cursor = 0;
+
+        Menu_InsZoneReset();
+        return;
+    }
+
+    if(ins_split_menu_initialized == false)
+    {
+        uint16_t confirmed_boundary[4];
+
+        if(INS_NAV_is_split_ready())
+        {
+            if(INS_NAV_get_confirmed_boundaries(confirmed_boundary) == false)
+            {
+                return;
+            }
+
+            ins_menu_lap1_end = confirmed_boundary[1];
+            ins_menu_lap2_end = confirmed_boundary[2];
+            ins_menu_lap3_end = confirmed_boundary[3];
+        }
+        else if(INS_NAV_get_boundary(&ins_menu_lap1_end,
+                                     &ins_menu_lap2_end,
+                                     &ins_menu_lap3_end) == false)
+        {
+            return;
+        }
+
+        ins_split_menu_initialized = true;
+        ins_map_need_redraw = true;
+    }
+
+    if(ins_split_confirm)
+    {
+        if(INS_NAV_confirm_boundaries(ins_menu_lap1_end,
+                                      ins_menu_lap2_end,
+                                      ins_menu_lap3_end))
+        {
+            ins_map_cursor = 0;
+            Menu_InsZoneReset();
+            ins_map_need_redraw = true;
+        }
+
+        ins_split_confirm = false;
+    }
+
+    if(ins_display_lap < 1 || ins_display_lap > 3)
+    {
+        ins_display_lap = 1;
+    }
+
+    lap = (uint8_t)(ins_display_lap - 1u);
+
+    if(INS_NAV_is_split_ready() == false)
+    {
+        Menu_InsZoneReset();
+        return;
+    }
+
+    if(ins_zone_quick_edit && ins_zone_quick_active == false)
+    {
+        if(Menu_InsZoneQuickBegin(lap) == false)
+        {
+            ins_zone_quick_edit = false;
+        }
+    }
+
+    if(ins_zone_quick_active == false &&
+       (ins_zone_last_lap != lap ||
+        ins_zone_last_id != ins_zone_id))
+    {
+        Menu_InsZoneLoad(lap);
+    }
+
+    if(ins_zone_quick_active == false &&
+       ins_zone_delete_confirm)
+    {
+        ins_zone_delete_confirm = false;
+        manual_count = INS_NAV_get_manual_count(lap);
+
+        if(ins_zone_delete)
+        {
+            ins_zone_delete = false;
+
+            if(ins_zone_id < manual_count &&
+               INS_NAV_delete_manual_zone(lap, ins_zone_id))
+            {
+                manual_count = INS_NAV_get_manual_count(lap);
+
+                if(manual_count == 0)
+                {
+                    ins_zone_id = 0;
+                }
+                else if(ins_zone_id >= manual_count)
+                {
+                    ins_zone_id = manual_count - 1u;
+                }
+
+                ins_zone_last_id = 0xFF;
+                Menu_InsZoneLoad(lap);
+            }
+        }
+        else if(ins_zone_id < manual_count &&
+                INS_NAV_set_manual_zone(lap,
+                                        ins_zone_id,
+                                        &ins_zone_edit))
+        {
+            ins_zone_last_id = 0xFF;
+            Menu_InsZoneLoad(lap);
+        }
+    }
+#endif
+}
+//-------------------------------------------------------------------------------------------------------------------
+// 函数简介       初始化菜单树及菜单显示状态
+// 参数简介       无
+// 返回参数       void                     无返回值
+// 备注信息       由对应模块任务或上层控制流程调用。
+//-------------------------------------------------------------------------------------------------------------------
+void menu_init(void)
+{
+
+    root.father = NULL;
+    root.son_first = NULL;
+    root.next_brother = NULL;
+    root.last_brother = NULL;
+    root.name = "<Root>";
+    root.sons_Count = 0;
+    root.No = 0;
+    root.kind = Normal_Folder;
+
+    my_create_Menus();
+
+
+    if(root.son_first != NULL)
+    key_menu_p = root.son_first;
+
+    All_Folder_Menu_Init(&root);
+}
+//-------------------------------------------------------------------------------------------------------------------
+// 函数简介       处理前瞻参数的单次发送按键
+// 参数简介       无
+// 返回参数       void                     无返回值
+// 备注信息       发布一次参数快照后自动复位按键。
+//-------------------------------------------------------------------------------------------------------------------
+void Menu_LookaheadSendTask(void)
+{
+    if(lookahead_send)
+    {
+        Menu_RequestLookaheadSend();
+        lookahead_send = false;
+    }
+}
+//-------------------------------------------------------------------------------------------------------------------
+// 函数简介       发布当前菜单中的前瞻参数
+// 参数简介       无
+// 返回参数       void                     无返回值
+// 备注信息       供菜单按键和发车延时阶段触发一次双参数快照。
+//-------------------------------------------------------------------------------------------------------------------
+void Menu_RequestLookaheadSend(void)
+{
+    UART_RequestLookaheadSend(normal_speed_lookahead, fast_speed_lookahead);
+}
+//-------------------------------------------------------------------------------------------------------------------
+// 函数简介       获取菜单树根节点
+// 参数简介       无
+// 返回参数       Folder_Menu*             返回目标对象地址，查找失败时可能为NULL
+// 备注信息       由对应模块任务或上层控制流程调用。
+//-------------------------------------------------------------------------------------------------------------------
+Folder_Menu* menu_get_root(void)
+{
+    return &root;
+}
+
+//-------------------------------------------------------------------------------------------------------------------
+// 函数简介       Check whether the current menu is under InsNav/Map.
+// 参数简介       无
+// 返回参数       bool                     True only in the Map subtree
+// 备注信息       Setup keeps the normal full-screen menu.
+//-------------------------------------------------------------------------------------------------------------------
+static bool Mymenu_is_ins_page(void)
+{
+#if INS_NAV_ENABLE
+    Folder_Menu *folder;
+
+    if(key_menu_p == NULL)
+        return false;
+
+    folder = key_menu_p->father;
+
+    while(folder != NULL)
+    {
+        if(folder == ins_map_folder)
+            return true;
+
+        folder = folder->father;
+    }
+#endif
+
+    return false;
+}
+//-------------------------------------------------------------------------------------------------------------------
+// 函数简介       绘制当前菜单页面标题
+// 参数简介       无
+// 返回参数       void                     无返回值
+// 备注信息       由对应模块任务或上层控制流程调用。
+//-------------------------------------------------------------------------------------------------------------------
+void Mymenu_show_title(void)
+{
+    char tmpchar[COLS_SUM_LEN-SETUP_NUMBER_LEN+1];
+    for(int i = 0; i < COLS_SUM_LEN-SETUP_NUMBER_LEN+1; i++)
+        tmpchar[i] = ' ';
+    sprintf(tmpchar, "%s/", key_menu_p->father->name);
+    tmpchar[strlen(tmpchar)] = ' ';
+    tmpchar[COLS_SUM_LEN-SETUP_NUMBER_LEN] = '\0';
+    menu_show_string(0, SHOW_STAR_Y, tmpchar);
+}
+
+
+//-------------------------------------------------------------------------------------------------------------------
+// 函数简介       绘制数值设置页面
+// 参数简介       无
+// 返回参数       void                     无返回值
+// 备注信息       由对应模块任务或上层控制流程调用。
+//-------------------------------------------------------------------------------------------------------------------
+void Mymenu_show_Setup(void)
+{
+    char tmpchar[SETUP_NUMBER_LEN+1];
+    for(int i = 0; i < SETUP_NUMBER_LEN+1; i++)
+        tmpchar[i] = ' ';
+    if(SetupNumber[SetupIndex] < 1)
+        sprintf(tmpchar, "<%.3f>", SetupNumber[SetupIndex]);
+    else
+        sprintf(tmpchar, "<%.0f>", SetupNumber[SetupIndex]);
+    tmpchar[strlen(tmpchar)] = ' ';
+    tmpchar[SETUP_NUMBER_LEN] = '\0';
+    menu_show_string(60,0, tmpchar);
+}
+
+//-------------------------------------------------------------------------------------------------------------------
+// 函数简介       获取当前菜单页面可以显示的项目数量
+// 参数简介       无
+// 返回参数       int                      当前页面可显示项目数量
+// 备注信息       普通菜单显示19项，InsNav分屏菜单显示5项。
+//-------------------------------------------------------------------------------------------------------------------
+static int Mymenu_get_visible_rows(void)
+{
+    if(Mymenu_is_ins_page())
+        return INS_MENU_ROWS;
+
+    return EVERY_FOLDER_NUMBER;
+}
+
+//-------------------------------------------------------------------------------------------------------------------
+// 函数简介       计算当前菜单项目的屏幕Y坐标
+// 参数简介       row                      当前显示窗口中的项目行号，从1开始
+// 返回参数       uint16_t                 项目的屏幕Y坐标
+// 备注信息       分屏状态下第1行从Y=240开始。
+//-------------------------------------------------------------------------------------------------------------------
+static uint16_t Mymenu_get_item_y(int row)
+{
+    if(Mymenu_is_ins_page())
+        return INS_MENU_Y + FONT_H * (row - 1);
+
+    return SHOW_STAR_Y + FONT_H * row;
+}
+
+
+//-------------------------------------------------------------------------------------------------------------------
+// 函数简介       计算当前菜单窗口的首个显示项序号
+// 参数简介       无
+// 返回参数       int                      返回计算或查询结果
+// 备注信息       仅在本文件内部调用。
+//-------------------------------------------------------------------------------------------------------------------
+static int Mymenu_get_show_start(void)
+{
+    int start = 1;
+    int count = key_menu_p->father->sons_Count;
+    int visible_rows = Mymenu_get_visible_rows();
+
+    if(key_menu_p->No > visible_rows)
+        start = key_menu_p->No - visible_rows + 1;
+
+    if(start < 1)
+        start = 1;
+
+    if(count > visible_rows &&
+       start > count - visible_rows + 1)
+    {
+        start = count - visible_rows + 1;
+    }
+
+    return start;
+}
+
+//-------------------------------------------------------------------------------------------------------------------
+// 函数简介       计算当前菜单窗口能够显示的项目数量
+// 参数简介       start                    当前页面首个显示节点
+// 返回参数       int                      返回计算或查询结果
+// 备注信息       仅在本文件内部调用。
+//-------------------------------------------------------------------------------------------------------------------
+static int Mymenu_get_show_count(int start)
+{
+    int count = key_menu_p->father->sons_Count - start + 1;
+    int visible_rows = Mymenu_get_visible_rows();
+
+    if(count > visible_rows)
+        count = visible_rows;
+
+    if(count < 0)
+        count = 0;
+
+    return count;
+}
+
+//-------------------------------------------------------------------------------------------------------------------
+// 函数简介       按照序号查找指定父菜单的子节点
+// 参数简介       father                   父菜单节点地址
+// 参数简介       no                       需要查找的同级节点编号
+// 返回参数       Folder_Menu *            返回目标对象地址，查找失败时可能为NULL
+// 备注信息       仅在本文件内部调用。
+//-------------------------------------------------------------------------------------------------------------------
+static Folder_Menu *Mymenu_get_child_by_no(Folder_Menu *father, int no)
+{
+    Folder_Menu *p = father->son_first;
+    while (p != NULL && p->No < no)
+        p = p->next_brother;
+    return p;
+}
+//-------------------------------------------------------------------------------------------------------------------
+// 函数简介       绘制当前文件夹菜单页面
+// 参数简介       无
+// 返回参数       void                     无返回值
+// 备注信息       由对应模块任务或上层控制流程调用。
+//-------------------------------------------------------------------------------------------------------------------
+void Mymenu_show_task(void)
+{
+    char tmpchar[FOLDER_NAME_LEN + 1];
+    int show_start = Mymenu_get_show_start();
+    int show_count = Mymenu_get_show_count(show_start);
+    Folder_Menu *son_p = Mymenu_get_child_by_no(key_menu_p->father, show_start);
+
+    for (int row = 1; row <= show_count && son_p != NULL; row++)
+    {
+        for (int j = 0; j < FOLDER_NAME_LEN + 1; j++)
+            tmpchar[j] = ' ';
+
+        if (son_p->kind == Normal_Folder)
+            sprintf(tmpchar, "%s[%d]", son_p->name, son_p->sons_Count);
+        else
+            sprintf(tmpchar, "%s", son_p->name);
+        tmpchar[strlen(tmpchar)] = ' ';
+        tmpchar[FOLDER_NAME_LEN] = '\0';
+
+        menu_show_string(FONT_W * 2, Mymenu_get_item_y(row), tmpchar);
+        son_p = son_p->next_brother;
+    }
+
+    for (int j = 0; j < FOLDER_NAME_LEN + 1; j++)
+        tmpchar[j] = ' ';
+    tmpchar[FOLDER_NAME_LEN] = '\0';
+
+    for (int row = show_count + 1; row <= Mymenu_get_visible_rows(); row++)
+        menu_show_string(FONT_W * 2, Mymenu_get_item_y(row), tmpchar);
+}
+
+
+//-------------------------------------------------------------------------------------------------------------------
+// 函数简介       绘制菜单操作按键提示
+// 参数简介       无
+// 返回参数       void                     无返回值
+// 备注信息       仅在本文件内部调用。
+//-------------------------------------------------------------------------------------------------------------------
+static void Mymenu_show_key(void)
+{
+    int show_start = Mymenu_get_show_start();
+    int show_count = Mymenu_get_show_count(show_start);
+    int selected_row = key_menu_p->No - show_start + 1;
+
+    for (int row = 1; row <= show_count; row++)
+    {
+        if (selected_row != row)
+            menu_show_string(0, Mymenu_get_item_y(row), "  ");
+        else
+            menu_show_string(0, Mymenu_get_item_y(row), "->");
+    }
+
+    for (int row = show_count + 1; row <= Mymenu_get_visible_rows(); row++)
+        menu_show_string(0, Mymenu_get_item_y(row), "  ");
+}
+
+
+//-------------------------------------------------------------------------------------------------------------------
+// 函数简介       绘制当前菜单节点对应的数据内容
+// 参数简介       无
+// 返回参数       void                     无返回值
+// 备注信息       仅在本文件内部调用。
+//-------------------------------------------------------------------------------------------------------------------
+static void Mymenu_show_data(void)
+{
+    char clean[FOLDER_NUMBER_LEN + 3];
+    int show_start = Mymenu_get_show_start();
+    int show_count = Mymenu_get_show_count(show_start);
+    Folder_Menu *son_p = Mymenu_get_child_by_no(key_menu_p->father, show_start);
+
+    for (int row = 1; row <= show_count && son_p != NULL; row++)
+    {
+        switch (son_p->kind)
+        {
+            case bool_Box:
+                for (int j = 0; j <= FOLDER_NUMBER_LEN; j++) {
+                    clean[j] = ' ';
+                }
+                clean[FOLDER_NUMBER_LEN + 1] = (*(bool *)son_p->private_data == 1) ? 'Y' : 'N';
+                clean[FOLDER_NUMBER_LEN + 2] = '\0';
+                menu_show_string(FONT_W * (COLS_SUM_LEN - FOLDER_NUMBER_LEN - 2), Mymenu_get_item_y(row), clean);
+                break;
+
+            case float_Box:
+                if (son_p->number_box_select == 0) {
+                    menu_show_char(FONT_W * (COLS_SUM_LEN - FOLDER_NUMBER_LEN - 2), Mymenu_get_item_y(row), ' ');
+                    if (*(float *)(son_p->private_data) > 10)
+                        menu_show_float(FONT_W * (COLS_SUM_LEN - FOLDER_NUMBER_LEN - 1), Mymenu_get_item_y(row), *(float *)(son_p->private_data), FOLDER_NUMBER_LEN - 3, 2);
+                    else
+                        menu_show_float(FONT_W * (COLS_SUM_LEN - FOLDER_NUMBER_LEN - 1), Mymenu_get_item_y(row), *(float *)(son_p->private_data), FOLDER_NUMBER_LEN - 4, 3);
+                    menu_show_char(FONT_W * (COLS_SUM_LEN - 1), Mymenu_get_item_y(row), ' ');
+                }
+                if (son_p->number_box_select == 1) {
+                    menu_show_char(FONT_W * (COLS_SUM_LEN - FOLDER_NUMBER_LEN - 2), Mymenu_get_item_y(row), '<');
+                    if (*(float *)(son_p->private_data) > 10)
+                        menu_show_float(FONT_W * (COLS_SUM_LEN - FOLDER_NUMBER_LEN - 1), Mymenu_get_item_y(row), *(float *)(son_p->private_data), FOLDER_NUMBER_LEN - 3, 2);
+                    else
+                        menu_show_float(FONT_W * (COLS_SUM_LEN - FOLDER_NUMBER_LEN - 1), Mymenu_get_item_y(row), *(float *)(son_p->private_data), FOLDER_NUMBER_LEN - 4, 3);
+                    menu_show_char(FONT_W * (COLS_SUM_LEN - 1), Mymenu_get_item_y(row), '>');
+                }
+                break;
+
+            default:
+                if (son_p->kind == Normal_Folder)
+                {
+                    for (int j = 0; j <= FOLDER_NUMBER_LEN + 2; j++) {
+                        clean[j] = ' ';
+                    }
+                    clean[FOLDER_NUMBER_LEN + 2] = '\0';
+                    menu_show_string(FONT_W * (COLS_SUM_LEN - FOLDER_NUMBER_LEN - 2), Mymenu_get_item_y(row), clean);
+                }
+                else
+                {
+                    if (son_p->number_box_select == 0)
+                        menu_show_char(FONT_W * (COLS_SUM_LEN - FOLDER_NUMBER_LEN - 2), Mymenu_get_item_y(row), ' ');
+                    else
+                        menu_show_char(FONT_W * (COLS_SUM_LEN - FOLDER_NUMBER_LEN - 2), Mymenu_get_item_y(row), '<');
+
+                    switch (son_p->kind)
+                    {
+                        case int_Box:
+                            menu_show_int(FONT_W * (COLS_SUM_LEN - FOLDER_NUMBER_LEN - 1), Mymenu_get_item_y(row), *(int *)(son_p->private_data), FOLDER_NUMBER_LEN);
+                            break;
+                        case uint8_Box:
+                            menu_show_int(FONT_W * (COLS_SUM_LEN - FOLDER_NUMBER_LEN - 1), Mymenu_get_item_y(row), *(uint8_t *)(son_p->private_data), FOLDER_NUMBER_LEN);
+                            break;
+                        case int8_Box:
+                            menu_show_int(FONT_W * (COLS_SUM_LEN - FOLDER_NUMBER_LEN - 1), Mymenu_get_item_y(row), *(int8_t *)(son_p->private_data), FOLDER_NUMBER_LEN);
+                            break;
+                        case uint16_Box:
+                            menu_show_int(FONT_W * (COLS_SUM_LEN - FOLDER_NUMBER_LEN - 1), Mymenu_get_item_y(row), *(uint16_t *)(son_p->private_data), FOLDER_NUMBER_LEN);
+                            break;
+                        case int16_Box:
+                            menu_show_int(FONT_W * (COLS_SUM_LEN - FOLDER_NUMBER_LEN - 1), Mymenu_get_item_y(row), *(int16_t *)(son_p->private_data), FOLDER_NUMBER_LEN);
+                            break;
+                        case uint32_Box:
+                            menu_show_int(FONT_W * (COLS_SUM_LEN - FOLDER_NUMBER_LEN - 1), Mymenu_get_item_y(row), *(uint32_t *)(son_p->private_data), FOLDER_NUMBER_LEN);
+                            break;
+                        case int32_Box:
+                            menu_show_int(FONT_W * (COLS_SUM_LEN - FOLDER_NUMBER_LEN - 1), Mymenu_get_item_y(row), *(int32_t *)(son_p->private_data), FOLDER_NUMBER_LEN);
+                            break;
+                        default:
+                            break;
+                    }
+
+                    if (son_p->number_box_select == 0)
+                        menu_show_char(FONT_W * (COLS_SUM_LEN - 1), Mymenu_get_item_y(row), ' ');
+                    else
+                        menu_show_char(FONT_W * (COLS_SUM_LEN - 1), Mymenu_get_item_y(row), '>');
+                }
+                break;
+        }
+        son_p = son_p->next_brother;
+    }
+
+    for (int j = 0; j <= FOLDER_NUMBER_LEN + 2; j++) {
+        clean[j] = ' ';
+    }
+    clean[FOLDER_NUMBER_LEN + 2] = '\0';
+    for (int row = show_count + 1; row <= Mymenu_get_visible_rows(); row++)
+    {
+        menu_show_string(FONT_W * (COLS_SUM_LEN - FOLDER_NUMBER_LEN - 2), Mymenu_get_item_y(row), clean);
+    }
+}
+#if INS_NAV_ENABLE
+//-------------------------------------------------------------------------------------------------------------------
+// 函数简介       请求刷新InsNav上方轨迹区域
+// 参数简介       无
+// 返回参数       void                     无返回值
+// 备注信息       只有分圈边界和显示圈发生修改时才触发刷新。
+//-------------------------------------------------------------------------------------------------------------------
+static void Mymenu_request_ins_map_redraw(void)
+{
+    if(key_menu_p == NULL)
+    {
+        return;
+    }
+
+    if(key_menu_p->private_data == &ins_display_lap)
+    {
+        ins_map_cursor = 0;
+        ins_zone_start = 0;
+        ins_zone_end = 0;
+        ins_zone_select_state = 0;
+        ins_zone_quick_edit = false;
+        ins_zone_quick_active = false;
+        ins_zone_last_lap = 0xFF;
+        ins_zone_last_id = 0xFF;
+        ins_zone_delete = false;
+        ins_zone_delete_confirm = false;
+    }
+
+    if(key_menu_p->private_data == &ins_menu_lap1_end ||
+       key_menu_p->private_data == &ins_menu_lap2_end ||
+       key_menu_p->private_data == &ins_menu_lap3_end ||
+       key_menu_p->private_data == &ins_display_lap ||
+       key_menu_p->private_data == &ins_map_cursor ||
+       key_menu_p->private_data == &ins_zone_id)
+    {
+        ins_map_need_redraw = true;
+    }
+}
+//-------------------------------------------------------------------------------------------------------------------
+// 函数简介       获取当前显示圈在连续预览数组中的范围
+// 参数简介       start                    返回当前圈起点下标
+// 参数简介       end                      返回当前圈终点下标
+// 返回参数       bool                     边界和预览有效时返回true
+// 备注信息       使用菜单中的临时边界，因此确认分圈前也可以查看轨迹。
+//-------------------------------------------------------------------------------------------------------------------
+static bool Mymenu_get_ins_map_range(uint16_t *start, uint16_t *end)
+{
+    uint16_t total;
+
+    if(start == NULL || end == NULL || INS_NAV_is_preview_ready() == false)
+        return false;
+
+    total = INS_NAV_get_preview_point_count();
+    if(ins_menu_lap1_end == 0 ||
+       ins_menu_lap1_end >= ins_menu_lap2_end ||
+       ins_menu_lap2_end >= ins_menu_lap3_end ||
+       ins_menu_lap3_end > total)
+    {
+        return false;
+    }
+
+    switch(ins_display_lap)
+    {
+        case 1:
+            *start = 0;
+            *end = ins_menu_lap1_end;
+            break;
+
+        case 2:
+            *start = ins_menu_lap1_end;
+            *end = ins_menu_lap2_end;
+            break;
+
+        case 3:
+            *start = ins_menu_lap2_end;
+            *end = ins_menu_lap3_end;
+            break;
+
+        default:
+            return false;
+    }
+
+    return (*end > *start);
+}
+
+//-------------------------------------------------------------------------------------------------------------------
+// 函数简介       清除InsNav上方轨迹区域
+// 参数简介       无
+// 返回参数       void                     无返回值
+// 备注信息       只清除Y=0到239，不影响下方菜单。
+//-------------------------------------------------------------------------------------------------------------------
+static void Mymenu_clear_ins_map(void)
+{
+    uint16_t y;
+
+    for(y = 0; y < INS_MAP_H; y++)
+        ips200_draw_line(0, y, INS_MAP_W - 1, y, INS_COLOR_BLACK);
+}
+
+//-------------------------------------------------------------------------------------------------------------------
+// 函数简介       计算当前圈轨迹的统一缩放和中心
+// 参数简介       start                    当前圈起点下标
+// 参数简介       end                      当前圈终点下标
+// 返回参数       bool                     成功取得全部轨迹点时返回true
+// 备注信息       X和Y使用同一个缩放比例，保持轨迹形状不变。
+//-------------------------------------------------------------------------------------------------------------------
+static bool Mymenu_calc_ins_map_scale(uint16_t start, uint16_t end)
+{
+    const INS_NAV_POINT *origin;
+    const INS_NAV_POINT *point;
+    uint16_t index;
+    float x;
+    float y;
+    float min_x = 0.0f;
+    float max_x = 0.0f;
+    float min_y = 0.0f;
+    float max_y = 0.0f;
+    float range_x;
+    float range_y;
+    float scale_x;
+    float scale_y;
+
+    if(end <= start)
+        return false;
+
+    origin = INS_NAV_get_preview_point(start);
+    if(origin == NULL)
+        return false;
+
+    for(index = start + 1; index < end; index++)
+    {
+        point = INS_NAV_get_preview_point(index);
+        if(point == NULL)
+            return false;
+
+        x = point->x - origin->x;
+        y = point->y - origin->y;
+
+        if(x < min_x) min_x = x;
+        if(x > max_x) max_x = x;
+        if(y < min_y) min_y = y;
+        if(y > max_y) max_y = y;
+    }
+
+    range_x = max_x - min_x;
+    range_y = max_y - min_y;
+    if(range_x < 1.0f) range_x = 1.0f;
+    if(range_y < 1.0f) range_y = 1.0f;
+
+    scale_x = (float)(INS_MAP_W - 2 * INS_MAP_MARGIN) / range_x;
+    scale_y = (float)(INS_MAP_H - 2 * INS_MAP_MARGIN) / range_y;
+    ins_map_scale = (scale_x < scale_y) ? scale_x : scale_y;
+    ins_map_center_x = (min_x + max_x) * 0.5f;
+    ins_map_center_y = (min_y + max_y) * 0.5f;
+
+    return true;
+}
+
+//-------------------------------------------------------------------------------------------------------------------
+// 函数简介       将当前圈局部坐标转换成上方屏幕坐标
+// 参数简介       x                        当前圈局部X坐标
+// 参数简介       y                        当前圈局部Y坐标
+// 参数简介       sx                       返回屏幕X坐标
+// 参数简介       sy                       返回屏幕Y坐标
+// 返回参数       void                     无返回值
+// 备注信息       输出坐标限制在上方轨迹区域的安全边距内。
+//-------------------------------------------------------------------------------------------------------------------
+static void Mymenu_ins_map_to_screen(float x, float y, int16_t *sx, int16_t *sy)
+{
+    int16_t screen_x;
+    int16_t screen_y;
+
+    screen_x = (int16_t)((float)(INS_MAP_W / 2) + (x - ins_map_center_x) * ins_map_scale);
+    screen_y = (int16_t)((float)(INS_MAP_H / 2) + (y - ins_map_center_y) * ins_map_scale);
+
+    if(screen_x < INS_MAP_MARGIN) screen_x = INS_MAP_MARGIN;
+    if(screen_x > INS_MAP_W - INS_MAP_MARGIN - 1) screen_x = INS_MAP_W - INS_MAP_MARGIN - 1;
+    if(screen_y < INS_MAP_MARGIN) screen_y = INS_MAP_MARGIN;
+    if(screen_y > INS_MAP_H - INS_MAP_MARGIN - 1) screen_y = INS_MAP_H - INS_MAP_MARGIN - 1;
+
+    *sx = screen_x;
+    *sy = screen_y;
+}
+
+//-------------------------------------------------------------------------------------------------------------------
+// 函数简介       在轨迹图中绘制十字标记
+// 参数简介       x                        标记中心X坐标
+// 参数简介       y                        标记中心Y坐标
+// 参数简介       size                     标记半径
+// 参数简介       color                    标记颜色
+// 返回参数       void                     无返回值
+// 备注信息       用于元素marker和圈终点。
+//-------------------------------------------------------------------------------------------------------------------
+static void Mymenu_draw_ins_cross(int16_t x, int16_t y, int16_t size, uint16_t color)
+{
+    ips200_draw_line(x - size, y, x + size, y, color);
+    ips200_draw_line(x, y - size, x, y + size, color);
+}
+
+//-------------------------------------------------------------------------------------------------------------------
+// 函数简介       绘制一段圈内人工区段轨迹
+// 参数简介       lap_start                当前圈在连续点数组中的起点
+// 参数简介       lap_point_count          当前圈点数
+// 参数简介       origin                   当前圈局部坐标原点
+// 参数简介       zone_start               区段圈内起点
+// 参数简介       zone_end                 区段圈内终点
+// 参数简介       color                    绘制颜色
+// 返回参数       void                     无返回值
+// 备注信息       只读取已经生成的预览点，不建立区段绘图数组。
+//-------------------------------------------------------------------------------------------------------------------
+static void Mymenu_draw_ins_zone_range(uint16_t lap_start,
+                                        uint16_t lap_point_count,
+                                        const INS_NAV_POINT *origin,
+                                        uint16_t zone_start,
+                                        uint16_t zone_end,
+                                        uint16_t color)
+{
+    const INS_NAV_POINT *point;
+    uint16_t index;
+    float x;
+    float y;
+    int16_t sx;
+    int16_t sy;
+    int16_t last_sx;
+    int16_t last_sy;
+
+    if(origin == NULL ||
+       zone_start > zone_end ||
+       zone_end >= lap_point_count)
+    {
+        return;
+    }
+
+    point = INS_NAV_get_preview_point(lap_start + zone_start);
+    if(point == NULL)
+    {
+        return;
+    }
+
+    x = point->x - origin->x;
+    y = point->y - origin->y;
+    Mymenu_ins_map_to_screen(x, y, &last_sx, &last_sy);
+
+    if(zone_start == zone_end)
+    {
+        Mymenu_draw_ins_cross(last_sx, last_sy, 2, color);
+        return;
+    }
+
+    for(index = zone_start + 1;
+        index <= zone_end;
+        index++)
+    {
+        point = INS_NAV_get_preview_point(lap_start + index);
+        if(point == NULL)
+        {
+            return;
+        }
+
+        x = point->x - origin->x;
+        y = point->y - origin->y;
+        Mymenu_ins_map_to_screen(x, y, &sx, &sy);
+
+        if(sx != last_sx || sy != last_sy)
+        {
+            ips200_draw_line(last_sx, last_sy, sx, sy, color);
+        }
+
+        last_sx = sx;
+        last_sy = sy;
+    }
+}
+
+//-------------------------------------------------------------------------------------------------------------------
+// 函数简介       绘制当前显示圈的只读轨迹
+// 参数简介       无
+// 返回参数       void                     无返回值
+// 备注信息       White path, colored markers, selected zone, start and end are drawn above.
+//-------------------------------------------------------------------------------------------------------------------
+static void Mymenu_show_ins_map(void)
+{
+    const INS_NAV_POINT *origin;
+    const INS_NAV_POINT *point;
+    uint16_t start;
+    uint16_t end;
+    uint16_t index;
+    uint16_t lap_point_count;
+    uint16_t zone_draw_end;
+    float x;
+    float y;
+    int16_t sx;
+    int16_t sy;
+    int16_t last_sx;
+    int16_t last_sy;
+    int16_t marker_size;
+    uint16_t marker_color;
+    INS_AUTO_ZONE auto_zone;
+    uint8_t auto_index;
+    uint8_t auto_count;
+    INS_MANUAL_ZONE manual_zone;
+    uint8_t manual_lap;
+    uint8_t manual_count;
+    uint8_t manual_index;
+
+    if(ins_map_need_redraw == false)
+        return;
+
+    Mymenu_clear_ins_map();
+    ins_map_need_redraw = false;
+
+    if(Mymenu_get_ins_map_range(&start, &end) == false || end - start < 2)
+    {
+        ips200_show_string(72, 112, "No Lap Map");
+        return;
+    }
+
+    lap_point_count = end - start;
+    if(ins_map_cursor >= lap_point_count)
+        ins_map_cursor = lap_point_count - 1;
+
+    if(Mymenu_calc_ins_map_scale(start, end) == false)
+    {
+        ips200_show_string(72, 112, "No Lap Map");
+        return;
+    }
+
+    origin = INS_NAV_get_preview_point(start);
+    if(origin == NULL)
+        return;
+
+    Mymenu_ins_map_to_screen(0.0f, 0.0f, &last_sx, &last_sy);
+
+    for(index = start + 1; index < end; index++)
+    {
+        point = INS_NAV_get_preview_point(index);
+        if(point == NULL)
+            return;
+
+        x = point->x - origin->x;
+        y = point->y - origin->y;
+        Mymenu_ins_map_to_screen(x, y, &sx, &sy);
+
+        if(sx != last_sx || sy != last_sy)
+            ips200_draw_line(last_sx, last_sy, sx, sy, INS_COLOR_WHITE);
+
+        last_sx = sx;
+        last_sy = sy;
+    }
+
+    auto_count = INS_NAV_get_auto_count();
+
+    for(auto_index = 0;
+        auto_index < auto_count;
+        auto_index++)
+    {
+        if(INS_NAV_get_auto_zone(auto_index, &auto_zone) == false)
+        {
+            continue;
+        }
+
+        if(auto_zone.physical_lap != (uint8_t)(ins_display_lap - 1u))
+        {
+            continue;
+        }
+
+        Mymenu_draw_ins_zone_range(start,
+                                   lap_point_count,
+                                   origin,
+                                   auto_zone.start_index,
+                                   auto_zone.end_index,
+                                   INS_COLOR_ORANGE);
+    }
+    if(ins_display_lap >= 1 && ins_display_lap <= 3)
+    {
+        manual_lap = (uint8_t)(ins_display_lap - 1);
+        manual_count = INS_NAV_get_manual_count(manual_lap);
+
+        for(manual_index = 0;
+            manual_index < manual_count;
+            manual_index++)
+        {
+            if(INS_NAV_get_manual_zone(manual_lap,
+                                       manual_index,
+                                       &manual_zone) == false)
+            {
+                continue;
+            }
+
+            Mymenu_draw_ins_zone_range(start,
+                                       lap_point_count,
+                                       origin,
+                                       manual_zone.start_index,
+                                       manual_zone.end_index,
+                                       INS_COLOR_CYAN);
+        }
+    }
+
+    if(ins_zone_select_state >= 2 &&
+       ins_zone_start < lap_point_count)
+    {
+        zone_draw_end = ins_zone_start;
+
+        if(ins_zone_select_state == 2 &&
+           ins_map_cursor >= ins_zone_start &&
+           ins_map_cursor < lap_point_count)
+        {
+            zone_draw_end = ins_map_cursor;
+        }
+        else if(ins_zone_select_state == 3 &&
+                ins_zone_end >= ins_zone_start &&
+                ins_zone_end < lap_point_count)
+        {
+            zone_draw_end = ins_zone_end;
+        }
+
+        point = INS_NAV_get_preview_point(start + ins_zone_start);
+
+        if(point != NULL)
+        {
+            x = point->x - origin->x;
+            y = point->y - origin->y;
+            Mymenu_ins_map_to_screen(x, y, &last_sx, &last_sy);
+
+            Mymenu_draw_ins_cross(last_sx,
+                                  last_sy,
+                                  4,
+                                  INS_COLOR_MAGENTA);
+
+            for(index = ins_zone_start + 1;
+                index <= zone_draw_end;
+                index++)
+            {
+                point = INS_NAV_get_preview_point(start + index);
+
+                if(point == NULL)
+                    return;
+
+                x = point->x - origin->x;
+                y = point->y - origin->y;
+                Mymenu_ins_map_to_screen(x, y, &sx, &sy);
+
+                if(sx != last_sx || sy != last_sy)
+                {
+                    ips200_draw_line(last_sx,
+                                     last_sy,
+                                     sx,
+                                     sy,
+                                     INS_COLOR_MAGENTA);
+                }
+
+                last_sx = sx;
+                last_sy = sy;
+            }
+
+            if(zone_draw_end > ins_zone_start)
+            {
+                Mymenu_draw_ins_cross(last_sx,
+                                      last_sy,
+                                      4,
+                                      INS_COLOR_MAGENTA);
+            }
+        }
+    }
+
+    for(index = start; index < end; index++)
+    {
+        point = INS_NAV_get_preview_point(index);
+        if(point == NULL)
+            return;
+
+        if(point->marker != INS_MARKER_NONE)
+        {
+            marker_color = INS_COLOR_ORANGE;
+            marker_size = 2;
+
+            if(point->marker == INS_MARKER_COIN)
+            {
+                marker_color = INS_COLOR_YELLOW;
+                marker_size = 3;
+            }
+
+            x = point->x - origin->x;
+            y = point->y - origin->y;
+            Mymenu_ins_map_to_screen(x, y, &sx, &sy);
+            Mymenu_draw_ins_cross(sx, sy, marker_size, marker_color);
+        }
+    }
+
+    Mymenu_ins_map_to_screen(0.0f, 0.0f, &sx, &sy);
+    ips200_draw_line(sx - 4, sy - 4, sx + 4, sy - 4, INS_COLOR_GREEN);
+    ips200_draw_line(sx + 4, sy - 4, sx + 4, sy + 4, INS_COLOR_GREEN);
+    ips200_draw_line(sx + 4, sy + 4, sx - 4, sy + 4, INS_COLOR_GREEN);
+    ips200_draw_line(sx - 4, sy + 4, sx - 4, sy - 4, INS_COLOR_GREEN);
+
+    point = INS_NAV_get_preview_point(end - 1);
+    if(point != NULL)
+    {
+        x = point->x - origin->x;
+        y = point->y - origin->y;
+        Mymenu_ins_map_to_screen(x, y, &sx, &sy);
+        Mymenu_draw_ins_cross(sx, sy, 4, INS_COLOR_RED);
+    }
+
+    point = INS_NAV_get_preview_point(start + ins_map_cursor);
+    if(point != NULL)
+    {
+        x = point->x - origin->x;
+        y = point->y - origin->y;
+        Mymenu_ins_map_to_screen(x, y, &sx, &sy);
+        Mymenu_draw_ins_cross(sx, sy, 6, INS_COLOR_CYAN);
+    }
+}
+#endif
+//-------------------------------------------------------------------------------------------------------------------
+// 函数简介       根据菜单状态刷新完整菜单界面
+// 参数简介       无
+// 返回参数       void                     无返回值
+// 备注信息       由对应模块任务或上层控制流程调用。
+//-------------------------------------------------------------------------------------------------------------------
+void menu_show_All(void)
+{
+    static bool last_ins_page = false;
+
+#if NAVIGATION_ENABLE
+    static bool last_navi_mode = false;
+
+    if(navi_mode)
+    {
+        if(!last_navi_mode)
+            NaviMenu_Invalidate();
+        NaviMenu_Show();
+        if(MenuPool_IsFull())
+            ips200_show_string(0, 224, "Menu Full!     ");
+        last_navi_mode = true;
+        return;
+    }
+    if(last_navi_mode)
+    {
+        ips200_clear();
+        last_navi_mode = false;
+    }
+#endif
+
+    bool ins_page = Mymenu_is_ins_page();
+
+    if(ins_page != last_ins_page)
+    {
+        ips200_clear();
+#if INS_NAV_ENABLE
+        if(ins_page)
+            ins_map_need_redraw = true;
+#endif
+    }
+
+#if INS_NAV_ENABLE
+    if(ins_page)
+        Mymenu_show_ins_map();
+#endif
+
+    if(!ins_page)
+    {
+        Mymenu_show_title();
+    }
+
+#if INS_NAV_ENABLE
+    if(!ins_page || ins_zone_quick_active)
+#else
+    if(!ins_page)
+#endif
+    {
+        Mymenu_show_Setup();
+    }
+
+    Mymenu_show_task();
+    Mymenu_show_key();
+    Mymenu_show_data();
+
+    if(!ins_page)
+    {
+        NaviFlash_ShowSaveStatus();
+        if(MenuPool_IsFull())
+            ips200_show_string(0, 224, "Menu Full!     ");
+    }
+
+    last_ins_page = ins_page;
+}
+
+//-------------------------------------------------------------------------------------------------------------------
+// 函数简介       将菜单选中项向上移动
+// 参数简介       无
+// 返回参数       void                     无返回值
+// 备注信息       由对应模块任务或上层控制流程调用。
+//-------------------------------------------------------------------------------------------------------------------
+void menu_function_up(void)
+{
+
+    key_menu_p = key_menu_p->last_brother;
+}
+
+
+//-------------------------------------------------------------------------------------------------------------------
+// 函数简介       将菜单选中项向下移动
+// 参数简介       无
+// 返回参数       void                     无返回值
+// 备注信息       由对应模块任务或上层控制流程调用。
+//-------------------------------------------------------------------------------------------------------------------
+void menu_function_down(void)
+{
+
+    key_menu_p = key_menu_p->next_brother;
+}
+
+
+//-------------------------------------------------------------------------------------------------------------------
+// 函数简介       进入当前选中的子菜单或设置项
+// 参数简介       无
+// 返回参数       void                     无返回值
+// 备注信息       由对应模块任务或上层控制流程调用。
+//-------------------------------------------------------------------------------------------------------------------
+void menu_function_enter(void)
+{
+    if(key_menu_p->son_first == NULL) return ;
+
+    key_menu_p = key_menu_p->son_first;
+}
+
+
+//-------------------------------------------------------------------------------------------------------------------
+// 函数简介       退出当前菜单并返回上一级
+// 参数简介       无
+// 返回参数       void                     无返回值
+// 备注信息       由对应模块任务或上层控制流程调用。
+//-------------------------------------------------------------------------------------------------------------------
+void menu_function_quit(void)
+{
+    if(key_menu_p->father->father == NULL) return ;
+
+    key_menu_p = key_menu_p->father;
+}
+
+
+//-------------------------------------------------------------------------------------------------------------------
+// 函数简介       切换当前布尔菜单项的取值
+// 参数简介       无
+// 返回参数       void                     无返回值
+// 备注信息       由对应模块任务或上层控制流程调用。
+//-------------------------------------------------------------------------------------------------------------------
+void menu_function_toggle(void)
+{
+
+    *(bool *)(key_menu_p->private_data) = !*(bool *)(key_menu_p->private_data);
+}
+
+
+//-------------------------------------------------------------------------------------------------------------------
+// 函数简介       选中当前菜单项并进入编辑状态
+// 参数简介       无
+// 返回参数       void                     无返回值
+// 备注信息       由对应模块任务或上层控制流程调用。
+//-------------------------------------------------------------------------------------------------------------------
+void menu_function_select(void)
+{
+
+    key_menu_p->number_box_select = 1;
+}
+
+
+//-------------------------------------------------------------------------------------------------------------------
+// 函数简介       结束当前菜单项的编辑状态
+// 参数简介       无
+// 返回参数       void                     无返回值
+// 备注信息       由对应模块任务或上层控制流程调用。
+//-------------------------------------------------------------------------------------------------------------------
+void menu_function_unselect(void)
+{
+
+    key_menu_p->number_box_select = 0;
+}
+
+
+//-------------------------------------------------------------------------------------------------------------------
+// 函数简介       按照数据类型增加当前数值设置项
+// 参数简介       无
+// 返回参数       void                     无返回值
+// 备注信息       由对应模块任务或上层控制流程调用。
+//-------------------------------------------------------------------------------------------------------------------
+void MenuNumber_SetupCtrl_Plus(void)
+{
+    SetupIndex = (SetupIndex + 1) % SETUP_LEN;
+}
+
+
+//-------------------------------------------------------------------------------------------------------------------
+// 函数简介       按照数据类型减小当前数值设置项
+// 参数简介       无
+// 返回参数       void                     无返回值
+// 备注信息       由对应模块任务或上层控制流程调用。
+//-------------------------------------------------------------------------------------------------------------------
+void MenuNumber_SetupCtrl_Sub(void)
+{
+    SetupIndex = (SetupIndex - 1 + SETUP_LEN) % SETUP_LEN;
+}
+
+
+//-------------------------------------------------------------------------------------------------------------------
+// 函数简介       增加普通数值菜单项并处理上下限
+// 参数简介       无
+// 返回参数       void                     无返回值
+// 备注信息       由对应模块任务或上层控制流程调用。
+//-------------------------------------------------------------------------------------------------------------------
+void menu_funtion_NumberPlus(void)
+{
+    switch(key_menu_p->kind)
+    {
+        case int_Box:
+        {
+            if(!key_menu_p -> isLimit)
+                *(int *)(key_menu_p->private_data) = *(int *)(key_menu_p->private_data) + SetupNumber[SetupIndex];
+            else
+                *(int *)(key_menu_p->private_data) = ( *(int *)(key_menu_p->private_data) + SetupNumber[SetupIndex] > key_menu_p->limit_max ) ? key_menu_p->limit_max : *(int *)(key_menu_p->private_data) + SetupNumber[SetupIndex];
+            break;
+        }
+        case float_Box:
+        {
+            if(!key_menu_p -> isLimit)
+                *(float *)(key_menu_p->private_data) = *(float *)(key_menu_p->private_data) + SetupNumber[SetupIndex];
+            else
+                *(float *)(key_menu_p->private_data) = ( *(float *)(key_menu_p->private_data) + SetupNumber[SetupIndex] >  key_menu_p->limit_max ) ? key_menu_p->limit_max : *(float *)(key_menu_p->private_data) + SetupNumber[SetupIndex];
+            break;
+        }
+        case uint8_Box:
+        {
+            if(!key_menu_p -> isLimit)
+                *(uint8_t *)(key_menu_p->private_data) = *(uint8_t *)(key_menu_p->private_data) + SetupNumber[SetupIndex];
+            else
+                *(uint8_t *)(key_menu_p->private_data) = ( *(uint8_t *)(key_menu_p->private_data) + SetupNumber[SetupIndex] > key_menu_p->limit_max ) ? key_menu_p->limit_max : *(uint8_t *)(key_menu_p->private_data) + SetupNumber[SetupIndex];
+            break;
+        }
+        case int8_Box:
+        {
+            if(!key_menu_p -> isLimit)
+                *(int8_t *)(key_menu_p->private_data) = *(int8_t *)(key_menu_p->private_data) + SetupNumber[SetupIndex];
+            else
+                *(int8_t *)(key_menu_p->private_data) = ( *(int8_t *)(key_menu_p->private_data) + SetupNumber[SetupIndex] > key_menu_p->limit_max ) ? key_menu_p->limit_max : *(int8_t *)(key_menu_p->private_data) + SetupNumber[SetupIndex];
+            break;
+        }
+        case uint16_Box:
+        {
+            if(!key_menu_p -> isLimit)
+                *(uint16_t *)(key_menu_p->private_data) = *(uint16_t *)(key_menu_p->private_data) + SetupNumber[SetupIndex];
+            else
+                *(uint16_t *)(key_menu_p->private_data) = ( *(uint16_t *)(key_menu_p->private_data) + SetupNumber[SetupIndex] > key_menu_p->limit_max ) ? key_menu_p->limit_max : *(uint16_t *)(key_menu_p->private_data) + SetupNumber[SetupIndex];
+            break;
+        }
+        case int16_Box:
+        {
+            if(!key_menu_p -> isLimit)
+                *(int16_t *)(key_menu_p->private_data) = *(int16_t *)(key_menu_p->private_data) + SetupNumber[SetupIndex];
+            else
+                *(int16_t *)(key_menu_p->private_data) = ( *(int16_t *)(key_menu_p->private_data) + SetupNumber[SetupIndex] > key_menu_p->limit_max ) ? key_menu_p->limit_max : *(int16_t *)(key_menu_p->private_data) + SetupNumber[SetupIndex];
+            break;
+        }
+        case uint32_Box:
+        {
+            if(!key_menu_p -> isLimit)
+                *(uint32_t *)(key_menu_p->private_data) = *(uint32_t *)(key_menu_p->private_data) + SetupNumber[SetupIndex];
+            else
+                *(uint32_t *)(key_menu_p->private_data) = ( *(uint32_t *)(key_menu_p->private_data) + SetupNumber[SetupIndex] > key_menu_p->limit_max ) ? key_menu_p->limit_max : *(uint32_t *)(key_menu_p->private_data) + SetupNumber[SetupIndex];
+            break;
+        }
+        case int32_Box:
+        {
+            if(!key_menu_p -> isLimit)
+                *(int32_t *)(key_menu_p->private_data) = *(int32_t *)(key_menu_p->private_data) + SetupNumber[SetupIndex];
+            else
+                *(int32_t *)(key_menu_p->private_data) = ( *(int32_t *)(key_menu_p->private_data) + SetupNumber[SetupIndex] > key_menu_p->limit_max ) ? key_menu_p->limit_max : *(int32_t *)(key_menu_p->private_data) + SetupNumber[SetupIndex];
+            break;
+        }
+        default:
+        break;
+    }
+
+#if INS_NAV_ENABLE
+    Mymenu_request_ins_map_redraw();
+#endif
+}
+
+//-------------------------------------------------------------------------------------------------------------------
+// 函数简介       减小普通数值菜单项并处理上下限
+// 参数简介       无
+// 返回参数       void                     无返回值
+// 备注信息       由对应模块任务或上层控制流程调用。
+//-------------------------------------------------------------------------------------------------------------------
+void menu_funtion_NumberSub(void)
+{
+    switch(key_menu_p->kind)
+    {
+        case int_Box:
+        {
+            if(!key_menu_p -> isLimit)
+                *(int *)(key_menu_p->private_data) = *(int *)(key_menu_p->private_data) - SetupNumber[SetupIndex];
+            else
+                *(int *)(key_menu_p->private_data) = ( *(int *)(key_menu_p->private_data) - SetupNumber[SetupIndex] < key_menu_p->limit_min) ? key_menu_p->limit_min : *(int *)(key_menu_p->private_data) - SetupNumber[SetupIndex];
+            break;
+        }
+        case float_Box:
+        {
+            if(!key_menu_p -> isLimit)
+                *(float *)(key_menu_p->private_data) = *(float *)(key_menu_p->private_data) - SetupNumber[SetupIndex];
+            else
+                *(float *)(key_menu_p->private_data) = ( *(float *)(key_menu_p->private_data) - SetupNumber[SetupIndex] < key_menu_p->limit_min) ? key_menu_p->limit_min : *(float *)(key_menu_p->private_data) - SetupNumber[SetupIndex];
+            break;
+        }
+        case uint8_Box:
+        {
+            if(!key_menu_p -> isLimit)
+                *(uint8_t *)(key_menu_p->private_data) = *(uint8_t *)(key_menu_p->private_data) - SetupNumber[SetupIndex];
+            else
+                *(uint8_t *)(key_menu_p->private_data) = ( *(uint8_t *)(key_menu_p->private_data) - SetupNumber[SetupIndex] < key_menu_p->limit_min) ? key_menu_p->limit_min : *(uint8_t *)(key_menu_p->private_data) - SetupNumber[SetupIndex];
+            break;
+        }
+        case int8_Box:
+        {
+            if(!key_menu_p -> isLimit)
+                *(int8_t *)(key_menu_p->private_data) = *(int8_t *)(key_menu_p->private_data) - SetupNumber[SetupIndex];
+            else
+                *(int8_t *)(key_menu_p->private_data) = ( *(int8_t *)(key_menu_p->private_data) - SetupNumber[SetupIndex] < key_menu_p->limit_min) ? key_menu_p->limit_min : *(int8_t *)(key_menu_p->private_data) - SetupNumber[SetupIndex];
+            break;
+        }
+        case uint16_Box:
+        {
+            if(!key_menu_p -> isLimit)
+                *(uint16_t *)(key_menu_p->private_data) = *(uint16_t *)(key_menu_p->private_data) - SetupNumber[SetupIndex];
+            else
+                *(uint16_t *)(key_menu_p->private_data) = ( *(uint16_t *)(key_menu_p->private_data) - SetupNumber[SetupIndex] < key_menu_p->limit_min) ? key_menu_p->limit_min : *(uint16_t *)(key_menu_p->private_data) - SetupNumber[SetupIndex];
+            break;
+        }
+        case int16_Box:
+        {
+            if(!key_menu_p -> isLimit)
+                *(int16_t *)(key_menu_p->private_data) = *(int16_t *)(key_menu_p->private_data) - SetupNumber[SetupIndex];
+            else
+                *(int16_t *)(key_menu_p->private_data) = ( *(int16_t *)(key_menu_p->private_data) - SetupNumber[SetupIndex] < key_menu_p->limit_min) ? key_menu_p->limit_min : *(int16_t *)(key_menu_p->private_data) - SetupNumber[SetupIndex];
+            break;
+        }
+        case uint32_Box:
+        {
+            if(!key_menu_p -> isLimit)
+                *(uint32_t *)(key_menu_p->private_data) = *(uint32_t *)(key_menu_p->private_data) - SetupNumber[SetupIndex];
+            else
+                *(uint32_t *)(key_menu_p->private_data) = ( *(uint32_t *)(key_menu_p->private_data) - SetupNumber[SetupIndex] < key_menu_p->limit_min) ? key_menu_p->limit_min : *(uint32_t *)(key_menu_p->private_data) - SetupNumber[SetupIndex];
+            break;
+        }
+        case int32_Box:
+        {
+            if(!key_menu_p -> isLimit)
+                *(int32_t *)(key_menu_p->private_data) = *(int32_t *)(key_menu_p->private_data) - SetupNumber[SetupIndex];
+            else
+                *(int32_t *)(key_menu_p->private_data) = ( *(int32_t *)(key_menu_p->private_data) - SetupNumber[SetupIndex] < key_menu_p->limit_min) ? key_menu_p->limit_min : *(int32_t *)(key_menu_p->private_data) - SetupNumber[SetupIndex];
+            break;
+        }
+        default:
+        break;
+    }
+
+#if INS_NAV_ENABLE
+    Mymenu_request_ins_map_redraw();
+#endif
+}
+
+
+#ifdef FIVE
+//-------------------------------------------------------------------------------------------------------------------
+// 函数简介       处理菜单上键按下事件
+// 参数简介       无
+// 返回参数       void                     无返回值
+// 备注信息       由对应模块任务或上层控制流程调用。
+//-------------------------------------------------------------------------------------------------------------------
+void Menu_upButton(void)
+{
+#if INS_NAV_ENABLE
+    if(ins_zone_quick_active)
+    {
+        if(ins_zone_select_state != 3)
+        {
+            Menu_InsZoneQuickMove(1);
+        }
+        return;
+    }
+#endif
+    switch (key_menu_p->kind)
+    {
+    case Normal_Folder:
+        menu_function_up();
+        break;
+
+    case bool_Box:
+        menu_function_up();
+        break;
+
+    default:
+
+        if(key_menu_p->number_box_select == 1)
+            menu_funtion_NumberPlus();
+        else
+            menu_function_up();
+        break;
+    }
+}
+
+//-------------------------------------------------------------------------------------------------------------------
+// 函数简介       处理菜单下键按下事件
+// 参数简介       无
+// 返回参数       void                     无返回值
+// 备注信息       由对应模块任务或上层控制流程调用。
+//-------------------------------------------------------------------------------------------------------------------
+void Menu_downButton(void)
+{
+#if INS_NAV_ENABLE
+    if(ins_zone_quick_active)
+    {
+        if(ins_zone_select_state != 3)
+        {
+            Menu_InsZoneQuickMove(-1);
+        }
+        return;
+    }
+#endif
+    switch (key_menu_p->kind)
+    {
+    case Normal_Folder:
+        menu_function_down();
+        break;
+
+    case bool_Box:
+        menu_function_down();
+        break;
+
+    default:
+
+        if(key_menu_p->number_box_select == 1)
+            menu_funtion_NumberSub();
+        else
+            menu_function_down();
+        break;
+    }
+}
+
+//-------------------------------------------------------------------------------------------------------------------
+// 函数简介       处理菜单左键按下事件
+// 参数简介       无
+// 返回参数       void                     无返回值
+// 备注信息       由对应模块任务或上层控制流程调用。
+//-------------------------------------------------------------------------------------------------------------------
+void Menu_leftButton(void)
+{
+#if INS_NAV_ENABLE
+    if(ins_zone_quick_active)
+    {
+        if(ins_zone_select_state == 3)
+        {
+            Menu_InsZoneQuickCancel();
+        }
+        else
+        {
+            Menu_InsZoneStepSub();
+        }
+        return;
+    }
+#endif
+#if NAVIGATION_ENABLE
+    if(navi_mode)
+    {
+        navi_mode = false;
+        return;
+    }
+#endif
+    switch (key_menu_p->kind)
+    {
+    case Normal_Folder:
+            menu_function_quit();
+        break;
+
+    case bool_Box:
+            menu_function_quit();
+        break;
+
+    default:
+        if(key_menu_p->number_box_select == 1)
+            MenuNumber_SetupCtrl_Sub();
+        else {
+            menu_function_quit();
+        }
+        break;
+    }
+}
+
+//-------------------------------------------------------------------------------------------------------------------
+// 函数简介       处理菜单右键按下事件
+// 参数简介       无
+// 返回参数       void                     无返回值
+// 备注信息       由对应模块任务或上层控制流程调用。
+//-------------------------------------------------------------------------------------------------------------------
+void Menu_rightButton(void)
+{
+#if INS_NAV_ENABLE
+    if(ins_zone_quick_active)
+    {
+        if(ins_zone_select_state == 3)
+        {
+            Menu_InsZoneQuickSave();
+        }
+        else
+        {
+            Menu_InsZoneStepPlus();
+        }
+        return;
+    }
+#endif
+
+    switch (key_menu_p->kind)
+    {
+    case Normal_Folder:
+//        menu_function_enter();
+        break;
+
+    case bool_Box:
+        menu_function_toggle();
+        break;
+
+    default:
+        if(key_menu_p->number_box_select == 1)
+            MenuNumber_SetupCtrl_Plus();
+        else
+//            menu_function_select();
+        break;
+    }
+}
+
+//-------------------------------------------------------------------------------------------------------------------
+// 函数简介       处理菜单确认键按下事件
+// 参数简介       无
+// 返回参数       void                     无返回值
+// 备注信息       由对应模块任务或上层控制流程调用。
+//-------------------------------------------------------------------------------------------------------------------
+void Menu_midButton(void)
+{
+#if INS_NAV_ENABLE
+    if(ins_zone_quick_active)
+    {
+        Menu_InsZoneQuickMid();
+        return;
+    }
+#endif
+    switch (key_menu_p->kind)
+    {
+    case Normal_Folder:
+        menu_function_enter();
+        break;
+
+    case bool_Box:
+//        menu_function_toggle();
+        break;
+
+    default:
+        if(key_menu_p->number_box_select == 1)
+            menu_function_unselect();
+        else
+            menu_function_select();
+        break;
+    }
+}
+#endif
+
+#ifdef FOUR
+
+//-------------------------------------------------------------------------------------------------------------------
+// 函数简介       根据当前菜单页面执行上移操作
+// 参数简介       无
+// 返回参数       void                     无返回值
+// 备注信息       由对应模块任务或上层控制流程调用。
+//-------------------------------------------------------------------------------------------------------------------
+void Menu_upFuntion(void)
+{
+    switch (key_menu_p->kind)
+    {
+    case Normal_Folder:
+        menu_function_up();
+        break;
+
+    case bool_Box:
+        menu_function_up();
+        break;
+
+    default:
+
+        if(key_menu_p->number_box_select == 1)
+            menu_funtion_NumberPlus();
+        else
+            menu_function_up();
+        break;
+    }
+}
+
+
+//-------------------------------------------------------------------------------------------------------------------
+// 函数简介       根据当前菜单页面执行下移操作
+// 参数简介       无
+// 返回参数       void                     无返回值
+// 备注信息       由对应模块任务或上层控制流程调用。
+//-------------------------------------------------------------------------------------------------------------------
+void Menu_downFuntion(void)
+{
+    switch (key_menu_p->kind)
+    {
+    case Normal_Folder:
+        menu_function_down();
+        break;
+
+    case bool_Box:
+        menu_function_down();
+        break;
+
+    default:
+
+        if(key_menu_p->number_box_select == 1)
+            menu_funtion_NumberSub();
+        else
+            menu_function_down();
+        break;
+    }
+}
+
+
+//-------------------------------------------------------------------------------------------------------------------
+// 函数简介       根据当前菜单页面执行确认操作
+// 参数简介       无
+// 返回参数       void                     无返回值
+// 备注信息       由对应模块任务或上层控制流程调用。
+//-------------------------------------------------------------------------------------------------------------------
+void Menu_enterFuntion(void)
+{
+    switch (key_menu_p->kind)
+    {
+    case Normal_Folder:
+        menu_function_enter();
+        break;
+
+    case bool_Box:
+        menu_function_toggle();
+        break;
+
+    default:
+        if(key_menu_p->number_box_select == 1)
+            menu_function_unselect();
+        else
+            menu_function_select();
+        break;
+    }
+}
+
+//-------------------------------------------------------------------------------------------------------------------
+// 函数简介       根据当前菜单页面执行返回操作
+// 参数简介       无
+// 返回参数       void                     无返回值
+// 备注信息       由对应模块任务或上层控制流程调用。
+//-------------------------------------------------------------------------------------------------------------------
+void Menu_quitFuntion(void)
+{
+    switch (key_menu_p->kind)
+    {
+    case Normal_Folder:
+            menu_function_quit();
+        break;
+
+    case bool_Box:
+            menu_function_quit();
+        break;
+
+    default:
+        if(key_menu_p->number_box_select == 1)
+            MenuNumber_SetupCtrl_Plus();
+        else
+            menu_function_quit();
+        break;
+    }
+}
+#endif
+
+#pragma section all pragma
+#include "zf_common_headfile.h"
+#include "cpu0_main.h"
+
+volatile bool pisend =false;
+
+  int core0_main(void)
+{
+    clock_init();
+    debug_init();
+
+
+    my_init_all();
+
+
+    cpu_wait_event_ready();
+	while (TRUE)
+	{
+
+	    IMU_Fusion_UITask();
+	    all_in_main();
+
+
+	}
+}
+
+IFX_INTERRUPT(cc60_pit_ch1_isr, 0, CCU6_0_CH1_ISR_PRIORITY)
+{
+    interrupt_global_enable(0);
+    pit_clear_flag(CCU60_CH1);
+    static uint8_t count_in_2ms = 0;
+    static uint8_t count_5ms = 0;
+    static uint8_t count_out_2ms = 0;
+    static uint8_t count_10ms = 0;
+    static uint8_t count_20ms = 0;
+    UART_ErrorWatchdogTick1ms();
+    count_10ms++;
+    count_20ms++;
+    count_out_2ms++;
+    if(my_car_state==ready||my_car_state==test)
+    {
+        count_in_2ms++;
+        count_5ms++;
+        if(count_in_2ms>=2)
+        {
+            count_in_2ms=0;
+            NaviFlash_TickSaveStatus();
+        }
+        if(count_5ms>=5)
+        {
+            count_5ms = 0;
+            MY_key_scan();
+            MY_key_all_ctrl();
+        }
+    }
+    if(count_out_2ms>=2)
+    {
+        count_out_2ms=0;
+        Encoder_Data_get();
+#if INS_NAV_ENABLE
+        INS_NAV_2msALL(motor_left.encoder_speed,motor_right.encoder_speed);
+#endif
+#if NAVIGATION_ENABLE
+        NaviCore_OnEncoderTick();
+#endif
+        speed_control();
+    }
+    if(count_20ms>=20)
+    {
+        count_20ms=0;
+        pisend = true;
+    }
+    IMU_Fusion_Task();
+    if(count_10ms>=10)
+    {
+        count_10ms=0;
+        UART_PublishYawLatest(IMU_Fusion_GetYaw());
+    }
+}
+
+IFX_INTERRUPT(cc61_pit_ch0_isr, 0, CCU6_1_CH0_ISR_PRIORITY)
+{
+    interrupt_global_enable(0);
+    pit_clear_flag(CCU61_CH0);
+    del_car();
+}
+IFX_INTERRUPT(uart1_rx_isr, 0, UART1_RX_INT_PRIO)
+{
+    interrupt_global_enable(0);
+    uint8_t data;
+    while(uart_query_byte(UART_1, &data))
+    {
+        if(rx_index == 0 && data != 0x55)
+        {
+            continue;
+        }
+        rx_buffer[rx_index] = data;
+        rx_index++;
+        if(rx_index == 3)
+        {
+            if(rx_buffer[0] != Frame_h || rx_buffer[2] != param1_longest_byte)
+            {
+                memset(rx_buffer, 0, sizeof(rx_buffer));
+                rx_index = 0;
+                continue;
+            }
+        }
+        if(rx_index >= param1_send_all_byte)
+        {
+            process_received_data(rx_buffer, rx_index);
+            memset(rx_buffer, 0, sizeof(rx_buffer));
+            rx_index = 0;
+        }
+        if(rx_index >= 60)
+        {
+            memset(rx_buffer, 0, sizeof(rx_buffer));
+            rx_index = 0;
+        }
+    }
+}
+
+
+#pragma section all restore
+
+
+
+
+
+
+附录 C 车模技术检查表
+一、车模技术检查表
+二、车模照片
+1、车模外观照片
+
+
+
+
+▲ 图1.1 车模照片（从前到后依次为前视图，侧视图，俯视图）
+2、电路板PCB图
+
+
+
+
+
+
+
+
+3、电路板原理图
+
+
+
+
+
+===== TABLE 1 =====
+式中 | (公式4.2)
+k——采样序号，k = 0，1，2…； | r(k)——第k次给定值；
+c(k)——第k次实际输出值； | u(k)—— 第k次输出控制量；
+e(k)—— 第k次偏差； | e(k-1)—— 第k-1次偏差；
+KP——比例系数； | TI——积分时间常数；
+TD——微分时间常数； | T——采样周期。
+
+===== TABLE 2 =====
+名称 | 参数
+车模总质量 | 1406g
+车模长度 | 290 mm
+车模宽度 | 200 mm
+车模高度 | 约150 mm
+传感器个数 | 3种，3个
+传感器种类 | 陀螺仪模块 摄像头模块 龙邱编码器
+赛道检测频率 | 50hz
+额外伺服器 | 无
+
+===== TABLE 3 =====
+队伍名称 | 杭电人工智能模型一队 | 杭电人工智能模型一队 | 杭电人工智能模型一队 | 杭电人工智能模型一队
+参赛学校 | 杭州电子科技大学 | 杭州电子科技大学 | 杭州电子科技大学 | 杭州电子科技大学
+赛题组别 | 人工智能模型组 | 人工智能模型组 | 人工智能模型组 | 人工智能模型组
+检查项目 | 规格 （选手自行填写） | 符合 （） | 不符合（） | 备注
+1.车模类型是什么？ | C车模改装 |  |  | 如果是自制车模，请标明自制。
+车模整体尺寸： （包括传感器在内）长，宽，高(mm) | 长33 cm，宽20 cm，高约15 cm |  |  | 高最大16cm，长度小于35cm，宽度小于22cm
+传感器种类、规格(型号)数量。 是否使用自带MCU的成品传感器模块？型号是什么？ | 摄像头：OV13855 4-Lane MIPI 高清广角定焦模组（板卡自带*1） 板卡：rk3588s 陀螺仪：ICM42688 *1个 |  |  | 
+控制转向舵机型号是否自行改装舵机？ 防伪易损标签是否完整？ | 1.否 2.完好 |  |  | 
+1. 是否增加伺服电机？ 2. 如果有种类、个数和作用？ | 1.否 2.无 |  |  | 
+电路中微处理器型号和个数？ | TC264D40F200W，1个 |  |  | 
+是否具有其它可编程器件，个数与作用？ | 否 |  |  | 
+是否有无线通讯装置？ 如果有种类和个数？ | 无 |  |  | 
+电池的种类、规格和数量？ | 达普3S电池，2200 mAh，45C |  |  | 
+1. 是否使用GPS导航？ 2. 是否没有使用RTK？ | 否，否 |  |  | 
+后轮驱动电机是否是原车模电机？ 是否具有防伪易损标签？ | 1.是 2.是 |  |  | 
+轮胎是否是原车同款轮胎？ 轮胎的尺寸（直径和宽度）是否小于等于原车模尺寸？ | 是，否 |  |  | 
+车轮轴距、轮距是否改装？ 改装参数是什么？ | 1.否 2.无 |  |  | 
+车模驱动轮传动机构是否改装？ 改装方式是什么？ | 1.否 2.无 |  |  | 
+是否更换过原装车模中的机械元器件？更换后的规格 是什么？ | 是，底盘，换成20cm*27cm |  |  | 。
+车模电路板个数及功能。 其中是否有购买成品电路板？ | 1.6个电路板 主板、电机驱动板、电源降压板、按键转接板、屏幕转接板、陀螺仪转接板 2.无成品电路板 |  |  | 
+自制电路板是否标记有学校名称、队伍名称、制作日期等信息？ 标示信息在PCB的哪一层？ | 1.是 2.正面敷铜层 |  |  | 
+其它待说明内容 |  |  |  | 
+检查人员签名： | 检查意见： | 检查意见： | 检查意见： | 检查意见：

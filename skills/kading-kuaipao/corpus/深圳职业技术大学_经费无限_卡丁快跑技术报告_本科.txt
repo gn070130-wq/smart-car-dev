@@ -1,0 +1,1594 @@
+第二十一届全国大学生智能汽车竞赛
+技 术 报 告
+基于英飞凌 TC387 的智能卡丁车
+视觉跟随与反向路径回放系统设计
+参赛学校：深圳职业技术大学
+队伍名称：经费无限
+参赛队员：张健林  庄子祺  黎飞扬  宋玉成  黄鹏涛
+带队老师：林艳艳  崔宏巍
+参赛组别：卡丁快跑组
+二〇二六年八月
+
+技术报告及研究论文使用授权说明
+本技术报告为参赛队伍在带队老师指导下合作完成，授权全国大学生智能汽车竞赛组委会在比赛之后出版的论文集中使用本报告内容。
+参赛队员签名：          
+带队老师签名：    
+日期：2026 年 8 月 18 日
+
+目录
+技术报告及研究论文使用授权说明	i
+目录	i
+主要符号表	i
+第一章 引言	1
+1.1 项目概述	1
+1.2 技术背景	1
+1.3 报告结构	2
+第二章 系统总体设计	1
+2.1 系统总体架构	1
+2.2 四核分工	1
+2.3 综合任务流程	2
+第三章 机械结构与传感器安装	1
+3.1 车模底盘与转向结构	1
+3.2 传感器配置	5
+3.3 前视摄像头安装	6
+3.4 执行机构	7
+第四章 电路设计	1
+4.1 核心控制器	1
+4.2 电机与编码器接口	1
+4.3 感知与显示接口	2
+4.4 灯光、点阵与声音接口	2
+4.5 电源与功耗	3
+第五章 软件与算法设计	1
+5.1 实时任务与中断设计	1
+5.2 Task3 六状态流程	2
+5.3 视觉目标识别	3
+5.3.1 冻结帧与跨核快照	3
+5.3.2 颜色空间与连通域识别	3
+5.4 视觉 Pure Pursuit 跟随控制	4
+5.5 INS 航位推算与轨迹录制	5
+5.6 Flash 存储与反向路径生成	5
+5.7 CTE 与航向复合返回控制	5
+5.8 电机闭环控制	7
+5.8.1 转向位置 PID	7
+5.8.2 后轮增量式 PID	7
+5.9 在线语音识别与动作执行	7
+5.10 安全与故障处理	8
+第六章 开发工具与调试过程	1
+6.1 开发环境	1
+6.2 调试方法	1
+6.2.1 分层调试	1
+6.2.2 摄像头冻结帧诊断	1
+6.2.3 遥测观察量	2
+6.3 实测结果与待改进项	2
+第七章 模型车技术参数	1
+7.1 整车参数	1
+7.2 电气参数	1
+7.3 检测精度和频率	2
+7.4 软件容量	2
+7.5 传感器与执行机构汇总	2
+第八章 结论	1
+8.1 工作总结	1
+8.2 主要特点	1
+8.3 当前限制与改进方向	1
+8.4 阶段性总结	2
+参考文献	1
+附录 A 源代码索引	1
+A.1 code/ 根目录 60 个源文件	1
+A.2 TLD7002 驱动 3 个源码	1
+A.3 user/ 入口和中断 5 个源码	1
+A.4 项目结构与核心代码节选（脱敏版）	1
+A.4.1 项目目录结构	1
+A.4.2 多核主流程与任务调度（user/cpu0_main.c:199-270）	3
+A.4.3 底盘运动学与左右轮目标分配（code/chassis_control.c:127-227）	4
+A.4.4 视觉帧快照与目标跟踪状态机（code/s3_vision_follow.c:71-175）	6
+A.4.5 前向视觉检测与跟随任务（code/shijue.c:613-760）	8
+A.4.6 反向路径回放控制（code/path_planing.c:755-880）	10
+A.4.7 路径构建与跟随控制准备（code/path_planing.c:1560-1715）	12
+A.4.8 转向角计算与闭环控制（code/steer_pid.c:654-835）	15
+A.4.9 CPU3语音服务入口（user/cpu3_main.c:1-80）	18
+附录 B 引脚分配表	1
+
+
+主要符号表
+表0-1  内容汇总参数表
+
+
+第一章 引言
+1.1 项目概述
+本项目面向第二十一届全国大学生智能汽车竞赛卡丁快跑组，设计并实现一套基于智能卡丁车平台的视觉跟随、路径录制、反向路径生成、倒车回放及语音动作执行系统。系统主控为 Infineon AURIX TC387QP，采用逐飞 TC387 开源库 V3.4.3 和 Infineon iLLD 1.0.11.0。
+国赛固件 kemu3 采用一体化任务流程：车辆首先通过朝向车辆前进方向的 SCC8660 前视彩色摄像头识别前方紫色目标物，利用视觉偏差控制车辆跟随目标，同时由 IMU 与左右轮编码器进行局部航位推算并以 0.03 m 间隔记录轨迹；视觉目标消失或进入近距停车区后，轨迹写入 DFlash，CPU2 将记录轨迹变换为以终点为原点的反向返回路径；随后车辆关闭摄像头采集，采用录制转向前馈、航向 PI 修正和 CTE 横向修正倒车返回起点；返回成功后，CPU3 启动在线语音识别，CPU0 串行执行灯光和鸣笛命令。
+当前国赛构建仅在任务菜单中开放 RC 对中/遥控模式与 Task3 综合任务。旧工程中 Task1、Task2 的入口和路径规划接口保留为兼容空壳，但不会在本固件中运行。因此本报告以实际启用的 Task3 全流程为主线，不将未启用模块描述为已完成竞赛功能。
+1.2 技术背景
+车辆定位采用轮编码器里程增量与 IMU 航向角融合的局部航位推算。该方法不依赖外部 GNSS 基站，适合短距离、封闭场地运行，但误差会随距离累积，因此系统在录制和返回阶段均通过较短的轨迹间隔、航向闭环与 CTE 反馈抑制偏差。
+视觉跟随采用 YCbCr 颜色阈值、形态学闭运算、BFS 连通域搜索及候选评分识别目标，再使用 Pure Pursuit 几何关系把图像横向偏差转换为前轮转角。Pure Pursuit 算法计算量较低，适合嵌入式实时控制；其经典实现和前视距离对跟踪性能的影响可参考 Coulter 的技术报告[4]。
+语音部分采用讯飞流式语音听写 WebAPI。音频以 8 kHz、16 bit、单声道 PCM 形式采集，通过 WebSocket 上传，返回 UTF-8 JSON 文本后在本地执行最长关键词匹配。讯飞官方接口允许 8 kHz 或 16 kHz PCM，并使用 WebSocket 鉴权通信[5]。
+1.3 报告结构
+第二章介绍总体架构和多核分工；第三章介绍底盘、传感器与执行机构；第四章整理接口及引脚；第五章详细说明视觉、INS、轨迹录制、反向路径生成、CTE 回放和语音系统；第六章说明开发与调试过程；第七章汇总技术参数；第八章总结成果、限制与后续改进方向。
+
+第二章 系统总体设计
+2.1 系统总体架构
+系统由感知、定位、决策、控制和人机交互五部分构成：
+感知层：SCC8660 摄像头、IMU963RA、方向盘绝对编码器、左右轮增量编码器、ADC 麦克风和 SBUS 接收机。
+定位层：IMU 航向与轮编码器里程融合形成局部 INS 位姿。
+决策层：Task3 六状态流程管理、视觉距离状态机、反向路径生成及完成判定。
+控制层：视觉 Pure Pursuit、返回 CTE/航向复合修正、转向位置 PID、双后轮增量式速度 PID。
+交互层：IPS200Pro、7×15 点阵屏、TLD7002 灯光驱动、蜂鸣器/喇叭和在线语音识别。
+
+图2-1 系统总体架构
+2.2 四核分工
+表2-1  四核分工参数表
+
+
+图2-2 软件分层与四核分工
+2.3 综合任务流程
+车辆上电，CPU0 完成时钟、显示、定时器、任务及执行器初始化。
+在菜单中选择 Task3，系统进入 IDLE，允许遥控对中并等待开始命令。
+按下 P11.3 进入视觉录制；CPU1 通过前视相机识别前方紫色目标，CPU0 每 5 ms 更新视觉跟随控制，INS 每 10 ms 更新位置。
+系统每累计 0.03 m 保存一个 (x,y,steer,key) 轨迹点。视觉目标持续无效或过近约 1 s 时触发自动停车、保存轨迹和终点航向。
+CPU2 反转点序、平移至终点坐标系并根据终点航向旋转，生成倒车返回路径。
+系统暂停摄像头与点阵扫描冲突链路，进入 RETURNING，以 CTE、航向和录制转向前馈控制车辆倒车。
+正常到达终点后进入 DONE，停车并请求 CPU3 启动语音服务；识别出的灯光/鸣笛命令由 CPU0 依次执行。
+任意阶段检测到遥控紧急变化、手动取消、路径无效或超时，系统强制停车。
+
+第三章 机械结构与传感器安装
+3.1 车模底盘与转向结构
+当前代码中用于运动学与 INS 的车体参数如下。
+表3-1  车模底盘与转向结构参数表
+
+车辆采用两个后轮驱动电机和一个转向直流电机。转向电机由绝对编码器构成位置闭环，不是传统 PWM 舵机。实际直行中心可在启动时于 1730±50 count 内采集，以减小安装零偏。
+整车采用科宇 T 型卡丁车底盘，改造后总重量约 22 kg，外形尺寸约为 1250 mm×750 mm×450 mm。车辆保留原车保险丝，并增加机械急停开关和遥控软件急停。转向电机通过支架加装绝对位置编码器实现角度闭环反馈（见图3-6），驱动板采用散热片辅助散热（见图4-1），控制板及相机支架通过 3D 打印支架与尼龙柱固定。
+图3-1~图3-5 为整车实物照片，图3-6 为转向电机绝对编码器安装方案。
+
+图3-1 整车正面实物照片
+
+图3-2 整车侧面实物照片
+
+图3-3 整车后视实物照片
+
+图3-4 整车另一侧实物照片
+
+图3-5 整车俯视实物照片
+
+图3-6 转向电机绝对编码器安装方案
+转向电机输出轴通过一对啮合齿轮带动绝对位置编码器。金色安装支架为 3 mm 铝板激光切割件，编码器本体为红色金属外壳，白色尼龙齿轮与电机侧小齿轮啮合。该方案将转向角度反馈升级为 12 位绝对编码器，直行中心可在启动时于 1730±50 count 内采集，显著提高了转向零位稳定性和角度分辨率。
+3.2 传感器配置
+表3-2  传感器配置参数表
+
+源码中虽然保留 GNSS 和 DL1B ToF 库文件，但 Task3 的当前位置来自 INS，going_position() 为兼容空实现；ToF 未在当前任务链路初始化。因此二者不得计入实际使用传感器。
+3.3 前视摄像头安装
+摄像头安装在座椅正中间，离地约 0.50 m，朝向车辆前进方向并向下俯视 10°。源码配置头中仍保留 S3_VISION_REAR_CAMERA_ENABLE=1 这一历史宏和与实物不一致的旧说明，但该宏当前未参与控制分支，不应据此判断实车安装方向；实际参与横向偏差处理的是 S3_VISION_REAR_CAMERA_MIRROR_X=0，即图像横向坐标未启用额外镜像。水平视场角在控制模型中取 130°，目标横向像素偏差换算比例为 130/160=0.8125°/px。安装时应保证：
+图像中心线与车辆纵向中心面尽量重合；
+相机俯仰角固定，目标距离变化主要反映在包围框高度上；
+紫色目标在比赛照明下具有足够饱和度；
+支架具有抗振性，避免像素偏差直接转化为转向抖动。
+
+图3-7 传感器与执行器布局示意
+3.4 执行机构
+表3-3  执行机构参数表
+
+
+第四章 电路设计
+4.1 核心控制器
+核心控制器为逐飞科技 TC387 核心板，搭配自制竞赛底板；核心芯片为 AURIX TC387QP，工程配置主频 300 MHz。Infineon 官方器件页面给出的 TC387QP 主要特性包括 4 个 300 MHz TriCore、片上 Flash、SRAM、DMA 和丰富的通信外设[2]。本工程使用逐飞 TC387 开源库 V3.4.3，iLLD 版本宏为 1.0.1.11.0，对应项目文档中的简写 1.0.11.0。核心板型号已确认为逐飞 TC387（实物照片见图4-1、图4-2）。
+自制电机功率级实装信息为 6 颗 Infineon BTN8982TA 集成大电流半桥，而非单颗分立 MOSFET；芯片内部集成高侧/低侧功率开关、驱动与保护功能[8]。每两颗半桥构成一路完整 H 桥，三路分别驱动左后轮、右后轮和转向电机。每路 PWM 信号经过一颗 Texas Instruments SN74LVC2G241DCUR 双路三态缓冲/驱动器后送入功率级[9]。驱动板原理图的六个功率器件符号均标为 BTN8982TA，与实装器件一致；主控底板原理图核心板符号原标为 TC264_CoreBoard，与国赛实装 TC387 不一致，最终版本已更正为 TC387。
+
+图4-1 BTN8982TA 芯片丝印实物照片
+
+图4-2 BTN8982TA 驱动散热方案
+驱动板实装 6 颗 Infineon BTN8982TA 大电流半桥，每两颗构成一路 H 桥。为应对整车峰值功率约 320 W 的工况，每颗 BTN8982TA 顶部贴装铝制散热片，并通过导热垫与芯片外壳接触；散热片高度受限于车底安装空间，采用矮型开槽设计。PCB 上 L1、L2 为电机相线接线端子，红黑粗线为 24 V 动力电源输入。
+4.2 电机与编码器接口
+表4-1  电机与编码器接口参数表
+
+4.3 感知与显示接口
+表4-2  感知与显示接口参数表
+
+4.4 灯光、点阵与声音接口
+TLD7002 使用 UART3（P21.7/P21.6）以 2 Mbit/s 通信。点阵屏使用 P20.9 作为 SYNC，SR0～SR6 分别连接 P20.0、P20.3、P00.8、P33.4、P20.8、P33.13 和 P20.10。摄像头 VSYNC 与点阵 SYNC 共同由 CPU1 的 ERU 组合中断管理；视觉任务运行时软件暂停点阵扫描，避免摄像头采集和点阵刷新争用 CPU1 实时资源。整车完整引脚分配见附录 B。
+
+图4-3 系统电气连接框图
+4.5 电源与功耗
+整车采用 LONG WAY（龙威）12FM14 阀控式密封铅酸蓄电池，铭牌容量为 24 V、14 Ah（20 h 率）。铭牌给出的 25 ℃充电参数为：浮充 27.0～27.6 V、循环使用 28.8～30.0 V，初始充电电流小于 4.20 A。逻辑电源由 SCT2450STER 生成 5 V，再由 RT9013-33GB 生成 3.3 V。驱动电机使用基于 BTN8982TA 集成半桥的自制 H 桥电路，PWM 前级采用 SN74LVC2G241DCUR 缓冲器。
+系统保留原车保险丝，设置机械急停开关和遥控软件急停；当前未配置独立的板级反接保护和外置过流保护，应在报告中如实披露。BTN8982TA 芯片本身具有内部保护功能[8]，但不能替代整车电源入口的反接、熔断和线束保护。
+根据两张原理图的标称值逐项求和，驱动板电容为 944.7094 µF，主控底板电容为 804.5094 µF，整车两张自制 PCB 的电容名义总容量为 1749.2188 µF，报告取 1749.22 µF（约 1.749 mF）。该结果包含储能、滤波、去耦和补偿电容；若只统计不小于 1 µF 的储能/滤波电容，则合计 1746.8 µF。
+整车三台电机的总额定功率为 350 W，其中两台后轮驱动电机合计 300 W，转向电机为 50 W。待机约 10 W、正常运行约 240 W 仍作为工程估算值，峰值约 320 W 已于 2026-08-17 整机实测确认；按 24 V 换算的等效电流约为 0.42 A、10.0 A 和 13.33 A。电池最大持续放电电流暂按约 20 A 估计，其 24 V 理论功率上限约 480 W。
+
+图4-4 国赛驱动板原理图
+
+图4-5 主控底板原理图
+
+图4-6 LONG WAY 12FM14 电池铭牌
+
+
+图4-7 主控底板正面实物照片（核心板插槽与电源部分）
+
+图4-8 主控底板背面 PCB 丝印照片
+
+图4-9 编码器安装特写
+
+图4-10 前视摄像头安装特写
+第五章 软件与算法设计
+5.1 实时任务与中断设计
+CPU0 初始化四个主要定时源。CCU60_CH0 每 1 ms 进入控制中断，Task3 的感知控制和位姿读取每累计 5 次执行一次，即 5 ms；转向编码器位置 PID 也在函数内部以 5 ms 更新；左右轮编码器和速度 PID 每累计 10 次执行，即 10 ms。CCU60_CH1 配置为 50 ms，用于按键扫描；CCU61_CH0 以 125 µs 采样音频；CCU61_CH1 以 1 ms 推进鸣笛状态机。
+表5-1  实时任务与中断设计参数表
+
+
+图5-1 多核中断时序示意
+5.2 Task3 六状态流程
+系统定义六个状态：IDLE、RECORDING、PREPARING、READY、RETURNING 和 DONE。
+表5-2  Task3 六状态流程参数表
+
+
+图5-2 Task3 状态转移图
+5.3 视觉目标识别
+5.3.1 冻结帧与跨核快照
+SCC8660 以单缓冲 DMA 写入 scc8660_image。DMA 完成后，CPU1 将 160×120×2=38400 byte 图像复制到 s3_frame_copy，识别和显示均读取冻结副本，使下一帧 DMA 写入不破坏正在处理的数据。视觉输出再通过互斥锁复制到跨核快照，CPU0 的 5 ms 控制中断只读取完整快照。
+5.3.2 颜色空间与连通域识别
+当前选择紫色模式，YCbCr 阈值为：
+
+算法首先按 2 倍降采样将 RGB565 转为 YCbCr，生成二值颜色掩膜；随后执行 3×3 形态学闭运算；利用容量 1024 的 BFS 队列搜索连通域。候选评分由连续性、外接框比例、填充密度和颜色健康度组成，并在原始 160×120 图像上细化质心和包围框。输出分数必须大于 60，且连续 3 帧有效后才置 valid=1；短时丢失可保持上次结果 10 帧。
+横向偏差和尺寸分别采用一阶滤波：
+
+
+其中 x 为目标中心相对图像中心的横向像素偏差，h 为目标包围框高度。
+
+图5-3 视觉目标识别流程
+5.4 视觉 Pure Pursuit 跟随控制
+图像水平视场角为 130°，宽度为 160 px，因此目标方位角估计为：
+
+采用自行车模型将目标方位角转换为前轮转角：
+
+其中 L=0.64 m。当前前视距离会随偏差在 1.20 m 与 0.65 m 之间线性变化：中心附近使用较长前视抑制摆动，偏差较大时使用较短前视提高转向响应。转角限幅为 ±25°，每个 5 ms 控制周期最大变化 0.8°。
+目标远、中、近三个距离状态的当前基础速度均为 65，仅停车区速度为 0；这意味着包围框高度目前主要用于近距停车，而不是分档调速。转弯时按转角比例降速：
+
+停车采用迟滞判定：进入阈值为包围框高度 50 px，退出阈值为 22 px，并要求目标横向偏差不超过 20 px，避免阈值附近反复启停。
+5.5 INS 航位推算与轨迹录制
+左右轮编码器每 10 ms 采样一次。实际 INS 更新函数采用轮周长 0.785 m、每圈 2112 脉冲：
+
+
+里程增量根据直线、曲线、倒车和停车状态使用不同低通系数。当前航向增量最终取 IMU 航向变化；源码同时计算了转向运动学和左右轮差速航向量，但尚未参与最终融合。采用航向中值积分位置：
+
+
+当车辆相对上一个记录点移动达到 0.03 m 时，保存局部坐标 (x,y)、实际转向 ADC 值和运动标志。路径数组最大 7500 点。
+5.6 Flash 存储与反向路径生成
+每个 DFlash 逻辑页保存 512 个 32 bit 数值，7500 点需要 15 页。Task3 使用页 20～80：经度命名数组实际存局部 y，纬度命名数组实际存局部 x，另存运动标志、终点航向和转向 ADC。坐标按 106 缩放后转为 int32，并用魔数和保存点数恢复路径。
+CPU2 生成返回路径的步骤为：
+从 Flash 读取原始轨迹和终点航向；
+以原轨迹终点为新原点，将点序完全反转；
+按终点航向的相反角度旋转全部点，使当前位置对应返回坐标系原点；
+复制录制转向 ADC 作为返回前馈；
+按局部曲率和剩余距离标记直线、一般跟踪和减速段；
+将所有段转为倒车标志并计算累计路径长度。
+当前 S3_SMOOTH_ENABLE=0，因此报告不把轨迹平滑描述为已启用功能。
+5.7 CTE 与航向复合返回控制
+返回控制周期为 5 ms。系统根据累计行驶距离获得进度索引，再在其后 12 点、前 28 点窗口中搜索最近路径线段。对线段 A(x0,y0) 到 B(x1,y1)，车辆位置为 P(x,y)，投影参数为：
+
+有符号横向误差为：
+
+倒车期望航向为路径切线方向加 180°。航向修正采用 PI，CTE 修正采用比例与差分阻尼：
+
+
+积分限幅为 ±3，uh 与 uc 分别限幅 ±20°。最终转向目标为：
+
+基础倒车速度为 -90；剩余距离不超过 0.60 m 时改为 -80；当 |eh|>15° 或 |ec|>0.15 m 时再乘 0.70。速度从零开始，每 5 个控制周期最多增加 1 个控制单位，降低启动冲击。
+完成判定综合累计进度、终点距离、末段越线和航向误差，并设置“基础 10 s＋每米 4 s”的超时保护。正常完成才允许转交语音任务。
+
+图5-4 反向路径、投影点和 CTE 示意
+5.8 电机闭环控制
+除了§5.4中的转弯比例降速和§5.7中的返回大偏差降速外，系统在倒车返回阶段还实现了一套五层速度门控策略。该策略根据转向跟踪误差、航向误差和 CTE 横向偏差三者中的最大者进行分级降速：当任一误差超过 L1~L5 阈值时，对应将目标速度乘以 0.85、0.65、0.45、0.30、0.25 的缩放系数。最终速度缩放取三者中最保守值，并与曲率预判降速和末端减速取最小值，保证大偏差时车辆有足够时间完成纠偏。
+5.7.1 多级速度门控策略（创新点）
+5.8.1 转向位置 PID
+返回控制和视觉控制首先给出目标转向 ADC，转向电机位置 PID 再跟踪该目标。当前 Outer 参数为：
+表5-3  转向位置 PID参数表
+
+PID 输出乘 20 后转为两路互斥 PWM，占空比上限 10000；输出绝对值不超过 10 时关闭电机，转向 ADC 达到机械限位时禁止继续向限位方向驱动。
+5.8.2 后轮增量式 PID
+左右后轮分别使用增量式 PID，参数均为 Kp=1.0、Ki=0.1、Kd=0，输出限幅 ±100，实际每 10 ms 更新。输出乘 100 转为 H 桥 PWM。阿克曼/差速目标由轴距和后轮距计算：
+
+
+当前底盘方向配置启用了左右差速符号反转，以匹配实际电机和编码器安装方向。
+5.9 在线语音识别与动作执行
+CPU3 在车辆正常返回后才启动语音服务。系统采样率为 8 kHz、最长录音 15 s、单次最多保存 36 条命令。WebSocket 鉴权使用 HMAC-SHA256，识别结果为 UTF-8 JSON。源码中保存的 WiFi 和 API 凭据属于部署秘密，不进入技术报告和附录展示版，提交版已改为脱敏配置。
+识别词表共有 36 条，覆盖 8 条灯光、10 条鸣笛（包含“鸣笛一声”）、门洞和运动指令；停止/关闭/取消映射到特殊命令 101。本国赛 Task3 输出调度器只接收命令 1～17 和 36，即实际执行 8 类灯光和 10 类鸣笛，门洞/运动命令在该构建中不执行。完整指令编号与内容见表 5-4。
+表5-4 语音指令集表
+
+本地解析从识别累计文本左向右扫描，在每个字节位置选择最长命中的规范词或别名，从而避免“左转”抢先匹配“打开左转向灯”。灯光保持 1 s，命令间隔 2 s；鸣笛等待当前模式完成后再执行下一条。
+
+图5-5 语音识别与动作执行流程
+5.10 安全与故障处理
+未收到完整视觉快照、识别无效或目标过近时立即把后轮目标和 PWM 置零；
+遥控 CH5 大幅变化触发紧急停车；
+视觉目标无效/过近持续约 1 s 后自动保存，避免车辆永久等待；
+路径点不足、CPU2 构建失败、返回超时或人工取消时不启动语音任务；
+wheel_cnt 作为电机输出看门狗，归零时清 PID 并关闭后轮；
+摄像头工作时暂停点阵扫描，避免 CPU1 中断和带宽竞争；
+DMA 原始缓冲与算法冻结帧分离，跨核视觉结果使用互斥快照。
+
+第六章 开发工具与调试过程
+6.1 开发环境
+表6-1  开发环境参数表
+
+6.2 调试方法
+6.2.1 分层调试
+单独验证转向中心、机械限位和三个电机方向；
+验证左右编码器在车辆前进时计数符号一致；
+静止标定 IMU 零偏并检查航向连续性；
+在屏幕上显示原始 SCC8660 图像，调整曝光、白平衡和 颜色阈值；
+开启识别叠加框，检查目标质心、包围框和有效评分；
+低速视觉跟随，依次调整前视距离、转角斜坡和转弯降速；
+记录短直线和 S 弯，核对 Flash 点数、坐标和转向前馈；
+先架空测试反向电机方向，再实车调整 CTE/航向增益；
+最后接入语音、灯光和鸣笛，进行完整状态机联调。
+6.2.2 摄像头冻结帧诊断
+项目曾针对彩色斑点和画面卡顿进行隔离诊断。最终结构恢复 SCC8660 单 DMA 缓冲，在 CPU1 收到完整帧后立即复制 38400 byte 冻结副本；算法与显示只读取副本。该方法将“采集写入”和“算法/显示读取”在时间和存储上隔离，避免下一帧 DMA 覆盖当前处理帧。
+6.2.3 遥测观察量
+建议记录以下数据形成最终报告曲线：目标 offset_x、包围框高度、视觉状态、目标/实际转向 ADC、左右轮目标/实际脉冲、INS (x,y,ψ)、路径索引、CTE、航向误差、控制周期耗时和摄像头帧率。
+
+图6-1 分层调试流程
+6.3 实测结果与待改进项
+视觉识别有效率：实测按时段统计，6:00-9:00 约 60%、9:00-11:00 约 80%、15:00-18:00 约 80%（2026-08-17 实测），低照度时段成功率明显下降；实际处理帧率已测得约 20 fps；
+不同距离下像素偏差与实际方位角标定曲线：受调试周期限制未完成系统化标定，列为后续改进项。标定方法为在已知方位角放置目标并记录 offset_x，拟合 offset_x—方位角线性关系（预期 y = k·x），为视觉跟随增益提供定量依据；
+录制/返回轨迹叠加图和 CTE RMS、最大值：调试日志未启用轨迹导出功能，暂无定量数据。定性观察表明返回轨迹与录制路径重合度较好，CTE 峰值多出现在弯道出入口；后续可启用日志导出完成定量评估；
+返回成功率约 50%（2026-08-17 实测），平均用时暂未统计；
+ASR 指令识别成功率约 80%（2026-08-17 实测）；网络延迟受 WiFi 信号质量和讯飞服务器响应影响，实测体感约 1–3 s（含音频上传、云端识别和指令下发），未做精确计时；
+整车功耗实测约 320 W（2026-08-17 实测）；电池续航实测：满功率运行约 1 h（2026-08-17 实测），与 24 V/14 Ah 电池理论续航（14 Ah ÷ 13.33 A ≈ 1.05 h）基本吻合；电机电流的直接实测因车况复杂暂不具备条件，作为后续工作保留。
+6.3.1 综合任务联调过程
+在单个模块验证完成后，团队按照国赛 Task3 完整流程进行联调：首先在开阔场地低速跟随紫色目标完成 20 m 以上路径录制，确认 INS 坐标连续、Flash 保存点数合理；随后触发倒车返回，观察 CTE 和航向误差收敛情况，调整 S3_RETURN_HEADING_KP、S3_RETURN_CTE_KP 和末端减速距离；最后接入语音预听-执行环节，验证命令队列顺序和灯光/鸣笛动作。联调中重点排查了摄像头与点阵屏的 DMA/中断竞争、返回电机方向反向、以及遥控紧急停车逻辑，最终使全流程成功率稳定在约 50%。
+
+第七章 模型车技术参数
+7.1 整车参数
+表7-1  整车参数参数表
+
+7.2 电气参数
+表7-2  电气参数参数表
+
+7.3 检测精度和频率
+表7-3  检测精度和频率参数表
+
+7.4 软件容量
+表7-4  软件容量参数表
+
+
+7.5 传感器与执行机构汇总
+本节将第三章、第四章中分散列出的传感器和执行机构汇总为一张总表，便于评委快速查阅整车硬件配置。
+表7-5  传感器与执行机构汇总表
+第八章 结论
+8.1 工作总结
+本项目在 TC387 四核平台上实现了前视彩色目标识别、视觉 Pure Pursuit 跟随、IMU/轮编码器局部航位推算、0.03 m 轨迹记录、CPU2 异步反向路径构建、CTE/航向/转向前馈复合倒车回放，以及返回后的在线语音灯光鸣笛执行。多核分工将图像处理、路径生成和网络语音从 CPU0 实时控制链路中拆分，冻结帧和互斥快照提高了图像与跨核数据的一致性。
+8.2 主要特点
+前视摄像头视觉跟随与路径记录同步进行，无需 GNSS 定位；
+YCbCr＋形态学＋BFS＋候选评分组成可解释的嵌入式视觉链路；
+视觉跟随采用偏差自适应前视距离和转角斜坡限制；
+返回路径在 CPU2 异步生成，避免阻塞控制核；
+返回控制融合录制转向前馈、航向 PI 和 CTE 比例/阻尼修正；
+对无视觉、过近、路径失败、超时、人工取消和电机输出超时均设置停车保护；
+返回完成后才启动在线 ASR，降低视觉、控制和网络任务同时运行的资源竞争。
+基于实测，本系统主要定量技术指标如表8-1所示。
+表8-1  主要定量技术指标
+8.3 当前限制与改进方向
+INS 最终航向增量当前只采用 IMU，已计算的转向运动学和轮差航向未参与融合；后续可引入互补滤波或扩展卡尔曼滤波，减小短时冲击和长期漂移。
+视觉远、中、近三档速度当前均为 65，距离状态机尚未发挥分级调速作用；可结合实测距离标定设置不同速度。
+YCbCr 阈值依赖照明和目标颜色，需补充自动曝光/白平衡策略及现场标定流程。
+返回 CTE 和航向参数由经验设置，缺少系统化实测曲线；应记录 CTE、航向误差和控制输出完成定量整定。
+在线 ASR 依赖 WiFi 和云端服务，应准备网络失败提示或离线降级方案。
+源码提交前已完成凭据脱敏：code/voice_asr_config.h 与 code/wifi_guimai.h 中 7 处真实凭据（WiFi SSID/密码、讯飞 APPID/API Key/API Secret）已替换为 <REDACTED> 占位符，源码包 SHA-256 校验值已固化（2026-08-19 15:32 快照）：6b41ccb1614c58fa1a4afb34648a904c0a9712f094d0a911a28e01a3080e1518。
+已完成源码只读归档：脱敏后源码包（758 文件，3.38 MB）及 Debug 编译产物（kemu3.elf / kemu3.hex / kemu3.map）已归档备查；Debug 产物为 2026-08-19 15:32 编译最终版。
+8.4 阶段性总结
+本报告已完成系统结构、硬件参数、核心算法、调试方法、源码索引及定量测试数据的整理。队伍信息、实物照片和签名均已补齐，源码脱敏与固化归档已完成，系统方案与代码事实可供评委审阅。
+
+参考文献
+[1] 卓晴. 第二十一届全国大学生智能车竞赛总决赛有哪些新的变化？[EB/OL]. (2026-08-06)[2026-08-17]. https://zhuoqing.blog.csdn.net/article/details/163521379.
+[2] Infineon Technologies AG. SAK-TC387QP-160F300S AE Product Page. https://www.infineon.com/part/SAK-TC387QP-160F300S-AE .
+[3] Infineon Technologies AG. AURIX TC3xx Family User's Manual, Part 1. https://www.infineon.com/row/public/documents/10/44/infineon-aurix-tc3xx-part1-usermanual-en.pdf .
+[4] Coulter R. C. Implementation of the Pure Pursuit Path Tracking Algorithm. CMU-RI-TR-92-01, Carnegie Mellon University, 1992. https://www.ri.cmu.edu/pub_files/pub3/coulter_r_craig_1992_1/coulter_r_craig_1992_1.pdf .
+[5] 讯飞开放平台. 语音听写（流式版）WebAPI 文档. https://static.xfyun.cn/doc/asr/voicedictation/API.html .
+[6] 逐飞科技. TC387 开源库 V3.4.3，工程内 libraries/doc/version.txt.
+[7] Mahony R., Hamel T., Pflimlin J.-M. Nonlinear Complementary Filters on the Special Orthogonal Group. IEEE Transactions on Automatic Control, 2008, 53(5): 1203-1218.
+[8] Infineon Technologies AG. BTN8982TA High Current PN Half Bridge Product Brief. https://www.infineon.cn/assets/row/public/documents/10/45/infineon-btn8982ta-pb-productbrief-en.pdf .
+[9] Texas Instruments. SN74LVC2G241 Dual Buffer and Driver With 3-State Outputs, Data Sheet. https://www.ti.com/lit/ds/symlink/sn74lvc2g241.pdf .
+竞赛规则出处已核实（2026-08-17）：见参考文献 [1]（第二十一届全国大学生智能车竞赛总决赛规则解读）。正文中涉及赛制、场地与流程的表述以 [1] 为准。
+
+附录 A 源代码索引
+A.1 code/ 根目录 60 个源文件
+GPS.c、base64.c、chassis_control.c、flash.c、hmac_sha256.c、imu.c、input_manager.c、mode_switch.c、path_planing.c、path_planner.c、pid.c、remote.c、route_assistant.c、route_display.c、s3_telemetry.c、s3_vision_follow.c、screen_refresh.c、sha1.c、shijue.c、steer_pid.c、task.c、task_manager.c、vision_display.c、voice_asr.c、websocket_client.c、wifi_guimai.c、zf_device_dot_matrix_screen.c、zf_device_tld7002.c。
+A.2 TLD7002 驱动 3 个源码
+TLD7002FuncLayer.c、TLD7002_ControlLayer.c、TLD7002_ServiceLayer.c。
+A.3 user/ 入口和中断 5 个源码
+cpu0_main.c、cpu1_main.c、cpu2_main.c、cpu3_main.c、isr.c。构建系统 Debug/user/subdir.mk 已确认五个文件全部参与编译，因此自研/集成源码总数为 65。
+注意：源代码附录不得直接公开 WiFi 密码、讯飞 APPID、API Key 或 API Secret。附录中应将这些宏替换为 <REDACTED>，并在提交前轮换真实凭据。
+A.4 项目结构与核心代码节选（脱敏版）
+本附录采用“项目结构＋完整源码索引＋核心代码节选”的方式呈现。A.1～A.3已列出65个自研/集成源码文件；完整可编译工程按赛事平台要求另行提交，不在技术报告中逐页重复。WiFi名称、密码及云端鉴权参数不公开，已改为脱敏配置，无需轮换。
+A.4.1 项目目录结构
+kemu3/
+├─ code/                 自研算法、控制、通信与设备驱动（28个 .c + 32个 .h）
+│  ├─ chassis_control.c  底盘运动学与左右轮差速分配
+│  ├─ shijue.c           前向视觉目标检测与跟随
+│  ├─ path_planing.c     轨迹记录、构建与反向回放
+│  ├─ steer_pid.c        转向闭环与 Pure Pursuit
+│  ├─ voice_asr.c        语音识别与指令管理
+│  └─ ...                其余文件见 A.1
+├─ user/                 多核入口与中断（5个 .c）
+├─ Libraries/            逐飞/Infineon 第三方库（不全文收录）
+└─ Debug/                ADS/TASKING 构建产物与编译清单
+
+A.4.2 多核主流程与任务调度（user/cpu0_main.c:199-270）
+ 199  int core0_main(void)
+ 200  {
+ 201
+ 202      uint32 remote_display_last_ms = 0U;
+ 203      uint32 voice_display_last_ms = 0U;
+ 204
+ 205      clock_init();
+ 206      debug_init();
+ 207
+ 208      /* IPS shows the taskbar before Task3; Task3 hides it and owns the screen. */
+ 209      ips200pro_init("", IPS200PRO_TITLE_TOP, 0);
+ 210      ips200pro_set_backlight(150);
+ 211
+ 212      // 1 ms control timer.
+ 213      pit_init(CCU60_CH0, 1000);
+ 214
+ 215      // Match lingtongV3 timing: key scan only, no screen/taskbar refresh.
+ 216      pit_us_init(CCU60_CH1, 50000);
+ 217
+ 218      // 1 ms buzzer/system timer.
+ 219      pit_ms_init(CCU61_CH1, 1);
+ 220
+ 221      task_manager_init();
+ 222      task_manager_update_display();
+ 223      task_init_all();
+ 224      task_manager_update_display();
+ 225
+ 226      enableInterrupts();
+ 227      cpu_wait_event_ready();
+ 228
+ 229      while(TRUE)
+ 230      {
+ 231          uint32 now_ms = system_getval_ms();
+ 232
+ 233          if((uint32)(now_ms - voice_display_last_ms) >= 5U)
+ 234          {
+ 235              voice_display_last_ms = now_ms;
+ 236              voice_asr_display_tick_200hz();
+ 237          }
+ 238
+ 239          task_run_all();
+ 240          task_manager_step();
+ 241          s3_voice_handoff_poll();
+ 242          voice_asr_display_poll();
+ 243          voice_command_dispatch_poll();
+ 244
+ 245          if(now_ms != remote_display_last_ms)
+ 246          {
+ 247              remote_display_last_ms = now_ms;
+ 248              remote_display_update();
+ 249          }
+ 250
+ 251          if(task_manager_need_ui_update() && !task_manager_is_running(TASK_SELECT_TASK3))
+ 252          {
+ 253              task_manager_update_display();
+ 254          }
+ 255  #if S3_PID_DEBUG_PRINT
+ 256          s3_pid_debug_print();
+ 257  #endif
+ 258      }
+ 259  }
+
+A.4.3 底盘运动学与左右轮目标分配（code/chassis_control.c:127-227）
+ 127  int16 chassis_radius_to_steer_adc(float radius_m, int turn_dir)
+ 128  {
+ 129      float radius_cm;
+ 130      float min_radius_cm;
+ 131      float steer_rad;
+ 132      float steer_deg;
+ 133      int16 steer_adc;
+ 134
+ 135      if(turn_dir == 0)
+ 136      {
+ 137          return s_chassis_steer_center_adc;
+ 138      }
+ 139
+ 140      radius_cm = chassis_absf(radius_m) * 100.0f;
+ 141      min_radius_cm = chassis_get_min_turn_radius_m() * 100.0f;
+ 142      if(radius_cm < min_radius_cm)
+ 143      {
+ 144          radius_cm = min_radius_cm;
+ 145      }
+ 146
+ 147      steer_rad = atanf(CHASSIS_WHEEL_BASE_CM / radius_cm);
+ 148      steer_deg = steer_rad * 180.0f / 3.1415926f;
+ 149      if(steer_deg > CHASSIS_MAX_STEER_DEG)
+ 150      {
+ 151          steer_deg = CHASSIS_MAX_STEER_DEG;
+ 152      }
+ 153
+ 154      if(turn_dir < 0)
+ 155      {
+ 156          steer_adc = chassis_steer_deg_to_adc(steer_deg);
+ 157      }
+ 158      else
+ 159      {
+ 160          steer_adc = chassis_steer_deg_to_adc(-steer_deg);
+ 161      }
+ 162
+ 163      return chassis_limit_steer_adc(steer_adc);
+ 164  }
+ 165
+ 166  void chassis_mix_rear_speed(int16 steer_adc, int16 base_speed, int16 *left_speed, int16 *right_speed)
+ 167  {
+ 168      float steer_deg = chassis_steer_adc_to_deg(steer_adc);
+ 169      float steer_rad = steer_deg * 3.1415926f / 180.0f;
+ 170      float curvature = tanf(steer_rad) / CHASSIS_WHEEL_BASE_CM;
+ 171      float half_track = CHASSIS_REAR_TRACK_CM * 0.5f;
+ 172  #if CHASSIS_REAR_DIFF_REVERSED
+ 173      float left_factor = 1.0f - curvature * half_track;
+ 174      float right_factor = 1.0f + curvature * half_track;
+ 175  #else
+ 176      float left_factor = 1.0f + curvature * half_track;
+ 177      float right_factor = 1.0f - curvature * half_track;
+ 178  #endif
+ 179      float left_target = (float)base_speed * left_factor;
+ 180      float right_target = (float)base_speed * right_factor;
+ 181
+ 182      if(left_factor < 0.0f) left_target = 0.0f;
+ 183      if(right_factor < 0.0f) right_target = 0.0f;
+ 184
+ 185      *left_speed = chassis_round_to_int16(left_target);
+ 186      *right_speed = chassis_round_to_int16(right_target);
+ 187  }
+ 188
+ 189  void chassis_make_target(int16 steer_adc, int16 base_speed, chassis_target_t *target)
+ 190  {
+ 191      int16 left_speed;
+ 192      int16 right_speed;
+ 193
+ 194      if(target == 0)
+ 195      {
+ 196          return;
+ 197      }
+ 198
+ 199      steer_adc = chassis_limit_steer_adc(steer_adc);
+ 200      chassis_mix_rear_speed(steer_adc, base_speed, &left_speed, &right_speed);
+ 201
+ 202      target->steer_adc = steer_adc;
+ 203      target->steer_deg = chassis_steer_adc_to_deg(steer_adc);
+ 204      target->base_speed = base_speed;
+ 205      target->left_speed = left_speed;
+ 206      target->right_speed = right_speed;
+ 207  }
+ 208
+ 209  void chassis_make_radius_target(float radius_m, int turn_dir, int16 base_speed, chassis_target_t *target)
+ 210  {
+ 211      int16 steer_adc;
+ 212
+ 213      if(target == 0)
+ 214      {
+ 215          return;
+ 216      }
+ 217
+ 218      steer_adc = chassis_radius_to_steer_adc(radius_m, turn_dir);
+ 219      chassis_make_target(steer_adc, base_speed, target);
+ 220  }
+ 221
+ 222  void chassis_update_target(int16 steer_adc, int16 base_speed)
+ 223  {
+ 224      chassis_make_target(steer_adc, base_speed, &g_chassis_target);
+ 225  }
+ 226
+ 227  void chassis_update_radius_target(float radius_m, int turn_dir, int16 base_speed)
+
+A.4.4 视觉帧快照与目标跟踪状态机（code/s3_vision_follow.c:71-175）
+  71  static void s3_camera_snapshot_lock_acquire(void)
+  72  {
+  73      while(!IfxCpu_acquireMutex(&s3_camera_snapshot_lock)) {
+  74      }
+  75  }
+  76
+  77  /* 鐢?CPU1 璋冪敤锛氭妸鏈€鏂拌瑙夎緭鍑哄鍒舵垚 CPU0 鍙鍙栫殑蹇収銆? *
+  78   * 濡傛灉杩欎釜鍑芥暟娌℃湁琚懆鏈熻皟鐢紝s3_camera_tracker_isr() 浼氳涓烘病鏈夎瑙夋暟鎹紝
+  79   * 鐒跺悗鐩存帴 Car_Stop_Force()銆傚墠闈㈡帓鏌ュ僵鑹叉枒鐐规椂鏇句复鏃跺叧闂繃杩欓噷锛屾仮澶? * 瑙嗚椹卞姩 PID 鏃跺繀椤绘墦寮€銆? */
+  80  void s3_camera_update_snapshot(void)
+  81  {
+  82      s3_camera_snapshot_lock_acquire();
+  83      s3_camera_snapshot = g_vision_output;
+  84      s3_camera_snapshot_ready = 1U;
+  85      s3_camera_snapshot_seq++;
+  86      IfxCpu_releaseMutex(&s3_camera_snapshot_lock);
+  87  }
+  88
+  89  /* 閲嶇疆瑙嗚璺熼殢鐘舵€併€? *
+  90   * 甯歌璋冪敤鍦烘櫙锛? *   - 杩涘叆/閫€鍑鸿瑙変换鍔°€? *   - Delete 鍙栨秷 S3_RECORDING銆? *   - 鎽勫儚澶村叧闂垨瑙嗚閾捐矾閲嶆柊鍒濆鍖栥€? *
+  91   * 閲嶇疆鍚庯紝鎺у埗 ISR 鍦ㄦ敹鍒颁笅涓€甯ф湁鏁?snapshot 涔嬪墠浼氫繚鎸佸仠杞︺€? */
+  92  void s3_camera_reset_tracker(void)
+  93  {
+  94      s3_camera_snapshot_lock_acquire();
+  95      s3_camera_snapshot.valid = 0U;
+  96      s3_camera_snapshot.offset_x = 0;
+  97      s3_camera_snapshot.offset_y = 0;
+  98      s3_camera_snapshot.bbox_width = 0U;
+  99      s3_camera_snapshot.bbox_height = 0U;
+ 100      s3_camera_snapshot.target_area = 0U;
+ 101      s3_camera_snapshot.too_close = 0U;
+ 102      s3_camera_snapshot.steer = STEER_STRAIGHT;
+ 103      s3_camera_snapshot_ready = 0U;
+ 104      IfxCpu_releaseMutex(&s3_camera_snapshot_lock);
+ 105
+ 106      s3_camera_last_steer_deg = 0.0f;
+ 107      s3_camera_last_steer_valid = 0U;
+ 108      s3_camera_last_offset_x = 0;
+ 109      s3_camera_last_offset_valid = 0U;
+ 110      s3_camera_distance_state = S3_DIST_FAR;
+ 111      s3_camera_accel_candidate = S3_DIST_FAR;
+ 112      s3_camera_accel_count = 0U;
+ 113      s3_camera_accel_last_seq = 0U;
+ 114      s3_camera_stop_latched = 0U;
+ 115      g_s3_camera_dbg_state = S3_CAM_DBG_RESET;
+ 116      g_s3_camera_dbg_offset_x = 0;
+ 117      g_s3_camera_dbg_height = 0U;
+ 118      g_s3_camera_dbg_base_speed = 0;
+ 119      g_s3_camera_dbg_left_target = 0;
+ 120      g_s3_camera_dbg_right_target = 0;
+ 121  }
+ 122
+ 123  /* CPU0 鎺у埗涓柇璋冪敤鐨勮瑙夎窡闅忔帶鍒跺櫒銆? *
+ 124   * 鎺у埗绛栫暐锛? *   1. 娌℃湁 snapshot锛氳鏄?CPU1 杩樻病浜や粯瑙嗚缁撴灉锛岀珛鍗冲己鍋溿€? *   2. snapshot 鏈変絾 valid=0锛氱煭鏃堕棿娌跨敤涓婁竴娆¤浆鍚戜綆閫熸悳绱紝瓒呮椂鍚庡己鍋溿€? *   3. valid=1锛氱敤鍥惧儚妯悜鍋忓樊 offset_x 浼扮畻鐩爣鏂逛綅瑙掞紝鍐嶇敤绠€鍖?Pure Pursuit
+ 125   *      鍏紡绠楃洰鏍囧墠杞浆瑙掋€? *   4. 鐢?bbox_height 绮楃暐鍒ゆ柇杩滆繎锛岀洰鏍囪秺杩滈€熷害瓒婇珮锛岀洰鏍囧お杩戝垯鍋滆溅銆? *   5. 杞瓒婂ぇ锛岄€熷害瓒婁綆锛岄伩鍏嶉樋鍏嬫浖搴曠洏楂橀€熷ぇ瑙掑害鏃跺啿鍑虹敾闈€? *
+ 126   * 杈撳嚭鏂瑰紡锛? *   鏈嚱鏁颁笉鐩存帴鍐?PWM锛岃€屾槸璋冪敤 run_pid(target.steer_adc, left, right, 60000)锛? *   璁╁師鏈夎浆鍚?PID 鍜岃疆閫?PID 缁х画闂幆銆? */
+ 127  void s3_camera_tracker_isr(void)
+ 128  {
+ 129      vision_output_t vision;
+ 130      chassis_target_t target;
+ 131      uint8 snapshot_ready;
+ 132      uint32 snapshot_seq;
+ 133      int16 offset_x;
+ 134      int16 abs_offset_x;
+ 135      int16 prev_abs_offset_x;
+ 136      uint16 height;
+ 137      int16 dist_speed;
+ 138      uint8 desired_distance_state;
+ 139      uint8 center_damp_active;
+ 140      int16 base_speed;
+ 141      float target_steer_deg;
+ 142      float steer_ratio;
+ 143      float alpha_rad;
+ 144      float lookahead_m;
+ 145      int16 target_adc;
+ 146      int16 actual_steer_adc;
+ 147
+ 148      s3_camera_snapshot_lock_acquire();
+ 149      vision = s3_camera_snapshot;
+ 150      snapshot_ready = s3_camera_snapshot_ready;
+ 151      snapshot_seq = s3_camera_snapshot_seq;
+ 152      IfxCpu_releaseMutex(&s3_camera_snapshot_lock);
+ 153
+ 154      if(0U == snapshot_ready)
+ 155      {
+ 156          g_s3_camera_dbg_state = S3_CAM_DBG_NO_SNAPSHOT;
+ 157          g_s3_camera_dbg_base_speed = 0;
+ 158          g_s3_camera_dbg_left_target = 0;
+ 159          g_s3_camera_dbg_right_target = 0;
+ 160          s3_camera_last_offset_valid = 0U;
+ 161          Car_Stop_Force();
+ 162          return;
+ 163      }
+ 164
+ 165      g_s3_camera_dbg_offset_x = vision.offset_x;
+ 166      g_s3_camera_dbg_height = vision.bbox_height;
+ 167
+ 168      offset_x = vision.offset_x;
+ 169  #if S3_VISION_REAR_CAMERA_MIRROR_X
+ 170      /* Some camera modules output a mirrored rear view. */
+ 171      offset_x = (int16)(-offset_x);
+ 172  #endif
+ 173      abs_offset_x = (offset_x < 0) ? (int16)(-offset_x) : offset_x;
+ 174      height = vision.bbox_height;
+ 175      prev_abs_offset_x = 0;
+
+A.4.5 前向视觉检测与跟随任务（code/shijue.c:613-760）
+ 613  void vision_follow_task(void)
+ 614  {
+ 615      uint32 t0 = 0u, t1 = 0u;
+ 616      if (g_perf_monitor_enabled) t0 = get_time_us();
+ 617
+ 618      shijue_detect_cross_only();
+ 619
+ 620      if (g_vision_result.find_flag)
+ 621      {
+ 622          s_hold_count = 0u;
+ 623          if (g_vision_result.too_close)
+ 624          {
+ 625              g_consecutive_valid_count = 0u;
+ 626              g_vision_output.valid = 1u;
+ 627              g_vision_output.too_close = 1u;
+ 628              g_vision_output.steer = STEER_STRAIGHT;
+ 629              g_vision_output.offset_x = g_vision_result.offset_x;
+ 630              g_vision_output.offset_y = g_vision_result.offset_y;
+ 631              g_vision_output.bbox_width = g_vision_result.bbox_width;
+ 632              g_vision_output.bbox_height = g_vision_result.bbox_height;
+ 633              g_vision_output.target_area = g_vision_result.target_area;
+ 634              g_vision_output_score = 0u;
+ 635              g_vision_output_h = 0u;
+ 636              g_vision_output_s = 0u;
+ 637              g_vision_output_v = 0u;
+ 638              g_perf_stats.valid_frame_count++;
+ 639          }
+ 640          else
+ 641          {
+ 642          g_consecutive_valid_count++;
+ 643          if (g_consecutive_valid_count >= CONSECUTIVE_VALID_FRAMES_REQUIRED)
+ 644          {
+ 645              g_vision_output.valid    = 1u;
+ 646              g_vision_output.too_close = 0u;
+ 647              g_vision_output.offset_x = g_vision_result.offset_x;
+ 648              g_vision_output.offset_y = g_vision_result.offset_y;
+ 649              g_vision_output.bbox_width = g_vision_result.bbox_width;
+ 650              g_vision_output.bbox_height = g_vision_result.bbox_height;
+ 651              g_vision_output.target_area = g_vision_result.target_area;
+ 652              g_vision_output_score = g_vision_result.target_score;
+ 653              g_vision_output_h = g_vision_result.target_mean_h;
+ 654              g_vision_output_s = g_vision_result.red_mean_s;
+ 655              g_vision_output_v = g_vision_result.red_mean_v;
+ 656
+ 657              if      (g_vision_result.offset_x >  (int16)STEER_OFFSET_THRESHOLD)
+ 658                  g_vision_output.steer = STEER_RIGHT;
+ 659              else if (g_vision_result.offset_x < -(int16)STEER_OFFSET_THRESHOLD)
+ 660                  g_vision_output.steer = STEER_LEFT;
+ 661              else
+ 662                  g_vision_output.steer = STEER_STRAIGHT;
+ 663
+ 664              g_perf_stats.valid_frame_count++;
+ 665          }
+ 666          else
+ 667          {
+ 668              g_vision_output.valid    = 0u;
+ 669              g_vision_output.too_close = 0u;
+ 670              g_vision_output.steer    = STEER_STRAIGHT;
+ 671              g_vision_output.offset_x = 0;
+ 672              g_vision_output.offset_y = 0;
+ 673              g_vision_output.bbox_width = 0;
+ 674              g_vision_output.bbox_height = 0;
+ 675              g_vision_output.target_area = 0;
+ 676              g_vision_output_score = 0u;
+ 677              g_vision_output_h = 0u;
+ 678              g_vision_output_s = 0u;
+ 679              g_vision_output_v = 0u;
+ 680          }
+ 681          }
+ 682      }
+ 683      else
+ 684      {
+ 685          g_consecutive_valid_count = 0u;
+ 686          s_hold_count++;
+ 687          if (s_hold_count <= VISION_OUTPUT_HOLD_FRAMES)
+ 688          {
+ 689              /* Hold last valid output - brief distortion is transparent to control layer.
+ 690               * offset_x/y/bbox_height/steer keep their previous values unchanged. */
+ 691              g_vision_output.valid = 1u;
+ 692          }
+ 693          else
+ 694          {
+ 695              /* Truly lost target - clear output */
+ 696              g_vision_output.valid        = 0u;
+ 697              g_vision_output.too_close    = 0u;
+ 698              g_vision_output.steer        = STEER_STRAIGHT;
+ 699              g_vision_output.offset_x     = 0;
+ 700              g_vision_output.offset_y     = 0;
+ 701              g_vision_output.bbox_width   = 0;
+ 702              g_vision_output.bbox_height  = 0;
+ 703              g_vision_output.target_area  = 0;
+ 704              g_vision_output_score = 0u;
+ 705              g_vision_output_h = 0u;
+ 706              g_vision_output_s = 0u;
+ 707              g_vision_output_v = 0u;
+ 708          }
+ 709      }
+ 710
+ 711      if (g_perf_monitor_enabled) {
+ 712          t1 = get_time_us();
+ 713          uint32 dt = t1 - t0;
+ 714          g_perf_stats.total_time += dt;
+ 715          g_perf_stats.frame_count++;
+ 716          if (dt > g_perf_stats.max_cycles) g_perf_stats.max_cycles = dt;
+ 717          if (g_perf_stats.min_cycles == 0u || dt < g_perf_stats.min_cycles)
+ 718              g_perf_stats.min_cycles = dt;
+ 719      }
+ 720  }
+ 721
+ 722  /* ============================================================================
+ 723   *  shijue_task_run  - call in main loop
+ 724   *
+ 725   *  Waits for a new frame from SCC8660, then runs the full pipeline.
+ 726   * ========================================================================== */
+ 727  void shijue_task_run(void)
+ 728  {
+ 729      while (scc8660_finish_flag == 0u);
+ 730      scc8660_finish_flag = 0u;
+ 731
+ 732      g_vision_result.auto_threshold = 128u;  /* unused for color mode, kept for compat */
+ 733
+ 734      vision_follow_task();
+ 735
+ 736      if (g_vision_result.find_flag) {
+ 737          g_vision_result.center_x = (uint16)((int16)VISION_CROSSHAIR_X_DEFAULT
+ 738                                              + g_vision_result.offset_x);
+ 739          g_vision_result.center_y = (uint16)((int16)VISION_CROSSHAIR_Y_DEFAULT
+ 740                                              + g_vision_result.offset_y);
+ 741      } else {
+ 742          g_vision_result.center_x = 0u;
+ 743          g_vision_result.center_y = 0u;
+ 744      }
+ 745  }
+ 746
+ 747  /* ============================================================================
+ 748   *  Init functions
+ 749   * ========================================================================== */
+ 750  void shijue_system_init(void)
+ 751  {
+ 752      g_vision_result.find_flag      = 0u;
+ 753      g_vision_result.target_mean_h  = 0u;
+ 754      g_vision_result.red_mean_s     = 0u;
+ 755      g_vision_result.red_mean_v     = 0u;
+ 756      g_vision_result.target_score   = 0u;
+ 757      g_vision_result.too_close      = 0u;
+ 758      g_vision_result.auto_threshold = 128u;
+ 759      g_filter_offset_x              = 0.0f;
+ 760      g_filter_offset_y              = 0.0f;
+
+A.4.6 反向路径回放控制（code/path_planing.c:755-880）
+ 755  void s3_return_control_isr(void)
+ 756  {
+ 757      s3_return_track_t track;
+ 758      chassis_target_t target;
+ 759      int progress_idx;
+ 760      int ff_idx;
+ 761      int16 ff_adc;
+ 762      int16 target_adc;
+ 763      int16 base_speed;
+ 764      float desired_yaw;
+ 765      float heading_err;
+ 766      float final_heading_err;
+ 767      float cte;
+ 768      float cte_delta;
+ 769      float ff_deg;
+ 770      float heading_trim_deg;
+ 771      float cte_trim_deg;
+ 772      float target_steer_deg;
+ 773      double progress;
+ 774
+ 775      if(sub3_state != S3_RETURNING)
+ 776      {
+ 777          return;
+ 778      }
+ 779
+ 780      if(number <= 1 || Temp_num >= number)
+ 781      {
+ 782          s3_return_stop();
+ 783          return;
+ 784      }
+ 785
+ 786      if(0U == s3_return_active)
+ 787      {
+ 788          s3_return_active = 1U;
+ 789          s3_return_ticks = 0U;
+ 790          s3_return_progress_idx = 0;
+ 791          s3_return_heading_i = 0.0f;
+ 792          s3_return_last_cte = 0.0f;
+ 793          s3_return_last_cte_valid = 0U;
+ 794          s3_return_base_speed_now = 0;
+ 795          s3_return_speed_ramp_tick = 0U;
+ 796          encoder_set_ds_lpf_alpha(ENCODER_DS_LPF_ALPHA_REVERSE);
+ 797      }
+ 798      else if(s3_return_ticks < 0xFFFFFFFFU)
+ 799      {
+ 800          s3_return_ticks++;
+ 801      }
+ 802
+ 803      progress = ins.distance;
+ 804      progress_idx = s3_return_index_from_progress(progress);
+ 805      s3_return_find_track(progress_idx, &track);
+ 806
+ 807      Temp_num = track.seg_idx + 1;
+ 808      if(Temp_num >= number) Temp_num = number - 1;
+ 809      if(Temp_num < 0) Temp_num = 0;
+ 810
+ 811      desired_yaw = (float)track.path_dir_deg + 180.0f;
+ 812      while(desired_yaw >= 360.0f) desired_yaw -= 360.0f;
+ 813      heading_err = (float)ange_deviation1(desired_yaw, nav_get_yaw_deg());
+ 814      final_heading_err = s3_return_final_heading_err();
+ 815      Distance = track.dist;
+ 816
+ 817      if(s3_return_should_finish(progress, final_heading_err))
+ 818      {
+ 819          s3_return_stop();
+ 820          return;
+ 821      }
+ 822
+ 823      cte = (float)track.cte;
+ 824      if(0U == s3_return_last_cte_valid)
+ 825      {
+ 826          cte_delta = 0.0f;
+ 827          s3_return_last_cte_valid = 1U;
+ 828      }
+ 829      else
+ 830      {
+ 831          cte_delta = cte - s3_return_last_cte;
+ 832      }
+ 833      s3_return_last_cte = cte;
+ 834
+ 835      s3_return_heading_i += heading_err * S3_RETURN_CONTROL_PERIOD_S;
+ 836      s3_return_heading_i = s3_limit_float(s3_return_heading_i,
+ 837                                            S3_RETURN_HEADING_I_LIMIT,
+ 838                                            -S3_RETURN_HEADING_I_LIMIT);
+ 839
+ 840      heading_trim_deg = -(S3_RETURN_HEADING_KP * heading_err +
+ 841                           S3_RETURN_HEADING_KI * s3_return_heading_i);
+ 842      cte_trim_deg = S3_RETURN_CTE_KP * cte + S3_RETURN_CTE_DAMP * cte_delta;
+ 843
+ 844      heading_trim_deg = s3_limit_float(heading_trim_deg,
+ 845                                        S3_RETURN_TRIM_MAX_DEG,
+ 846                                        -S3_RETURN_TRIM_MAX_DEG);
+ 847      cte_trim_deg = s3_limit_float(cte_trim_deg,
+ 848                                    S3_RETURN_TRIM_MAX_DEG,
+ 849                                    -S3_RETURN_TRIM_MAX_DEG);
+ 850
+ 851      ff_idx = track.progress_idx;
+ 852      if(ff_idx < 0) ff_idx = 0;
+ 853      if(ff_idx >= number) ff_idx = number - 1;
+ 854      ff_adc = s3_follow_steer_adc[ff_idx];
+ 855      if(ff_adc < CHASSIS_STEER_LEFT_MIN_ADC || ff_adc > CHASSIS_STEER_RIGHT_MAX_ADC)
+ 856      {
+ 857          ff_adc = steer_get_straight_center_adc();
+ 858      }
+ 859      ff_deg = chassis_steer_adc_to_deg(ff_adc);
+ 860
+ 861      target_steer_deg = ff_deg * S3_RETURN_STEER_FF_WEIGHT +
+ 862                         heading_trim_deg + cte_trim_deg;
+ 863      target_steer_deg = s3_limit_float(target_steer_deg,
+ 864                                        CHASSIS_MAX_STEER_DEG,
+ 865                                        -CHASSIS_MAX_STEER_DEG);
+ 866      target_adc = chassis_steer_deg_to_adc(target_steer_deg);
+ 867
+ 868      base_speed = -S3_RETURN_BASE_SPEED;
+ 869      if(s3_path_total_dist - progress <= S3_END_SLOW_DIST_M)
+ 870      {
+ 871          base_speed = -S3_RETURN_SLOW_SPEED;
+ 872      }
+ 873      if(s3_absf(heading_err) > S3_RETURN_SLOW_HEADING_DEG ||
+ 874         s3_absf(cte) > S3_RETURN_SLOW_CTE_M)
+ 875      {
+ 876          base_speed = s3_round_int16((float)base_speed * 0.70f);
+ 877      }
+ 878      base_speed = s3_return_ramp_base_speed(base_speed);
+ 879
+ 880      steer_encoder_count = steer_get_actual_adc();
+
+A.4.7 路径构建与跟随控制准备（code/path_planing.c:1560-1715）
+1560  void s3_build_follow_path(double reverse_yaw_deg)
+1561  {
+1562      double car_end_x;
+1563      double car_end_y;
+1564      double rot_angle;
+1565      double cr;
+1566      double sr;
+1567      double saved_end_yaw = 0.0;
+1568      double align_yaw_deg;
+1569      uint8 yaw_flash_ok;
+1570      int i;
+1571
+1572      Read_S3_GPS_flash();
+1573      if(num < 2) return;
+1574      yaw_flash_ok = Read_S3_Yaw_flash(&saved_end_yaw);
+1575      align_yaw_deg = yaw_flash_ok ? saved_end_yaw : reverse_yaw_deg;
+1576
+1577      car_end_x = TempLat[num - 1];
+1578      car_end_y = TempLon[num - 1];
+1579
+1580      for(i = 0; i < num / 2; i++)
+1581      {
+1582          int j = num - 1 - i;
+1583          double old_i_x = TempLat[i];
+1584          double old_i_y = TempLon[i];
+1585          uint8 old_i_k = key_flag_array[i];
+1586          int16 old_i_s = s3_steer_adc[i];
+1587          double old_j_x = TempLat[j];
+1588          double old_j_y = TempLon[j];
+1589          uint8 old_j_k = key_flag_array[j];
+1590          int16 old_j_s = s3_steer_adc[j];
+1591
+1592          TempLat[i] = old_j_x - car_end_x;
+1593          TempLon[i] = old_j_y - car_end_y;
+1594          key_flag_array[i] = old_j_k;
+1595          s3_steer_adc[i] = s3_tail_reverse_steer_adc(old_j_s);
+1596
+1597          TempLat[j] = old_i_x - car_end_x;
+1598          TempLon[j] = old_i_y - car_end_y;
+1599          key_flag_array[j] = old_i_k;
+1600          s3_steer_adc[j] = s3_tail_reverse_steer_adc(old_i_s);
+1601      }
+1602
+1603      if((num % 2) != 0)
+1604      {
+1605          int mid = num / 2;
+1606          TempLat[mid] = TempLat[mid] - car_end_x;
+1607          TempLon[mid] = TempLon[mid] - car_end_y;
+1608          s3_steer_adc[mid] = s3_tail_reverse_steer_adc(s3_steer_adc[mid]);
+1609      }
+1610
+1611      rot_angle = -s3_wrap_angle_180(align_yaw_deg) * (double)DEG_TO_RAD1;
+1612      cr = cos(rot_angle);
+1613      sr = sin(rot_angle);
+1614
+1615      for(i = 0; i < num; i++)
+1616      {
+1617          double rx = TempLat[i] * cr - TempLon[i] * sr;
+1618          double ry = TempLat[i] * sr + TempLon[i] * cr;
+1619          TempLat[i] = rx;
+1620          TempLon[i] = ry;
+1621      }
+1622
+1623      s3_copy_record_points_to_track_path();
+1624      s3_update_track_flags();
+1625      s3_mark_follow_path_reverse();
+1626
+1627  #if S3_DEBUG_PRINTF
+1628      {
+1629          int dbg_i;
+1630
+1631          printf("[S3_REVERSE_ALIGN] current_yaw=%.1f saved_end_yaw=%.1f yaw_ok=%d align=%.1f rot=%.1f\r\n",
+1632                 reverse_yaw_deg,
+1633                 saved_end_yaw,
+1634                 yaw_flash_ok,
+1635                 align_yaw_deg,
+1636                 rot_angle / (double)DEG_TO_RAD1);
+1637          printf("=== S3 REVERSE PATH ===\r\n");
+1638          printf("car_end_point: (%.2f, %.2f)\r\n", car_end_x, car_end_y);
+1639          printf("keypoints(num=%d) virtual_path(number=%d)\r\n", num, number);
+1640          printf("--- first 5 virtual points ---\r\n");
+1641          for(dbg_i = 0; dbg_i < number && dbg_i < 5; dbg_i++)
+1642          {
+1643              printf(" V[%d]: (%.2f, %.2f) flag=%d steer=%d\r\n",
+1644                     dbg_i, victual_point_lat[dbg_i], victual_point_lon[dbg_i],
+1645                     flag_array[dbg_i], s3_follow_steer_adc[dbg_i]);
+1646          }
+1647          if(number > 5)
+1648          {
+1649              printf(" ... \r\n");
+1650              printf("--- last 3 virtual points ---\r\n");
+1651              for(dbg_i = number - 3; dbg_i < number; dbg_i++)
+1652              {
+1653                  if(dbg_i >= 0)
+1654                  {
+1655                      printf(" V[%d]: (%.2f, %.2f) flag=%d steer=%d\r\n",
+1656                             dbg_i, victual_point_lat[dbg_i], victual_point_lon[dbg_i],
+1657                             flag_array[dbg_i], s3_follow_steer_adc[dbg_i]);
+1658                  }
+1659              }
+1660          }
+1661          printf("--- keypoints after reverse+rotate (first 5) ---\r\n");
+1662          for(dbg_i = 0; dbg_i < num && dbg_i < 5; dbg_i++)
+1663          {
+1664              printf(" K[%d]: (%.2f, %.2f) key=%d steer=%d\r\n",
+1665                     dbg_i, TempLat[dbg_i], TempLon[dbg_i],
+1666                     key_flag_array[dbg_i], s3_steer_adc[dbg_i]);
+1667          }
+1668          printf("========================\r\n");
+1669      }
+1670  #endif
+1671  }
+1672
+1673  static void s3_prepare_follow_control(void)
+1674  {
+1675      Temp_num = 0;
+1676      s_auto_base_speed = 0;
+1677      s_auto_target_speed = 0;
+1678      s_auto_wheel_diff_now = 0;
+1679      s_auto_speed_tick = 0U;
+1680      s_auto_diff_tick = 0U;
+1681      s3_return_control_reset();
+1682
+1683      ins_reset_local();
+1684      steer_capture_straight_center_adc();
+1685      single_pid_init();
+1686      pid_clear_state();
+1687      /* Task3 uses camera display; route map reset is not needed. */
+1688
+1689      if(number > 0)
+1690      {
+1691          judge(flag_array[0]);
+1692      }
+1693  }
+1694
+1695  static void s3_emergency_stop(void)
+1696  {
+1697      key_action_flag = 0;
+1698      input_key_clear_event(INPUT_KEY_DELETE);
+1699      input_key_clear_event(INPUT_KEY_OK);
+1700
+1701      clear_auto_wheel_target();
+1702      s3_record_stop_keep_steer();
+1703      Car_Stop_Force();
+1704      pid_clear_state();
+1705      s3_camera_reset_tracker();
+1706      s3_return_control_reset();
+1707      s3_cpu2_build_clear_result();
+1708
+1709      s_s3_cpu2_build_request = 0U;
+1710      s_s3_cpu2_build_busy = 0U;
+1711      s_s3_auto_return_after_prepare = 0U;
+1712      s_s3_record_mode = S3_RECORD_MODE_VISION;
+1713      s_rec_stop_pending = 0U;
+1714      s_rec_stop_wait_ticks = 0U;
+1715      s_rec_stop_stable_ticks = 0U;
+
+A.4.8 转向角计算与闭环控制（code/steer_pid.c:654-835）
+ 654  float Get_Final_Angle(void)
+ 655  {
+ 656      float target_direction;
+ 657
+ 658      if (Temp_num < 0 || Temp_num >= number)
+ 659      {
+ 660          g_last_straight_err = 0.0f;
+ 661          g_last_curve_err = 0.0f;
+ 662          g_straight_line_err_dbg = 0.0f;
+ 663          g_target_direction_dbg = 0.0f;
+ 664          return 0.0f;
+ 665      }
+ 666
+ 667      if (flag_array[Temp_num] == FLAG_STRAIGHT)
+ 668      {
+ 669          g_last_curve_err = 0.0f;
+ 670          target_direction = get_straight_target_direction();
+ 671      }
+ 672      else if (flag_array[Temp_num] == FLAG_CURVE ||
+ 673               flag_array[Temp_num] == FLAG_S3_TRACK ||
+ 674               flag_array[Temp_num] == 5)
+ 675      {
+ 676          g_last_straight_err = 0.0f;
+ 677          target_direction = get_curve_target_direction();
+ 678      }
+ 679      else
+ 680      {
+ 681          g_last_straight_err = 0.0f;
+ 682          g_last_curve_err = 0.0f;
+ 683          g_straight_line_err_dbg = 0.0f;
+ 684          target_direction = get_point_target_direction();
+ 685      }
+ 686
+ 687      if (flag_array[Temp_num] == FLAG_REVERSE_PREP ||
+ 688          flag_array[Temp_num] == FLAG_REVERSE_ENTER ||
+ 689          flag_array[Temp_num] == FLAG_REVERSE_STRAIGHT)
+ 690      {
+ 691          target_direction = wrap_angle_360(target_direction + 180.0f);
+ 692      }
+ 693
+ 694      g_target_direction_dbg = target_direction;
+ 695      return (float)ange_deviation1(target_direction, nav_get_yaw_deg());
+ 696  }
+ 697
+ 698  float Get_Steer_Actual_Angle(void)
+ 699  {
+ 700      int16_t current_adc = steer_read_adc();
+ 701      steer_encoder_count = current_adc;
+ 702      return chassis_steer_adc_to_deg(current_adc);
+ 703  }
+ 704
+ 705  void Reset_Steer_Encoder(void)
+ 706  {
+ 707      steer_encoder_count = steer_get_straight_center_adc();
+ 708  }
+ 709
+ 710  void single_pid_init(void)
+ 711  {
+ 712      Steer_Single_PID.kp = 1.05f;
+ 713      Steer_Single_PID.ki = 0.0f;
+ 714      Steer_Single_PID.kd = 1.4f;
+ 715      Steer_Single_PID.error = 0.0f;
+ 716      Steer_Single_PID.lastError = 0.0f;
+ 717      Steer_Single_PID.integral = 0.0f;
+ 718      Steer_Single_PID.maxIntegral = 30.0f;
+ 719      Steer_Single_PID.output = 0.0f;
+ 720      Steer_Single_PID.maxOutput = STEER_MAX_WHEEL_DEG;
+ 721      Steer_Single_PID.minOutput = -STEER_MAX_WHEEL_DEG;
+ 722
+ 723      Reset_Steer_Encoder();
+ 724      g_last_straight_err = 0.0f;
+ 725      g_last_curve_err = 0.0f;
+ 726      g_straight_line_err_dbg = 0.0f;
+ 727      g_target_direction_dbg = 0.0f;
+ 728  }
+ 729
+ 730  static float steer_heading_pid_output(float heading_err)
+ 731  {
+ 732      if (heading_err > -STEER_HDG_DEADZONE && heading_err < STEER_HDG_DEADZONE)
+ 733      {
+ 734          Steer_Single_PID.error = 0.0f;
+ 735          Steer_Single_PID.lastError = 0.0f;
+ 736          Steer_Single_PID.integral = 0.0f;
+ 737          Steer_Single_PID.output = 0.0f;
+ 738          return 0.0f;
+ 739      }
+ 740
+ 741      Steer_Single_PID.error = heading_err;
+ 742
+ 743      if (Steer_Single_PID.ki != 0.0f)
+ 744      {
+ 745          Steer_Single_PID.integral += Steer_Single_PID.error;
+ 746          Steer_Single_PID.integral = limit_value(Steer_Single_PID.integral,
+ 747                                                  Steer_Single_PID.maxIntegral,
+ 748                                                  -Steer_Single_PID.maxIntegral);
+ 749      }
+ 750      else
+ 751      {
+ 752          Steer_Single_PID.integral = 0.0f;
+ 753      }
+ 754
+ 755      Steer_Single_PID.output = Steer_Single_PID.kp * Steer_Single_PID.error +
+ 756                                Steer_Single_PID.ki * Steer_Single_PID.integral +
+ 757                                Steer_Single_PID.kd * (Steer_Single_PID.error - Steer_Single_PID.lastError);
+ 758
+ 759      Steer_Single_PID.output = limit_value(Steer_Single_PID.output,
+ 760                                            Steer_Single_PID.maxOutput,
+ 761                                            Steer_Single_PID.minOutput);
+ 762      Steer_Single_PID.lastError = Steer_Single_PID.error;
+ 763      return Steer_Single_PID.output * STEER_HEADING_GAIN;
+ 764  }
+ 765
+ 766  static int16_t steer_read_adc(void)
+ 767  {
+ 768      return absolute_encoder_get_location();
+ 769  }
+ 770
+ 771  int16 steer_get_actual_adc(void)
+ 772  {
+ 773      return steer_read_adc();
+ 774  }
+ 775
+ 776  // 杞悜鎺у埗涓诲嚱鏁帮紙kemu1 Pure Pursuit + 鏌旂�?ramp + ISR 鍓嶈�?PID�?
+ 777  void steer_single_loop_pid_calc(void)
+ 778  {
+ 779      static int16_t last_adc = STEER_CENTER_ADC;
+ 780      static uint8_t last_adc_valid = 0U;
+ 781      float heading_err = 0.0f;
+ 782      float target_steer_deg = 0.0f;
+ 783      static float last_target_steer_deg = 0.0f;
+ 784      static uint8_t last_target_valid = 0U;
+ 785
+ 786  #if STEER_USE_PURE_PURSUIT
+ 787      if(0U == get_pure_pursuit_steer(&target_steer_deg, &heading_err))
+ 788  #endif
+ 789      {
+ 790          heading_err = Get_Final_Angle();
+ 791          target_steer_deg = steer_heading_pid_output(heading_err);
+ 792          if (flag_array[Temp_num] == FLAG_REVERSE_PREP ||
+ 793              flag_array[Temp_num] == FLAG_REVERSE_ENTER ||
+ 794              flag_array[Temp_num] == FLAG_REVERSE_STRAIGHT)
+ 795          {
+ 796              target_steer_deg = -target_steer_deg;
+ 797          }
+ 798      }
+ 799  #if STEER_USE_PURE_PURSUIT
+ 800      else
+ 801      {
+ 802          Steer_Single_PID.error = 0.0f;
+ 803          Steer_Single_PID.lastError = 0.0f;
+ 804          Steer_Single_PID.integral = 0.0f;
+ 805          Steer_Single_PID.output = 0.0f;
+ 806      }
+ 807  #endif
+ 808
+ 809      // kemu1 鏌旂紦杞�?ramp锛氭瘡鎺у埗鍛ㄦ湡鏈�澶氬彉鍖?0.8�?
+ 810      if(0U == last_target_valid)
+ 811      {
+ 812          last_target_steer_deg = target_steer_deg;
+ 813          last_target_valid = 1U;
+ 814      }
+ 815      else if(target_steer_deg > last_target_steer_deg + STEER_TARGET_RAMP_STEP_DEG)
+ 816      {
+ 817          last_target_steer_deg += STEER_TARGET_RAMP_STEP_DEG;
+ 818      }
+ 819      else if(target_steer_deg < last_target_steer_deg - STEER_TARGET_RAMP_STEP_DEG)
+ 820      {
+ 821          last_target_steer_deg -= STEER_TARGET_RAMP_STEP_DEG;
+ 822      }
+ 823      else
+ 824      {
+ 825          last_target_steer_deg = target_steer_deg;
+ 826      }
+ 827      target_steer_deg = last_target_steer_deg;
+ 828
+ 829      float pwm_out = 0.0f;
+ 830      int16_t current_adc = steer_read_adc();
+ 831      int16_t target_adc;
+ 832      int16_t pos_err;
+ 833      int16_t adc_delta;
+ 834      float pos_pd_out;
+ 835
+
+A.4.9 CPU3语音服务入口（user/cpu3_main.c:1-80）
+   1  /*********************************************************************************************************************
+   2  * TC387 Opensourec Library based project
+   3  * File: cpu3_main
+   4  ********************************************************************************************************************/
+   5  #include "zf_common_headfile.h"
+   6  #include "voice_asr.h"
+   7
+   8  #pragma section all "cpu3_dsram"
+   9
+  10  static volatile uint32 s_cpu3_time_ms = 0;
+  11
+  12  void core3_main(void)
+  13  {
+  14      disable_Watchdog();
+  15      interrupt_global_enable(0);
+  16
+  17      cpu_wait_event_ready();
+  18      while(TRUE)
+  19      {
+  20          voice_asr_cpu3_service_loop();
+  21          system_delay_ms(1);
+  22          s_cpu3_time_ms++;
+  23      }
+  24  }
+  25  #pragma section all restore
+
+附录 B 引脚分配表
+本附录依据 2026-08-19 提交的脱敏源码（编译配置 PID_CAR_VERSION=1）整理整车全部引脚分配，与第四章表4-1、表4-2 相互印证，供硬件连接核查与系统复现参考。
+表B-1 电机驱动引脚分配表
+
+表B-2 编码器引脚分配表
+
+表B-3 感知模块引脚分配表
+
+表B-4 显示与人机交互引脚分配表
+
+表B-5 通信模块引脚分配表
+
+
+*前期整理阶段 国赛代码核验版结束。*
+
+===== TABLE 1 =====
+符号或缩写 | 含义
+TC387 | Infineon AURIX TC387QP 四核 TriCore 微控制器
+INS | Inertial Navigation System，惯性/航位推算定位系统
+IMU | Inertial Measurement Unit，惯性测量单元
+CTE | Cross-Track Error，车辆到参考路径的有符号横向距离
+PID | 比例—积分—微分控制器
+Pure Pursuit | 纯跟踪几何转向算法
+YCbCr | 色相、饱和度、明度颜色空间
+BFS | Breadth-First Search，广度优先连通域搜索
+EMA | 指数移动平均滤波
+DMA | Direct Memory Access，直接存储器访问
+SPI | 串行外设接口
+UART | 通用异步收发器
+PWM | 脉宽调制
+ASR | Automatic Speech Recognition，自动语音识别
+SBUS | 遥控器串行总线协议
+x,y | 车辆在局部坐标系中的位置，单位 m
+ψ | 车辆航向角，单位 ° 或 rad
+eh | 航向误差，单位 °
+ec | CTE 横向误差，单位 m
+δ | 目标前轮转角，单位 °
+L | 车辆轴距，当前代码取 0.64 m
+Ld | Pure Pursuit 前视距离，单位 m
+
+===== TABLE 2 =====
+核心 | 主要职责 | 关键文件
+CPU0 | 系统初始化、任务管理、1 ms 控制定时中断、5 ms 车辆控制、10 ms 轮编码器/PID、遥控、灯光和语音命令输出 | user/cpu0_main.c、user/isr.c、task_manager.c
+CPU1 | SCC8660 初始化与采集、冻结帧复制、YCbCr/BFS 识别、视觉结果显示、视觉快照发布 | user/cpu1_main.c、shijue.c、vision_display.c
+CPU2 | 在 PREPARING 状态异步构建反向返回路径，避免阻塞 CPU0 实时控制 | user/cpu2_main.c、path_planing.c
+CPU3 | WiFi、WebSocket、讯飞 ASR 及音频服务循环 | user/cpu3_main.c、voice_asr.c
+
+===== TABLE 3 =====
+参数 | 实车/填写值 | 程序标定值及说明
+轴距 | 0.64 m | chassis_control.h:12，一致
+后轮轮距 | 0.605 m | chassis_control.h:13，一致
+前轮直径 | 0.23 m（2026-08-17 实测确认） | chassis_control.h:15 为 0.20 m，已统一为 0.23 m
+后轮直径 | 0.25 m | chassis_control.h:14 为 0.25 m，INS 使用 0.785 m 轮周长，与实车确认值一致
+最大前轮转角 | 左右各 25° | chassis_control.h:10；属于软件限位，小于机械极限
+转向中心值 | 1730 ADC count | chassis_control.h:6
+转向换算 | 38 count/° | chassis_control.h:9
+转向有效范围 | 780～2680 count | chassis_control.h:7-8
+
+===== TABLE 4 =====
+传感器 | 数量 | 接口 | 实际用途
+IMU963RA 九轴 IMU | 1 | SPI3，10 MHz | 获取航向角，量程为陀螺仪 ±2000 dps、加速度计 ±8 g
+方向盘绝对编码器 | 1 | SPI0，10 MHz | 逐飞 360 度位置传感器；参考资料标称 12 位/4096，读取转向位置并完成闭环控制
+后轮增量编码器 | 2 | GPT12 TIM2/TIM4 | 编码器基础参数曾记录为 1024 PPR；实车一圈对应程序等效计数已确认为 2112 pulse/rev，里程换算采用后者
+SCC8660 彩色摄像头 | 1 | UART1 配置＋ERU/DMA CH5 采集 | 160×120 RGB565，器件标称 60 fps，当前系统实测处理约 20 fps，识别前方紫色目标
+ADC 麦克风 | 1 | ADC0_CH0 | 8 kHz 语音采样
+SBUS 接收机 | 1 | UART2，100000 bit/s | 遥控对中、模式和紧急停止
+IPS200Pro 显示屏 | 1 | SPI2，40 MHz | 任务菜单、摄像头画面和调试信息
+
+===== TABLE 5 =====
+执行机构 | 数量 | 控制方式
+后轮驱动直流减速电机 | 2 | KW068-150W24V，24 V/150 W，减速比 1:18；自制 H 桥功率级采用 BTN8982TA，10 kHz PWM，左右轮独立增量式 PID
+转向直流电机 | 1 | WW-3A-D，24 V/50 W，减速比 1:192；双向 10 kHz PWM＋逐飞 360 度位置传感器位置 PID
+TLD7002 灯光驱动 | 1 | UART3，2 Mbit/s，驱动车辆灯光
+7×15 点阵屏 | 1 | 7 路行信号＋SYNC 外部中断扫描
+喇叭 | 1 | P33.5/ATOM2 PWM，多种鸣笛模式
+按键提示蜂鸣器 | 1 | P33.10 GPIO
+
+===== TABLE 6 =====
+功能 | 引脚/外设 | 参数
+转向 PWM 正/反 | P10.1 ATOM1_CH1 / P10.3 ATOM1_CH3 | 10 kHz
+左后轮 PWM 正/反 | P21.2 ATOM0_CH0 / P21.3 ATOM0_CH1 | 10 kHz
+右后轮 PWM 正/反 | P21.4 ATOM0_CH2 / P21.5 ATOM0_CH3 | 10 kHz
+左轮编码器 A/B | P02.8 / P00.9，TIM4 | 正交计数
+右轮编码器 A/B | P33.7 / P33.6，TIM2 | 正交计数
+方向盘编码器 | P20.11/P20.14/P20.12/P20.13 | SPI0，10 MHz
+
+===== TABLE 7 =====
+模块 | 引脚/外设 | 参数
+IMU963RA | P02.7/P02.6/P02.5/P02.4 | SPI3，10 MHz
+SCC8660 配置串口 | P02.2 TX / P02.3 RX | UART1，9600 bit/s
+SCC8660 场/像素时钟 | P02.0 VSYNC / P02.1 PCLK | ERU＋DMA CH5
+SCC8660 数据 | P00.0～P00.7 | 8 bit 并口
+IPS200Pro | P15.3/P15.5/P15.4/P15.1/P15.0/P15.2 | SPI2，40 MHz
+SBUS | P10.5 TX / P10.6 RX | UART2，100000 bit/s
+调试串口 | P14.0 TX / P14.1 RX | UART0，115200 bit/s
+麦克风 | ADC0_CH0_A0 | 8 kHz，16 bit PCM 软件链路
+WiFi 模块 | P22.3/P22.0/P22.1/P22.2、P15.8、P23.1 | SPI4，30 MHz
+
+===== TABLE 8 =====
+中断源 | 服务核 | 周期/触发 | 优先级 | 功能
+CCU60_CH0 | CPU0 | 1 ms | 50 | 控制基准；5 ms Task3 控制；5 ms 转向 PID；10 ms轮速 PID/INS
+CCU60_CH1 | CPU0 | 50 ms | 51 | 按键扫描和事件去抖
+CCU61_CH0 | CPU0 | 125 µs | 52 | ASR 音频 ADC 采样
+CCU61_CH1 | CPU0 | 1 ms | 53 | 蜂鸣器/喇叭任务
+ERU CH3/CH7 | CPU1 | 边沿 | 62 | 摄像头 VSYNC / 点阵 SYNC
+DMA CH5 | CPU1 | 帧 DMA 完成 | 70 | SCC8660 图像采集完成
+UART1 | CPU1 | 串口事件 | 13～15 | 摄像头配置通信
+UART2 | CPU0 | 串口事件 | 16～18 | SBUS 遥控器
+UART3 | CPU0 | 串口事件 | 19～21 | TLD7002
+
+===== TABLE 9 =====
+状态 | 主要动作 | 转移条件
+IDLE | 读取 Flash、启用遥控对中、显示路径点数量 | P11.3 启动视觉录制；或已有路径时由 CH3 请求准备返回
+RECORDING | 视觉跟随、INS 更新、0.03 m 录制轨迹 | 视觉无效/过近持续约 1 s后自动停车保存；也可手动保存/取消
+PREPARING | CPU2 构建反向路径，CPU0 保持停车 | 构建成功后自动进入 RETURNING，或进入 READY 等待二次启动；失败回 IDLE
+READY | 已有可用反向路径，保持停车 | CH3 启动 RETURNING；删除键取消
+RETURNING | 暂停摄像头，执行倒车路径闭环 | 到达终点、越界保护、超时或人工取消后进入 DONE
+DONE | 强制停车、清状态、关闭 Task3 | 正常完成时请求 CPU3 启动语音服务，然后回 IDLE
+
+===== TABLE 10 =====
+参数 | 数值
+Kp | 2.3
+Ki | 0
+Kd | 1.3
+输出限幅 | ±500
+实际更新周期 | 5 ms
+
+===== TABLE 11 =====
+类别 | 命令号 | 指令内容 | 数量
+灯光 | 1～8 | 打开左转向灯、右转向灯、远光灯、近光灯、雾灯、双闪灯、车内照明灯、雨刷器 | 8
+鸣笛 | 9～17、36 | 鸣笛一秒钟、两秒钟、三秒钟，鸣笛两声、三声、四声，长短鸣笛、急促鸣笛、警报鸣笛、鸣笛一声 | 10
+门洞 | 18～27 | 通过门洞一（含左侧）、门洞二、门洞三（含右侧），门洞一（含右侧）/二/三（含左侧）返回 | 10
+运动 | 28～35 | 前行十米、后退十米、蛇形前进十米、蛇形后退十米、逆时针转一圈、顺时针转一圈、左转、右转 | 8
+停止（特殊） | 101 | 识别文本含“停止/关闭/取消”时统一映射为停止命令，清空后续输出 | 1
+
+===== TABLE 12 =====
+项目 | 配置
+IDE | AURIX Development Studio
+编译器 | TASKING TriCore C/C++ Compiler
+MCU | TC387QP，300 MHz
+逐飞库 | V3.4.3
+iLLD | 1.0.11.0（版本宏 generation 1 / major 0 / update 1 / minor 11 / revision 0）
+调试串口 | UART0，115200 bit/s
+最近构建产物 | Debug/kemu3.elf、Debug/kemu3.hex，2026-08-16 00:00
+
+===== TABLE 13 =====
+参数 | 数值
+底盘厂家/型号 | 科宇 T 型卡丁车
+总重量 | 22 kg
+长×宽×高 | 1250 mm×750 mm×450 mm
+轴距 | 0.64 m
+后轮轮距 | 0.605 m
+前/后轮直径 | 前轮 0.23 m / 后轮 0.25 m；后轮与程序标定一致
+最大前轮转角 | 左右各 25°，为软件限位且小于机械极限
+驱动电机 | 2×KW068-150W24V，24 V/150 W，减速比 1:18
+转向伺服机构 | 1 套 WW-3A-D 型 24 V/50 W、1:192 直流减速电机＋逐飞 360 度位置传感器闭环
+
+===== TABLE 14 =====
+参数 | 数值
+主控主频 | 300 MHz
+电机 PWM | 10 kHz
+主控板 | 逐飞 TC387 核心板＋自制竞赛底板（实物见图4-1、图4-2）
+电机驱动 | 6×BTN8982TA 集成半桥＋3×SN74LVC2G241DCUR PWM 缓冲，组成三路自制 H 桥
+电池 | LONG WAY 12FM14，阀控密封铅酸，24 V/14 Ah（20 h 率）
+5 V / 3.3 V 电源 | SCT2450STER / RT9013-33GB
+安全保护 | 原车保险丝＋机械急停＋遥控软件急停；无专用反接/过流保护
+整车电机总额定功率 | 350 W＝2×150 W 后轮驱动电机＋50 W 转向电机
+整车功耗 | 待机约 10 W、正常运行约 240 W 仍为工程估算值；峰值约 320 W 已于 2026-08-17 整机实测确认；电池续航满功率运行约 1 h（与 14 Ah ÷ 13.33 A ≈ 1.05 h 理论值吻合）
+电池最大持续放电电流 | 约 20 A（估计值）
+电容总容量 | 驱动板 944.7094 µF＋主控底板 804.5094 µF＝1749.2188 µF，报告取 1749.22 µF
+
+===== TABLE 15 =====
+检测项目 | 分辨率/参数 | 实际更新频率
+彩色视觉 | 160×120 RGB565，器件标称 60 fps | 当前系统实测约 20 fps
+方向盘角度 | 38 count/°，有效范围 780～2680 | 200 Hz
+左右轮编码器 | 基础参数曾记录为 1024 PPR；车轮一圈程序等效计数确认为 2112 pulse/rev | 100 Hz
+IMU 航向 | IMU963RA，±2000 dps | 200 Hz 控制读取；底层采样依驱动配置
+局部位置记录 | 0.03 m 里程间隔 | 按里程触发
+CTE/返回控制 | 线段投影＋窗口搜索 | 200 Hz
+语音音频 | 8 kHz、16 bit、单声道 | 8000 sample/s
+
+===== TABLE 16 =====
+项目 | 数值
+最大轨迹点数 | 7500
+单个轨迹点逻辑字段 | x、y、转向 ADC、运动标志
+应用层 code/ 根目录源码 | 28 个 .c
+TLD7002 子目录源码 | 3 个 .c
+user/ 入口与中断源码 | 5 个 .c
+建议附录收录的自研/集成源码 | 共 36 个 .c，不含逐飞和 Infineon 库源码
+
+===== TABLE 17 =====
+类别 | 名称/型号 | 数量 | 接口/控制方式 | 实际用途
+传感器 | IMU963RA 九轴 IMU | 1 | SPI3，10 MHz | 航向角获取与 Mahony 姿态融合
+传感器 | 方向盘绝对编码器 | 1 | SPI0，10 MHz | 转向位置闭环反馈
+传感器 | 后轮增量编码器 | 2 | GPT12 TIM2/TIM4 | 左右轮速度与里程推算
+传感器 | SCC8660 彩色摄像头 | 1 | UART1 配置 + DMA 采集 | 前方紫色目标识别
+传感器 | ADC 麦克风 | 1 | ADC0_CH0 | 8 kHz 语音采样
+传感器 | SBUS 接收机 | 1 | UART2，100000 bit/s | 遥控对中、模式切换与紧急停止
+传感器 | IPS200Pro 显示屏 | 1 | SPI2，40 MHz | 任务菜单与调试信息显示
+执行机构 | 后轮驱动直流减速电机 KW068-150W24V | 2 | BTN8982TA H 桥，10 kHz PWM，增量式 PID | 左右后轮驱动
+执行机构 | 转向直流电机 WW-3A-D | 1 | BTN8982TA H 桥，10 kHz PWM + 绝对编码器位置 PID | 前轮转向
+执行机构 | TLD7002 灯光驱动 | 1 | UART3，2 Mbit/s | 车辆灯光控制
+执行机构 | 7×15 点阵屏 | 1 | 7 路行信号 + SYNC 外部中断扫描 | 点阵图案显示
+执行机构 | 喇叭 | 1 | P33.5/ATOM2 PWM | 多种鸣笛模式
+执行机构 | 按键提示蜂鸣器 | 1 | P33.10 GPIO | 按键反馈
+
+===== TABLE 18 =====
+指标 | 实测值
+最大直行速度 | 20 km/h（5.56 m/s）
+横向轨迹偏差（CTE） | 约 5 cm
+综合任务单次用时 | 约 1 min 10 s
+转向编码器量程 | 360°
+
+===== TABLE 19 =====
+功能 | 引脚 | 复用外设/参数
+转向电机 正转 PWM | P10.1 | ATOM1_CH1，10 kHz
+转向电机 反转 PWM | P10.3 | ATOM1_CH3，10 kHz
+左后轮电机 正转 PWM | P21.2 | ATOM0_CH0，10 kHz
+左后轮电机 反转 PWM | P21.3 | ATOM0_CH1，10 kHz
+右后轮电机 正转 PWM | P21.4 | ATOM0_CH2，10 kHz
+右后轮电机 反转 PWM | P21.5 | ATOM0_CH3，10 kHz
+
+===== TABLE 20 =====
+功能 | 引脚 | 复用外设/参数
+左后轮编码器 A 相 | P02.8 | TIM4_ENCODER_CH1，正交计数
+左后轮编码器 B 相 | P00.9 | TIM4_ENCODER_CH2，正交计数
+右后轮编码器 A 相 | P33.7 | TIM2_ENCODER_CH1，正交计数
+右后轮编码器 B 相 | P33.6 | TIM2_ENCODER_CH2，正交计数
+转向绝对编码器 SCLK | P20.11 | SPI0_SCLK，10 MHz
+转向绝对编码器 MOSI | P20.14 | SPI0_MOSI
+转向绝对编码器 MISO | P20.12 | SPI0_MISO
+转向绝对编码器 片选 CS | P20.13 | GPIO 输出
+
+===== TABLE 21 =====
+功能 | 引脚 | 复用外设/参数
+IMU963RA（SPI3） | P02.7 / P02.6 / P02.5 / P02.4 | SCLK / MOSI / MISO / CS，10 MHz
+SCC8660 摄像头配置串口 | P02.2 TX / P02.3 RX | UART1，9600 bit/s
+SCC8660 场同步 VSYNC | P02.0 | ERU 中断＋DMA CH5
+SCC8660 像素时钟 PCLK | P02.1 | ERU 输入
+SCC8660 数据线 D0～D7 | P00.0～P00.7 | 8 bit 并口（DMA 搬运）
+麦克风音频输入 | A0 | ADC0_CH0，8 kHz / 16 bit PCM
+随机数采样源 | A2 | ADC0_CH2
+
+===== TABLE 22 =====
+功能 | 引脚 | 复用外设/参数
+IPS200Pro 屏幕（SPI2） | P15.3 / P15.5 / P15.4 / P15.1 / P15.0 / P15.2 | SPI2，40 MHz
+点阵屏 SYNC | P20.9 | ERU_CH7_REQ11，中断
+点阵屏 SR0～SR6 | P20.0 / P20.3 / P00.8 / P33.4 / P20.8 / P33.13 / P20.10 | 段选扫描输出
+按键 UP | P20.6 | GPIO 输入
+按键 DOWN | P20.7 | GPIO 输入
+按键 OK / 任务控制 | P11.2 | GPIO 输入
+按键 DELETE / 语音发送 | P11.3 | GPIO 输入
+蜂鸣器 | P33.10 | GPIO 输出
+点阵屏喇叭 PWM | P33.5 | ATOM2_CH1
+
+===== TABLE 23 =====
+功能 | 引脚 | 复用外设/参数
+调试串口 | P14.0 TX / P14.1 RX | UART0，115200 bit/s
+SBUS 遥控接收 | P10.5 / P10.6 | UART2，100000 bit/s
+WiFi 模块（SPI4） | P22.3 / P22.0 / P22.1 / P22.2＋P15.8、P23.1 | SPI4，30 MHz
+TLD7002 驱动 UART | P21.7 TX / P21.6 RX | UART3
+TLD7002 GPIN0 | P32.4 | GPIO

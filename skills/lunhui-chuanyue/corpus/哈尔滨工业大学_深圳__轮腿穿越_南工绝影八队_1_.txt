@@ -1,0 +1,439 @@
+
+第二十届全国大学生
+智能汽车竞赛
+
+技 术 报 告
+
+
+
+
+	学    校：哈尔滨工业大学(深圳)
+队伍名称：南工绝影八队
+参赛队员：李致轩
+          韩正琦
+          蒋国贤
+带队教师：葛亚明、杜惠
+
+
+关于技术报告和研究论文使用授权的说明
+
+本人完全了解全国大学生智能汽车竞赛关保留、使用技术报告和研究论文的规定，即：参赛作品著作权归参赛者本人，比赛组委会可以在相关主页上收录并公开参赛作品的设计方案、技术报告以及参赛模型车的视频、图像资料，并将相关内容编纂收录在组委会出版论文集中。
+
+                                 参赛队员签名：  
+                   参赛老师签名：               
+                           日        期：2026.8.12 
+
+
+引言
+智能车竞赛背景
+智能车是集成了大量高新技术的创新型汽车，依托汽车电子技术，深度融合了自动控制、模式识别、传感器、电子电气、计算机及机械等多个学科，是一项极具科技创意的综合设计。它通常由路径识别、速度采集、角度控制及车速控制等功能模块构成，具备自动驾驶、自动变速以及自主道路识别等能力，已成为现代电子产业发展的关键方向之一。随着自动驾驶技术的持续演进，智能车所蕴含的理论研究价值和商业应用价值正变得越来越重要。
+在国内，为加强对大学生实践能力、创新意识与团队协作精神的培养，教育部委托高等学校自动化类专业教学指导分委员会，每年主办一届全国大学生智能汽车竞赛。比赛基于组委会统一提供的模型车平台，选用英飞凌、STC等公司的微控制器作为核心控制单元，参赛者需自行设计道路识别传感器和电机驱动电路，编写配套软件并完成模型车的装配，最终制作出一辆能够自主识别道路的模型车。车辆需按赛前未知的指定路线行驶，以最短时间完成全程者为胜。该竞赛将现实中智能车的行驶任务进行了合理简化，让参赛学生在实践和学习中领会智能车技术，进而提升解决问题的能力。
+方案总体介绍
+根据第二十一届全国大学生智能汽车竞赛轮腿穿越组比赛科目细则，本组比赛由行进绕桩、定点排雷和颠簸路段三个科目组成。三个科目分别考察车模平台行进能力、定位与定点旋转能力，以及轮腿机构在复杂路面中的姿态控制和跳跃能力。针对上述任务，本车模采用轮腿式底盘，以微处理器为核心控制单元，结合 IMU、编码器、摄像头等传感器完成姿态估计、位置推算、目标识别和运动控制。
+ 科目一为行进绕桩。车模从发车区出发后先直行至掉头区，随后在返回路径中穿越由锥桶形成的间隙。若场地布置 N 个锥桶，车模需要完成 N-1 次间隙穿越；锥桶之间的最小距离为 1.5 m，且锥桶不一定共线。本队在该科目中采用惯性导航方案，以 IMU 姿态信息和编码器里程信息估计车体位姿，按照预设直行、掉头和绕桩路径生成目标航向和目标速度。控制程序根据航向偏差调整轮腿运动输出，并在返回段按照锥桶间隙的几何约束完成穿越。
+科目二为定点排雷。场地内铺设若干白色方框雷区，单个雷区边长 100 cm，胶带宽 10 cm。车模通过雷区的顺序和旋转方向不限，但进入雷区后至少旋转两周，旋转过程中车轮不得越出白色边框。本队在该科目中继续采用惯性导航方案，利用起点、雷区和掉头区的相对位置建立场地坐标系，依靠 IMU 航向角和编码器里程进行位置递推。车模到达目标雷区后切换为原地旋转控制，通过角速度积分统计旋转圈数，完成雷区任务后进入下一个目标点。
+图1.1 科目二定点排雷多雷区布置示意图           图1.2 科目一桩子摆放示意图
+科目三为颠簸路段。场地设置交错单边桥、颠簸路段、草地和三级台阶坡道等元素，车模从发车区出发后选择顺序通过各元素并返回掉头区；三级台阶坡道需要正反两个方向各通过一次。本队在该科目中采用惯性导航与摄像头识别相结合的方案。惯性导航负责维持全局行驶方向、估计车体姿态并通过里程判断大致位置；摄像头用于识别白色赛道、蓝色台阶表面、黑色楔形路障、草地区域和颠簸路段标志。控制程序根据视觉识别结果和 IMU 姿态反馈切换不同运动策略。
+                    图 1.3 科目三颠簸路段比赛元素示意图
+通过交错单边桥时，车模不能绕行，也不允许跳跃通过；单边桥之间间隔为 10-25 cm，遗漏单个障碍会产生罚时。本车模在该段以摄像头识别黑色楔形路障位置，以 IMU 横滚角和俯仰角反馈调整轮腿姿态，降低单侧支撑造成的车身扰动。
+通过颠簸路段和草地时，控制目标由快速通行转为姿态稳定。颠簸路段由高度 2 cm、宽度 2.5 cm 的路肩组成，路肩间距约 10 cm；草地路段阻力较大，需要降低目标速度并提高电机输出余量。通过三级台阶坡道时，摄像头识别蓝色台阶表面和边缘，IMU 判断上坡、下坡和落地姿态；第一次按台阶上坡、坡道下行完成通过，第二次按坡道上行、台阶跳下完成通过。
+
+图 1.4 交错单边桥尺寸与布置示意图
+
+图 1.5 三级台阶坡道结构示意图
+整体方案上，科目一、科目二以惯性导航为主，减少对现场光照和图像识别条件的依赖；科目三引入摄像头识别，用于区分复杂路面元素和定位台阶边缘。三个科目共用底层驱动、姿态估计和速度控制模块，在任务层通过状态机切换直行、掉头、穿越、定点旋转、越障和跳跃等动作。
+本文结构
+本文共分为七章。第一章介绍了比赛的背景及本系统总体方案；第二章从智能车系统的机械结构出发，详细阐述了整车布局、电路板与摄像头的安装，以及碳纤腿部、保险杠与配重等结构的设计；第三章重点介绍了系统的硬件电路设计，包括主控板、舵机供电板、无刷电机驱动板和磁编码器；第四章介绍了系统的软件控制设计，涵盖姿态解算算法、PID控制算法和元素识别策略；第五章对系统调试过程中使用的开发调试工具、人机交互工具和上位机调试工具进行了讲解；第六章则对智能车的主要技术参数进行了汇总；最后在第七章附上了电路板原理图与核心算法子程序。
+机械结构设计
+2.1  整车布局综述
+整车布局参考逐飞科技v车模安装教程，采用分层结构。底层安装四个关节舵机、五连杆腿部和驱动电机；中层安装舵机电源板、IMU、主板等硬件；顶层安装摄像头与GPS。除此之外，车头还装有防撞保险杠，车尾装有无刷驱动。整车采用螺栓+螺母安装固定。驱动电机型号为ZH3620-1无刷电机，舵机型号为BDS300。
+                             图2.1 整车结构示意图
+2.2  电路板与摄像头安装
+电路板使用铜螺柱和螺栓安装固定。主板、舵机电源板以及无刷位置的布局如图2.2，充分考虑了接线美观性与方便性。摄像头整体安装在PLA材质的板材上，通过PLA材质的摄像头杆法兰固定，如图2.3。满足了车模轻量化需求的同时，又便于拆装与更换备用件。在摄像头杆的顶部还安装有伞帽状的防撞装置，用于在车辆翻到时保护摄像头
+                       图2.2 电路板布局示意图
+图2.3 摄像头安装示意图
+2.3  碳纤腿部设计
+v车模原有的腿部设计和材质很软，在室外通过颠簸路段或者大机动的情况下，难以保证机械结构的稳定，因此我们设计了碳纤维材质的腿部，如图2.4。经测试，碳纤维材质的腿部抗弯折性能较原车模有明显提升。
+碳腿的关节部分使用两个挡边轴承进行链接，相较原本v车模的设计，能更好的承受径向力和轴向力，减少腿部在机动状态下的形变。
+图2.4 碳纤腿主视图
+图2.5 腿部关节剖面图
+2.4  保险杠与配重
+保险杠是保护车模在非预取状态下产生碰撞的保护组件，防止车模在撞击时腿部承受巨大的冲攻击力而虽坏。保险杠通过螺栓固定在车辆前部。
+在安装完所有部件之后，发现车模的重心靠前，为了平衡重心，我们在保险杆增加了垫片用来配平重心，效果显著。
+图2.6 保险杠示意图
+硬件电路设计
+本车模的电路板主要包括主控板、舵机供电板及无刷电机驱动板，整个硬件系统的设计秉持供电安全可靠，接口服务于结构与调试的原则，整个硬件系统的示意图如图3.1所示。
+图3.1 硬件系统示意图
+3.1  CYT4BB7核心主控板
+3.1.1 单片机系统设计
+单片机最小系统是智能车系统的核心控制部件。主板搭载了CYT4BB7CEx CoreBoard作为核心控制器，负责赛道图像处理、整车运动学姿态解算及逻辑调度。
+
+图3.2 单片机系统原理图
+3.1.2 电源模块设计
+主板直接从动力电池取电，使用SCT2450同步降压芯片将电池电压转换为稳定的5V，随后通过RT9013-33低压差线性稳压器(LDO)输出3.3V系统供电。为保证总钻风摄像头的图像采集质量，专门设计了独立的RT9013-33稳压回路为摄像头提供纯净的3.3V电源，实现了数字逻辑与传感器电源的有效隔离。
+3.1.3 外设选取
+摄像头：比赛采用总钻风摄像头，其具有自动曝光功能，当环境变亮摄像头会自动减小曝光时间，这样摄像头就可以适应不同环境；同时，可以通过程序调节其曝光时间，调整至合适的亮度，且无需复位摄像头。 
+陀螺仪：选用IMU660RC陀螺仪，温漂和零漂较小，采用硬件SPI通信可以达到较高的速率。 
+电磁编码器：采用TLE5012BE磁编码器对无刷电机速度进行测算，利用霍尔原理，以非接触的方式获取电机的位置信息，计算出实际所需的电流矢量。 
+调参接头与通信外设：调参及通讯接口包括TFT屏幕，四个独立按键，以及WiFi-SPI和无线串口模块的接口，可以从上位机观察车模运行的情况并对参数进行调整。此外，系统还配置了遥控器接收端，便于日常测试时的安全接管。
+3.2  独立四路舵机电源板
+轮腿车模在进行跳跃、过单边桥等动作时，腿部需要瞬间输出大扭矩，电流的突变极易引起系统电压波动。为了彻底隔绝大功率执行机构对主控逻辑电路的干扰，本系统设计了专属的四路舵机电源板。
+该板并联配置了四组独立的SCT2450开关电源降压电路，分别将电池总压降压至适宜舵机工作的稳定电压，为四路舵机提供互不干扰的独立供电。这一分离式设计能够辅助提高续流能力，满足跳跃时电流的突变，减小供电波动对舵机工作状况的影响。 
+3.3  CYT2BL3双无刷电机驱动板
+无刷驱动板选用了CYT2BL3芯片作为专职电机主控，其支持互补PWM输出和死区控制，可以轻松驾驭无刷电机FOC驱动的任务。 
+在电源输入侧并联了多个贴片电容与TVS瞬态抑制二极管（SMAJ16CA）进行滤波与浪涌保护。板载SCT2450和RT9013-33分别输出5V与3.3V的电压，为磁编与主控芯片进行供电。预驱动部分选用了两颗高集成度的DRV8300DRGER芯片，可将来自单片机的PWM信号转化为驱动MOS栅极的电平。功率级采用JMSL0408AGQ-13构成双三相全桥逆变电路，该MOS管功率密度较高，导通内阻低，能够为双侧无刷电机提供澎湃且平稳的动力输出。 
+软件控制设计
+4.1  姿态解算算法
+本系统采用六轴惯性传感器获取车模运动状态，其中三轴陀螺仪用于测量角速度，三轴加速度计用于测量重力方向和车体加速度。通过对六轴数据进行融合处理，可以实时得到车模的俯仰角、横滚角和航向角等姿态信息，为平衡控制和惯性导航提供基础数据。 
+姿态解算过程中，首先对陀螺仪和加速度计数据进行零偏校准和滤波处理，减少传感器噪声对姿态计算的影响。陀螺仪具有动态响应快的特点，能够较好地反映车体短时间内的姿态变化，但长时间积分会产生漂移；加速度计可以根据重力方向修正俯仰角和横滚角，但在车模加减速或受到冲击时容易受到干扰。因此，系统采用互补滤波方法对两类传感器数据进行融合。 
+互补滤波利用陀螺仪数据的高频响应能力和加速度计数据的低频稳定性，对姿态角进行实时修正。短时间内主要依靠陀螺仪积分获得姿态变化，长期趋势则通过加速度计计算出的重力方向进行校正，从而减小积分漂移，提高姿态角的稳定性和可靠性。 
+为避免欧拉角直接积分带来的奇异性和计算误差，系统采用四元数描述车体姿态。程序根据陀螺仪角速度更新四元数，并结合加速度计反馈对四元数进行修正，最后将四元数转换为姿态角输出。得到的姿态角一方面用于平衡控制中的角度反馈和角速度反馈，另一方面用于惯性导航中的航向估计和运动状态判断，为车模完成各项任务提供姿态依据。
+4.2  PID控制算法
+本系统采用分层 PID 控制方法对车模姿态和运动状态进行控制。控制对象主要包括俯仰角、横滚角和偏航角三个方向，每个方向均设置角度环和角速度环。角度环用于根据目标姿态和实际姿态之间的偏差计算期望角速度，角速度环则根据期望角速度和实际角速度之间的偏差输出控制量。通过这种串级控制结构，可以兼顾姿态响应速度和系统稳定性。 
+俯仰角控制主要用于维持车模前后方向的动态平衡。当车模发生前倾或后仰时，角度环根据俯仰角偏差生成修正目标，角速度环进一步抑制姿态变化速度，使车模能够快速恢复到稳定姿态。在加速、减速和越过台阶等工况下，俯仰角控制对整车稳定性影响较大，因此需要根据不同任务阶段调整控制参数。 
+横滚角控制主要用于保持车模左右方向的平衡。车模在通过单边桥、坡面或受到侧向扰动时，横滚角会发生变化。系统通过横滚角角度环判断车体左右倾斜程度，再由角速度环对倾斜变化进行抑制，从而降低车体侧翻风险，提高通过复杂元素时的稳定性。 
+偏航角控制主要用于保持车模行驶方向和导航路径。角度环根据目标航向与实际航向之间的偏差计算转向需求，角速度环用于限制偏航变化速度，避免车模转向过快造成姿态波动。该控制量与惯性导航结果结合后，可用于直线保持、转向修正和任务路径跟踪。 
+除姿态 PID 外，系统还设置舵机控制环辅助车模平衡和加减速过程。舵机根据姿态偏差、运动方向和任务状态进行角度调整，在车模对正、通过台阶和单边桥时提供辅助支撑与方向修正。同时，舵机控制也参与加减速过程中的姿态补偿，使车模在速度变化时仍能保持较稳定的运行状态。
+4.3  元素识别策略
+在科目三中，车模需要对台阶和单边桥等特殊元素进行检测与定位。由于这些元素与赛道背景之间存在较明显的边界差异，本系统采用基于图像边缘信息的识别方法。整体处理流程为图像滤波、Canny 边缘提取、边缘特征分析和元素位置解算。 
+首先对摄像头采集到的图像进行预处理，选取车模前方的有效识别区域，并通过滤波削弱图像噪声、赛道纹理和光照波动对识别结果的影响。滤波后的图像能够保留台阶边缘、单边桥轮廓等主要结构信息，为后续边缘检测提供较稳定的输入。 
+随后使用 Canny 算子对图像进行边缘检测。该方法通过梯度计算、非极大值抑制和双阈值连接获得连续边缘，能够较好地提取赛道中灰度或颜色变化明显的位置。程序在设定的感兴趣区域内搜索边缘点，并统计边缘的位置、长度、方向和连续性等特征。 
+对于台阶元素，系统主要依据其前沿边界进行判断。当图像中出现宽度满足要求、方向近似水平且连续性较好的边缘时，将其作为台阶候选边缘。根据该边缘在图像中的纵向位置估计车模与台阶之间的距离，根据边缘中心的横向位置判断车体相对台阶的偏移量，从而为后续减速、对正和越阶控制提供依据。 
+对于单边桥元素，系统主要利用桥面或路障边缘在图像中的分布特征进行识别。程序通过分析边缘簇的左右位置、间距和轮廓形态，判断单边桥所在区域，并提取其中心位置和相对偏移量。检测结果传递给运动控制模块后，控制程序可根据元素位置调整车体姿态和行驶路径。 
+为提高识别稳定性，系统不会仅依靠单帧图像直接确认元素类型，而是对连续多帧的检测结果进行一致性判断。对于位置突变、长度过短或出现在无效区域内的边缘，程序会进行剔除；只有当边缘位置和形态在连续帧中保持稳定时，才确认台阶或单边桥元素。该策略在保证实时性的同时，提高了特殊元素检测与定位的可靠性。
+系统调试
+5.1  开发调试工具
+本系统采用 IAR Embedded Workbench 作为主要开发调试环境，用于完成微控制器工程建立、代码编写、程序编译、下载烧录和在线调试等工作。IAR 支持对工程文件进行统一管理，能够方便地配置芯片型号、编译选项和链接文件，适合嵌入式控制程序的开发需求。 在程序调试过程中，IAR 提供了断点调试、单步运行、变量观察和寄存器查看等功能。通过这些调试手段，可以实时分析程序运行状态，检查传感器数据读取、控制算法计算和执行机构输出是否符合预期。对于姿态解算、PID 控制和元素识别等关键模块，使用 IAR 可以较快定位程序逻辑错误，提高软件开发效率。
+5.2  人机交互工具
+车模端的人机交互主要通过逐飞 IPS200PRO 屏幕和按键完成。IPS200PRO 屏幕用于显示系统运行状态、传感器数据、控制参数和调试信息，使调试人员能够在不连接上位机的情况下直接观察车模当前工作状态。 
+按键用于实现菜单切换、参数修改、模式选择和程序启动等操作。在实际调试中，可以通过按键选择不同科目或不同运行模式，并对部分控制参数进行现场调整。屏幕与按键结合后，能够提高车模独立调试能力，减少反复烧录程序的次数，使参数整定和功能验证更加方便。
+5.3  上位机调试工具
+上位机调试部分采用逐飞科技 WiFi 模块和逐飞串口助手软件完成。WiFi 模块负责将车模运行过程中的数据无线发送到电脑端，避免有线连接对车模运动造成影响，适合在动态运行状态下观察系统数据。 逐飞串口助手用于接收和显示车模上传的数据，包括姿态角、速度、编码器信息、控制输出量和元素识别结果等。通过观察这些实时数据，可以分析车模在不同任务中的运行状态，判断导航、识别和控制模块是否工作正常。在调试过程中，上位机数据能够帮助发现参数设置不合理、姿态波动过大等问题，为后续算法优化提供依据
+主要技术参数说明
+
+附录
+7.1  电路板原理图
+图7.1 主板原理图
+图7.2 无刷原理图
+
+图7.3 舵机原理图
+
+7.2  核心算法子程序
+PID部分
+static float PID_Update_Position(PID_t *pid, float target, float current, float dt) {
+    if (pid == NULL || dt < EPSILON) return 0.0f;
+    
+    pid->target = target;
+    pid->current = current;
+    pid->err = target - current;
+    
+    // 1. 积分项处理
+    bool skip_integral = false;
+    if (pid->config.integral_threshold > 0.0f && fabsf(pid->err) > pid->config.integral_threshold) {
+        skip_integral = true;
+    }
+    if (!skip_integral) {
+        pid->err_sum += pid->err * dt;
+        // 积分输出限幅 
+        float i_term = pid->config.ki * pid->err_sum;
+        if (fabsf(i_term) > pid->config.integral_limit) {
+            pid->err_sum -= pid->err * dt;
+            i_term = limit(i_term, -pid->config.integral_limit, pid->config.integral_limit);
+        }
+    }
+
+    // 2. 微分项处理 
+    float raw_derivative = 0.0f;
+    if (!pid->first_run) {
+        if (pid->config.derivative_on_measurement) {
+            raw_derivative = -(current - pid->current_last) / dt;
+        } else {
+            raw_derivative = (pid->err - pid->err_last) / dt;
+        }
+    }
+    
+    float filtered_derivative = pid->config.derivative_lpf_alpha * raw_derivative + 
+                                (1.0f - pid->config.derivative_lpf_alpha) * pid->last_derivative;
+
+    // 3. 总输出
+    pid->output = pid->config.kp * pid->err +
+                  pid->config.ki * pid->err_sum +
+                  pid->config.kd * filtered_derivative;
+
+    pid->output = limit(pid->output, -pid->config.output_limit, pid->config.output_limit);
+
+    // 4. 状态更新
+    pid->err_last = pid->err;
+    pid->current_last = current;
+    pid->last_derivative = filtered_derivative;
+    pid->first_run = false;
+
+    return pid->output;
+}
+
+static float PID_Update_Increment(PID_t *pid, float target, float current, float dt) {
+    if (pid == NULL || dt < EPSILON) return 0.0f;
+
+    float err = target - current;
+    if (pid->first_run) {
+        pid->err_last = err;
+        pid->err_second_last = err;
+        pid->current_last = current;
+        pid->current_second_last = current;
+        pid->first_run = false;
+        return 0.0f;
+    }
+
+    // 1. 比例增量
+    float d_kp = pid->config.kp * (err - pid->err_last);
+
+    // 2. 积分增量
+    float d_ki = pid->config.ki * err * dt;
+
+    // 3. 微分增量 (考虑微分先行和滤波)
+    float raw_d_kd = 0.0f;
+    if (pid->config.derivative_on_measurement) {
+        // ΔD = -Kd * (y(k) - 2y(k-1) + y(k-2)) / dt
+        raw_d_kd = -pid->config.kd * (current - 2.0f * pid->current_last + pid->current_second_last) / dt;
+    } else {
+        // ΔD = Kd * (e(k) - 2e(k-1) + e(k-2)) / dt
+        raw_d_kd = pid->config.kd * (err - 2.0f * pid->err_last + pid->err_second_last) / dt;
+    }
+
+    // 对微分增量进行低通滤波，防止噪声累积到输出中
+    float filtered_d_kd = pid->config.derivative_lpf_alpha * raw_d_kd + 
+                          (1.0f - pid->config.derivative_lpf_alpha) * pid->last_derivative;
+
+    // 4. 更新总输出
+    pid->output += (d_kp + d_ki + filtered_d_kd);
+    pid->output = limit(pid->output, -pid->config.output_limit, pid->config.output_limit);
+
+    // 状态更新
+    pid->err_second_last = pid->err_last;
+    pid->err_last = err;
+    pid->current_second_last = pid->current_last;
+    pid->current_last = current;
+    pid->last_derivative = filtered_d_kd; // 存储本次微分分量供下次滤波
+
+    return pid->output;
+}
+导航部分
+static void update_nowpos(NAV_t* nav) {
+    NAV_INPUT_t input = nav->input;
+    float delta_distance = input.current_speed * ENC_TO_METER_COFF * NAV_UPDATE_DT_MS / 1000;
+    if (nav->input.gps_valid) update_nowgps(nav); 
+
+    if (nav_ctx.locmode == ENC_MODE) {
+        float theta = DEG_TO_RAD(input.theta);
+        //nav_ctx.now_pos.x += (delta_distance * cosf(theta));
+        //nav_ctx.now_pos.y += (delta_distance * sinf(theta));
+    }
+    else if (input.gps_valid){
+        Point2D diff = get_gps_diff(nav_ctx.now_gps, nav_ctx.last_gps);
+        nav_ctx.now_pos.x += diff.x;
+        nav_ctx.now_pos.y += diff.y;
+    }
+    nav_ctx.now_distance += delta_distance;     // 距离一直使用编码器更新
+}
+
+static Action_result_t is_gps_stable(NAV_t* nav) {
+    if (NAV_FRAME_MODE == NAV_FRAME_BODY) return FIRST_EVENT; // 在机器人坐标系下，不使用GPS，默认返回GPS稳定
+    else {      
+        // 在北向或南向坐标系下，GPS稳定的判断为等待一定时间并且GPS有效位置为有效的次数达到一定阈值
+        static uint8_t stable_count = 0;
+        if (nav->input.gps_valid && stable_count < 20) {
+            update_nowgps(nav);     // GPS信号有效情况下更新GPS点位
+            stable_count++; // 需要连续20次GPS有效（约100ms * 20 = 2秒）才能认为GPS稳定
+        }
+        // GPS稳定的条件：连续20次GPS有效且等待了一定时间
+        return (stable_count >= 20 && WaitTime(GPS_WAIT_TIME_S * 1000)) ? FIRST_EVENT : NONE_EVENT; 
+    }
+}
+
+static Action_result_t calib(NAV_t* nav) {
+    if (!GPS_CALIB_ENABLE || NAV_FRAME_MODE == NAV_FRAME_BODY) return FIRST_EVENT;
+
+    nav_ctx.locmode = ENC_MODE;    // 使用编码器计算距离
+    nav->output.control_speed = GPS_CALIB_SPEED;
+        
+    update_nowpos(nav);
+    if (fabsf(nav_ctx.now_distance) > GPS_CALIB_DISTANCE) {
+        nav->output.yaw_calib = get_angle_gps(nav_ctx.start_gps, nav_ctx.now_gps);
+        nav_ctx.now_pos = get_gps_diff(nav_ctx.now_gps, nav_ctx.start_gps);
+        return FIRST_EVENT;
+    }
+    return NONE_EVENT;
+}
+
+static Action_result_t navigate(NAV_t* nav) {
+    nav_ctx.locmode = ENC_MODE;
+    update_nowpos(nav);
+    Action_result_t result = NONE_EVENT;
+    // 从内存中搬取变量
+    float lookahead_distance = nav_ctx.current_path->lookahead_dist;
+    float lookahead_distance_sq = lookahead_distance * lookahead_distance;
+
+    uint16_t now_index = nav_ctx.current_path->now_path_index;
+    
+    if (now_index >= nav_ctx.current_path->count) return SECOND_EVENT;  // 保护，防止后面数组溢出，到达终点，触发事件2
+
+    Point2D target_point = nav_ctx.current_path->points[now_index].point;
+    float now_distance_sq = get_distance_squared(nav_ctx.now_pos, target_point);
+    float dx = fabsf(nav_ctx.now_pos.x - target_point.x);
+    float dy = fabsf(nav_ctx.now_pos.y - target_point.y);
+    // 判断是否到达点位以及进行元素记录
+    FlagBits_t now_flag = nav_ctx.current_path->points[now_index].flag;
+    while(now_distance_sq < lookahead_distance_sq /*&& dx < DX_DY_DIS && dy < DX_DY_DIS*/) {
+        now_index++;
+        if (now_index >= nav_ctx.current_path->count) {
+            result = SECOND_EVENT;
+            break;    // 保护，防止后面数组溢出
+        }
+        if (now_flag != FLAG_NULL) {
+            nav_ctx.now_yuansu = what_yuansu(now_flag);  // 遇到元素，记录下来
+            result = FIRST_EVENT;      // 触发第二个事件
+            if (/*nav_ctx.now_yuansu != YUANSU_PAILEI && */nav_ctx.now_yuansu != YUANSU_TURN) nav_ctx.locmode = GPS_MODE;
+            else nav_ctx.locmode = ENC_MODE;
+        }
+        now_flag = nav_ctx.current_path->points[now_index].flag;
+        target_point = nav_ctx.current_path->points[now_index].point;
+        now_distance_sq = get_distance_squared(nav_ctx.now_pos, target_point);
+        dx = fabsf(nav_ctx.now_pos.x - target_point.x);
+        dy = fabsf(nav_ctx.now_pos.y - target_point.y);
+    }
+
+    if (now_index >= nav_ctx.current_path->count) return result;    // 提前返回，防止后面的数组越界
+    nav_ctx.current_path->now_path_index = now_index;   // 更新内存中的目标点位下标
+    nav->output.control_steering = get_angle(nav_ctx.now_pos, target_point);
+    nav->output.control_speed = nav_ctx.current_path->points[now_index].speed_cofficient * MAX_SPEED;
+    nav->output.now_yuansu = nav_ctx.now_yuansu;
+    return result;
+}
+
+CANNY巡线部分
+void steering_opencv_canny(const uint8_t src[IMAGE_HEIGHT][IMAGE_WIDTH], uint8_t dst[IMAGE_HEIGHT][IMAGE_WIDTH],EdgeDetectionParams *params) 
+{
+
+    int x, y;
+    uint32_t hist[256] = {0};
+    uint32_t nz = 0;
+
+    memset(dst, 0, IMAGE_HEIGHT * IMAGE_WIDTH * sizeof(uint8_t));
+
+    for (y = 1; y < IMAGE_HEIGHT - 1; y++) {
+        for (x = 1; x < IMAGE_WIDTH - 1; x++) {
+            //int gx = -src[y-1][x-1] + src[y-1][x+1] -2*src[y][x-1] + 2*src[y][x+1] -src[y+1][x-1] + src[y+1][x+1];
+            int16_t gy = -src[y-1][x-1] - 2*src[y-1][x] - src[y-1][x+1] +src[y+1][x-1] + 2*src[y+1][x] + src[y+1][x+1];
+            
+
+            dst[y][x] = abs(gy);
+            
+            int hm = abs(gy) >> 2; 
+            if (hm > 255) hm = 255;
+            if (hm > 0) { hist[hm]++; nz++; }
+        }
+    }
+
+    int high_th = 50;
+    if (nz > 0) {
+        uint32_t target = (uint32_t)((float)nz * params->canny_threshold);
+        uint32_t cs = 0;
+        for (int k = 1; k < 256; k++) {
+            cs += hist[k];
+            if (cs >= target) { high_th = k; break; }
+        }
+    }
+    if (high_th < 5) high_th = 5;
+
+    int high = high_th * 4;
+
+   // memset(dst, 0, IMAGE_SIZE);
+    for (y = 1; y < IMAGE_HEIGHT - 1; y++) {
+        for (x = 1; x < IMAGE_WIDTH - 1; x++) {
+            if (dst[y][x] > high) dst[y][x] = 255;
+        }
+    }
+}
+菜单部分
+//父级菜单显示
+void center_menu()
+{
+	uint8 index = p_unit->m_index[0];
+
+	if(first_in_page_flag)
+		showstr(DAD_INDEX(index,0),DAD_INDEX(index,1),MOUSE_LOOK);
+	
+	if(button3||button4){
+		if(index==0){
+			showstr(DAD_INDEX(DAD_NUM-1,0),DAD_INDEX(DAD_NUM-1,1)," ");
+			showstr(DAD_INDEX(0,0) ,DAD_INDEX(0,1),MOUSE_LOOK);
+			showstr(DAD_INDEX(1,0) ,DAD_INDEX(1,1)," ");
+		}else if(index==DAD_NUM-1){
+			showstr(DAD_INDEX(DAD_NUM-2,0),DAD_INDEX(DAD_NUM-2,1)," ");
+			showstr(DAD_INDEX(DAD_NUM-1,0),DAD_INDEX(DAD_NUM-1,1),MOUSE_LOOK);
+			showstr(DAD_INDEX(0,0) ,DAD_INDEX(0,1) ," ");			
+		}else{
+			showstr(DAD_INDEX(index-1,0),DAD_INDEX(index-1,1)," ");
+			showstr(DAD_INDEX(index  ,0),DAD_INDEX(index  ,1),MOUSE_LOOK);
+			showstr(DAD_INDEX(index+1,0),DAD_INDEX(index+1,1)," ");					
+		}
+	}else if((is_clear_flag==1&&(button1))||(begin_menu_flag)){
+		menu_unit* p = NULL;
+		p = p_unit;
+		for(uint8 i=0;i<DAD_NUM;i++){
+			showstr(DAD_INDEX(p->m_index[0],0)+MOUSE_DIS,DAD_INDEX(p->m_index[0],1),p->name);
+			p = p->up;
+		}
+		begin_menu_flag = 0;
+	}
+}
+
+//子级菜单显示
+void assist_menu()
+{
+	uint8 index = p_unit->m_index[1];
+	if(first_in_page_flag)
+		showstr(SON_INDEX(index,0),SON_INDEX(index,1),MOUSE_LOOK);
+	
+	if(button3||button4){
+		if(index==0){
+			showstr(SON_INDEX(p_unit->down->m_index[1],0),SON_INDEX(p_unit->down->m_index[1],1)," ");
+			showstr(SON_INDEX(0,0) ,SON_INDEX(0,1),MOUSE_LOOK);
+			showstr(SON_INDEX(1,0) ,SON_INDEX(1,1)," ");
+		}else if(index==p_unit->back->enter->down->m_index[1]){
+			showstr(SON_INDEX(index-1,0),SON_INDEX(index-1,1)," ");
+			showstr(SON_INDEX(index,0),SON_INDEX(index,1),MOUSE_LOOK);
+			showstr(SON_INDEX(0,0) ,SON_INDEX(0,1) ," ");			
+		}else{
+			showstr(SON_INDEX(index-1,0),SON_INDEX(index-1,1)," ");
+			showstr(SON_INDEX(index  ,0),SON_INDEX(index  ,1),MOUSE_LOOK);
+			showstr(SON_INDEX(index+1,0),SON_INDEX(index+1,1)," ");					
+		}
+	}else if(is_clear_flag==1&&(button2)){
+		menu_unit* p = NULL;
+		p = p_unit;
+		for(uint8 i=0;i<SON_NUM;i++){
+			showstr(SON_INDEX(p->m_index[1],0)+MOUSE_DIS,SON_INDEX(p->m_index[1],1),p->name);
+			p = p->up;
+		}
+	}				 
+}
+结论
+本次模型汽车的制作围绕轮腿穿越组比赛任务展开，整体完成了机械结构设计、硬件电路搭建、控制软件编写和整车联调等工作。在机械方面，车模以稳定支撑和轻量化为主要目标，对车体布局、重心位置和执行机构安装方式进行了调整；在硬件方面，完成了主控系统、惯性传感器、摄像头、舵机、电机驱动、屏幕按键和无线调试模块的连接与调试；在软件方面，建立了姿态解算、PID 控制、惯性导航、元素识别和人机交互等功能模块，使车模能够根据不同科目要求完成运行控制。
+从技术路线来看，系统以六轴惯性传感器为核心姿态来源，通过互补滤波和四元数解算获得车体姿态角，并将姿态角用于平衡控制和惯性导航。科目一、科目二主要依靠惯性导航完成路径判断与动作切换，科目三则在惯性导航基础上加入摄像头识别，通过滤波、Canny 边缘检测和边缘位置分析实现台阶与单边桥的检测定位。整车调试过程中，IAR 开发环境、IPS200PRO 屏幕按键和逐飞 WiFi 上位机调试工具共同提高了程序下载、参数整定和运行状态分析效率。
+目前车模已经具备基本的姿态稳定、路径执行、特殊元素识别和无线数据回传能力，主要技术指标基本满足比赛任务需求。但在实际调试中也暴露出一些问题。首先，平衡轮腿车模的姿态控制与运动控制耦合较强，加减速、越过台阶和通过单边桥时容易引起俯仰角和横滚角波动，说明控制参数仍需要根据不同工况进行更精细的分段调整。其次，惯性导航存在累计误差，长时间运行后航向和位置判断会受到陀螺仪零漂、轮胎打滑和地面扰动的影响。再次，摄像头识别对光照条件和图像噪声较敏感，固定阈值下的边缘检测在复杂背景中可能出现误判或漏判。
+后续改进方向主要包括三个方面。第一，在控制算法上，可以进一步优化姿态环和角速度环参数，并加入速度状态、任务阶段和元素类型相关的参数切换策略，提高不同工况下的稳定性。第二，在导航算法上，可以引入更多传感器信息进行融合，例如将编码器、IMU 和视觉定位结果结合，减少单一惯性导航带来的累计误差。第三，在视觉识别上，可以加入自适应阈值、边缘置信度判断和连续帧跟踪机制，提高台阶和单边桥定位的可靠性。
+通过本次设计与调试可以看出，平衡轮腿组车模的关键并不只是单个模块性能，而是机械结构、传感器数据、控制算法和调试工具之间的整体配合。只有在结构稳定、数据可靠、控制及时和调试充分的基础上，车模才能在复杂任务中保持较高的通过率。后续工作应继续围绕系统稳定性和任务适应性进行优化，使车模在速度、精度和可靠性之间取得更好的平衡。
+
+===== TABLE 1 =====
+模型车基本参数 | 长/宽/高 | 200/240/300mm
+模型车基本参数 | 车重 | 1765g
+功耗 | 带载 | 12W
+电容总容量 | 电容总容量 | 2400uF
+传感器 | 编码器 | 2个
+传感器 | 总钻风摄像头 | 1个
+传感器 | 陀螺仪 | 1个
+除车模原有的驱动电机、舵机之外伺服电机个数 | 除车模原有的驱动电机、舵机之外伺服电机个数 | 0
+赛道信息检测 | 视野范围（近/远） | 12/103cm
+赛道信息检测 | 精度(近/远) | 3/17mm
+赛道信息检测 | 频率 | 50Hz

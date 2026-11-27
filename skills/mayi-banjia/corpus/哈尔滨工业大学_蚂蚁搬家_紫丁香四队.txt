@@ -1,0 +1,1713 @@
+
+第二十一届全国大学生
+智能汽车竞赛
+
+技 术 报 告
+
+	学    校：哈尔滨工业大学
+队伍名称：紫丁香四队
+参赛队员：张毅飞
+          崔弘烜
+          何子涵
+          郑靖昊
+
+
+带队教师： 魏方睿 于艳君 
+
+
+
+
+
+
+
+关于技术报告和研究论文使用授权的说明
+
+	 本人完全了解全国大学生智能汽车竞赛关保留、使用技术报告和研究论文的规定，即：参赛作品著作权归参赛者本人，比赛组委会可以在相关主页上收录并公开参赛作品的设计方案、技术报告以及参赛模型车的视频、图像资料，并将相关内容编纂收录在组委会出版论文集中。
+
+参赛队员签名：张毅飞 崔弘烜 何子涵 郑靖昊
+    带队教师签名： 魏方睿 于艳君    
+日    期： 2026年8月18日 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+摘要
+本文详细介绍了哈尔滨工业大学“紫丁香四队”在第二十一届全国大学生智能汽车竞赛蚂蚁搬家组中的系统方案。本赛题要求两台自制车模在无固定导引轨迹的场地上协同完成目标搜索、对准、推送搬运与返库任务。本系统采用主副双车协同架构，两车均以RT1021核心板为主控制器，运行MicroPython固件；主车搭载OpenART Plus视觉模块，采用YOLOv3-Nano深度学习检测与LAB颜色验证相融合的方案识别搬运物体与砖块障碍，通过任务状态机组织出库、观察点搜索、目标对准、绕物转向、推动、避障和返库的完整流程；副车通过460800 bit/s无线串口接收主车的状态与速度前馈，并结合红外光斑视觉跟随实现稳定的双车协同。运动控制方面，两车采用三轮全向轮底盘，利用BMI270陀螺仪进行航向估计，结合三路编码器构建全向里程计，通过位置式PID、轮速增量式PID与航向串级控制实现速度、位置和航向的闭环控制，并利用场地黄线进行位置重校准以抑制累积误差；机械方面设计了低重心底盘、三点支撑摄像头支架与负压涵道系统，兼顾轻量化、结构刚度与高速附着力。为了提高模型车的速度和稳定性，使用上位机、无线串口、按键与显示屏等调试工具进行了大量软硬件测试。实验结果表明，该系统设计方案确实可行。
+
+关键词：RT1021；双车协同；三轮全向轮；YOLOv3目标检测；PID控制
+
+目录
+摘要	I
+目录	I
+第一章  绪 论	3
+1.1 智能车研究背景	3
+1.2 方案总体介绍	3
+1.3 本文结构	4
+第二章 机械结构设计及调整	5
+2.1 总体设计思路与协同姿态	5
+2.2 传动与底盘设计	5
+2.3 支撑结构	6
+2.4负压涵道	8
+2.5 整车参数汇总	8
+第三章 硬件电路设计	9
+3.1 单片机系统设计	9
+3.2 电源模块设计	9
+3.3 电机驱动电路	11
+3.4 传感器的选择	13
+3.5 通信电路设计	14
+第四章 软件控制设计	15
+4.1 软件总体结构及运行流程	15
+4.2 姿态估计与三轮全向里程计	16
+4.3 闭环控制与速度规划	18
+4.4 A车任务规划与搬运控制	19
+4.5 B车协同跟随控制	24
+4.6 参数管理与软件可靠性设计	26
+4.7 视觉识别与目标跟踪	26
+第五章 系统调试	29
+5.1 开发调试工具	29
+5.2 人机交互工具	30
+5.3 无线串口及上位机调试	30
+第六章 模型车主要技术参数说明	1
+结论	2
+1、车模外观照片	46
+2、电路板原理图	47
+
+
+
+
+第一章  绪 论
+1.1 智能车研究背景
+智能车是一种高新技术密集型的新型汽车，以汽车电子为背景涵盖控制、模式识别、传感技术、电子、电气、计算机、机械等多科学的科技创意性设计，一般主要由路径识别、速度采集、角度控制及车速控制等模块组成。可实现自动驾驶、自动变速及自动识别道路等功能，是现代电子产业发展中一项重要的组成部分。
+在我国，教育部为了加强大学生实践、创新能力和团队合作精神的培养，委托教育部高等学校自动化专业教学指导分委员会主办了每年一度的全国大学生智能汽车竞赛。竞赛以统一规则、现场比拼的形式，要求参赛队伍综合运用机械、电子、控制与计算机等多学科知识，设计制作能够自主完成规定任务的模型汽车。第二十一届竞赛设置了多个富有挑战性的组别，其中蚂蚁搬家组要求两台智能车像蚂蚁协作搬运食物一样，在没有固定导引轨迹的场地上协同完成目标搜索、对准、推送搬运与返库等任务，对车辆的环境感知、运动控制和双车协同能力提出了很高的要求。
+1.2 方案总体介绍
+本届蚂蚁搬家组的比赛在铺设黄色边界胶带的平面场地上进行，场地中随机摆放玩具熊、沙袋、网球等待搬运物体，并可能放置砖块作为障碍物。参赛队员的目标是使两台智能车从发车区出发，协同搜索并识别各类目标，将其逐一推送至指定边界，全部搬运完成后返回车库，以完成全部任务的时间最短者为优胜。与常规循迹类赛题不同，本赛题没有固定赛道线作为控制依据，对视觉识别、自主定位与任务规划能力提出了全新的挑战。
+根据竞赛规则相关规定，本系统采用主副双车协同方案，两台车均采用自制三轮全向轮底盘，以RT1021核心板作为核心控制器，运行MicroPython固件并使用Thonny进行软件开发。主车（A车）承担任务决策：通过OpenART Plus视觉模块采集图像，采用YOLOv3-Nano深度学习模型与LAB颜色验证相结合的方案识别搬运物体与砖块障碍，由任务状态机组织出库、观察点搜索、目标对准、绕物转向、推动与返库等流程；副车（B车）通过460800 bit/s无线串口接收主车的任务状态与速度前馈，并利用红外光斑视觉跟随主车，使两车推杆始终保持“V”字形协同姿态，对目标形成稳定的包络与限位。运动控制方面，系统通过BMI270陀螺仪进行航向估计，结合三路编码器构成三轮全向里程计，采用位置式PID与轮速增量式PID实现位置、速度和航向的闭环控制，并利用场地黄线进行位置重校准以抑制长时间运行的累积误差。
+1.3 本文结构
+本文共分为六章。第一章主要介绍比赛背景及智能车系统的总体方案；第二章从智能车的机械结构出发，详细阐述双车协同姿态、传动与底盘、支撑结构及负压涵道的设计与调整；第三章重点介绍系统硬件电路的设计方案与原理，包括单片机系统、电源模块、电机驱动与传感器选型；第四章介绍软件控制设计，包括软件总体结构、姿态估计与三轮全向里程计、闭环控制与速度规划、A车任务规划与搬运控制、B车协同跟随控制以及视觉识别与目标跟踪；第五章对系统调试过程中使用的开发工具与调试手段进行讲解；第六章对主副车搭载的传感器种类及数量进行汇总汇报。
+第二章 机械结构设计及调整
+2.1 总体设计思路与协同姿态
+针对本届竞赛的协同搬运任务，本参赛队设计了主副双车协同系统。主副两车均采用三轮全向轮底盘架构。在行进与搬运过程中，主车依靠视觉传感器主动寻找目标物体，副车则通过视觉跟随主车。为了实现稳定的协同搬运，主副车均设计有对称且向斜前方伸出的推杆。在跟随与搬运过程中，两车的推杆保持“V”字形姿态前进，以便对目标物体形成有效的包络与限位。
+两车的底盘布局均采用“双轮在后、单轮在前”的全向轮排布姿态。该布局方案相较于常规的排布方式，大幅提升了车辆在直线加速以及紧急制动时的后轮抓地力与抗侧倾稳定性，为高速协同与急停提供了可靠的物理基础。
+
+图2.1 主副车协同姿态示意图
+2.2 传动与底盘设计
+2.2.1 传动电机
+本车动力源选用额定转速为1000 RPM的N20减速电机，该型号电机体积小巧且能提供充足的输出扭矩，完全满足全向轮底盘的驱动需求。为贯彻“轻量化”的设计理念，所选N20电机尾部自带出轴磁环与7 PPR的高精度磁编码器，通过6P柔性排线直接与主控板接口相连。此设计省去了传统方案中额外的传动齿轮组与独立编码器模块，极大降低了簧下质量与机械传动损耗。
+2.2.2 全向轮
+车轮采用直径52mm、自带20个滚子及硅胶环包胶的定制全向轮。硅胶材质进一步增强了车轮与赛道表面的摩擦系数。全向轮与电机输出轴之间通过十字转D型联轴器进行高强度装配，消除传动虚位。
+考虑到52mm全向轮尺寸较大，为避免整车重心过高导致过弯翻车，我们在三个电机的安装位，底盘结构向上凸起，相当于将电机的安装基准面整体抬升。该设计使得整车底盘的下边缘距离地面的净空高度仅为8mm。这一高度既大幅降低了整车重心，又保留了足够的通过性，可轻松跨越赛道上的凸起障碍。
+
+
+
+图2.2 异形低重心底盘结构图
+2.3 支撑结构
+2.3.1 车体
+为提高车体结构的整体强度并严格控制重量，推杆与底盘主体采用了PLA-CF（碳纤维增强聚乳酸）耗材进行3D打印一体成型。PLA-CF密度低且抗拉伸、抗弯折强度大，完美契合了智能车轻量化与高刚性的需求。
+2.3.2电机壳
+电机通过自研设计的3D打印电机固定壳进行安装。该固定壳并非单一的紧固件，而是多功能的核心连接枢纽：其在水平方向延伸出安装耳板，用于为主控PCB板提供稳定支撑；在斜上方则延伸出2.6mm的方形套筒，用于精准插接并固定截面为2.5mm的碳纤维方杆。
+2.3.3 三杆支撑摄像头支架
+视觉传感器的安装稳定性直接决定了图像处理的质量。本车摒弃了传统的单根直立杆安装方案，创新性地采用了“三点支撑”式汇合支架方案。从三个电机壳斜向伸出的三根碳纤维方杆，在车体上方通过一个3D打印的三通连接件进行交汇固定。摄像头与微处理器模块即固定于该三通连接件的顶部平台。
+这种三棱锥式的立体桁架结构，大幅增强了整车的结构刚度。在车辆急加速、急减速或高速过弯时，有效消除了支架的形变，从机械层面避免了“抬头”现象导致的图像剧烈抖动，保障了视觉前瞻的稳定性。
+而本车创新的“三点支撑”式结构，在力学上构成了极其稳定的四面体空间桁架。当顶部受到水平惯性冲击时，破坏性的“弯矩”被沿着三根碳纤维方杆分解为轴向的“拉力”与“压力”。基于碳纤维极佳的轴向抗拉压特性，整车结构刚度呈指数级跃升，系统固有频率大幅提高。这从根本上抑制了底盘运动引发的摄像头低频共振，以微小的重量代价实现了极佳的视觉稳定性。
+从力学角度分析，传统的单杆支撑结构等效为一端固定、一端自由的悬臂梁。根据悬臂梁挠度公式，其顶端形变量与支撑高度的三次方成正比。
+
+由于主车需较高视野，单杆在车辆急停或急加速的惯性作用下会产生极大的弯曲形变与低频谐振。
+
+图2.3 三点式摄像头支架
+2.4负压涵道
+为了进一步突破车辆在极限速度下的抓地力瓶颈，我们在底盘中央加入了负压涵道系统。底盘正下方安装有定制的负压吸盘，该吸盘中央由具有较高硬度的薄膜提供结构支撑，四周边缘则采用软质薄膜构成密封裙边。
+底盘中部开设有进气孔，其正上方安装有1103无刷电机与高转速扇叶。系统工作时，无刷电机抽气在底盘下方形成局部真空负压区，利用大气压差为车体提供强大的下压力。该涵道系统极大地提升了车辆高速运行及过弯时的轮胎附着力，有效防止了侧滑。
+
+图2.3 三点式摄像头支架
+
+2.5 整车参数汇总
+经过一系列的轻量化与结构优化，主副两车的最终机械参数如表1.1所示。主副车主要在高度上存在差异（主车摄像头由于需要搜寻目标故支架较高），其余关键物理指标保持高度一致，以保证协同运动控制时的动力学对称性。
+表1.1 主副车关键机械参数对比表
+
+第三章 硬件电路设计
+本智能车系统采用模块化电路设计方案，整体供电由3S锂电池输入，通过电源管理模块完成不同电压等级的转换，为单片机系统、电机驱动模块、传感器以及通信模块提供稳定可靠的工作电源。系统以RT1021核心板作为主控单元，负责整车运动控制、传感器数据采集以及通信任务处理。由于采用组委会提供的核心MCU电路板，因此不对该核心板内部电路进行详细说明。本着可靠、高效、轻量化的原则，在满足各个要求的情况下，尽量使设计的电路简单，缩小PCB体积。
+3.1 单片机系统设计
+单片机最小系统是智能车系统的核心控制部件。我们采用了RT1021核心板。原理图如图3.1所示：
+
+图3.1 单片机系统原理图
+3.2 电源模块设计
+全部硬件电路的电源由3S电池提供（满电电压12.6V）。由于电路中的不同电路模块所需要的工作电压和电流容量各不相同，因此电源模块应该包含多个稳压电路，将充电电池电压转换成各个模块所需要的电压。为满足需要，本车模上存在4种供电电压：
+
+全部硬件电路的电源由格式航模锂电池提供（额定电压11.1V，满电电压12.6V）。由于电路中的不同电路模块所需要的工作电压和电流容量各不相同，因此电源模块应该包含多个稳压电路，将充电电池电压转换成各个模块所需要的电压。为满足需要，本车模上存在4种供电电压：
+(1) 智能车使用锂电池供电，正常使用时电压在12V。可直接用于电机供电。
+(2) 电池输入电压经过SY8113BADC降压模块转换为稳定的5V电源，为系统中的单片机进行供电。
+
+图3.2 转压电路5V-3.3V原理图
+(3) 在5V供电部分，由于RT1021需要核心板先于外设供电，因此采用SY6280AAC作为5V上电时序控制芯片，实现系统电源开启过程中的电源管理。
+
+图3.3 转压电路12V-5V原理图
+
+(4) 使用XC6504A331MR低压差稳压芯片，将5V电压分别转换为3.3V电源，为不同功能模块提供独立稳定的供电。三个3.3V电源模块用于屏幕、陀螺仪、编码器等供电，降低不同模块之间的电源干扰。   
+                    
+图3.4 转压电路5V—-5V原理图
+系统采用功率地与信号地分离的设计方式，用零欧姆电阻进行电源地分割，将电源输入及电机驱动部分划分为功率地（PGND），主要承载电池输入电流、电机驱动电流以及MOSFET开关产生的瞬态电流；其余控制、通信及传感器模块共用信号地（GND），作为低电流信号参考地。两部分地线通过零欧姆电阻进行连接，在保证系统共地的同时，降低电机驱动产生的电磁干扰对主控和传感器信号的影响，提高系统稳定性。
+3.3 电机驱动电路
+3.3.1 有刷驱动
+运动部分采用三个带磁编码器的N20减速电机作为执行机构，每个电机均具有独立闭环控制能力。电机驱动部分采用DRV8701E作为电机驱动控制芯片，并配合AON7264E功率MOSFET构成功率驱动电路。DRV8701E负责接收PWM控制信号，并完成电机正反转控制、电流调节以及保护功能；AON7264E作为功率开关器件，具有较低导通电阻和较好的电流承载能力，可以满足电机启动和高速运行时的大电流需求。驱动芯片将单片机经缓冲电路处理过后的的信号信号输入进行处理，而后传递到直接连接电机的 H 桥电路中的 MOS 管栅极，利用 H 桥的特性，通过控制 MOS 管的通断进而控制电机的通电方向，从而控制电机的转速与转向。单个有刷电机驱动原理图如图3.5所示。
+
+图3.5 左侧电机驱动原理图
+3.3.2 无刷驱动
+采用STC无刷驱动模块，用于驱动负压相关执行机构。原理图如图3.6所示：
+
+图3.6 无刷电机驱动原理图
+3.4 传感器的选择
+3.4.1 编码器
+	带有霍尔编码器的N20减速电机是一种通过霍尔磁电转换将输出轴上的机械几何位移量转换成正交脉冲数字信号的微型驱动单元，这也是应用较多的测速与位置反馈电机之一。其结构紧凑、抗震动粉尘能力强、闭环控制搭建简单。
+采用集成增量式霍尔编码器的N20减速电机，编码器供电电压为3.3V，霍尔元件输出微弱的磁感应模拟信号。为了将此信号放大整形，板载信号调理电路，其基本原理是使用运放构成比较器电路，调节参考阈值电压，使输出变为0V-3.3V的A、B两相正交方波信号，送入单片机进行转速、转向与位置运算。电路板采用ZH-1.5PIN型号的线对板针座与带磁编的电机连接。
+3.4.2 陀螺仪
+BMI270是一种惯性传感器，能够检测载体运动过程中的角速度与加速度物理量，并转换为数字输出信号，是姿态检测中应用广泛的传感芯片。芯片供电电压为3.3V，单片机读取芯片采集的三轴角速度、三轴加速度信息，经过姿态解算运算，即可得到载体的姿态角度。
+3.5 通信电路设计
+无线通信部分采用无线转串口模块，实现两辆搬运车模之间的数据传输，便于调试过程中进行参数修改和状态监测。同时设计独立UART接口模块，用于主控与OpenART之间的数据交互。
+
+
+第四章 软件控制设计
+本组赛题要求两台全向轮智能车协同完成目标搜索、搬运与返库。与常规单车循迹不同，本系统没有以固定赛道线作为唯一控制依据，而是将视觉识别、惯性姿态、编码器里程计和双车无线通信组合为统一的软件控制框架。A车承担任务决策、目标识别、推动路径规划和砖块避障；B车接收A车状态与速度前馈，同时利用摄像头对A车进行视觉跟随，两车推杆保持稳定的协同姿态。
+4.1 软件总体结构及运行流程
+4.1.1 软件分层结构
+软件采用“驱动层—感知层—控制层—任务层”的分层结构。驱动层封装电机PWM、编码器、IMU、摄像头串口、无线串口、按键、显示屏及Flash读写；感知层完成陀螺仪零漂校准、偏航角积分、编码器滤波、视觉数据解码和双车通信帧校验；控制层完成位置、视觉、航向及轮速闭环；任务层仅部署在A车，通过任务状态机组织出库、观察点搜索、目标对准、绕物转向、推动、避障和返库。
+4.1.2初始化与定时运行流程
+上电后程序首先初始化LCD、按键、拨码开关、IMU、三路编码器、三路电机、无线串口及摄像头串口，并创建参数菜单。菜单从Flash读取轮速环、角度环、位置环、视觉环、阈值、航点及协同前馈参数。发车前，程序连续采集200组陀螺仪Z轴数据并求均值，得到零漂偏置；同时将编码器滤波器和里程计坐标清零。随后启动10 ms周期定时器，进入闭环运行。
+定时中断前两个周期仅预取编码器数据，用于建立初始状态；从第三个周期开始执行正式控制。A车每个控制周期依次完成IMU和编码器读取、偏航角更新、里程计积分、控制模式选择、速度指令计算、目标航向步进、三轮运动学分配、轮速PID、PWM限幅输出、任务状态机更新以及向B车发送协同数据。B车主循环负责滑动窗口接收A车无线帧，中断内解析摄像头数据、更新速度前馈并执行运动控制。拨码开关状态改变时立即停止定时器并退出运行，形成可靠的软件急停手段。
+4.2 姿态估计与三轮全向里程计
+4.2.1 IMU零漂校准与偏航角估计
+两台车均采用陀螺仪的Z轴角速度进行航向估计。发车前静止采样200次，采样间隔5 ms，将平均值作为零漂偏置。运行阶段先从原始角速度中扣除该偏置，再使用系数为0.25的一阶低通滤波器抑制高频抖动；当角速度绝对值小于0.08°/s时进入死区并置零，以减小微小漂移在长时间积分中的累积。
+
+
+A车采用10 ms周期的欧拉积分获得连续偏航角；B车在此基础上使用相邻两个周期角速度的梯形积分，以进一步降低快速转向时的积分误差。积分结果再经过系数为0.15的一阶低通滤波，并统一映射到-180°～180°区间。角度环实际使用的角速度反馈还经过系数为0.1的一阶滤波，避免毛刺直接放大到内环微分项。
+
+
+4.2.2 三轮全向运动学
+两车轮组安装角度统一取-240°、0°和-120°。设车体前向速度为v_x、横向速度为v_y、角速度为ω，轮心到车体中心距离为L，则第i个轮子的目标线速度为：
+
+运动学反解由三个编码器速度恢复车体运动状态：
+
+三路编码器原始值先进行系数为0.15的一阶低通滤波，滤波值放大10倍后作为轮速反馈。里程计计算时设置幅值为3的死区，低于死区的编码器增量直接置零，避免静止或推动打滑初期的小噪声被持续积分。反解得到的机体系速度再按当前偏航角旋转到世界坐标系，并以0.01 s为周期累加得到pos_x、pos_y。
+
+该“IMU定方向、编码器定位移”的结构避免了三轮底盘在任意平移方向下仍需要机械前导轮的问题，同时为A车观察点导航、推动距离计算、砖块避障和B车速度前馈坐标变换提供统一坐标基准。
+4.3 闭环控制与速度规划
+4.3.1 位置式PID
+位置、航向和视觉偏差均采用位置式PID。控制器先计算目标值与反馈值之差；角度输入额外进行最小角映射，保证从179°转到-179°时选择2°的最短路径而不是358°的大角度回转。位置式PID公式为：
+
+
+程序为位置环设置了3个单位左右的到达死区，为视觉环设置约3像素的居中死区。A车位置式控制器进入死区后将积分清零，并将积分项限制在±200以内，避免长时间偏差造成的积分饱和。推动等状态切换时还会主动清空位置PID的历史误差和上一周期速度，减少模式切换瞬间的控制冲击。
+4.3.2 轮速增量式PID
+三个驱动电机采用增量式闭环。程序以反馈轮速减目标轮速构造误差，利用最近三次误差计算控制量增量，再叠加到上一周期PWM输出：
+
+
+运动学分配后的三个目标轮速先做整体等比例限幅，保证任一车轮超过MAX_WHEEL_SPEED时三个轮速按同一比例缩小，从而不改变车体运动方向。随后三个独立轮速环分别计算PWM增量，并统一限制在pwm_limit以内。参数保存模块还建立了pwm_limit与轮速上限的换算关系，使调参时能够同时约束动力输出和运动学指令。
+4.3.3 航向串级控制与速度平滑
+航向控制采用“角度外环＋角速度内环”的串级结构。外环根据angle_target与angle_z的最小角误差生成期望角速度；内环将期望角速度与IMU实际角速度比较，再通过比例—微分环节得到最终ω指令。目标航向不直接突变，而是以angle_step逐周期向final_yaw步进；A车在避障回正等特殊阶段将步长降至0.5°，B车默认步长为2°，从而降低双车协同姿态突变。
+
+平移速度同样采用每周期变化率限制。位置控制默认每周期最多改变5个速度单位，视觉跟踪通道使用独立的cam_accel_limit；当视觉目标短暂丢失不超过5个周期时，A车保持上一周期速度指令，避免在视觉闭环与里程计闭环之间来回切换造成车体顿挫。
+4.4 A车任务规划与搬运控制
+A车任务层以mission_state为核心组织完整搬运流程。状态机在10 ms控制周期末尾运行，根据当前里程计位置、视觉目标、物体类别、砖块标志和完成计数更新下一阶段目标点或目标航向；运动控制层再把这些任务目标转换为车体速度。图4.2给出了主要状态转移关系。
+
+图4.1  A车搬运任务状态转移关系
+表4.1 A车任务状态定义
+状态机并未将“寻找、对准、推动”写成固定顺序的延迟程序，而是把每一步都与传感器反馈绑定。目标视觉帧需要连续出现超过5个控制周期才确认为有效；目标短暂丢失时保持当前速度，丢失超过20个周期后停止继续逼近，超过50个周期则返回最近观察点重新搜索。这样可以显著降低单帧误检和短时遮挡对任务流程的影响。
+4.4.1 视觉坐标解算与目标对准
+A车摄像头通过6字节数据包上传帧头、物体类别、目标横纵坐标及数量等信息。程序以帧头0xAA作为有效标志，0xFF作为无目标帧，若读取到异常首字节则逐字节丢弃并重新对齐。识别结果中1表示熊、2表示沙包、3表示网球。根据物体类别，状态4分别选择90°、-90°和0°作为最终推动航向，并切换对应的摄像头工作命令。
+为了把像素偏差转换为地面距离，程序使用小孔成像模型。相机安装高度H为21.5 cm，俯角α为45.37°，等效焦距F为157.3像素，画面中心为(160,120)。像素点(px,py)先归一化，再求光线与地面交点：
+
+
+当Z小于0.02时说明视线接近水平，无法与地面形成有效交点，该帧不参与控制。视觉跟踪阶段以目标在画面中的设定中心作为期望值：X方向像素偏差映射为车体横向速度，Y方向像素偏差映射为前后速度；两组PD控制器均设置3像素死区、速度限幅和加速度限制。目标即将接触推杆时，程序将状态3切换为状态31，位置环负责沿世界坐标轴低速接近，视觉环只负责横向修正，避免末端阶段两个控制目标相互干扰。
+当画面中网球数量连续多个周期大于1时，程序进入状态35，先执行Y方向20个单位的侧移，再执行X方向20个单位的位移，随后清空视觉缓存并重新搜索。该策略避免A车在两个目标成像重叠时直接冲向二者中心。
+4.4.2 推动控制与黄线位置校准
+推动阶段的控制目标由“到达某个二维点”转换为“沿当前机头方向走完剩余距离”。状态5根据物体类别选择熊的+Y边界、沙包的-Y边界或网球的+X边界，实时计算剩余distance，并将其输入位置式PID得到前向速度。横向速度保持为0，使推杆接触方向尽可能稳定；速度输出经限幅和每周期变化率限制后送入运动学分配。
+绕物转向及避障起步时，A车并非单纯原地旋转，而是在横向速度中叠加“-ω×orbit_radius”的补偿项，使车体绕目标近似公转，减少旋转过程中推杆与目标之间的相对滑移。对于网球在特定边界附近的场景，程序还设置了较小的附加补偿系数，避免早期偏转将球带离预期方向。
+由于长时间推动会引入轮胎打滑和编码器累积误差，A车在推动和返库阶段利用场地黄线进行位置重校准。摄像头返回黄线像素坐标后，程序将像素坐标换算为地面距离，再根据当前物体类别选择相应的场地边界方程，直接覆写里程计的pos_x或pos_y。该策略相当于在长航迹推算中引入绝对位置观测，降低了多轮搬运后航点偏移的风险。
+4.4.3 砖块检测与路径避障
+目标对准后，状态4先让车体转到目标推动方向，再发送一次砖块检测命令。若视觉结果确认存在砖块，程序根据目标类别及目标在图像中的左右位置估计砖块中心坐标，并将其作为圆形/椭圆形障碍物加入障碍物列表；同时按目标类别设置安全余量。若未检测到砖块，则直接进入正常推动。
+路径检测以当前位置到目标边界的线段为基准，计算障碍中心到该线段的最短距离。障碍物参数为(ox,oy,ra,rb)，安全半径取max(ra,rb)+安全余量。当最短距离小于安全半径时认为直推路径存在碰撞风险；若在安全半径外40个单位内检测到砖块，也会提前设置brick_flag，为下一观察点路径预留避让信息。
+
+
+偏转方向由推动方向向量与起点到障碍向量的叉积决定：障碍在路径左侧时向右偏，障碍在右侧时向左偏。所需偏转角由安全半径与障碍距离的反正弦关系求得，多个障碍取绝对值最大的偏转角，并限制在±35°以内；完成避障所需的直线距离取最远障碍投影距离的0.8倍。
+
+避障过程分为四个子阶段：先原地转到偏转航向；再沿偏转方向推动，利用里程计判断车体已经越过障碍；随后进入状态51，在低速前进的同时将航向回正；最后恢复正常的直线推动。若目标为网球且当前位置靠近边界，程序会先将车体带过指定X坐标，再叠加反向修正角，防止避障路径与场地边界冲突。完成一次推动后，状态7根据物体类别累计熊、沙包或网球数量；若尚未达到任务总数则返回相应观察点，否则进入返库状态。
+4.5 B车协同跟随控制
+4.5.1 双车无线通信协议
+双车采用460800 bit/s无线串口通信。A车在每个控制周期打包自身任务状态、目标点、当前期望航向、最终航向、实时偏航角、机体系速度及当前物体标签，形成19字节协同帧；B车主循环使用滑动窗口接收并解析。
+接收端每轮最多从串口取40字节，避免通信处理阻塞控制周期；数据先写入19字节滑动窗口，只有帧头和CRC同时正确时才更新receive_buffer。若序列号与上一帧相同则直接丢弃，防止同一状态被重复消费。帧头或校验失败时窗口整体左移一个字节继续搜索，从字节流错位中自动恢复。
+4.5.2 速度前馈与坐标变换
+使两车朝向不同，前馈速度仍表示同一世界方向上的运动趋势。B车接收到A车速度后，并不是直接把A车的机体速度用于自身控制，而是先利用A车实时偏航角将其旋转到世界坐标系，再利用B车自身偏航角旋转回B车机体系。这样即
+
+前馈速度按正负方向分别乘以ff_vx_pos、ff_vx_neg、ff_vy_pos和ff_vy_neg四个独立系数，以补偿两车机械摩擦和轮组效率的不对称。接收速度超过car1_speed_limit时被视为异常数据，不更新前馈量。
+4.5.3 视觉跟随与航向同步
+B车摄像头输出A车在画面中的中点坐标及角度信息。程序先以0.6为系数对中点X、Y进行一阶低通滤波；首次稳定检测到A车时丢弃前10帧，并将当前画面中点锁定为期望位置，从而自动适配两车发车时的相对距离和相机安装误差。锁定后，X、Y两个视觉PID分别生成B车机体系速度修正量，再与无线前馈叠加。
+当摄像头短暂看不到A车时，B车不立即停车，而是将控制量切换为纯无线速度前馈，保持与A车相同的运动趋势；当A车发送状态0时，B车强制三路PWM输出为0，防止无线数据异常导致副车继续运动。
+航向方面，B车以A车的final_yaw作为自己的最终朝向，并采用与A车相同的串级角度控制。目标角按每周期2°平滑步进；当A车处于状态51推动回正阶段时，步长减小到0.5°。在航向尚未转到目标值期间，B车额外叠加与ω成正比的前进速度v_x=ω×ff_w_radius，使转向过程表现为绕A车的圆弧运动，而不是原地自转后再追赶。
+
+
+通过“无线前馈保证大趋势、视觉闭环修正相对位置、航向同步保持推杆夹角”的组合，B车无需独立完成物体搜索和路径规划，即可在A车转向、接近和推动时维持稳定的协同位姿。
+4.6 参数管理与软件可靠性设计
+两车均实现了基于双向链表的LCD菜单。五个按键支持20 ms消抖、300 ms长按和100 ms连发，参数调整时将数值拆分为符号位、4位整数和4位小数，可逐位修改。参数分为轮速环、角度环、位置环、常规控制、视觉跟踪、视觉目标、阈值、航点和B车前馈系数等组别；确认后同步写入对应PID结构体或全局变量，保存时再按组别写入Flash文本文件。
+A车保存观察点、推动目标、黄线校准距离、物体总数和网球数量等任务参数；B车保存视觉目标点、相机跟踪PID、前馈方向系数和绕转半径系数。掉电后重新上电会自动恢复上次参数，使现场调试不必重复输入。
+4.7 视觉识别与目标跟踪
+4.7.1 视觉系统总体方案
+两车视觉模块均运行于 OpenART Plus 图像处理平台，经 115200 bps 串口与各自主控交互，采用 6 字节数据帧回传识别结果（A 车：帧头 0xAA＋目标类型＋辅助字段＋横纵坐标；B 车：帧头＋光斑横纵坐标），与 4.1 节所述感知层接口一致。A 车需区分网球、沙袋、玩具熊三类搬运物和砖块障碍，仅靠颜色阈值无法区分颜色相近的红沙袋与砖块，故采用“YOLOv3 深度学习检测＋LAB 颜色验证”的双路融合方案：深度学习提供语义类别与初始检测框，LAB 颜色分析复核修正标签并将检测框收紧到颜色边界，二者互补，在嵌入式平台上兼顾精度与实时性。摄像头采用 QVGA（320×240）分辨率，固定曝光、增益与白平衡以保证颜色稳定，镜头加装偏振片抑制反光。视觉模块设有物体检测、纯模型检测、黄线检测、灯光校准等多种工作模式，由 A 车任务状态机按 4.4 节所述阶段经串口切换。
+4.7.2 检测模型训练与端侧部署
+检测模型采用 YOLOv3-Nano，骨干网络为 MobileNetV2，利用深度可分离卷积与倒残差结构在保持精度的同时大幅降低计算量；模型将检测建模为网格回归问题，经 K-means 聚类得到 9×9、17×16、33×30 三个先验锚框。训练面向四类目标，数据集按比赛实际摄像头与光照参数采集，覆盖单目标、多目标及目标与砖块共存场景，采用 Pascal VOC 格式标注后转为 YOLO 格式；为与 QVGA 保持 4:3 比例，模型输入设为 128×96。训练采用 TensorFlow 2.x，批大小 32、训练 150 轮，Adam 优化器配合余弦退火学习率，并施加 letterbox 等比缩放、随机抖动与尺度变化、水平翻转和 HSV 颜色扰动等数据增强。在 IoU=0.5、置信度阈值 0.3 条件下，三类搬运物的 AP 均超过 95%（网球 95.62%、沙袋 95.05%、玩具熊 95.04%），整体 mAP 达 95.24%。训练完成的 fp32 模型经约 100 张代表图像标定量化为 int8，转换为 TFLite 格式并将 NMS 后处理一并集成，部署至平台 SD 卡，实测帧率约 24 帧/秒。
+4.7.3 颜色验证与稳定跟踪
+模型推理输出检测框后，程序在框内按各类 LAB 颜色阈值做连通域分析：若某类颜色面积显著大于预测类别则纠正标签，占比过低则标记为低可信度，同时将检测框收紧至颜色边界以提高定位精度；各类别设置独立置信度阈值（网球 0.2、沙袋 0.3、玩具熊 0.6、砖块 0.8），其中砖块与红沙袋颜色相近，还需结合框内蓝色分量检测与砖块纹理面积/距离比二次判定加以区分。为保证时序稳定，系统为每类目标维护跟踪状态，用指数移动平均平滑检测框位置，模型漏检时在上一帧邻域内以颜色阈值接力补位并做面积校验，连续多帧丢失才放弃；多目标场景下采用目标锁定机制抑制切换抖动，并对同物体重叠框先做同类 NMS 去重、再对沙袋/砖块跨标签高重叠框做红系合并，避免同一红色物体被重复判定。针对光照变化，系统支持灯光自动校准：实验室保存参照物 LAB 基准，比赛现场微调曝光与增益使实测颜色逼近基准后保存，上电自动加载。场地黄色边界胶带经 LAB 黄色阈值检测，返回色块中心与旋转角度，供 4.4 节所述黄线位置校准与返库导航使用。
+4.7.4 B车红外目标跟踪
+B 车视觉只需锁定 A 车上的单一红外光源，无需深度学习模型，采用轻量化灰度方案以获得更高帧率：摄像头视场角 140°，镜头加装红外滤光片，图像以灰度格式采集并关闭自动增益与白平衡，红外光源在灰度图中呈现为高亮光斑。程序以亮度阈值二值化分割高亮区域，经连通域分析后选取面积最大的光斑作为目标并输出其质心坐标，从而抑制背景杂光与小面积噪声；未检测到目标时发送无效标记帧。该质心坐标即 4.5.3 节视觉跟随闭环的输入，与无线速度前馈叠加后驱动 B 车保持对 A 车的稳定协同跟随。
+
+
+
+
+
+第五章 系统调试
+5.1 开发调试工具
+本系统双车主控均采用 RT1021 微控制器，运行 MicroPython 固件，软件开发工具选用 Thonny。相比传统的嵌入式 C 开发环境，Thonny 具有体积小、上手快、无需配置编译链等特点，其内置的 MicroPython 设备支持功能与本项目的开发流程高度契合。Thonny 通过串口与主控直连，集代码编辑、文件管理与交互式调试于一体：左侧文件窗口可直接管理主控文件系统中的各功能模块（main、control、mission_state、imu_state、pid、wl 等），修改后一键上传即完成程序更新，省去了编译与烧录环节，显著缩短了“修改—验证”的调试周期；下方 Shell 窗口提供 REPL 交互环境，程序运行中的 print 调试信息、异常回溯均实时回显，还可随时中断运行并手动输入指令读取变量、单步验证函数逻辑，为任务状态机切换、PID 参数整定和双车通信协议的联调提供了极大便利。
+图5.1 Thoony调试界面
+5.2 人机交互工具
+在调试过程中需要不断地修改变量的值来达到整定参数的作用，对此我们选用了液晶屏配合按键和拨码开关的调试方法。此外，比赛的时候，修改参数我们同样用这个模块进行修改。
+5.3 无线串口及上位机调试
+车在同样的赛道上走过的路都是不一样的，所以无论怎么考虑车的状态都是不够完全的，因此需要对运行中的车进行实时监控。为了解决这个问题，我们使用无线转串口模块配合逐飞上位机进行实时观测车模运行状态。如图5.3所示。
+
+图5.2 上位机实时监测
+
+第六章 模型车主要技术参数说明
+表6.1 模型车主要技术参数说明
+
+
+结论
+自报名参加智能汽车竞赛以来，我们小组成员从查找资料、设计结构、组装车模、编写程序一步一步地进行，围绕双车协同搬运这一任务不断迭代方案，最终完成了最初目标，定下了现在这个设计方案。
+在此份技术报告中，我们主要介绍了准备比赛时的基本思路，包括机械结构、硬件电路以及最重要的控制算法的创新思想。在机械方面，我们设计了低重心的三轮全向轮底盘、三点支撑式摄像头支架与负压涵道系统，在轻量化、结构刚度与高速附着力之间取得了平衡。在电路方面，我们以模块形式分类，在单片机最小系统、电源管理、有刷与无刷电机驱动、传感器接口等模块分别设计，经过不断实验，最后确定了最终的电路图。在程序方面，我们基于MicroPython编写控制程序，构建了“驱动层—感知层—控制层—任务层”的分层软件架构，将视觉识别、惯性姿态与编码器里程计融合为统一的控制框架，实现了主车任务规划、目标对准、推动避障与返库，以及副车基于无线前馈和视觉跟随的协同搬运；经过小组成员不断讨论、改进，终于设计出一套比较通用稳定的程序。在这套算法中，主车通过深度学习模型与颜色验证可靠识别目标，并利用黄线重校准抑制累积误差，副车始终保持稳定的协同姿态，保证双车以最短的时间完成全部搬运任务。
+在备战过程中，我们遇到了很多挫折，一次次的校内比赛见证我们这个小队艰难的蜕变。非常感谢哈工大智能车创新俱乐部这个像家一样的地方，同时也感谢在场地和经费方面都得到了学校和学院的大力支持，更要特别感谢一直支持和关注智能车比赛的学校和学院领导以及各位指导老师、指导学长，同时也感谢比赛组委会能组织这样一项有意义的比赛。
+
+
+
+
+附录一：部分源代码
+主车控制代码：
+from function import *
+import math
+
+
+
+
+
+def all_control():
+    
+    
+    
+    
+    
+    # 1. 读取 IMU 数据
+    acc_x = glo.imu_data[0]
+    acc_y = glo.imu_data[1]
+    acc_z = glo.imu_data[2]
+    gyro_x = glo.imu_data[3]
+    gyro_y = glo.imu_data[4]
+    rr_gyro_z = glo.imu_data[5]
+    
+    beta = 0.1
+    r_gyro_z = beta * rr_gyro_z + (1-beta) * glo.gyro_z_last
+    glo.gyro_z_last = r_gyro_z
+    
+    gyro_z = r_gyro_z / 83.3
+    
+    
+
+    # 2. 读取编码器数据 + 低通滤波
+    enc1_raw = encoder_1.get()
+    enc2_raw = encoder_2.get()
+    enc3_raw = encoder_3.get()
+
+    if not glo.enc_filt_init:
+        glo.enc_filt[0] = float(enc1_raw)
+        glo.enc_filt[1] = float(enc2_raw)
+        glo.enc_filt[2] = float(enc3_raw)
+        glo.enc_filt_init = True
+
+    a = glo.enc_filt_alpha
+    glo.enc_filt[0] = a * enc1_raw + (1 - a) * glo.enc_filt[0]
+    glo.enc_filt[1] = a * enc2_raw + (1 - a) * glo.enc_filt[1]
+    glo.enc_filt[2] = a * enc3_raw + (1 - a) * glo.enc_filt[2]
+
+    glo.enc1_data = glo.enc_filt[0]* 10
+    glo.enc2_data = glo.enc_filt[1]* 10
+    glo.enc3_data = glo.enc_filt[2]* 10
+
+    #-------------------编码器滤波结束-------------------#
+
+    # 3. 计算 yaw
+    glo.angle_z = yaw_filter.update(gyro_z_raw=rr_gyro_z, bias_raw=glo.angle_z_default)
+
+    # 4. 里程计：编码器死区(低于阈值视为0) + 缩放后反算机体速度
+    db = glo.enc_odo_deadband
+    e1 = glo.enc1_data * glo.enc_odo_scale if abs(glo.enc1_data) > db else 0.0
+    e2 = glo.enc2_data * glo.enc_odo_scale if abs(glo.enc2_data) > db else 0.0
+    e3 = glo.enc3_data * glo.enc_odo_scale if abs(glo.enc3_data) > db else 0.0
+    vx_body_meas, vy_body_meas, _ = car.wheel_to_body_speeds(e1, e2, e3)
+
+    dx_world, dy_world = body_to_world(vx_body_meas, vy_body_meas, glo.angle_z)
+
+    glo.pos_x += dx_world * 0.01
+    glo.pos_y += dy_world * 0.01
+
+    # ===== 摄像头丢帧计数（防止单帧闪烁导致控制模式来回切换造成卡顿）=====
+    _cam_data_ok = (glo.camera_read_data[0] == 0xAA and glo.camera_read_data[1] != 0)
+
+    if _cam_data_ok:
+        glo.cam_valid_cnt += 1
+        glo.cam_lost_cnt = 0
+    else:
+        glo.cam_valid_cnt = 0
+        if glo.ctrl_mode == 0 and glo.mission_state == 3:
+            glo.cam_lost_cnt += 1
+        else:
+            glo.cam_lost_cnt = 0
+    # ================================================================
+
+
+    if glo.mission_state in (5,51): #推动状态（里程计避障版）
+        glo.ctrl_mode = 2
+
+        if glo.avoid_active and glo.avoid_sub_phase == 0:
+            # ---- 起步偏转(未接触物体): 原地旋转, 速度清零 ----
+            glo.vx_body_cmd = 0.0
+            glo.vy_body_cmd = 0.0
+            glo.body_vx_cmd_last = 0.0
+            glo.body_vy_cmd_last = 0.0
+
+        else:
+            # ---- 推动/回正阶段: 沿机体前方直线推(不横移) ----
+            pos_x_pid_struct.place_pid_caculate(
+                glo.distance, 0, wrap_angle=False,
+                deadband=glo.pos_deadband, min_out=glo.pos_min_speed
+            )
+            vx_target = pos_x_pid_struct.out
+            vx_target = out_range(vx_target, glo.pos_speed_limit, -glo.pos_speed_limit)
+
+
+            glo.vx_body_cmd = rate_limit(vx_target, glo.body_vx_cmd_last, glo.pos_accel_limit)
+
+            glo.vy_body_cmd = 0.0
+
+            glo.body_vx_cmd_last = glo.vx_body_cmd
+            glo.body_vy_cmd_last = glo.vy_body_cmd
+        
+    elif glo.mission_state == 31:
+
+        if glo.angle_target == 0:
+            pos_x_pid_struct.place_pid_caculate(
+                glo.target_x, glo.pos_x, wrap_angle=False, deadband=glo.pos_deadband, min_out=glo.pos_min_speed
+            )
+            vx_world_cmd = out_range(pos_x_pid_struct.out, glo.pos_speed_limit, -glo.pos_speed_limit)
+            glo.vx_body_cmd, glo.vy_body_cmd = world_to_body(
+                        vx_world_cmd, 0, glo.angle_z
+                    )
+            
+        elif abs(glo.angle_target) == 90:
+            pos_y_pid_struct.place_pid_caculate(
+                glo.target_y, glo.pos_y, wrap_angle=False, deadband=glo.pos_deadband, min_out=glo.pos_min_speed
+            )
+            vy_world_cmd = out_range(pos_y_pid_struct.out, glo.pos_speed_limit, -glo.pos_speed_limit)
+            glo.vx_body_cmd, glo.vy_body_cmd = world_to_body(
+                                0, vy_world_cmd, glo.angle_z
+                )
+            
+        if glo.camera_read_data[0] == 0xAA:    
+            camera_track_pid_struct.place_pid_caculate(
+                target=glo.rx,
+                current=glo.camera_center_x,
+                deadband=3.0
+            )
+            glo.vy_body_cmd = camera_track_pid_struct.out
+        else:
+            glo.vy_body_cmd = 0
+        
+        glo.vy_body_cmd = out_range(glo.vy_body_cmd,glo.cam_speed_limit,-glo.cam_speed_limit)
+
+
+        #对前进和后退方向做j型加速
+        glo.vx_body_cmd = rate_limit(glo.vx_body_cmd, glo.body_vx_cmd_last, glo.pos_accel_limit)
+        #左右横移用梯形加速    
+        glo.vy_body_cmd = rate_limit(glo.vy_body_cmd, glo.body_vy_cmd_last, glo.pos_accel_limit)
+        
+        
+        glo.body_vx_cmd_last = glo.vx_body_cmd
+        glo.body_vy_cmd_last = glo.vy_body_cmd
+        
+        
+    elif glo.cam_mode == 1 and _cam_data_ok and not (glo.mission_state in (21,22,23,24)):
+        
+        glo.ctrl_mode = 0
+  
+        # 检测到物体，用PID维持物体在画面中心
+        # 摄像头X轴PID: 水平偏差 → 车身Y方向速度 (物体偏右→车身向右横移)
+        camera_track_pid_struct.place_pid_caculate(
+            target=glo.rx,
+            current=glo.camera_center_x,
+            deadband=3.0
+        )
+        glo.vy_body_cmd = camera_track_pid_struct.out
+        glo.vy_body_cmd = out_range(glo.vy_body_cmd,glo.cam_speed_limit,-glo.cam_speed_limit)
+        glo.vy_body_cmd = rate_limit(glo.vy_body_cmd,glo.body_vy_cmd_last,glo.cam_accel_limit)
+        # 摄像头Y轴PID: 垂直偏差 → 车身X方向速度 (物体偏下说明远→前进; 偏上说明近→后退)
+        camera_track_y_pid_struct.place_pid_caculate(
+            target=glo.ry,
+            current=glo.camera_center_y,
+            deadband=3.0
+        )
+        glo.vx_body_cmd = camera_track_y_pid_struct.out
+        glo.vx_body_cmd = out_range(glo.vx_body_cmd,glo.cam_speed_limit,-glo.cam_speed_limit)
+        glo.vx_body_cmd = rate_limit(glo.vx_body_cmd,glo.body_vx_cmd_last,glo.cam_accel_limit)
+        
+        glo.body_vx_cmd_last = glo.vx_body_cmd
+        glo.body_vy_cmd_last = glo.vy_body_cmd
+
+    elif glo.cam_mode == 1 and 0 < glo.cam_lost_cnt <= 5 and glo.mission_state == 3:
+        # 摄像头短暂丢帧(≤5帧)：保持上一周期速度指令，避免切到位置模式导致卡顿
+        glo.ctrl_mode = 0
+        # vx/vy_body_cmd 和 body_vx/vy_cmd_last 保持不变，延续上一周期速度
+
+    else:
+        
+        glo.ctrl_mode = 1
+        
+        #先只对位置环输出的世界速度做一个限幅
+        pos_x_pid_struct.place_pid_caculate(
+            glo.target_x, glo.pos_x, wrap_angle=False, deadband=glo.pos_deadband, min_out=glo.pos_min_speed
+        )
+        vx_world_cmd = out_range(pos_x_pid_struct.out, glo.pos_speed_limit, -glo.pos_speed_limit)
+        
+        pos_y_pid_struct.place_pid_caculate(
+            glo.target_y, glo.pos_y, wrap_angle=False, deadband=glo.pos_deadband, min_out=glo.pos_min_speed
+        )
+        vy_world_cmd = out_range(pos_y_pid_struct.out, glo.pos_speed_limit, -glo.pos_speed_limit)
+
+        #转换到体坐标
+        glo.vx_body_cmd, glo.vy_body_cmd = world_to_body(
+            vx_world_cmd, vy_world_cmd, glo.angle_z
+        )
+        
+        #对前进和后退方向做j型加速
+        glo.vx_body_cmd = rate_limit(glo.vx_body_cmd, glo.body_vx_cmd_last, glo.pos_accel_limit)
+        #左右横移用梯形加速    
+        glo.vy_body_cmd = rate_limit(glo.vy_body_cmd, glo.body_vy_cmd_last, glo.pos_accel_limit)
+        
+        
+        glo.body_vx_cmd_last = glo.vx_body_cmd
+        glo.body_vy_cmd_last = glo.vy_body_cmd
+
+ 
+        # ========== 统一转向状态 ==========      
+    if glo.mission_state in (3,31,4,8):
+        glo.camera_x = (glo.camera_read_data[3] << 8) | glo.camera_read_data[4]
+        glo.camera_y = glo.camera_read_data[5]
+
+        glo.rx ,glo.ry = calculate_cordinate(glo.camera_x,glo.camera_y)
+        glo.rx = abs(glo.rx)
+        if glo.camera_x < 160:
+            glo.rx = -glo.rx
+            
+             
+
+    # --- 归一化 final_yaw ---
+    if glo.final_yaw > 180.0:
+        glo.final_yaw -= 360.0
+
+    # --- 计算到目标的差值 ---
+    diff = glo.final_yaw - glo.angle_target
+    if diff > 180.0:
+        diff -= 360.0
+    elif diff < -180.0:
+        diff += 360.0
+    elif abs(diff - 180.0) < 0.01:    # 恰好 +180°：强制走负方向（逆时针）
+        diff = -180.0
+
+    # 回正时使用独立的角度步长
+    if glo.mission_state == 51 :
+        step = 0.5
+    else:
+        step = glo.angle_step
+    
+    if abs(diff) < step:
+        glo.angle_target = glo.final_yaw
+    elif diff > 0:
+        glo.angle_target += step
+    else:
+        glo.angle_target -= step
+
+    # --- 归一化 angle_target ---
+    if glo.angle_target > 180.0:
+        glo.angle_target -= 360.0
+    elif glo.angle_target < -180.0:
+        glo.angle_target += 360.0      
+    
+
+    # 7. 角度控制
+    
+  
+#     if glo.mission_state in (1,21,22,23,24):
+#         single_angle_pid_struct.place_pid_caculate(
+#               glo.angle_target, glo.angle_z, wrap_angle=True, deadband=1.5  
+#         )
+#         glo.w_target = single_angle_pid_struct.out
+#         glo.w_target = out_range(glo.w_target,glo.w_limit,-glo.w_limit)
+#     else :
+    # --- 外环：角度误差 → 期望角速度 ---
+    angle_pid_struct.place_pid_caculate(
+        glo.angle_target, glo.angle_z, wrap_angle=True, deadband=1
+    )
+    w_desired = angle_pid_struct.out
+    
+    # --- 内环：角速度误差 → 最终角速度指令（PD）---
+    w_error = w_desired - gyro_z                 # gyro_z = 当前实际角速度(deg/s)
+    if abs(w_error)<1:
+        w_error = 0
+    if not hasattr(glo, 'w_error_last'):
+        glo.w_error_last = 0.0
+    glo.w_target = glo.kp_w * w_error + glo.kd_w * (w_error - glo.w_error_last)
+    glo.w_error_last = w_error
+    glo.w_target = out_range(glo.w_target,glo.w_limit,-glo.w_limit)  
+    
+    
+    # 绕物体公转: State 4 原地旋转 或 State 5 避障起步偏转
+    _is_orbiting = (glo.mission_state == 4) or (glo.mission_state == 5 and glo.avoid_active and glo.avoid_sub_phase == 0)
+    if _is_orbiting :
+        # 叠加横移线速度, 抵消角速度造成的物体位移
+        glo.vy_body_cmd -= glo.w_target * glo.orbit_radius
+    if glo._is_orbiting_1:
+        glo.vy_body_cmd -= glo.w_target * 3
+    
+    double_car_drive()
+
+
+    
+    # 8. 运动学：机体速度 + 角速度 → 三轮目标速度   
+    glo.wheeltemp = car.body_to_wheel_speeds(glo.vx_body_cmd, glo.vy_body_cmd, glo.w_target)
+    #调试角度环
+#     glo.wheeltemp = car.body_to_wheel_speeds(0, 0, w_target)
+    max_val = max(abs(glo.wheeltemp[0]), abs(glo.wheeltemp[1]), abs(glo.wheeltemp[2]))
+    if max_val > glo.MAX_WHEEL_SPEED:
+        scale = glo.MAX_WHEEL_SPEED / max_val
+        glo.wheeltemp = [w * scale for w in glo.wheeltemp]
+
+    # 9. 轮速 PID
+    wheel1_pid_struct.incremental_pid_caculate(glo.wheeltemp[0], glo.enc1_data)
+    wheel2_pid_struct.incremental_pid_caculate(glo.wheeltemp[1], glo.enc2_data)
+    wheel3_pid_struct.incremental_pid_caculate(glo.wheeltemp[2], glo.enc3_data)
+
+    # 10. PWM 输出限制
+    wheel1_pid_struct.out = out_range(wheel1_pid_struct.out, glo.pwm_limit, -glo.pwm_limit)
+    wheel2_pid_struct.out = out_range(wheel2_pid_struct.out, glo.pwm_limit, -glo.pwm_limit)
+    wheel3_pid_struct.out = out_range(wheel3_pid_struct.out, glo.pwm_limit, -glo.pwm_limit)
+    # 11. PWM 输出到电机
+    motor_1.duty(wheel1_pid_struct.out)
+    motor_2.duty(wheel2_pid_struct.out)
+    motor_3.duty(wheel3_pid_struct.out)
+# 
+#     motor_1.duty(3000)
+#     motor_2.duty(3000)
+#     motor_3.duty(3000)
+
+    #motor_3.duty(-5000)
+
+
+
+
+
+主车状态机代码：
+from function import *
+import math
+
+def state_machine():
+    """
+    wp[1]->x低处观察点
+    wp[2]->x高处观察点
+    wp[3]->y低处观察点
+    wp[4]->y高处观察点
+    """
+
+    if glo.mission_state == 0:
+        glo.vx_body_cmd = 0
+        glo.vy_body_cmd = 0
+        glo.w_target = 0
+
+        glo.target_x = glo.pos_x
+        glo.target_y = glo.pos_y
+         
+    elif glo.mission_state == 1:   #出库   摄像头状态应该为不工作不发送
+        if glo.state1_phase == 0:
+            glo.target_x = glo.start_x    #出库（50，0）
+            glo.target_y = 0
+            if abs(glo.pos_x - glo.target_x) < glo.wp_threshold_passby and abs(glo.pos_y - glo.target_y) < glo.wp_threshold_passby:
+                glo.state1_phase = 1
+        elif glo.state1_phase == 1:
+            glo.target_x = glo.start_x    #出库（50，0）
+            glo.target_y = 120*glo.a_temp
+            if abs(glo.pos_x - glo.target_x) < glo.wp_threshold_passby and abs(glo.pos_y - glo.target_y) < glo.wp_threshold_passby:
+                glo.mission_state = 21
+                camera_uart12.write(bytes([0x33]))    #摄像头为模型识别模式,一开始只识别网球
+                glo.cam_mode = 1
+                glo.state1_phase = 0
+
+
+    elif glo.mission_state == 21:   #向x低处观察点移动 ，在这个移动过程中摄像头开始检测物体，若检测到物体则进入状态3，若未检测到物体则继续移动到x高处观察点，若仍未检测到物体则进入状态5返回
+        
+        glo.target_x = glo.center_pos_x - 20
+        glo.target_y = glo.center_pos_y
+        if glo.camera_read_data[0] == 0XAA :
+            glo.define_object_time += 1
+            if glo.define_object_time > 5:   #100帧确定看到物体
+                
+                glo.mission_state = 3
+                glo.last_mission = 21
+                glo.define_object_time = 0     #确认看到物体进入寻物状态
+    
+        if abs(glo.pos_x - glo.target_x) < glo.wp_threshold_passby and abs(glo.pos_y - glo.target_y) < glo.wp_threshold_passby:
+            glo.arrive_obs_point = 1
+            glo.last_mission = 21
+            
+            glo.mission_state = 3
+
+
+    elif glo.mission_state == 22:   #向上方观察点前进 ，在这个移动过程中摄像头开始检测物体，若检测到物体则进入状态3，
+
+        if glo.brick_flag == 1:
+            if glo.avoid_active == False:
+                glo.target_x = glo.x_temp - 100
+            else:
+                glo.target_x = glo.push_pos_brick_x - 50
+            if glo.brick_dir == 0:
+                glo.target_y = glo.y_temp-30*glo.a_temp
+            else:
+                glo.target_y = glo.push_pos_y
+            if abs(glo.pos_x - glo.target_x) < glo.wp_threshold_passby and abs(glo.pos_y - glo.target_y) < glo.wp_threshold_passby:
+                glo.brick_flag = 0
+                if abs(glo.angle_target) == 180:
+                    camera_uart12.write(bytes([0x33]))
+                else:
+                    camera_uart12.write(bytes([0x31]))
+                glo.cam_mode = 1
+                glo.avoid_active = False
+
+        else: 
+            glo.target_x = glo.center_pos_x + 30
+            glo.target_y = glo.center_pos_y
+                
+            if glo.camera_read_data[0] == 0XAA :
+                glo.define_object_time += 1
+                if glo.define_object_time > 5:
+                    glo.mission_state = 3
+                    glo.last_mission = 21
+                    glo.define_object_time = 0     #确认看到物体进入寻物状态
+        
+            if abs(glo.pos_x - glo.target_x) < glo.wp_threshold and abs(glo.pos_y - glo.target_y) < glo.wp_threshold:
+                glo.mission_state = 3
+                glo.arrive_obs_point = 1
+                glo.last_mission = 22
+                
+
+
+
+    elif glo.mission_state == 23:   #向左方观察点靠近，在这个移动过程中摄像头开始检测物体，若检测到物体则进入状态3
+        
+        if glo.brick_flag == 1: 
+            if glo.brick_dir == 0:
+                if glo.avoid_active == False:
+                    glo.target_x = glo.x_temp-40*glo.a_temp
+                else:
+                    glo.target_x = glo.x_temp-20*glo.a_temp
+            else:
+                glo.target_x = glo.x_temp
+            if glo.avoid_active == False:
+                 glo.target_y = glo.push_pos_y - 30
+            else:
+                glo.target_y = glo.push_pos_brick_y + 50
+            if abs(glo.pos_x - glo.target_x) < glo.wp_threshold_passby and abs(glo.pos_y - glo.target_y) < glo.wp_threshold_passby:
+                glo.brick_flag = 0
+                glo.avoid_active = False
+                if glo.sandbag_cnt ==  2:
+                    camera_uart12.write(bytes([0x31]))
+                    glo.cam_mode = 1
+        else:
+            glo.target_x = glo.push_pos_x - 30
+            glo.target_y = glo.push_pos_y
+            if glo.camera_read_data[0] == 0XAA :
+                glo.define_object_time += 1
+                if glo.define_object_time > 5:
+                    
+                    glo.mission_state = 3
+                    glo.last_mission = 21
+                    glo.define_object_time = 0     #确认看到物体进入寻物状态
+        
+            if abs(glo.pos_x - glo.target_x) < glo.wp_threshold_passby and abs(glo.pos_y - glo.target_y) < glo.wp_threshold_passby:
+                camera_uart12.write(bytes([0x31]))
+                glo.cam_mode = 1       
+                glo.mission_state = 3
+                glo.arrive_obs_point = 1
+                glo.last_mission = 23
+
+
+    elif glo.mission_state == 24:   #向右方观察点靠近 ，在这个移动过程中摄像头开始检测物体，若检测到物体则进入状态3
+
+        
+        if glo.brick_flag == 1: 
+            if glo.brick_dir == 0:
+                if glo.avoid_active == False:
+                    glo.target_x = glo.x_temp+40*glo.a_temp
+                else:
+                    glo.target_x = glo.x_temp+20*glo.a_temp
+            else:
+                glo.target_x = glo.x_temp
+                
+            if glo.avoid_active == False:
+                glo.target_y = glo.y_temp - 100
+            else:
+                if glo.brick_dir == 0:
+                    glo.target_y = glo.push_pos_brick_y - 70
+                else :
+                    glo.target_y = glo.push_pos_brick_y - 50
+            if abs(glo.pos_x - glo.target_x) < glo.wp_threshold_passby and abs(glo.pos_y - glo.target_y) < glo.wp_threshold_passby:
+                glo.brick_flag = 0
+                glo.avoid_active = False
+                if glo.bear_cnt ==  2:
+                    camera_uart12.write(bytes([0x32]))
+                    glo.cam_mode = 1
+        else:
+       
+            glo.target_x = glo.push_pos_x + 50 
+            glo.target_y = glo.push_pos_y 
+            
+            if glo.camera_read_data[0] == 0XAA :
+                glo.define_object_time += 1
+                if glo.define_object_time > 5:
+                
+                    glo.mission_state = 3
+            
+            if abs(glo.pos_x - glo.target_x) < glo.wp_threshold_passby and abs(glo.pos_y - glo.target_y) < glo.wp_threshold_passby:
+               
+                glo.mission_state = 3
+                glo.arrive_obs_point = 1
+                glo.last_mission = 24
+                camera_uart12.write(bytes([0x32]))
+                glo.cam_mode = 1
+
+
+    
+    elif glo.mission_state in (3,31):   #向物体移动,该过程摄像头应该是工作状态
+
+        # if glo.arrive_obs_point == 0:
+        #     if abs(glo.pos_x - glo.target_x) < glo.wp_threshold_passby and abs(glo.pos_y - glo.target_y) <glo.wp_threshold_passby:
+        #         glo.arrive_obs_point = 1
+
+        
+
+        if glo.angle_target == 90:
+            glo.target_x = glo.pos_x
+            glo.target_y = glo.push_y[0]
+        elif glo.angle_target == -90:
+            glo.target_x = glo.pos_x
+            glo.target_y = glo.push_y[1]
+        else:
+            glo.target_x = glo.push_x[2]
+            glo.target_y = glo.pos_y
+
+        if glo.camera_read_data[0] == 0XAA :
+            
+            if glo.camera_read_data[2] > 1:
+                glo.mult_ball_cnt += 1
+                if glo.mult_ball_cnt > 3 and glo.ball_count > 1:
+                    glo.mult_ball = 1
+            
+
+            glo.lost_object_time = 0    #lost_object_time 当丢失物体时开始计数，达到阈值后再回到观察点状态
+            glo.state31_lost = 0
+            obj = glo.camera_read_data[1]
+            if obj in (1,2,3):           # 1=熊 2=沙包 3=网球
+                # 对象参数表: final_yaw, cam_cmd
+                _params = {1:(90,0x04), 2:(-90,0x05), 3:(0,0x06)}
+                _yaw, _cmd = _params[obj]
+                    
+                
+                if glo.angle_target == _yaw:
+                    if obj == 3:                
+                        glo.camera_center_x, glo.camera_center_y = glo.cam_detect_x, glo.cam_detect_y
+                    elif obj == 1:
+                        glo.camera_center_x, glo.camera_center_y = -10, glo.cam_detect_y
+                    elif obj == 2:
+                        glo.camera_center_x, glo.camera_center_y = -3, glo.cam_detect_y
+                else:
+                    glo.camera_center_x, glo.camera_center_y = glo.cam_rot_x, glo.cam_rot_y
+                
+                if glo.mission_state == 3 and abs(glo.rx - glo.camera_center_x) < glo.cam_align_x + 10 and glo.brick[obj] == 1:
+                    glo.mission_state = 31
+                    glo.pos_speed_limit = 150
+
+#                 if (abs(glo.camera_x - glo.camera_center_x) < glo.cam_align_x + 25 and obj!= 2) or (obj == 2 and glo.pos_y  < 150*glo.a_temp):
+                elif abs(glo.rx - glo.camera_center_x) < glo.cam_align_x and abs(glo.ry - glo.camera_center_y) < glo.cam_align_y and glo.mission_state == 3:
+                    
+                    if glo.mult_ball:
+                        glo.mission_state = 35
+                        glo.cam_mode = 8
+                        glo.x_temp = glo.pos_x
+                        glo.y_temp = glo.pos_y
+                        glo.mult_ball = 0
+                        glo.mult_ball_cnt = 0
+                    
+                    else:
+                        glo.mission_state = 4
+                        glo.current_object = obj
+                        glo.arrive_obs_point = 0
+                        glo.define_object_time = 0
+
+                        pos_x_pid_struct.last_error = 0
+                        pos_x_pid_struct.error = 0
+                        pos_y_pid_struct.last_error = 0
+                        pos_y_pid_struct.error = 0
+                        pos_y_pid_struct.out = 0
+                        glo.pos_vy_cmd_last = 0
+                        pos_x_pid_struct.out = 0
+                        glo.pos_vx_cmd_last = 0
+
+                        glo.x_temp = glo.pos_x
+                        glo.y_temp = glo.pos_y
+
+                        glo.push_pos_x = glo.pos_x
+                        glo.push_pos_y = glo.pos_y
+
+                        glo.final_yaw = _yaw
+                        camera_uart12.write(bytes([_cmd]))
+
+                elif abs(glo.ry - glo.camera_center_y) < glo.cam_align_y and glo.mission_state == 31:
+                    glo.mission_state = 5
+                    glo.current_object = obj
+                    glo.arrive_obs_point = 0
+                    glo.define_object_time = 0
+
+                    pos_x_pid_struct.last_error = 0
+                    pos_x_pid_struct.error = 0
+                    pos_y_pid_struct.last_error = 0
+                    pos_y_pid_struct.error = 0
+                    pos_y_pid_struct.out = 0
+                    glo.pos_vy_cmd_last = 0
+                    pos_x_pid_struct.out = 0
+                    glo.pos_vx_cmd_last = 0
+
+                    glo.x_temp = glo.pos_x
+                    glo.y_temp = glo.pos_y
+
+                    glo.push_pos_x = glo.pos_x
+                    glo.push_pos_y = glo.pos_y
+
+                    glo.final_yaw = _yaw
+                    camera_uart12.write(bytes([0x02]))
+                    glo.pos_speed_limit = glo.tmp_pos_speed_limit
+                    #------------------ -------------------------------------------------#
+        else:
+            if glo.mission_state == 31:
+                glo.state31_lost+= 1
+                if glo.state31_lost > 5:
+                    glo.mission_state = 3
+                    glo.pos_speed_limit = glo.tmp_pos_speed_limit
+            
+            if glo.arrive_obs_point:  #如果已经到了观察点还没看到物体，就向逆时针的角落横移 
+
+                if glo.last_mission == 21:
+                    glo.target_x = glo.center_pos_x
+                    glo.target_y = glo.center_pos_y
+                if glo.last_mission == 22:
+                    glo.target_x = glo.center_pos_x - 100
+                    glo.target_y = glo.center_pos_y - 10                  
+                if glo.last_mission == 23:
+                    glo.target_x = glo.center_pos_x - 30
+                    glo.target_y = glo.center_pos_y
+                if glo.last_mission == 24:
+                    glo.target_x = glo.center_pos_x - 30
+                    glo.target_y = glo.center_pos_y                    
+
+                glo.camera_x = glo.camera_center_x
+                glo.camera_y = glo.camera_center_y
+            else :                     #如果提前看到了且确认了物体但是目标丢失了
+                glo.lost_object_time += 1
+                if glo.lost_object_time <= 20:
+                    # 短暂丢帧(≤5帧)：不覆盖摄像头坐标和target，all_control()侧保持速度避免卡顿
+                    pass
+                else:
+                    glo.target_x = glo.pos_x
+                    glo.target_y = glo.pos_y
+                    glo.camera_x = glo.camera_center_x
+                    glo.camera_y = glo.camera_center_y
+                    if glo.lost_object_time > 50:
+                        glo.mission_state = glo.last_mission
+                        glo.lost_object_time = 0
+
+    elif glo.mission_state == 35:  #避让平移：先Y+再X+，然后回状态3
+        if glo.state35_phase == 0:
+            glo.target_x = glo.x_temp
+            glo.target_y = glo.y_temp + 20 * glo.a_temp
+            if abs(glo.pos_y - glo.target_y) < glo.wp_threshold:
+                glo.state35_phase = 1
+                glo.x_temp = glo.pos_x
+                glo.y_temp = glo.pos_y
+        elif glo.state35_phase == 1:
+            glo.target_x = glo.x_temp + 20 * glo.a_temp
+            glo.target_y = glo.y_temp
+            if abs(glo.pos_x - glo.target_x) < glo.wp_threshold:
+                glo.mission_state = 3
+                glo.cam_mode = 1
+                glo.state35_phase = 0
+                for i in range(0,6):
+                    glo.camera_read_data[i] = 0
+            
+
+
+    elif glo.mission_state == 4:  # 绕物体旋转到推动方向, 预计算避障路径
+
+        glo.target_x = glo.pos_x
+        glo.target_y = glo.pos_y
+
+
+        if glo.state4_phase == 0:
+            final_error = abs(glo.angle_z - glo.final_yaw)
+            if final_error > 180.0:
+                final_error = 360.0 - final_error
+                
+            if final_error < glo.yaw_threshold:
+                
+
+                    
+                glo.camera_center_x = glo.cam_detect_x
+                glo.camera_center_y = glo.cam_detect_y
+                
+                if glo.wait_brick == 0:
+                    if abs(glo.rx - glo.camera_center_x) < glo.cam_align_x:
+                        camera_uart12.write(bytes([0x07])) # 触发一次即可，不要狂发
+                        glo.cam_mode = 7
+                        glo.x_temp = glo.pos_x
+                        glo.y_temp = glo.pos_y
+                        glo.wait_brick = 1  # 开启等待计时
+                    
+                        if glo.ball_cnt >= 1:
+                            glo.pos_x += 30
+                            
+                        for i in range(0,6):
+                            glo.camera_read_data[i] = 0
+
+                # 2. 一旦指令发出，无脑进入等待，不要再受 camera_x 的干扰
+                elif glo.wait_brick > 0 :
+                    glo.wait_brick += 1
+                    if glo.wait_brick >= 10: # 等50ms识别砖块
+                        glo.wait_brick = 0
+                        glo.state4_phase = 1
+                        if glo.camera_read_data[0] == 0xAA and glo.camera_read_data[1] == 0x05:
+                            glo.brick_flag = 1
+                            if glo.rx > 0:
+                                glo.brick_dir = 0
+                            elif glo.rx < 0:
+                                glo.brick_dir = 1
+                            if glo.current_object == 1:
+                                glo.brick_pos_x = glo.pos_x - glo.rx * glo.a_temp - glo.add
+                                glo.brick_pos_y = glo.pos_y + glo.ry * glo.a_temp
+                            elif glo.current_object == 2:
+                                glo.brick_pos_x = glo.pos_x + glo.rx * glo.a_temp + glo.add
+                                glo.brick_pos_y = glo.pos_y - glo.ry * glo.a_temp
+                            elif glo.current_object == 3:
+                                glo.brick_pos_x = glo.pos_x + glo.ry * glo.a_temp
+                                glo.brick_pos_y = glo.pos_y + glo.rx * glo.a_temp + glo.add
+                            glo.obstacles = [
+                                (glo.brick_pos_x, glo.brick_pos_y, 15*glo.a_temp, 15*glo.a_temp, 1),
+                                # 可以添加更多
+                            ]
+                            glo.avoid_safe_margin = 30 * glo.a_temp if glo.current_object == 3 else 20 * glo.a_temp
+                            
+                            precompute_avoidance(glo.final_yaw)
+                        else :
+                            glo.avoid_active = False
+                        
+        elif glo.state4_phase == 1:
+
+                
+
+            # ---- 若需避障: 偏转推动方向, 先旋转到位 ----
+            if glo.avoid_active:
+                glo.final_yaw += glo.avoid_total_delta
+             
+
+                if glo.final_yaw > 180.0:
+                    glo.final_yaw -= 360.0
+                elif glo.final_yaw < -180.0:
+                    glo.final_yaw += 360.0
+                            
+                if glo.current_object == 3 and glo.pos_x < 160 * glo.a_temp:
+                    glo.tmp_final_yaw = glo.final_yaw
+                    glo.final_yaw = 0        
+                    
+                glo.avoid_sub_phase = 0   # 先旋转到偏转角度
+            else:
+                glo.avoid_sub_phase = 3   # 无需避障, 直接正常直推
+
+            # ---- 进入 State 5 的公共初始化 ----
+            glo.mission_state = 5
+            glo.state4_phase = 0
+
+            camera_uart12.write(bytes([0x02]))
+            glo.cam_mode = 2
+            glo.yellow_flag = 1
+
+            pos_x_pid_struct.last_error = 0
+            pos_x_pid_struct.error = 0
+            pos_y_pid_struct.last_error = 0
+            pos_y_pid_struct.error = 0
+            glo.push_pos_x = glo.pos_x
+            glo.push_pos_y = glo.pos_y
+            glo.x_temp = glo.pos_x
+            glo.y_temp = glo.pos_y
+
+    elif glo.mission_state in (5,51):  # 推动物体（里程计避障版）(51-->边前进边旋转)
+        
+        if glo.avoid_sub_phase in (2,3) or glo.brick_flag == 0:
+            # === 计算剩余推动距离 & 已行进距离 ===
+            if glo.current_object == 1:  # 熊, 沿+Y推
+                glo.distance = abs(glo.push_y[0] - glo.pos_y)
+                traveled = abs(glo.pos_y - glo.push_start_y)
+                _boundary_target = (glo.pos_x, glo.push_y[0])
+            elif glo.current_object == 2:  # 沙包, 沿-Y推
+                glo.distance = abs(glo.push_y[1] - glo.pos_y)
+                traveled = abs(glo.pos_y - glo.push_start_y)
+                _boundary_target = (glo.pos_x, glo.push_y[1])
+            elif glo.current_object == 3:  # 网球, 沿+X推
+                glo.distance = abs(glo.push_x[2] - glo.pos_x)
+                traveled = abs(glo.pos_x - glo.push_start_x)
+                _boundary_target = (glo.push_x[2], glo.pos_y)
+
+        
+            # === 黄线校准: 推动过程中持续修正里程计 ===
+            if glo.camera_read_data[0] == 0xAA and glo.camera_read_data[1] == 0x04:
+                py = glo.camera_read_data[5]
+                if py < 180:
+                    none,ex_cm = calculate_cordinate(160,py)
+                    if   glo.current_object == 1: glo.pos_y = 284*glo.a_temp - ex_cm*glo.a_temp
+                    elif glo.current_object == 2: glo.pos_y = ex_cm*glo.a_temp - 41*glo.a_temp
+                    elif glo.current_object == 3: glo.pos_x = 267*glo.a_temp - ex_cm*glo.a_temp
+        else:
+            if glo.current_object == 1:  # 熊, 沿+Y推
+                glo.distance = abs(glo.push_y[0] - glo.pos_y)+150
+                traveled = abs(glo.pos_y - glo.push_start_y)
+                _boundary_target = (glo.pos_x, glo.push_y[0])
+            elif glo.current_object == 2:  # 沙包, 沿-Y推
+                glo.distance = abs(glo.push_y[1] - glo.pos_y)+150
+                traveled = abs(glo.pos_y - glo.push_start_y)
+                _boundary_target = (glo.pos_x, glo.push_y[1])
+            elif glo.current_object == 3:  # 网球, 沿+X推
+                glo.distance = abs(glo.push_x[2] - glo.pos_x)+150
+                traveled = abs(glo.pos_x - glo.push_start_x)
+                _boundary_target = (glo.push_x[2], glo.pos_y)
+
+        # === 避障子状态机 ===
+        if glo.avoid_active:
+            #glo.brick_flag = 1
+            if glo.avoid_sub_phase == 0:
+                # 旋转到偏转角度, 位置锁定
+                glo.target_x = glo.pos_x
+                glo.target_y = glo.pos_y
+                if glo.current_object == 3 and glo.pos_x < 160 * glo.a_temp:
+                    glo.avoid_sub_phase = 55
+                    glo.mission_state = 51
+                    glo._is_orbiting_1 = 1
+                elif yaw_error() < 5:
+                    glo.avoid_sub_phase = 1
+                    
+            elif glo.avoid_sub_phase == 55:
+                glo.pos_speed_limit = 100
+                glo.target_x = glo.pos_x
+                glo.target_y = glo.pos_y
+            
+           
+                if glo.pos_x > 160 * glo.a_temp:
+                    if glo.brick_dir == 1:
+                        glo.final_yaw = glo.tmp_final_yaw + 15
+                    else:
+                        glo.final_yaw = glo.tmp_final_yaw - 15
+                    glo.push_pos_x = glo.pos_x
+                    glo.push_pos_y = glo.pos_y
+                    glo.avoid_sub_phase = 1
+
+
+            elif glo.avoid_sub_phase == 1:
+                # 斜向推动, 监控里程计是否越过所有障碍物
+                glo.target_x = glo.pos_x
+                glo.target_y = glo.pos_y
+                if traveled > glo.avoid_clear_dist:
+                    glo._is_orbiting_1 = 0
+                    glo.avoid_sub_phase = 2
+                    glo.final_yaw = glo.push_yaw_target
+                    wrap_yaw()
+                    glo.pos_speed_limit = glo.tmp_pos_speed_limit
+                    glo.mission_state = 51
+
+            elif glo.avoid_sub_phase == 2:
+                # 旋转回正, 位置锁定
+                glo.target_x = glo.pos_x
+                glo.target_y = glo.pos_y
+                if yaw_error() < 5:
+                    glo.avoid_sub_phase = 3
+                    #glo.avoid_active = False
+                    glo.push_pos_brick_x = glo.pos_x
+                    glo.push_pos_brick_y = glo.pos_y
+
+            elif glo.avoid_sub_phase == 3:
+                # 回正后正常直推到边界
+                glo.target_x = _boundary_target[0]
+                glo.target_y = _boundary_target[1]
+                if glo.distance < glo.wp_threshold:
+                    enter_state6()
+                    #glo.avoid_active = False
+
+        else:
+            
+            # 无避障, 直接正常直推到边界
+            glo.target_x = _boundary_target[0]
+            glo.target_y = _boundary_target[1]
+            if glo.distance < glo.wp_threshold:
+                enter_state6()
+                #glo.avoid_active = False
+                
+                
+
+    elif glo.mission_state == 7:      #黄线检测完如果有物体要180度旋转
+        
+        glo.target_x = glo.pos_x
+        glo.target_y = glo.pos_y       
+
+        # --- 判断转向是否完成 ---
+        final_error = abs(glo.angle_z - glo.final_yaw)
+        if final_error > 180.0:
+            final_error = 360.0 - final_error
+
+        if final_error < glo.yaw_align_threshold:
+                        
+            if glo.current_object == 1: #上一个是熊，这次回到右边观察点
+                glo.bear_cnt += 1
+                glo.mission_state = 24
+                for i in range(0,6):
+                    glo.camera_read_data[i] = 0
+            elif glo.current_object == 2:  #上一个是沙包,这次回到左边观察点
+                glo.sandbag_cnt += 1
+                glo.mission_state = 23
+                for i in range(0,6):
+                    glo.camera_read_data[i] = 0
+            elif glo.current_object == 3: #上一个是球，这次回到上方观察点
+                if glo.ball_count == 1:
+                    pass
+                else:
+                    glo.ball_cnt += 1
+                glo.mission_state = 22
+                for i in range(0,6):
+                    glo.camera_read_data[i] = 0
+
+            if glo.brick_flag == 0:
+            #转完先开启摄像头
+                if glo.current_object == 3:
+                    camera_uart12.write(bytes([0x31]))
+                elif glo.current_object == 1:
+                    if glo.bear_cnt == 2:
+                        camera_uart12.write(bytes([0x32]))
+                    else:
+                        pass
+                elif glo.current_object == 2:
+                    if glo.sandbag_cnt == 2:
+                        camera_uart12.write(bytes([0x31]))
+                    else:
+                        pass
+                glo.cam_mode = 1
+
+
+            pos_x_pid_struct.last_error = 0
+            pos_x_pid_struct.error = 0
+            pos_x_pid_struct.i_error = 0
+            pos_y_pid_struct.last_error = 0
+            pos_y_pid_struct.error = 0
+            pos_y_pid_struct.i_error = 0
+
+            glo.body_vx_cmd_last = 0
+            glo.body_vy_cmd_last = 0
+
+            glo.x_temp = glo.pos_x
+            glo.y_temp = glo.pos_y
+                
+
+    elif glo.mission_state == 8:   #回库，回库应先到库前的位置，再进库，摄像头不工作
+        if glo.state8_phase == 0:
+            glo.target_x = glo.x_temp - 30
+            glo.target_y = glo.y_temp + 50
+            if glo.camera_read_data[0] == 0xAA and glo.camera_read_data[1] == 0x04:
+                py = glo.camera_read_data[5]
+                if py < 220:
+                    none,ex_cm = calculate_cordinate(160,py)
+                    if   glo.current_object == 1: glo.pos_y = 284*glo.a_temp - ex_cm*glo.a_temp
+                    elif glo.current_object == 2: glo.pos_y = ex_cm*glo.a_temp - 41*glo.a_temp
+                    elif glo.current_object == 3: glo.pos_x = 267*glo.a_temp - ex_cm*glo.a_temp
+                    glo.state8_phase=1
+                    camera_uart12.write(bytes([0x0D]))
+            
+                
+
+        elif glo.state8_phase == 1:
+            # 返回发车区: 向航点10移动 (wp[9])
+            
+            if glo.current_object == 1:
+                glo.target_x = -30
+                glo.target_y = -20 * glo.a_temp
+            else:
+                glo.target_x = -100 * glo.a_temp
+                glo.target_y = -20 * glo.a_temp
+            
+            if glo.camera_x > 170:
+                glo.mission_state = 0
+            if abs(glo.pos_x - glo.target_x) < glo.wp_threshold and abs(glo.pos_y - glo.target_y) < glo.wp_threshold:
+                # 到达发车区, 任务完成
+                glo.mission_state = 0
+                
+
+#     elif glo.mission_state == 9:   #调试模式: Car1原地不动, 周期性切换final_yaw让Car2绕圈跟随
+#         glo.target_x = glo.pos_x
+#         glo.target_y = glo.pos_y
+#         glo.vx_body_cmd = 0.0
+#         glo.vy_body_cmd = 0.0
+#         glo.body_vx_cmd_last = 0.0
+#         glo.body_vy_cmd_last = 0.0
+# 
+#         glo.debug_wait_cnt += 1
+#         # 每300个周期(3秒)切换一次: 留足时间让Car2完成90°旋转+绕圈
+#         phase = (glo.debug_wait_cnt // 300) % 4
+#         yaws = [0, 90, 180, -90]
+#         glo.final_yaw = yaws[phase]
+           
+     
+
+副车控制代码：
+from object import *
+from imu_state import *
+from pid import *
+import math
+
+def curved_acceleration(v_current, v_target, max_accel=10.0, min_accel=1.0):
+    """
+    基于 J型(幂函数) 的变加速函数：起步极慢，速度越大加速度越快。
+    适用于且仅适用于【加速阶段】。
+    """
+    # 如果当前速度已经非常接近目标速度，直接赋予目标值
+    if abs(v_target - v_current) <= min_accel:
+        return v_target
+
+    # 1. 计算当前速度占目标速度的比例 (0.0 到 1.0 之间)
+    if abs(v_target) < 0.001:
+        ratio = 1.0  
+    else:
+        ratio = abs(v_current / v_target)
+        if ratio > 1.0:
+            ratio = 1.0
+
+    # 2. 核心算法：J型曲线加速度动态计算 (三次方映射)
+    # 当 ratio 接近 0 时，步长极小，几乎等于 min_accel
+    # 当 ratio 接近 1 时，步长迅速膨胀，达到 max_accel
+    # 你也可以把 ratio ** 3 改成 ratio ** 2，次方越高，起步越“肉”，后段越“猛”
+    accel_step = min_accel + max_accel * (ratio ** 0.5)
+
+    # 3. 将计算出的加速度步长应用到当前速度上
+    if v_target > v_current:
+        v_next = v_current + accel_step
+        if v_next > v_target:
+            v_next = v_target
+    else:
+        v_next = v_current - accel_step
+        if v_next < v_target:
+            v_next = v_target
+
+    return v_next
+
+class LowPassFilter:
+    def __init__(self, alpha):
+        """
+        初始化一阶低通滤波器
+        :param alpha: 滤波系数 (0.0 ~ 1.0)。例如 0.2 表示 20% 信任新数据，80% 信任老数据。
+        """
+        self.alpha = alpha
+        self.last_val = None
+
+    def update(self, current_val):
+        """
+        输入最新测量值，返回滤波后的平滑值
+        """
+        # 如果是第一次输入数据，直接将其作为初始历史值，避免开机猛烈突变
+        if self.last_val is None:
+            self.last_val = current_val
+            return current_val
+        
+        # 核心公式
+        filtered_val = self.alpha * current_val + (1.0 - self.alpha) * self.last_val
+        self.last_val = filtered_val
+        
+        return filtered_val
+    
+# 初始化摄像头 X 和 Y 的低通滤波器
+# 这里的 0.3 是一个经验值，你可以根据实际抖动情况调整：
+# 如果还是抖，改小(例如0.15)；如果跟丢目标了嫌太慢，改大(例如0.6)
+cam_x_filter = LowPassFilter(alpha=0.6)
+cam_y_filter = LowPassFilter(alpha=0.6)
+
+
+def world_to_body(vx_world, vy_world, yaw_deg):
+    yaw_rad = math.radians(yaw_deg)
+    cos_yaw = math.cos(yaw_rad)
+    sin_yaw = math.sin(yaw_rad)
+    vx_body =  cos_yaw * vx_world + sin_yaw * vy_world
+    vy_body = -sin_yaw * vx_world + cos_yaw * vy_world
+    return vx_body, vy_body
+
+
+def rate_limit(raw, last, limit):
+    delta = raw - last
+    if delta > limit:
+        return last + limit
+    elif delta < -limit:
+        return last - limit
+    return raw
+
+
+def body_to_world(vx_body, vy_body, yaw_deg):
+    yaw_rad = math.radians(yaw_deg)
+    cos_yaw = math.cos(yaw_rad)
+    sin_yaw = math.sin(yaw_rad)
+    dx = cos_yaw * vx_body - sin_yaw * vy_body
+    dy = sin_yaw * vx_body + cos_yaw * vy_body
+    return dx, dy
+
+
+
+
+
+
+def all_control():
+
+
+    # 定义局部变量
+    mid_x = 0
+    mid_y = 0
+    cam_angle = 0
+
+    # 1. 读取 IMU 数据
+    acc_x = glo.imu_data[0]
+    acc_y = glo.imu_data[1]
+    acc_z = glo.imu_data[2]
+    gyro_x = glo.imu_data[3]
+    gyro_y = glo.imu_data[4]
+    rr_gyro_z = glo.imu_data[5]
+    
+    beta = 0.1
+    r_gyro_z = beta * rr_gyro_z + (1-beta) * glo.gyro_z_last
+    glo.gyro_z_last = r_gyro_z
+    
+    gyro_z = r_gyro_z / 83.3
+
+    # 2. 读取编码器数据 + 低通滤波
+    enc1_raw = encoder_1.get()
+    enc2_raw = encoder_2.get()
+    enc3_raw = encoder_3.get()
+#     print(enc1_raw,enc2_raw,enc3_raw)
+
+    if not glo.enc_filt_init:
+        glo.enc_filt[0] = float(enc1_raw)
+        glo.enc_filt[1] = float(enc2_raw)
+        glo.enc_filt[2] = float(enc3_raw)
+        glo.enc_filt_init = True
+
+    a = glo.enc_filt_alpha
+    glo.enc_filt[0] = a * enc1_raw + (1 - a) * glo.enc_filt[0]
+    glo.enc_filt[1] = a * enc2_raw + (1 - a) * glo.enc_filt[1]
+    glo.enc_filt[2] = a * enc3_raw + (1 - a) * glo.enc_filt[2]
+
+    glo.enc1_data = glo.enc_filt[0] * 10
+    glo.enc2_data = glo.enc_filt[1] * 10
+    glo.enc3_data = glo.enc_filt[2] * 10
+
+    # -------------------编码器滤波结束-------------------#
+
+    # 3. 计算 yaw (惯导核心)
+    glo.angle_z = yaw_filter.update(gyro_z_raw=rr_gyro_z, bias_raw=glo.angle_z_default)
+
+    # 4. 里程计：编码器死区 + 缩放后反算机体速度 → 世界坐标积分
+    db = glo.enc_odo_deadband
+    e1 = glo.enc1_data * glo.enc_odo_scale if abs(glo.enc1_data) > db else 0.0
+    e2 = glo.enc2_data * glo.enc_odo_scale if abs(glo.enc2_data) > db else 0.0
+    e3 = glo.enc3_data * glo.enc_odo_scale if abs(glo.enc3_data) > db else 0.0
+    vx_body_meas, vy_body_meas, _ = car.wheel_to_body_speeds(e1, e2, e3)
+
+    dx_world, dy_world = body_to_world(vx_body_meas, vy_body_meas, glo.angle_z)
+
+    glo.pos_x += dx_world * 0.01
+    glo.pos_y += dy_world * 0.01
+    
+    
+    #-----------------------------------调试--------------------------------------#
+
+#     # 5. 位置 PID：世界坐标系误差 → 世界坐标系速度指令 (前馈: 主车发来的目标坐标)
+#     pos_x_pid_struct.place_pid_caculate(
+#         glo.target_x, glo.pos_x, wrap_angle=False, deadband=glo.pos_deadband
+#     )
+#     vx_world_raw = out_range(pos_x_pid_struct.out, 200, -200)
+#     if (vx_world_raw * glo.pos_vx_cmd_last > 0) and (abs(vx_world_raw) > abs(glo.pos_vx_cmd_last)) :            
+#             vx_world_cmd = curved_acceleration(glo.pos_vx_cmd_last, vx_world_raw, max_accel=5, min_accel=1)
+#     else :
+#             vx_world_cmd = rate_limit(vx_world_raw, glo.pos_vx_cmd_last, glo.pos_accel_limit)
+#     glo.pos_vx_cmd_last = vx_world_cmd
+# 
+#     pos_y_pid_struct.place_pid_caculate(
+#         glo.target_y, glo.pos_y, wrap_angle=False, deadband=glo.pos_deadband
+#     )
+#     vy_world_raw = out_range(pos_y_pid_struct.out, 200, -200)
+#     vy_world_cmd = rate_limit(vy_world_raw, glo.pos_vy_cmd_last, glo.pos_accel_limit)
+#     glo.pos_vy_cmd_last = vy_world_cmd
+# 
+#     # ---- 速度前馈注入: Car1的世界速度直接叠加到PID输出 ----
+#     
+# 
+# 
+#     # 6. 坐标变换：世界速度指令 → 机体速度指令
+#     glo.vx_body_cmd, glo.vy_body_cmd = world_to_body(
+#         vx_world_cmd, vy_world_cmd, glo.angle_z
+#     )
+
+    #-----------------------------------调试--------------------------------------#
+    
+    
+
+    # ========== 步进旋转：朝向 A车 car1_final_yaw ==========
+    if glo.car1_final_yaw > 180.0:
+        glo.car1_final_yaw -= 360.0
+
+    # --- 计算到目标的差值 ---
+    diff = glo.car1_final_yaw - glo.angle_target
+    if diff > 180.0:
+        diff -= 360.0
+    elif diff < -180.0:
+        diff += 360.0
+    elif abs(diff - 180.0) < 0.01:    # 恰好 +180°：强制走负方向（逆时针）
+        diff = -180.0
+
+    step = glo.rotate_angle_step
+    if glo.car1_state == 51:
+        step = 0.5
+
+    if abs(diff) < step:
+        glo.angle_target = glo.car1_final_yaw
+    elif diff > 0:
+        glo.angle_target += step
+    else:
+        glo.angle_target -= step
+
+    if glo.angle_target > 180.0:
+        glo.angle_target -= 360.0
+    elif glo.angle_target < -180.0:
+        glo.angle_target += 360.0
+
+    # 7. 角度控制（串级PD：外环角度 → 内环角速度）
+    # --- 外环：角度误差 → 期望角速度 ---
+    angle_pid_struct.place_pid_caculate(
+        glo.angle_target, glo.angle_z, wrap_angle=True, deadband=1.5
+    )
+    w_desired = angle_pid_struct.out
+    
+
+
+    # --- 内环：角速度误差 → 最终角速度指令（PD）---
+    w_error = w_desired - gyro_z                 # gyro_z = 当前实际角速度(deg/s)
+    if abs(w_error)<1:
+        w_error = 0
+    if not hasattr(glo, 'w_error_last'):
+        glo.w_error_last = 0.0
+    glo.w_target = glo.kp_w * w_error + glo.kd_w * (w_error - glo.w_error_last)
+    glo.w_error_last = w_error
+    glo.w_target = out_range(glo.w_target,glo.w_limit,-glo.w_limit)
+    
+#     glo.send_data[7] = glo.w_target
+    
+    # ----------摄像头追踪修正 (叠加到前馈指令上)----------
+    if glo.camera_read_data[0] == 0xAA:     # 帧头 = 数据有效
+        raw_mid_x = glo.camera_read_data[1] | (glo.camera_read_data[2] << 8)
+        raw_mid_y = glo.camera_read_data[3]
+        
+        #还原有符号角度
+        angle_int = glo.camera_read_data[4]
+        if glo.camera_read_data[5] == 0:
+            angle_int = -angle_int
+
+
+        glo.mid_x = cam_x_filter.update(raw_mid_x)
+        glo.mid_y = cam_y_filter.update(raw_mid_y)
+        glo.angle = angle_int
+
+        # 首次稳定看到Car1时, 自动抓取当前位置作为跟踪目标
+        if not glo.cam_target_locked:
+            glo.cam_frame_count += 1
+            if glo.cam_frame_count >= glo.CAM_DISCARD:
+                glo.CAM_TARGET_X = glo.mid_x
+                glo.CAM_TARGET_Y = glo.mid_y
+                glo.cam_target_locked = True
+                glo.cam_frame_count = 0
+        else :
+            # 摄像头X轴修正 → 叠加到机体速度 (沿用副车原有映射: camera_x_pid→vx, camera_y_pid→vy)
+            #camera_x_pid.place_pid_caculate(glo.CAM_TARGET_X, glo.mid_x, deadband=3)
+            camera_x_pid.place_pid_caculate(glo.mid_x, glo.CAM_TARGET_X, deadband=3)
+            glo.vx_body_cmd = camera_x_pid.out
+
+            #camera_y_pid.place_pid_caculate(glo.CAM_TARGET_Y, glo.mid_y, deadband=3)
+            camera_y_pid.place_pid_caculate(glo.mid_y, glo.CAM_TARGET_Y, deadband=3)
+            glo.vy_body_cmd = camera_y_pid.out
+
+        # 限幅
+        glo.vx_body_cmd = out_range(glo.vx_body_cmd, glo.cam_vx_limit, -glo.cam_vx_limit)
+        glo.vy_body_cmd = out_range(glo.vy_body_cmd, glo.cam_vy_limit, -glo.cam_vy_limit)
+        
+        if glo.feedforward_vx>=0:
+            glo.vx_body_cmd += glo.feedforward_vx * glo.ff_vx_pos
+        else :
+            glo.vx_body_cmd += glo.feedforward_vx * glo.ff_vx_neg
+        if glo.feedforward_vy>=0:
+            glo.vy_body_cmd += glo.feedforward_vy * glo.ff_vy_pos
+        else:
+            glo.vy_body_cmd += glo.feedforward_vy * glo.ff_vy_neg
+
+    #摄像头丢失时车体会保持与主车相同的车心速度
+    else :       
+        mid_x=glo.CAM_TARGET_X
+        mid_y=glo.CAM_TARGET_Y
+        if glo.feedforward_vx>=0:
+            glo.vx_body_cmd = glo.feedforward_vx * glo.ff_vx_pos
+        else :
+            glo.vx_body_cmd = glo.feedforward_vx * glo.ff_vx_neg
+        if glo.feedforward_vy>=0:
+            glo.vy_body_cmd = glo.feedforward_vy * glo.ff_vy_pos
+        else:
+            glo.vy_body_cmd = glo.feedforward_vy * glo.ff_vy_neg
+            
+    # 步进旋转未到位时叠加前进线速度，保证绕A车旋转
+    if abs(diff) >= step:
+        glo.vx_body_cmd += glo.w_target * glo.ff_w_radius
+        
+#         camera_angle_pid.place_pid_caculate(
+#             glo.angle, 0 , wrap_angle=True, deadband=1.5
+#         )
+#         glo.w_target = camera_angle_pid.out
+        
+
+    # 角速度加速度限制
+#     w_target = rate_limit(w_target, glo.w_target_last, 15.0)
+#     glo.w_target_last = w_target
+
+
+#     glo.vx_body_cmd = glo.read_data[6]
+
+    # 8. 运动学：机体速度 + 角速度 → 三轮目标速度
+    glo.wheeltemp = car.body_to_wheel_speeds(glo.vx_body_cmd, glo.vy_body_cmd, glo.w_target)
+    
+    #防止最大轮速超过轮速限幅
+    max_val = max(abs(glo.wheeltemp[0]), abs(glo.wheeltemp[1]), abs(glo.wheeltemp[2]))
+    if max_val > glo.MAX_WHEEL_SPEED:
+        scale = glo.MAX_WHEEL_SPEED / max_val
+        glo.wheeltemp = [w * scale for w in glo.wheeltemp]
+        
+    # 9. 轮速 PID
+    wheel1_pid_struct.incremental_pid_caculate(glo.wheeltemp[0], glo.enc1_data)
+    wheel2_pid_struct.incremental_pid_caculate(glo.wheeltemp[1], glo.enc2_data)
+    wheel3_pid_struct.incremental_pid_caculate(glo.wheeltemp[2], glo.enc3_data)
+
+    # 10. PWM 输出限制
+    wheel1_pid_struct.out = out_range(wheel1_pid_struct.out, glo.pwm_limit, -glo.pwm_limit)
+    wheel2_pid_struct.out = out_range(wheel2_pid_struct.out, glo.pwm_limit, -glo.pwm_limit)
+    wheel3_pid_struct.out = out_range(wheel3_pid_struct.out, glo.pwm_limit, -glo.pwm_limit)
+    # 11. PWM 输出到电机
+    
+    if glo.car1_state == 0:
+        motor_1.duty(0)
+        motor_2.duty(0)
+        motor_3.duty(0)
+
+    else:
+        motor_1.duty(wheel1_pid_struct.out)
+        motor_2.duty(wheel2_pid_struct.out)
+        motor_3.duty(wheel3_pid_struct.out)
+    
+
+    
+    
+
+
+
+附录二：车模展示
+1、车模外观照片
+  主车：
+
+
+
+
+
+副车：
+
+
+2、电路板原理图
+  
+总体原理图
+
+
+
+
+
+===== TABLE 1 =====
+参数项目 | 主车 | 副车
+整车重量 (g) | 206.2 | 204.3
+车体长度 (mm) | 140 | 140
+车体宽度 (mm) | 180 | 180
+整车高度 (mm) | 254.5 | 184.5
+底盘离地间隙 (mm) | 8 | 8
+驱动电机数量 (个) | 3 | 3
+涵道无刷电机 (个) | 1 | 1
+
+===== TABLE 2 =====
+状态 | 功能 | 主要退出条件
+0 | 待机，速度指令和目标位置保持为当前值 | 菜单启动任务后进入出库
+1 | 出库并进入场地观察区 | 到达出库航点后进入观察点搜索
+21～24 | 下、上、左、右观察点巡航并搜索目标 | 视觉连续确认目标或到达观察点
+3 | 向目标物体接近并保持视觉居中 | 目标进入横向与纵向对准范围
+31 | 存在砖块风险时低速接近目标 | 仅保留纵向对准并限速靠近
+35 | 多球场景下先横向再纵向避让 | 两个方向的避让位移均完成
+4 | 绕物体转向至推动方向，并检测砖块 | 航向到位且完成障碍预计算
+5/51 | 按目标方向推动；51用于推动中回正 | 剩余推动距离小于阈值
+7 | 完成一次搬运后的原地回转与计数 | 回转误差小于阈值，返回下一观察点
+8 | 全部物体完成后返库 | 经过黄线校准并回到发车区
+
+===== TABLE 3 =====
+传感器类型 | 型号及参数 | 主车数量 | 副车数量
+惯性测量单元 (IMU) | BMI270六轴陀螺仪 | 1 | 1
+视觉传感器 | 130度广角彩色摄像头 | 1 | 0
+视觉传感器 | 140度广角彩色摄像头 | 0 | 1
+测速传感器 | 7ppr霍尔编码器 | 3 | 3
+模型车基本参数 | 无 | 16cm*19cm*25cm | 16cm*19cm*16cm
+电容总容量 | 无 | 546 μF | 546 μF
+功耗 | 无 | 空载10W 带载25W | 空载10W 带载25W
+赛道检测 | 无 | 视野范围 1.5m 检测频率20Hz | 视野范围0.5m 检测频率30Hz

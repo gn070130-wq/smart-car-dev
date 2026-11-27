@@ -1,0 +1,995 @@
+
+第二十一届全国大学生
+智能汽车竞赛
+
+技 术 报 告
+
+
+
+
+学     校：杭州科技职业技术学院
+队伍名称：行知卡丁X队
+参赛队员：沈家诺  杨静龙  李璐  李淦  李信
+带队教师：张朝山  徐观生
+
+
+关于技术报告和研究论文使用授权的说明
+本人完全了解全国大学生智能汽车竞赛关保留、使用技术报告和研究论文的规定，即：参赛作品著作权归参赛者本人，比赛组委会可以在相关主页上收录并公开参赛作品的设计方案、技术报告以及参赛模型车的视频、图像资料，并将相关内容编纂收录在组委会出版论文集中。
+
+参赛队员签名：沈家诺 杨静龙 李璐 李淦 李信
+带队教师签名：张朝山 徐观生
+日        期：2026年8月14日
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+摘要
+本文详细介绍了杭州科技职业技术学院行知卡丁X队在第二十一届全国大学生智能汽车竞赛卡丁快跑组中的系统设计方案。以第二十一届全国大学生智能车竞赛正式规则为背景。本文所设计的智能车，采用卡丁车模，系统通过凌瞳摄像头完成识别物图像实时采集与处理，实现视觉识别物识别循迹；利用 MPU6050 陀螺仪做姿态检测与惯性导航辅助，结合编码器检测车速、角度编码器采集舵机转角。舵机转向采用位置式 PID，电机驱动使用增量式 PID，完成方向与速度闭环控制。软件基于 AURIX Development Studio 以 C 语言开发，借助 TFT 显示屏实现参数实时显示与调试。实验结果表明，该系统设计方案确实可行。
+关键词：TC264；凌瞳摄像头；MPU6050；PID控制；视觉循迹
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+第一章 引言
+1.1 概述
+全国大学生智能车竞赛是从2006开始，由教育部高等教育司委托高等学校自动化类教学指导委员会举办的旨在加强学生实践、创新能力和培养团队精神的一项创意性科技竞赛，至今已经成功举办了二十届。在继承和总结前二十届比赛实践的基础上，竞赛组委会努力拓展新的竞赛内涵，设计新的竞赛内容，创造新的比赛模式，使得围绕该比赛所产生的竞赛生态环境得到进一步的发展。该竞赛以“立足培养、重在参与、鼓励探索、追求卓越”为指导思想，旨在促进高等学校素质教育，培养大学生的综合知识运用能力、基本工程实践能力和创新意识，激发大学生从事科学研究与探索的兴趣和潜能，倡导理论联系实际、求真务实的学风和团队协作的人文精神，为优秀人才的脱颖而出创造条件。该竞赛由竞赛校方为各参赛队提供购置规定范围内的标准硬软件技术平台，竞赛过程包括理论设计、实际制作、整车调试、现场比赛等环节，要求学生组成团队，协同工作，初步体会一个工程性的研究开发项目从设计到实现的全过程。该竞赛融科学性、趣味性和观赏性为一体，是以迅猛发展、前景广阔的汽车电子为背景，涵盖自动控制、模式识别、传感技术、电子、电气、计算机、机械与汽车等多学科专业的创意性比赛。该竞赛规则透明，评价标准客观，坚持公开、公平、公正的原则，保证竞赛向健康、普及，持续的方向发展。[1]全国大学生智能汽车竞赛由竞赛秘书处设计、规范标准硬软件技术平台，竞赛过程包括理论设计、实际制作、整车调试、现场比赛等环节，要求学生组成团队，协同工作，初步体会一个工程性的研究开发项目从设计到实现的全过程。本届竞赛中，竞速比赛有十一个组别，分别是飞檐走壁、疯狂电路、蚂蚁搬家、飞跃雷区、走马观碑、雁过留痕、智能视觉、智能模型、卡丁快跑、轮腿穿越、单车定向。本论文主要介绍卡丁快跑的智能车制作的整体思路、电路、算法、调试、车辆参数，详尽地阐述了我们的思想和创意，具体表现在电路的创新设计，以及算法方面的独特想法。2026年举行第二十一届全国大学生智能汽车竞赛，为响应教育部的号召，本校积极组织学生参加此次大赛。在此期间，我们的智能车经过了几次较大幅度的改进，本文将对我们的设计方案性以及在设计的过程中所遇问题和解决措施进行详细说明。
+1.2  系统设计框架
+根据竞赛规则相关规定，本智能车系统采用卡丁车模，以TC264单片机作为核心控制器，在AURIX开发环境中进行软件开发。系统通过凌瞳摄像头实时采集识别物图像，经过图像处理算法识别识别物边界和中线，计算出当前偏差量；通过编码器检测实时车速，通过MPU6050陀螺仪获取车身姿态信息。转向舵机采用位置式PID控制算法，根据摄像头检测到的识别物偏差进行精确转向；驱动电机采用增量式PID控制算法，通过PWM信号控制电机转速，如图1.1。综上所述，本智能车系统包含了以下几个模块：
+1．TC264主控模块
+2．凌瞳摄像头模块（视觉采集与处理）
+3．MPU6050陀螺仪模块（姿态检测与惯性导航）
+4．电源模块
+5．电机驱动模块
+6．舵机驱动模块
+7．速度检测模块（编码器）
+8．角度编码器模块（舵机角度反馈）
+9．TFT显示调试模块
+
+
+图 1.1 系统设计
+
+第二章 模型车设计与制作
+2.1  主要思想
+我队制作智能车的主要思想是“基于规则、勤学妙用、吸收精华、勇于创新”，下面我们将为这一思想进行详细得解说。基于规则，本届智能车竞赛规则是我们制作智能车的基础，我们所有的设计和创新都基于这个规则，我们在不违反规则的前提下，对智能车进行改造，进行创新，使智能车达到最优化的状态。勤学妙用，我们在制作小车的过程中，会遇到问题，会接触到我们的未知领域，这就需要我们通过学习来解决困难。我们会问老师、问师兄，或是上网查找资料，带着问题和兴趣，有目的性地去学习，使我们的知识和项目经验得到了积累，也锻炼了我们自学和适应新事物的能力。巧妙地运用所学的知识，将它们运用到制作小车上，使我们更加高效的掌握知识。吸收精华，得到我们小车上的方案和参数是一个来之不易的过程。我们查阅了往届的相关技术资料，观看跑车视频。[1]从中总结经验，吸取教训，将它们融入到我们自主创新的方案中。我们小车无论硬件还是软件，都有几套方案，在最终确定前，我们都对各个方案进行了讨论比较。小车系统上的每一个参数都是我们通过不断调试得到的，它吸取了每一次试验的精华。勇于创新，创新思维已成主流，智能车竞赛亦如“逆水行舟，不进则退”。人人都想要好成绩，要想不被超越，取得进步，我们就需要创新，敢于尝试新的方案，不畏失败。在失败中总结经验，用于再创新，坚信我们一定会成功。
+2.2  技术方案概要说明
+2.2.1 车模机械结构
+本系统直接采用竞赛指定的原厂车模平台，未对底盘、舵机安装座、电机座等机械结构进行额外改造，整车保留原厂出厂配置，以确保机械可靠性和一致性。[2]
+2.2.2传感器的安装
+凌瞳彩色摄像头通过配套支架安装于底盘前部中间位置，利用原车底盘预留孔位固定，摄像头高度和俯仰角可根据视野需求进行微调。速度编码器通过配套支架固定于驱动电机尾部，编码器转轴与电机伸出轴同心连接，确保脉冲信号稳定输出。舵机角度编码器安装于舵机输出轴端部，实现舵机转向角度的实时反馈。语音检测电路麦克风布置于主板边缘，朝向车辆前方，确保有效接收外部语音信号。
+2.2.3 电路板的固定与连接
+主板通过尼龙螺柱固定于底盘上方，核心板通过排针排母以叠层方式插接于主板上方，电机驱动板固定于车模后部靠近电机位置。各模块线缆沿底盘内侧布置并使用扎带分段固定，驱动电机电源线与传感器信号线分开走线以减少电磁干扰。所有接地点在主板电源输入端单点汇接。供电采用分级架构，24V铅酸蓄电池经DC-DC转换后分别为各模块提供工作电压。
+2.3  软件系统
+为实现程序的可读性和高效性，我们根据用途对程序进行了分装，形成了一个个具体的函数和文件。[3]软件控制总体分为速度控制和方向控制两部分，其中速度控制主要是通过控制车模的电机转速完成，方向控制则是利用前置舵机打角实现。在结合各种软件算法后，我们合理完成了速度控制和方向控制。
+简单说来，PID控制器各校正环节的作用如下：比例环节：及时成比例地反映控制系统的偏差信号，偏差一旦产生，控制器立即产生控制作用，以减少偏差。积分环节：主要用于消除静差，提高系统的无差度。积分作用的强弱取决于积分时间常数，越大，积分作用越弱，反之则越强。微分环节：能反映偏差信号的变化趋势(变化速率)，并能在该偏差信号变得太大之前，在系统中引入一个有效的早期修正信号，从而加快系统的动作速度，减小调节时间。数字PID控制算法通常分为位置式PID控制算法和增量式PID控制算法。驱动电机采用PID控制，通过PWM控制驱动电路调整电机的功率；而车速的目标值由默认值以及按键开关进行综合控制。
+第三章 智能车硬件电路设计
+3.1  硬件方案设计
+硬件是车的基石，只有一个良好、稳定的硬件环境才能保障车在后期的高速行驶。可靠、高效、简洁，是我们在整个硬件系统设计中严格遵循的准则。整车的硬件系统主要由三个部分组成，分别是：主控(tc264核心版)、驱动、电源板。
+3.2  电源模块设计
+电源是智能车硬件的核心，直接决定系统稳定性。[2]设计中采用24V转8V、5V及3.3V多级并联供电，各模块独立隔离并严格分离功率地与信号地，有效防止电机与主控间的电源干扰，保障整车可靠运行。
+24V转8V电源模块：采用LM7808CT三端稳压芯片，具有电路结构简单、内置过热及过流保护等特点。配合输入输出端的滤波电容，有效降低纹波干扰，可提供稳定可靠的8V电压输出，满足系统特定外设的供电需求。原理图如图3.1所示。
+
+
+图 3.1 8V电源原理图
+
+24V转5V电源模块：采用LM7805CT三端稳压芯片，具有电路结构简单、内置过热及过流保护等特点。配合输入输出端的滤波电容，有效降低纹波干扰，可提供稳定可靠的5V电压输出，满足系统主控及外设模块的供电需求,如图3.2所示。
+
+
+图 3.2 5V电源原理图
+3.3V电源模块：采用RT9013-33低压差稳压芯片，具有高精度、低噪声及过流热保护功能。电路设计简单，配合输入输出端的去耦电容，能够输出稳定纯净的3.3V电压，有效保障主控系统的供电可靠性，如图3.3所示。
+
+
+图 3.3 3.3V电源原理图
+3.3 主板设计
+主板用于连接最小核心板与各个模块，原理图如图3.4和3.5所示
+
+
+图 3.4 主板原理图（一）
+
+图 3.5 主板原理图（二）
+主板作为整车的硬件载体，承担着电源分配、信号互联与模块驱动的核心任务。本节将重点围绕主板所集成的五大功能模块展开介绍，分别为凌瞳彩色摄像头模块、点阵屏显示模块、速度编码器接口、舵机角度编码器接口以及语音检测电路模块。
+3.3.1 凌瞳彩色摄像头
+本系统选用凌瞳（Lingtong）彩色摄像头作为识别物视觉信息采集的核心传感器。该摄像头内部可直接输出RGB565格式的全彩图像，色彩还原准确；同时支持YUV422等多种图像格式，可满足不同算法下的图像处理需求。
+凌瞳摄像头在性能指标上充分考虑了竞赛场景的需求。其分辨率最高可达VGA（160×120），图像采集帧率最高可达60fps，为实时识别物识别与路径规划提供了充足的数据支撑。该摄像头在低光照条件下表现同样稳定，即便在缺乏补光的昏暗环境中，也能捕捉到清晰且细节丰富的图像，有效提升了识别物环境适应能力。根据第二十一届全国大学生智能汽车竞赛规则，参赛队须使用无MCU版本的凌瞳摄像头模组，以保证图像数据由主控芯片直接处理。
+在主板上，凌瞳摄像头通过核心板插针（P2.0~P2.7、P3.0~P3.7等多组GPIO端口）与主控芯片连接，如图3.6。
+
+
+图 3.6 凌瞳摄像头插针
+实现图像数据的并行传输与时钟同步。摄像头安装于主板前端的专用支架上，确保在车模运行过程中获得稳定的前方识别物视野。
+3.3.2 速度编码器
+速度编码器是电机速度闭环控制中的关键反馈元件。[4]本系统在车模驱动电机的后端安装增量式光电/霍尔编码器，用于实时检测电机转速。编码器内部包含一个与电机转子同轴的磁铁（或光栅盘）及两个霍尔传感器（或光电检测装置），电机旋转时，磁铁的N/S磁极交替经过传感器，产生两路相位相差约90°的方波脉冲信号。
+脉冲信号的频率正比于电机转速，单片机通过在一定时间窗口内（如0.1秒）对脉冲个数进行计数，即可换算得到实时速度值；同时，通过判断两路信号的相位超前或滞后关系，可进一步识别电机的转动方向。速度编码器的脉冲信号接入主控MCU的外部中断输入引脚，配合定时器中断进行周期性读取，为位置式PID或增量式PID速度闭环控制提供精准的反馈输入。
+3.3.3 舵机角度编码器
+在转向控制方面，本系统在舵机输出轴上安装了角度编码器（磁编码器），用于实时反馈舵机的实际转向角度。与传统的开环PWM控制相比，角度编码器的引入使转向控制由开环升级为闭环，可有效克服舵机响应延迟、机械回差以及电池电压波动带来的角度偏差问题。
+舵机角度编码器的工作原理与速度编码器类似，均基于磁场变化产生脉冲信号，但其关注的是舵机输出轴的绝对或相对角位移。主控MCU读取编码器反馈的角度信息后，结合识别物偏差值进行位置式PD控制计算，实时修正PWM输出占空比，使舵机精确跟踪期望转向角，从而提升车模在弯道和连续S弯中的行驶稳定性与路径跟踪精度。
+3.3.4 语音检测电路
+为实现声控触发启动功能，主板上设计了一路语音检测电路，其原理图如图3.8所示。
+
+
+图 3.8 语音检测电路原理图
+该电路选用英飞凌IM68A130AXTMA1型MEMS麦克风作为语音敏感元件，配合LMV321单通道运算放大器构成信号调理链路。英飞凌IM68A130AXTMA1是一款高性能数字麦克风，内置PDM输出接口，但在本电路中利用其模拟输出特性，经外部RC滤波后送入运放进行放大处理。该麦克风具有高信噪比（SNR典型值为64dB）、低功耗（工作电流约200μA）和宽频率响应范围等优点，能够有效捕捉比赛现场的发令语音信号，适应竞赛场景下的声控触发需求。
+麦克风输出的微弱音频信号首先经过C9（1μF）耦合电容进入LMV321运放的同相输入端，运放采用单电源3.3V供电，由R28（1.5MΩ）与R27（2.49kΩ）构成负反馈网络，设置适当的电压增益，将微弱的麦克风信号放大至主控MCU可识别的电压范围。R29（249kΩ）与C9共同组成高通滤波网络，用于滤除低频环境噪声，提高声控触发的可靠性。运放输出端接入D16（BZT52C3V6）稳压管，将输出信号钳位在3.6V以内，防止过压损坏主控芯片的GPIO引脚。此外，C7（100nF）与C8（100nF）分别为麦克风和运放提供电源去耦，确保电路在电机等大功率负载启动时仍能稳定工作。
+3.3.5 点阵屏
+基于英飞凌TLD7002芯片的7×15点阵LED显示屏，是为智能车竞赛实现语言指令需求而设计的显示方案。该模块通过三个5×7点阵拼接实现三字符显示，内置字库并支持亮度调节。其核心技术亮点在于通过硬件同步机制解决了传统行扫描中亮度不均的固有问题，确保显示效果清晰均匀。模块采用HSLI接口与主控通讯，配套多平台驱动例程，并支持仿真模式免烧录调试，大幅降低了开发难度。在本项目中，点阵屏承担语音识别结果的视觉反馈角色，将识别到的指令实时呈现，为人机交互提供了直观高效的显示终端。原理图如图3.7所示。
+
+
+图 3.7 点阵屏驱动电路原理图
+3.4  电机驱动
+采用分离式MOS（金属氧化物半导体）管H桥架构，配合HIR4082IBZ半桥驱动芯片，电路具备大电流输出与过流保护能力。通过单片机PWM信号精确控制电机正反转与调速，保障整车动力系统高效、稳定运行。[4]原理图如图3.9所示。
+
+
+图 3.9 电机驱动原理图
+
+
+第四章 智能车软件程序设计
+4.1 程序主流程
+程序上电后先完成各硬件外设的初始化，随后判断发车键进行发车，发车键按下后延时一段时间，待延时结束、姿态数据稳定后，程序正式进入循环阶段。循环阶段主要识别 GPS（全球定位系统） 信号解算目标航向，采集陀螺仪信号进行舵机位置式 PID 控制，采集有刷车速进行增量式 PID 计算 PWM 驱动有刷控制板，摄像头图像识别辅助，使车模按预设路线稳定行驶，直到冲过终点线停止，等待下次发车。[5]如图4.1。
+
+
+图 4.1 程序流程图
+
+4.2 控制算法
+4.2.1 PID算法
+在工程实际中，应用最为广泛的调节器控制规律为比例、积分、微分控制，简称PID控制，又称PID调节。它以其结构简单、稳定性好、工作可靠、调整方便而成为工业控制的主要技术之一。当被控对象的结构和参数不能完全掌握，或得不到精确的数学模型时，控制理论的其它技术难以采用时，系统控制器的结构 和参数必须依靠经验和现场调试来确定，这时应用PID 控制技术最为方便。即当我们不完全了解一个系统和被控对象，或不能通过有效的测量手段来获得系统参数时，最适合用PID控制技术。PID 控制，实际中也有PI和PD控制。PID控制器是一种线性控制器，它根据给定值与实际输出值构成控制偏差。将偏差的比例(P)、积分(I)和微分(D)通过线性组合构成控制量，对被控对象进行控制，故称 PID 控制器，[1]原理框图如图4.2所示。
+
+
+图 4.2 PID 控制算法原理框图
+比例调节作用 (P) ：是按比例反应系统的偏差，系统一旦出现了偏差， 比 例调节作用用以减少偏差。比例作用大，可以加快调节，减少误差，但是过大的 比例使系统的稳定性下降，甚至造成系统的不稳定。
+积分调节作用(I)：是使系统消除稳态误差，提高误差度。当有误差时，积分调节就进行，直至无误差，积分调节停止，积分调节输出一常值。积分作用的强弱取决与积分时间Ti，Ti越小，积分作用就越强。反之Ti大则积分作用弱，加入积分调节可使系统稳定性下降，动态响应变慢。
+微分调节作用(D)：微分作用反应系统偏差信号的变化率，具有预见性，能预见偏差变化的趋势，因此能产生超前的控制作用，在偏差还没有形成之前，已被微分调节作用消除。因此，可以改善系统得动态性能。在微分时间选择合适的情况下，可以减少超调，减少调节时间。微分作用对噪声干扰有放大作用，因此过强的加微分调节，对系统抗干扰不利。我们的舵机是采用了位置式PID算法，用矩形数值积分代替上式中的积分项，对导数项用后向差分逼近，得到数字 PID其中x0 为偏差信号为 0 时的控制作用，是控制量的基础。其中T为采样时间，KP、KI、KD为三个参数。∆反映的是第k次和第k-1次之间的增量，而且可以看出，使用增量式PID只需要保存前两次的误差即可。因此代码简单高效，并且无积分的累加误差。
+运用PID 控制的关键是调整 KP、KI、KD 三个参数，即参数整定。PID 参数的整定方法有两大类：一是理论计算整定法。它主要是依据系统的数学模型，经 过理论计算确定控制器参数；二是工程整定方法，它主要依赖工程经验，直接在控制系统的试验中进行，且方法简单、易于掌握，在工程实际中被广泛采用。由于智能车系统是机电高耦合的分布式系统，并且要考虑识别物的具体环境，要建立精确的智能车运动控制数学模型有一定难度，而且我们对车身机械结构经常进行修正，模型参数变化较为频繁，理论计算整定法可操作性不强，最终我们采用了工程整定方法。
+4.2.2 位置式PID的介绍与应用
+对于舵机的闭环控制，采用了位置式PID控制算法。[1]舵机是一个位置随动系统，舵机的打角与我们发出的PWM信号成正比关系，在系统中我们使用位置式PID计算舵机的PWM占空比。位置式PID控制器的输出是控制量的绝对值，即控制器在当前时刻直接计算出执行机构（如电机、舵机等）应达到的控制位置或控制量。其核心思想是：根据当前时刻的误差值，结合误差的历史累积和变化趋势，综合计算出一个总的控制输出。
+位置式输出控制精度高，适用于舵机这种需要绝对位置输入的系统，在实际使用中还需注意限幅。
+4.2.3 增量式PID的介绍与应用
+对于电机而言，因为无法直接在启动时就达到理想转速，电机需要一个上升的过程，因此如果是位置式PID，那么就会在最开始时达到我们的误差最大值，如果参数调整不当，那么就会引起初期的PID系统震荡，而增量式PID则与位置式PID不同，它不直接输出控制量，而是输出控制量的增量，即本次输出与上次输出的差值，这个差值逐渐累加从而使我们的实际值逼近目标值。因此在电机的控制上我们选择增量式PID控制，[4]
+4.3 循迹处理
+4.3.1 凌瞳SCC8660摄像头图像采集
+凌瞳SCC8660摄像头输出 160×120 的 RGB565 彩色图像,经 DVP 由 PCLK 触发 DMA通道5 自动搬入内存;DMA 中断置位,主循环检测到该标志后即开始图像处理。摄像头参数由完成初始化,安装时调节俯仰角以兼顾远、近视野。
+4.3.2 颜色空间转换与目标识别
+将 RGB565 像素转为 HSL 色彩空间,按蓝色阈值(H:132215, S:50240, L:5~215)匹配,并通过饱和度、亮度上限及 RGB方差与 B 通道优势度过滤浅蓝、亮蓝干扰;按下 按键 学习目标颜色后,叠加 RGB 容差(±30%)与通道比例匹配,抑制光照变化影响。
+4.3.3 目标定位与偏差输出
+采用"种子扫描 + 区域生长"定位目标:全图搜索高密度蓝色种子,经 8 次迭代生长出候选框,通过面积、中心、外围蓝环、长宽比等多项检验,再按"面积 × 形状 × 位置 × 颜色密度"综合打分,取最优者输出目标中心坐标,与画面中心的横向偏移即控制偏差。检测采用局部优先、丢失 30 帧转全图搜索;当前偏差尚未接入转向,后续经 PID 即可构成视觉循迹闭环。
+4.3.4 MPU6050惯性姿态传感器辅助导航
+通过上电静止校准消除零偏，并以批量读取方式获取高精度原始数据；在此基础上，结合互补滤波或DMP解算出的姿态角能够有效弥补摄像头或电磁传感器在高速运动下的视觉延迟与信号突变，为车辆提供短时、连续的姿态参考，从而实现坡道识别、入弯预判等辅助导航功能。
+4.3.5 角度编码器反馈
+舵机加装绝对编码器构成双环控制:外环将航向误差经位置式 PID 换算为舵机目标转角;内环比较实测转角与目标,以死区 ±20 的三位式(左/右/停)驱动,5ms 周期执行,消除机械间隙影响。
+
+
+第五章 调试与分析
+5.1 开发环境简介
+合适的开发调试工具能帮助我们更好的调试和开发，增加工作效率。AURIX Development Studio（ADS）是英飞凌公司开发的一个集成开发环境（IDE），和Eclipse类似。[5]它包括工程管理，源代码编辑，编译设置，下载调试和模拟仿真等功能。它提供一个环境，让开发者易于操作,支持TC系列微控制器的开发工具。软件界面如图5.1所示。
+
+图 5.1 AURIX调试界面
+5.2 调试过程
+整个调试过程分为以下几个阶段：
+第一阶段为硬件模块测试。在上电前，我们首先对各模块的供电电压进行检测，确认各路电源输出正常。然后逐一测试各传感器模块的功能，包括凌瞳摄像头的图像采集是否正常、MPU6050的数据读取是否准确、编码器信号是否稳定、舵机和电机的控制信号是否正确等。
+第二阶段为单模块调试。分别对摄像头循迹算法、PID控制参数、陀螺仪数据采集等进行独立调试。在摄像头调试中，我们通过TFT显示屏实时观察二值化后的图像效果，调整阈值和边界检测参数，直到获得稳定可靠的识别物识别效果。
+第三阶段为系统集成调试。将各模块整合后进行整体联调，重点调试PID参数的整定。我们采用先调舵机后调电机的顺序，先将舵机的位置式PID参数调整到循迹效果良好，然后再调整电机的增量式PID参数，逐步提高目标车速。
+
+第六章 模型车主要技术参数说明
+6.1 车模基本参数
+如表6.1，本系统其主要基本参数如下：
+表6.1 主要基本参数表
+
+
+第七章 总结
+7.1 总结
+自报名参加智能汽车竞赛以来，我们小组成员从查找资料、设计机构、组装车模、编写程序一步一步的进行，最后终于完成了最初目标，定下了现在这个设计方案。在此份技术报告中，我们主要介绍了准备比赛时的基本思路，包括机械、电路以及最重要的控制算法的创新思想。在机械结构方面，我们分析了舵机转向系统的改进办法，对前轮倾角进行一系列的改动。在电路方面，我们以模块形式分类，在最小系统、主板、电机驱动、电池使用、 GPS采集等模块分别设计，经过不断实验，最后决定了最终的电路图。在程序方面，我们使用C语言编程，利用开发工具调试程序，经过小组成员不断讨论、改进，终于设计出一套比较通用稳定的程序。在这套算法中，我们结合路况调整车速，做到直道加速、弯道减速，保证在最短时间内跑完全程。在备战过程中，我们遇到了很多挫折，一次次的比赛见证我们这个小队艰难的蜕变。感谢在场地和经费方面都得到了学校和学院的大力支持，更要特别感谢一直支持和关注智能车比赛的学校和学院领导以及各位指导老师、指导学长，同时也感谢比赛组委会能组织这样一项有意义的比赛。智能车竞赛是一个多学科、综合性的比赛，其中设计涉及了控制、传感技术、 电子信息、模式识别、汽车电子、机械等多个学科，在整个准备的过程中，我们不仅仅把所学的理论知识应用于实际，还自学了大量的新知识。不仅开拓了我们的视野， 同时也使我们的动手能力、运用知识的能力、分析解决问题的能力也有了很大的提高。制作智能车是一个长期的工程，只有在平时抓牢每一个细节，不放过 每一点瑕疵，严格要求车，严格要求自己，不断积累努力，才能够筑起成功的万里长城。艰苦的付出和坚持不懈的努力是制作智能车所必须的精神。
+
+参考文献
+卓晴，黄开胜，邵贝贝．学做智能车 [M]．北京：北京航空航天大学出版社．2007.
+谭浩强著.C 程序设计[M].北京:清华大学出版社,2003.
+王晓明. 电动机的单片机控制[M]．北京. 北京航空航天大学出版社．2002
+王盼宝主编.智能车制作[M].北京:清华大学出版社,2017.
+邵贝贝.单片机嵌入式应用的在线开发方法[M]．北京：清华大学出版社．2004 年 10 月第 1 版
+
+
+附录A：源代码
+
+
+
+===== TABLE 1 =====
+车模尺寸 | 16cm × 13cm × 11.5cm | 长 × 宽 × 高
+传感器种类 | MPU6050陀螺仪 | 姿态检测
+传感器种类 | 凌瞳摄像头 | 识别物图像采集
+传感器种类 | 脉冲编码器 | 车速检测
+传感器种类 | 角度编码器 | 舵机角度反馈
+额外伺服电机个数 | 0个 | 除原有驱动电机、舵机之外
+
+===== TABLE 2 =====
+1 | 
+2 | #include "zf_common_headfile.h"
+3 | #include "mode.h"
+4 | #include "algorithm.h"
+5 | 
+6 | #define DIR_SWITCH_DELAY  100       // 方向切换缓冲周期数（主循环迭代次数）
+7 | float md_30_pulse_compensation = 1.06f;
+8 | #define MD_30_HEADING_THRESHOLD 5.0f
+9 | #define RAMP_STEP 30
+10 | #define MD_REPLAY_ACCEL_STEP 100
+11 | 
+12 | uint8 mode = 0, mode_old = 0; // 当前模式 / 上一帧模式
+13 | char mode_1 = 0;
+14 | char point_count_md_1 = 0, point_count_max_md_1 = 0, point_count_run_md_1 = 0; // 当前记录点数 / 最大记录点数 / 当前执行点数
+15 | char look_flag_md_1 = 0; // 是否查看记录模式
+16 | 
+17 | char mode_2 = 0;
+18 | 
+19 | int left_count_md_2 = 0;
+20 | char md_2_count_num_flag = 0;
+21 | char md_2_draw_flag = 0;
+22 | char md_2_set=0;
+23 | char md_2_look_flag=0;            // 串口输出数据
+24 | 
+25 | int md_30_count_num = 0;          // 当前已记录的路径点数
+26 | int md_30_count_max = 0;          // 记录路径的最大点数
+27 | //int32 mode_30_count = 0;          // 模式30编码器累计值
+28 | //int32 mode_30_accumulator = 0;    // 模式30路径复刻编码器累加器
+29 | 
+30 | char mode_10 = 2;
+31 | char mode_11 = 0;
+32 | 
+33 | char start_show_flag = 0;         // 进入新模式时是否在TFT屏幕显示模式名称
+34 | 
+35 | // 记录一次读取的编码器值，用于调试
+36 | int md_2_last_encoder_value = 0;
+37 | 
+38 | float angle_target = 0;  // 目标航向角度
+39 | float distance = 0;      // 到目标的距离
+40 | 
+41 | // 2D 经纬度坐标数组[index][0] = 经度(lon), [index][1] = 纬度(lat)
+42 | double mode_1_data[20][2];
+43 | 
+44 | int MD_2_PULSE_INTERVAL = 500;
+45 | int md_2_count_num = 0;
+46 | float gyro_deviation_threshold = 5.0f;
+47 | int MD_2_ENCODER_FORCE_THRESHOLD = 30000;  // 编码器强制记录阈值，注意不要超过 int16 安全范围
+48 | // 2D 轨迹点数组：[index][0] = 编码器脉冲数(count)，[index][1] = 角度(angle)
+49 | float mode_2_data[MAX_MODE_2_POINTS][2];
+50 | 
+51 | int32 md_30_total_pulses = 0;      // 整条路径的总脉冲数（所有段绝对值之和）
+52 | int32 md_30_executed_pulses = 0;
+53 | int MD_RAMP_PULSES = 5000;
+54 | 
+55 | char target_direction=0;
+56 | 
+57 | void print_mode_2_data(void)
+58 | {
+59 | printf("\r\n=== MD_2_DATA_START ===\r\n");
+60 | for (int i = 0; i < md_2_count_num; i++)
+61 | {
+62 | printf("MD_2_DATA:%d,%.2f,%.2f\r\n",
+63 | i,
+64 | mode_2_data[i][0],  // 脉冲计数
+65 | mode_2_data[i][1]);  // 角度
+66 | }
+67 | printf("MD_2_DATA_END:%d\r\n", md_2_count_num);
+68 | printf("=== MD_2_DATA_END ===\r\n\r\n");
+69 | }
+70 | 
+71 | /**
+72 | * @brief  计算缓启动、缓停止时的 PWM 占空比。
+73 | * 前 MD_RAMP_PULSES 个脉冲：从 10% 线性增加到 motor_pwm_run。
+74 | * 后 MD_RAMP_PULSES 个脉冲：从 motor_pwm_run 线性降低到 10%。
+75 | * 中间段：保持 motor_pwm_run
+76 | *
+77 | * 边界处理：如果总路径太短（total < 2*ramp），ramp 区间按比例缩小，避免重叠。
+78 | * @param  executed  已执行的脉冲数
+79 | * @param  total     总路径脉冲数
+80 | * @return 计算后的 PWM，占空比范围约为 1000 ~ motor_pwm_run。
+81 | */
+82 | static int calculate_ramp_pwm(int32 executed, int32 total)
+83 | {
+84 | #define MD_RAMP_START_DUTY 1000  // 10% 占空比(10000 * 10%)
+85 | 
+86 | int32 effective_ramp = MD_RAMP_PULSES;
+87 | 
+88 | // 总路径太短时，缩小缓启动区间防止重叠
+89 | if (total > 0 && effective_ramp > total / 2)
+90 | {
+91 | effective_ramp = total / 2;
+92 | }
+93 | if (effective_ramp < 1) effective_ramp = 1;
+94 | 
+95 | int32 remaining = total - executed;
+96 | 
+97 | if (executed < effective_ramp)
+98 | {
+99 | return MD_RAMP_START_DUTY +
+100 | (motor_pwm_run - MD_RAMP_START_DUTY) * (int)executed / (int)effective_ramp;
+101 | }
+102 | else if (remaining < effective_ramp)
+103 | {
+104 | if (remaining < 0) remaining = 0;
+105 | return MD_RAMP_START_DUTY +
+106 | (motor_pwm_run - MD_RAMP_START_DUTY) * (int)remaining / (int)effective_ramp;
+107 | }
+108 | // 正常行驶
+109 | else
+110 | {
+111 | return motor_pwm_run;
+112 | }
+113 | }
+114 | 
+115 | static int calculate_camera_replay_ramp_pwm(int32 executed, int32 total)
+116 | {
+117 | int32 effective_ramp = MD_RAMP_PULSES;
+118 | int32 remaining;
+119 | int base_pwm = tft_camera_debug_get_replay_speed();
+120 | 
+121 | if (total > 0 && effective_ramp > total / 2)
+122 | {
+123 | effective_ramp = total / 2;
+124 | }
+125 | if (effective_ramp < 1) effective_ramp = 1;
+126 | 
+127 | remaining = total - executed;
+128 | 
+129 | if (executed < effective_ramp)
+130 | {
+131 | return 1000 + (base_pwm - 1000) * (int)executed / (int)effective_ramp;
+132 | }
+133 | else if (remaining < effective_ramp)
+134 | {
+135 | if (remaining < 0) remaining = 0;
+136 | return 1000 + (base_pwm - 1000) * (int)remaining / (int)effective_ramp;
+137 | }
+138 | else
+139 | {
+140 | return base_pwm;
+141 | }
+142 | }
+143 | 
+144 | static int md_replay_accel_limit(int target_pwm, char reset)
+145 | {
+146 | static int current_pwm = 0;
+147 | 
+148 | if(reset || target_pwm <= 0)
+149 | {
+150 | current_pwm = 0;
+151 | return 0;
+152 | }
+153 | 
+154 | if(target_pwm > current_pwm)
+155 | {
+156 | current_pwm += MD_REPLAY_ACCEL_STEP;
+157 | if(current_pwm > target_pwm)
+158 | {
+159 | current_pwm = target_pwm;
+160 | }
+161 | }
+162 | else
+163 | {
+164 | current_pwm = target_pwm;
+165 | }
+166 | 
+167 | return current_pwm;
+168 | }
+169 | void mode_run(void)
+170 | {
+171 | 
+172 | 
+173 | if (mode == 0)
+174 | {
+175 | mode_old = 0;
+176 | battery_check();
+177 | tft_sensor_init();
+178 | }
+179 | 
+180 | if (mode == 1)
+181 | {
+182 | mode_old = 1;
+183 | if (mode_1 == 0)
+184 | tft_gps_get_md_1(mode_1_data, point_count_md_1, point_count_max_md_1, mode_1, look_flag_md_1);
+185 | if (mode_1 != 0 && mode_1 < 10)
+186 | tft_md_1_set(mode_1);
+187 | if (mode_1 == 10)
+188 | tft_draw_polygon(mode_1_data, point_count_max_md_1, 1, 95, 95);
+189 | }
+190 | 
+191 | if (mode == 2)
+192 | {
+193 | char just_entered_mode_2 = (mode_old != 2);  // 检测是否刚进入模式2
+194 | mode_old = 2;
+195 | if (mode_2 == 0)
+196 | {
+197 | tft_md_2_get_count();
+198 | 
+199 | if (just_entered_mode_2 && md_2_count_num != 0)
+200 | {
+201 | md_2_count_num_flag = 1;
+202 | }
+203 | 
+204 | //            // 处理模式2的编码器数据记录
+205 | //            left_count_md_2 = process_mode2_encoder_recording(
+206 | //                -encoder_get_count(ENCODER_2),
+207 | //                &left_count_md_2,
+208 | //                md_2_count_num_flag,
+209 | //                mode_2_data,
+210 | //                &md_2_count_num
+211 | //            );
+212 | 
+213 | // 处理模式2的编码器数据记录（含陀螺仪偏差检测）
+214 | left_count_md_2 = process_mode2_encoder_recording_with_gyro(
+215 | -encoder_get_count(ENCODER_2),
+216 | &left_count_md_2,
+217 | md_2_count_num_flag,
+218 | mode_2_data,
+219 | &md_2_count_num,
+220 | gyro_deviation_threshold
+221 | );
+222 | 
+223 | // 备选：纯陀螺仪版记录（首点500脉冲触发，后续仅角度偏差触发，直线稀疏弯道密集）
+224 | //            left_count_md_2 = process_mode2_encoder_recording_gyro_only(
+225 | //                -encoder_get_count(ENCODER_2),
+226 | //                &left_count_md_2,
+227 | //                md_2_count_num_flag,
+228 | //                mode_2_data,
+229 | //                &md_2_count_num,
+230 | //                gyro_deviation_threshold,          // 陀螺仪偏差阈 //                MD_2_ENCODER_FORCE_THRESHOLD       // 编码器强制记录阈值;
+231 | }
+232 | 
+233 | // 录制停止后计算总脉冲（用于回放时缓启动/缓停止）
+234 | if (md_2_count_num_flag == 1 && md_30_total_pulses == 0 && md_2_count_num > 0)
+235 | {
+236 | int32 sum = 0;
+237 | for (int i = 0; i < md_2_count_num; i++)
+238 | {
+239 | sum += (int32)fabsf(mode_2_data[i][0]);
+240 | }
+241 | md_30_total_pulses = sum;
+242 | }
+243 | 
+244 | if (mode_2 != 0 && mode_2 < 10)
+245 | tft_md_2_set(mode_2);
+246 | if (md_2_look_flag == 1)
+247 | {
+248 | print_mode_2_data();
+249 | md_2_look_flag = 0;
+250 | }
+251 | if (mode_2 == 10)
+252 | {
+253 | if (md_2_draw_flag == 0)
+254 | {
+255 | draw_inertial_navigation_demo_local_heading(mode_2_data, md_2_count_num + 1, 95, 95);
+256 | md_2_draw_flag = 1;
+257 | }
+258 | }
+259 | else
+260 | {
+261 | md_2_draw_flag = 0;
+262 | }
+263 | if (mode_2 == 11)
+264 | tft_md_2_count_set(md_2_set);
+265 | }
+266 | 
+267 | if (mode == 3)
+268 | {
+269 | char just_entered_mode_3 = (mode_old != 3);
+270 | mode_old = 3;
+271 | if(just_entered_mode_3)
+272 | {
+273 | tft_camera_debug_reset();
+274 | }
+275 | if(tft_camera_debug_need_process())
+276 | {
+277 | camera_process_run();
+278 | }
+279 | tft_camera_debug_run_task();
+280 | tft_camera_debug();
+281 | }
+282 | if (mode == 10)
+283 | ftf_md_10_set(mode_10);
+284 | 
+285 | if (mode == 11)
+286 | ftf_md_11_set(mode_11);
+287 | 
+288 | if (mode == 20)
+289 | {
+290 | if (start_show_flag == 0)
+291 | {
+292 | tft180_show_uint(0, 0, mode, 2);
+293 | start_show_flag = 1;
+294 | }
+295 | 
+296 | angle_target = get_two_points_azimuth(
+297 | gps_tau1201.latitude, gps_tau1201.longitude,
+298 | mode_1_data[point_count_run_md_1 + 1][1],
+299 | mode_1_data[point_count_run_md_1 + 1][0]
+300 | );
+301 | distance = get_two_points_distance(
+302 | gps_tau1201.latitude, gps_tau1201.longitude,
+303 | mode_1_data[point_count_run_md_1 + 1][1],
+304 | mode_1_data[point_count_run_md_1 + 1][0]
+305 | );
+306 | 
+307 | if (distance > 1.5)
+308 | {
+309 | duoji.target_value = angle_target;
+310 | }
+311 | else if (distance < 1.5)
+312 | {
+313 | point_count_run_md_1++;  // 到达当前点，前往下一个点
+314 | // buzzer_on();
+315 | }
+316 | 
+317 | // 遍历完所有路径点后回到第一个点，从0开始循迹max-1个点
+318 | if (point_count_run_md_1 > point_count_max_md_1 - 2)
+319 | {
+320 | // buzzer_on();
+321 | point_count_run_md_1 = 0;
+322 | motor_stop();
+323 | mode = 11;
+324 | tft180_clear();
+325 | }
+326 | }
+327 | 
+328 | if (mode == 30)
+329 | {
+330 | static int32 segment_target = 0;
+331 | static char active_direction = 1;
+332 | static char  switch_timer = 0;
+333 | 
+334 | if (start_show_flag == 0)
+335 | {
+336 | tft180_show_uint(0, 0, mode, 2);
+337 | encoder_clear_count(ENCODER_1);
+338 | encoder_clear_count(ENCODER_2);
+339 | md_30_count_num = md_30_count_max - 1;
+340 | segment_target = (int32)fabsf(mode_2_data[md_30_count_num][0]);
+341 | active_direction = (mode_2_data[md_30_count_num][0] >= 0) ? -1 : 1;
+342 | target_direction = active_direction;
+343 | switch_timer = 0;
+344 | md_replay_accel_limit(0, 1);
+345 | 
+346 | if (md_30_total_pulses == 0)
+347 | {
+348 | int32 sum = 0;
+349 | for (int i = 0; i < md_30_count_max; i++)
+350 | {
+351 | sum += (int32)fabsf(mode_2_data[i][0]);
+352 | }
+353 | md_30_total_pulses = sum;
+354 | }
+355 | md_30_executed_pulses = 0;
+356 | start_show_flag = 1;
+357 | }
+358 | 
+359 | int32 current_encoder = -encoder_get_count(ENCODER_2);
+360 | 
+361 | tft180_show_uint(0, 64, md_30_count_num, 3);
+362 | tft180_show_int(0, 112, current_encoder, 5);
+363 | tft180_show_int(0, 128, segment_target, 5);
+364 | duoji.target_value = mode_2_data[md_30_count_num][1];
+365 | if (md_30_count_num >= 0 && mode_2_data[md_30_count_num][0] != 0)
+366 | {
+367 | // 当前段要求的方向
+368 | target_direction = (mode_2_data[md_30_count_num][0] > 0) ? -1 : 1;
+369 | 
+370 | // 检测方向切换，启动浮空缓冲
+371 | if (target_direction != active_direction && switch_timer == 0)
+372 | {
+373 | switch_timer = DIR_SWITCH_DELAY;
+374 | }
+375 | 
+376 | // 驱动控制：缓冲期间浮空滑行，否则正常驱动
+377 | if (switch_timer > 0)
+378 | {
+379 | md_replay_accel_limit(0, 1);
+380 | motor_floating();
+381 | switch_timer--;
+382 | if (switch_timer == 0)
+383 | active_direction = target_direction;
+384 | }
+385 | else
+386 | {
+387 | int32 live_position = md_30_executed_pulses + (int32)abs(current_encoder);
+388 | int ramp_pwm = tft_camera_debug_is_replaying() ?
+389 | calculate_camera_replay_ramp_pwm(live_position, md_30_total_pulses) :
+390 | calculate_ramp_pwm(live_position, md_30_total_pulses);
+391 | motor_on_differential(md_replay_accel_limit(ramp_pwm, 0), active_direction);
+392 | }
+393 | 
+394 | if (abs(current_encoder) >= segment_target)
+395 | {
+396 | md_30_executed_pulses += segment_target;
+397 | encoder_clear_count(ENCODER_1);
+398 | encoder_clear_count(ENCODER_2);
+399 | md_30_count_num--;
+400 | if (md_30_count_num >= 0)
+401 | {
+402 | segment_target = (int32)fabsf(mode_2_data[md_30_count_num][0]);
+403 | }
+404 | }
+405 | }
+406 | else
+407 | {
+408 | // motor_stop();
+409 | motor_off();                // 关闭电机PWM输出
+410 | pit_disable(CCU60_CH1);     // 关闭舵机ISR
+411 | duoji_on_flag=0;            // 关闭舵机使能
+412 | duoji.target_value=0;
+413 | md_30_total_pulses = 0;
+414 | md_30_executed_pulses = 0;
+415 | md_replay_accel_limit(0, 1);
+416 | if(tft_camera_debug_replay_finished())
+417 | {
+418 | mode = 3;
+419 | mode_old = 0;
+420 | }
+421 | else
+422 | {
+423 | mode = 11;
+424 | }
+425 | tft180_clear();
+426 | }
+427 | }
+428 | 
+429 | if (mode == 31)
+430 | {
+431 | static int32 segment_target = 0;
+432 | static char active_direction = 1;
+433 | static char  switch_timer = 0;
+434 | 
+435 | if (start_show_flag == 0)
+436 | {
+437 | tft180_clear();
+438 | tft180_show_uint(0, 0, mode, 2);
+439 | encoder_clear_count(ENCODER_1);
+440 | encoder_clear_count(ENCODER_2);
+441 | md_30_count_num = md_30_count_max - 1;
+442 | segment_target = (int32)(fabsf(mode_2_data[md_30_count_num][0]) * md_30_pulse_compensation);
+443 | active_direction = (mode_2_data[md_30_count_num][0] >= 0) ? -1 : 1;
+444 | target_direction = active_direction;
+445 | switch_timer = 0;
+446 | md_replay_accel_limit(0, 1);
+447 | 
+448 | //
+449 | if (md_30_total_pulses == 0)
+450 | {
+451 | int32 sum = 0;
+452 | for (int i = 0; i < md_30_count_max; i++)
+453 | {
+454 | sum += (int32)fabsf(mode_2_data[i][0]);
+455 | }
+456 | md_30_total_pulses = (int32)((float)sum * md_30_pulse_compensation);
+457 | }
+458 | md_30_executed_pulses = 0;
+459 | start_show_flag = 1;
+460 | }
+461 | 
+462 | int32 current_encoder = -encoder_get_count(ENCODER_2);
+463 | 
+464 | tft180_show_uint(0, 64, md_30_count_num, 3);
+465 | tft180_show_int(0, 112, current_encoder, 5);
+466 | tft180_show_int(0, 128, segment_target, 5);
+467 | duoji.target_value = mode_2_data[md_30_count_num][1];
+468 | if (md_30_count_num >= 0 && mode_2_data[md_30_count_num][0] != 0)
+469 | {
+470 | // 当前段要求的方向
+471 | target_direction = (mode_2_data[md_30_count_num][0] > 0) ? -1 : 1;
+472 | 
+473 | // 检测方向切换，启动浮空缓冲
+474 | if (target_direction != active_direction && switch_timer == 0)
+475 | {
+476 | switch_timer = DIR_SWITCH_DELAY;
+477 | }
+478 | 
+479 | // 驱动控制：缓冲期间浮空滑行，否则正常驱动
+480 | if (switch_timer > 0)
+481 | {
+482 | md_replay_accel_limit(0, 1);
+483 | motor_floating();
+484 | switch_timer--;
+485 | if (switch_timer == 0)
+486 | active_direction = target_direction;
+487 | }
+488 | else
+489 | {
+490 | int32 live_position = md_30_executed_pulses + (int32)abs(current_encoder);
+491 | int ramp_pwm = calculate_ramp_pwm(live_position, md_30_total_pulses);
+492 | motor_on_differential(md_replay_accel_limit(ramp_pwm, 0), active_direction);
+493 | }
+494 | 
+495 | if (abs(current_encoder) >= segment_target)
+496 | {
+497 | md_30_executed_pulses += segment_target;
+498 | encoder_clear_count(ENCODER_1);
+499 | encoder_clear_count(ENCODER_2);
+500 | md_30_count_num--;
+501 | if (md_30_count_num >= 0)
+502 | {
+503 | segment_target = (int32)(fabsf(mode_2_data[md_30_count_num][0]) * md_30_pulse_compensation);
+504 | }
+505 | }
+506 | }
+507 | else
+508 | {
+509 | // motor_stop();
+510 | motor_off();                // 关闭电机PWM输出
+511 | pit_disable(CCU60_CH1);     // 关闭舵机ISR
+512 | duoji_on_flag=0;            // 关闭舵机使能
+513 | duoji.target_value=0;
+514 | md_30_total_pulses = 0;
+515 | md_30_executed_pulses = 0;
+516 | md_replay_accel_limit(0, 1);
+517 | if(tft_camera_debug_replay_finished())
+518 | {
+519 | mode = 3;
+520 | mode_old = 0;
+521 | }
+522 | else
+523 | {
+524 | mode = 11;
+525 | }
+526 | tft180_clear();
+527 | }
+528 | }
+529 | 
+530 | if (mode == 32)
+531 | {
+532 | static int32 segment_target = 0;
+533 | static char active_direction = 1;
+534 | static char  switch_timer = 0;
+535 | 
+536 | if (start_show_flag == 0)
+537 | {
+538 | tft180_clear();
+539 | tft180_show_uint(0, 0, mode, 2);
+540 | encoder_clear_count(ENCODER_1);
+541 | encoder_clear_count(ENCODER_2);
+542 | md_30_count_num = md_30_count_max - 1;
+543 | segment_target = (int32)fabsf(mode_2_data[md_30_count_num][0]);
+544 | active_direction = (mode_2_data[md_30_count_num][0] >= 0) ? -1 : 1;
+545 | target_direction = active_direction;
+546 | switch_timer = 0;
+547 | md_replay_accel_limit(0, 1);
+548 | 
+549 | if (md_30_total_pulses == 0)
+550 | {
+551 | int32 sum = 0;
+552 | for (int i = 0; i < md_30_count_max; i++)
+553 | {
+554 | sum += (int32)fabsf(mode_2_data[i][0]);
+555 | }
+556 | md_30_total_pulses = sum;
+557 | }
+558 | md_30_executed_pulses = 0;
+559 | start_show_flag = 1;
+560 | }
+561 | 
+562 | int32 current_encoder = -encoder_get_count(ENCODER_2);
+563 | 
+564 | tft180_show_uint(0, 64, md_30_count_num, 3);
+565 | tft180_show_int(0, 112, current_encoder, 5);
+566 | tft180_show_int(0, 128, segment_target, 5);
+567 | duoji.target_value = mode_2_data[md_30_count_num][1];
+568 | 
+569 | if (md_30_count_num >= 0 && mode_2_data[md_30_count_num][0] != 0)
+570 | {
+571 | // 当前段要求的方向
+572 | target_direction = (mode_2_data[md_30_count_num][0] > 0) ? -1 : 1;
+573 | 
+574 | // 检测方向切换，启动浮空缓冲
+575 | if (target_direction != active_direction && switch_timer == 0)
+576 | {
+577 | switch_timer = DIR_SWITCH_DELAY;
+578 | }
+579 | 
+580 | // 驱动控制：缓冲期间浮空滑行，否则正常驱动
+581 | if (switch_timer > 0)
+582 | {
+583 | md_replay_accel_limit(0, 1);
+584 | motor_floating();
+585 | switch_timer--;
+586 | if (switch_timer == 0)
+587 | active_direction = target_direction;
+588 | }
+589 | else
+590 | {
+591 | int32 live_position = md_30_executed_pulses + (int32)abs(current_encoder);
+592 | int ramp_pwm = calculate_ramp_pwm(live_position, md_30_total_pulses);
+593 | motor_on_differential(md_replay_accel_limit(ramp_pwm, 0), active_direction);
+594 | }
+595 | 
+596 | // 计算当前航向与目标航向的误差
+597 | float heading_error = fabsf(angle_diff(
+598 | (unsigned int)mode_2_data[md_30_count_num][1], z_angle));
+599 | char heading_ok = (heading_error < MD_30_HEADING_THRESHOLD);
+600 | 
+601 | static int heading_timeout = 0;  // 超时计数器，防止卡死
+602 | 
+603 | if (abs(current_encoder) >= segment_target)
+604 | {
+605 | if (!heading_ok)
+606 | {
+607 | heading_timeout++;
+608 | if (abs(current_encoder) >= (int32)(segment_target * 1.5f)
+609 | || heading_timeout > 100)
+610 | {
+611 | heading_ok = 1;
+612 | }
+613 | }
+614 | 
+615 | if (heading_ok)
+616 | {
+617 | heading_timeout = 0;
+618 | md_30_executed_pulses += segment_target;
+619 | encoder_clear_count(ENCODER_1);
+620 | encoder_clear_count(ENCODER_2);
+621 | md_30_count_num--;
+622 | if (md_30_count_num >= 0)
+623 | {
+624 | segment_target = (int32)fabsf(mode_2_data[md_30_count_num][0]);
+625 | }
+626 | }
+627 | }
+628 | else
+629 | {
+630 | heading_timeout = 0;
+631 | }
+632 | }
+633 | else
+634 | {
+635 | // motor_stop();
+636 | motor_off();                // 关闭电机PWM输出
+637 | pit_disable(CCU60_CH1);     // 关闭舵机ISR
+638 | duoji_on_flag=0;            // 关闭舵机使能
+639 | duoji.target_value=0;
+640 | md_30_total_pulses = 0;
+641 | md_30_executed_pulses = 0;
+642 | md_replay_accel_limit(0, 1);
+643 | mode = 11;
+644 | tft180_clear();
+645 | }
+646 | }
+647 | 
+648 | if (mode == 33)
+649 | {
+650 | static int32 segment_target = 0;
+651 | static char active_direction = 1;
+652 | static char  switch_timer = 0;     // 方向切换倒计 ?(0=正常驱动)
+653 | 
+654 | if (start_show_flag == 0)
+655 | {
+656 | tft180_clear();
+657 | tft180_show_uint(0, 0, mode, 2);
+658 | encoder_clear_count(ENCODER_1);
+659 | encoder_clear_count(ENCODER_2);
+660 | md_30_count_num = md_30_count_max - 1;
+661 | segment_target = (int32)(fabsf(mode_2_data[md_30_count_num][0]) * md_30_pulse_compensation);
+662 | active_direction = (mode_2_data[md_30_count_num][0] >= 0) ? -1 : 1;
+663 | target_direction = active_direction;
+664 | switch_timer = 0;
+665 | md_replay_accel_limit(0, 1);
+666 | 
+667 | //
+668 | if (md_30_total_pulses == 0)
+669 | {
+670 | int32 sum = 0;
+671 | for (int i = 0; i < md_30_count_max; i++)
+672 | {
+673 | sum += (int32)fabsf(mode_2_data[i][0]);
+674 | }
+675 | md_30_total_pulses = (int32)((float)sum * md_30_pulse_compensation);
+676 | }
+677 | md_30_executed_pulses = 0;
+678 | start_show_flag = 1;
+679 | }
+680 | 
+681 | int32 current_encoder = -encoder_get_count(ENCODER_2);
+682 | 
+683 | tft180_show_uint(0, 64, md_30_count_num, 3);
+684 | tft180_show_int(0, 112, current_encoder, 5);
+685 | tft180_show_int(0, 128, segment_target, 5);
+686 | duoji.target_value = mode_2_data[md_30_count_num][1];
+687 | if (md_30_count_num >= 0 && mode_2_data[md_30_count_num][0] != 0)
+688 | {
+689 | // 当前段要求的方向
+690 | target_direction = (mode_2_data[md_30_count_num][0] > 0) ? -1 : 1;
+691 | 
+692 | // 检测方向切换，启动浮空缓冲
+693 | if (target_direction != active_direction && switch_timer == 0)
+694 | {
+695 | switch_timer = DIR_SWITCH_DELAY;
+696 | }
+697 | 
+698 | // 驱动控制：缓冲期间浮空滑行，否则正常驱动
+699 | if (switch_timer > 0)
+700 | {
+701 | md_replay_accel_limit(0, 1);
+702 | motor_floating();
+703 | switch_timer--;
+704 | if (switch_timer == 0)
+705 | active_direction = target_direction;
+706 | }
+707 | else
+708 | {
+709 | int32 live_position = md_30_executed_pulses + (int32)abs(current_encoder);
+710 | int ramp_pwm = calculate_ramp_pwm(live_position, md_30_total_pulses);
+711 | motor_on_differential(md_replay_accel_limit(ramp_pwm, 0), active_direction);
+712 | }
+713 | 
+714 | // 计算当前航向与目标航向的误差
+715 | float heading_error = fabsf(angle_diff(
+716 | (unsigned int)mode_2_data[md_30_count_num][1], z_angle));
+717 | char heading_ok = (heading_error < MD_30_HEADING_THRESHOLD);
+718 | 
+719 | static int heading_timeout = 0;  // 超时计数器，防止卡死
+720 | 
+721 | if (abs(current_encoder) >= segment_target)
+722 | {
+723 | if (!heading_ok)
+724 | {
+725 | heading_timeout++;
+726 | if (abs(current_encoder) >= (int32)(segment_target * 1.5f)
+727 | || heading_timeout > 100)
+728 | {
+729 | heading_ok = 1;
+730 | }
+731 | }
+732 | 
+733 | if (heading_ok)
+734 | {
+735 | heading_timeout = 0;
+736 | md_30_executed_pulses += segment_target;
+737 | encoder_clear_count(ENCODER_1);
+738 | encoder_clear_count(ENCODER_2);
+739 | md_30_count_num--;
+740 | if (md_30_count_num >= 0)
+741 | {
+742 | segment_target = (int32)(fabsf(mode_2_data[md_30_count_num][0]) * md_30_pulse_compensation);
+743 | }
+744 | }
+745 | }
+746 | else
+747 | {
+748 | heading_timeout = 0;
+749 | }
+750 | }
+751 | else
+752 | {
+753 | // motor_stop();
+754 | motor_off();                // 关闭电机PWM输出
+755 | pit_disable(CCU60_CH1);     // 关闭舵机ISR
+756 | duoji_on_flag=0;            // 关闭舵机使能
+757 | duoji.target_value=0;
+758 | md_30_total_pulses = 0;
+759 | md_30_executed_pulses = 0;
+760 | md_replay_accel_limit(0, 1);
+761 | mode = 11;
+762 | tft180_clear();
+763 | }
+764 | }
+765 | }

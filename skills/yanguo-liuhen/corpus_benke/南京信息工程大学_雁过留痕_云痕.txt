@@ -1,0 +1,910 @@
+第二十一届
+全国大学生智能汽车竞赛
+技 术 报 告
+学 校：南京信息工程大学
+队伍名称：云痕
+参赛队员：朱旭、袁子豪、朱禹潼
+带队教师：余莉、孙玉宝
+I
+关于技术报告和研究论文使用授权的说明
+本人完全了解全国大学生智能汽车竞赛关于技术报告和研究论文保存、使用
+的规定。参赛作品著作权归参赛者本人；比赛组委会可以在相关主页收录并公开
+参赛作品的设计方案、技术报告、模型车视频及图像资料，并可将相关内容编入
+论文集。
+参赛队员签名：朱旭 袁子豪 朱禹潼
+带队教师签名：余莉 孙玉宝
+日期：2026 年 8 月 17 日
+II
+目 录
+引言 1
+第一章 模型车设计思路与技术方案概述 2
+1.1 总体方案 2
+1.2 数据处理 2
+第二章 模型车硬件结构搭建 4
+2.1 机械结构与总体布局 4
+2.2 传感器与执行器安装 4
+2.3PCB 固定与线束连接 5
+第三章 电路设计 6
+3.1 电路设计方案 6
+3.2 主控与摄像头接口 6
+3.3 电机与舵机接口 7
+3.4 负压电路设计 8
+3.5 无刷云台设计 9
+第四章 微处理器控制软件设计 11
+4.1 软件任务调度 11
+4.2 图像处理与中线构造 11
+4.3 纯跟踪与闭环控制 11
+4.4 特殊元素状态机 12
+第五章 开发工具与调试过程 13
+5.1 开发工具说明 13
+5.2 制作与调试过程 13
+第六章 主要技术参数 14
+第七章 结论 18
+参考文献 I
+附录 II
+第二十一届全国大学生智能汽车竞赛技术报告 第一章 模型车设计思路与技术方案概述
+1
+引言
+全国大学生智能汽车竞赛是一项以“立足培养、重在参与、鼓励探索、追求
+卓越”为指导思想，面向全国大学生开展的具有探索性的工程实践活动。它以
+设计制作在特定赛道上能自主行驶且具有优越性能的智能模型汽车这类复杂工
+程问题为任务，鼓励大学生组成团队，综合运用多学科知识，提出、分析、设计、
+开发并研究智能汽车的机械结构、电子线路、运动控制和开发与调试工具等问题，
+激发大学生从事工程技术开发和科学研究探索的兴趣和潜能，倡导理论联系实际、
+求真务实的学风和团队协作的人文精神。
+在大赛中选手们追求卓越，挑战自我，超越自我，实现从无到有，从零到一
+的锐变。而雁过留痕作为智能车改革元年从室内竞速向竞速与任务并重的组别，
+对我们有着极大的挑战，如何在算力限制下高效率完成任务，是我们需要克服的
+困难。
+在这份报告中，包含我们组对小车的整体制作思路，电路，算法，结构，车
+辆大体参数等车辆涵盖的内容，详尽地描述了我们的思路以及创新，同时这份报
+告凝聚了我们的努力以及智慧，是我们组共同努力的结果。
+第二十一届全国大学生智能汽车竞赛技术报告 第一章 模型车设计思路与技术方案概述
+2
+第一章 模型车设计思路与技术方案概述
+1.1 总体方案
+车模采用单主控、单摄像头、双编码器和单 IMU 的控制结构。主控完成图
+像采集、路径计算、元素识别和执行器输出，速度环由定时器独立运行。
+（1）使用 MT9V03X 灰度摄像头获取赛道图像，分辨率 188×120、帧率 100
+FPS。
+（2）左右方向编码器分别接入 TIM18 和 TIM17，为双轮速度环及距离状态提
+供反馈。
+（3）IMU660RA 提供角速度和加速度，用于零漂估计、坡道识别和舵机补偿。
+（4）边线搜索、透视变换、中线构造和纯跟踪依次生成转向目标。
+（5）普通道路和特殊元素分别使用独立状态与参数，减少场景切换时的相互影
+响。
+（6）速度、差速、LADRC、舵机 PID 和曝光时间参数按 PlanA/PlanB/PlanC 三
+组保存进flash。
+1.2 数据处理
+感知数据包括摄像头图像、编码器周期脉冲和 IMU 角速度。图像链路输出
+中线与 pure_angle，状态机根据边线、累计脉冲和 IMU 条件覆盖目标速度及中
+线处理方式，控制层再输出舵机、左右电机、负压风扇和打靶指令。
+第二十一届全国大学生智能汽车竞赛技术报告 第一章 模型车设计思路与技术方案概述
+3
+系统把帧级图像任务与固定周期控制任务分开：图像到达后更新道路几何和
+元素状态，5ms 定时中断持续读取编码器并刷新电机输出。即使某一帧图像处
+理时间发生变化，轮速闭环仍保持固定采样周期。负压风扇先完成软启动，随后
+才允许驱动电机进入控制状态。
+层级 输入 主要处理 输出
+感知
+188×120 灰度图、编码器、
+IMU
+采样、帧同步、零漂校准 边线点、轮速、角速度
+决策 边线与状态量 透视、中线、纯跟踪、状态机 转向量、左右轮目标
+执行 目标与反馈 LADRC、舵机 PD、限幅、软启动
+电机、舵机、负压、打
+靶
+图 1.2 控制系统示意图
+
+第二十一届全国大学生智能汽车竞赛技术报告 第二章 模型车硬件结构搭建
+4
+第二章 模型车硬件结构搭建
+2.1 机械结构与总体布局
+车模采用四轮底盘，确定纯跟踪模型中的等效轴距与等效车身长度。电池、
+主控板、驱动板和负压组件集中布置在车模中后部，摄像头与 IMU 安装在前部，
+靠近纵向中心线，以减小安装偏差对透视标定和角速度测量的影响。
+2.2 传感器与执行器安装
+2.2.1 摄像头安装
+摄像头安装高度、俯仰角和相对后轴距离决定透视矩阵。安装后使用静态赛
+道检查图像中心与车体中心线，再锁紧支架，避免急加速和坡道振动改变标定关
+系。
+图 2.2 摄像头安装
+2.2.2 编码器与 IMU 安装
+左右编码器分别连接 TIM18、TIM17。每个速度周期读取计数并清零，累
+计脉冲用于障碍和坡道距离判断。IMU660RA 固定在刚性区域，坐标轴与车体
+坐标一致；上电静止采样 200 次、间隔 10ms，估计 Y/Z 轴零漂。
+
+第二十一届全国大学生智能汽车竞赛技术报告 第二章 模型车硬件结构搭建
+5
+2.3 PCB 固定与线束连接
+电机和负压风扇使用大电流线束，摄像头、IMU 和编码器信号线单独固定。
+连接器保留检修余量但接触车轮、齿轮和舵机连杆。舵机输出限制在 ±34，打
+靶云台使用 UART7串口，后期使用多路激光，因云台轨迹为一条弧线，打靶准
+确率不足而放弃。
+图 2.4 电池固定与线束连接
+
+第二十一届全国大学生智能汽车竞赛技术报告 第三章 电路设计
+6
+第三章 电路设计
+3.1 电路设计方案
+电路由主控与调试接口、摄像头和 IMU 接口、双路电机驱动、转向舵机、
+负压风扇及打靶云台接口组成。主控板承担采集、运算和通信，功率器件集中在
+驱动板，传感器接口与电机、风扇的大电流回路分区布置。
+硬件单元 代码接口 作用
+主控 STC32G144K246/96MHz 运行主循环、中断和外设驱动
+摄像头 MT9V03X/FIFO/DMA 188×120 灰度图像
+IMU IMU660RA Y/Z 角速度与加速度
+编码器 TIM17/TIM18 周期脉冲与累计距离
+电机 PWMB_CH4/PWMB_CH2+DIR 左右轮 PWM 与方向
+舵机/云台 PWME_CH4P_PA6/UART7 转向与CYT2BL3 打靶云台
+3.2 主控与摄像头接口
+启动阶段依次配置 USBCDC、按键、IPS200、舵机、电机、编码器、灯光、
+UART7、IMU 和摄像头。MT9V03X 通过并口、FIFO 和 DMA 接收，VSYNC
+与 DMA 中断共同置位帧完成标志。
+第二十一届全国大学生智能汽车竞赛技术报告 第三章 电路设计
+7
+图 3.1 主控与摄像头接口.
+3.3 电机与舵机接口
+电机 PWM 频率为 17kHz，方向信号使用 IO_P76、IO_P74。负压风扇由
+两个 50Hz 通道驱动，软启动每次增加 1 个计数，达到 MAX_VAC_PWM=910
+后再启动电机。转向舵机由 PWME_CH4P_PA6 输出，SERVO_DUTY() 将角度
+换算为占空比。
+
+第二十一届全国大学生智能汽车竞赛技术报告 第三章 电路设计
+8
+图 3.2 舵机电源
+3.4 负压电路设计
+负压电机使用乘风2207V3（2550kv）。电调使用Ai8051U-QFN48 芯片，制
+作二合一电调，经测试峰值电流可达70A，持续电流可以稳定在60A，满足使用
+需要。Pwm波形无畸变，无重启现象。
+图 3.3 二合一电调3D视图
+
+第二十一届全国大学生智能汽车竞赛技术报告 第三章 电路设计
+9
+图 3.4 二合一电调原理图
+3.5 无刷云台设计
+团队设计了一个基于CYT2BL3 的无刷驱动，使用2804 无刷云台，在逐飞
+科技的CYT2BL3 开源库上进行了一些小修改，硬件电路上借鉴开源方案，栅极
+驱动更换为DRV8300D，无需自举二极管，有效节省PCB空间。方案也将开源
+在立创开源广场上。该方案国赛并未使用
+
+第二十一届全国大学生智能汽车竞赛技术报告 第三章 电路设计
+10
+图 3.5CYT2-FOC 驱动部分原理图
+
+第二十一届全国大学生智能汽车竞赛技术报告 第五章 开发工具与调试过程
+11
+第四章 微处理器控制软件设计
+4.1 软件任务调度
+主循环以 mt9v03x_finish_flag 为帧同步条件，每帧依次执行曝光处理、巡
+线、特殊元素处理、line_process()、打靶识别、IMU 读取、舵机控制和菜单刷
+新。TIM5、TIM6 每 5ms 分别执行 fps_handler() 和 motor_control_wrapper()，
+TIM11 每 1ms 执行 shooting_countdown()。
+上电初始化依次完成显示、按键、PWM、编码器、UART7、IMU660RA 和
+MT9V03X 配置。IMU 在车模静止时采集 200 组数据估计零漂；摄像头由
+VSYNC 和 DMA 中断共同维护帧完成标志。菜单参数通过 PlanA、PlanB、
+PlanC 三组结构保存，切换方案时同步刷新速度、舵机、LADRC 和曝光参数。
+4.2 图像处理与中线构造
+4.2.1 边线搜索
+compare_search_line() 按行寻找灰度跳变点，用局部白值和容差筛出左右边
+界。line_detect() 根据边线长度和连续性返回 LEFT_AND_RIGHT、ONLY_LEFT、
+ONLY_RIGHT 或 NOTHING。双边有效时取中点，单边丢失时结合道路半宽和
+上一帧边线补线。
+4.2.2 透视变换与重采样
+point_transf() 使用 3×3 矩阵把像素坐标转换到车体坐标，
+resample_points_left()/right() 按等距采样整理边线。圆环重新搜索内外边线，十
+字使用 crossing_line_clear() 和补线逻辑，障碍段由 obstacle_center_line() 按方
+向偏移中线。
+4.3 纯跟踪与闭环控制
+4.3.1 转向控制
+pure_suit() 在中线上寻找预瞄点并输出 pure_angle 和 speed_off_k。当前标
+定值为 Ld=0.8、pixel_per_meter=100、wheelbase_val=0.155m。普通道路、圆环、
+十字、斑马线和打靶使用不同舵机参数，servo_pd_control() 叠加 IMU 角速度
+第二十一届全国大学生智能汽车竞赛技术报告 第五章 开发工具与调试过程
+12
+补偿后把输出限制在 ±34。
+4.3.2 速度控制
+Speed_control() 按 pure_angle 分段设置 aimspeed 和差速比例 S_angle，转
+角越大目标速度越低；坡道、圆环、打靶和等待状态覆盖默认速度。Aim_speed_set()
+生成左右轮目标，Motor_Control() 读取编码器周期脉冲并调用左右
+LADRC_Update() 输出 PWM，采样周期为 0.005s。
+LADRC 使用二阶线性扩张状态观测器估计轮速及总扰动。离散实现先计算
+e=y-z1，再由 z1、z2、控制周期 Ts 和上一周期输出更新观测状态；控制律
+u0=wc(target-z1)，补偿 z2 后按 b0 的倒数换算为 PWM。输出限幅在启动阶段
+逐步释放，抑制负压建立完成后电机突然加速造成的机械冲击。
+4.4 特殊元素状态机
+元素 进入条件 处理方式 退出条件
+圆环 边线缺失与圆环补搜 切换圆环边线和专用舵机参数 环内/环外状态完成
+十字 左右边线形态 清线、补线并限制速度 边线恢复或距离满足
+坡道 IMUY 轴角速度连续触发 RAMP_UP/RAMP_DOWN 限速
+角度回正或累计距离
+满足
+障碍 element_order 指定 中线按方向偏移 累计脉冲超过阈值
+斑马线 连续白色跳变点 减速并进入 ZEBRA 累计脉冲达到 17000
+打靶 圆形目标定位 云台对准、倒计时、执行
+动作完成回到
+NORMAL
+元素处理同时使用 condition 和 element_order：condition 表示当前车辆状
+态，element_order 表示赛道元素顺序。每个元素只改写本阶段需要的中线、速
+度或执行器参数，退出时恢复 NORMAL 并更新 element_count。编码器累计脉
+冲用于距离退出条件，IMU 用于坡道方向判定，边线长度与连续性用于圆环、
+十字和障碍的几何判断。
+第二十一届全国大学生智能汽车竞赛技术报告 第五章 开发工具与调试过程
+13
+第五章 开发工具与调试过程
+5.1 开发工具说明
+工程使用 MDKforC251 和逐飞科技 STC32G144K 开源库。应用层包含
+search_line、crossing、ring、shooting、ramp、zebra、motor、servo、imu、menu 等
+模块，库层负责摄像头、IMU、编码器、PWM、GPIO、显示和中断驱动。
+5.2 制作与调试过程
+阶段 主要工作 通过条件
+机械安装 固定摄像头、IMU、编码器、板卡和线束
+无松动、无卡滞、中心线一
+致
+分模块上电 测量电压和纹波 电源轨处于额定范围
+外设验证 图像、编码器、IMU、舵机和电机 数据连续且方向正确
+静态算法 检查边线、中线、透视和纯跟踪 典型图像输出稳定
+赛道联调 按直道、弯道和特殊元素逐项调参 状态转换无误触发
+安全测试 软启动、堵转、终点和异常停车 能够可靠停机
+调试时通过 IPS200 和 USBCDC/串口记录速度、pure_angle、speed_off_k、
+左右轮速、IMU 角速度、condition 和 element_count。每轮只改变一个参数，
+同时记录光照、目标速度和异常现象。
+参数整定顺序为先完成编码器方向和电机闭环，再标定摄像头透视关系与道
+路半宽，随后调节纯跟踪预瞄和舵机参数，最后逐项接入圆环、十字、坡道、障
+碍、斑马线与打靶状态。自动曝光测试固定赛道位置和相机姿态，通过改变环境
+照度观察图像均值、曝光时间和边线连续性。
+第二十一届全国大学生智能汽车竞赛技术报告 第六章 主要技术参数
+14
+第六章 主要技术参数
+表 6.1 分列控制系统中的确定参数与整车实测项目。软件参数直接对应当
+前工程配置，尺寸、质量和功耗栏用于记录最终装车状态。
+队伍名称 云痕
+参赛学校 南京信息工程大学
+赛题组组别 雁过留痕组
+检查项目
+规格
+（选手自行填写）
+符合
+（）
+不符合
+（）
+备注
+1.车模类型是什么？ C 型车模 
+车模整体尺寸：
+1.（包括传感器在内）长，
+宽，高(mm)
+2. 摄像头组标明镜头距
+离地面高度。
+长宽高：
+200*280*350镜头距
+地面 330
+1. 传感器种类、规格(型
+号)数量。
+2. 是否使用自带MCU的成
+品传感器模块？型号
+是什么？
+总钻风摄像头 1 个，陀螺仪
+IMU660RA一个；未使用。
+1. 是否增加伺服电机？
+2. 如果有那么种类、个数
+和作用？
+未增加伺服电机
+1. 电路中微处理器型号
+和个数？
+2 颗 Ai8051U,1 块
+stc32g144k246
+第二十一届全国大学生智能汽车竞赛技术报告 第六章 主要技术参数
+15
+1. 是否具有其它可编程
+器件，个数与作用？
+无
+1. 是否有无线通讯装
+置？
+2. 如果有，那么种类和个
+数？
+未使用无线通讯装置
+1. 电池的种类、规格和数
+量？
+75c 1800mah 3s
+1. 是否使用 GPS 导航？
+2. 是否没有使用 RTK？
+未使用 GPS 导航
+未使用 RTK
+1. 后轮驱动电机是否是
+原车模电机？
+2. 是否具有防伪易损标
+签？
+是
+是
+1. 车模轮胎是否原有的
+纹理可辨析？
+2. 轮胎表面是否具有粘
+性物质？
+3. 对于麦克纳姆轮是否
+更换过小轮胶皮？
+轮胎纹理不可辨
+轮胎表面无粘性物质
+未使用麦克纳姆轮
+1. 车模底盘是否是原车
+模底盘？
+2. 是否有大面积切割？
+原车底盘，加装碳板
+否
+1. 车轮轴距、轮距是否改
+装？
+2. 改装参数是什么？
+无
+第二十一届全国大学生智能汽车竞赛技术报告 第六章 主要技术参数
+16
+1. 车模驱动轮传动机构
+是否改装？
+2. 改装方式是什么？
+无
+1. 车模差速器是否改
+装？
+2. 改装方式是什么？
+无
+1. 是否更换过原装车模
+中的机械元器件？更
+换后的规格 是什么？
+未更换
+。
+1. 车模电路板个数及功
+能。
+2. 其中是否有购买成品、
+哪一些？
+本车模包含 6 块电路板，功能
+分别为：电源管理与后轮驱动、
+承载核心板与各模块、无刷电
+调、姿态检测、激光笔分电
+1. 自制电路板是否标记
+有学校名称、队伍名
+称、制作日期等信息？
+2. 标示信息在PCB的哪一
+层？
+包含，均标示在 PCB 顶层 请在表格中注
+明电路板队伍
+信息的内容。
+其它待说明内容
+第二十一届全国大学生智能汽车竞赛技术报告 第六章 主要技术参数
+17
+图 6.1 车模技术参数测量
+
+第二十一届全国大学生智能汽车竞赛技术报告 第七章 结论
+18
+第七章 结论
+车模已经形成从灰度图像、边线和中线到舵机与双轮速度输出的完整控制链
+路。MT9V03X 提供赛道图像，纯跟踪生成转向目标，编码器和 LADRC 维持
+轮速，IMU 参与坡道识别和角速度补偿，状态机负责圆环、十字、障碍、斑马
+线和打靶等元素切换。菜单和 IAP 保存多组参数，便于现场切换。
+智能车竞赛是一个多学科、综合性的比赛，其中设计涉及了控制、传感技术、
+电子信息、模式识别、深度学习、汽车电子、机械等多个学科，在整个准备的过
+程中，我们把所学的理论知识应用于实际，不仅开拓了视野，使我们的动手能力、
+运用知识的能力、分析解决问题的能力也有了很大的提高。
+第二十一届全国大学生智能汽车竞赛技术报告 附录
+I
+参考文献
+[1] 卓晴. 第二十一届全国大学生智能汽车竞赛技术报告要求细则[EB/OL].
+CSDN博客,2026.
+[2] 逐飞科技.STC32G144K 开源库与外设驱动文档[Z].2025.
+[3] 逐飞科技.MT9V03X 灰度摄像头驱动说明[Z].
+[4] 逐飞科技.IMU660RA 六轴惯性传感器驱动说明[Z].
+第二十一届全国大学生智能汽车竞赛技术报告 附录
+II
+附录
+附录 A 车模与电路板照片
+图 A.1 车模俯视照片
+
+第二十一届全国大学生智能汽车竞赛技术报告 附录
+III
+图 A.2 车模前视照片
+附录 B 电路板原理图
+图 B.1 主控与接口原理图
+
+第二十一届全国大学生智能汽车竞赛技术报告 附录
+IV
+图 B.2 电机驱动与电源原理图
+
+第二十一届全国大学生智能汽车竞赛技术报告 附录
+V
+图 B.3 无刷电调原理图
+附录 C 核心源码
+voidcompare_search_line(uint8image[MT9V03X_H][MT9V03X_W]){
+int16i;
+int16j;
+uint16local_height; //参
+考白列采样高度
+uint16local_width; //参
+考白列采样宽度
+uint8half_width;
+//图像半宽
+lineleft_white_count={{{0}},0,Max_Length_all}; //左白列（坐标版本）
+lineright_white_count={{{0}},0,Max_Length_all};//右白列（坐标版本）
+uint8lie_distence;
+//设定最长白列的间隔
+uint8hang_distence;
+//设定最长白列的跳行判断
+int16hang;
+//在一些循环中表示行号
+uint16lie;
+//在一些循环中表示列号
+int16hang_compare;
+//实际对比度巡线时的行号
+int16lie_compare;
+//实际对比度巡线时的列号
+int16gap_compare;
+//实际对比度巡线时的隔列采样
+uint8white_tolerance; //用
+于设置白值宽容度，参考白值+-white_tolerance都判定为白
+uint8is_boundary;
+//用于判断是否判定为跳变点
+uint8step;
+//用于记录变现长度
+uint8temporary_gap; //用于标记排序是上一个参照
+点的位置
+uint8is_successful;
+//巡线成功标志位
+int16extern_compare_half_height; //用于
+记录额外巡线的半高
+uint8fail_counts;
+//用于记录额外巡线失败次数
+// int16max_zero_len;
+int16cur_start;
+int16best_start;
+int16cur_len;
+//************************参数设定************************//
+//设定参考白值统计高度
+local_height=5; // 采样高度：从图像底部向上取5行
+//设定参考白值统计宽度(需为偶数)
+local_width=10; // 采样宽度：中心区域左右各15列（总
+宽度30）0
+第二十一届全国大学生智能汽车竞赛技术报告 附录
+VI
+//设定最长白列巡线间隔
+lie_distence=2; // 每隔5列采样一次白点统计
+//设定最长白列跳行
+hang_distence=2;
+//设定白值宽容度
+white_tolerance=40; // 白值宽容度 ±50
+//设定跳变阈值
+is_boundary=17; // 跳变阈值 30
+//设定巡线行间隔
+gap_compare=2;
+//设定额外巡线半高
+extern_compare_half_height=3;
+//**********************参数初始化***************************//
+//初始化宽度中值
+half_width=MT9V03X_W/2; // 计算图像中心列
+local_width=local_width/2; // 将采样宽度转换为单侧宽度
+//初始化参考白值
+local_white_value=0;
+//初始化边线长度
+step=0;
+//初始化巡线成功标志位
+is_successful=0;
+//初始化额外巡线失败次数
+fail_counts=0;
+if(element_order[element_count]==SHOOTING_ORDER){
+hang_distence=3;
+gap_compare=3;
+}
+//1. 提取参考白值（取图像底部中心区域的平均灰度作为赛道白色的参考值）
+for(i=MT9V03X_H-1;i>MT9V03X_H-local_height-1;i--) // 从最底部向上取
+local_height 行
+for(j=half_width-local_width;j<half_width+local_width;j++)// 中心区域左右各 local_width
+列
+local_white_value=local_white_value+image[i][j];
+local_white_value=local_white_value/(local_height*local_width*2);// 计算平均值
+// ips200_show_int16(0,200,abs(-local_white_value));
+// printf("local_white_value:%d\n\r",local_white_value);
+//2. 最长白列确认大致轮廓（统计每一列从底部向上的连续白点数量）
+// 将结果存入 white_count 结构体：points[i][X]= 列号，points[i][Y]= 该列第一个非白点的行号
+（即白点起始行）
+for(i=0,lie=lie_distence;lie<MT9V03X_W;lie+=lie_distence,i++)//避免识别到底部两侧白边，浪费
+算力
+{
+white_count.points[i][X]=lie; // 记录当前列号
+white_count_crossing.points[i][X]=lie; // 记录当前列号
+// 从底部向上扫描，统计连续白色的像素个数
+//将白列点集初始化为屏幕顶部，是否能解决问题？
+//初始化Y 坐标
+white_count.points[i][Y]=0; // 记录当前列号
+white_count_crossing.points[i][Y]=0; // 记录当前列号
+for(hang=MT9V03X_H-1;hang>0;hang-=hang_distence)
+{
+第二十一届全国大学生智能汽车竞赛技术报告 附录
+VII
+if(image[hang][lie]>local_white_value-white_tolerance&&
+image[hang][lie]<local_white_value+white_tolerance)
+{
+white_count.points[i][Y]+=hang_distence; // 白色像素计数+1
+}
+else
+{
+// 遇到非白色像素，停止计数，将计数转换为起始行号
+white_count_crossing.points[i][Y]=MT9V03X_H-white_count.points[i][Y];
+white_count.points[i][Y]=MT9V03X_H-white_count.points[i][Y];
+// //画点，显示白列位置(两个都要画)
+// ips200_draw_point(lie,white_count.points[i][Y],RGB565_RED);
+//
+break;
+}
+// if(hang-hang_distence<0){
+//// white_count.points[i][Y]=MT9V03X_H-white_count.points[i][Y];
+// white_count.points[i][Y]=0;
+// //画点，显示白列位置(两个都要画)
+// ips200_draw_point(lie,white_count.points[i][Y],RGB565_RED);
+// break;
+// }
+}
+if(hang<5&&white_count_crossing.points[i][Y]==120)
+white_count_crossing.points[i][Y]=0;
+}
+white_count.hang_length=i; // 记录采样列的总数
+white_count_crossing.hang_length=i; // 记录采样列的总数
+// 寻找最长白列（即白点起始行最小的列，表示该列白色区域最高）
+// 初始化左右最长白列索引
+left_max=white_count.hang_length-1; // 左侧最长白列初始化为最右边
+的一列（后面会更新为真正最长的）
+right_max=0; // 右侧最长白列初始化为最左边
+的一列
+if(white_count.hang_length>0){
+for(i=0;i<white_count.hang_length-1;i++)
+{
+// 左侧：从左边开始，找到白点起始行最小的列（即白色区域最高的列）
+if(white_count.points[i][Y]<white_count.points[left_max][Y])
+left_max=i;//left_max 可取到
+// 右侧：从右边开始，找到白点起始行最小的列
+if(white_count.points[white_count.hang_length-1-i][Y]<
+white_count.points[right_max][Y])
+right_max=white_count.hang_length-i-1;//right_max 可取到
+}
+}
+// 初始化左右最长白列索引
+// 寻找 white_count_crossing 的最长全白连续段（Y==0）
+left_max_crossing=white_count_crossing.hang_length-1;
+right_max_crossing=0;
+if(white_count_crossing.hang_length>0)
+第二十一届全国大学生智能汽车竞赛技术报告 附录
+VIII
+{
+max_zero_len=0;
+cur_start=-1;
+best_start=-1;
+cur_len=0;
+for(i=0;i<white_count_crossing.hang_length;i++)
+{
+if(white_count_crossing.points[i][Y]==0)
+{
+if(cur_start==-1)
+cur_start=i;
+cur_len++;
+}
+else
+{
+if(cur_len>max_zero_len)
+{
+max_zero_len=cur_len;
+best_start=cur_start;
+}
+cur_start=-1;
+cur_len=0;
+}
+}
+if(cur_len>max_zero_len) // 处理末尾的连续段
+{
+max_zero_len=cur_len;
+best_start=cur_start;
+}
+if(max_zero_len>0)
+{
+// 存在全白列，使用最长连续段的左右索引
+left_max_crossing=best_start;
+right_max_crossing=best_start+max_zero_len-1;
+}
+else
+{
+// 没有全白列，沿用原来的最小 Y 搜索逻辑
+for(i=0;i<white_count_crossing.hang_length-1;i++)
+{
+if(white_count_crossing.points[i][Y]<white_count_crossing.points[left_max_crossing][Y])
+left_max_crossing=i;
+if(white_count_crossing.points[white_count_crossing.hang_length-1-i][Y]<
+white_count_crossing.points[right_max_crossing][Y])
+right_max_crossing=white_count_crossing.hang_length-i-1;
+}
+}
+}
+for(i=1,temporary_gap=0,j=0;i<=left_max_crossing;i++)
+// for(i=1,temporary_gap=0,j=0;i<=left_max;i++)
+{
+// 如果当前列的白点起始行比前一列（跳过异常点后）还高（即行号更大），则视为异常点，跳
+过
+if(white_count.points[i][Y]>=white_count.points[i-1-temporary_gap][Y])
+{
+temporary_gap++; // 异常点计数加1
+第二十一届全国大学生智能汽车竞赛技术报告 附录
+IX
+// ips200_show_int16(0,200,temporary_gap);
+//
+ips200_draw_point(white_count.points[i][X],white_count.points[i][Y],RGB565_BLUE);
+}
+else
+{
+// 正常点，保留
+left_white_count.points[j][X]=white_count.points[i][X];
+left_white_count.points[j][Y]=white_count.points[i][Y];
+// //画点，校验
+//
+ips200_draw_point(left_white_count.points[j][X],left_white_count.points[j][Y]+2,RGB565_WHITE);
+// ips200_show_int16(0,200,temporary_gap);
+temporary_gap=0;
+j++;
+}
+}
+left_white_count.hang_length=j; // 记录左侧有效列数
+//ips200_show_int16(0,200,left_white_count.hang_length);
+// 右侧白列筛选
+// 第一个点直接舍弃
+for(i=white_count.hang_length-2,temporary_gap=0,j=0;i>=right_max_crossing;i--)
+{
+// 如果当前列的白点起始行比后一列（跳过异常点后）还高，则视为异常点跳过
+if(white_count.points[i][Y]>=white_count.points[i+1+temporary_gap][Y])
+{
+temporary_gap++;
+}
+else
+{
+right_white_count.points[j][X]=white_count.points[i][X];
+right_white_count.points[j][Y]=white_count.points[i][Y];
+// //画点，校验
+//
+ips200_draw_point(right_white_count.points[j][X],right_white_count.points[j][Y],RGB565_CYAN);
+//
+temporary_gap=0;
+j++;
+}
+}
+right_white_count.hang_length=j; // 记录右侧有效列数
+// ips200_show_int16(0,212,left_white_count.hang_length);
+//
+// ips200_show_int16(0,224,right_white_count.hang_length);
+//4. 对比度巡线：基于筛选后的白列信息，逐行搜索左右边界
+//重置左右边线
+left_line_local.hang_length=0;
+right_line_local.hang_length=0;
+第二十一届全国大学生智能汽车竞赛技术报告 附录
+X
+// printf("max_y:%d",left_white_count.points[left_white_count.hang_length-1][Y]+1);
+//更新左右边界其实行
+left_line_local.start_hang=left_white_count.points[0][Y];
+right_line_local.start_hang=right_white_count.points[0][Y];
+// 寻左线
+if(left_white_count.hang_length>0){
+for(i=0,step=0;i<left_white_count.hang_length-1;i++)
+{
+//检验是否寻
+// ips200_show_int16(0,236,666);
+// 内循环：从当前白列的顶部行到下一白列的顶部行，逐行向下搜索
+for(hang_compare=left_white_count.points[i][Y];
+(hang_compare>left_white_count.points[i+1][Y])&&hang_compare>
+left_white_count.points[left_white_count.hang_length-1][Y]+1;
+hang_compare--)
+{
+is_successful=0; // 重
+置成功标志
+// 第一次搜索：在当前两列之间的列范围内查找边界
+// 列范围从 [i 列左移一列] 到 [i+1列右移一列]（确保覆盖可能边界）
+for(lie_compare=
+(left_white_count.points[i+1][X]<MT9V03X_W-1)?left_white_count.points[i+1][X]+1 :MT9V03X_W-
+1;
+// lie_compare<=left_white_count.points[i+1][X]+1&&lie_compare<MT9V03X_W
+-1;
+lie_compare>=
+((left_white_count.points[i][X]>0)?left_white_count.points[i][X]-1:0)&&lie_compare>=gap_compare+1;
+lie_compare-=gap_compare)
+{
+// printf("%d\n",(abs(image[hang_compare][lie_compare]-
+image[hang_compare][lie_compare-gap_compare-1])*200/(image[hang_compare][lie_compare]+
+image[hang_compare][lie_compare-gap_compare-1])));
+if(abs(image[hang_compare][lie_compare]-
+image[hang_compare][lie_compare-gap_compare-1])*200/(image[hang_compare][lie_compare]+
+image[hang_compare][lie_compare-gap_compare-1])>is_boundary)
+{
+// 找到边界，记录该点
+left_line_local.points[step][X]=lie_compare;
+left_line_local.points[step][Y]=hang_compare;
+step++;
+is_successful=1;
+break;
+}
+}
+// 如果第一次搜索失败，扩大范围到整个左半部分
+if(is_successful==0)
+{
+// 从最左侧有效白列的左邻列开始，一直搜索到图像最右
+侧（这里实际是左半部分的最右边界）
+for(lie_compare=
+(left_white_count.points[left_white_count.hang_length-1][X]<MT9V03X_W-1)?
+left_white_count.points[left_white_count.hang_length-1][X]+1 :MT9V03X_W-1;
+lie_compare>=gap_compare+1;
+lie_compare-=gap_compare)
+{
+if(abs(image[hang_compare][lie_compare]-
+第二十一届全国大学生智能汽车竞赛技术报告 附录
+XI
+image[hang_compare][lie_compare-gap_compare-1])*200/(image[hang_compare][lie_compare]+
+image[hang_compare][lie_compare-gap_compare-1])>is_boundary)
+{
+left_line_local.points[step][X]=
+lie_compare;
+left_line_local.points[step][Y]=
+hang_compare;
+step++;
+is_successful=1;
+break;
+}
+}
+}
+// 如果仍然失败，则将该行左边界设置为图像最左侧（即列0）
+if(is_successful==0)
+{
+left_line_local.points[step][X]=0;
+left_line_local.points[step][Y]=hang_compare;
+step++;
+}
+}
+}
+left_line_local.hang_length=step; // 记录左线总点数
+left_line_local.length=step;
+}
+if(left_line_local.points[left_line_local.hang_length-1][Y]>5+extern_compare_half_height&&
+left_line_local.points[left_line_local.hang_length-1][Y]+gap_compare<MT9V03X_H&&
+left_line_local.points[left_line_local.hang_length-1][X]>=60&&
+left_line_local.points[left_line_local.hang_length-1][X]<187
+){
+//重置额外巡线失败次数
+fail_counts=0;
+//2.向右侧搜线，直到再次遇到黑色像素或者来到赛道边界
+for(lie_compare=left_line_local.points[left_line_local.hang_length-1][X]+gap_compare;
+lie_compare<=MT9V03X_W-gap_compare&&fail_counts<3; //若连续三次巡线失败，这终止额
+外巡线
+lie_compare+=gap_compare)
+{
+is_successful=0; // 重置成功标志
+for(hang_compare=(left_line_local.points[step-1][Y]-extern_compare_half_height);//行起始点
+为上一点的上额外巡线半高行
+hang_compare<=left_line_local.points[step-1][Y]+extern_compare_half_height&&
+left_line_local.points[step-1][Y]+extern_compare_half_height<MT9V03X_H;
+hang_compare++)
+{
+//画点，校验
+if(abs(image[hang_compare][lie_compare]-
+image[hang_compare+gap_compare][lie_compare])>is_boundary)
+第二十一届全国大学生智能汽车竞赛技术报告 附录
+XII
+{
+// 找到边界，记录该点
+left_line_local.points[step][X]=lie_compare;
+left_line_local.points[step][Y]=hang_compare;
+step++;
+is_successful=1;
+fail_counts=0;
+break;
+}
+}
+if(is_successful==0 )
+fail_counts++;
+}
+left_line_local.length=step;
+}
+if(right_white_count.hang_length>0){
+// 寻右线
+for(i=0,step=0;i<right_white_count.hang_length-1;i++)
+{
+// 内循环：从当前白列的顶部行到下一白列的顶部行，逐行搜索
+for(hang_compare=right_white_count.points[i][Y];
+hang_compare>right_white_count.points[i+1][Y]&&hang_compare>
+right_white_count.points[right_white_count.hang_length-1][Y]+1;
+hang_compare--)
+{
+is_successful=0; // 重置成功标志
+// 第一次搜索：在当前两列之间的列范围内查找边界
+// 列范围从 [i+1 列左移一列] 到 [i列右移一列]
+for(lie_compare=(right_white_count.points[i+1][X]>0)?
+right_white_count.points[i+1][X]:0;// 左边界限幅
+lie_compare<=right_white_count.points[i][X]+1&&
+lie_compare<MT9V03X_W-gap_compare-2; // 保证
+lie+1有效
+lie_compare+=gap_compare)
+{
+if(abs(image[hang_compare][lie_compare]-
+image[hang_compare][lie_compare+gap_compare+1])*200/(image[hang_compare][lie_compare]+
+image[hang_compare][lie_compare+gap_compare+1])>is_boundary)
+{
+right_line_local.points[step][X]=lie_compare;
+right_line_local.points[step][Y]=hang_compare;
+step++;
+is_successful=1;
+break;
+}
+}
+// 如果第一次搜索失败，扩大范围到整个右半部分
+if(is_successful==0)
+{
+// 从最左侧有效白列的左邻列开始，一直搜索到图像最右侧
+for(lie_compare=white_count.points[right_max][X];
+第二十一届全国大学生智能汽车竞赛技术报告 附录
+XIII
+lie_compare<MT9V03X_W-gap_compare-2; // 同样避
+免lie+1越界
+lie_compare+=gap_compare)
+{
+if(abs(image[hang_compare][lie_compare]-
+image[hang_compare][lie_compare+gap_compare+1])*200/(image[hang_compare][lie_compare]+
+image[hang_compare][lie_compare+gap_compare+1])>is_boundary)
+{
+right_line_local.points[step][X]=lie_compare;
+right_line_local.points[step][Y]=hang_compare;
+step++;
+is_successful=1;
+break;
+}
+}
+}
+// 如果仍然失败，则将该行右边界设置为图像最右侧
+if(is_successful==0)
+{
+right_line_local.points[step][X]=MT9V03X_W-1;
+right_line_local.points[step][Y]=hang_compare;
+step++;
+}
+}
+}
+right_line_local.hang_length=step; // 记录右线总点数
+right_line_local.length=step;
+}
+//右线额外搜线
+// 右线额外搜线
+if(right_line_local.points[right_line_local.hang_length-1][Y]>5+extern_compare_half_height&&
+right_line_local.points[right_line_local.hang_length-1][Y]+gap_compare<MT9V03X_H&&
+right_line_local.points[right_line_local.hang_length-1][X]<=MT9V03X_W-60&&
+right_line_local.points[right_line_local.hang_length-1][X]>0
+) // 右边界条件改为 ≤ 图像宽-60
+{
+// 重置额外巡线失败次数
+fail_counts=0;
+// 向左侧搜线，直到再次遇到黑色像素或者来到赛道边界
+for(lie_compare=right_line_local.points[right_line_local.hang_length-1][X]-gap_compare;
+lie_compare>=0&&fail_counts<3; // 向左搜索，列号递减，下限0
+lie_compare-=gap_compare)
+{
+is_successful=0; // 重置成功标志
+for(hang_compare=(right_line_local.points[step-1][Y]-
+extern_compare_half_height);
+hang_compare<=right_line_local.points[step-1][Y]+
+extern_compare_half_height&& right_line_local.points[step-1][Y]+extern_compare_half_height<
+MT9V03X_H;
+hang_compare++)
+{
+if(abs(image[hang_compare][lie_compare]-
+image[hang_compare+gap_compare][lie_compare])>
+is_boundary)
+第二十一届全国大学生智能汽车竞赛技术报告 附录
+XIV
+{
+// 找到边界，记录该点
+right_line_local.points[step][X]=lie_compare;
+right_line_local.points[step][Y]=hang_compare;
+step++;
+is_successful=1;
+fail_counts=0;
+break;
+}
+}
+if(is_successful==0)
+fail_counts++;
+}
+right_line_local.length=step;
+}
+}

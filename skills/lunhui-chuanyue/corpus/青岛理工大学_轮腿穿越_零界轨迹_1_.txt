@@ -1,0 +1,828 @@
+第二十一届全国大学生
+智能汽车竞赛
+
+技 术 报 告
+
+
+学校：青岛理工大学
+队伍名称：零界轨迹
+参赛队员：郑航 吕明浩 董佳鑫 刘俊
+带队教师：邢丽娟 杨世忠
+
+
+
+
+
+
+关于技术报告和研究论文使用授权的说明
+本人完全了解全国大学生智能汽车竞赛关保留、使用技术报告和研究论文的规定，即：参赛作品著作权归参赛者本人，比赛组委会可以在相关主页上收录并公开参赛作品的设计方案、技术报告以及参赛模型车的视频、图像资料，并将相关内容编纂收录在组委会出版论文集中。
+参赛队员签名：
+带队教师签名：	
+日期：2026 年 8 月 16 日
+
+第一章 模型车安装主要思路以及实现的技术方案概要
+1.1车模概述
+轮腿穿越组别是今年新出的组别，队伍主要使用了来自博思威龙的轮腿V车模。该车模由2个行进电机，4个金属齿轮大扭矩舵机为主要动力构成。该车模的腿部机械结构为并联腿，采用的连接方式为“五连杆”式连接。通过算法控制可以很好的实现腿部控制，比如变腿高或者跳跃。
+车模长22.5cm 宽22cm 高34cm
+1.2车模传感器和电路板装配说明
+该车模的顶部预留的安装接口不是很多，我们队采用了基于原本车身的安装孔拓展地板的方式来固定传感器和电路板。如图1所示，材质主要为碳纤维。
+
+图1. 底板预览图
+因为轮腿穿越组别主要是平衡类组别，因此我们在对电路板安装的时候优先考虑到车模的重心分布，确保在重心均匀分布的情况下将电路板和电池等配件进行安装完善。其中，电池是整个车占比比较重的东西，也是影响车重心的主要器件。因此我们队做了一个小型电池仓来保证电池可以居中放置。
+图2. 电池仓
+对平衡组别而言，陀螺仪（LSM6DSRx）的安装位置决定了车辆是否可以跑的稳定。陀螺仪安装的位置对平整度的要求很高，因此为了能将陀螺仪安装平整居中，我们最终将陀螺仪安装在了底板的位置上（底板更平一些）。
+图3. 陀螺仪位置
+其他电路板采用“叠叠乐”的方式放置，因为上层空间本身比较紧凑，叠着放置可以尽可能的利用空间。
+图4. “叠叠乐”设计
+ 
+图5. 摄像头固定
+
+第二章 硬件设计
+2.1硬件设计概述
+轮腿穿越组 V 型车模搭载 2 台行进无刷电机与 4 个大扭矩金属齿轮舵机。车辆持续行驶过程中无刷电机会产生大稳态工作电流；而舵机在完成跳跃、动态调整腿高等动作时，会出现瞬时负载突变，瞬间冲击电流急剧增大。为保障整车供电系统稳定可靠，硬件设计中选用高放电倍率动力电池，并在各电源链路增加大容量滤波电容，抑制负载突变带来的电压跌落，保证主控、驱动、舵机、传感器能够稳定工作。
+整车硬件由主控主板、无刷电机驱动板、舵机专用供电板、自制磁编码器四部分组成，全部硬件均为团队自主设计绘制。硬件之间采用串口、SPI 等通信方式完成数据交互，配合合理的结构安装布局，兼顾重心控制、电磁兼容与后期调试维护需求。
+2.2硬件方案选型
+4 路舵机供电单元采用 SCT2450STER 芯片搭建，单路芯片最大瞬时输出电流可达 9A，完全覆盖舵机跳跃动作时的峰值电流需求。为抑制负载突变带来的电压波动，在每一路 DCDC 输入端配置 100μF 固态电解电容，输出端配置 220μF 固态电解电容，利用电容储能特性补偿瞬时大电流，避免舵机动作时出现电压骤降，防止主控、传感器出现复位死机。
+开关电源输出稳压值设置为 6.8V，针对 DCDC 本身固有的输出纹波预留安全余量，既满足舵机动力性能，又避免电压过高造成舵机烧毁。四路电源相互独立，单路舵机负载冲击不会干扰其余三路供电，提升系统抗扰动能力。
+图6. 舵机供电板
+无刷电机驱动是本硬件系统的设计难点，团队基于 CYT2BL3 主控芯片自主开发 FOC 无刷驱动板，预驱芯片选用 FD6288Q，搭配英飞凌 MOS 管构成三相逆变电路，能够快速、平滑驱动两台行进无刷电机。驱动板独立实现 FOC 矢量控制算法，主板与驱动板之间通过串口进行通信，主控板下发调速指令数据包，驱动板接收指令完成电机闭环控制，分担主控芯片运算压力。（具体型号如图所示）
+
+图7. 无刷驱动
+无刷电机的算法主要为FOC，该方案主要和主板利用串口的方式通信。主板通过不断的给驱动的主控发送数据包来进行调速。
+磁编码器采用自制TLE5012绝对式磁编码器，核心芯片为英飞凌TLE5012B，基于iGMR巨磁阻传感技术，可实现0°～360°全量程绝对角度检测。该传感器通过检测磁场方向完成角度测量，相较于传统霍尔传感器，温漂更小、稳定性更高。作为绝对式编码器，其无需上电归零，断电重启后可直接获取转子位置，适用于电机FOC矢量控制、位置闭环等高精度控制场景。
+图8. 磁编码器
+主控主板以 CYT4BB7 芯片作为核心控制器件，承担整车姿态解算、导航算法运算、视觉图像处理、逻辑调度、外设控制等核心任务。电源链路采用 “单路 DCDC + 三路 LDO” 的两级降压架构。首先由 TPS5430 DCDC 芯片将电池输入的 12V 电压降压至 5V；再通过两片 RT9013 低压差 LDO 芯片将 5V 进一步降压至 3.3V。其中一路 3.3V 为陀螺仪、屏幕等普通外设供电，另一路独立给摄像头模块供电，隔离电源噪声，避免电源扰动造成图像失真、花屏等问题，一路LDO使用LM78M05芯片，将电池12V直接降到5V为GPS单独供电，确保始终有GPS信号，提升GPS精度。
+主板引出多路外设接口，预留陀螺仪、GPS、屏幕、摄像头、无线遥控、舵机信号、无刷驱动通信接口，所有接口做电平匹配与简单的防护处理，满足轮腿车模多传感器、多执行器的接入需求。
+图9. 主板
+电池选用穿越机专用 3S 高倍率锂电池，能够在瞬时大负载工况下输出足够电流，为无刷电机与舵机提供充沛动力。结合机械结构设计，将电池放置于车体居中位置，降低对整车平衡的不利影响。
+2.2.1主板的详细设计
+2.2.2驱动的详细设计
+
+2.2.3舵机供电的详细设计
+2.2.4磁编码器的详细设计
+
+第三章 融合导航算法深度解析
+3.1 “盲走模式”与编码器冻结策略
+在 GPS 信号丢失且轮胎打滑严重的复杂路段（如台阶、颠簸路），传统的卡尔曼滤波极易发散。代码中创新性地引入了“盲走模式”（Blind Mode）。
+触发机制：add_blind_xx_start_point_gps2标志点。当导航运行到该点时，blind_mode2被置为1。
+核心逻辑（冻结与补距离）：
+冻结：process_encoder_data_gps2 函数中增加了条件判断 if(blind_mode2 == 0)，在盲走模式下完全不累加编码器数据，防止打滑带来的错误位移。
+补距离：当导航运行到blind_xx_end终点时，通过blind_pending_dist2（预设的盲区距离，如台阶 1.6m，颠簸路 1.0m）进行一次瞬间位置补偿，依靠航向将车体位置硬性插值到盲区另一侧。这种“跳点”式处理有效防止了因编码器打滑导致的累积误差。
+3.2 多传感器位置融合与 GPS 突变防御
+加权互补融合：系统没有简单使用卡尔曼滤波，而是采用了信任度（Trust）加权融合。每个路径点都可以单独设定trust_gps_x和trust_gps_y在gnss_preprocess2中，融合公式为：
+fused_east = encoder_east + trust_x * (gps_east - encoder_east)。
+这种设计极大的增强了灵活性，在 GPS 信号好的开阔地，可设置trust=1；在桥洞下，可设置trust=0.2，让编码器占主导。
+GPS 突变丢弃保护：gps_mutation_check函数运行周期为50ms。如果检测到当前GPS坐标与历史有效坐标的欧氏距离超过阈值GPS_MUTATION_THRESHOLD_M（设定为600米，远超正常漂移，比一般卡尔曼滤波的判断更硬核），系统会直接判定当前 GPS 数据无效，g_gps_data_valid = 0，在融合时不参与计算，从而避免位置和航向发生瞬间突变。
+3.3 前视搜索与刹车辅助
+前瞻目标点搜索：在select_next_target2中，为了提高控制平滑性，不是死板地寻找current_target_index + 1，而是向前搜索一个窗口（LOOKAHEAD_COUNT，通常是 1~3 个点）。
+刹车辅助机制：当到达目标点，且目标点带有brake_speed属性时，代码会判定是否需要剧烈减速。系统会将刹车速度与目标速度进行比对，实现快速制动，防止速度过快导致过冲，尤其在接近单边桥或横断路时至关重要。
+/ ===== 位置更新（融合核心第一步：编码器推算） =====
+/**
+ * @brief 利用左右轮平均位移（俊→米）结合矫正后的航向，更新编码器推测位置。
+ *        计算后清零编码器累计值，为下一次增量做准备。
+ * @param delta_forward_m 输出本次前进距离（米）
+ */
+static void update_position_2(float *delta_forward_m) {
+   // ===== 新增：盲走模式下只清零编码器，不更新位置 =====
+      if (blind_mode2) {
+          encoder_sum_left_gps2 = 0.0f;
+          encoder_sum_right_gps2 = 0.0f;
+          *delta_forward_m = 0.0f;
+          return;
+      }
+    float left  = encoder_sum_left_gps2;
+    float right = encoder_sum_right_gps2;
+    float avg_jun = (-left +right) / 2.0f;                  // 平均俊值(编码器数据有一个是负数，需要减去)
+    *delta_forward_m = (double)avg_jun * JUN_TO_METER_gps;  // 转为米
+    encoder_sum_left_gps2 = 0.0f;   // 清零，供下次增量计算
+    encoder_sum_right_gps2 = 0.0f;
+
+    // 使用校准后的互补滤波航向（已融合手机GPS角度）
+    double heading_rad = filtered_heading2 * 0.01745329252;// M_PI / 180.0 的近似值
+    fused_east2  += *delta_forward_m * sin(heading_rad);    // 东向增量
+    fused_north2+= *delta_forward_m * cos(heading_rad);    // 北向增量
+}
+
+// ===== 轨迹绘制坐标映射 =====
+static void enu_to_screen_plan2(double x, double y, uint16 *sx, uint16 *sy) {
+    if(x < WORLD_X_MIN2) x = WORLD_X_MIN2; if(x > WORLD_X_MAX2) x = WORLD_X_MAX2;
+    if(y < WORLD_Y_MIN2) y = WORLD_Y_MIN2; if(y > WORLD_Y_MAX2) y = WORLD_Y_MAX2;
+    float rx = (x - WORLD_X_MIN2) / WORLD_X_RANGE2;
+    float ry = (y - WORLD_Y_MIN2) / WORLD_Y_RANGE2;
+    *sx = MARGIN_LEFT2 + (uint16)(rx * DISPLAY_W2);
+    *sy = PLAN_TOP2 + (uint16)((1.0f - ry) * PLAN_H2);
+}
+
+static void enu_to_screen_traj2(double x, double y, uint16 *sx, uint16 *sy) {
+    if(x < WORLD_X_MIN2) x = WORLD_X_MIN2; if(x > WORLD_X_MAX2) x = WORLD_X_MAX2;
+    if(y < WORLD_Y_MIN2) y = WORLD_Y_MIN2; if(y > WORLD_Y_MAX2) y = WORLD_Y_MAX2;
+    float rx = (x - WORLD_X_MIN2) / WORLD_X_RANGE2;
+    float ry = (y - WORLD_Y_MIN2) / WORLD_Y_RANGE2;
+    *sx = MARGIN_LEFT2 + (uint16)(rx * DISPLAY_W2);
+    *sy = TRAJ_TOP2 + (uint16)((1.0f - ry) * TRAJ_H2);
+}
+
+// 绘制规划路径（上半屏，蓝色）
+static void draw_planned_path2(void) {
+    if(current_point_number_array2 < 2) return;
+    uint16 x0,y0,x1,y1;
+    enu_to_screen_plan2(path_points2[0].x, path_points2[0].y, &x0, &y0);
+    for(uint16 i=1; i<current_point_number_array2; i++){
+        enu_to_screen_plan2(path_points2[i].x, path_points2[i].y, &x1, &y1);
+        tft180_draw_line(x0, y0, x1, y1, RGB565_BLUE);
+        x0 = x1; y0 = y1;
+    }
+}
+
+// 绘制实际轨迹（下半屏，绿色）
+static void draw_traversed_path2(void) {
+    if(traj_count2 < 2) return;
+    uint16 x0,y0,x1,y1;
+    enu_to_screen_traj2(traj_buffer2[0].x, traj_buffer2[0].y, &x0, &y0);
+    for(uint16 i=1; i<traj_count2; i++){
+        enu_to_screen_traj2(traj_buffer2[i].x, traj_buffer2[i].y, &x1, &y1);
+        tft180_draw_line(x0, y0, x1, y1, RGB565_GREEN);
+        x0 = x1; y0 = y1;
+    }
+}
+/**
+ * @brief 将轮腿坐标系下的相对坐标 (x前向, y右向) 转换为全局ENU坐标
+ * @param x 前向距离（米）
+ * @param y 右向距离（米）
+ * @param abs_east 输出绝对东向坐标
+ * @param abs_north 输出绝对北向坐标
+ * @note 航向取自 get_gyro_heading2()（陀螺仪积分角，非滤波后）
+ */
+static void relative_to_absolute2(double x, double y, double *abs_east, double *abs_north) {
+    double cur_east = current_point_proj2.x;
+    double cur_north = current_point_proj2.y;
+    double heading_deg = get_gyro_heading2();
+    double heading_rad = heading_deg * M_PI / 180.0;
+    double delta_east = y * sin(heading_rad) + x * cos(heading_rad);
+    double delta_north = y * cos(heading_rad) - x * sin(heading_rad);
+    *abs_east = cur_east + delta_east;
+    *abs_north = cur_north + delta_north;
+}
+
+// ============================== 手机GPS校准陀螺仪 ==============================
+/**
+ * @brief 利用手机GPS提供的真北航向校准陀螺仪零偏
+ * @param compass_heading_deg 手机给出的航向角（度，真北顺时针）
+ */
+void calibrate_gyro_with_compass2(double compass_heading_deg) {
+    double current_gyro_rad = -euler.yaw;                     // 陀螺仪当前yaw（四元数解算的yaw角度的正负180度坐标系于gps坐标系不同，故为负值）
+    double compass_rad = normalize_angle_deg2(compass_heading_deg);
+    gyro_heading_offset_deg2 = compass_rad - current_gyro_rad; // 计算偏移量
+    get_point2 = 1;                                          // 标记已校准
+}
+
+// ============================== GPS 坐标转换 ==============================
+/**
+ * @brief 设置GPS参考点，用于后续经纬度转ENU
+ */
+void gnss_set_reference_point2(double lat, double lon) {
+    ref_lat2 = lat;
+    ref_lon2 = lon;
+    cos_ref_lat2 = cos(lat * M_PI / 180.0);
+    ref_set2 = 1;
+}
+
+/**
+ * @brief 经纬度转ENU坐标（东、北，单位：米）
+ */
+void gnss_to_enu2(double lat, double lon, double *east, double *north) {
+    double dlat = (lat - ref_lat2) * M_PI / 180.0;
+    double dlon = (lon - ref_lon2) * M_PI / 180.0;
+    *north = EARTH_RADIUS * dlat;
+    *east  = EARTH_RADIUS * dlon * cos_ref_lat2;
+}
+
+// ============================== 实时位置更新（GPS+编码器融合） ==============================
+/**
+ * @brief 主更新函数：调用编码器累积 -> 更新编码器位置 -> 结合GPS信任度修正位置。
+ *        信任度从当前目标路径点读取（trust_gps_x / trust_gps_y）。
+ *        无GPS或原点未设时，直接使用编码器推测位置。
+ */
+void gnss_preprocess2(void) {
+    static double gps_east2 = 0.0, gps_north2 = 0.0;
+    // 1. 获取GPS位置（若有效）
+    if(gnss.state == 1 && ref_set2) {
+        gnss_to_enu2(gnss.latitude, gnss.longitude, &gps_east2, &gps_north2);
+        if(origin_set2) {
+            gps_east2 -= origin_east2;
+            gps_north2 -= origin_north2;
+        }
+    } 
+    else {
+        gps_east2 = fused_east2; gps_north2 = fused_north2;
+    }
+
+    // ----突变检测结果应用 ----
+    if(!g_gps_data_valid) {
+        // GPS数据被丢弃，强制本次不参与融合（信任度=0）
+        gps_east2 = fused_east2;   // 让修正项 (gps - fused) 为0
+        gps_north2 = fused_north2;
+    }
+    // ---------------------------------
+
+    // 2. 累积编码器并更新纯编码器位置（内部清零累计值）
+    process_encoder_data_gps2();
+    float delta_forward_m = 0.0f;
+    update_position_2(&delta_forward_m);
+
+    
+    if(image_use_GPS2==1){
+    g_image_jump_distance+=delta_forward_m;
+    }
+    isr_dist+=delta_forward_m;
+     
+      
+      // =================================
+    // 3. 获取当前目标点设定的信任度（X轴、Y轴可不同）
+    float trust_x = 0.05f, trust_y = 0.05f;   // 默认高度信任编码器
+    if(origin_set2 && current_target_index2 < current_point_number_array2) {
+        trust_x = path_points2[current_target_index2].trust_gps_x;
+        trust_y = path_points2[current_target_index2].trust_gps_y;
+    }
+
+    // 4. 互补融合：编码器位置 + trust * (GPS - 编码器位置)//前提imu(惯导坐标系)和GPS坐标系一致
+    fused_east2  += trust_x * (gps_east2  - fused_east2);
+    fused_north2 += trust_y * (gps_north2 - fused_north2);
+
+    // 5. 更新全局投影位置
+    if(origin_set2) {
+        current_point_proj2.x = fused_east2;
+        current_point_proj2.y = fused_north2;
+    } else {
+        // 原点未确认时直接用GPS位置初始化融合位置
+        current_point_proj2.x = gps_east2;
+        current_point_proj2.y = gps_north2;
+        fused_east2 = gps_east2;
+        fused_north2 = gps_north2;
+    }
+
+    // 6. 记录轨迹点
+    if(origin_set2) {
+        traj_buffer2[traj_head2] = current_point_proj2;
+        traj_head2 = (traj_head2 + 1) % TRAJ_BUFFER_SIZE2;
+        if(traj_count2 < TRAJ_BUFFER_SIZE2) traj_count2++;
+    }
+}
+
+// ============================== 路径点管理 ==============================
+/**
+ * @brief 内部辅助：设置路径点默认值（包括新增的速度与信任度字段）
+ */
+static void set_point_defaults2(Point2D2 *p, double east, double north,
+                                float speed, float trust_x, float trust_y) {
+    p->x = east; p->y = north;
+    p->need_jump = 0;
+    p->leg_high_start = 0; p->leg_high_end = 0;
+    p->image_start = 0; p->image_end = 0;
+    p->bump_start = 0; p->bump_end = 0;
+    
+    p->need_rotate = 0;
+    p->target_speed = speed;
+    p->trust_gps_x = trust_x;
+    p->trust_gps_y = trust_y;
+    
+    // ===== 新增：图像巡线、三级台阶巡线标志默认值 =====
+    p->line_follow_start = 0;
+    p->line_follow_end = 0;
+    p->stair_follow_start = 0;
+    p->stair_follow_end = 0;
+    
+    p->target_speed = speed;
+    p->brake_speed = 0;         // 默认不启用刹车辅助
+    p->trust_gps_x = trust_x;
+    
+    p->two_kp =Init_twokp;          // 和现在正常行驶时的 twoKp 一致
+    
+    p->use_yaw_kp = 0;
+    p->yaw_kp = -0.11f;      // 默认值（不会被使用）
+    
+    p->lock_yaw_start = 0;
+    p->lock_yaw_end = 0;
+     // ===== 新增：盲走区段标志默认值 =====
+      p->blind_stairs_start = 0;
+      p->blind_stairs_end = 0;
+      p->blind_bumpy_start = 0;
+      p->blind_bumpy_end = 0;
+      p->blind_bridge_start = 0;
+      p->blind_bridge_end = 0;
+
+}
+第四章 控制算法设计
+4.1总体控制架构设计
+
+4.2 姿态解算
+本车姿态解算采用了基于四元数的传感器融合算法，结合陀螺仪和加速度计的数据，能够在动态和静态环境下同时兼顾姿态更新的实时性与精度。
+首先，在数据采集阶段，IMU 模块输出的陀螺仪和加速度计原始数据会经过零漂补偿与比例系数换算：陀螺仪数据减去实验测得的零漂值并除以灵敏度系数进行角速度单位转换为弧度/秒，加速度计数据则经过比例标定单位转换为 m/s²，并完成方向修正。
+随后，对加速度计输出的三轴加速度向量进行归一化处理，以确保其模长为 1，再利用当前四元数预测出的重力方向与加速度测量值进行比较，计算姿态误差向量 (ex, ey, ez) 
+在融合策略上，算法采用了互补滤波思想：陀螺仪数据提供短时间内高精度的姿态变化量，而加速度计提供长时间稳定的参考方向。通过比例系数 twoKp 将误差反馈到角速度修正项中，有效抑制陀螺仪漂移。
+在姿态更新阶段，程序使用四元数微分方程：
+其中 q 为当前四元数，ω为修正后的角速度向量。利用欧拉法对四元数进行积分更新后，再次进行归一化，保证四元数始终保持单位模长，避免累计数值误差导致姿态畸变。
+最后，算法将更新后的四元数转换为欧拉角形式（roll、pitch、yaw）以便直观显示。其中，roll 与 yaw 直接由标准公式计算，pitch 角在计算后进行了零点修正，消除陀螺仪安装偏差。
+
+void imu_complete_init(void) {
+    // 初始化零漂（上电后需要校准测量）
+    imu.gyro_bias[0] =5.950;  // x轴零漂
+    imu.gyro_bias[1]= -6.656;   // y轴零漂
+    imu.gyro_bias[2] =-8.7;   // z轴零漂
+
+    // 初始化角度为0度
+    imu.roll = 0;
+    imu.pitch = 0;
+    imu.yaw = 0;
+
+    // 初始化角加速度为0度/秒2
+    imu.angular_accel_degs2[0] = 0;
+    imu.angular_accel_degs2[1] = 0;
+    imu.angular_accel_degs2[2] = 0;
+
+    // 初始化上一次的角速度用于计算角加速度
+    imu.last_gyro_dps[0] = 0;
+    imu.last_gyro_dps[1] = 0;
+    imu.last_gyro_dps[2] = 0;
+
+
+}
+
+//零漂
+int sample_count = 0;
+float gyro_sum[3] = {0};
+void calibrate_imu(void) {
+    gyro_sum[0] += imu660rb_gyro_x;
+    gyro_sum[1] += imu660rb_gyro_y;
+    gyro_sum[2] += imu660rb_gyro_z;
+
+    sample_count++;
+
+    // 计算平均零漂
+    imu.gyro_bias[0] = gyro_sum[0] / sample_count;
+    imu.gyro_bias[1] = gyro_sum[1] / sample_count;
+    imu.gyro_bias[2] = gyro_sum[2] / sample_count;
+}
+//陀螺仪数据加工
+void imu_complete(void){
+
+    gyro_x_conversion=(imu660rb_gyro_x-imu.gyro_bias[0])/14.3/RAD_TO_DEG;
+    gyro_y_conversion=(imu660rb_gyro_y-imu.gyro_bias[1])/14.3/RAD_TO_DEG;
+    gyro_z_conversion=(imu660rb_gyro_z-imu.gyro_bias[2])/14.3/RAD_TO_DEG;
+
+    imu660rb_accx=(float)imu660rb_acc_x/4098/RAD_TO_DEG;
+    imu660rb_accy=(float)imu660rb_acc_y/4098/RAD_TO_DEG;
+    imu660rb_accz=(float)imu660rb_acc_z/4098/RAD_TO_DEG;
+
+    imu.acc_raw[0] = imu660rb_acc_x;
+    imu.acc_raw[1] = imu660rb_acc_y;
+    imu.acc_raw[2] = imu660rb_acc_z;
+    // 3. 加速度计角度计算
+    imu.acc_roll = atan2(imu.acc_raw[1],
+                           sqrt(imu.acc_raw[0]*imu.acc_raw[0] +
+                                imu.acc_raw[2]*imu.acc_raw[2])) * RAD_TO_DEG;
+
+    imu.acc_pitch = (atan2(imu.acc_raw[0],
+                             sqrt(imu.acc_raw[1]*imu.acc_raw[1] +
+                                  imu.acc_raw[2]*imu.acc_raw[2])) * RAD_TO_DEG)-20.5;
+    imu.gyro_pitch+= (imu660rb_gyro_y-1.94)*DT1/(32768.0f / 2000.0);
+    imu.gyro_roll+=( 0-(imu660rb_gyro_x-2.22)*DT1/(32768.0f / 2000.0));
+
+
+    imu.yaw+= (imu660rb_gyro_z-0.60)*DT1/(32768.0f / 2000.0);
+    imu.pitch=COMPLEMENTARY_ALPHA*imu.acc_pitch+(1-COMPLEMENTARY_ALPHA)*imu.gyro_pitch;
+    imu.roll=COMPLEMENTARY_ALPHA*imu.acc_roll+(1-COMPLEMENTARY_ALPHA)*imu.gyro_roll;
+}
+
+// 将陀螺仪原始数据直接转换为度/秒
+void convert_gyro_raw_to_dps(void) {
+    imu.gyro_dps[0] = (imu.gyro_raw[0] - imu.gyro_bias[0]) / GYRO_SCALE;
+    imu.gyro_dps[1] = (imu.gyro_raw[1] - imu.gyro_bias[1]) / GYRO_SCALE;
+    imu.gyro_dps[2] = (imu.gyro_raw[2] - imu.gyro_bias[2]) / GYRO_SCALE;
+}
+
+
+// 获取所有角度（度）
+void get_euler_angles(float *roll, float *pitch, float *yaw) {
+    *roll = imu.roll;
+    *pitch = imu.pitch;
+    *yaw = imu.yaw;
+}
+
+// 获取所有角速度（度/秒）
+void get_angular_velocity(float *gyro_x, float *gyro_y, float *gyro_z) {
+    *gyro_x = imu.gyro_dps[0];
+    *gyro_y = imu.gyro_dps[1];
+    *gyro_z = imu.gyro_dps[2];
+}
+
+// 获取所有角加速度（度/秒2）
+void get_angular_acceleration(float *accel_x, float *accel_y, float *accel_z) {
+    *accel_x = imu.angular_accel_degs2[0];
+    *accel_y = imu.angular_accel_degs2[1];
+    *accel_z = imu.angular_accel_degs2[2];
+}
+
+//积分角度yaw
+void imu_yaw_get(void){
+    count_yaw +=yaw_imu_DT*gyro_z_conversion*RAD_TO_DEG;
+    current_imu_yaw=normalize_angle_deg(count_yaw);
+    imu_yaw=current_imu_yaw*(1-imu_yaw_lastOrcurrent)+last_imu_yaw*imu_yaw_lastOrcurrent;
+    last_imu_yaw=imu_yaw;
+
+}
+// 获取单个角度（度）
+float get_roll(void) { return imu.roll; }
+float get_pitch(void) { return imu.pitch; }
+float get_yaw(void) { return imu.yaw; }
+
+// 获取单个角速度（度/秒）
+float get_gyro_x(void) { return imu.gyro_dps[0]; }
+float get_gyro_y(void) { return imu.gyro_dps[1]; }
+float get_gyro_z(void) { return imu.gyro_dps[2]; }
+
+// 获取单个角加速度（度/秒2）
+float get_angular_accel_x(void) { return imu.angular_accel_degs2[0]; }
+float get_angular_accel_y(void) { return imu.angular_accel_degs2[1]; }
+float get_angular_accel_z(void) { return imu.angular_accel_degs2[2]; }
+4.3 腿部控制
+腿部控制是轮腿车模运动系统的核心组成部分，直接决定了车模在不同地形下的机动性与通过性。车模所使用的腿部机构为左右对称的双舵机驱动五连杆机构，结构上每条腿通过两只舵机分别控制前后连杆的转动，末端以连杆连接处的车轮作为唯一作用点进行地面接触与支撑。
+   由于五连杆结构具有非线性传动特性，舵机的转角与末端车轮位置（x, y 坐标）需要借助逆运动学进行精确控制。给定车轮在车体侧面平面坐标系下的目标位置，通过几何推导计算两只舵机所需的转角，再将转角转换为 PWM 占空比信号控制舵机动作。
+在逆运动学建模过程中，我们将腿部投影到车体侧视平面，已知各连杆长度 L1,L2,L3,L4,L5及目标点坐标 (X,Y)，可通过余弦定理与几何约束列出两组方程，分别求解出两舵机对应的关节角α与β。同理推广至左右两侧腿部控制
+
+// 五连杆机构尺寸参数
+#define L1 6.0f    // 第一段连杆长度
+#define L2 9.0f    // 第二段连杆长度
+#define L3 9.0f    // 第三段连杆长度
+#define L4 6.0f    // 第四段连杆长度
+#define L5 3.8f    // 基座长度量
+
+#define JUMP_EXTEND_MS      60      // 阶段1: 伸腿推地持续时间 (ms)
+#define JUMP_RETRACT_MS     30      // 阶段2: 收腿渐变时间 (ms)，不要太快
+#define JUMP_STABILIZE_MS   10     // 阶段3: 落地后稳定等待 (ms)，之前完全没等
+#define JUMP_HIGH_Y         8.0f   // 跳跃时腿高（伸直到最大）
+#define JUMP_LOW_Y          3.0f    // 正常行走时腿高
+#define JUMP_X_POS          1.9f    // 正常X位置;
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
+extern float left_duty_prev;
+extern float right_duty_prev;
+// ===== 跳跃状态机全局变量 =====
+JumpState_e jump_state = JUMP_IDLE;
+static uint32_t phase_start_time = 0;  // 当前阶段开始时刻
+
+extern int time;
+int currentime=0;
+// 全局角度变量（用于舵机控制）
+float alpha_Left_ToAngle = 0, beta_Left_ToAngle = 0;
+float alpha_Right_ToAngle = 0, beta_Right_ToAngle = 0;
+//五连杆x与y坐标（初始位置）
+float x_left=1.9,x_right=1.9;
+float left_y=3.0,right_y=3.0;
+
+//蹬腿时让速度锁死
+int stopspeed=0;
+
+// 安全限制函数
+void xianfu_float(float *value, float max_val, float min_val) {
+    if (*value > max_val) *value = max_val;
+    if (*value < min_val) *value = min_val;
+}
+
+/**
+ * @brief 五连杆逆运动学计算
+ * @param leg 五连杆结构体指针，包含输入坐标和输出角度
+ * @note 输入：XLeft, YLeft, XRight, YRight (足端坐标)
+ *       输出：alphaLeft, alphaRight, betaLeft, betaRight (关节角度，弧度)
+ */
+
+ //  atan （速度慢精度好）          fx_atan（速度快精度慢）
+//Inverse Kinematics (IK)：逆运动学
+void diamond_inverse_kinematics(diamond_fivbar *leg) {
+    float alpha1, alpha2, beta1, beta2;
+    //..........................左腿逆运动学计算..............................
+    float aLeft = 2 * leg->XLeft * L1;
+    float bLeft = 2 * leg->YLeft * L1;
+    float cLeft = leg->XLeft * leg->XLeft + leg->YLeft * leg->YLeft + L1 * L1 - L2 * L2;
+
+    float dLeft = 2 * L4 * (leg->XLeft - L5);
+    float eLeft = 2 * L4 * leg->YLeft;
+    float fLeft = ((leg->XLeft - L5) * (leg->XLeft - L5) + L4 * L4 + leg->YLeft * leg->YLeft - L3 * L3);
+
+    // 计算alpha角的两个可能解
+    alpha1 = 2 * fx_atan((bLeft + sqrt((aLeft * aLeft) + (bLeft * bLeft) - (cLeft * cLeft))) / (aLeft + cLeft));
+    alpha2 = 2 * fx_atan((bLeft - sqrt((aLeft * aLeft) + (bLeft * bLeft) - (cLeft * cLeft))) / (aLeft + cLeft));
+
+    // 计算beta角的两个可能解
+    beta1 = 2 * fx_atan((eLeft + sqrt((dLeft * dLeft) + eLeft * eLeft - (fLeft * fLeft))) / (dLeft + fLeft));
+    beta2 = 2 * fx_atan((eLeft - sqrt((dLeft * dLeft) + eLeft * eLeft - (fLeft * fLeft))) / (dLeft + fLeft));
+
+    // 角度规范化到 [0, 2π] 范围
+    alpha1 = (alpha1 >= 0) ? alpha1 : (alpha1 + 2 * M_PI);
+    alpha2 = (alpha2 >= 0) ? alpha2 : (alpha2 + 2 * M_PI);
+
+    // 选择物理上可行的解
+    // alpha选择大于45度的解，避免奇异位置
+    if (alpha1 >= M_PI/4)
+        leg->alphaLeft = alpha1;
+    else
+        leg->alphaLeft = alpha2;
+
+    // beta选择在 [0, 45°] 范围内的解
+    if (beta1 >= 0 && beta1 <= M_PI/4)
+        leg->betaLeft = beta1;
+    else
+        leg->betaLeft = beta2;
+
+    //............................右腿逆运动学计算..............................
+    float aRight = 2 * leg->XRight * L1;
+    float bRight = 2 * leg->YRight * L1;
+    float cRight = leg->XRight * leg->XRight + leg->YRight * leg->YRight + L1 * L1 - L2 * L2;
+
+    float dRight = 2 * L4 * (leg->XRight - L5);
+    float eRight = 2 * L4 * leg->YRight;
+    float fRight = ((leg->XRight - L5) * (leg->XRight - L5) + L4 * L4 + leg->YRight * leg->YRight - L3 * L3);
+
+    // 计算alpha角的两个可能解
+    alpha1 = 2 * fx_atan((bRight + sqrt((aRight * aRight) + (bRight * bRight) - (cRight * cRight))) / (aRight + cRight));
+    alpha2 = 2 * fx_atan((bRight - sqrt((aRight * aRight) + (bRight * bRight) - (cRight * cRight))) / (aRight + cRight));
+
+    // 计算beta角的两个可能解
+    beta1 = 2 * fx_atan((eRight + sqrt((dRight * dRight) + eRight * eRight - (fRight * fRight))) / (dRight + fRight));
+    beta2 = 2 * fx_atan((eRight - sqrt((dRight * dRight) + eRight * eRight - (fRight * fRight))) / (dRight + fRight));
+
+    // 角度规范化到 [0, 2π] 范围
+    alpha1 = (alpha1 >= 0) ? alpha1 : (alpha1 + 2 * M_PI);
+    alpha2 = (alpha2 >= 0) ? alpha2 : (alpha2 + 2 * M_PI);
+
+    // 选择物理上可行的解
+    if (alpha1 >= M_PI/4)
+        leg->alphaRight = alpha1;
+    else
+        leg->alphaRight = alpha2;
+
+    if (beta1 >= 0 && beta1 <= M_PI/4)
+        leg->betaRight = beta1;
+    else
+        leg->betaRight = beta2;
+
+    // ==================== 角度转换和限制 ====================
+    // 弧度转角度，并调整机械零点偏移
+    alpha_Left_ToAngle = (leg->alphaLeft / (2 * M_PI)) * 360 - 90;  // alpha关节角度//先转换为度再减去机械零点偏移
+    beta_Left_ToAngle = 90 - (leg->betaLeft / (2 * M_PI)) * 360;    // beta关节角度//先转换为度再减去机械零点偏移，
+                                                                    //alpha为顺时针转动，beta为逆时针转动
+
+    //重复赋值
+    alpha_Right_ToAngle = (leg->alphaRight / (2 * M_PI)) * 360 - 90;
+    beta_Right_ToAngle = 90 - (leg->betaRight / (2 * M_PI)) * 360;
+
+    // 安全角度限制 (5° ~ 145°)
+    xianfu_float(&alpha_Left_ToAngle, 145.0f, 5.0f);
+    xianfu_float(&beta_Left_ToAngle, 145.0f, 5.0f);
+    xianfu_float(&alpha_Right_ToAngle, 145.0f, 5.0f);
+    xianfu_float(&beta_Right_ToAngle, 145.0f, 5.0f);
+}
+
+/**
+ * @brief 初始化五连杆参数
+ * @param leg 五连杆结构体指针
+ * @param x_left 左腿X坐标
+ * @param x_right 右腿X坐标
+ * @param y_left 左腿Y坐标
+ * @param y_right 右腿Y坐标
+ */
+void diamond_init_parameters(diamond_fivbar *leg, float x_left, float x_right, float y_left, float y_right) {
+    leg->XLeft = x_left;
+    leg->XRight = x_right;
+    leg->YLeft = y_left;
+    leg->YRight = y_right;
+
+    // 初始化角度为0
+    leg->alphaLeft = 0;
+    leg->alphaRight = 0;
+    leg->betaLeft = 0;
+    leg->betaRight = 0;
+}
+void diamond_init_parameters_1(diamond_fivbar *leg, float x_left, float x_right, float y_left, float y_right) {
+    leg->XLeft = x_left;
+    leg->XRight = x_right;
+    leg->YLeft = y_left;
+    leg->YRight = y_right;
+}
+void set_diamond_duty(float angle_lf,float angle_lb,float angle_rf,float angle_rb){
+    pwm_set_duty(PWM_CH3,(7900-angle_lf/0.03));//左1小为上
+    pwm_set_duty(PWM_CH4,(900+angle_rf/0.03));//右前大为上 
+    pwm_set_duty(PWM_CH1,(-800+angle_lb/0.03));//左2
+    pwm_set_duty(PWM_CH2,(9300-angle_rb/0.03));//右后
+}
+4.4 pid控制
+本车主要采用了串级pid来控制车体直立，外环速度环pid计算后将输出量赋给腿部控制算法改变车体重心，发生角度改变间接引入角度环，角度环pid计算后将输出量引入最内环角速度环，计算后输出量直接作为占空比引入foc算法驱动无刷电机转动。 
+寻迹方面则还有并级的转向环根据视觉给出的Angle_err滤波后作为输入变量引入转向环计算差速输出量，与角速度环输出量相加后输出给电机。
+ 
+主要输入数据包括轮部电机编码器数据滤波并解算出的实时速度，姿态解算出的实时角度和角速度，分别引入各串级pid中与目标值比较并更新计算出新的纠正输出量。
+为提高可读性和可维护性，PID 控制器被封装为结构体 PIDController，并提供初始化与计算函数：
+PID_init()：初始化 PID 参数（比例系数 Kp、积分系数 Ki、微分系数 Kd）并清零积分与历史误差。
+PID_value()：根据当前测量值与目标值计算误差，并进行积分与微分运算，得到 PID输出。
+void PID_init(PIDController *pid,float kp,float ki,float kd)
+{
+    pid->kp=kp;
+    pid->ki=ki;
+    pid->kd=kd;
+    pid->error_last = 0.0f;
+    pid->error_sum  = 0.0f;
+
+}
+ float PID_value(PIDController *pid, float Measure, float Target)
+  {
+      float error, p_out, i_out, d_out, pid_output;
+
+      error = Target - Measure;
+
+      pid->error_sum += error;
+
+      // 积分限幅（防饱和）
+      if (pid->error_sum > pid->err_sum_xianfu)
+          pid->error_sum = pid->err_sum_xianfu;
+      if (pid->error_sum < -pid->err_sum_xianfu)
+          pid->error_sum = -pid->err_sum_xianfu;
+
+      p_out = pid->kp * error;
+      i_out = pid->ki * pid->error_sum;
+      d_out = pid->kd * (error - pid->error_last);
+
+      pid_output = p_out + i_out + d_out;
+
+      // 输出限幅
+      if (pid_output > pid->pidout_xianfu)
+          pid_output = pid->pidout_xianfu;
+      if (pid_output < -pid->pidout_xianfu)
+          pid_output = -pid->pidout_xianfu;
+
+      pid->error_last = error;   // 保存本次误差供下次D项使用
+
+      return pid_output;
+  }
+
+void xianfu(PIDController *pid,float err_sum_xianfu,float pidout_xianfu){//初始化限幅
+
+    pid->err_sum_xianfu=err_sum_xianfu;
+    pid->pidout_xianfu=pidout_xianfu;
+}
+
+
+/**
+   * @brief 重置PID内部状态 — 跳跃开始/紧急停车时调用
+   *        清零积分累加和历史误差，防止恢复时输出跳变
+*/
+void PID_reset(PIDController *pid)
+  {
+      pid->error_last = 0.0f;
+      pid->error_sum  = 0.0f;
+}
+使用过程中先在初始化时用PID_init输入对应pid参数，再在定时中断中按最外环到最内环分周期调用PID_value计算函数。
+PID_init(&vertical_l,VERTICAL_KP,VERTICAL_KI,VERTICAL_KD);//角度环初始化
+PID_init(&velocity_l,VELOCITY_KP,VELOCITY_KI,0);//速度环初始化
+PID_init(&angle_velocity,ANGLE_V_KP,0,ANGLE_V_KD);//角速度初始化
+PID_init(&angle,ANGLE_KP,0,ANGLE_KD);//转向环初始化
+velocity_data_l = PID_value(&velocity_l,speed_lpf_out,velocity_goal,PID_PIT*10);//速度环
+driver_duty_l = PID_value(&vertical_l,gyro_y_sum,goal_angle,PID_PIT*3);//角度环
+angle_V_duty =PID_value(&angle_velocity,gyro_y_conversion*57.295,driver_duty_l,PID_PIT);//角速度环
+angle_duty = PID_value(&angle,angleE_goal,angle_lp,PID_PIT);//转向环
+第五章 视觉算法深度解析
+5.1 总体框架与处理流程
+本系统视觉模块采用精简高效的单目标追踪策略。考虑到主控算力与车模运动实时性要求，视觉算法并未采用传统的双边界寻线，而是基于最大黑色连通域提取为核心。图像处理流程如下：
+图像采集与压缩：采集总钻风摄像头 188×120 分辨率图像，通过 1/2 隔点下采样，压缩至 60×94 像素，大幅降低计算负载。
+自适应二值化：针对光源不均问题，通过图像局部灰度均值动态计算二值化阈值，生成初始二值图。
+边缘与去噪处理：使用 Sobel 算子提取边缘梯度，配合自适应阈值过滤弱边缘；随后运行小面积连通域滤波，滤除面积小于设定阈值（如 80 像素）的白色噪点。
+边界修正：人为添加上下左右边界白线，防止最大连通域溢出图像边缘。
+核心提取：通过 BFS 广度优先搜索，在全图中寻找面积最大的黑色连通域，并计算其质心坐标作为视觉反馈。
+元素联动：视觉模块仅输出目标的质心误差，赛道元素的动作识别（如跳跃/单边桥）交由导航层根据路径点属性触发，实现控制与视觉的解耦。
+5.2 图像预处理与二值化
+5.2.1 图像降采样
+原始图像分辨率为 188 × 120，若直接处理，计算量将显著影响 1ms 控制周期。考虑到赛场元素多为水平或倾斜的连续块状特征，采用等间隔抽样的方式对图像进行降采样，将图像压缩为 60 × 94。该步骤在保证远处元素特征不被丢失的前提下，处理时间压缩至原图的约 1/4。
+5.2.2 自适应阈值与二值化
+摄像头受场地光照及镜头暗角影响，画面中心亮、四周暗。系统首先利用大津法（Otsu）计算整图的类间方差最大阈值。为防止大津法在暗角区域失效，程序中结合暴力加权补偿策略：在计算出的全局阈值基础上，依据像素所在行列的不同位置，对阈值进行微调，生成二值化图像，有效解决了边缘过暗导致的断裂问题。
+5.2.3 边缘检测与小面积去噪
+为提高对不规则光照的抗干扰能力，在二值化前先对灰度图进行 Sobel 算子 边缘检测。
+利用 Gx 和 Gy 差分近似计算出像素点的梯度幅值 |G| ≈ |Gx| + |Gy|。
+计算全图梯度的自适应均值，以此设定动态阈值，提取出赛道的主干边缘。
+边缘提取后，通过 BFS 遍历连通域。若白色连通域的面积小于 MIN_BLOCK_AREA，则直接清除该区域像素，滤除地面反光、尘土等高频噪点。
+
+
+
+第六章 结论
+本团队设计的轮腿平衡车模在第二十一届全国大学生智能汽车竞赛轮腿穿越组别中，成功实现了预期的核心功能与技术目标。基于博思威龙轮腿V车模搭建的硬件系统与算法框架，能够稳定完成赛道循迹、特殊元素识别与通过、车体平衡控制等关键任务，整体性能达到竞赛要求。
+从机械结构来看，通过碳纤维拓展底板与"叠叠乐"式电路板安装设计，有效解决了车模重心分布与空间利用的矛盾；电池仓居中设计与陀螺仪平整安装方案，为车体平衡控制奠定了硬件基础。硬件电路方面，基于 SCT2450STER 的舵机供电方案可应对 9A 瞬间电流需求，配合固态电解电容的滤波设计，保障了舵机在变腿高、跳跃等动作中的稳定运行；基于 cyt2bl3 与 FD6288 预驱的无刷驱动方案，实现了无刷电机的高效调速，满足车模高速行驶与动态响应需求。
+视觉算法方面，针对轮腿穿越组别赛道元素多为独立块状特征的特点，采用基于最大黑色连通域的质心追踪法作为核心巡线策略。系统通过图像压缩（60×94）、自适应阈值与 Sobel 边缘检测提取目标边界，再利用 BFS（广度优先搜索）在全图中锁定面积最大的黑色连通域并输出质心偏差。在特殊元素处理上，本系统摒弃了传统复杂的视觉补线逻辑，采用视觉反馈与导航层联合决策的机制，视觉层仅提供目标的偏差与初步的宽高比特征，具体的跳跃、抬腿或单边桥自适应等特殊动作响应，由导航层根据预设路径点的属性标志（need_jump、bump_start、leg_high_start等）统一调度执行。这种解耦设计在保证赛道元素通过性的同时，大幅提升了系统的鲁棒性与调试效率。
+控制算法层面，基于四元数的传感器融合算法实现了车体姿态的高精度解算（roll、pitch、yaw 角误差 ≤ 2°），为平衡控制提供了可靠的状态反馈；五连杆机构的逆运动学建模，实现了腿部位置的精确控制（位置误差 ≤ 0.5cm）；串级 PID 控制架构（速度环 - 角度环 - 角速度环）结合并级转向控制，使车模能够在直立状态下稳定行驶（平衡误差 ≤ 3°），最高速度可达 2.3m/s。
+
+
+第七章 车模主要技术参数说明
+
+表6-1 模型车技术参数表
+
+第八章 参考文献
+[1]卓晴,黄开胜,邵贝贝等编.学做智能车—挑战“飞思卡尔”杯.北京:北京航空航天大学出版社,2007.
+[2] 王淑娟，蔡惟铮，齐明．模拟电子技术基础 [M]．北京：高等教育出版社.2009
+[3] 蔡述庭．“飞思卡尔”杯智能汽车竞赛设计与实践 [M]．北京：北京航空航天大学出版社. 2012.
+[4] 邵贝贝．单片机嵌入式应用的在线开发方法 [M]．北京．清华大学出版社.2004.
+[5] 尹怡欣, 陶永华. 新型 PID控制及其应用[M].北京: 机械工业出版社, 
+1998.
+[6]王伟,张晶涛,柴天佑.PID参数先进整定方法综述[J].自动化学报,2000(03)
+附件
+车模技术检查表
+一、车模技术检查表
+
+
+二、车模照片
+1、车模外观照片
+  
+图1. 车模侧视图
+
+
+图2. 车模正视图
+
+
+
+
+图3. 车模俯视图
+
+2、电路板PCB图
+
+图4. 无刷驱动
+ 
+ 
+图5. 舵机供电
+
+
+
+图6. 主板
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+图7. 磁编
+
+3、电路板原理图
+ 
+图7. 无刷驱动原理图
+
+图8. 主板原理图
+
+
+图9. 舵机供电原理图
+
+                                   
+图10. 磁编码器原理图
+
+
+===== TABLE 1 =====
+名称 | 参数
+车模总质量（无电池） | 1243g
+车模长度 | 22.5cm
+车模宽度 | 22cm
+车模高度 | 34cm
+电路电容器总容量 | 3340uF
+传感器种类及个数 | LSM6DSRx陀螺仪*1 TLE5012磁编码器*2
+外加伺服电机个数 | 0 个
+赛道信息检测精度 | 22.5mm
+赛道信息检测频度 | 60(次/秒)
+
+===== TABLE 2 =====
+队伍名称 | 零界轨迹 | 零界轨迹 | 零界轨迹 | 零界轨迹
+参赛学校 | 青岛理工大学 | 青岛理工大学 | 青岛理工大学 | 青岛理工大学
+赛题组组别 | 轮腿穿越 | 轮腿穿越 | 轮腿穿越 | 轮腿穿越
+检查项目 | 规格 （选手自行填写） | 符合 （） | 不符合（） | 备注
+1.车模类型是什么？ | V车模基础上自制 |  |  | 如果是自制车模，请标明自制。
+车模整体尺寸： （包括传感器在内）长，宽，高(mm) | 长225mm 宽220mm 高340mm |  |  | 今年比赛车模尺寸没有限制
+传感器种类、规格(型号)数量。 是否使用自带MCU的成品传感器模块？型号是什么？ | 陀螺仪LSM6DSR *1 磁编码器 TLE5012 *2  无 |  |  | 
+控制转向舵机型号是否自行改装舵机？ 防伪易损标签是否完整？ | 无   完整 |  |  | 
+1. 是否增加伺服电机？ 2. 如果有种类、个数和作用？ | 否 |  |  | 
+电路中微处理器型号和个数？ | CYT4BB7 *1 CYT2bl3 *1 |  |  | 
+是否具有其它可编程器件，个数与作用？ | 否 |  |  | 
+是否有无线通讯装置？ 如果有种类和个数？ | 否 |  |  | 
+电池的种类、规格和数量？ | 格式ACEFPV锂电池 1300mh，3s，75c，三块 |  |  | 
+1. 是否使用GPS导航？ 2. 是否没有使用RTK？ | 是 否 |  |  | 
+后轮驱动电机是否是原车模电机？ 是否具有防伪易损标签？ | 是   是 |  |  | 
+轮胎是否是原车同款轮胎？ 轮胎的尺寸（直径和宽度）是否小于等于原车膜尺寸？ | 否   宽度3.7cm 直径10cm 否 |  |  | 
+车轮轴距、轮距是否改装？ 改装参数是什么？ | 是  轮距两边各加宽3mm |  |  | 
+车模驱动轮传动机构是否改装？ 改装方式是什么？ | 否 |  |  | 
+是否更换过原装车模中的机械元器件？更换后的规格 是什么？ | 是  更换轮胎，直径10cm，宽度3.7cm |  |  | 。
+车模电路板个数及功能。 其中是否有购买成品电路板？ | 4个 无刷驱动 舵机供电 主板 磁编码器  否 |  |  | 
+自制电路板是否标记有学校名称、队伍名称、制作日期等信息？ 标示信息在PCB的哪一层？ | 已标记    覆铜层 |  |  | 请在表格中注明电路板队伍信息的内容。
+其它待说明内容 | 无 |  |  | 
+检查人员签名： | 检查意见： | 检查意见： | 检查意见： | 检查意见：

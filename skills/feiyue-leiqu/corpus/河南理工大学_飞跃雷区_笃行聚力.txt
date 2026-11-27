@@ -1,0 +1,1283 @@
+第二十一届全国大学生智能汽车竞赛
+技 术 报 告
+
+
+
+
+
+学    校：			   河南理工大学
+队伍名称：        		笃行聚力
+参赛队员：阙中博  徐斌彬  张家琛  王皓天  卢金涛
+带队教师：                 张涛
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+关于技术报告使用授权的说明
+本人完全了解全国大学生智能汽车竞赛组织委员会有关保留、使用技术报告的规定，即：参赛队伍提交的技术报告，组委会有权保留、汇编出版技术报告，有权采用影印、缩印或其他复制手段保存技术报告。
+本技术报告的知识产权归参赛队伍所有，参赛队伍对技术报告内容的真实性、准确性负责，并授权竞赛组委会在相关赛事活动与出版物中使用。
+特此声明。
+
+
+
+
+参赛队员签名：
+        				          带队老师签名：         
+
+日                期：2026年 8 月16日
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+目  录
+摘  要	1
+第一章 引言	2
+1.1 竞赛背景与任务分析	2
+1.2 系统总体方案	3
+第二章 机械结构设计	4
+2.1 飞行器结构	4
+2.2 牵引车结构	6
+2.3 空地连接与供电方案	7
+第三章 电路硬件设计	7
+3.1 主控与电源	7
+3.2 传感器选型	8
+3.3 执行器与驱动	9
+3.4 电路板与接口	10
+第四章 软件系统设计	11
+4.1 软件总体架构	11
+4.2 视觉处理算法	12
+4.3 飞行器姿态解算	13
+4.4 飞行控制算法	14
+4.5 高度估计与障碍抑制	15
+4.6 光流速度估计	16
+4.7 牵引车运动控制	17
+4.8 里程计与定位	18
+4.9 通信协议设计	18
+第五章 系统调试与测试	19
+5.1 调试方法与工具	19
+5.2 测试结果分析	20
+第六章 技术参数	20
+结  论	21
+参考文献	22
+附录 A 系统源代码（核心部分）	22
+A.1 空地通信协议与帧解析	22
+A.2 视觉处理核心算法	23
+A.3 飞行器姿态解算（Mahony 四元数互补滤波）	29
+A.4 飞行串级 PID 控制与电机混控	30
+A.5 高度估计与障碍抑制	32
+A.6 光流速度估计与自适应卡尔曼滤波	34
+A.7 牵引车麦克纳姆轮运动控制	35
+A.8 牵引车航向角解算与里程计	37
+A.9 牵引车增量式 PID 与积分分离	37
+A.10 参数 Flash 存储与掉电保存	38
+
+
+摘  要
+本文面向第二十一届全国大学生智能汽车竞赛"飞跃雷区组"赛题，设计并实现了一套空地协同智能系统。系统由两部分组成：四旋翼悬停飞行器（以下简称"飞行器"）与麦克纳姆轮四轮牵引车（以下简称"牵引车"）。飞行器通过缆绳与牵引车连接，由牵引车供电并牵引飞行；飞行器携带全部传感器（摄像头、惯性测量单元、光流、激光测距模块），负责空中态势感知；牵引车作为地面移动平台，通过麦克纳姆轮实现全向运动，根据飞行器下传的视觉与姿态信息完成自主巡航与目标追踪。这一"飞行器感知、牵引车执行"的空地协同方案，既满足了赛题对传感器必须全部安装于飞行器的约束，又充分利用了地面平台供电稳定、负载能力强的优势。
+系统硬件采用英飞凌 CYT4BB（TRAVEO T2G）双核 Cortex-M7 微控制器（主频 250MHz）作为任务芯片，基于逐飞科技（SeekFree）开源库在 IAR 9.40.1 环境下开发。飞行器与牵引车各自独立运行一套 CYT4BB 双核系统：飞行器采用双核分工（cm7_0 负责飞控与车控、cm7_1 负责视觉图像处理），牵引车采用单核控制（cm7_0 负责运动控制与里程计，cm7_1 预留）。两套主控之间通过缆绳内的串口通信线连接，飞行器内部的 cm7_0 与 cm7_1 核则通过共享内存数组与 UART6 进行高速数据交换，形成了"核间共享内存 + 板间串口"的两级通信体系。
+软件层面，飞行器实现了基于 MT9V03X 摄像头的 V 形灯与信标识别算法（Sobel 边缘检测、OTSU 自适应阈值、形态学处理、连通域标记、三态锁定跟踪）、基于 IMU963RA 九轴惯性测量单元的 Mahony 四元数互补滤波姿态解算、基于串级 PID 的飞行控制律、基于双 TOF 激光测距的高度估计与障碍抑制、基于光流传感器的水平速度估计；牵引车实现了基于 IMU660RA 的航向角解算、基于 DRV8701 有刷电机驱动的麦克纳姆轮速度闭环与全向运动学解算、基于编码器与航向角的里程计定位、以及视觉寻点回充与目标追踪。
+针对赛题中"飞越车辆等障碍时高度测量突变"这一核心难点，本文提出了"三层防护 + 障碍抑制 + 自适应底油"的融合高度估计算法，使飞行器在飞越 0.5 秒的车辆时高度仅下沉约 10 毫米，避免了高度环误响应。同时针对牵引车全向运动中的方向速度不对称、45° 死区、加减速冲击等问题，设计了方向限幅、死区破除、斜坡限幅等平滑控制策略，保证了运动平稳性。
+经过反复调参验证，系统能够实现飞行器稳定悬停、牵引车全向精确移动、空地协同目标识别与追踪，满足竞赛任务要求。通过本项目，团队成员在嵌入式系统设计、运动控制、图像处理、多传感器融合、控制理论等方面得到了全面锻炼。
+关键词：飞跃雷区；空地协同；四旋翼飞行器；麦克纳姆轮；CYT4BB；串级 PID；Mahony 姿态解算；视觉识别；里程计
+
+
+第一章 引言
+1.1 竞赛背景与任务分析
+全国大学生智能汽车竞赛是由教育部高等学校自动化类专业教学指导委员会主办的一项面向全国大学生的探索性工程实践活动，以"立足培养、重在参与、鼓励探索、追求卓越"为宗旨，旨在促进高等学校素质教育，培养大学生的综合知识运用能力、基本工程实践能力和创新意识。经过二十余年的发展，竞赛已形成多个竞速组与创意组并行的赛制格局，参赛队伍需要在规定的主控芯片与传感器约束下，自主设计机械结构、硬件电路与控制算法，完成具有较高难度的工程任务。
+"飞跃雷区组"是第二十一届竞赛中新增的特色创意组别，其核心是"空地协同"。赛题要求参赛队伍设计一套由飞行器与地面牵引车组成的协同系统：飞行器在空中悬停并携带全部传感器，通过长度不超过 1.5 米的缆绳与牵引车相连，由牵引车供电并牵引飞行；飞行器将感知到的地面目标（V 形灯、信标灯）信息实时传递给地面牵引车，牵引车据此完成自主巡航、目标追踪与定位等任务。这一赛题将旋翼飞行器控制、地面全向移动、视觉识别、多传感器融合、空地通信等多个技术领域有机融合，具有较高的综合性与挑战性。
+赛题对系统提出如下约束与挑战：
+（1）供电约束：飞行器不携带动力电池，必须由牵引车通过缆绳供电，要求供电链路在缆绳长度范围内稳定可靠，且供电线路不能与通信线路相互干扰；
+（2）传感器位置约束：所有传感器仅能安装在飞行器上，飞行器必须"看得见"地面目标并回传，这对摄像头的安装角度、视野范围以及视觉算法的鲁棒性提出了较高要求；
+（3）高度约束：飞行器悬停高度不超过 1.5 米，且飞行过程中需飞越地面车辆等障碍物，高度测量与高度环控制必须具备抗干扰能力；
+（4）尺寸约束：飞行器尺寸不超过 50 厘米，牵引车尺寸不超过 30 厘米，限制了结构与传感器布局空间；
+（5）任务芯片约束：任务必须基于指定的 TRAVEO 系列微控制器完成，且不允许使用其他高性能计算平台；
+（6）缆绳约束：缆绳既是供电通道又是通信通道，同时会通过拉力对飞行器姿态产生干扰，需要在机械设计与控制算法上共同加以抑制。
+针对上述约束，本队采用"飞行器负责感知、牵引车负责执行"的分工方案，并对高度测量、缆绳供电、空地通信、全向运动等关键环节进行了针对性设计。下面对系统总体方案进行介绍。
+1.2 系统总体方案
+系统整体结构如图 1.1 所示，采用双主控、双车体架构：飞行器与牵引车各自搭载一块 CYT4BB 双核微控制器，二者通过缆绳内的供电线与通信线连接。飞行器端的 cm7_0 核运行飞控与车控逻辑，cm7_1 核运行视觉图像处理；两核之间通过共享内存（shijue_data 数组）与 UART6 进行数据交换。牵引车端的 cm7_0 核运行运动控制与里程计，cm7_1 核预留。
+                 ┌─────────────────────────────────┐
+                 │        飞行器（四旋翼）              │
+                 │  ┌─────────┐   ┌───────────┐      │
+                 │  │ cm7_0   │   │  cm7_1    │      │
+                 │  │ 飞控/车控 │◄─►│  视觉处理  │      │
+                 │  └────┬────┘   └─────┬─────┘      │
+                 │       │ 共享内存 / UART6          │
+                 │  IMU963RA│ MT9V03X 摄像头          │
+                 │  光流传感器│ 双 TOF 激光测距        │
+                 └───────┼──────────────┼────────────┘
+                         │  缆绳（供电 + 通信）       │
+                         ▼                              
+                 ┌─────────────────────────────────┐
+                 │      牵引车（麦克纳姆轮）            │
+                 │  ┌─────────┐   ┌───────────┐      │
+                 │  │ cm7_0   │   │  cm7_1    │      │
+                 │  │ 运动控制 │   │  （预留）   │      │
+                 │  └────┬────┘   └───────────┘      │
+                 │  IMU660RA│ DRV8701 × 4 驱动         │
+                 │  编码器×4 │  有刷电机 × 4          │
+                 └─────────────────────────────────┘
+图 1.1  系统总体架构图
+
+系统的信息流与控制流可归纳为：飞行器 cm7_1 核采集图像并进行目标识别，将 V 形灯与信标的图像坐标写入共享内存；飞行器 cm7_0 核读取视觉结果，结合姿态角解算控制误差（含俯仰/滚转补偿），运行串级 PID 飞控输出电调 PWM 实现悬停；同时将目标坐标通过 UART6 下传给牵引车；牵引车 cm7_0 核接收目标坐标，运行麦克纳姆轮运动控制与航向角闭环，驱动四个有刷电机实现全向运动与目标追踪；牵引车再通过里程计与 Flash 保存的坐标实现寻点回充。整条链路从"图像采集"到"车轮动作"形成了完整的感知—决策—执行闭环。
+图 1.2  系统整体实物图
+第二章 机械结构设计
+2.1 飞行器结构
+飞行器采用 X 型四旋翼布局，机架由轻质碳纤维板与 3D 打印连接件构成，四个无刷电机对称布置于机臂末端，长33cm，宽33cm，高13 cm。为满足尺寸约束（≤50 厘米），机架对角线尺寸控制在 50 厘米以内，同时通过合理减重降低悬停功耗。碳纤维板具有高比强度、低密度的优点，3D 打印件则用于电机座、传感器支架等异形结构，兼顾了结构强度与轻量化。
+飞行器中心下方悬挂摄像头（MT9V03X）与双 TOF 激光测距模块。摄像头朝向地面，用于识别地面 V 形灯与信标；双 TOF 模块垂直向下安装，用于测量飞行高度。两个 TOF 模块在机架上的安装位置存在杠杆臂偏移（TOF1 沿 X 轴偏移 58 毫米、TOF2 沿 Y 轴偏移 68 毫米），因此高度解算中进行了杠杆补偿。光流传感器与 IMU963RA 安装在机架中心附近，尽量减小安装偏心对测量的影响。
+飞行器通过顶部缆绳与牵引车相连，缆绳内部包含供电线（动力电源）与通信线（串口数据线），缆绳长度控制在 1.5 米以内。为降低缆绳对飞行器姿态的干扰，缆绳连接点位于飞行器重心上方，使缆绳拉力产生的俯仰/滚转力矩尽量小。同时，缆绳采用轻质且抗拉的材料，在保证供电与通信可靠性的前提下尽量减小附加质量。
+图 2.1  飞行器整机结构图
+图 2.2  飞行器机架与 3D 打印件
+2.2 牵引车结构
+牵引车采用麦克纳姆轮四轮翻转底盘，四个麦克纳姆轮分别由四个有刷直流电机独立驱动，实现平面内的全向移动（前后、左右平移、原地旋转）。底盘尺寸控制在 30 厘米以内，长30cm，宽30cm，高30 cm。麦克纳姆轮的滚子斜置角度为标准 45°，通过合理的轮速分配实现全向运动学解算。麦克纳姆轮能够在保持车体朝向不变的情况下实现任意方向的平移，非常适合赛题中需要在狭小场地内灵活机动的应用场景。
+牵引车上方固定供电模块与通信模块，通过缆绳为飞行器供电并与飞行器通信。车体上还搭载 IMU660RA 惯性测量单元（用于航向角解算）与四路编码器（用于轮速反馈与里程计）。四个编码器分别与四个电机同轴安装或通过减速结构相连，实时反馈各轮转速，是速度闭环与里程计定位的数据来源。
+麦克纳姆轮的关键几何参数包括：轮半径 R = 3.15 厘米、纵向半轴距 L = 10.0 厘米、横向半轴距 W = 8.875 厘米。这些参数直接决定运动学正解与逆解的准确性，安装时应保证四个轮子的轴线两两平行、半轴距左右对称，否则会引起车体运动时的打滑与航向漂移。
+同时，将基础底盘分割为二后设计连接翻转轴，从而实现一定的越野能力。
+图 2.3  牵引车整车结构图
+图 2.4  麦克纳姆轮与底盘细节
+2.3 空地连接与供电方案
+空地连接缆绳是本系统的关键纽带，同时承担供电与通信双重任务。缆绳一端固定于牵引车，另一端连接飞行器重心上方。供电部分将牵引车动力电池直接引出传输至飞行器，为飞控主控、传感器与四个无刷电调供电；通信部分采用串口双绞线，实现飞行器到牵引车的数据下传（目标坐标、检测状态）。为减小串扰，供电线与通信线在缆绳内分组屏蔽，且串口信号线通过数字隔离器将无人机控制地与牵引车控制地电气隔离，避免相互串扰。
+缆绳的长度、重量与刚性对飞行器影响显著：缆绳过短会限制飞行高度与机动范围，过长则增加重量并加大摆动；缆绳刚性过大会将牵引车的振动直接传递给飞行器。本队经过试验确定了 1.5 米内的缆绳长度，并选用轻质柔性电缆，兼顾了供电能力、通信可靠性与对飞行姿态的干扰抑制。
+第三章 电路硬件设计
+3.1 主控与电源
+主控芯片：系统任务芯片采用英飞凌 CYT4BB（TRAVEO T2G）双核 Cortex-M7 微控制器，主频 250MHz，具备丰富的外设资源（多路 UART、SPI、IIC、TCPWM、编码器接口等），满足视觉处理、飞控解算与运动控制的高实时性要求。CYT4BB 的双核架构支持两核并行运行不同的实时任务，本系统正是利用这一特性，将视觉处理
+（cm7_1）与控制逻辑（cm7_0）分配到不同核心，降低了单核负载，提高了系统的实时响应能力。飞行器与牵引车各使用一块 CYT4BB 核心板。
+电源系统：飞行器不携带动力电池，由牵引车通过缆绳供电。牵引车搭载动力电池，无人机的功率供电电缆直接从动力电池取电，实现了无人机与牵引车的并联运行。无人机与牵引车的电源部分采用多级稳压结构：电池电压经一级 DC-DC 降压得到稳定的5V电压，再通过LDO降压到3.3V分别给主控核心板（3.3V）与外设传感器供电。无人机与牵引车采用相同的控制部分供电设计。无人机无刷电机与牵引车有刷电机直接从动力电池母线取电并各自与其控制地单点接地。二者之间采用数字隔离器在保障通信的前提下将二者的控制地隔离，避免相互串扰。
+图 3.1  无人机主板
+图 3.2  牵引车主板
+3.2 传感器选型
+系统所用传感器如表 3.1 所示。传感器选型的原则是：在满足测量精度与刷新率的前提下，尽量选择体积小、功耗低、接口简单、与逐飞开源库兼容的型号，以便于二次开发。
+表 3.1  传感器选型
+
+MT9V03X 是一款全局快门灰度图像传感器，输出 188×120 分辨率的灰度图像，适合高速运动下的目标识别；IMU963RA 集成了三轴加速度计、三轴陀螺仪与三轴磁力计，为飞行器提供完整姿态信息；IMU660RA 为六轴 IMU，用于牵引车航向角解算；光流传感器测量水平速度，弥补单靠加速度积分速度易漂移的不足；双 TOF 激光测距模块基于 VL53L1X，量程可达 0~2000 毫米，用于飞行器高度测量，双传感器冗余提高了测高可靠性。
+图 3.3  传感器安装细节
+3.3 执行器与驱动
+飞行器执行器：四个无刷电机通过电调（ESC）驱动。电调采用 50Hz PWM 信号（1~2ms 脉冲宽度）控制转速，其中 1ms 对应 0% 油门、2ms 对应 100% 油门。飞控将控制量解算为四路 PWM 输出到电调，电调再将 PWM 转换为三相交流驱动无刷电机。电调的输出频率与响应速度直接影响飞行器姿态控制的带宽。
+牵引车执行器：四个有刷直流电机由 DRV8701 驱动芯片驱动，采用 17kHz PWM 调速，配合 GPIO 控制电机正反转。DRV8701 是一种低功耗 H 桥电机驱动器，支持 PWM 调速与方向控制，能够满足有刷电机的双向调速需求。电机输出经减速后驱动麦克纳姆轮，编码器反馈轮速构成速度闭环。
+编码器接口：四个编码器通过 CYT4BB 的编码器接口（TC_CH07、TC_CH20、TC_CH27、TC_CH58）计数，在 1ms 定时中断中采集编码器计数并做一阶低通滤波得到轮速，用于速度 PID 与里程计。
+图 3.4  电机驱动板
+3.4 电路板与接口
+电路设计遵循"模块化 + 抗干扰"的原则。主控核心板、电源板、驱动板相互独立，通过排针/排线连接，便于调试与更换。信号线与动力线在布局上尽量分离，避免大电流对传感器与通信的干扰。所有外部接口（摄像头、IMU、光流、TOF、电调、电机、编码器、屏幕、键盘）均做引脚规划，与逐飞开源库的引脚宏定义保持一致，降低接线错误的概率。
+图 3.5  通信原理图
+第四章 软件系统设计
+4.1 软件总体架构
+软件基于逐飞科技开源库开发，采用"分层 + 双核分工"的架构。飞行器端双核通过共享内存与串口协同工作；牵引车端采用"中断驱动 + 主循环轮询"的结构。整体上，软
+件分为驱动层（传感器/执行器初始化与读写）、算法层（姿态解算、PID、视觉、滤波）与应用层（任务调度、模式切换、显示、参数管理）三个层次，层次间接口清晰，便于模块化开发与调试。
+飞行器端双核分工：cm7_0 核（飞控/车控）在主循环中读取共享内存中的视觉结果，计算控制误差（含俯仰/滚转补偿），运行串级 PID 飞控，输出电调 PWM，同时处理摄像头源滞后切换、模式切换等逻辑；cm7_1 核（视觉）负责 MT9V03X 图像采集、畸变校正、二值化、滤波、V 形灯与信标识别，将识别结果写入共享内存供 cm7_0 读取。两核通过共享内存数组 shijue_data 进行数据交换，采用标志位同步读写，实现低延迟的核间通信。
+牵引车端控制结构：主循环（cm7_0）处理按键、模式切换、遥控通道解析、IPS200 显示、Flash 参数读写等；PIT 定时中断在 1ms 周期内完成编码器采集、实际速度计算、里程计更新、按键扫描，2ms 周期运行运动控制（Motor_Control）。这种"慢任务主循环 + 快任务定时中断"的结构，既保证了运动控制的实时性，又兼顾了人机交互与参数管理的灵活性。
+飞行器飞控的定时调度采用多周期计数分频实现：位置环 42ms、速度环 21ms、高度外环 20ms、高度内环 10ms、角度环 4ms、角速度环 2ms。不同控制环按各自周期运行，内环频率高于外环，符合串级 PID 的经典设计原则。整个调度在主循环中以 1ms 为基准计数，各环在满足计数条件时执行一次，形成稳定的多速率控制。
+4.2 视觉处理算法
+视觉处理运行于飞行器 cm7_1 核，是整个系统感知环节的核心。处理流程如下：
+（1）图像采集与畸变校正：通过 MT9V03X 采集 188×120 灰度图像，并对镜头畸变进行校正。系统采用径向畸变模型，通过牛顿迭代求解畸变校正查找表（LUT），在图像预处理阶段完成去畸变，提高了目标几何特征提取的准确性；
+（2）二值化：提供 OTSU 自适应阈值、均值阈值、Sobel 边缘检测、Sobel 自适应阈值四种模式。针对 V 形灯与信标灯的高亮特征，采用 Sobel 边缘检测（阈值 250）或 Sobel 自适应阈值能够更好地提取目标轮廓，抑制光照不均的干扰；
+（3）形态学处理：对边缘图进行桥接（Bridge）、对角桥接（Bridge_Diag）、闭运算与内部空洞填充（Close_And_Fill_Edges），消除噪点、闭合轮廓、填充目标内部，为连通域标记提供质量更高的二值图像；
+（4）连通域标记（CCL/BFS）：通过广度优先搜索对二值图像进行连通域标记，得到候选目标区域，并统计每个连通域的面积、质心、外接矩形、平均亮度、周长等几何特征；
+（5）V 形灯识别：对连通域进行几何特征评分（面积 15~600、宽高比 1.1~5、填充率小于 0.8、双线段特征 tsr 与锥形特征 taper），识别地面 V 形灯。真实的 V 形灯具有"上宽下窄、中间缺省"的锥形特征，通过锥形特征 tapering 与双线段特征可以与其他形状区分；
+（6）信标识别：对连通域进行信标评分（面积 5~400、宽高比 0.3~3.5、圆度大于 0.25），识别空中信标。信标灯近似圆形高亮目标，圆度与填充率是其主要判别特征，同时结合历史跟踪位置进行加权加分，提高识别稳定性；
+（7）三态锁定跟踪：采用状态机（IDLE → ACQUIRING → TRACKING）对信标进行锁定。IDLE 状态从候选目标中选择最接近画面中心者开始锁定；ACQUIRING 状态连续多帧匹配确认后进入 TRACKING；TRACKING 状态在门限半径内匹配目标，配合指数滑动平均（EMA）平滑与速度预测，目标丢失时利用预测位置维持跟踪，并检测目标是否熄灭（亮度骤降）以区分"遮挡丢失"与"熄灭"。三态锁定显著提高了复杂背景下目标跟踪的稳定性；
+（8）V 灯对检测：检测成对出现的 V 形灯，通过两个臂的面积、间距、尺寸比例与整体宽高比进行评分，用于目标定位。识别结果（目标坐标、是否检测到目标、目标类型等）写入共享内存，供飞控/车控使用。
+此外，为排除 V 形灯碎片被误识别为信标，系统在识别出 V 形灯后建立 V-mask 屏蔽区域，在该区域内抑制信标候选的搜索，进一步降低了误检率。
+图 4.1  视觉识别效果图（IPS200 显示）
+4.3 飞行器姿态解算
+飞行器采用 IMU963RA 九轴惯性测量单元，通过 Mahony 四元数互补滤波进行姿态解算，流程如下：
+（1）陀螺仪零漂标定：上电时对 4000 次陀螺仪采样取均值，得到零偏，并在后续解算中从陀螺仪原始值中减去零偏，减小陀螺仪零漂对姿态积分的累积误差；
+（2）数据预处理：加速度计做一阶低通滤波以抑制振动噪声，陀螺仪去零偏并转换为 rad/s；
+（3）Mahony 滤波：利用加速度计测量的重力矢量对陀螺仪积分进行 PI 校正。将四元数估计的重力方向与加速度计测量的重力方向做叉积得到误差，误差经 PI 校正后补偿陀螺仪角速度，再对四元数进行一阶积分更新。这种互补滤波结构使陀螺仪的低频漂移被加速度计的长时准确度校正，同时保留陀螺仪的高频响应特性；
+（4）欧拉角解算：由四元数解算俯仰角（pitch）、滚转角（roll）与航向角（yaw），其中 yaw 角做连续化处理，通过检测相邻两次 yaw 的跳变（>180°）并累加差分，防止 ±180° 处的跳变。
+姿态角用于飞行器的角度环与角速度环控制，以及高度测量的倾角补偿与光流速度的坐标变换。快速开方（fast_inv_sqrt）算法用于四元数与加速度矢量的归一化，降低了计算开销，适合在 250MHz 双核 MCU 上以 1kHz 频率实时运行。
+4.4 飞行控制算法
+飞行器采用串级 PID 控制结构，由外环（位置/高度）与内环（角度/角速度）串联构成：
+位置环（周期 42ms）：根据目标位置与实际位置误差，输出目标倾角；
+速度环（周期 21ms）：根据目标速度与实际速度误差，输出目标倾角；
+角度环（周期 4ms）：根据目标倾角与实际倾角误差，输出目标角速度；
+角速度环（周期 2ms）：根据目标角速度与实际角速度误差，输出电机 PWM；
+高度外环（周期 20ms）与高度内环（周期 10ms）：根据高度误差输出油门控制量。
+位置环、速度环与角度环均采用带积分分离与死区的 PID 结构（PID_Calc），当误差绝对值小于分离阈值且大于死区时累加积分，否则关闭积分，防止积分饱和引起的超调与振荡。关键 PID 参数如表 4.1 所示。
+表 4.1  飞行控制关键 PID 参数
+
+电机混控：采用 X 型布局，将四路控制量（油门、俯仰、滚转、偏航）解算为四个电机的 PWM，输出给电调。具体混控关系为：
+duty1 = base + x_in - y_in - z_in + hight_in    （公式 1）
+duty2 = base - x_in + y_in - z_in + hight_in    （公式 2）
+duty3 = base - x_in - y_in + z_in + hight_in    （公式 3）
+duty4 = base + x_in + y_in + z_in + hight_in    （公式 4）
+其中 base 为自适应基础油门，x_in/y_in/z_in 为三轴角速度环输出，hight_in 为高度内环输出。同时设置安全保护：当滚转角或俯仰角超过 75° 时立即将四路电机 PWM 置零，防止坠机。此外，系统设计了 yaw 搜索功能，在未锁定目标时以斜坡加减速的方式旋转搜索，锁定目标后停止旋转。
+高度上升采用斜坡规划：目标高度从起始值按固定步长线性增长到设定值，避免起飞瞬间油门突变引起的超调。降落模式（land_mod）则单独设置降落基础油门，并将速度环输出置零，实现平稳降落。
+4.5 高度估计与障碍抑制
+飞行高度通过双 TOF 激光测距模块（DL1B 与 DL1B2，VL53L1X）测量，并做多级处理：
+（1）倾角补偿：根据飞行器俯仰/滚转角，将斜测距离转换为垂直高度：
+h = d × cos(roll) × cos(pitch)    （公式 5）
+（2）杠杆补偿：根据 TOF 安装位置与机架中心偏移进行补偿（h1 = d1×cos + 58×sin(pitch) - 6，h2 = d2×cos + 68×sin(roll)）；
+（3）三层防护：第一层为单传感器量程与跳变检测（量程 0~2000mm，单帧跳变阈值 100mm），对超量程或突变的数据判定为坏值；第二层为双 TOF 一致性检测（阈值 80mm）与择优，两传感器一致时取均值，不一致时取与历史值更接近者；第三层为限速器，限制每周期最大变化量，防止数据突变；
+（4）障碍抑制：针对"飞越车辆时 TOF 照到车顶导致高度突降"的场景，设计专门的障碍抑制策略——单帧降幅超过 25mm 时判定为疑似障碍，以极慢速率（0.5mm/帧）跟踪；连续 30 帧（300ms）保持低位才确认真实下降，恢复正常跟踪速率；测量恢复时立即重置计数。该策略使飞越 0.5 秒的车辆时高度仅下沉约 10mm，而非原方案的约 75mm，避免了高度环误响应，使实际飞行高度保持稳定；
+（5）自适应底油函数：根据倾角补偿（tilt_factor = 1/cos(roll)/cos(pitch)）与电池电压自适应调整基础油门，在 TOF 有效且姿态平稳（滚转、俯仰角小于 20°）时积分调整自适应量，最终合成基础油门并做安全限幅，保证不同姿态与电压下的悬停稳定性。基础油门基准约为 835，自适应量被限制在合理范围内。
+此外，系统还实现了高度下降任务（HeightDescent）：给定目标高度与下降时间，在 1ms 中断中按线性插值生成下降高度目标，实现平滑下降，避免降落过程中的油门突变。
+4.6 光流速度估计
+飞行器水平速度由光流传感器测量。光流数据通过 UART 协议（0xFE 0x0A 帧头、12 字节负载、XOR 校验、0x55 帧尾）接收，解析得到像素光流积分、积分时间、地面距离与质量指标。原始光流需与陀螺仪角速度补偿叠加，以消除飞行器自身旋转对光流的影响，再乘以高度得到水平速度估计。
+为抑制光流噪声与加速度积分漂移，系统采用基于加速度计积分与光流观测融合的自适应卡尔曼滤波：状态量为速度与加速度零偏（2 维），以加速度积分作为过程输入（控制量），光流速度作为观测，根据光流质量动态调整观测噪声（质量越高观测噪声越小），并对观测残差进行限幅以抑制野值。该滤波器在光流质量较差时主要依靠加速度积分预测，质量较好时融合光流观测，实现了水平速度的平滑、无漂移估计，供速度环控制使用。
+光流数据质量以 245 为有效判据，无效帧不更新观测而仅做预测，并设置最长连续无效帧数限制，超过后复位相关状态，保证估计的可靠性。
+4.7 牵引车运动控制
+牵引车采用麦克纳姆轮全向底盘，四个轮子分别由 DRV8701 驱动、编码器反馈。编码器计数经一阶低通滤波（系数 0.65/0.35）得到轮速。轮速 PID 采用增量式加积分分离结构（误差阈值 12 时关闭积分项防止积分饱和）。
+由四个轮速解算车体实际速度（麦克纳姆轮运动学正解）：
+Vx_real = (v1 + v2 + v3 + v4) / 4 × R    （公式 6）
+Vy_real = (-v1 + v2 + v3 - v4) / 4 × R    （公式 7）
+wz_real = (-v1 + v2 - v3 + v4) / (4 × (L + W)) × R    （公式 8）
+由车体目标速度解算四个轮目标转速（麦克纳姆轮运动学逆解）：
+wl1 = (Vx - Vy - wz × (L + W)) / R    （公式 9）
+wr1 = (Vx + Vy + wz × (L + W)) / R    （公式 10）
+wl2 = (Vx + Vy - wz × (L + W)) / R    （公式 11）
+wr2 = (Vx - Vy + wz × (L + W)) / R    （公式 12）
+其中 L = 10.0cm（纵向半轴距）、W = 8.875cm（横向半轴距）、R = 3.15cm（轮半径）。
+分层控制环包括：电机速度环（最内层，轮速 PID，Kp≈562~576，Ki=8，Kd≈5~6）；航向角环（yaw 角度 PID，Kp=0.32，Kd=0.05，输出目标角速度，再由角速度 PID Kp=0.4，Ki=0.03，Kd=0.02 控制，角速度经一阶低通滤波后反馈）；水平速度环（Vx/Vy 速度 PID，Kp=1.5，Ki=0.03，Kd=0.11，结合一阶低通滤波）。
+方向速度限幅与加减速：方向限幅（limit_speed_by_dir）根据运动方向（前/后/左/右）对速度幅值做不同上限，远距离（误差大于 20）与近距离（误差小于 5）采用不同速度档位，中间区间线性插值；45° 死区破除（break_45deg_deadzone）在斜向速度接近 45° 时加入角度偏置，避免斜向卡顿；斜坡限幅（ramp_limit）限制速度每周期变化量，实现平滑加减速。此外还有分段减速策略：当误差进入融合预警距离（FUSION_WARN_DIST）后，将速度分解为趋近方向与切向分量，按比例衰减，逼近目标时减速，保证目标追踪的平稳性与定位精度。
+工作模式：模式 0（视觉寻点回充）根据里程计坐标与保存的目标点（Flash 存储的 saved_x/saved_y），在世界坐标系下计算误差，经坐标旋转转换到车体坐标系，控制车体返回目标点，到达阈值内后切换模式；模式 1（视觉循迹/跟踪）根据飞行器下传的视觉目标坐标（经低通滤波），通过位置 PID 计算目标速度，并叠加方向限幅与分段减速，实现目标跟踪。
+4.8 里程计与定位
+牵引车通过编码器与航向角实现航位推算里程计。由轮速解算车体速度 Vx、Vy，经低通滤波后，用 yaw 角将车体速度旋转到世界坐标系：
+vx_world = vx × cos(yaw) - vy × sin(yaw)    （公式 13）
+vy_world = vx × sin(yaw) + vy × cos(yaw)    （公式 14）
+对世界速度积分得到世界坐标 world_x、world_y，当速度幅值大于阈值时才累加，抑制静止时的漂移。里程计坐标用于模式 0 的目标点回充，目标点坐标可通过按键写入 Flash 保存，实现掉电记忆。航向角 yaw 来自 IMU660RA 的 Mahony 姿态解算，并做了连续化处理以防止 ±180° 跳变。由于航位推算存在积分漂移，里程计定位精度随行驶距离增大而下降，但在赛题要求的短距离回充场景下足够使用，且可通过视觉信息进行校正。
+4.9 通信协议设计
+飞行器双核通信：飞行器 cm7_0 与 cm7_1 核之间通过共享内存数组 shijue_data 与 UART6 交换视觉结果与控制指令，实现低延迟的核间通信。共享内存位于特定地址段，两核均可直接读写，配合标志位实现同步。
+空地通信协议：飞行器与牵引车之间采用自定义串口协议（UART6，115200 波特率），帧格式为 0xAA 0x55 帧头加 10 字节数据加 XOR 校验，传输视觉目标坐标（v_x、v_y、beacon_x、beacon_y，各 2 字节小端）与检测状态（v_found、beacon_found，各 1 字节）。接收端采用状态机（HEAD1 → HEAD2 → DATA）逐字节解析，对帧头、校验逐项校验，校验通过后更新目标数据并置新数据标志位，主循环读取后清零。这种带校验的帧协议保证了空地数据传输的可靠性。
+VOFA+ 调试协议：牵引车通过 UART4 接收 VOFA+ 上位机协议（@...! 帧格式），解析 5 路通道数据用于遥控与模式切换，同时向上位机回传速度、航向角等调试数据，便于实时调参。VOFA+ 协议解析采用状态机逐字节处理，支持浮点数数组解析，可扩展通道数。
+第五章 系统调试与测试
+5.1 调试方法与工具
+（1）VOFA+ 实时曲线：将速度、航向角、目标坐标等关键变量实时上传，通过曲线观察控制环响应，辅助 PID 调参。VOFA+ 提供波形显示与数据记录功能，可直观对比不同参数下的阶跃响应与稳态误差；
+（2）IPS200 屏幕菜单：牵引车搭载 IPS200 SPI 屏幕，配合 9 键键盘实现 PID 参数在线修改与显示，调参结果实时写入 Flash 掉电保存。飞行器端亦通过 IPS200 显示视觉识别结果（二值图、目标坐标），便于现场观察识别效果；
+
+（3）Flash 参数管理：所有 PID 参数与底盘参数通过 Flash 读写，支持上电自动加载与断电保存。参数读写带默认值保护与数值范围限制（NaN 检测、上下限幅），防止非法数据导致系统异常；
+（4）安全保护：飞行器设置姿态超限（>75°）停机保护，牵引车设置方向限速与加减速限幅，电源与驱动电路设置过流保护，保证调试过程中的人员与设备安全；
+（5）分模块调试：按"传感器驱动 → 姿态解算 → 单环 PID → 串级 PID → 空地通信 → 整机协同"的顺序逐步调试，每一阶段确认无误后再进入下一阶段，降低了系统联调的复杂度。
+图 5.1  调试现场与 VOFA+ 曲线截图
+5.2 测试结果分析
+飞行器悬停：在串级 PID 控制下，飞行器能够稳定悬停在设定高度（约 1250 毫米），姿态角保持在小范围内波动，抗外部扰动能力良好。高度上升采用斜坡规划，起飞过程无超调。
+高度估计：双 TOF 融合加障碍抑制策略有效。在飞越地面车辆的测试中，测量高度短暂受车顶影响，但经障碍抑制后高度环几乎不响应，飞行器实际高度保持稳定；车辆通过后测量快速恢复正常。
+视觉识别：V 形灯与信标识别算法在复杂背景下能够稳定锁定目标，三态锁定跟踪有效降低抖动；V-mask 屏蔽与几何特征评分有效抑制了误检。信标熄灭与遮挡丢失能够被正确区分。
+牵引车全向移动：麦克纳姆轮运动学解算正确，牵引车可实现前后、左右平移与原地旋转；方向限幅与 45° 死区破除保证了斜向运动的平稳性，斜坡限幅消除了加减速冲击。
+协同追踪：牵引车能够根据飞行器下传的视觉目标信息，自动调整速度与方向，完成目标追踪；视觉寻点回充模式能够在里程计引导下准确返回保存的目标点。
+综合测试表明，系统各模块工作正常，空地协同任务完成度较高，达到了赛题要求。详细的量化测试数据与调参记录参见调试笔记，本报告限于篇幅仅给出定性结论。
+第六章 技术参数
+表 6.1  系统主要技术参数
+
+结  论
+本队针对第二十一届全国大学生智能汽车竞赛"飞跃雷区组"赛题，设计并实现了一套空地协同智能系统。系统以英飞凌 CYT4BB 双核微控制器为任务芯片，采用"飞行器感知、牵引车执行"的分工方案，飞行器负责视觉识别与空中悬停，牵引车负责全向移动与目标追踪，二者通过缆绳供电与通信，满足了赛题对供电方式、传感器安装位置、系统尺寸与任务芯片的全部约束。
+在软件层面，飞行器实现了基于 Sobel 加连通域标记的视觉识别、基于 Mahony 四元数的姿态解算、基于串级 PID 的飞行控制、基于双 TOF 的高度估计与障碍抑制、基于光流的速度估计；牵引车实现了基于麦克纳姆轮运动学的全向运动控制、基于编码器与航向角的里程计定位、以及视觉寻点回充与目标追踪。针对飞越障碍物导致高度突变、斜向运动死区、方向速度不对称等难点，分别设计了障碍抑制、死区破除、方向限幅等针对性算法，显著提升了系统的鲁棒性与运动平稳性。
+通过本次竞赛，团队成员在嵌入式系统设计、运动控制、图像处理、多传感器融合、控制理论、工程调试与团队协作等方面得到了全面锻炼，积累了宝贵的工程实践经验。项目也存在若干可改进之处，例如里程计长距离漂移、视觉识别在强光下的适应性、缆绳对飞行姿态的残余干扰等，将在后续工作中进一步优化。
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+参考文献
+[1] 逐飞科技. CYT4BB（TRAVEO T2G）开源库使用文档[Z].
+[2] 英飞凌科技. TRAVEO T2G 系列微控制器数据手册[Z].
+[3] 秦永元. 惯性导航（第2版）[M]. 北京：科学出版社，2014.
+[4] Mahony R, Hamel T, Pflimlin J M. Nonlinear Complementary Filters on the Special Orthogonal Group[J]. IEEE Transactions on Automatic Control, 2008, 53(5): 1203-1218.
+[5] 刘金琨. 先进 PID 控制 MATLAB 仿真（第4版）[M]. 北京：电子工业出版社，2016.
+[6] 冈萨雷斯. 数字图像处理（第3版）[M]. 北京：电子工业出版社，2011.
+[7] 冯正平, 李伟. 麦克纳姆轮全向移动机器人运动学分析与控制[J]. 机器人, 2007.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+附录 A 系统源代码（核心部分）
+说明：以下列出系统核心算法的关键代码。完整工程包含飞行器（8.9AI-3(shuang she)）与牵引车（juesaiguandao1111）两套 IAR 工程，此处选取反映核心思路的模块。
+A.1 空地通信协议与帧解析
+/* comm_protocol.h — 板间视觉数据通信协议 */
+#define COMM_UART              UART_6
+#define COMM_UART_BAUD         115200
+#define COMM_FRAME_HEAD1       0xAA
+#define COMM_FRAME_HEAD2       0x55
+#define COMM_FRAME_DATA_LEN    10
+#define COMM_FRAME_TOTAL_LEN   (COMM_FRAME_DATA_LEN + 3)  /* 2头 + 10数据 + 1校验 */
+ 
+typedef struct {
+    int16_t  v_x;              /* V字型灯带 x 坐标 */
+    int16_t  v_y;              /* V字型灯带 y 坐标 */
+    int16_t  beacon_x;         /* 信标灯 x 坐标 */
+    int16_t  beacon_y;         /* 信标灯 y 坐标 */
+    uint8_t  v_found;          /* V灯带识别标志位 (0/1) */
+    uint8_t  beacon_found;     /* 信标灯识别标志位 (0/1) */
+} VisionCommData;
+ 
+extern VisionCommData g_rx_vision;
+extern volatile uint8_t g_rx_vision_new;
+/* comm_receive.c — UART 中断逐字节解析状态机 */
+void Comm_Recv_ParseByte(uint8_t byte)
+{
+    static uint8_t  rx_state = 0;   /* 0=等HEAD1, 1=等HEAD2, 2=收数据 */
+    static uint8_t  rx_buf[COMM_FRAME_DATA_LEN + 1];
+    static uint8_t  rx_idx  = 0;
+    uint8_t calc_checksum, i;
+ 
+    switch(rx_state) {
+        case 0:
+            if(byte == COMM_FRAME_HEAD1) rx_state = 1;
+            break;
+        case 1:
+            if(byte == COMM_FRAME_HEAD2) { rx_state = 2; rx_idx = 0; }
+            else if(byte == COMM_FRAME_HEAD1) rx_state = 1;
+            else rx_state = 0;
+            break;
+        case 2:
+            rx_buf[rx_idx++] = byte;
+            if(rx_idx >= (COMM_FRAME_DATA_LEN + 1)) {
+                rx_idx = 0; rx_state = 0;
+                calc_checksum = 0;
+                for(i = 0; i < COMM_FRAME_DATA_LEN; i++)
+                    calc_checksum ^= rx_buf[i];
+                if(calc_checksum == rx_buf[COMM_FRAME_DATA_LEN]) {
+                    g_rx_vision.v_x  = (int16_t)((uint16_t)rx_buf[0] | ((uint16_t)rx_buf[1] << 8));
+                    g_rx_vision.v_y  = (int16_t)((uint16_t)rx_buf[2] | ((uint16_t)rx_buf[3] << 8));
+                    g_rx_vision.beacon_x = (int16_t)((uint16_t)rx_buf[4] | ((uint16_t)rx_buf[5] << 8));
+                    g_rx_vision.beacon_y = (int16_t)((uint16_t)rx_buf[6] | ((uint16_t)rx_buf[7] << 8));
+                    g_rx_vision.v_found = rx_buf[8];
+                    g_rx_vision.beacon_found = rx_buf[9];
+                    g_rx_vision_new = 1;
+                    g_rx_frame_ok_cnt++;
+                } else {
+                    g_rx_frame_err_cnt++;
+                }
+            }
+            break;
+        default:
+            rx_state = 0; rx_idx = 0;
+            break;
+    }
+}
+A.2 视觉处理核心算法
+/* lq_sobel — 四方向 Sobel 边缘检测，取四个方向梯度最大值 */
+void lq_sobel(unsigned char imageIn[LCDH][LCDW],
+              unsigned char imageOut[LCDH][LCDW], unsigned char Threshold)
+{
+    short i, j, k, temp[4];
+    for (j = 0; j < LCDW; j++) { imageOut[0][j] = 0; imageOut[LCDH-1][j] = 0; }
+    for (i = 0; i < LCDH; i++) { imageOut[i][0] = 0; imageOut[i][LCDW-1] = 0; }
+ 
+    for (i = 1; i < LCDH - 1; i++) {
+        for (j = 1; j < LCDW - 1; j++) {
+            temp[0] = -(short)imageIn[i-1][j-1]+(short)imageIn[i-1][j+1]
+                      -(short)imageIn[i  ][j-1]+(short)imageIn[i  ][j+1]
+                      -(short)imageIn[i+1][j-1]+(short)imageIn[i+1][j+1];
+            temp[1] = -(short)imageIn[i-1][j-1]+(short)imageIn[i+1][j-1]
+                      -(short)imageIn[i-1][j  ]+(short)imageIn[i+1][j  ]
+                      -(short)imageIn[i-1][j+1]+(short)imageIn[i+1][j+1];
+            temp[2] = -(short)imageIn[i-1][j  ]+(short)imageIn[i  ][j-1]
+                      -(short)imageIn[i  ][j+1]+(short)imageIn[i+1][j  ]
+                      -(short)imageIn[i-1][j+1]+(short)imageIn[i+1][j-1];
+            temp[3] = -(short)imageIn[i-1][j  ]+(short)imageIn[i  ][j+1]
+                      -(short)imageIn[i  ][j-1]+(short)imageIn[i+1][j  ]
+                      -(short)imageIn[i-1][j-1]+(short)imageIn[i+1][j+1];
+            for (k = 0; k < 4; k++) temp[k] = abs(temp[k]);
+            for (k = 1; k < 4; k++) if (temp[0] < temp[k]) temp[0] = temp[k];
+            imageOut[i][j] = (temp[0] > Threshold) ? 1 : 0;
+        }
+    }
+}
+/* ConnectedComponentLabeling — 广度优先搜索连通域标记，统计几何特征 */
+void ConnectedComponentLabeling(unsigned char *bitmap, unsigned char *labelmap)
+{
+    int i, j, k;
+    uint8_t labelIndex = 1;
+    memset(labelmap, 0, LCDW * LCDH);
+    /* 初始化 bbox 与统计量 ... */
+    for (i = 1; i < LCDH - 1; i++) {
+        for (j = 1; j < LCDW - 1; j++) {
+            int idx = i * LCDW + j;
+            if (bitmap[idx] != 1 || labelmap[idx] != 0) continue;
+            if (labelIndex >= MAX_LABEL_NUM) continue;
+            labelIndex++;
+            area = 1;
+            Connected_x[labelIndex] = i;
+            Connected_y[labelIndex] = j;
+            Connected_light[labelIndex] = ((unsigned char *)Image_Use)[idx];
+            q_reset();
+            labelmap[idx] = labelIndex;
+            q_push((uint16_t)idx);
+            while (!q_empty()) {
+                uint16_t pix = q_pop();
+                int pr = pix / LCDW, pc = pix % LCDW;
+                for (k = 0; k < 4; k++) {
+                    int nr = pr + NeighborDir[k][0];
+                    int nc = pc + NeighborDir[k][1];
+                    if (nr <= 0 || nr >= LCDH - 1 || nc <= 0 || nc >= LCDW - 1) continue;
+                    int ni = nr * LCDW + nc;
+                    if (bitmap[ni] != 1 || labelmap[ni] != 0) continue;
+                    labelmap[ni] = labelIndex;
+                    area++;
+                    Connected_x[labelIndex] += nr;
+                    Connected_y[labelIndex] += nc;
+                    Connected_light[labelIndex] += ((unsigned char *)Image_Use)[ni];
+                    if (nc < blob_x0[labelIndex]) blob_x0[labelIndex] = nc;
+                    if (nc > blob_x1[labelIndex]) blob_x1[labelIndex] = nc;
+                    if (nr < blob_y0[labelIndex]) blob_y0[labelIndex] = nr;
+                    if (nr > blob_y1[labelIndex]) blob_y1[labelIndex] = nr;
+                    q_push((uint16_t)ni);
+                }
+            }
+            area_map[labelIndex] = area;
+            if (area > 0) {
+                Connected_x[labelIndex] /= area;
+                Connected_y[labelIndex] /= area;
+                Connected_light[labelIndex] /= area;
+            }
+            if (area > (int)areamax) { areamax = (uint16_t)area; labelmax = labelIndex; }
+        }
+    }
+    labelcount = labelIndex;
+}
+/* score_v — V 形灯几何特征评分（锥形 + 双线段特征） */
+static float score_v(int idx, const BlobDetail *f)
+{
+    int   a  = area_map[idx];
+    int   w  = blob_x1[idx] - blob_x0[idx] + 1;
+    int   h  = blob_y1[idx] - blob_y0[idx] + 1;
+    float wh, fill, tsr, taper, score;
+ 
+    if (a < V_AREA_MIN || a > V_AREA_MAX)       return -1e6f;
+    if (w < V_W_MIN || h < V_H_MIN)             return -1e6f;
+    wh = (float)w / (float)h;
+    if (wh < V_WH_MIN || wh > V_WH_MAX)         return -1e6f;
+    fill = (float)a / (float)(w * h + 1);
+    if (fill > V_FILL_MAX)                       return -1e6f;
+    if (f->valid_rows < 3)                       return -1e6f;
+ 
+    tsr = (float)f->two_seg_rows / (float)f->valid_rows;
+    taper = 0.0f;
+    if (f->top_cnt > 0 && f->bot_cnt > 0) {
+        float ta = (float)f->top_w_sum / (float)f->top_cnt;
+        float ba = (float)f->bot_w_sum / (float)f->bot_cnt;
+        taper = fabsf(ta - ba) / (ta + ba + 1e-3f);
+    }
+    /* 真实 V 形：锥形或双线段特征应明显 */
+    if (tsr < 0.05f && taper < 0.08f)            return -1e6f;
+    score  = (wh - 1.0f) * 40.0f;
+    score += (1.0f - fill) * 60.0f;
+    score += tsr * 120.0f;
+    score += taper * 150.0f;
+    if (a >= 20 && a <= 300) score += 10.0f;
+    if (g_v_track.valid) {           /* 历史跟踪位置加权 */
+        int dx = iabs(Connected_y[idx] - g_v_track.x);
+        int dy = iabs(Connected_x[idx] - g_v_track.y);
+        if      (dx <= 15 && dy <= 12) score += 35.0f;
+        else if (dx <= 25 && dy <= 20) score += 15.0f;
+        else if (dx >  40 || dy >  35) score -= 30.0f;
+    }
+    return score;
+}
+/* score_beacon_fn — 信标灯几何特征评分（圆度 + 填充率 + 亮度） */
+static float score_beacon_fn(int idx, const BlobDetail *f)
+{
+    int   a  = area_map[idx];
+    int   w  = blob_x1[idx] - blob_x0[idx] + 1;
+    int   h  = blob_y1[idx] - blob_y0[idx] + 1;
+    float wh, fill, tsr, circ, score;
+ 
+    if (a < BEACON_AREA_MIN || a > BEACON_AREA_MAX) return -1e6f;
+    if (w < 2 || h < 2)                             return -1e6f;
+    wh = (float)w / (float)h;
+    if (wh < BEACON_WH_MIN || wh > BEACON_WH_MAX)   return -1e6f;
+    fill = (float)a / (float)(w * h + 1);
+    if (fill < BEACON_FILL_MIN)                      return -1e6f;
+    tsr = (f->valid_rows > 0) ?
+          (float)f->two_seg_rows / (float)f->valid_rows : 0.0f;
+    if (tsr > BEACON_TSR_MAX)                        return -1e6f;
+    circ = (f->perimeter > 0) ?
+           (4.0f * 3.14159f * (float)a) /
+           ((float)f->perimeter * (float)f->perimeter + 1e-3f) : 0.0f;
+    if (circ < BEACON_CIRC_MIN)                      return -1e6f;
+ 
+    score  = (1.0f - fabsf(wh - 1.0f)) * 80.0f;
+    score += fill * 70.0f;
+    score += circ * 100.0f;
+    score -= tsr  * 100.0f;
+    score += Connected_light[idx] * 1.5f;
+    if (a < 30 && Connected_light[idx] > 150 && circ > 0.45f)
+        score += 20.0f;
+    if (g_beacon_track.valid) {       /* 历史跟踪位置加权 */
+        int dx = iabs(Connected_y[idx] - g_beacon_track.x);
+        int dy = iabs(Connected_x[idx] - g_beacon_track.y);
+        if      (dx <= 15 && dy <= 12) score += 35.0f;
+        else if (dx <= 25 && dy <= 20) score += 15.0f;
+        else if (dx >  40 || dy >  35) score -= 25.0f;
+    }
+    return score;
+}
+/* BeaconLock_Update — 三态锁定状态机：IDLE → ACQUIRING → TRACKING */
+static void BeaconLock_Update(void)
+{
+    int i;
+    BeaconLockManager *lk = &g_beacon_lock;
+    switch (lk->state) {
+    case LOCK_IDLE: {
+        if (g_beacon_candi_cnt == 0) break;
+        int best = -1; float best_dist = 1e9f;
+        int cx = LCDW / 2, cy = LCDH / 2;
+        for (i = 0; i < g_beacon_candi_cnt; i++) {
+            float d = dist_sq(g_beacon_candidates[i].x,
+                              g_beacon_candidates[i].y, cx, cy);
+            if (d < best_dist) { best_dist = d; best = i; }
+        }
+        if (best >= 0) {
+            lk->locked_x = g_beacon_candidates[best].x;
+            lk->locked_y = g_beacon_candidates[best].y;
+            lk->predict_x = lk->locked_x; lk->predict_y = lk->locked_y;
+            lk->vel_x = 0; lk->vel_y = 0;
+            lk->confirm_cnt = 1; lk->lost_cnt = 0;
+            lk->state = LOCK_ACQUIRING;
+        }
+        break;
+    }
+    case LOCK_ACQUIRING: {
+        int best = -1;
+        float best_d = (float)(LOCK_MATCH_RADIUS * LOCK_MATCH_RADIUS);
+        for (i = 0; i < g_beacon_candi_cnt; i++) {
+            float d = dist_sq(g_beacon_candidates[i].x,
+                              g_beacon_candidates[i].y,
+                              lk->locked_x, lk->locked_y);
+            if (d < best_d) { best_d = d; best = i; }
+        }
+        if (best >= 0) {
+            lk->locked_x = (int16_t)((lk->locked_x * 2 +
+                            g_beacon_candidates[best].x) / 3);
+            lk->locked_y = (int16_t)((lk->locked_y * 2 +
+                            g_beacon_candidates[best].y) / 3);
+            lk->confirm_cnt++; lk->lost_cnt = 0;
+            if (lk->confirm_cnt >= LOCK_CONFIRM_FRAMES) {
+                lk->state = LOCK_TRACKING;
+                lk->predict_x = lk->locked_x; lk->predict_y = lk->locked_y;
+            }
+        } else {
+            lk->lost_cnt++;
+            if (lk->lost_cnt > 3) { lk->state = LOCK_IDLE; lk->confirm_cnt = 0; }
+        }
+        break;
+    }
+    case LOCK_TRACKING: {
+        int search_x = lk->predict_x, search_y = lk->predict_y;
+        int best = -1;
+        float best_d = (float)(LOCK_GATE_RADIUS * LOCK_GATE_RADIUS);
+        float best_score = -1e6f;
+        for (i = 0; i < g_beacon_candi_cnt; i++) {
+            int cx = g_beacon_candidates[i].x;
+            int cy = g_beacon_candidates[i].y;
+            float d = dist_sq(cx, cy, search_x, search_y);
+            if (d > best_d) continue;
+            if (lk->locked_area > 0) {
+                float ar = (float)g_beacon_candidates[i].area / (float)lk->locked_area;
+                if (ar > LOCK_AREA_RATIO_MAX || ar < 1.0f / LOCK_AREA_RATIO_MAX)
+                    continue;
+            }
+            float ms = g_beacon_candidates[i].score - sqrtf(d) * 0.5f;
+            if (ms > best_score) { best_score = ms; best = i; }
+        }
+        if (best >= 0) {
+            int16_t nx = g_beacon_candidates[best].x;
+            int16_t ny = g_beacon_candidates[best].y;
+            lk->vel_x = nx - lk->locked_x;
+            lk->vel_y = ny - lk->locked_y;
+            int dist = iabs(nx - lk->locked_x) + iabs(ny - lk->locked_y);
+            float alpha = (dist < 5) ? 0.3f : (dist < 15) ? 0.6f : 0.9f;
+            lk->locked_x = (int16_t)(lk->locked_x * (1.0f - alpha) + nx * alpha);
+            lk->locked_y = (int16_t)(lk->locked_y * (1.0f - alpha) + ny * alpha);
+            lk->locked_area = (lk->locked_area * 3 +
+                               g_beacon_candidates[best].area) / 4;
+            lk->predict_x = lk->locked_x + lk->vel_x;
+            lk->predict_y = lk->locked_y + lk->vel_y;
+            /* 预测范围限幅 */
+            lk->lost_cnt = 0;
+        } else {
+            lk->lost_cnt++;
+            lk->predict_x += lk->vel_x; lk->predict_y += lk->vel_y;
+            lk->vel_x = lk->vel_x * 2 / 3; lk->vel_y = lk->vel_y * 2 / 3;
+            if (lk->lost_cnt > LOCK_LOST_FRAMES) {
+                /* 区分熄灭丢失与遮挡丢失后回到 IDLE */
+                lk->state = LOCK_IDLE; lk->confirm_cnt = 0; lk->lost_cnt = 0;
+            }
+        }
+        break;
+    }
+    default:
+        lk->state = LOCK_IDLE;
+        break;
+    }
+}
+A.3 飞行器姿态解算（Mahony 四元数互补滤波）
+void ICM_AHRSupdate(float gx, float gy, float gz,
+                     float ax, float ay, float az)
+{
+    float halfT = 0.5f * delta_T;
+    float q0 = Q_info.q0, q1 = Q_info.q1, q2 = Q_info.q2, q3 = Q_info.q3;
+    float vx, vy, vz, ex, ey, ez, norm;
+ 
+    norm = fast_inv_sqrt(ax*ax + ay*ay + az*az);   /* 加速度归一化 */
+    ax *= norm; ay *= norm; az *= norm;
+ 
+    vx = 2.0f * (q1*q3 - q0*q2);                  /* 估计重力矢量 */
+    vy = 2.0f * (q0*q1 + q2*q3);
+    vz = q0*q0 - q1*q1 - q2*q2 + q3*q3;
+ 
+    ex = ay*vz - az*vy;                           /* 叉积误差 */
+    ey = az*vx - ax*vz;
+    ez = ax*vy - ay*vx;
+ 
+    I_ex += delta_T * ex;                         /* PI 校正 */
+    I_ey += delta_T * ey;
+    I_ez += delta_T * ez;
+ 
+    gx += param_Kp * ex + param_Ki * I_ex;
+    gy += param_Kp * ey + param_Ki * I_ey;
+    gz += param_Kp * ez + param_Ki * I_ez;
+ 
+    float q0_new = q0 + (-q1*gx - q2*gy - q3*gz) * halfT;  /* 四元数更新 */
+    float q1_new = q1 + ( q0*gx + q2*gz - q3*gy) * halfT;
+    float q2_new = q2 + ( q0*gy - q1*gz + q3*gx) * halfT;
+    float q3_new = q3 + ( q0*gz + q1*gy - q2*gx) * halfT;
+ 
+    norm = fast_inv_sqrt(q0_new*q0_new + q1_new*q1_new + q2_new*q2_new + q3_new*q3_new);
+    Q_info.q0 = q0_new * norm;                    /* 四元数归一化 */
+    Q_info.q1 = q1_new * norm;
+    Q_info.q2 = q2_new * norm;
+    Q_info.q3 = q3_new * norm;
+}
+A.4 飞行串级 PID 控制与电机混控
+/* PID_Calc — 带积分分离与死区的 PID */
+float PID_Calc(PID *pid, float target, float fb)
+{
+    pid->error = target - fb;
+    if(fabs(pid->error) < pid->separate_thr
+       && fabs(pid->error) > pid->inte_deadzone)
+    {
+        pid->integral += pid->error;
+    }
+    if(pid->integral >  pid->inte_max) pid->integral =  pid->inte_max;
+    if(pid->integral < -pid->inte_max) pid->integral = -pid->inte_max;
+ 
+    float diff = pid->error - pid->error_last;
+    float out = pid->Kp * pid->error
+              + pid->Ki * pid->integral
+              + pid->Kd * diff;
+    pid->error_last = pid->error;
+    return out;
+}
+ 
+/* 角度环（X 轴，roll） */
+float pid_x_outerA(float target_x_outer, euler_param1_t *my_EulerAngle)
+{
+    return PID_Calc(&pid_x_outer1, target_x_outer, EulerAngle.roll);
+}
+/* 角速度环（X 轴，roll） */
+float pid_x_innerA(float target_x_inner)
+{
+    float real_x1 = low_pass_filter(&lpf_gyro_x, gyro_x2, 0.35);
+    x_Angular_v = real_x1;
+    return PID_Calc(&pid_x_inner1, target_x_inner, real_x1);
+}
+/* drive_feikong — 多周期串级调度 + X 型电机混控 */
+void drive_feikong(void)
+{
+    cnt1++; cnt2++; cnt3++; cnt4++; cnt5++; cnt6++;
+ 
+    if(cnt4 >= 21) {                        /* 速度环 21ms */
+        if(land_mod) {
+            x_speed_out = 0.0f; y_speed_out = 0.0f;
+        } else {
+            x_speed_out = pid_x_speedA(target_x_speed);
+            y_speed_out = pid_y_speedA(target_y_speed);
+        }
+        cnt4 = 0;
+    }
+    if(cnt3 >= 20) {                        /* 高度外环 20ms */
+        /* 目标高度斜坡规划（上升阶段线性增长） */
+        hight_out = pid_high_outerA(target_hight);
+        cnt3 = 0;
+    }
+    if(cnt5 >= 10) {                        /* 高度内环 10ms */
+        hight_in = pid_high_innerA(hight_out);
+        throttle_adaptive_calc(hight_in, EulerAngle.roll, EulerAngle.pitch,
+                               tof_data_valid, hover_throttle, hight,
+                               &g_height_latch, &g_throttle_adapt, &base_throttle);
+        cnt5 = 0;
+    }
+    if(cnt1 >= 4) {                         /* 角度环 4ms */
+        x_out = pid_x_outerA(target_x + y_speed_out, &EulerAngle);  /* roll */
+        y_out = pid_y_outerA(target_y + x_speed_out, &EulerAngle);  /* pitch */
+        z_out = pid_z_outerA(target_z, &EulerAngle);                /* yaw */
+        cnt1 = 0;
+    }
+    if(cnt2 >= 2) {                         /* 角速度环 2ms */
+        x_in = pid_x_innerA(x_out);
+        y_in = pid_y_innerA(y_out);
+        z_in = pid_z_innerA(z_out);
+        cnt2 = 0;
+    }
+ 
+    /* X 型电机混控 */
+    duty1 = (int)(Limit_float(0, base_throttle + Limit_float(-1000.0,x_in,1000.0)
+               - Limit_float(-1000.0,y_in,1000.0) - Limit_float(-1000.0,z_in,1000.0) + hight_in, 1000.0));
+    duty2 = (int)(Limit_float(0, base_throttle - Limit_float(-1000.0,x_in,1000.0)
+               + Limit_float(-1000.0,y_in,1000.0) - Limit_float(-1000.0,z_in,1000.0) + hight_in, 1000.0));
+    duty3 = (int)(Limit_float(0, base_throttle - Limit_float(-1000.0,x_in,1000.0)
+               - Limit_float(-1000.0,y_in,1000.0) + Limit_float(-1000.0,z_in,1000.0) + hight_in, 1000.0));
+    duty4 = (int)(Limit_float(0, base_throttle + Limit_float(-1000.0,x_in,1000.0)
+               + Limit_float(-1000.0,y_in,1000.0) + Limit_float(-1000.0,z_in,1000.0) + hight_in, 1000.0));
+    diantiao_set(duty1, duty2, duty3, duty4);
+ 
+    /* 安全保护：姿态超限立即停机 */
+    if((fabs(EulerAngle.roll) >= 75.0f) || (fabs(EulerAngle.pitch) >= 75.0f))
+        diantiao_set(0, 0, 0, 0);
+}
+A.5 高度估计与障碍抑制
+/* Tilt_Angle_Handling — 三层防护 + 障碍抑制 + 非对称限速 */
+float Tilt_Angle_Handling(uint16 dl1b_distance, float roll, float pitch)
+{
+    static float  last_vertical_h = 0.0f;
+    static uint16 last_d1 = 0, last_d2 = 0;
+    static uint16 bad_cnt1 = 0, bad_cnt2 = 0, both_bad_cnt = 0;
+    float vertical_h = 0.0f;
+    float roll_rad  = roll  * M_PI / 180.0f;
+    float pitch_rad = pitch * M_PI / 180.0f;
+    float cos_comp  = cosf(roll_rad) * cosf(pitch_rad);
+    float sin_pitch = sinf(pitch_rad);
+    float sin_roll  = sinf(roll_rad);
+    uint16 d1 = dl1b_distance, d2 = dl1b2_distance_mm;
+ 
+    /* 第一层：单传感器量程 + 跳变检测 */
+    uint8 tof1_bad = (d1 < TOF_RANGE_MIN) || (d1 > TOF_RANGE_MAX) ||
+                     (last_d1 != 0 && abs((int)d1 - (int)last_d1) >= TOF_JUMP_THRESH);
+    uint8 tof2_bad = (d2 < TOF_RANGE_MIN) || (d2 > TOF_RANGE_MAX) ||
+                     (last_d2 != 0 && abs((int)d2 - (int)last_d2) >= TOF_JUMP_THRESH);
+ 
+    /* 第二层：杠杆补偿 + 双 TOF 一致性 */
+    h1 = d1 * cos_comp + TOF1_LEVER_X * sin_pitch - 6;
+    h2 = d2 * cos_comp + TOF2_LEVER_Y * sin_roll;
+    if (!tof1_bad && !tof2_bad) {
+        float diff = fabsf(h1 - h2);
+        if (diff <= TOF_CONSIST_THRESH) vertical_h = (h1 + h2) * 0.5f;
+        else {
+            if (tof_data_valid) {
+                float e1 = fabsf(h1 - last_vertical_h);
+                float e2 = fabsf(h2 - last_vertical_h);
+                vertical_h = (e1 <= e2) ? h1 : h2;
+            } else vertical_h = (h1 < h2) ? h1 : h2;
+        }
+        last_d1 = d1; last_d2 = d2;
+        tof_fresh = 1;
+    } else if (!tof1_bad) { vertical_h = h1; last_d1 = d1; tof_fresh = 1; }
+    else if (!tof2_bad)   { vertical_h = h2; last_d2 = d2; tof_fresh = 1; }
+    else { vertical_h = last_vertical_h; tof_fresh = 0; }
+ 
+    if (vertical_h < 0.0f) vertical_h = 0.0f;
+ 
+    /* 第三层：障碍物抑制 + 非对称限速器 */
+    #define OBSTACLE_DROP_THRESH   25.0f
+    #define OBSTACLE_SLEW_DOWN      0.5f
+    #define OBSTACLE_CONFIRM_CNT   30
+    static uint16 drop_counter = 0;
+    if (tof_data_valid) {
+        float delta = vertical_h - last_vertical_h;
+        if (delta < -OBSTACLE_DROP_THRESH) {
+            drop_counter++;
+            if (drop_counter < OBSTACLE_CONFIRM_CNT)
+                vertical_h = last_vertical_h - OBSTACLE_SLEW_DOWN;
+            else
+                vertical_h = last_vertical_h - TOF_SLEW_RATE;
+        } else {
+            if (delta > -5.0f) drop_counter = 0;
+            if (delta > TOF_SLEW_RATE) vertical_h = last_vertical_h + TOF_SLEW_RATE;
+            else if (delta < -TOF_SLEW_RATE) vertical_h = last_vertical_h - TOF_SLEW_RATE;
+        }
+    } else {
+        if (vertical_h > 0.0f) tof_data_valid = 1;
+    }
+    last_vertical_h = vertical_h;
+    return vertical_h;
+}
+/* throttle_adaptive_calc — 自适应底油（倾角补偿 + 电压自适应） */
+void throttle_adaptive_calc(float hight_in, float roll_deg, float pitch_deg,
+                            uint8_t tof_valid, float first_data, float height,
+                            uint8_t *height_latch,
+                            float *throttle_adapt, float *base_throttle)
+{
+    if (!(*height_latch)) {                 /* 高度锁存：一次触发永久生效 */
+        if (height >= HEIGHT_TRIGGER) *height_latch = 1;
+        else { *base_throttle = first_data; return; }
+    }
+    /* 第一部分：倾斜补偿 */
+    float roll_rad_c  = roll_deg  * (float)M_PI / 180.0f;
+    float pitch_rad_c = pitch_deg * (float)M_PI / 180.0f;
+    float cos_tilt    = cosf(roll_rad_c) * cosf(pitch_rad_c);
+    if (cos_tilt < (1.0f / TILT_COMP_MAX)) cos_tilt = 1.0f / TILT_COMP_MAX;
+    float tilt_factor = 1.0f / cos_tilt;
+ 
+    /* 第二部分：电池电压自适应 */
+    if (tof_valid && fabsf(roll_deg) < 20.0f && fabsf(pitch_deg) < 20.0f) {
+        *throttle_adapt += THROTTLE_ADAPT_RATE * hight_in;
+        if (*throttle_adapt > THROTTLE_ADAPT_MAX) *throttle_adapt = THROTTLE_ADAPT_MAX;
+        else if (*throttle_adapt < THROTTLE_ADAPT_MIN) *throttle_adapt = THROTTLE_ADAPT_MIN;
+    }
+    /* 合成基础油门 + 安全限幅 */
+    *base_throttle = (first_data + *throttle_adapt) * tilt_factor;
+    if (*base_throttle > BASE_THROTTLE_MAX) *base_throttle = BASE_THROTTLE_MAX;
+    if (*base_throttle < BASE_THROTTLE_MIN) *base_throttle = BASE_THROTTLE_MIN;
+}
+A.6 光流速度估计与自适应卡尔曼滤波
+/* flow_kalman_update — 二维自适应卡尔曼滤波（速度 + 加速度零偏） */
+static float flow_kalman_update(flow_velocity_kf_t *kf,
+                                float acc_speed, float flow_velocity,
+                                float dT, uint8_t quality,
+                                uint8_t measurement_valid)
+{
+    float acc_delta, p00, p01, p10, p11;
+ 
+    if(flow_kf_initialized == 0) {
+        kf->velocity = acc_speed; kf->acc_bias = 0.0f;
+        kf->p00 = FLOW_KF_INITIAL_P; kf->p01 = 0.0f;
+        kf->p10 = 0.0f; kf->p11 = FLOW_KF_BIAS_INITIAL_P;
+        kf->last_acc_speed = acc_speed;
+    }
+    /* 加速度积分增量作为过程输入（控制量） */
+    acc_delta = acc_speed - kf->last_acc_speed;
+    acc_delta = flow_limit_f(acc_delta, -FLOW_KF_MAX_ACC_DELTA, FLOW_KF_MAX_ACC_DELTA);
+    kf->velocity += acc_delta - kf->acc_bias * dT;
+    kf->last_acc_speed = acc_speed;
+ 
+    /* 状态 [velocity, acceleration bias] 的协方差预测 */
+    p00 = kf->p00 - dT * (kf->p01 + kf->p10) + dT * dT * kf->p11 + FLOW_KF_PROCESS_Q;
+    p01 = kf->p01 - dT * kf->p11;
+    p10 = kf->p10 - dT * kf->p11;
+    p11 = kf->p11 + FLOW_KF_BIAS_PROCESS_Q;
+    if (p00 > FLOW_KF_MAX_P) p00 = FLOW_KF_MAX_P;
+    if (p11 > FLOW_KF_BIAS_MAX_P) p11 = FLOW_KF_BIAS_MAX_P;
+    kf->p00 = p00; kf->p01 = p01; kf->p10 = p10; kf->p11 = p11;
+ 
+    if((measurement_valid != 0U) && (quality >= FLOW_KF_QUAL_MIN)) {
+        float quality_ratio = (float)quality / (float)FLOW_KF_QUAL_FULL;
+        quality_ratio = flow_limit_f(quality_ratio, 0.0f, 1.0f);
+        float quality_error = 1.0f - quality_ratio;
+        float measurement_noise = FLOW_KF_FLOW_R_GOOD
+            + quality_error * quality_error * (FLOW_KF_FLOW_R_BAD - FLOW_KF_FLOW_R_GOOD);
+        float gain_velocity = kf->p00 / (kf->p00 + measurement_noise);
+        float gain_bias = kf->p10 / (kf->p00 + measurement_noise);
+        if (gain_velocity > FLOW_KF_MAX_GAIN) {
+            float gain_scale = FLOW_KF_MAX_GAIN / gain_velocity;
+            gain_velocity = FLOW_KF_MAX_GAIN; gain_bias *= gain_scale;
+        }
+        float innovation = flow_velocity - kf->velocity;
+        innovation = flow_limit_f(innovation, -FLOW_KF_MAX_INNOVATION, FLOW_KF_MAX_INNOVATION);
+        kf->velocity += gain_velocity * innovation;
+        kf->acc_bias += gain_bias * innovation;
+        kf->acc_bias = flow_limit_f(kf->acc_bias, -FLOW_KF_MAX_ACC_BIAS, FLOW_KF_MAX_ACC_BIAS);
+        float old_p00 = kf->p00, old_p01 = kf->p01;
+        kf->p00 -= gain_velocity * old_p00;
+        kf->p01 -= gain_velocity * old_p01;
+        kf->p10 -= gain_bias * old_p00;
+        kf->p11 -= gain_bias * old_p01;
+        kf->p01 = 0.5f * (kf->p01 + kf->p10);
+        kf->p10 = kf->p01;
+    }
+    return kf->velocity;
+}
+A.7 牵引车麦克纳姆轮运动控制
+/* Calculate_Real_Speed — 轮速到车体速度（运动学正解）+ 里程计 */
+void Calculate_Real_Speed(void)
+{
+    float v1 = motor_l_1.encoder_speed, v2 = motor_r_1.encoder_speed;
+    float v3 = motor_l_2.encoder_speed, v4 = motor_r_2.encoder_speed;
+ 
+    Vx_real = (v1 + v2 + v3 + v4) / 4.0f * R;
+    Vy_real = (-v1 + v2 + v3 - v4) / 4.0f * R;
+    wz_real = (-v1 + v2 - v3 + v4) / (4.0f * (L + W)) * R;
+ 
+    vx_filtered = last_vx_filt * SPEED_LOWPASS_ALPHA + Vx_real * (1.0f - SPEED_LOWPASS_ALPHA);
+    vy_filtered = last_vy_filt * SPEED_LOWPASS_ALPHA + Vy_real * (1.0f - SPEED_LOWPASS_ALPHA);
+    last_vx_filt = vx_filtered;
+    last_vy_filt = vy_filtered;
+ 
+    float speed_mag = sqrtf(vx_filtered * vx_filtered + vy_filtered * vy_filtered);
+    if (speed_mag > ZERO_SPEED_THRESHOLD) {
+        odom_x += vx_filtered * CONTROL_DT;
+        odom_y += vy_filtered * CONTROL_DT;
+    }
+    float yaw_rad = yaw_tmp * PI_ANGLE / 180.0f;
+    float cos_yaw = cosf(yaw_rad), sin_yaw = sinf(yaw_rad);
+    float vx_world = vx_filtered * cos_yaw - vy_filtered * sin_yaw;
+    float vy_world = vx_filtered * sin_yaw + vy_filtered * cos_yaw;
+    if (speed_mag > ZERO_SPEED_THRESHOLD) {
+        world_x += vx_world * CONTROL_DT;
+        world_y += vy_world * CONTROL_DT;
+    }
+}
+/* limit_speed_by_dir — 按运动方向限幅（前/后/左/右不对称上限） */
+static void limit_speed_by_dir(volatile float *vx, volatile float *vy,
+                               float max_fwd, float max_bck,
+                               float max_left, float max_right)
+{
+    float speed_mag = sqrtf((*vx) * (*vx) + (*vy) * (*vy));
+    if (speed_mag < 0.001f) return;
+    float theta = atan2f(*vy, *vx);
+    float abs_theta = fabsf(theta);
+    float dir_max_speed, ratio_ang;
+    if (abs_theta <= HALF_PI_ANGLE) {
+        ratio_ang = abs_theta / HALF_PI_ANGLE;
+        float side_spd = (theta >= 0) ? max_left : max_right;
+        dir_max_speed = max_fwd * (1.0f - ratio_ang) + side_spd * ratio_ang;
+    } else {
+        ratio_ang = (abs_theta - HALF_PI_ANGLE) / HALF_PI_ANGLE;
+        float side_spd = (theta >= 0) ? max_left : max_right;
+        dir_max_speed = side_spd * (1.0f - ratio_ang) + max_bck * ratio_ang;
+    }
+    if (speed_mag > dir_max_speed) {
+        float scale = dir_max_speed / speed_mag;
+        *vx *= scale; *vy *= scale;
+    }
+}
+/* Motor_Control — 车体目标速度解算四轮目标转速 + 速度闭环 */
+void Motor_Control(void)
+{
+    /* ...模式 0 寻点回充 / 模式 1 视觉追踪，得到车体目标速度 vx_tion、vy_tion... */
+    Vx = vx_tion;
+    Vy = vy_tion;
+    wz = PID_diranglecontrol(&dirangle, basi);   /* yaw 角速度闭环 */
+ 
+    /* 麦克纳姆轮运动学逆解：车体速度 -> 四轮目标转速 */
+    float wl1 = (Vx - Vy - wz * (L + W)) / R;
+    float wr1 = (Vx + Vy + wz * (L + W)) / R;
+    float wl2 = (Vx + Vy - wz * (L + W)) / R;
+    float wr2 = (Vx - Vy + wz * (L + W)) / R;
+    motor_l_1.target_speed = wl1;
+    motor_r_1.target_speed = wr1;
+    motor_l_2.target_speed = wl2;
+    motor_r_2.target_speed = wr2;
+ 
+    /* 轮速闭环 -> PWM */
+    motor_l_1.duty = Limit_int(-pid_limit1, (int)(PID_Increase(&motor_pid_l_1, motor_l_1.encoder_speed, motor_l_1.target_speed)), pid_limit1);
+    motor_r_1.duty = Limit_int(-pid_limit2, (int)(PID_Increase(&motor_pid_r_1, motor_r_1.encoder_speed, motor_r_1.target_speed)), pid_limit2);
+    motor_l_2.duty = Limit_int(-pid_limit1, (int)(PID_Increase(&motor_pid_l_2, motor_l_2.encoder_speed, motor_l_2.target_speed)), pid_limit1);
+    motor_r_2.duty = Limit_int(-pid_limit2, (int)(PID_Increase(&motor_pid_r_2, motor_r_2.encoder_speed, motor_r_2.target_speed)), pid_limit2);
+    DRV8701_MOTOR_DRIVER_D(motor_l_1.duty, motor_r_1.duty, motor_l_2.duty, motor_r_2.duty);
+}
+A.8 牵引车航向角解算与里程计
+/* imu660_ICM_getEulerianAngles — Mahony 解算 + yaw 连续化 */
+void imu660_ICM_getEulerianAngles(void)
+{
+    static float yaw_total = 0.0f;
+    static float last_yaw = 0.0f;
+    imu660_ICM_getValues();
+    imu660_ICM_AHRSupdate(imu660_Icm_data.gyro_x, imu660_Icm_data.gyro_y, imu660_Icm_data.gyro_z,
+                          imu660_Icm_data.acc_x, imu660_Icm_data.acc_y, imu660_Icm_data.acc_z);
+    float q0 = imu660_Q_info.q0, q1 = imu660_Q_info.q1;
+    float q2 = imu660_Q_info.q2, q3 = imu660_Q_info.q3;
+ 
+    imu660_EulerAngle.pitch = asin(-2.0f*q1*q3 + 2.0f*q0*q2) * 180.0f / imu660_M_PI;
+    imu660_EulerAngle.roll  = atan2(2.0f*q2*q3 + 2.0f*q0*q1, -2.0f*q1*q1 - 2.0f*q2*q2 + 1.0f) * 180.0f / imu660_M_PI;
+    yaw_tmp = atan2(2.0f*q1*q2 + 2.0f*q0*q3, -2.0f*q2*q2 - 2.0f*q3*q3 + 1.0f) * 180.0f / imu660_M_PI;
+ 
+    /* yaw 连续化，防止 ±180 跳变 */
+    float diff = yaw_tmp - last_yaw;
+    if(diff > 180.0f)  diff -= 360.0f;
+    if(diff < -180.0f) diff += 360.0f;
+    yaw_total += diff;
+    last_yaw = yaw_tmp;
+    imu660_EulerAngle.yaw = yaw_total;
+}
+A.9 牵引车增量式 PID 与积分分离
+/* PID_Increase — 增量式 PID + 积分分离 */
+float PID_Increase(PID* PID, float NowData, float Point)
+{
+    PID->Error = Point - NowData;
+    PID->Out_P = PID->Error;
+    #define MOTOR_INTEGRAL_THRESHOLD  12.0f
+    if (fabsf(PID->Error) > MOTOR_INTEGRAL_THRESHOLD) {
+        PID->Out_I = 0.0f;              /* 大误差关闭积分 */
+    } else {
+        PID->Out_I += PID->Error;
+        if (PID->Out_I > pid_out_I_limit1) PID->Out_I = pid_out_I_limit1;
+        if (PID->Out_I < -pid_out_I_limit1) PID->Out_I = -pid_out_I_limit1;
+    }
+    PID->Out_D = (PID->Error - PID->LastError);
+    PID->LastError = PID->Error;
+    PID->LastData = NowData;
+    return (PID->Kp * PID->Out_P + PID->Ki * PID->Out_I + PID->Kd * PID->Out_D);
+}
+ 
+/* Direction_error — 角度环误差（积分分离 + 限幅） */
+float Direction_error(PID* PID, float NowData, float Point)
+{
+    float angle_err = Point - NowData;
+    PID->Error = angle_err;
+    PID->Out_P = PID->Error;
+    #define INTEGRAL_SEPARATION_THRESHOLD  2.0f
+    if (fabs(PID->Error) > INTEGRAL_SEPARATION_THRESHOLD) {
+        PID->Out_I = 0.0f;
+    } else {
+        PID->Out_I += PID->Error;
+        if (PID->Out_I > pid_out_I_limit) PID->Out_I = pid_out_I_limit;
+        if (PID->Out_I < -pid_out_I_limit) PID->Out_I = -pid_out_I_limit;
+    }
+    PID->Out_D = (PID->Error - PID->LastError);
+    PID->LastError = PID->Error;
+    PID->LastData = NowData;
+    return PID->Kp * PID->Out_P + PID->Ki * PID->Out_I + PID->Kd * PID->Out_D;
+}
+ 
+/* PID_diranglecontrol — 角速度环（陀螺仪滤波后反馈） */
+float PID_diranglecontrol(PID* PID, float out_dw)
+{
+    static float gyro_z_filtered_prev = 0.0f;
+    float raw_gyro_z = imu660_Icm_data.gyro_z;
+    float gyro_z_filtered = LPF_ALPHA * raw_gyro_z + (1 - LPF_ALPHA) * gyro_z_filtered_prev;
+    gyro_z_filtered_prev = gyro_z_filtered;
+    PID->Error = out_dw - gyro_z_filtered;
+    PID->Out_P = PID->Error;
+    PID->Out_D = (PID->Error - PID->LastError);
+    PID->LastError = PID->Error;
+    PID->LastData = gyro_z_filtered;
+    return (PID->Kp * PID->Out_P + PID->Kd * PID->Out_D);
+}
+A.10 参数 Flash 存储与掉电保存
+/* FLASH_write — 全部 PID 与底盘参数写入 Flash */
+void FLASH_write()
+{
+    flash_buffer_clear();
+    if(flash_check(FLASH_SECTION_INDEX, FLASH_PAGE_INDEX11))
+        flash_erase_page(FLASH_SECTION_INDEX, FLASH_PAGE_INDEX11);
+    flash_union_buffer[INIT_FLAG_ADDR].uint32_type = INIT_FLAG;
+ 
+    /* 电机 PID Kp/Kd */
+    flash_union_buffer[0].float_type = motor_pid_l_1.Kp;
+    flash_union_buffer[1].float_type = motor_pid_l_1.Kd;
+    flash_union_buffer[2].float_type = motor_pid_l_2.Kp;
+    flash_union_buffer[3].float_type = motor_pid_l_2.Kd;
+    flash_union_buffer[4].float_type = motor_pid_r_1.Kp;
+    flash_union_buffer[5].float_type = motor_pid_r_1.Kd;
+    flash_union_buffer[6].float_type = motor_pid_r_2.Kp;
+    flash_union_buffer[7].float_type = motor_pid_r_2.Kd;
+ 
+    /* 电机 Ki（限幅保护） */
+    flash_union_buffer[MOTOR_L1_KI_ADDR].float_type = limit_pid_flash_param(motor_pid_l_1.Ki);
+    flash_union_buffer[MOTOR_L2_KI_ADDR].float_type = limit_pid_flash_param(motor_pid_l_2.Ki);
+    flash_union_buffer[MOTOR_R1_KI_ADDR].float_type = limit_pid_flash_param(motor_pid_r_1.Ki);
+    flash_union_buffer[MOTOR_R2_KI_ADDR].float_type = limit_pid_flash_param(motor_pid_r_2.Ki);
+ 
+    /* 底盘运动控制参数（限幅保护） */
+    flash_union_buffer[MAX_SPEED_FAR_FWD_ADDR].float_type  = limit_chassis_param(MAX_SPEED_FAR_FWD, 0.0f, 10.0f);
+    flash_union_buffer[MAX_SPEED_FAR_BCK_ADDR].float_type  = limit_chassis_param(MAX_SPEED_FAR_BCK, 0.0f, 10.0f);
+    flash_union_buffer[MAX_SPEED_FAR_SIDE_ADDR].float_type = limit_chassis_param(MAX_SPEED_FAR_SIDE, 0.0f, 10.0f);
+    flash_union_buffer[SPEED_STEP_X_ADDR].float_type       = limit_chassis_param(SPEED_STEP_X, 0.001f, 1.0f);
+    flash_union_buffer[SPEED_STEP_Y_ADDR].float_type       = limit_chassis_param(SPEED_STEP_Y, 0.001f, 1.0f);
+    flash_union_buffer[FUSION_SLOW_DIST_ADDR].float_type   = limit_chassis_param(FUSION_SLOW_DIST, 0.0f, 50.0f);
+    flash_union_buffer[FUSION_MIN_SPEED_ADDR].float_type   = limit_chassis_param(FUSION_MIN_SPEED, 0.0f, 5.0f);
+ 
+    flash_write_page_from_buffer(FLASH_SECTION_INDEX, FLASH_PAGE_INDEX11, FLASH_RW_LEN);
+    ReadSavePoint();
+}
+ 
+/* WriteSavePoint — 目标点坐标掉电保存 */
+void WriteSavePoint(void)
+{
+    flash_read_page_to_buffer(FLASH_SECTION_INDEX, FLASH_PAGE_INDEX11, FLASH_RW_LEN);
+    flash_union_buffer[POINT_FLAG_ADDR].uint8_type = 1;
+    flash_union_buffer[POINT_X_ADDR].float_type = world_x;
+    flash_union_buffer[POINT_Y_ADDR].float_type = world_y;
+    flash_write_page_from_buffer(FLASH_SECTION_INDEX, FLASH_PAGE_INDEX11, FLASH_RW_LEN);
+    saved_x = world_x;
+    saved_y = world_y;
+    point_ready = 1;
+}
+
+===== TABLE 1 =====
+
+
+===== TABLE 2 =====
+
+
+===== TABLE 3 =====
+
+
+===== TABLE 4 =====
+
+
+===== TABLE 5 =====
+
+
+===== TABLE 6 =====
+
+
+===== TABLE 7 =====
+
+
+===== TABLE 8 =====
+传感器 | 型号/类型 | 用途 | 接口
+摄像头 | MT9V03X（188×120） | V 形灯 / 信标识别 | DVP/SPI
+惯性测量单元 | IMU963RA（九轴） | 飞行器姿态解算 | SPI
+惯性测量单元 | IMU660RA（六轴） | 牵引车航向角解算 | SPI
+光流传感器 | 光流模块 | 水平速度估计 | UART
+激光测距 | DL1B / DL1B2（VL53L1X） | 飞行高度测量 | 软 IIC
+
+===== TABLE 9 =====
+
+
+===== TABLE 10 =====
+
+
+===== TABLE 11 =====
+
+
+===== TABLE 12 =====
+
+
+===== TABLE 13 =====
+控制环 | Kp | Ki | Kd
+X 角速度环（roll） | -0.018 | -0.00001 | 0.0
+Y 角速度环（pitch） | 0.017 | 0.000015 | 0.0
+Z 角速度环（yaw） | 0.22 | 0.004 | 0.0
+X 角度环（roll） | 110.0 | 0.65 | 1.7
+Y 角度环（pitch） | 117.0 | 0.51 | 2.0
+Z 角度环（yaw） | 120.0 | 0.07 | 0.0
+高度内环 | 9.0 | 0.1 | 0.0
+高度外环 | 0.022 | 0.0001 | 0.0
+X 速度环 | 0.033 | 0.00015 | 0.0022
+Y 速度环 | 0.032 | 0.00008 | 0.0015
+
+===== TABLE 14 =====
+
+
+===== TABLE 15 =====
+项目 | 参数
+任务芯片 | 英飞凌 CYT4BB（TRAVEO T2G）双核 Cortex-M7，250MHz
+开发环境 | IAR 9.40.1
+基础库 | 逐飞科技（SeekFree）开源库
+飞行器类型 | X 型四旋翼悬停飞行器
+飞行器尺寸 | 33 cm
+悬停高度 | 1.25 m
+缆绳长度 | 1.5 m
+牵引车类型 | 麦克纳姆轮四轮全向车
+牵引车尺寸 | 30 cm
+轮半径 / 半轴距 | R=3.15cm，L=10.0cm，W=8.875cm
+摄像头 | MT9V03X（188×120）
+飞行器 IMU | IMU963RA（九轴）
+牵引车 IMU | IMU660RA（六轴）
+高度测量 | 双 TOF（DL1B/DL1B2，VL53L1X），0~2000mm
+速度测量 | 光流传感器（飞行器）/ 编码器（牵引车）
+电机驱动 | 无刷电调 50Hz PWM（飞行器）/ DRV8701 17kHz PWM（牵引车）
+飞控周期 | 位置 42ms / 速度 21ms / 角度 4ms / 角速度 2ms / 高度 20ms、10ms
+车控周期 | 2ms
+空地通信 | UART6 115200 波特率，0xAA0x55 + XOR 校验

@@ -1,0 +1,749 @@
+第二十一届全国大学生智能汽车竞赛
+技 术 报 告
+卡丁快跑组别
+
+
+
+学　　校：武汉纺织大学
+队伍名称：妹妹真漂亮
+参赛队员：李权恒 覃异之 李子俊 吴宇泽 潘永志	带队教师：刘文琮、余烈
+
+
+二〇二六年八月
+
+
+关于技术报告以及研究论文使用授权的说明
+
+本参赛队授权全国大学生智能汽车竞赛组委会，可以以任何形式（包括但不限于纸质、电子、网络等）对本参赛队的技术报告（含研究论文）进行复制、传播、展示、出版等使用。本参赛队保证所提交的技术报告（含研究论文）为参赛队原创作品，不存在抄袭、剽窃等学术不端行为。
+
+参赛队签名：
+
+
+
+日　　期：2026-8-19
+
+目　录
+
+第一章　引言	1
+1.1　竞赛背景与任务概述	1
+1.2　国内外研究现状与文献综述	1
+1.3　报告内容与章节安排	3
+第二章　总体技术方案设计	4
+2.1　系统架构	4
+2.2　中断与任务调度体系	4
+2.3　感知-决策-执行闭环	5
+2.4　本章小结	5
+第三章　机械结构设计与改造	6
+3.1　车模平台	6
+3.2　关键机械参数	6
+3.3　传感器安装位置	7
+3.4　本章小结	7
+第四章　电路设计说明	8
+4.1　自制电路板清单	8
+4.2　电源与功耗	9
+4.3　电机驱动与关键外设电路	10
+4.4　本章小结	11
+第五章　微处理器控制软件设计	12
+5.1　软件总体框架	12
+5.2　惯性导航算法（INS）	13
+5.3　转向控制算法	14
+5.4　速度控制算法	15
+5.5　轨迹录制与循迹算法（Pure Pursuit）	16
+5.6　RTK 卫星定位	17
+5.7　图像视觉与色块跟随	18
+5.8　本章小结	19
+第六章　开发工具、制作、安装与调试过程	20
+6.1　开发环境与工具链	20
+6.2　调试过程记录	20
+6.3　制作与安装过程	22
+6.4　本章小结	23
+第七章　模型车主要技术参数	24
+第八章　结论	25
+参考文献	26
+附录A　程序源代码	28
+附录B　核心算法子程序	32
+附录C　硬件电路	36
+
+主要符号表
+
+
+
+第一章　引言
+1.1　竞赛背景与任务概述
+第二十一届全国大学生智能汽车竞赛“卡丁快跑”组别要求参赛车辆在规定赛道上完成自动驾驶、战场救护（科目二）和如影随形（科目三）等任务。其中科目二要求车辆自主行驶至指定区域完成“救护”任务，科目三要求车辆跟随引导车行驶，保持规定距离。本参赛队围绕上述任务，基于英飞凌TC387三核微控制器，设计了集视觉感知、惯性导航、RTK定位、编码器里程计和Pure Pursuit路径跟踪于一体的智能车系统，通过多传感器融合实现赛道环境下的高精度定位与稳定路径跟踪。
+1.2　国内外研究现状与文献综述
+（1）惯性导航与多传感器融合
+惯性导航系统（INS）通过陀螺仪和加速度计的积分运算获取载体的姿态、速度与位置，具有完全自主、短时高精度、高数据率的优势，但存在随时间累积的漂移误差。针对低成本MEMS IMU的漂移问题，国内外学者开展了大量研究。Woodman等人系统阐述了MEMS惯性导航的误差模型与校准方法，指出零速更新（ZUPT）和零角率更新（ZARU）是抑制漂移的有效手段[1]。在智能车领域，由于载体运动约束明确（非完整约束），可通过编码器里程计与IMU进行紧耦合融合[4][5]。本项目采用六轴姿态卡尔曼滤波（加速度计校正roll/pitch，陀螺仪积分yaw）结合航向EKF（陀螺仪+磁力计融合），并引入ZUPT静止检测在停车时修正陀螺仪零偏，有效抑制了yaw漂移（实测静态漂移率约1.42度/min）。
+（2）Pure Pursuit路径跟踪算法
+Pure Pursuit算法由R. Wallace于1985年提出，是一种基于几何的路径跟踪方法，通过计算前视距离处目标点对应的曲率来控制转向角[2]。该算法结构简单、鲁棒性强，被广泛应用于移动机器人和自动驾驶车辆。Couetil等人对Pure Pursuit的前视距离参数进行了自适应研究，提出根据车速动态调整前视距离以兼顾稳定性与响应速度[3]。在智能车竞赛中，由于赛道宽度有限且车速较高，通常采用固定前视距离结合转向角限幅、死区滤波和变化率限幅。本项目在传统Pure Pursuit基础上，将视觉色块目标经LUT映射为车体坐标后直接代入PP公式，并增加一阶低通滤波与转向角变化率限幅，有效抑制了单帧抖动导致的转向振荡。
+（3）RTK高精度定位
+实时动态差分定位（RTK）通过基准站与流动站之间的载波相位差分，可实现厘米级定位精度。双天线RTK进一步利用两天线基线方向直接测量载体航向，摆脱了对运动状态的依赖[6][12]。近年来，低成本RTK模块（如u-blox F9P、和芯星通UM980等）的普及使得小型无人平台也能获得厘米级定位[13]。本项目采用GN43RFA双天线RTK模块，通过纳度整数经纬度差避免浮点精度丢失，将WGS84坐标投影为局部ENU平面坐标，并利用双天线真北航向完成INS坐标系对齐，为视觉/惯导系统提供绝对位置参考。
+（4）编码器里程计与差速转向
+轮式编码器里程计通过测量左右轮转速差推算车体位移与航向，是移动机器人最基本的定位手段。差速转向模型中，车体角速度与左右轮速度差成正比，与轮距成反比[10]。对于前轮转向+后轮驱动的车辆模型（Ackermann几何），转向角与转弯半径满足R = L / tan(delta)关系。本项目在传统Ackermann转向基础上，引入后轮几何差速助力（基于平行转向运动学公式R = L*cot(2*delta) + sqrt(L^2*csc^2(2*delta) + b^2/4)），将等效转向能力从机械极限25度扩展至约40度，最小转弯半径从1.67m降至约1.2m。
+1.3　报告内容与章节安排
+本报告共分八章。第一章为引言，概述竞赛背景、任务要求及相关研究现状；第二章介绍系统总体技术方案，包括三核架构与任务调度体系；第三章描述机械结构设计与改造方案；第四章说明自制电路板设计与电源方案；第五章详细阐述微处理器控制软件设计，包括惯性导航、转向控制、速度控制、Pure Pursuit路径跟踪、RTK定位和图像视觉等核心算法；第六章介绍开发工具与调试过程；第七章列出模型车主要技术参数；第八章为结论。报告附有参考文献及程序源代码附录。
+
+第二章　总体技术方案设计
+2.1　系统架构
+本系统以英飞凌AURIX TC387三核微控制器为核心（通过自制TC387转接板兼容TC377开源库），采用“视觉+惯导+RTK+里程计”多源融合定位体系。三核分工如下：
+
+CPU0主循环采用InterruptTasks_Poll()轮询调度：4ms任务包括IMU采样、转向控制、编码器更新、速度环PID、INS更新、RTK更新、RAM赛道处理；8ms任务包括按键扫描、遥控数据处理、科目三更新；40ms任务包括陀螺仪数据输出、科目三显示、图像显示。低优先级Flash写入通过track_flash_poll()轮询。CPU1等待摄像头帧完成标志scc8660_finish_flag后执行image_trace_HSV()，结果通过全局变量传递给CPU0。
+2.2　中断与任务调度体系
+系统中断体系基于PIT（周期中断定时器）和EXTI（外部中断）实现。PIT产生1ms基准中断，在interrupt.c的run_4ms_tasks()中按4ms周期依次执行：IMU采样、转向控制、编码器更新、速度PID、INS更新、RAM赛道处理、RTK更新。8ms任务和40ms任务通过计数器分频触发。EXTI中断用于摄像头VSYNC帧同步和UART接收。DMA用于摄像头图像数据传输，减少CPU开销。
+2.3　感知-决策-执行闭环（技术方案概要）
+系统感知层包括SCC8660摄像头（视觉色块检测）、ASM330LHH六轴IMU（姿态与角速度）、GN43RFA双天线RTK（绝对位置与航向）、左右轮正交编码器（里程计）和转向绝对编码器（角度反馈）。决策层在CPU1上运行HSV色块追踪算法，经LUT查表将视觉目标映射为车体坐标，结合INS航向和RTK位置信息进行路径规划。执行层在CPU0上以4ms周期运行转向PD控制（含陀螺仪前馈和几何差速助力）和速度环增量PID，驱动DRV8701电机控制器。
+2.4　本章小结
+本章介绍了系统的三核架构分工、中断调度体系和感知-决策-执行闭环。CPU0承担控制与融合任务，CPU1独立运行视觉算法，CPU2预留。下一章将详细介绍机械结构设计与改造方案。
+
+第三章　机械结构设计与改造
+3.1　车模平台
+本车模采用智能车竞赛四轮车模平台（前轮转向+后轮双电机驱动）。车模进行了以下系统性改装：
+1. 主控升级：由原TC264单核升级为TC387三核，通过自制TC387转接板（兼容原核心板插座）实现引脚映射，保留主板原有外设接口。
+2. 多传感器融合：新增ASM330LHH六轴IMU（自制陀螺仪板）、GN43RFA双天线RTK模块、IMU963RA九轴模块（LSM6DSRTR+QMC5883L），构建多源融合定位体系。
+3. 驱动板自制：设计DRV8701双驱板（后轮）与单驱板（转向），采用光耠隔离（SN74HC125）抑制电机干扰。
+4. 电源分配：自制分电板，XT60输入+双路XT30输出，船型开关总控。
+5. 人机交互：自制灯光秀+点阵屏板（74HC595驱动）、语音模块（LTK1026D功放+硅麦拓展板）。
+车模基本参数：轮胎为10x4.0-6充气轮胎，外径254mm；轴距0.632m；轮距0.60m。
+
+表 3.1  车模的右视图
+
+表 3.2  车模的前视图
+
+表 3.3  车模的俯视图
+
+3.2　关键机械参数
+
+3.3　传感器安装位置
+
+3.4　本章小结
+本章介绍了车模平台的选型与系统性改装方案，包括主控升级、多传感器融合、驱动板自制和电源分配。关键机械参数和传感器安装位置已详细列出。
+
+第四章　电路设计说明
+4.1　自制电路板清单
+本项目全部采用自制PCB（嘉立创EDA设计），共制佖10块板卡：
+
+各板卡原理图见硬件图片详见附录D 。
+4.2　电源与功耗
+供电方案：电池、XT60、船型开关、分电板、双路XT30、驱动板（电机功率）+主板（逻辑电源）。电池为智能车竞赛标准2S或3S锂电池（7.4V/11.1V）。稳压方案：驱动板板载LR8341A-33（3.3V LDO供DRV8701逻辑）；963陀螺仪板载RT9013-33GB（5V转3.3V）；主板由核心板板载稳压提供3.3V/5V。驱动信号经SN74HC125光耠隔离，控制地与功率地单点连接。
+表 4.1 电路功耗估算
+
+表 4.2 所有电容总容量（逐板统计）
+
+4.3　电机驱动与关键外设电路
+转向电机驱动：DRV8701单H桥驱动板，DIR=P13_2，PWM=P11_9（10kHz）。后轮驱动电机：DRV8701双H桥驱动板，左电机PWM=P11_9/P11_10，右电机P11_11/P11_12（20kHz）。驱动信号经SN74HC125光耠隔离。
+
+四路运放A0~A3：经核查主板原理图与代码，本项目未使用外部四运放芯片。电压检测采用电阻分压（R49/R50=200K/200K）+C90（100nF）RC滤波，直接接入TC387内部ADC（A11引脚）。摄像头为数字并行接口，IMU/磁力计为SPI/I2C数字接口，无模拟信号需运放调理。A0~A3运放预留，实际未启用。
+4.4　本章小结
+本章介绍了全部10块自制PCB的设计、供电方案、功耗估算和电容容量统计。驱动板采用DRV8701+光耠隔离方案，转向电机PWM频率10kHz，驱动电机PWM频率20kHz。
+
+第五章　微处理器控制软件设计
+5.1　软件总体框架
+软件基于英飞凌TC387三核架构，CPU0为主核心，负责系统初始化与全部控制任务。主循环采用InterruptTasks_Poll()轮询调度，按4ms/8ms/40ms三级周期分发任务。CPU1为视觉核心，等待SCC8660摄像头帧完成后执行HSV色块追踪。CPU2为预留空壳。项目文件结构如下：
+user/cpu0_main.c — 主核心入口（约80行）
+user/cpu1_main.c — 视觉核心入口（约70行）
+user/cpu2_main.c — 空壳（约50行）
+user/isr.c — 全部中断服务（约350行）
+code/MOTOR.c — 电机PWM驱动（约50行）
+code/vehicle_config.h — 车辆参数宏定义（约80行）
+code/control/interrupt.c — 4/8/40ms任务调度（约300行）
+code/control/steering_control.c — 转向PD+前馈+差速（约250行）
+code/control/PID.c — 速度环增量PID（约100行）
+code/control/encoder.c — 编码器层（约150行）
+code/image/image_error.c — LUT+PP转向（约300行）
+code/image/image_HSV.c — HSV色块追踪（约300行）
+code/ins/Ins.c — INS核心算法（约600行）
+code/rtk/rtk.c — RTK坐标转换（约350行）
+5.2　惯性导航算法（INS）
+INS以4ms（250Hz）周期更新，包含三个核心环节：
+（1）六轴姿态卡尔曼滤波：roll/pitch由加速度计观测校正，yaw由陀螺仪纯积分。状态更新方程：yaw(k) = yaw(k-1) + (gyro_z - bias) x dt
+（2）航向扩展卡尔曼滤波（EKF）：状态量为[yaw, gyro_bias]，预测步使用陀螺仪积分，更新步使用倾斜补偿后的磁力计航向。关键调参：Q_yaw=1e-7，R_mag=5e-2，N_b=5e-5，创新限并0.035rad(2度)，K1限并0.08。实测静态yaw漂移率约1.42度/min（63s静态测试）。
+（3）ZUPT零速更新：通过编码器速度阈值（0.00m/s）和陀螺仪阈值（0.08rad/s）检测静止状态，静止时增大bias过程噪声，加速零偏收敛。
+编码器位置积分：左右轮位移=脉冲数x周长/2048，车体中心位移取两轮平均，航向由yaw角投影至ENU平面积分。核心函数Ins_update()源码见附录B.1。
+5.3　转向控制算法
+转向控制采用绝对编码器反馈PD+陀螺仪前馈，4ms周期。控制律：output = Kp x error + Kd x d(error)/dt + Kg x gyro_z
+其中error=目标角-当前角（绝对编码器不对称映射），STEER_KP/STEER_KD/STEER_GKD为PD参数。输出限幅后驱动DRV8701（DIR方向+PWM占空比，10kHz）。
+几何差速助力：基于平行转向运动学公式 R = L*cot(2*delta) + sqrt(L^2*csc^2(2*delta) + b^2/4)，计算最优轮速比 k_opt = (R+b/2)/(R-b/2)，差速偏移与车速成正比，限幅2脉冲。右转时左轮加速辅助。等效转向能力从25度扩展至约40度。
+核心函数steering_control()源码见附录B.2。
+5.4　速度控制算法
+速度环采用增量式PID，双轮独立控制，4ms周期。增量式PID公式：delta_u = Kp*(e(k)-e(k-1)) + Ki*e(k) + Kd*(e(k)-2*e(k-1)+e(k-2))
+当前参数：Kp=0, Ki=20, Kd=0（纯I控制），输出限幅9000。差速偏移通过wheel_pid_set_target_speed()叠加到左右轮目标速度：左轮=target+diff，右轮=target-diff，安全保护防止反转。
+核心函数PID_Increase_vLB()源码见附录B.3。
+5.5　轨迹录制与循迹算法（Pure Pursuit）
+Pure Pursuit路径跟踪算法将LUT得到的车体坐标目标点代入PP公式：curvature = 2*y / ld^2, steer = atan(curvature x L)
+其中ld为前视距离（目标点到车体原点距离），L为轴距(0.632m)，y为横向偏移。输出经死区滤波、正负30度限幅、一阶低通滤波（alpha=0.3）和变化率限幅（2.0度/帧）后送至转向控制器。
+Flash赛道记忆功能框架已搭建（track_init()、track_flash_poll()），但track_proc()被注释，实际赛道记忆与重放功能未完成调试。
+核心函数image_follow_steer()源码见附录B.5。
+5.6　RTK 卫星定位
+RTK采用GN43RFA双天线模块，10Hz更新。核心处理流程：
+1. NMEA解析：gnss_data_parse()解析GGA/VTG语句，提取纳度整数经纬度（避免float精度丢失）、固定质量（4=RTK固定,5=RTK浮点）、卫星数。
+2. 双天线航向：antenna_direction_to_yaw_rad()对MAIN到AUX方向做+180度修正（因MAIN到AUX指向车尾，取反得车头航向）。
+3. 原点采样：首次定位时收集N个点，剔除离群点，计算平均原点经纬度。
+4. ENU投影：经纬度差 x1.113188e-4 m/纳度，转换为局部ENU平面坐标。
+5. INS坐标系对齐：以首次有效RTK位置和航向为基准，将ENU坐标旋转至车体前-左坐标系。
+核心函数rtk_update()源码见附录B.6。
+5.7　图像视觉与色块跟随
+视觉系统在CPU1上运行，基于SCC8660总钻风数字摄像头（188x120灰度，8位并行，DMA传输，配置串口UART1）。实测帧率50~100fps，代码支持运行时读取scc8660_fps_value。
+HSV高动态色块追踪算法流程：RGB转HSV转换、计算目标色相似度距离图、种子点选取、十字区域扩张、形态学腐蚀迭代、最小外接矩形提取目标中心。该方法对光照变化具有较强鲁棒性。
+像素到惯导LUT查表：预先标定11x13网格点（x=20~140步长10，y=10~110步长10），摄像头安装高度7.8cm、俯角60度。每个网格点存储{ins_forward_m, ins_lateral_m}，运行时通过查表将目标像素位置转换为前向距离与横向偏移。LUT数据来源于image_error.c中img2ins_lut[11][13]常量数组。
+图像PP跟随：最小前视距离0.10m，转向低通滤波系数0.65，变化率限幅1.0度/帧。
+核心函数image_trace_HSV()源码见附录B.4。
+5.8　本章小结
+本章详细介绍了软件总体框架、INS惯性导航、转向控制、速度控制、Pure Pursuit路径跟踪、RTK定位和图像视觉等核心算法。所有算法均以4ms周期在CPU0上运行（视觉在CPU1按帧运行），通过全局变量实现核间通信。
+
+第六章　开发工具、制作、安装与调试过程
+6.1　开发环境与工具链
+
+6.2　调试过程记录
+（1）第一轮：基础功能验证（2026.03~04）
+完成TC387移植、电机驱动、编码器读取、转向PD基础调参。转向PD参数STEER_KP、STEER_KD、STEER_GKD（陀螺仪前馈）通过VOFA观察阶跃响应调整。速度环PID：增量式，Kp=0, Ki=20, Kd=0（纯I控制），输出限幅9000。
+（2）第二轮：INS与RTK融合（2026.05~06）
+INS航向EKF调参，基于63s静态测试，陀螺仪漂移率1.42度/min：
+- Q_yaw: 1e-6到1e-7（减小yaw过程噪声，积分更稳定）
+- R_mag: 1e-2到5e-2（磁力计静态噪声大约正负5.69度，降低权重）
+- N_b: 1e-5到5e-5（静止时bias过程噪声增大，更快收敛零偏）
+- 创新限幅：0.052rad(3度)到0.035rad(2度)（收紧，抑制磁干扰跳变）
+- K1限幅：0.15到0.08（防止单次磁观测拉偏bias）
+ZUPT阈值：速度阈值0.00m/s（依赖编码器），陀螺仪阈值0.05到0.08rad/s。
+（3）第三轮：视觉与Pure Pursuit（2026.07~08）
+HSV色块追踪参数调优：参考色采样、腐蚀迭代次数、十字扩张范围。LUT标定：摄像头高7.8cm、俯角60度，逐网格点实测填入img2ins_lut[11][13]。Pure Pursuit转向滤波：ANGLE_FILTER_ALPHA=0.3，ANGLE_RATE_LIMIT=2.0度/帧。几何差速助力：DIFF_KINEMATIC_GAIN、DIFF_KINEMATIC_MAX_DELTA=2脉冲，等效转向扩展至约40度。
+6.3　制作与安装过程
+装配步骤：
+1. 底盘组装：安装四轮、转向机构、电机固定座，确保转向拉杆行程对称。
+2. 分电板安装：固定于车尾，烑接XT60输入、双XT30输出、船型开关。
+3. 驱动板安装：8701双驱板固定于后轮附近，单驱板固定于转向电机旁，连接电机线与信号线（光耠隔离侧接主板）。
+4. 主板安装：固定于车体中心，插入TC387转接板+核心板，连接各外设排线。
+5. 传感器安装：IMU插于主板IMU接口确保水平；摄像头固定于车头支架调整高度7.8cm俯角60度；RTK双天线沿车体纵轴安装（MAIN前AUX后）；编码器接线。
+6. 人机交互：安装IPS200屏幕、灯光秀点阵屏、语音模块（预留）。
+7. 整车布线：信号线与功率线分开走线，避免电机干扰。
+传感器标定流程：
+1. IMU零偏标定：上电时保持静止，imu_sensor_init()自动执行陀螺仪零偏校准。验证：静止时gyro_z接近0，波动<0.01rad/s。
+2. 磁力计椭球标定：水平面内缓慢旋转360度，采集三轴数据，最小二乘法拟合椭球，计算硬铁偏移与软铁缩放。验证：校准后合成矢量模长恒定，航向波动<正负5度。
+3. 转向中位标定：手动将前轮拨至正前方，读取绝对编码器raw值710作为STEER_HOME_RAW。左转极限1667（diff=957），右转极限3656（跨零点|diff|=1150），不对称映射至正负25度。
+4. RTK天线偏角标定：车辆停在已知朝向（正北），读取gnss.antenna_direction，计算安装偏角。验证：静止时RTK航向与车体实际朝向一致，误差<1度。
+5. LUT网格标定：将红色色块放置在已知物理位置，读取图像像素坐标填入img2ins_lut[row][col]，共11x13=143个网格点。
+6.4　本章小结
+本章介绍了开发环境、三轮调试过程（基础功能验证、INS与RTK融合、视觉与Pure Pursuit）、装配步骤和五项传感器标定流程。
+
+第七章　模型车主要技术参数
+
+除车模原有驱动电机之外，无额外伺服电机、RTK仅仅提供数据，实际代码中没有用到RTK。
+第八章　结论
+本项目设计并实现了一款基于英飞凌TC387三核微控制器的智能车系统，完成了以下功能：
+1. 多传感器硬件平台：自制主板、分电板、DRV8701双驱/单驱板、ASM330LHH陀螺仪板、TC387转接板等10块PCB，构建了完整的智能车硬件系统。
+2. 视觉色块追踪：基于SCC8660摄像头的HSV高动态色块追踪算法，在CPU1上独立运行。
+3. 惯性导航系统：六轴姿态卡尔曼滤波+航向EKF（陀螺仪/磁力计融合）+编码器里程计，4ms周期更新，支持ZUPT零速修正。
+4. RTK高精度定位：GN43RFA双天线RTK，纳度整数坐标投影ENU，双天线真北航向对齐INS坐标系。
+5. Pure Pursuit路径跟踪：视觉目标经LUT映射为车体坐标后代入PP公式，配合转向角滤波与变化率限幅。
+6. 转向与差速控制：绝对编码器反馈PD+陀螺仪前馈，几何差速助力将等效转向从25度扩展至约40度。
+7. 速度环PID：增量式PID双轮独立速度控制，4ms周期。
+8. 人机交互与遥测：IPS200显示、VOFA+无线遥测、LoRa通信、遥控接收。
+达到指标：INS静态航向漂移率约1.42度/min，视觉跟踪帧率50~100fps，RTK定位精度厘米级，控制周期4ms（250Hz），转向响应PD+前馈阶跃响应无超调。
+存在的问题：
+1. INS长时漂移：纯惯导航向随时间累积漂移，磁力计易受车内电机/电流干扰，EKF融合在强磁干扰场景下仍可能跳变。
+2. Flash轨迹重构未完成：track.c中Flash存储赛道记忆点功能框架已搭建但track_proc()被注释，实际赛道记忆与重放功能未完成调试。
+3. CPU1/CPU2未充分利用：CPU2完全空壳，CPU1仅做视觉处理，三核算力资源浪费。
+4. 语音模块未启用：硬件已就绪但软件全部注释，未实现语音控制功能。
+5. RTK与INS松耦合：当前RTK仅作为独立位置参考输出，未与INS做紧耦合滤波。
+6. 部分参数为估算值：整车重量、尺寸、功耗、电容总量等需实测确认。
+改进方向：
+1. RTK/INS紧耦合融合：设计EKF将RTK位置/航向作为观测值修正INS累积误差。
+2. CPU2启用：将显示、语音、赛道记忆等低优先级任务迁移至CPU2。
+3. Flash赛道记忆完善：调试track_proc()实现赛道点自动存储与重放。
+4. 语音功能启用：调试访飞ASR语音识别实现语音启动/停止/模式切换。
+5. 自适应Pure Pursuit：前视距离随车速动态调整。
+6. 磁干扰抑制：增加电机开关状态与磁力计读数关联分析，电机大电流时降低磁力计权重。
+
+参考文献
+
+[1] WOODMAN O J. An introduction to inertial navigation[R]. Cambridge: University of Cambridge, Computer Laboratory, 2007.
+[2] WALLACE R S. Parallel local vision for high speed road following[C]//Proceedings of the IEEE International Conference on Robotics and Automation. St. Louis: IEEE, 1985: 524-529.
+[3] COUETIL L, BRAUN T, RAUCH A, et al. Automated vehicle lateral control with a dynamic extension of the pure pursuit algorithm[C]//2018 21st International Conference on Intelligent Transportation Systems (ITSC). Maui: IEEE, 2018: 2975-2980.
+[4] 秦永元, 张洪钺, 汪叔华. 卡尔曼滤波与组合导航原理[M]. 3版. 西安: 西北工业大学出版社, 2015.
+[5] 严恭敏, 翁浪. 捷联惯导算法与组合导航原理[M]. 西安: 西北工业大学出版社, 2019.
+[6] TAKEDA H, TORIU T, HAMA T, et al. Vehicle localization on an urban road using RTK-GPS and gyroscope[C]//2006 IEEE Intelligent Vehicles Symposium. Tokyo: IEEE, 2006: 536-541.
+[7] 戗建成, 宁晓琳. 航天器自主天文导航原理与方法[M]. 北京: 中国宇航出版社, 2006.
+[8] SEEKFREE. 逐飞科技TC377/TC387开源库使用手册[EB/OL]. (2022-11-03)[2026-08-18]. https://seekfree.taobao.com/.
+[9] STMicroelectronics. ASM330LHH: Automotive 6-axis inertial measurement unit datasheet[EB/OL]. (2023)[2026-08-18]. https://www.st.com/.
+[10] 熊璐, 杨兴, 卓桂荣, 等. 智能车辆横向控制研究综述[J]. 中国公路学报, 2020, 33(1): 1-15.
+[11] 李克强, 王建强, 李升波, 等. 智能网联汽车技术与应用[M]. 北京: 清华大学出版社, 2021.
+[12] BORRE K, AKOS D M, BERTIGER C, et al. A software-defined GPS and GALILEO receiver: a single-frequency approach[M]. Boston: Artech House, 2007.
+[13] 张小红. 动态GPS精密定位理论与方法[M]. 武汉: 武汉大学出版社, 2010.
+[14] SICKERT N A, JAVED M A, XING Y, et al. Automated lane change controller design considering driver characteristics[J]. IEEE Transactions on Intelligent Vehicles, 2016, 1(2): 87-97.
+[15] 卓晴, 王磊, 陈嘉伟. 智能车设计与实践[M]. 北京: 清华大学出版社, 2019.
+
+附录A　程序源代码
+项目文件结构如下：
+TC377_Project1_ins/
+  user/
+    cpu0_main.c          # CPU0主核心
+    cpu1_main.c          # CPU1视觉核心
+    cpu2_main.c          # CPU2空壳
+    isr.c / isr.h        # 中断服务
+    isr_config.h         # 中断优先级配置
+  code/
+    MOTOR.c / MOTOR.h    # 电机驱动
+    vehicle_config.h      # 车辆参数配置
+    control/
+      control.c/h       # 任务调度框架
+      interrupt.c/h     # 4/8/40ms任务调度
+      steering_control.c/h  # 转向控制
+      PID.c / PID.h     # 速度环PID
+      encoder.c / encoder.h   # 编码器
+      RAM.c / RAM.h     # RAM赛道处理
+      subject_003.c/h  # 科目三
+      track.c / track.h    # Flash赛道记忆
+      VOFA.c / VOFA.h     # VOFA+通信
+      yaokong.c/h      # 遥控
+    image/
+      image_error.c/h  # LUT+PP转向
+      image_HSV.c/h    # HSV色块追踪
+      image_show.c/h   # 图像显示
+    ins/
+      Ins.c / Ins.h     # INS核心
+      asm330.c / asm330.h  # ASM330驱动
+      imu660.c / imu660.h  # IMU驱动
+    rtk/
+      rtk.c / rtk.h     # RTK坐标转换
+    system/
+      init_all.c/h     # 系统初始化
+      interrupt.c/h    # 任务调度
+  libraries/               # 逐飞TC377开源库
+
+附录B　核心算法子程序
+B.1 Ins_update() — 惯性导航核心更新函数
+文件：code/ins/Ins.c，调用周期：4ms（250Hz）
+void Ins_update(const INS_Input *input, float dt_s)
+{
+    float yaw_gyro = 0.0f;
+    uint8_t is_stationary = 0;
+ 
+    if(!s_initialized) return;
+    if(!ins_input_is_valid(input, dt_s)) return;
+ 
+    s_kalman_6axis.T = dt_s;
+ 
+    // 1. 六轴姿态卡尔曼更新
+    yaw_gyro = ins_kalman_6axis_update(
+        imu660.data_Ripen.gyro_x, imu660.data_Ripen.gyro_y,
+        input->gyro_z_rad_s,
+        imu660.data_Ripen.acc_x, imu660.data_Ripen.acc_y,
+        imu660.data_Ripen.acc_z);
+ 
+    // 2. 静止检测（ZUPT）
+    is_stationary = ins_is_stationary(input);
+ 
+    // 3. 航向 EKF 预测
+    yaw_ekf2_predict(s_kalman_6axis.Uk[2], dt_s, is_stationary);
+ 
+    // 4. 航向 EKF 更新（磁力计观测，含倾斜补偿）
+    if(input->mag_valid) {
+        float body_roll, body_pitch;
+        map_body_attitude_for_mag_compensation(
+            s_kalman_6axis.roll, s_kalman_6axis.pitch,
+            &body_roll, &body_pitch);
+        s_mag_yaw_raw = compute_tilt_compensated_mag_yaw(
+            imu660.data_Ripen.mag_x, imu660.data_Ripen.mag_y,
+            imu660.data_Ripen.mag_z, body_roll, body_pitch);
+        if(!s_mag_initial_yaw_captured) {
+            s_initial_mag_yaw = normalize_angle_rad(s_mag_yaw_raw - s_yaw_ekf.x[0]);
+            s_mag_initial_yaw_captured = 1;
+        }
+        s_mag_yaw_rel = normalize_angle_rad(s_mag_yaw_raw - s_initial_mag_yaw);
+        s_mag_yaw_rel_filtered = s_config.mag_alpha * s_mag_yaw_rel
+            + (1.0f - s_config.mag_alpha) * s_mag_yaw_rel_filtered;
+        yaw_ekf2_update(s_mag_yaw_rel_filtered);
+    }
+ 
+    // 5. 状态输出
+    s_state.yaw = s_yaw_ekf.x[0];
+    s_state.roll = s_kalman_6axis.roll;
+    s_state.pitch = s_kalman_6axis.pitch;
+ 
+    // 6. 编码器位置积分
+    ins_position_update(s_state.yaw, input->delta_left_m, input->delta_right_m);
+    s_state.x = s_pos_x;
+    s_state.y = s_pos_y;
+}
+B.2 steering_control() — 转向控制函数
+文件：code/control/steering_control.c，调用周期：4ms
+void steering_control(void)
+{
+    float current = steering_get_current_angle();
+    float error = g_target_angle - current;
+    float derivative = (error - g_last_error) / STEER_CONTROL_DT;
+    float output = STEER_KP * error
+                 + STEER_KD * derivative
+                 + STEER_GKD * imu660.data_Ripen.gyro_z;
+    output = func_limit(output, (float)STEER_PWM_MAX);
+    int16_t abs_duty = (int16_t)fabsf(output);
+    if(output >= 0.0f) gpio_low(STEER_DIR_PIN);
+    else               gpio_high(STEER_DIR_PIN);
+    pwm_set_duty(STEER_PWM_PIN, (uint16_t)abs_duty);
+    g_last_error = error;
+ 
+    // 几何差速助力
+    if(g_diff_enabled) {
+        float steer_deg = steering_get_current_angle();
+        float abs_steer = fabsf(steer_deg);
+        if(abs_steer < DIFF_KINEMATIC_DEADZONE_DEG) {
+            g_diff_delta = 0.0f;
+        } else {
+            if(abs_steer > DIFF_KINEMATIC_MAX_STEER_DEG)
+                abs_steer = DIFF_KINEMATIC_MAX_STEER_DEG;
+            float steer_rad = abs_steer * DEG2RAD;
+            float sin_2d = sinf(2.0f * steer_rad);
+            if(fabsf(sin_2d) < 1e-6f) {
+                g_diff_delta = 0.0f;
+            } else {
+                float cot_2d = cosf(2*steer_rad) / sin_2d;
+                float csc_2d = 1.0f / sin_2d;
+                float L = VEHICLE_WHEELBASE_M;
+                float b = VEHICLE_TRACK_WIDTH_M;
+                float R = L*cot_2d + sqrtf(L*L*csc_2d*csc_2d + b*b*0.25f);
+                float k_opt = (R + b*0.5f) / (R - b*0.5f);
+                float ratio = (k_opt - 1.0f) / (k_opt + 1.0f);
+                float avg_speed = (fabsf(g_state.tick_left)+fabsf(g_state.tick_right))*0.5f;
+                float diff_used = avg_speed * ratio * DIFF_KINEMATIC_GAIN;
+                if(diff_used > DIFF_KINEMATIC_MAX_DELTA) diff_used = DIFF_KINEMATIC_MAX_DELTA;
+                g_diff_delta = (steer_deg > 0) ? diff_used : -diff_used;
+            }
+        }
+    }
+}
+B.3 PID_Increase_vLB() — 速度环增量PID
+文件：code/control/PID.c，调用周期：4ms
+void wheel_pid_set_target_speed(int16_t target)
+{
+    float diff = steering_get_diff_delta();
+    float target_l = (float)target + diff;
+    float target_r = (float)target - diff;
+    if(target >= 0) {
+        if(target_l < 0) target_l = 0;
+        if(target_r < 0) target_r = 0;
+    } else {
+        if(target_l > 0) target_l = 0;
+        if(target_r > 0) target_r = 0;
+    }
+    Yao.Target_Speed_L = (int16_t)target_l;
+    Yao.Target_Speed_R = (int16_t)target_r;
+}
+ 
+float PID_Increase_vLB(PID_INFO *pid_info, float *PID_Parm,
+                        float NowPoint, float SetPoint)
+{
+    float Increase;
+    pid_info->iError = SetPoint - NowPoint;
+    Increase = PID_Parm[KP] * (pid_info->iError - pid_info->LastError)
+             + PID_Parm[KI] * pid_info->iError
+             + PID_Parm[KD] * (pid_info->iError - 2*pid_info->LastError + pid_info->PrevError);
+    pid_info->PrevError = pid_info->LastError;
+    pid_info->LastError = pid_info->iError;
+    pid_info->LastData = NowPoint;
+    return Increase;
+}
+B.4 image_trace_HSV() — HSV色块追踪
+文件：code/image/image_error.c，运行核心：CPU1
+void image_trace_HSV(void)
+{
+    extract_result = color_trace_hsv(&target_hsv_ref, &hsv_target_pos);
+    finally_xy.x = hsv_target_pos.x;
+    finally_xy.y = hsv_target_pos.y;
+    finally_xy.w = hsv_target_pos.w;
+    finally_xy.h = hsv_target_pos.h;
+ 
+    img2ins_lookup((float)finally_xy.x, (float)finally_xy.y,
+                   &image_to_ins_xy.ins_forward_m,
+                   &image_to_ins_xy.ins_lateral_m);
+ 
+    image_target_speed = dist_to_speed((float)finally_xy.y);
+    image_target_angle = dist_to_angle((float)finally_xy.x, (float)finally_xy.y);
+}
+B.5 image_follow_steer() — Pure Pursuit转向计算
+文件：code/image/image_error.c
+float image_follow_steer(void)
+{
+    float x_local = image_to_ins_xy.ins_forward_m;
+    float y_local = image_to_ins_xy.ins_lateral_m;
+    float ld = sqrtf(x_local*x_local + y_local*y_local);
+    if(ld < IMG_FOLLOW_MIN_LD_M) return 0.0f;
+ 
+    float curvature = 2.0f * y_local / (ld * ld);
+    float steer_rad = atanf(curvature * TRACK_WHEELBASE);
+    float steer_deg = -steer_rad * RAD2DEG;
+ 
+    if(fabsf(steer_deg) < VEHICLE_STEER_DEADZONE_DEG) steer_deg = 0.0f;
+    steer_deg = func_limit(steer_deg, VEHICLE_PP_MAX_STEER_DEG);
+ 
+    s_follow_steer_filt = IMG_FOLLOW_STEER_ALPHA * steer_deg
+        + (1.0f - IMG_FOLLOW_STEER_ALPHA) * s_follow_steer_filt;
+    if(ld > IMG_FOLLOW_RATE_LIMIT_DIST) {
+        s_follow_steer_filt = func_limit(s_follow_steer_filt - s_follow_steer_prev,
+                                          IMG_FOLLOW_RATE_LIMIT) + s_follow_steer_prev;
+    }
+    s_follow_steer_prev = s_follow_steer_filt;
+    return s_follow_steer_filt;
+}
+B.6 rtk_update() — RTK坐标转换与INS对齐
+文件：code/rtk/rtk.c，调用周期：4ms
+void rtk_update(void)
+{
+    if(gnss_flag == 0) return;
+    gnss_flag = 0;
+    if(gnss_data_parse() != 0) return;
+ 
+    int64_t lat_e9 = gnss.lat_e9;
+    int64_t lon_e9 = gnss.lon_e9;
+    uint8_t fix_q = gnss.fix_quality;
+    uint8_t sats = gnss.satellite_used;
+ 
+    if(gnss.antenna_direction_state == 1) {
+        s_rtk_state.yaw_true_north = antenna_direction_to_yaw_rad(gnss.antenna_direction);
+        s_rtk_state.yaw_valid = 1;
+    }
+ 
+    if(s_rtk_origin.is_set == 0 && rtk_is_solution_acceptable(fix_q, sats)) {
+        // 原点采样平均
+    }
+ 
+    if(s_rtk_origin.is_set) {
+        rtk_latlon_to_enu(lat_e9, lon_e9, &s_rtk_state.x_enu, &s_rtk_state.y_enu);
+    }
+ 
+    if(!s_is_aligned && pos_valid && yaw_valid) {
+        s_align_x_enu_0 = s_rtk_state.x_enu;
+        s_align_y_enu_0 = s_rtk_state.y_enu;
+        s_align_yaw_0   = s_rtk_state.yaw_true_north;
+        s_is_aligned = 1;
+    }
+    if(s_is_aligned && pos_valid) {
+        float dx = s_rtk_state.x_enu - s_align_x_enu_0;
+        float dy = s_rtk_state.y_enu - s_align_y_enu_0;
+        float sin_t = sinf(s_align_yaw_0), cos_t = cosf(s_align_yaw_0);
+        s_rtk_state.x_ins =  sin_t*dx + cos_t*dy;
+        s_rtk_state.y_ins = -(cos_t*dx - sin_t*dy);
+        s_rtk_state.yaw_ins = rtk_normalize_angle(
+            s_rtk_state.yaw_true_north - s_align_yaw_0);
+    }
+}
+B.7 run_4ms_tasks() — 4ms核心调度
+文件：code/system/interrupt.c
+static void run_4ms_tasks(float dt_s)
+{
+    imu_sample_valid = date_handle(&imu_date);
+    steering_control();
+    encoder_layer_update(dt_s);
+    if(Yao.flag_motor_start_user == 1) {
+        Yao.OutP_LB += PID_Increase_vLB(&Yao_pid.vLB_pid, param_vLB,
+                                         g_state.tick_left, Yao.Target_Speed_L);
+        Yao.OutP_RB += PID_Increase_vRB(&Yao_pid.vRB_pid, param_vRB,
+                                         g_state.tick_right, Yao.Target_Speed_R);
+        Yao.OutP_LB = func_limit(Yao.OutP_LB, param_vLB[3]);
+        Yao.OutP_RB = func_limit(Yao.OutP_RB, param_vRB[3]);
+        Motor_Ctrl(MOTOR_L, (int32)Yao.OutP_LB);
+        Motor_Ctrl(MOTOR_R, (int32)Yao.OutP_RB);
+    }
+    s_ins_input.v_mps = g_state.speed_average_mps;
+    s_ins_input.gyro_z_rad_s = imu660.data_Ripen.gyro_z;
+    s_ins_input.delta_left_m = g_state.delta_left_m;
+    s_ins_input.delta_right_m = g_state.delta_right_m;
+    s_ins_input.omega_rad_s = s_ins_input.v_mps * tanf(steer_rad) / INS_WHEELBASE_M;
+    if(imu_sample_valid) Ins_update(&s_ins_input, imu_dt_s);
+    ram_track_proc();
+    rtk_update();
+}
+
+附录C　硬件电路
+
+
+1、IMU660RA六轴陀螺仪
+
+
+
+
+
+2、IMU963RA九轴陀螺仪
+
+
+
+
+
+
+
+
+DRV8701单路电机驱动模块
+
+DRV8701 双路电机驱动模块
+
+
+TC387转接板
+
+
+
+灯光秀+点阵屏
+
+
+
+
+
+
+
+分电板
+
+
+
+
+
+硅麦拓展板
+
+
+
+
+
+
+
+
+
+
+
+
+
+语音模块
+
+
+
+
+
+
+
+
+
+
+
+
+10、主板
+
+===== TABLE 1 =====
+符号 | 含义
+INS | 惯性导航系统
+IMU | 惯性测量单元
+RTK | 实时动态差分定位
+EKF | 扩展卡尔曼滤波
+PID | 比例-积分-微分
+PP | Pure Pursuit纯跟踪算法
+LUT | 查找表
+HSV | 色调-饱和度-明度色彩空间
+ZUPT | 零速更新
+DRV8701 | 电机驱动芯片
+TC387 | 英飞凌AURIX主控芯片
+SPI | 串行外设接口
+UART | 通用异步收发传输器
+PWM | 脉冲宽度调制
+ADC | 模数转换器
+DMA | 直接内存访问
+CPU0/CPU1/CPU2 | 三核处理器核心
+
+===== TABLE 2 =====
+核心 | 状态 | 主要任务 | 控制周期
+CPU0 | 满载运行 | 系统初始化、电机控制、转向PID、INS更新、RTK更新、遥控、显示 | 4/8/40ms
+CPU1 | 部分使用 | SCC8660摄像头采集、HSV高动态色块追踪、LUT映射、目标速度/角度计算 | 按帧（50~100fps）
+CPU2 | 未利用（空壳） | 预留（原计划LoRa通信、遥控、菜单、语音，当前全部注释） | —
+
+===== TABLE 3 =====
+参数 | 数值 | 来源
+轴距 | 0.632 m | vehicle_config.h
+轮距 | 0.60 m | vehicle_config.h
+车轮直径 | 0.254 m | 10x4.0-6轮胎
+转向最大机械角 | 正负25度 | VEHICLE_MAX_STEER_ANGLE_DEG
+PP算法限幅角 | 正负30度 | VEHICLE_PP_MAX_STEER_DEG
+等效最大转向角 | 约40度 | 差速助力后
+最小转弯半径 | 约1.2 m | 差速助力后（原1.67m）
+编码器分辨率 | 2048脉冲/转 | ENCODER_PULSES_PER_REVOLUTION
+转向编码器 | 12位绝对编码器（4096线） | steering_control.c
+转向中位raw值 | 710 | STEER_HOME_RAW
+左转极限raw值 | 1667（diff=957） | steering_control.h
+右转极限raw值 | 3656（|diff|=1150） | steering_control.h
+
+===== TABLE 4 =====
+传感器 | 型号 | 安装位置 | 接口
+IMU | ASM330LHH | 自制330陀螺仪板，插于主板IMU接口，位于车体中心靠近后轴上方，Z轴垂直向上 | SPI, 3.3V
+摄像头 | SCC8660总钻风 | 车头高处支架，安装高度7.8cm，俯角60度 | 8位并行+DMA
+RTK双天线 | GN43RFA | MAIN天线车头，AUX天线车尾，基线平行车体纵轴 | UART
+编码器x2 | 正交编码器 | 后轮左右 | TIM5/TIM4
+转向编码器 | 12位绝对编码器 | 转向机构 | SPI
+屏幕 | IPS200 | 车体上方调试位 | SPI
+LoRa | 3A22模块 | 车体侧方 | UART5
+
+===== TABLE 5 =====
+序号 | 板卡名称 | 核心功能 | 关键芯片 | 版本/日期
+1 | 主板 | 核心板接口、外设扩展、电源管理、IMU/磁力计/功放 | LSM6DSRTR、QMC5883L、LTK1026D、74HC595 | V1.0/2026.8.1
+2 | TC387转接板 | TC387核心板转TC264插座引脚映射 | — | 2026.6.18
+3 | 分电板 | 电源分配与总开关 | XT60/XT30、船型开关 | —
+4 | 8701双驱板 | 后轮双电机H桥驱动 | DRV8701x2、SN74HC125光耠 | V1.0/2026.5.22
+5 | 8701单驱板 | 转向电机H桥驱动 | DRV8701、SN74HC125、LR8341A-33 | V1.0/2026.6.8
+6 | 330陀螺仪板 | ASM330LHH六轴IMU最小系统 | ASM330LHH | 2026.8.1
+7 | 963陀螺仪板 | LSM6DSRTR+QMC5883L九轴IMU | LSM6DSRTR、QMC5883L、RT9013-33GB | —
+8 | 语音模块 | 语音识别与功放输出 | LTK1026D、USB接口 | 2026.5.12
+9 | 硅麦拓展板 | MEMS麦克风音频采集 | 硅麦元件 | 2026.8.1
+10 | 灯光秀+点阵屏 | LED点阵显示与状态灯 | 74HC595 | 2026.5.12
+
+===== TABLE 6 =====
+模块 | 典型功耗（估算）
+TC387核心板+主板 | 约1.5 W
+SCC8660摄像头 | 约0.5 W
+ASM330LHH IMU | 约0.05 W
+GN43RFA RTK | 约0.8 W
+后轮双电机（空载） | 约2~5 W
+转向电机（保持） | 约0.5 W
+其他（屏幕/遥控/LoRa） | 约0.5 W
+整车静态总功耗 | 约6~9 W
+
+===== TABLE 7 =====
+板卡 | 估算总容量
+主板 | 约30 uF
+8701双驱板 | 约90 uF
+8701单驱板 | 约42 uF
+963陀螺仪板 | 约35 uF
+330陀螺仪板 | 约2 uF
+语音模块/灯光秀/其他 | 约20 uF
+整车总计 | 约200~220 uF
+
+===== TABLE 8 =====
+驱动对象 | PWM频率 | 代码位置
+后轮驱动电机（左/右） | 20 kHz | MOTOR.c
+转向电机 | 10 kHz | steering_control.c
+
+===== TABLE 9 =====
+工具 | 用途
+ADS v1.10.2 | 英飞凌AURIX Development Tools，代码编写、编译、烧录、在线调试
+VOFA+ | 上位机波形显示，通过无线串口接收PID/INS/转向数据
+无线串口 | 实车数据遥测（UART2）
+IPS200屏幕 | 车端实时显示状态、坐标、调试信息
+LoRa3a22 | 远距离无线通信/遥控
+嘉立创EDA | PCB原理图与Layout设计
+
+===== TABLE 10 =====
+序号 | 参数 | 数值 | 来源/备注
+1 | 整车总重量 | 约20kg | 用电子秤称量含电池
+2 | 长x宽x高 | 100*60*40（cm） | 含摄像头支架
+3 | 电路功耗（静态） | 约6~9 W（估算） | 电机静止时
+4 | 电路功耗（动态） | 约15~30 W（估算） | 行驶中，依速度而定
+5 | 所有电容总容量 | 约200~220 uF（估算） | 逐板统计，详见4.2节
+6 | 图像FPS | 50~100 fps | SCC8660，代码支持运行时读取
+7 | 图像分辨率 | 188x120 | SCC8660规格
+8 | RTK定位精度 | 厘米级（典型1~5cm） | GN43RFA RTK固定解
+9 | RTK航向精度 | 约0.2度~1度 | 双天线基线长度相关
+10 | 轴距 | 0.632 m | vehicle_config.h
+11 | 轮距 | 0.60 m | vehicle_config.h
+12 | 车轮直径 | 0.254 m | 10x4.0-6轮胎
+13 | 编码器分辨率 | 2048脉冲/转 | ENCODER_PULSES_PER_REVOLUTION
+14 | 转向最大机械角 | 正负25度 | VEHICLE_MAX_STEER_ANGLE_DEG
+15 | PP算法限幅角 | 正负30度 | VEHICLE_PP_MAX_STEER_DEG
+16 | 等效最大转向角 | 约40度 | 差速助力后
+17 | 驱动电机PWM频率 | 20 kHz | MOTOR.c
+18 | 转向电机PWM频率 | 10 kHz | steering_control.c
+19 | INS静态yaw漂移 | 约1.42度/min | 63s静态测试
+20 | INS更新频率 | 250 Hz（4ms） | interrupt.c
+21 | 主控 | TC387（三核） | 实际使用CPU0+CPU1，CPU2空壳
+22 | IMU | ASM330LHH（六轴） | 自制330陀螺仪板
+23 | 摄像头 | SCC8660 | 逐飞总钻风
+24 | 电池 | 2S/3S锂电池 | 智能车竞赛标准

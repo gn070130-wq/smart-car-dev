@@ -1,0 +1,757 @@
+第 二十一 届全国大学生
+智能汽车竞赛
+
+技 术 报 告
+
+
+
+
+学    校：      浙江师范大学     
+队伍名称：       尖峰睡大觉      
+参赛队员：吴康长 周文磊 薛进威 李俊喆
+带队教师：     许富洋 沈建国     
+
+
+
+
+关于技术报告和研究论文使用授权的说明
+	本人完全了解全国大学生智能汽车竞赛关保留、使用技术报告和研究论文的规定，即:参赛作品著作权归参赛者本人，比赛组委会可以在相关主页上收录并公开参赛作品的设计方案、技术报告以及参赛模型车的视频、图像资料并将相关内容编纂收录在组委会出版论文集中。
+
+参赛队员签名：
+
+带队教师签名：
+日        期：  2026.8.18
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+目录
+第一章	系统总体方案	5
+1.1技术方案概述	5
+第二章	硬件设计	6
+2.1 机械结构设计与实现	6
+2.1.1 车模安装	6
+2.1.2 传感器选型与布局	6
+2.2 电路设计与选型	8
+2.2.1 电源模块	8
+2.2.2 主控板设计	9
+2.2.3 电机驱动设计	9
+第三章	软件设计	10
+3.1 图像处理算法	10
+3.2 运动控制算法	14
+3.3 路径规划算法	19
+3.4模型训练	21
+第四章	开发与调试过程	22
+4.1开发平台	22
+4.2 软件调试过程	23
+第五章	主要技术参数	23
+5.1 基本参数	23
+5.2 传感器参数	23
+第六章	总结	23
+附录1 部分主程序源代码	24
+第二十一届全国大学生智能汽车竞赛	34
+车模技术检查表	34
+一、车模技术检查表	34
+二、车模照片	37
+1、车模外观照片	37
+2、电路板PCB图	39
+3、电路板原理图	41
+
+系统总体方案
+1.1技术方案概述
+	本参赛车辆为人工智能视觉组麦轮全向移动小车，采用RT1064（逐飞核心板+自制载板）搭配双OpenART的分布式架构，整体划分为硬件平台、机器视觉感知、运动控制、路径规划、任务状态调度五大模块协同完成赛场任务。
+硬件上基于麦轮M车模搭建全向底盘，配备直流减速电机、编码器以及IMU惯性单元，多路稳压电源为各模块独立供电。两块OpenART分工采集环境信息：车顶相机获取完整12×16场地全局地图，车头相机识别箱体图案与数字，借助MobileNetV2网络完成目标推理；通信链路做了划分，全局相机使用UART4，车头相机使用UART3，UART1预留调试。小车在20cm格点场地实现全向平移，仅识别物体时原地转向，推箱、横移过程保持车身朝向不变。
+软件采用分层架构，视觉完成图像采集与推理后经串口上报主控。针对三关不同任务条件，依靠有限状态机调度业务逻辑：任务一采集完整地图后车载生成整套推箱动作序列；任务二执行“巡游-识别-推箱”循环；任务三增加炸弹爆破处理堵墙场景。国赛模式42支持一键跑完全部关卡，单关出错自动跳关防止卡死。车辆完成初始化与地图校验后启动任务，结束后返回指定格点，通过应答交互流转至下一关。运动控制采用多级闭环PID，结合麦轮运动学做速度解算，目标点位单向趋近抑制震荡，同时增加避让补偿降低箱体剐蹭；视觉位姿仅用于修正车身至格心，不修改上层规划。路径规划先在PC端仿真调参，再移植至主控；车载规划采用静态内存、分批处理箱体配对，底层通行检测基于A*、BFS，箱序决策、炸墙逻辑由上层实现。整车结合视觉与惯性信息修正行驶偏差，应对光线扰动、识别延迟等现场问题，在兼顾感知实时性与运动稳定性的前提下完成全部赛事任务。
+
+硬件设计
+2.1 机械结构设计与实现
+2.1.1 车模安装
+智能车的机械结构是支撑其完成各项任务目标的物理基础。无论是软件算法还是硬件系统，其设计与实现都需依托于机械结构所能提供的实际功能。因此，合理、正确地设计智能车的机械结构，是确保车辆在比赛中稳定、可靠地完成各项任务的关键前提。在支架设计上，为兼顾结构强度与轻量化需求，我们选用碳素杆材制作摄像头支架。其中，两根外径8mm的主杆用于固定摄像头及顶部目标板，以提供足够的承载刚度，在碳素杆的底部使用加强版法轮盘为碳素杆提供稳定支撑，同时使用3D打印屏幕支架为屏幕提供稳定支撑。
+
+2.1.2 传感器选型与布局
+	我们主要使用的传感器主要有图像传感器、姿态传感器、编码器。图像传感器我选用了两个OPEN-ART，分别负责总体地图的识别与箱子图片与数字的识别，负责识别总体地图的摄像头放在距离车模底板8cm，距离屏幕5cm的位置，负责模型识别的摄像头放在距离车模底板8cm，距离屏幕6.5cm的位置。负责两种识别任务的摄像头放在距离屏幕不同距离的主要目的是一个离得近可以更好识别具体图像，一个离得远可以减少摄像头边缘的畸变。
+
+在姿态传感器方面我们选用imu963ra，直接通过铜柱固定在底盘前方中心位置，X轴朝前，这样放置的原因是为了减少抖动带来的数据误差。
+
+在编码器方面我们选择1024线带方向编码器，安装于电机传动轴旁，通过齿轮与电机传动轴耦合，用于测量电机转速解算车身当前位置。
+
+2.2 电路设计与选型
+2.2.1 电源模块
+在电源系统设计上，5V电源模块负责为单片机、编码器及OPENART提供工作电压，并作为后续3.3V稳压模块的输入源。该模块选用SCT2450 DC-DC稳压芯片，支持5.5V至36V的宽电压输入，最大输出电流达3A，兼具发热低、输出电流大的优势，同时集成过压瞬态保护与欠压保护功能，有效提升电路安全性。针对屏幕供电需求，我们选用RT9013-33GB作为3.3V稳压芯片。该器件为高性能LDO稳压器，具备500mA输出能力，拥有极高的电源抑制比（PSRR）和超低压降特性。其与低ESR陶瓷电容器配合使用，可有效缩小电源部分占用的电路板面积，满足屏幕供电的紧凑布局要求。
+
+2.2.2 主控板设计
+主板上还集成了蜂鸣器与时序控制电路，以满足系统状态提示与上电保护需求。蜂鸣器驱动电路采用NPN三极管搭建的简易开关电路，其基极通过限流电阻连接至核心板的通用I/O引脚，。时序控制电路主要用于管理各外设模块的上电时序。RT1064主控芯片对内核电压、I/O电压及模拟电压等不同电源轨的建立顺序有一定要求，若上电顺序不当，可能导致芯片工作异常甚至损坏。为此，原设计中增加了时序控制电路，通过延迟不同电源轨的使能信号，确保各电压按规范顺序建立，从而有效保护主控芯片及其他外设。
+
+2.2.3 电机驱动设计
+电机驱动部分选用DRV8701栅极驱动器，配合外部N沟道MOSFET构成完整的H桥驱动方案。DRV8701是一款专为12V至24V双向有刷直流电机设计的单路H桥栅极驱动器，其驱动电路由4个外部N沟道MOSFET搭建而成。该芯片支持PH/EN（DRV8701E型号）控制接口，与控制器连接方便，指令响应直接。内置高精度电流检测放大器，支持可调节的闭环电流控制，配合固定关断时间调制的PWM电流斩波功能，能够实现对绕组电流的精准调节，有效提升电机运行的平滑性和响应速度。DRV8701+TPH1R403NL 搭建的 H 桥电路可以通过较大电流，TPH1R403NL 的持续漏极电流可达 100A，且 DRV8701 的宽电压范围适配性让其在电容电压较低时仍能正常工作，不过作为栅极驱动器与外部功率 MOSFET 的组合方案，电路复杂度略高于全集成方案，所需元器件也相对较多。对比三种方案，我们选择了 DRV8701+TPH1R403NL 搭建的 H 桥电路作为驱动电路，下面是电路原理图。
+
+软件设计
+3.1 图像处理算法
+对于整体地图的识别，我们将其分为三类物体识别，通过黑墙边缘检测+紫色基站校准+外圈墙校验三重机制实现稳定地图框锁定，一、黑墙边缘检测与边界校正过检测“外侧黑色区域→内侧墙壁”的亮度突变来动态定位赛道边界。is_black_to_wall_edge()函数比较外侧像素（LAB空间）和内侧像素。find_best_column()和find_best_bottom()分别在垂直和水平方向上扫描，先用2像素步长粗扫找到最佳位置，再在附近逐像素精扫，最终返回得分最高的边界坐标，先粗后精的策略既保证了首次锁框的速度（粗扫范围20像素），又保留了1像素的定位精度，二、紫色方块（实际为粉色阈值threshold_pink）用于校正地图框的平移偏差。在框内搜索紫色色块，对每个色块进行密度过滤和粘连拆分，然后对每个子块重新计算中心。计算每个紫色中心点与其最近网格中心的偏移量，取平均后平移整个地图框，锁定前每帧都执行紫色校准确保稳定帧计数不被“校准帧/未校准帧”交替打断。三、小车识别使用青+绿双色验证，避免单一颜色阈值误检。对每个青色blob，在其左右扩展像素、上下扩展像素的区域内逐像素统计绿色点数。
+
+部分部分代码展示
+def is_black_to_wall_edge(out_pixel, in_pixel):
+"""检测外黑区 -> 内墙壁的边缘"""
+if not out_pixel or not in_pixel:
+return False
+out_l, out_a, out_b = _rgb2lab(out_pixel)
+in_l, in_a, in_b = _rgb2lab(in_pixel)
+delta_l = in_l - out_l
+if delta_l < EDGE_DELTA_L_MIN or in_l < out_l * EDGE_L_RATIO_MIN or out_l > EDGE_OUT_BLACK_L_MAX:
+return False
+if not (EDGE_OUT_BLACK_A_MIN <= out_a <= EDGE_OUT_BLACK_A_MAX and
+EDGE_OUT_BLACK_B_MIN <= out_b <= EDGE_OUT_BLACK_B_MAX):
+return False
+if in_l < EDGE_IN_WALL_L_MIN:
+return False
+if not (EDGE_IN_WALL_A_MIN <= in_a <= EDGE_IN_WALL_A_MAX and
+EDGE_IN_WALL_B_MIN <= in_b <= EDGE_IN_WALL_B_MAX):
+return False
+return True
+def black_wall_column_score(img, x, y0, y1, outside_left):
+"""垂直边界打分"""
+hits = 0
+total = 0
+gap = EDGE_REFINE_SIDE_GAP
+get_pix = img.get_pixel
+y_start = max(0, min(y0, max_y_idx))
+y_end = max(0, min(y1, max_y_idx)) + 1
+if outside_left:
+ox = max(0, min(x - gap, max_x_idx))
+ix = max(0, min(x + gap, max_x_idx))
+else:
+ox = max(0, min(x + gap, max_x_idx))
+ix = max(0, min(x - gap, max_x_idx))
+for y in range(y_start, y_end, EDGE_REFINE_SAMPLE_STEP):
+if is_black_to_wall_edge(get_pix(ox, y), get_pix(ix, y)):
+hits += 1
+total += 1
+return hits / total if total > 0 else 0.0
+def black_wall_row_score(img, y, x0, x1):
+"""水平边界打分"""
+hits = 0
+total = 0
+gap = EDGE_REFINE_SIDE_GAP
+get_pix = img.get_pixel
+x_start = max(0, min(x0, max_x_idx))
+x_end = max(0, min(x1, max_x_idx)) + 1
+oy = max(0, min(y + gap, max_y_idx))
+iy = max(0, min(y - gap, max_y_idx))
+for x in range(x_start, x_end, EDGE_REFINE_SAMPLE_STEP):
+if is_black_to_wall_edge(get_pix(x, oy), get_pix(x, iy)):
+hits += 1
+total += 1
+return hits / total if total > 0 else 0.0
+def find_best_column(img, x0, x1, y0, y1, outside_left):
+    """先粗扫、再精扫最佳列边界，降低首次锁框计算量。"""
+    best_x = None
+    best_score = 0.0
+    x0 = clamp(x0, 0, max_x_idx)
+    x1 = clamp(x1, 0, max_x_idx)
+    if x1 < x0:
+        x0, x1 = x1, x0
+
+    step = max(1, EDGE_REFINE_POSITION_STEP)
+    for x in range(x0, x1 + 1, step):
+        score = black_wall_column_score(img, x, y0, y1, outside_left)
+        if score > best_score:
+            best_score = score
+            best_x = x
+
+    # 粗扫命中后，只在附近逐像素精扫，仍保留1像素定位精度。
+    if best_x is not None and step > 1:
+        rx0 = max(x0, best_x - step + 1)
+        rx1 = min(x1, best_x + step - 1)
+        for x in range(rx0, rx1 + 1):
+            score = black_wall_column_score(img, x, y0, y1, outside_left)
+            if score > best_score:
+                best_score = score
+                best_x = x
+
+    return best_x if best_score >= EDGE_REFINE_SCORE_MIN else None
+
+def find_best_bottom(img, y0, y1, x0, x1):
+    """先粗扫、再精扫最佳底边界。"""
+    best_y = None
+    best_score = 0.0
+    y0 = clamp(y0, 0, max_y_idx)
+    y1 = clamp(y1, 0, max_y_idx)
+    if y1 < y0:
+        y0, y1 = y1, y0
+
+    step = max(1, EDGE_REFINE_POSITION_STEP)
+    for y in range(y0, y1 + 1, step):
+        score = black_wall_row_score(img, y, x0, x1)
+        if score > best_score:
+            best_score = score
+            best_y = y
+
+    if best_y is not None and step > 1:
+        ry0 = max(y0, best_y - step + 1)
+        ry1 = min(y1, best_y + step - 1)
+        for y in range(ry0, ry1 + 1):
+            score = black_wall_row_score(img, y, x0, x1)
+            if score > best_score:
+                best_score = score
+                best_y = y
+
+    return best_y if best_score >= EDGE_BOTTOM_SCORE_MIN else None
+3.2 运动控制算法
+对于车模运动的控制，我们采用PID控制算法。我们对于不同条件下不同的车身控制要求使用了多种PID变体，针对不同控制对象采用了不同结构。轮速环pid_speed_n()是增量式PID，输出为累计值，每次只计算增量delta_out，积分项隐含在out累加中，优点是抗积分饱和、平滑启动、抗干扰强，适合电机速度闭环。角速度环pid_anglespeed_n()是带前馈的PI加积分弱化加抗饱和积分，前馈项占主导，P/I只负责修正，积分增益随误差大小动态减弱，输出饱和时只允许积分向退出饱和方向变化，优点是快速跟随、抗积分饱和、避免锁死在饱和区。角度环pid_angle_n()是非线性变增益PID加预刹车加阻尼加积分限幅，误差大时纯P控制加速度轮廓直接产生角速度目标，误差小时P加积分加微分阻尼，积分仅在低速小误差时累积，含预刹车逻辑和角速度阻尼，优点是快速无超调、抗积分饱和、抗抖动、鲁棒性强。位置外环pid_position_axis_n()本质是状态机加速度轮廓而非传统PID，通过MOVE/HOLD/CRAWL三态和sqrt(2*a*s)速度规划输出速度目标，优点是单向逼近无超调、平滑加减速、适应不同距离分档、抗静摩擦。位置速度内环pid_position_speed_n()是前馈加增量式PID，前馈占主导，修正量限幅，目标跳变时清历史，优点是响应快、修正温和、抗跳变。整体设计采用分层架构，角度环根据误差大小切换控制策略，多处积分限幅、积分弱化、增量式结构保证抗饱和与抗干扰，位置外环采用运动规划思维避免经典PID超调和震荡问题。
+
+部分代码展示
+float pid_angle_n(PidParam_t *pid_n, float target, float value)
+{
+float abs_err;
+float abs_gyro;
+float sign_e;
+float w_abs;
+float w_prof;
+float w_soft;
+float soft_lim;
+float p_scale;
+float stop_need;
+float gyro_z;
+float rate_hold;
+int approaching;
+if (NULL == pid_n)
+{
+zf_assert(0);
+return 0.0f;
+}
+pid_n->target = target;
+pid_n->error = pid_angle_error_normalize(target - value);
+pid_angle_overshoot_update(pid_n->error);
+pid_n->error = pid_limit(pid_n->error, 180.0f, -180.0f);
+abs_err = fabsf(pid_n->error);
+gyro_z = imu.out.gyro_z;
+abs_gyro = fabsf(gyro_z);
+sign_e = (pid_n->error >= 0.0f) ? 1.0f : -1.0f;
+approaching = (pid_n->error * gyro_z) > 0.0f;
+if ((abs_err < ANGLE_DEAD_ERR_DEG) && (abs_gyro <= ANGLE_DEAD_GYRO_DPS))
+{
+pid_n->integral = 0.0f;
+pid_n->out = 0.0f;
+pid_n->error = 0.0f;
+pid_n->last_error = 0.0f;
+pid_5.out = 0.0f;
+pid_5.target = 0;
+pid_5.error = 0.0f;
+pid_5.last_error = 0.0f;
+pid_5.lalast_error = 0.0f;
+pid_5.integral = 0.0f;
+return 0.0f;
+}
+/* 预刹车：高速接近时更早收 */
+stop_need = (abs_gyro * abs_gyro) / (2.0f * ANGLE_STOP_ALPHA);
+if (approaching && (abs_gyro > 50.0f) && (stop_need > (0.70f * abs_err)))
+{
+pid_n->integral = 0.0f;
+w_abs = abs_gyro * 0.70f;
+if (w_abs > ANGLE_PREBRAKE_W_MAX)
+{
+w_abs = ANGLE_PREBRAKE_W_MAX;
+}
+if (w_abs < 40.0f)
+{
+w_abs = 40.0f;
+}
+pid_n->out = -((gyro_z >= 0.0f) ? 1.0f : -1.0f) * w_abs;
+pid_n->out = pid_limit(pid_n->out, (float)pid_n->limit_high, (float)pid_n->limit_low);
+pid_n->last_error = pid_n->error;
+return pid_n->out;
+}
+if (abs_err > ANGLE_SOFT_ERR_DEG)
+{
+pid_n->integral = 0.0f;
+w_prof = sqrtf(2.0f * ANGLE_BRAKE_ALPHA * abs_err);
+w_abs = (w_prof > ANGLE_W_MAX_DPS) ? ANGLE_W_MAX_DPS : w_prof;
+if (abs_err < 40.0f)
+{
+float w_lin = 7.0f * abs_err + 40.0f;
+if (w_abs > w_lin)
+{
+w_abs = w_lin;
+}
+}
+pid_n->out = sign_e * w_abs + pid_n->d * (-gyro_z);
+}
+else
+{
+if (pid_n->error * pid_n->last_error < 0.0f)
+{
+pid_n->integral = 0.0f;
+}
+p_scale = 1.0f;
+soft_lim = ANGLE_SOFT_OUT_LIM;
+if ((abs_err > ANGLE_DEAD_ERR_DEG) && (abs_gyro < ANGLE_SOFT_I_GYRO))
+{
+pid_n->integral += pid_n->error * ANGLE_SOFT_I_STEP;
+pid_n->integral = pid_limit(pid_n->integral, ANGLE_SOFT_I_LIM, -ANGLE_SOFT_I_LIM);
+p_scale = ANGLE_SOFT_P_HOLD;
+if (abs_err > ANGLE_SOFT_HOLD_ERR)
+{
+soft_lim = ANGLE_SOFT_OUT_LIM_HOLD;
+}
+}
+else if (abs_gyro >= ANGLE_SOFT_I_GYRO)
+{
+pid_n->integral = 0.0f;
+}
+w_soft = sign_e * (p_scale * pid_n->p * abs_err) +
+pid_n->i * pid_n->integral +
+(ANGLE_SOFT_D_SCALE * pid_n->d) * (-gyro_z);
+/* 小偏角大角速度：纯 gyro 阻尼（横移起步拧头） */
+if ((abs_err < ANGLE_SOFT_HOLD_ERR) && (abs_gyro > ANGLE_RATE_HOLD_GYRO))
+{
+rate_hold = -ANGLE_RATE_HOLD_K * gyro_z;
+w_soft += rate_hold;
+if (soft_lim < ANGLE_SOFT_OUT_LIM_HOLD)
+{
+soft_lim = ANGLE_SOFT_OUT_LIM_HOLD;
+}
+}
+pid_n->out = pid_limit(w_soft, soft_lim, -soft_lim);
+}
+pid_n->out = pid_limit(pid_n->out, (float)pid_n->limit_high, (float)pid_n->limit_low);
+pid_n->last_error = pid_n->error;
+return pid_n->out;
+}
+3.3 路径规划算法
+对于路径规划算法，我们使用了一种基于状态空间搜索的路径规划算法，其本质是带方向记忆的A*算法变体，传统A*只按格子搜索，可能在相邻格子间频繁转向（如蛇形路径）。本算法把“上一步方向”纳入状态，并在代价中累加转弯次数，因此搜索会优先选择直线前进，减少不必要的转弯，生成更平滑更符合车体运动学的路径。通过多目标代价设计，将代价函数设计成步数代价乘以步数权重加转弯代价乘以转弯权重加风险区代价乘以风险权重的加权和，其中风险区指落入待避让箱子（除豁免箱外）的3乘3邻域内的格点，这种软约束设计只增加代价而不将风险格点设为障碍，确保了在唯一通路必须靠近箱子时仍能规划出路径。同时通过多级比较，先比路径分数再比风险次数再比步数再比转弯数，使搜索结果在边界情况下更稳定减少因并列状态造成的路径跳变。与传统A星相比，本算法状态定义更细能优化转弯，代价函数融合多目标可灵活调控路径偏好，约束方式采用软约束提高鲁棒性，输出同时包含格点序列和动作序列便于执行。
+路径规划模拟情况如图。
+
+部分代码展示
+int astar_find_path(AStarGrid *grid, AStarPoint start, AStarPoint goal, AStarPath *path)
+{
+AStarPoint current;
+AStarNode *start_node;
+if (!grid || !path)
+{
+return 0;
+}
+memset(path, 0, sizeof(*path));
+if (!astar_is_in_bounds(grid, start.row, start.col) || !astar_is_in_bounds(grid, goal.row, goal.col))
+{
+return 0;
+}
+astar_reset_nodes(grid);
+if (!grid->nodes[start.row][start.col].walkable || !grid->nodes[goal.row][goal.col].walkable)
+{
+return 0;
+}
+start_node = &grid->nodes[start.row][start.col];
+start_node->opened = 1;
+start_node->g = 0;
+start_node->h = astar_manhattan(start, goal);
+start_node->f = start_node->h;
+while (astar_pick_best_open_node(grid, &current))
+{
+AStarNode *current_node = &grid->nodes[current.row][current.col];
+current_node->closed = 1;
+if (current.row == goal.row && current.col == goal.col)
+{
+astar_rebuild_path(grid, goal, path);
+return 1;
+}
+astar_try_neighbor(grid, current, goal, current.row - 1, current.col);
+astar_try_neighbor(grid, current, goal, current.row + 1, current.col);
+astar_try_neighbor(grid, current, goal, current.row, current.col - 1);
+astar_try_neighbor(grid, current, goal, current.row, current.col + 1);
+}
+return 0;
+3.4模型训练
+	我们的模型训练基于恩智浦推出的边缘计算软件eIQ Portal平台，这个平台最大的特点就是可视化程度高、操作直观，即使是新手也能快速上手。eIQ Portal支持通过脚本交互的方式，方便地导入我们自己制作、增广和标注的数据集，同时平台内置了种类丰富的训练器，我们可以灵活选择训练参数和增广策略，整个训练流程非常顺畅。在模型选择上，我们采用了eIQ自带的MobileNetV2。MobileNet系列的核心创新是用深度可分离卷积替代传统卷积，这种设计大幅降低了模型的参数量，在保证网络深度足够的前提下，显著压缩了模型体积，非常适合部署在资源受限的边缘设备上。而MobileNetV2在V1的基础上又做了进一步改进，引入了线性瓶颈和倒残差结构，并采用了ReLU6激活函数，这些优化有效提升了模型的特征提取能力，让轻量级网络也能达到不错的识别精度。训练器方面我们选择了Adam，并将alpha值设为0.35。Adam结合了自适应学习率和动量的优点，既能让训练过程更稳定，又能加快收敛速度，对于图像分类这类相对简单的任务来说表现相当出色，同时也是入门级开发者最常用的优化器之一。在超参数配置上，学习率固定为0.0001，batch size则根据训练集规模在32和64之间调整，配合我们设计的数据增广策略，整个训练过程收敛效果理想，模型表现稳定可靠。
+
+
+
+
+
+
+
+开发与调试过程
+4.1开发平台
+单片机程序的开发与编写是在 Keil IDE 下进行的。 Keil 广泛支持大多数，视觉摄像头的代码编写以及模型的训练则在PyCharm以及OpenMV IDE平台进行
+4.2 软件调试过程
+	在项目开发过程中，我们首先将硬件层面的工作落实到位——从电源供电、主控芯片、传感器到电机驱动，每一个硬件模块都经过严格的功能验证和稳定性测试。只有在硬件基础可靠的前提下，后续的软件调试才有意义。我们着手进行视觉模块与电控模块的联合调试。视觉部分由OpenMV摄像头负责图像采集与识别，电控部分则基于Keil开发环境运行主控程序。联调过程中，我们充分利用了OpenMV IDE自带的串口终端，实时查看视觉模块输出的识别结果、坐标信息和状态日志，同时配合Keil软件强大的断点调试功能.这种“串口打印+硬件断点”的组合调试方式，让我们能够同时掌握视觉端和电控端的运行状态。在电机PID控制系数的整定环节，我们采用了一套由内而外、先粗后细的调节策略。具体操作上，我们先增大积分系数I，目的是让系统在启动阶段能够快速积累误差修正量，使实际速度能够迅速从零上升到目标速度，缩短上升时间，增强系统的响应积极性。当速度曲线能够较快跟踪目标后，我们再逐步增大比例系数P，利用P项的即时纠偏能力来抑制速度曲线的超调和振荡，使系统在稳态运行时更加平稳。
+主要技术参数
+5.1 基本参数
+车模基础参数，小车长28cm，宽21cm，高15cm。
+5.2 传感器参数
+编码器4个，Open Art摄像头 2 个，陀螺仪IMU963RA 1个。
+
+总结
+智能车竞赛犹如一场漫长的马拉松，考验着耐力与恒心，唯有持续精进方能抵达终点。这是我们第二年参加智能车竞赛，第一年由于团队的经验不足以及比赛现场的光线强度等种种原因未能完赛，今年我们从头再来，历经数月攻坚，如今成功闯入总决赛。每一步成长，都凝聚着成员们脚踏实地的付出与对卓越的执着。这项竞技的魅力在于软硬件的深度耦合——两者如车之两轮，缺一不可。从硬件电路的精密设计、PCB制作与车模搭建，到软件算法的麦轮全向控制，再到以摄像头为核心实现图像识别与感知，团队全程自主攻坚。无数次的调试与试错中，成员们的技能不断精进。备赛路上，团队始终紧密协作，遇到问题便围坐讨论、集思广益。有人彻夜调试代码，有人反复优化机械结构，有人奔波协调资源……正是不懈付出与团结精神，支撑我们从零起步，最终站上全国赛的舞台。日拱一卒，功不唐捐，我们始终相信热爱的力量。
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+附录1 部分主程序源代码
+int main(void)
+{
+clock_init(SYSTEM_CLOCK_600M); // 不可删除
+// debug_init();                  // 调试端口初始化
+//  XXX:调试端口初始化 暂关闭
+uart_init(UART_1, APP_UART_BAUDRATE, APP_UART1_TX_PIN, APP_UART1_RX_PIN);
+uart_init(UART_3, APP_UART_BAUDRATE, APP_UART3_TX_PIN, APP_UART3_RX_PIN);
+uart_init(UART_4, APP_UART_BAUDRATE, APP_UART4_TX_PIN, APP_UART4_RX_PIN);
+ips_init();
+key_init(10);
+system_delay_ms(300); // 等待主板其他外设上电完成
+#if (UART1_RX_ENABLE == 1) && ((TEST_MODE == 12) || (TEST_MODE == 13) || (TEST_MODE == 14) || (TEST_MODE == 15) || (TEST_MODE == 16))
+uart_rx_interrupt(UART_1, uart_rx_open); // 12~16 在线收 VOFA 改参
+interrupt_set_priority(LPUART1_IRQn, 1);
+#endif
+#if (TEST_MODE == 21) || (TEST_MODE == 32) || (TEST_MODE == 33) || (TEST_MODE == 34) || (TEST_MODE == 42)
+camera_uart_rx_init_selected();
+#endif
+pid_init();
+motor_init();   // 轮子初始化
+encoder_init(); // 编码器初始化
+imu_init(); // 陀螺仪初始化
+// all_uart_init();
+//  蜂鸣器和指示灯初始化
+base_init();
+#if TEST_MODE == 61
+/* 先刷一帧标题再接收，便于确认屏/主循环活着 */
+ips200_clear();
+ips200_show_string(64, 0, "REMOTE 61");
+ips200_show_string(16, 40, "BOOT OK wait BT");
+bluetooth_init();
+wheel_target_clear();
+wheel_pwm_clear();
+motor_move();
+#endif
+system_delay_ms(300);
+pit_ms_init(PIT_CH, 1);     // 编码器周期用到
+interrupt_global_enable(0); // 全局中断
+while (1)
+{
+#if (TEST_MODE == 21) || (TEST_MODE == 32) || (TEST_MODE == 33) || (TEST_MODE == 34) || (TEST_MODE == 42)
+if ((TEST_MODE == 21) && key1.short_flag)
+{
+key1.short_flag = 0;
+task21_manual_reset();
+}
+if ((TEST_MODE == 32) && key1.short_flag)
+{
+key1.short_flag = 0;
+key1_request_mission_start(task1_prestart_begin);
+}
+if ((TEST_MODE == 42) && key1.short_flag)
+{
+key1.short_flag = 0;
+#if DEBUG_LOG_UI_ENABLE == 1
+if (debug_log_ui_is_open())
+{
+/* 日志页：KEY1 只打包串口 */
+debug_log_dump_uart1();
+}
+else if (m42_ui_page == M42_UI_PAGE_VERIFY)
+{
+/* 路径复现页：KEY1=收图（T1 再规划；T2/T3 装几何） */
+if ((CAR_IDLE == Car_State) || (CAR_FINISH == Car_State))
+{
+task1_probe_map_plan_begin();
+}
+else
+{
+debug_log_push("PROBE busy ignore");
+}
+}
+else
+#endif
+if ((CAR_IDLE == Car_State) || (CAR_FINISH == Car_State))
+{
+m42_ui_set_page(M42_UI_PAGE_MAP);
+key1_request_mission_start(task1_prestart_begin);
+}
+}
+#if TEST_MODE == 42
+/* KEY1 长按：中途卡死也可安全重开（不要求 IDLE/FINISH） */
+if (key1.long_flag)
+{
+key1.long_flag = 0;
+#if DEBUG_LOG_UI_ENABLE == 1
+if (debug_log_ui_is_open())
+{
+/* 日志页长按不重启任务 */
+}
+else
+#endif
+{
+m42_ui_set_page(M42_UI_PAGE_MAP);
+debug_log_push("M42 KEY1 long force restart");
+key1_request_mission_start(task1_prestart_begin);
+}
+}
+#endif
+if ((TEST_MODE == 32) && key2.short_flag)
+{
+key2.short_flag = 0;
+task1_prestart_local_begin();
+}
+if ((TEST_MODE == 42) && key2.short_flag)
+{
+key2.short_flag = 0;
+if (m42_ui_page == M42_UI_PAGE_LOG)
+{
+debug_log_ui_page_up(); /* 日志：更旧 */
+}
+else if (m42_ui_page == M42_UI_PAGE_VERIFY)
+{
+extern void m42_sim_key2_short(void);
+m42_sim_key2_short(); /* T1/T2/T3 播放暂停 */
+}
+}
+#if TEST_MODE == 42
+if (key2.long_flag)
+{
+key2.long_flag = 0;
+if (m42_ui_page == M42_UI_PAGE_VERIFY)
+{
+extern void m42_sim_key2_long(void);
+m42_sim_key2_long();
+key2.short_flag = 0;
+}
+}
+#endif
+if ((TEST_MODE == 33) && key1.short_flag)
+{
+key1.short_flag = 0;
+if (debug_log_ui_is_open())
+{
+/* 日志页：打包经 UART1 发出，不启动任务 */
+debug_log_dump_uart1();
+}
+else
+{
+key1_request_mission_start(task2_prestart_begin);
+}
+}
+if ((TEST_MODE == 34) && key1.short_flag)
+{
+key1.short_flag = 0;
+if (debug_log_ui_is_open())
+{
+debug_log_dump_uart1();
+}
+else
+{
+key1_request_mission_start(task3_prestart_begin);
+}
+}
+if ((TEST_MODE == 33) && key2.short_flag)
+{
+key2.short_flag = 0;
+if (debug_log_ui_is_open())
+{
+debug_log_ui_page_up(); /* 日志：上页（更旧） */
+}
+else
+{
+global_camera_request_map();
+}
+}
+if ((TEST_MODE == 34) && key2.short_flag)
+{
+key2.short_flag = 0;
+if (debug_log_ui_is_open())
+{
+debug_log_ui_page_up();
+}
+}
+if (key3.short_flag)
+{
+key3.short_flag = 0;
+if ((TEST_MODE == 42) && (m42_ui_page == M42_UI_PAGE_VERIFY))
+{
+extern void m42_sim_task_cycle(void);
+m42_sim_task_cycle(); /* T1→T2→T3 */
+ips200_clear();
+task2_ips_force_redraw = 1;
+}
+else if (((TEST_MODE == 33) || (TEST_MODE == 34) || (TEST_MODE == 42)) &&
+debug_log_ui_is_open())
+{
+debug_log_ui_page_down(); /* 日志：下页（更新） */
+}
+else if (TEST_MODE == 42)
+{
+if ((CAR_IDLE == Car_State) || (CAR_FINISH == Car_State))
+{
+/* 地图页探路：G,1 收图 + 规划 */
+task1_probe_map_plan_begin();
+}
+else
+{
+debug_log_push("PROBE busy ignore");
+}
+}
+else if ((TEST_MODE == 33) || (TEST_MODE == 34))
+{
+task2_manual_request_box();
+}
+else if (TEST_MODE != 21)
+{
+global_camera_request_pose();
+}
+}
+#if DEBUG_LOG_UI_ENABLE == 1
+/* 长按松手若再带 short，用此标志吃掉，避免日志页“开了又关” */
+static uint8_t key4_ignore_short_after_long = 0;
+#endif
+/* 先处理 KEY4 长按，再处理短按，避免同帧 long+short 双翻转 */
+#if DEBUG_LOG_UI_ENABLE == 1
+if ((TEST_MODE == 33) || (TEST_MODE == 34) || (TEST_MODE == 42))
+{
+static uint8_t key4_long_handled = 0;
+if (key4.long_flag)
+{
+key4.long_flag = 0;
+if (!key4_long_handled)
+{
+key4_long_handled = 1;
+#if TEST_MODE == 42
+m42_ui_page_next(); /* 与短按一致：循环翻页 */
+#else
+debug_log_ui_toggle();
+#endif
+key4_ignore_short_after_long = 1;
+key4.short_flag = 0;
+}
+}
+if (!key4.long_latched)
+{
+key4_long_handled = 0;
+}
+}
+#endif
+if (key4.short_flag)
+{
+key4.short_flag = 0;
+if (TEST_MODE == 21)
+{
+task21_start();
+}
+else if ((TEST_MODE == 33) || (TEST_MODE == 34))
+{
+if (!debug_log_ui_is_open())
+{
+task2_manual_request_goal();
+}
+}
+#if DEBUG_LOG_UI_ENABLE == 1
+else if (TEST_MODE == 42)
+{
+/* 42 短按 KEY4：地图 → 规划检验 → 日志 → … */
+if (key4_ignore_short_after_long)
+{
+key4_ignore_short_after_long = 0;
+}
+else
+{
+m42_ui_page_next();
+}
+}
+#endif
+else if (TEST_MODE != 42)
+{
+global_camera_request_map();
+}
+}
+#endif
+camera_uart_task();
+#if (TEST_MODE == 32) || (TEST_MODE == 33) || (TEST_MODE == 34) || (TEST_MODE == 42)
+/* KEY1 重标定完成后在主循环启动 prestart（不在 1ms 中断里） */
+key1_poll_pending_start();
+#endif
+#if TEST_MODE == 32
+task1_background_task();
+#elif (TEST_MODE == 33) || (TEST_MODE == 34)
+task2_background_task();
+#elif TEST_MODE == 42
+/* 后台调度跟 mission phase，不再用 Car_Task 分支（Mission 唯一真相） */
+mission42_loop_tick_bg();
+/* KEY3 探路：IDLE 时 Mission 不跑 T1 bg，需单独轮询收图后规划 */
+task1_probe_background_task();
+m42_ui_frame_tick++; /* 路径复现动画节拍 */
+{
+extern void m42_sim_tick(void);
+m42_sim_tick();
+附录2车模技术检查表
+第二十一届全国大学生智能汽车竞赛
+车模技术检查表
+一、车模技术检查表
+二、车模照片
+1、车模外观照片
+车模平放时，俯视照片，前视图，左或右（任选）视图照片.
+
+
+▲ 图1.1 车模照片示例
+
+2、电路板PCB图
+车模中所有电路板正反面照片。对于自制电路板，需要使用红色方框标出队伍独自LOGO所在处。
+
+
+
+
+▲ 图1.2 电路板照片
+
+3、电路板原理图
+
+▲ 图1.4 主板、降压模块及驱动电路图
+
+
+
+
+
+===== TABLE 1 =====
+队伍名称 | 尖峰睡大觉 | 尖峰睡大觉 | 尖峰睡大觉 | 尖峰睡大觉
+参赛学校 | 浙江师范大学 | 浙江师范大学 | 浙江师范大学 | 浙江师范大学
+赛题组组别 | 智能视觉 | 智能视觉 | 智能视觉 | 智能视觉
+检查项目 | 规格 （选手自行填写） | 符合 （） | 不符合（） | 备注
+1.车模类型是什么？ | M车 |  |  | 如果是自制车模，请标明自制。
+车模整体尺寸： （包括传感器在内）长，宽，高(mm) | 28cm 21cm 15cm |  |  | 今年比赛车模尺寸没有限制
+传感器种类、规格(型号)数量。 是否使用自带MCU的成品传感器模块？型号是什么？ | 陀螺仪（IMU963RA） 否 |  |  | 
+控制转向舵机型号是否自行改装舵机？ 防伪易损标签是否完整？ | 无 |  |  | 
+1. 是否增加伺服电机？ 2. 如果有种类、个数和作用？ | 无 |  |  | 
+电路中微处理器型号和个数？ | RT1064,1个 |  |  | 
+是否具有其它可编程器件，个数与作用？ | 无 |  |  | 
+是否有无线通讯装置？ 如果有种类和个数？ | 无 |  |  | 
+电池的种类、规格和数量？ | 30c，4000mah，1个 |  |  | 
+1. 是否使用GPS导航？ 2. 是否没有使用RTK？ | 无 无 |  |  | 
+后轮驱动电机是否是原车模电机？ 是否具有防伪易损标签？ | 是 是 |  |  | 
+轮胎是否是原车同款轮胎？ 轮胎的尺寸（直径和宽度）是否小于等于原车膜尺寸？ | 是 否 |  |  | 
+车轮轴距、轮距是否改装？ 改装参数是什么？ | 否 |  |  | 
+车模驱动轮传动机构是否改装？ 改装方式是什么？ | 否 |  |  | 
+是否更换过原装车模中的机械元器件？更换后的规格 是什么？ | 否 |  |  | 。
+车模电路板个数及功能。 其中是否有购买成品电路板？ | 4个，主板1个，驱动板2个，降压模块1个 无 |  |  | 
+自制电路板是否标记有学校名称、队伍名称、制作日期等信息？ 标示信息在PCB的哪一层？ | 是（主板：浙江师范大学，尖峰睡大觉，2026-07-01）（驱动板：浙江师范大学，尖峰睡大觉，2026-07-09）（降压模块：浙江师范大学，尖峰睡大觉，2026-07-09） 主板：顶层 驱动板：顶层 降压模块：底层 |  |  | 请在表格中注明电路板队伍信息的内容。
+其它待说明内容 |  |  |  | 
+检查人员签名： | 检查意见： | 检查意见： | 检查意见： | 检查意见：

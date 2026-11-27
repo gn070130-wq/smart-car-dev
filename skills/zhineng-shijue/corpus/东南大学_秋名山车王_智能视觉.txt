@@ -1,0 +1,262 @@
+第二十一届全国大学生
+智能汽车竞赛
+技 术 报 告
+智能视觉组：双视觉感知与全局推箱规划智能车设计
+学    校：东南大学
+队伍名称：秋名山车王
+参赛队员：常泽旭  黄崎峰  袁苏源  庞轶铭
+带队教师：黄永明  赵冰雅
+2026 年 8 月
+
+技术报告和研究论文使用授权说明
+本人完全了解全国大学生智能汽车竞赛关于技术报告保存、汇编和使用的有关规定，同意竞赛组织方按竞赛管理需要保存和使用本报告。除报告中已注明的资料外，本报告所述整车设计、控制程序与算法均为本队参赛作品的技术总结。
+本授权说明仅用于本次竞赛技术报告提交与资料归档。
+
+
+
+
+参赛队员签名：
+
+日    期：2026 年 8 月18日
+
+目  录
+摘要	V
+第一章  引言	1
+第二章  机械与电气系统设计	2
+第三章  视觉感知与目标识别	3
+第四章  运动控制与视觉修正	5
+第五章  全局任务规划与推箱策略	6
+第六章  开发调试与主要技术参数	7
+第七章  结论	8
+参考文献	I
+附录A  核心算法程序节选	III
+附录B  电路原理图	VII
+
+摘  要
+针对智能视觉组的地图识别、目标分类、箱体搬运和TNT开路任务，本文设计了一套以RT1064为主控、双OpenART为视觉单元、四轮麦克纳姆底盘为执行机构的智能车系统。地图视觉负责14×10有效区域识别、车体定位与偏差输出，目标视觉负责数字和图案分类。主控在16×12逻辑地图上统一完成侦察、推箱、TNT和返航决策，并通过编码器、IMU与视觉反馈构成运动闭环。系统采用动态四点标定、置信度分级识别、滚动全局规划、识别阶段顺路推箱和视觉里程计重定基等方法，以减少无效往返和停车等待。
+关键词：智能车；OpenART；麦克纳姆轮；全局规划；视觉修正
+
+第一章  引言
+1.1 设计背景与目标
+智能视觉组任务要求车模在规则栅格环境中完成地图感知、数字/图案识别、箱体搬运、TNT开路及自主返航等任务。针对感知、规划和控制耦合度高，以及麦克纳姆轮运动易产生累计位置误差等问题，本车采用RT1064主控、双OpenART视觉单元和四轮麦克纳姆底盘，目标是在保证任务可完成性的前提下减少无效往返、识别等待和不必要停车。[1]
+1.2 总体技术方案
+地图OpenART完成地图锁定并向RT1064发送栅格信息；
+主控根据当前科目进入识别规划，选择观察点并请求数字或图案识别；
+识别结果更新后重新评估箱-目标匹配、顺路推箱与TNT开路；
+麦克纳姆底盘按规划路径执行，关键位置使用视觉偏差修正；
+任务结束后返航至发车区并完成强制校准。
+软件采用事件驱动状态机。运动目标下发后只有在IsMoveDone()确认小车实际到位时才更新逻辑位置，避免“命令已发送但车辆尚未到位”时提前触发识别或规划。
+
+第二章  机械与电气系统设计
+2.1 麦克纳姆底盘与传感器布置
+车模采用四轮麦克纳姆结构，可在车体航向基本不变时实现纵向、横向和斜向平移，减少栅格任务中的额外转向。地图OpenART安装位置以完整覆盖比赛区域为目标，识别OpenART面向近距离目标；两套相机功能分离，避免地图、位姿和分类任务频繁切换视觉参数。
+2.2 主控、驱动与接口
+主控制器采用逐飞RT1064核心板。两套OpenART通过独立UART与主控通信；四路电机驱动分别控制FL、FR、RL、RR四个车轮，四路编码器反馈轮速；IMU提供角速度与航向信息。底层控制以1 ms周期更新轮速、车体速度和姿态相关状态。[2]
+2.3 电源与抗干扰
+电机大电流路径与OpenART、UART、IMU等小信号链路分区布置，数字与视觉负载附近设置局部去耦。主电池尽量靠近车体几何中心和底板放置，以降低急停、横移时的姿态扰动。
+
+第三章  视觉感知与目标识别
+3.1 地图识别与动态标定
+主控使用16×12逻辑地图，其中最外圈为边界墙，实际视觉识别区域为14×10。地图OpenART采集QVGA（320×240）图像，对场地区域进行透视展开后按14列、10行分格，使颜色分类、车辆定位和主控坐标使用同一几何基准。
+为减小相机安装偏差和轻微振动造成的投影误差，程序沿参考四边法线搜索颜色突变，在多组锚点上拟合四条边并求交得到候选四点。候选结果通过面积、边长、角点漂移和拟合误差检查；当前最多使用5帧候选窗口并要求至少2帧稳定一致，失败时继续使用最近一次有效四点。
+3.2 颜色分类与车体定位
+透视展开后，在各栅格内部统计RGB、饱和度和颜色比例特征，用于区分墙体、空地、箱子、目标点和TNT。针对屏幕边缘偏暗的问题，颜色判断优先使用相对颜色比例和饱和度，并保留14×10全格色准采集模式。
+车体位置由绿色与青色两个相邻标志联合确定。程序对双色连通域的面积、填充率、间距和重叠关系进行筛选，并以双色组合几何中心映射到栅格坐标，得到当前grid_x、grid_y以及相对目标格中心的dx、dy。
+3.3 数字与图案识别
+近距离OpenART在上电时一次性加载数字模型与图案模型并保持常驻。主控发送“0”请求数字识别、发送“1”请求图案识别，同一请求处理期间的重复命令不重置稳定计数。[3]
+识别采用置信度分级的时间一致性策略：置信度不低于0.70时连续2帧一致即可确认；0.50～0.70时要求连续3帧一致；低于0.50的结果不作为正常输出。确认结果通过UART重复发送3次，每次间隔8 ms。
+表3.1  视觉识别主要参数
+
+第四章  运动控制与视觉修正
+4.1 麦克纳姆运动控制
+控制程序根据目标全局速度和当前航向角转换得到车体坐标系速度，再通过麦克纳姆逆运动学生成四轮目标速度。编码器反馈四轮实际速度，并反解车体实际vx、vy和角速度，用于速度闭环、停车判定和里程计积分。
+ωFL=(vx−vy−Lω)/r，  ωFR=(vx+vy+Lω)/r
+ωRL=(vx+vy−Lω)/r，  ωRR=(vx−vy+Lω)/r     （4-1）
+4.2 编码器、IMU与里程计
+编码器用于估计纵向、横向速度和行驶距离，IMU提供角速度与航向信息。程序启用四元数航向卡尔曼处理，并用航向角完成全局坐标与车体坐标之间的速度变换。VOFA+调试时记录IMU角速度、航向角、X/Y位置、目标/实际vx、vy以及四轮实际速度，用于区分轮胎滑移和航向控制误差。
+4.3 视觉闭环修正
+麦克纳姆轮横移、斜移和推箱时容易产生轮胎滑移，纯编码器里程计会出现累计误差。因此RT1064在关键位置读取OpenART输出的dx、dy，先检查网格一致性和偏差范围，再按偏差大小分级修正。普通修正死区为0.04 cell，普通最大有效偏差为0.50 cell。
+视觉修正完成后，程序不仅移动小车，还重定基位置相关的里程计变量，避免下一次绝对栅格控制把刚完成的物理修正反向抵消。对很小的日常偏差，在确认下一段为安全空车直线时可延后补偿；推箱、TNT、转向和最终发力点等关键动作仍采用停车修正。
+4.4 安全路段连续运动
+为减少“走一格停一次”的时间损失，安全的空车EXEC/RETURN内部路径点允许连续速度矢量衔接；识别点、推箱、TNT、视觉修正点和不安全转向仍保持完整停车。当前软件速度指令上限为2.1 m/s，末端稳定速度约0.22 m/s，实际比赛速度由路径和剩余距离动态决定。
+
+第五章  全局任务规划与推箱策略
+5.1 识别阶段滚动全局规划
+底层空车局部路径采用A*类搜索[4]；在此基础上，早期最近邻识别策略容易在地图两端反复往返。当前版本把剩余箱子和目标的可观察边、观察位置、进入方向与相机朝向一起建模，并使用宽度受限的beam search比较完整剩余识别顺序。规划器只提交当前第一步；每完成一次识别、推箱、TNT或地图变化后立即重新规划。
+5.2 识别与推箱联合优化
+在科目二、科目三中，当箱体ID与目标ID已经形成真实匹配且小车正处于可行发力位置时，程序会比较“当前提前推箱+剩余识别+全部推箱+返航”与“不提前推箱”的总代价。只有提前推动不会降低后续可达性且总代价更优时才执行，从而减少之后回到已路过区域的距离。
+对于多个相同数字目标点，逻辑地图仅在箱体真正完成目标时消耗对应目标；若箱体只是经过同ID目标后离开，则恢复目标地面属性，避免目标被错误删除。
+5.3 TNT开路与前瞻评估
+TNT决策首先检查未识别对象是否存在可达观察位，并进一步检查当前已知箱-目标集合的未来可推匹配。若观察路径或未来推箱拓扑不足，则进入TNT开路规划。对于每个可达TNT-墙体组合，程序模拟爆炸后的地图并评价识别可达性、匹配覆盖、完整推箱与返航可行性；仅在完整任务方案可行时提交TNT。
+5.4 返航
+任务完成后根据当前地图规划返回发车区(1,5)。返航途中关闭普通视觉修正，避免重复停车；到达发车区后执行一次强制视觉校准，并清理上一轮识别、TNT、路径和运动临时状态。
+
+第六章  开发调试与主要技术参数
+6.1 开发与调试
+程序在Keil ARMCLANG 6.19环境下编译。视觉算法先在OpenMV IDE中分别验证地图、位姿、数字和图案识别，再与RT1064联调。运动控制通过VOFA+观察14个关键通道，结合多张比赛地图进行识别顺序、方向代价、TNT候选和视觉修正参数回归测试。
+6.2 主要技术参数
+表6.1  主要技术参数
+
+第七章  结论
+本车以双OpenART分别承担地图/位姿与数字/图案识别，以RT1064统一完成状态机、全局规划和运动控制。围绕比赛中影响完成率和执行时间的关键环节，实现了动态四点标定、分级多帧识别、滚动全局侦察、识别阶段顺路推箱、TNT前瞻规划以及视觉里程计重定基。系统整体按照“关键位置保证精度、安全路段减少停车”的原则协调感知、规划和控制。
+目前系统精度主要受屏幕边缘亮度差异、麦克纳姆轮滑移和目标识别置信度波动影响。后续可通过进一步完善色准参数、优化运动误差模型并扩充识别样本，提高不同场地条件下的稳定性。
+
+参考文献
+[1] 第二十一届全国大学生智能汽车竞赛智能视觉组比赛规则与技术报告要求。
+[2] NXP Semiconductors. i.MX RT1064 Crossover Processor Reference Manual.
+[3] OpenMV Documentation. TensorFlow Lite Classification and MicroPython API.
+[4] Hart P. E., Nilsson N. J., Raphael B. A Formal Basis for the Heuristic Determination of Minimum Cost Paths.
+
+附录A  核心算法程序节选
+以下代码节选自当前RT1064任务规划程序，仅保留能够说明识别阶段“顺路推箱”和TNT强制开路判定的核心逻辑。
+A.1 识别阶段联合决策
+/* 当前格若正好可以直接推动一组已匹配箱子，则先顺路完成这一组。 */
+if (TryStartNearbyMatchedPushDuringRecon())
+{
+    break;
+}
+
+/* 观察不可达或未来可推匹配不足时，优先 TNT 开路。 */
+if (NeedTntToOpenReconPath() ||
+    NeedTntToOpenFuturePushPath())
+{
+    sys_state = TNT_PLAN;
+    break;
+}
+
+if (RECON_OPPORTUNISTIC_TNT_ENABLE != 0U &&
+    TryChooseNearbyTntDuringRecon())
+{
+    break;
+}
+A.2 TNT必要性判定
+static bool NeedTntToOpenReconPath(void)
+{
+    if (!IsFixedTntEnabledStage() || recon_finished ||
+        !has_tnt || tnt_count == 0)
+        return false;
+
+    return CountUnreachableReconTargetsOnMap(map_data, car_pos) > 0;
+}
+
+static bool NeedTntToOpenFuturePushPath(void)
+{
+    if (!IsFixedTntEnabledStage() || recon_finished ||
+        !has_tnt || tnt_count == 0 ||
+        box_count == 0 || target_count == 0)
+        return false;
+
+    return CountPushMatchingDeficitOnMap(map_data) > 0U;
+}
+A.3 视觉偏差分级修正
+static float CalculateVisualCorrectionCell(float value)
+{
+    float value_abs = fabsf(value);
+    float gain;
+    float max_step;
+    float correction;
+
+    if (value_abs <= VISUAL_CORRECTION_DEADBAND_CELL)
+    {
+        return 0.0f;
+    }
+
+    if (value_abs <= VISUAL_CORRECTION_SMALL_OFFSET_CELL)
+    {
+        gain = VISUAL_CORRECTION_SMALL_GAIN;
+        max_step = VISUAL_CORRECTION_SMALL_MAX_STEP_CELL;
+    }
+    else if (value_abs <= VISUAL_CORRECTION_MEDIUM_OFFSET_CELL)
+    {
+        gain = VISUAL_CORRECTION_MEDIUM_GAIN;
+        max_step = VISUAL_CORRECTION_MEDIUM_MAX_STEP_CELL;
+    }
+    else
+    {
+        return value * VISUAL_CORRECTION_LARGE_GAIN;
+    }
+
+    correction = value * gain;
+    if (correction > max_step)
+    {
+        return max_step * VISUAL_CORRECTION_AMPLITUDE_SCALE;
+    }
+    if (correction < -max_step)
+    {
+        return -max_step * VISUAL_CORRECTION_AMPLITUDE_SCALE;
+    }
+
+    return correction * VISUAL_CORRECTION_AMPLITUDE_SCALE;
+}
+A.4 安全空车路径非停车速度融合
+    if (empty_move_nonstop_blend_active)
+    {
+        uint32_t elapsed_ms =
+            (uint32_t)control_time_ms - empty_move_nonstop_blend_start_ms;
+        float blend_alpha =
+            (elapsed_ms >= EMPTY_MOVE_NONSTOP_BLEND_MS) ?
+            1.0f :
+            (float)elapsed_ms / (float)EMPTY_MOVE_NONSTOP_BLEND_MS;
+        float next_direction_norm =
+            sqrtf((float)current_move_dir_x * (float)current_move_dir_x +
+                  (float)current_move_dir_y * (float)current_move_dir_y);
+        float blend_to_vx_mps =
+            EMPTY_MOVE_NONSTOP_JUNCTION_SPEED_MPS *
+            (float)current_move_dir_x / next_direction_norm;
+        float blend_to_vy_mps =
+            EMPTY_MOVE_NONSTOP_JUNCTION_SPEED_MPS *
+            (float)current_move_dir_y / next_direction_norm;
+
+        target_v_global_x =
+            empty_move_nonstop_blend_from_vx_mps +
+            blend_alpha *
+                (blend_to_vx_mps -
+                 empty_move_nonstop_blend_from_vx_mps);
+        target_v_global_y =
+            empty_move_nonstop_blend_from_vy_mps +
+            blend_alpha *
+                (blend_to_vy_mps -
+                 empty_move_nonstop_blend_from_vy_mps);
+
+        if (elapsed_ms >= EMPTY_MOVE_NONSTOP_BLEND_MS)
+        {
+            ResetEmptyMoveNonstopTransition();
+        }
+    }
+其余底层驱动、库文件及与核心算法无关的工程代码不在报告中重复列出。
+
+附录B  电路原理图
+B.1 驱动板原理图
+
+图B.1  DRV8701电机驱动板原理图
+B.2 主板原理图（一）
+
+图B.2  RT1064主板接口与控制电路原理图
+B.3 主板原理图（二）
+
+图B.3  RT1064主板电源与稳压电路原理图
+
+===== TABLE 1 =====
+项目 | 参数
+图像输入 | RGB565，QVGA 320×240
+有效地图 | 14×10
+数字/图案命令 | 0 / 1
+高置信度确认 | ≥0.70，连续2帧
+中置信度确认 | 0.50～0.70，连续3帧
+正常输出下限 | 0.50
+UART结果发送 | 重复3次，间隔8 ms
+
+===== TABLE 2 =====
+项目 | 参数
+主控制器 | NXP i.MX RT1064
+视觉单元 | OpenART ×2
+底盘 | 四轮麦克纳姆
+轮速编码器 | 4路
+IMU | 1套
+逻辑地图 | 16×12
+有效视觉地图 | 14×10
+地图图像 | QVGA 320×240
+底层控制周期 | 1 ms
+软件速度指令上限 | 2.1 m/s
+传感器种类/数量 | OpenART×2，编码器×4，IMU×1
+额外伺服电机数量 | 0

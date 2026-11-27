@@ -1,0 +1,423 @@
+第二十一届全国大学生
+智能汽车竞赛
+
+技 术 报 告
+
+
+
+学    校： 菏泽学院
+队伍名称： 破界者
+参赛队员： 刘浩宇 
+张睿
+张懿韬 
+
+带队教师： 李明聪
+李新雨
+
+
+关于技术报告和研究论文使用授权的说明
+
+本人完全了解全国大学生智能汽车竞赛关保留、使用技术报告和研究论文的规定，即：参赛作品著作权归参赛者本人，比赛组委会可以在相关主页上收录并公开参赛作品的设计方案、技术报告以及参赛模型车的视频、图像资料，并将相关内容编纂收录在组委会出版论文集中。
+
+
+
+参赛队员签名：刘浩宇 张睿 张懿韬
+
+带队教师签名：李明聪 李新雨
+
+日期：2026.8.15
+
+
+
+
+
+
+
+
+
+
+
+	
+
+第一章 引言
+随着科技的不断进步，国家对智能化产业的产品和创新的关注也在日益上 升，智能化技术几乎渗透到所有的领域，我们的生活方式随着智能化的普及发 生了巨大改变。 
+全国大学生智能车竞赛以“立足培养，重在参与，鼓励探索，追求卓越” 为指导思想，旨在促进高等学校素质教育，培养大学生的综合知识运用能力、 基本工程实践能力和创新意识，激发大学生从事科学研究与探索的兴趣和潜能, 倡导理论联系实际、求真务实的学风和团队协作的人文精神，为优秀人才的脱 颖而出创造条件。 
+全国大学生智能车竞赛，以智能寻迹小车为载体，包括了多个组别，对小车的速度、智能启停、和自主寻路等多项目标进行考核，培养了大学生的自主创新、综合实践等多方面能力，涵盖多方面的知识，具有很强的实际考核意义。 
+本次比赛采用四轮C车模，硬件平台采用STC32G144K246， 软件平台使用Keil uVision5编程软件。
+本文介绍我们智能车设计流程,涉及传感器选择、控制优化、电路板设计等方面。整车工作原理是通过总钻风140°广角摄像头采集赛道图像，结合IMU660RA姿态传感器和编码器的多源数据，实现智能车在赛道上的快速稳定行驶，并完成激光打靶任务。
+在进行大量的实践之后，表明我们的系统设计方案完全是可行的。
+第二章 系统总体方案设计
+2.1 设计思路
+以快速、稳定为目标，确定视觉为主、传感器融合、电机闭环控制、负压增大抓地的设计思路。总钻风摄像头提取赛道边线与中线，IMU监测车身姿态，编码器反馈车速，PID控制电机速度，舵机控制转向，双无刷电机产生负压增强抓地，七路紫外激光完成打靶。
+2.2 系统总体架构
+智能车系统的总体工作模式为：总转风140°无畸变广角摄像头采集赛道灰度图像，输入到STC32G144K246，经过对比度搜索提取赛道边线和中线；通过编码器检测车速，通过IMU660RA六轴姿态传感器采集车身姿态，转向舵机和驱动电机采用PID控制，通过PWM控制DRV8701E驱动电路调整RC380电机的功率；车速目标值由默认值和基于图像处理的赛道曲率优化策略综合控制；两个银燕2207无刷电机产生负压增强抓地，七路405nm紫外激光完成打靶任务。
+该系统总共包括9个子系统：电源模块、主控制器模块、赛道采集模块、姿态与速度检测模块、伺服器（舵机）控制模块、电机控制模块、负压模块、激光打靶模块、调试模块。
+1、主控制器模块
+使用STC32G144K246最小系统板作为智能车系统的主控制器，该芯片为32位8051内核，配备144KB Flash程序存储空间，具有多路PWM、ADC、UART、SPI、I2C等外设接口，满足智能车多传感器融合与实时控制的设计需求。
+2、赛道采集模块
+使用总转风140°无畸变广角镜头作为光电传感器进行赛道图像采集，输出灰度图像，通过对比度搜索算法提取赛道的边线和中线信息。
+3、姿态与速度检测模块
+姿态传感器使用IMU660RA六轴惯性测量单元采集车身加速度和角速度；速度传感器使用正交编码器读取左右轮实时速度，用于电机闭环控制。
+4、舵机控制模块
+使用S-U400舵机进行车模转向控制，单独由7V电源供电以保证快速响应，控制信号为标准PWM。
+5、电机控制模块
+使用RC380电机进行车模速度控制，由DRV8701E双路驱动板驱动，驱动板接收主板PWM信号控制电机功率。
+
+
+
+6、负压模块
+使用两个银燕2207 1800KV无刷电机产生向下负压增强抓地，由以STC32G12K128为主控的无刷电调驱动板控制，主板通过两路PWM信号调节电机转速。
+7、激光打靶模块
+使用七个405nm大功率紫外激光头完成激光打靶任务，每路由主控GPIO经三极管驱动，主板设七路激光接口，软件控制点亮时序和组合模式。
+8、调试模块
+调试模块由IPS屏幕、五个调试按键、蜂鸣器组成，用于系统状态显示、参数设置、模式切换和故障报警。
+9、电源模块
+电源模块分为四类：第一类为7V舵机电压，单独给快速响应的舵机供电；第二类为3.3V电压，用于工作电压为3.3V的外设供电；第三类为12.4V电池电压，用于驱动电机；第四类为5V电源，用于工作电压为5V的外设和MCU供电。总电源为infinity 2200mAh 3S锂电池。
+2.3 技术方案概要
+本系统主控采用STC32G144K246成品最小系统板；感知方面采用总转风140°广角摄像头进行灰度对比度搜索，配合IMU660RA六轴姿态传感器和两个编码器实现多源信息采集；控制方面采用电机PID速度闭环、舵机比例转向策略；驱动方面采用DRV8701E双路驱动板驱动RC380电机；增强方面采用两个银燕2207 1800KV无刷电机产生负压增强抓地力，并配备七路紫外激光头完成打靶任务；电源采用infinity 2200mAh 3S锂电池；机械方面基于博思威龙C车模（280mm×180mm×80mm）进行改造，使用SolidWorks软件设计并3D打印七路激光架与防撞前铲。
+
+
+
+
+第三章 机械结构设计与改造
+3.1 车模平台
+本车模采用博思威龙C车模，外形尺寸为长280mm、宽180mm、高80mm，整车重量约为1400g。动力系统方面，配备1对RC380驱动电机和1个S-U400转向舵机，另设2个银燕2207 1800KV无刷电机用于产生负压增强抓地力。电源采用infinity 2200mAh 3S锂电池，激光打靶系统配备7个405nm紫外激光头。
+3.2 机械结构设计
+采用SolidWorks三维建模设计七路激光架，龙门式结构，底部螺钉固定，横梁均匀分布七个激光头安装孔位，每孔配角度调节槽可微调俯仰角和水平角。PETG材料3D打印制作，轻量化且结构稳固，确保激光命中目标且不遮挡摄像头视野。
+SolidWorks建模设计前铲，流线型弧形前端，底部贴合底盘螺丝固定，对舵机形成有效防护。PETG材料3D打印，具一定韧性可吸收碰撞能量，保护舵机及前端结构。高度经优化，兼顾防护范围与通过性。
+3.3 传感器安装布局
+摄像头：安装于车模前端上方，朝前下方倾斜，高度和俯仰角经调试优化，兼顾近处清晰度与远处前瞻视野。
+IMU660RA：安装于车模中线上，平面与底盘平行，X轴朝后、Y轴朝右、Z轴朝上。
+编码器：两个正交编码器分别安装于左右驱动轮轮轴旁，与车轮传动连接无打滑。
+激光头：七个405nm紫外激光头固定于激光架，按预定角度排列，各角度可独立微调。
+3.4 电路板固定与系统连接
+主板PCB按车模机械结构定制外形，铜柱螺钉固定于底盘中央。DRV8701E电机驱动板安装于车模后方，排线连接电机信号接口，电源接12.4V，输出接RC380电机。STC32G12K128无刷电调安装于电机下方，PWM信号线接主板无刷电调接口，电源直连锂电池，输出接银燕2207无刷电机。各模块电源线与信号线分开布线。
+
+第四章 硬件电路设计
+4.1 主板
+采用STC32G144K246成品最小系统板。最小系统板通过排针插座与主板连接，
+主板PCB按车模机械结构定制外形，采用四层板设计，高度集成了系统所需的全部模块与接口。核心连接方面，设有最小系统板插座用于连接STC32G144K246最小系统板，以及IPS屏幕接口用于显示系统状态和调试信息。电源方面，集成了5V电压模块、舵机电压模块和摄像头电源供电模块。传感器接口方面，设有IMU660RA接口连接姿态传感器，以及两个编码器接口接正交编码器。执行器接口方面，设有电机信号接口、电机电源接口、舵机接口、两个无刷电调PWM控制接口、七路激光接口。人机交互方面，设有蜂鸣器接口和五个调试按键。
+
+图 4.1 主板电路
+
+
+图 4.2 主板电路板
+4.2 电源模块
+总电源为infinity 2200mAh 3S锂电池（标称11.1V，满电12.6V），主板集成四路电源转换：
+主板集成四路电源转换：第一类为7V舵机电压，单独给S-U400快速响应舵机供电；第二类为5V电源，用于MCU和激光等外设供电；第三类为3.3V电压，用于IMU660RA等低压器件供电，由5V经LDO转换；第四类为12.4V电池电压，直接用于RC380电机驱动。
+
+
+图 4.3 5V电源模块
+
+图 4.4 舵机电源模块
+
+图 4.5 3V3电源模块
+
+
+4.3 电机驱动电路
+采用DRV8701E双路驱动板。电源输入接12.4V电池电压，控制信号接主板电机信号接口，主板输出两路PWM控制，驱动RC380电机。电机连接线采用大截面导线。
+
+图 4.6 电机驱动模块
+
+4.4 负压模块与无刷电调
+负压模块选用两台银燕2207 1800KV无刷电机，依靠电机高速转动向下产生负压吸力，以此提升设备整体的抓地能力。电机的驱动工作交由以STC32G12K128单片机作为主控芯片的无刷电调驱动板来实现，电调驱动板能够接收来自主板输出的PWM控制信号，依据信号占空比完成电机转速的调节，同时在电路板内部完成电机绕组换相处理，并且实现转速闭环控制，保障电机转速输出稳定。电调供电直接接入锂电池获取电能，减少中间转接环节，电调功率输出端通过三相动力线缆和无刷电机进行接线。两台电机在结构上采用对称式布置安装，以此让装置底部形成的负压可以均匀分布，保证整体抓地效果均衡一致。
+图 4.7 无刷电调电路
+
+图 4.8 电机相关系数
+第五章 控制软件设计
+5.1 开发环境
+Keil uVision5 + C语言，STC-ISP下载程序。软件采用模块化设计，分为主程序、图像处理、PID、舵机、编码器、IMU、负压、激光、人机交互等模块。
+5.2 主程序流程
+采用初始化+主循环+中断架构。上电初始化时钟、GPIO、定时器、中断、外设和变量，就绪后进入主循环。主循环按时间片执行图像处理、姿态解算、速度计算、转向与速度控制、PWM更新、按键处理、IPS显示、激光逻辑和状态监测。中断处理摄像头帧同步、编码器脉冲、控制周期时基和串口通信。
+5.3 摄像头图像处理算法
+对比度搜索边线：从图像中心向左右逐像素扫描，相邻像素灰度差比和值超过阈值即判定为边线。白色PVC赛道与背景灰度对比明显，该方法定位准确。
+中线提取：每行左右边线中点即为中线位置，多行中线拟合得到赛道中线表达式，中线偏移量作为转向偏差，斜率/曲率用于前瞻控制。
+最佳图像获取：调整摄像头角度、曝光和对比度阈值，不同光照下动态调整参数。算法采用整数运算优化速度。
+5.4 电机PID控制算法
+PID 控制算法作为自动控制系统中广泛应用的一种控制算法，小到控制一个 元件的温度，大到控制无人机的飞行姿态和飞行速度等等，都可以使用PID控 制。控制器问世至今已有近 70 年历史，它以其结构简单、稳定性好、工作可 靠、调整方便而成为工业控制的主要技术之一。 经过几十年的发展，PID 控制及其控制器或智能 PID 控制器（仪表）已经很多， 产品已在工程实际中得到了广泛的应用，有各种各样的 PID 控制器产品，各大 公司均开发了具有 PID 参数自整定功能的智能调节器(intelligentregulator)，其 中 PID 控制器参数的自动调整是通过智能化调整或自校正、自适应算法来实现。
+
+                    图 6.1 PID控制原理框图
+连续控制系统的理想PID控制规律为：
+         
+式中，Kp——比例增益，Kp与比例度成倒数关系； 
+Tt——积分时间常数； 
+TD——微分时间常数； 
+u（t）——PID控制器的输出信号； 
+e（t）——给定值r（t）与测量值之差。 
+采用增量式PI实现速度闭环：
+Δu(k) = Kp·[e(k)-e(k-1)] + Ki·e(k) 
+u(k) = u(k-1) + Δu(k)
+P环节快速减小误差，I环节消除稳态误差（设积分限幅抗饱和），参数采用实验法整定：先Kp临界振荡取0.6~0.7倍，再加Ki消稳态误差，目标速度根据赛道曲率和坡道信息动态调整，加减速限速防止打滑。
+5.5 舵机转向控制策略
+Servo_Out = kp_direction*error +kd_direction*(error - last_err) ;//+ (0.000001)*kd_gyro * gyro_z
+    last_err = error;
+    if(Servo_Out>400) Servo_Out = 400;
+    if(Servo_Out<-400) Servo_Out = -400;	
+Servo = (uint32)(Servo_Mid-Servo_Out);
+5.6 激光打靶控制逻辑
+摄像头识别打靶目标区域，结合摄像头获取的坐标确认到达目标相对位置，到达设定条件触发打靶。根据设置的条件进行计算选择对应区间的激光头点亮。时序为：目标进入→确定位置→点亮激光→持续指定时间→关闭。
+
+
+第六章 结论
+7.1 工作总结
+本文介绍了我们智能车的总体设计方案，整套控制系统以 STC32G144K246 单片机作为核心主控芯片，统筹处理传感器采集数据、执行机构控制以及整车逻辑运算。机械结构部分在博思威龙 C 车模原车底盘的基础上进行二次改造升级，借助 SolidWorks 三维建模软件完成零部件结构设计，通过 3D 打印工艺加工制作出七路激光传感器安装支架以及防撞前铲结构件，在保障传感器安装精度的同时提升车辆前端抗碰撞防护能力。硬件电路层面自主设计高度集成化的主控主板 PCB，将四路电源管理模块、所有传感器外接接口以及各类执行器接线接口全部整合在同一块电路板上，简化外部接线，降低线路故障概率；硬件执行单元使用 DRV8701E 芯片驱动 RC380 动力电机实现车辆行进，依靠 S-U400 舵机完成车辆转向动作，搭载双银燕 2207 无刷电机组建负压发生机构提升抓地性能，同时搭载七路 405nm 激光模块实现打靶功能。软件算法层面，编写完成灰度对比度识别算法对赛道图像信息进行搜索解析，完成赛道特征提取工作；配置增量式 PID 算法实现车辆行驶速度闭环控制，搭配前瞻转向控制算法优化过弯表现，引入 IMU 模块开展多传感器姿态数据融合处理，并且针对负压机构增加动态调节逻辑，可根据车辆运行状态实时调整负压电机输出。经过反复硬件调试与算法参数整定，该智能车模能够在白色 PVC 材质赛道上实现高速且稳定的行驶，并且可以可靠完成指定的激光打靶任务。
+小车见证了我们努力的过程，凝聚着我们组每个人的心血和智慧，同时在备赛期间这份经验将永伴我们一生，成为我们最珍贵的回忆。无论最终的比赛结果如何，每个有过智能车经历的人，都已经学到了很多，收获了很多。希望智能车只是一个起点，未来的我们能继续创造更多精彩。在备赛的过程中，离不开学校，老师和学长们的支持，给提供我们赛道和很大的资助。首先，我们要感谢学校对这次比赛的重视，感谢学校教务处对我们 比赛的大力支持，没有他们的支持，我们的车模绝对上不了赛场。其次，我们要感谢指导老师的悉心教导，没有他们在思想上的指导和 整体的规划安排，我们很难有今天的成果。最后也感谢承办单位提供的条件和服务，使我们能顺利完成比赛。
+7.2 存在的问题
+在实际赛道测试过程中，系统仍然存在多处待优化的问题。当赛场环境出现光照强度突变的工况下，视觉模块对赛道边线的提取效果会受到明显干扰，边线识别的抗干扰能力与算法鲁棒性表现不足，容易出现边线偏移、识别出错的情况。车辆高速行驶通过急转弯路段时，会出现较为明显的侧滑现象，底盘负压机构的性能没有得到充分释放，负压电机的实际作用未能完全发挥出来，无法充分抵消高速过弯带来的侧向滑移问题。整套车模系统当中，负压电机工作时整体功耗偏高，会大量消耗锂电池电能，直接缩短整车连续工作的续航时长，对车辆长时间运行造成不利影响。与此同时 IMU 惯性传感器与视觉传感器二者的数据融合程度还比较有限，仅完成简单的数据配合，并没有做到深度耦合，整车运行过程中的状态估计计算精度还有较大提升空间，对车辆姿态、位置的判断还存在一定误差。
+光照突变时边线提取鲁棒性不足；高速急弯存在侧滑，负压效果未完全发挥；负压和激光功耗较大影响续航；IMU与视觉深度融合不足，状态估计精度有待提升。
+7.3 改进方向
+引入自适应阈值和更先进图像处理算法提升鲁棒性；提升负压效率；优化PCB和结构减重降功耗；
+附录：部分代码及车模技术检查表
+void main_menu(void)
+{
+    ips200_show_string(0,0,"go");
+    ips200_show_string(0,16*1,"direction");
+    ips200_show_string(0,16*2,"speed");
+    ips200_show_string(0,16*3,"image");
+    ips200_show_string(0,16*4,"BLDC_go");
+    ips200_show_int16(0,16*5,encoder_data_left);
+	ips200_show_int16(0,16*6,encoder_data_right);
+	ips200_show_int16(0,16*7,RMotor_Out);
+	ips200_show_int16(0,16*8,lMotor_Out);
+	ips200_show_uint8(0,16*9,manghe);
+	ips200_show_uint8(0,16*10,biao);
+	ips200_show_int16(0,16*11,target_speed);
+	ips200_show_uint16(0,16*12,podao_bian);
+	//ips200_show_float(0,16*13,gyro_y,3,2);
+   
+}
+
+void page3(void)
+{
+    //ips200_show_string(0,16*0,"target_speed");     ips200_show_float(110,16*0,target_speed,3,2);
+    ips200_show_string(0,16*0,"circle");     ips200_show_int16(90,16*0,circle_speed);
+	ips200_show_string(0,16*1,"yuzhi");     ips200_show_uint8(90,16*1,CBH_Threshold);
+    ips200_show_string(0,16*2,"curve");     ips200_show_int16(90,16*2,curve_speed);
+    ips200_show_string(0,16*3,"straight");     ips200_show_int16(90,16*3,straight_speed);
+
+    ips200_show_string(0,16*4,"ki_speed_L");        ips200_show_float(110,16*4,ki_speed_L,3,2);
+    ips200_show_string(0,16*5,"kp_speed_L");        ips200_show_float(110,16*5,kp_speed_L,4,2);
+    ips200_show_string(0,16*6,"ki_speed_R");        ips200_show_float(110,16*6,ki_speed_R,3,2);
+    ips200_show_string(0,16*7,"kp_speed_R");        ips200_show_float(110,16*7,kp_speed_R,4,2);
+	ips200_show_string(0,16*8,"baoguang");        ips200_show_int16(110,16*8,baoguang);
+}
+
+void page2(void)
+{
+    ips200_show_string(0,16*0,"kp");            ips200_show_float(120,16*0,kp_direction,4,3);
+    ips200_show_string(0,16*1,"kpp");           ips200_show_float(120,16*1,kpp_direction,3,3);
+    ips200_show_string(0,16*2,"kd");            ips200_show_float(120,16*2,kd_direction,3,3);
+    ips200_show_string(0,16*3,"kd_gyro");       ips200_show_float(120,16*3,kd_gyro,3,3);
+    ips200_show_string(0,16*4,"dv1");           ips200_show_float(120,16*4,dv1,4,3);
+    ips200_show_string(0,16*5,"kp_circle");     ips200_show_float(120,16*5,kp_direction_cricle,4,3);
+    ips200_show_string(0,16*6,"kd_circle");     ips200_show_float(120,16*6,kd_direction_cricle,3,3);
+    ips200_show_string(0,16*7,"gyro_circle");   ips200_show_float(120,16*7,kd_gyro_cricle,3,3);
+
+}
+void shizi(uint8(*image)[image_w],uint8 *l_border,uint8 *r_border)
+{
+    uint8 i;
+    num1=0;
+    num2=0;
+    for(aa=5;aa<50;aa++)
+    {
+        //左上拐点
+        if((target_l==0)&&(target_r==0)&&
+			((Left_Line[aa]-Left_Line[aa+3])>10)&&((Left_Line[aa]-Left_Line[aa+2])>10)&&Road_Wide[aa+5]>60&&
+		Left_Line[aa+3]==1&&((Left_Line[aa-4]-Left_Line[aa])<6)&&aa>5&&Left_Line[aa]>5&&Left_Line[aa]<91&&Left_Lost_Time>8&&Right_Lost_Time>8)
+        {
+            y4=aa;
+            x4=Left_Line[aa];
+            d=1;
+            cross_l_up=d;
+        }
+        //右上拐点
+        if((target_l==0)&&(target_r==0)&&((Right_Line[aa+3]-Right_Line[aa])>10)&&((Right_Line[aa+2]-Right_Line[aa])>10)
+			&&Road_Wide[aa+5]>60&&Road_Wide[aa-3]>20&&
+		   ((Right_Line[aa]-Right_Line[aa-4])<6)&&aa>5&&Right_Line[aa]>5&&Right_Line[aa]<91&&Left_Lost_Time>5&&Right_Lost_Time>5)
+        {
+            y2=aa;
+            x2=Right_Line[aa];
+            b1=1;
+            cross_r_up=b1;
+        }
+		if(((target_l==0)&&(target_r==0)&&((Left_Line[aa]-Left_Line[aa-3])>10)&&((Left_Line[aa]-Left_Line[aa-2])>10)&&
+			Road_Wide[aa-5]>60&&Road_Wide[aa+3]>25&&((Left_Line[aa]-Left_Line[aa+3])<5)&&aa>15
+		&&((Left_Line[aa]-Left_Line[aa+3])>=0)
+		&&Left_Line[aa]>5&&Left_Line[aa]<91&&Left_Lost_Time>8&&Right_Lost_Time>8&&aa<46)
+		||((target_l==0)&&(target_r==0)&&((Left_Line[aa]-Left_Line[aa-5])>10)&&((Left_Line[aa]-Left_Line[aa-6])>10)&&
+			Road_Wide[aa-5]>55&&Road_Wide[aa+3]>25&&((Left_Line[aa]-Left_Line[aa+3])<=5)&&aa>15
+		&&((Left_Line[aa]-Left_Line[aa+3])>=0)
+		&&Left_Line[aa]>5&&Left_Line[aa]<91&&Right_Lost_Time>40&&aa<46)
+		)
+        {
+            y3=aa;
+            x3=Left_Line[aa];
+            c=1;
+			cross_l_down = c;
+        }
+        //右上拐点
+        if(((target_l==0)&&(target_r==0)&&((Right_Line[aa-3]-Right_Line[aa])>10)&&((Right_Line[aa-2]-Right_Line[aa])>10)
+			&&Road_Wide[aa-5]>60&&
+			Road_Wide[aa+3]>25&&((Right_Line[aa+3]-Right_Line[aa])<=3)&&((Right_Line[aa+5]-Right_Line[aa])<6)
+		   &&((Right_Line[aa+3]-Right_Line[aa])>=0)&&((Right_Line[aa+5]-Right_Line[aa])>=0)
+		&&aa>15&&Right_Line[aa]>5&&Right_Line[aa]<91&&Left_Lost_Time>5&&Right_Lost_Time>5&&aa<46)
+		    ||( (target_l==0)&&(target_r==0)&&((Right_Line[aa-7]-Right_Line[aa])>10)&&
+		     ((Right_Line[aa-6]-Right_Line[aa])>10)
+			  &&Road_Wide[aa-5]>60&&
+			    Road_Wide[aa+3]>25&&((Right_Line[aa+3]-Right_Line[aa])<6)&&Right_Line[aa+3]>=Right_Line[aa]&&
+		      ((Right_Line[aa+5]-Right_Line[aa])<6)&&((Right_Line[aa+5]-Right_Line[aa])>=0)&&aa>15&&aa<46&&Right_Line[aa]>5&&Right_Line[aa]<91&&Left_Lost_Time>32)
+		)
+        {
+            y_1=aa;
+            x1=Right_Line[aa];
+            a=1;
+            cross_r_down=a;
+            //num3 = Road_Wide[points_r[aa][1]-2];
+        }
+    }
+void BLDC_control(int duty1,int duty2)
+{
+    pwm_set_duty(PWM_1B, duty1); //左
+    pwm_set_duty(PWM_2B, duty2); //右
+}
+void display_image()
+{
+    uint8 i;
+     for (i = 0; i < image_h-1; i++)
+     {
+        //ips200_draw_point( Mid_Line[i], i, RGB565_RED);//显示起点 显示中线
+        ips200_draw_point(Left_Line[i], i, RGB565_GREEN);//显示起点 显示左边线
+        ips200_draw_point(Right_Line[i], i, RGB565_YELLOW);//显示起点 显示右边线
+		 ips200_draw_point(mid_line_solo[i], i, RGB565_RED);//显示起点 显示右边线mid_line_solo[i]
+     }
+	 for (i=40;i<54;i++)
+	 {
+		 //ips200_draw_point(10+i*3,y_longest_white_col[i],RGB565_RED);
+	     ips200_draw_point(i, longest_white_col[1], RGB565_GREEN);
+	 
+	 }
+	 for (j = 0; j < daba_point_count; j++)
+    {
+        ips200_draw_point(daba_points_x[j], daba_points_y[j], RGB565_RED);
+		ips200_draw_point(daba_points_x[j+1], daba_points_y[j], RGB565_RED);
+        ips200_draw_point(daba_points_x[j-1], daba_points_y[j], RGB565_RED);
+        ips200_draw_point(daba_points_x[j], daba_points_y[j+1], RGB565_RED);
+        ips200_draw_point(daba_points_x[j], daba_points_y[j-1], RGB565_RED);
+
+    }
+
+    // 如果找到靶心，绘制十字
+    if (daba_found)
+    {
+        ips200_draw_point(daba_center_x,   daba_center_y,   RGB565_GREEN);
+        ips200_draw_point(daba_center_x-1, daba_center_y,   RGB565_GREEN);
+        ips200_draw_point(daba_center_x+1, daba_center_y,   RGB565_GREEN);
+        ips200_draw_point(daba_center_x,   daba_center_y-1, RGB565_GREEN);
+        ips200_draw_point(daba_center_x,   daba_center_y+1, RGB565_GREEN);
+		
+	    ips200_draw_point(daba_center_x-2,   daba_center_y,   RGB565_GREEN);
+        ips200_draw_point(daba_center_x+2,   daba_center_y,   RGB565_GREEN);
+        ips200_draw_point(daba_center_x,   daba_center_y-2,   RGB565_GREEN);
+        ips200_draw_point(daba_center_x,   daba_center_y+2,   RGB565_GREEN);
+
+    }
+        ips200_show_string(100,16*1, "Lc");ips200_show_uint8(130,16*2, target_r);
+		ips200_show_string(100,16*2, "Rc");ips200_show_uint8(130,16*1, target_l);	    	    
+	    ips200_show_string(170,16*1, "Ld");ips200_show_uint8(190,16*1, Left_just);
+	    ips200_show_string(170,16*2, "Rd");ips200_show_uint8(190,16*2, Right_just);
+	    ips200_show_string(100,16*3, "Lw");ips200_show_uint8(130,16*3, Left_Lost_Time);
+	    ips200_show_string(170,16*3, "Rw");ips200_show_uint8(190,16*3, Right_Lost_Time);
+	    ips200_show_string(0,16*5, "xs");ips200_show_uint8(30,16*5, original_image[30][47]);
+	    ips200_show_string(60,16*5, "sz");ips200_show_uint8(90,16*5, check);
+	    ips200_show_string(120,16*5, "zc");ips200_show_uint8(150,16*5, longest_white_col[1]);
+        ips200_show_string(0,16*6, "jl");ips200_show_float(30, 16*6,real_distance,3,2);
+	    ips200_show_string(90,16*6, "TL");ips200_show_float(130, 16*6,angle_z,3,2);
+	    ips200_show_string(0,16*7, "Ls");ips200_show_uint8(30, 16*7,Left_Lost_Time_S30);
+	    ips200_show_string(60,16*7, "Rs");ips200_show_uint8(90, 16*7,Right_Lost_Time_S30);
+	    ips200_show_string(120,16*7, "PO");ips200_show_uint8(150,16*7, podao_flag);
+	    ips200_show_string(0,16*8, "Lx");ips200_show_uint8(30, 16*8,Left_Lost_Time_X30);
+	    ips200_show_string(60,16*8, "Rx");ips200_show_uint8(90, 16*8,Right_Lost_Time_X30);
+	    ips200_show_string(120,16*8, "pobian");ips200_show_uint8(180,16*8, podao_bian);
+	       //38cirr_x4 = Left_Line[aa];cir_x4 = Right_Line[aa]; cir_y4 = aa;
+//              //  cirr_x3 = Right_Line[aa];cirr_y3 
+//           
+//	    ips200_show_uint8(0, 16*13,x2);        //22
+	  //  ips200_show_uint8(80, 16*8,b1);      	   
+//	     ips200_show_uint8(0, 16*12,zhang_shang_y);
+//	     ips200_show_uint8(0, 16*13,zhang_shang_x);
+//	     ips200_show_uint8(0, 16*14,original_image[30][47]);
+//	     ips200_show_float(0, 16*15,angle_z,3,2);
+//	     ips200_show_float(0, 16*11,real_distance,3,2);
+//	
+//	    ips200_show_uint8(0, 16*15,Right_Line[12]);   //39
+//	    ips200_show_uint8(0, 16*16,Right_Line[13]);   //37
+//	    ips200_show_uint8(0, 16*17,Right_Line[14]);   //34
+//	    ips200_show_uint8(0, 16*18,Right_Line[15]);   //31
+//	    ips200_show_uint8(80, 16*11,Right_Line[16]);  //28
+//	    ips200_show_uint8(80, 16*12,Right_Line[17]);  //25 
+//	    ips200_show_uint8(80, 16*13,Right_Line[18]);   //22
+//	    ips200_show_uint8(80, 16*14,Right_Line[19]);   //20
+//	    ips200_show_uint8(80, 16*15,Right_Line[20]);   //30
+//	    ips200_show_uint8(80, 16*16,Right_Line[21]);   //35
+//	    ips200_show_uint8(80, 16*17,Road_Wide[14]);  //30
+//	    ips200_show_uint8(80, 16*18,Road_Wide[17]);  //24
+		
+	    ips200_show_uint8(0, 16*15,Left_Line[19]);   //37
+	    ips200_show_uint8(0, 16*16,Left_Line[20]);   //36
+	    ips200_show_uint8(0, 16*17,Left_Line[21]);   //43
+	    ips200_show_uint8(0, 16*18,Left_Line[22]);   //47
+	    ips200_show_uint8(80, 16*11,Left_Line[23]);  //51
+	    ips200_show_uint8(80, 16*12,Left_Line[24]);  //55 
+	    ips200_show_uint8(80, 16*13,Left_Line[25]);   //58
+	    ips200_show_uint8(80, 16*14,Left_Line[26]);   //59
+	    ips200_show_uint8(80, 16*15,Left_Line[27]);   //62
+	    ips200_show_uint8(80, 16*16,Left_Line[28]);   //65
+	    ips200_show_uint8(80, 16*17,Road_Wide[24]);  //91
+	    ips200_show_uint8(80, 16*18,Road_Wide[26]);  //70
+//        ips200_show_float(80, 16*12,mid_k,3,2);
+//		ips200_show_uint8(160, 16*15, daba_found);
+
+//        ips200_show_string(10,16*16, "X:");
+//        ips200_show_uint16(30,16*16, daba_center_x);
+//        ips200_show_string(10,16*17, "Y:");
+//        ips200_show_uint16(30,16*17, daba_center_y);
+//        ips200_show_string(0, 16*18, "Offset:");
+//		ips200_show_int16(64, 16*18, daba_offset);   // 使用全局变量 daba_offset
+
+
+
+}
+第二十一届全国大学生智能汽车竞赛
+车模技术检查表
+一、车模技术检查表
+
+
+
+
+
+
+
+队伍名称 | 破界者 | 破界者 | 破界者 | 破界者
+参赛学校 | 菏泽学院 | 菏泽学院 | 菏泽学院 | 菏泽学院
+赛题组组别 | 雁过留痕（本科） | 雁过留痕（本科） | 雁过留痕（本科） | 雁过留痕（本科）
+检查项目 | 规格 （选手自行填写） | 符合 （） | 不符合（） | 备注
+1.车模类型是什么？ | C车模 |  |  | 如果是自制车模，请标明自制。
+车模整体尺寸： （包括传感器在内）长，宽，高(mm) | 长：320mm 宽：330mm 高：350mm |  |  | 今年比赛车模尺寸没有限制
+传感器种类、规格(型号)数量。 是否使用自带MCU的成品传感器模块？型号是什么？ | 总钻风摄像头1个 U400舵机1个 编码器2个 有刷电机2个 IMU660RA陀螺仪1个 2.否 |  |  | 
+控制转向舵机型号是否自行改装舵机？ 防伪易损标签是否完整？ | 否  是 |  |  | 
+1. 是否增加伺服电机？ 2. 如果有种类、个数和作用？ | 1.否  2.无 |  |  | 
+电路中微处理器型号和个数？ | STC32G144K246核心板1个 STC32G12K128 2个 |  |  | 
+是否具有其它可编程器件，个数与作用？ | 否 |  |  | 
+是否有无线通讯装置？ 如果有种类和个数？ | 否 否 |  |  | 
+电池的种类、规格和数量？ | 2200MHA  3S锂电池 1个 |  |  | 
+1. 是否使用GPS导航？ 2. 是否没有使用RTK？ | 1.否 2.否 |  |  | 
+后轮驱动电机是否是原车模电机？ 是否具有防伪易损标签？ | 是 是 |  |  | 
+轮胎是否是原车同款轮胎？ 轮胎的尺寸（直径和宽度）是否小于等于原车膜尺寸？ | 是 是 |  |  | 
+车轮轴距、轮距是否改装？ 改装参数是什么？ | 否 否 |  |  | 
+车模驱动轮传动机构是否改装？ 改装方式是什么？ | 否 否 |  |  | 
+是否更换过原装车模中的机械元器件？更换后的规格 是什么？ | 否 |  |  | 。
+车模电路板个数及功能。 其中是否有购买成品电路板？ | 1.5个 1板主板 1板电机驱动板 1板STC32G144K246核心板2板无刷电调电路板  2.是（STC32G144K246核心板） |  |  | 
+自制电路板是否标记有学校名称、队伍名称、制作日期等信息？ 标示信息在PCB的哪一层？ | 是 覆铜层＋阻焊层 |  |  | 请在表格中注明电路板队伍信息的内容。
+其它待说明内容 |  |  |  | 
+检查人员签名： | 检查意见： | 检查意见： | 检查意见： | 检查意见：

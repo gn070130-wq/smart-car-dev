@@ -1,0 +1,707 @@
+
+第二十一届全国大学生
+智能汽车竞赛
+技 术 报 告
+学   校：  洛阳理工学院
+队伍名称：  海豹球球队
+参赛队员：   吴浩
+高昊博
+张艺凡
+带队教师：  张伟明  赵乐
+关于技术报告和研究论文使用授权的说明
+
+	 本人完全了解全国大学生智能汽车竞赛关保留、使用技术报告和研究论文的规定，即：参赛作品著作权归参赛者本人，比赛组委会可以在相关主页上收录并公开参赛作品的设计方案、技术报告以及参赛模型车的视频、图像资料，并将相关内容编纂收录在组委会出版论文集中。
+
+参赛队员签名：吴浩 高昊博 张艺凡	
+                        带队教师签名：张伟民 赵乐
+                        日        期：2026.8.19	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+第一章 引言
+1.1系统概述
+整车以 TC264 单片机作为中央控制器。摄像头负责提供前方灰度图像，编码器用于反馈驱动轮的实际速度，IMU 用于观测车体姿态和异常振动，电机驱动模块负责主驱电机输出，负压电机用于提高贴地能力。软件上采用“周期任务 + 中断采样 + 状态机”的结构：图像帧到来后进行二值化和扫线，控制周期中计算舵机转角与电机 PWM，后台任务完成按键调参、串口发送和参数保存。
+1.2 系统模块划分
+主控制器模块实现整车调度。TC264 实时控制性能优异，可在单片控制器内统一完成图像处理、PWM 输出、编码器读取与串口通信任务。赛道采集模块采用 MT9V034 灰度摄像头，图像分辨率与采样帧率由程序初始化配置设定。转向控制模块结合赛道中线误差与预瞄信息计算目标转向角；电机控制模块依据目标速度以及编码器反馈生成 PWM 驱动信号；姿态传感器模块辅助检测车身冲击、异常离地、负压不足等故障状态。
+  调试交互模块主要实现按键操作、屏幕信息显示、无线串口通信以及参数保存功能。若竞赛现场无法长时间连接上位机，借助上述功能可调试故障定位。
+表1.2  系统模块与主要功能
+
+
+第二章 机械系统设计与实现
+2.1 整车结构与装配工艺
+机械系统的任务是为硬件和算法提供稳定的物理基础。摄像头角度变化会直接改变图像中赛道边线的位置，主板松动会导致排线接触不良，电池位移会改变重心并影响出弯姿态，负压电机安装不牢会引入明显振动。因此，本车机械设计不只关注零件能否安装，更关注高速运行中的重复性。
+车体由侧板、底板、主板支架、摄像头碳素杆支架、电池固定结构和负压系统组成。根据本地车辆数据，整车长度约 13.5cm、宽度约 13cm、高度约 21cm。高度主要由摄像头支架决定，摄像头位置需要在视野长度和图像畸变之间折中：支架过低时前方预瞄距离不足，支架过高时车身振动被放大，且图像中远端线条容易变细。
+主板通过扎带固定在碳素板主板支架上，主板支架再通过两侧螺丝孔和安装孔固定到小车侧板。该固定方式的优点是拆装速度快、对 PCB 外形限制小，缺点是扎带松紧会影响板面受力，因此最终装车时应在扎带接触位置加垫片或胶垫，避免长时间振动导致焊点受力。
+2.2 前轮定位与底盘姿态调校
+底盘后倾角度直接决定车辆的转向回正性能。合理的后倾角度能够帮助车辆出弯后自主恢复直线行驶状态；而后倾角度过大则会造成转向响应滞后，出现摄像头已经识别到弯道，但车身姿态依旧未能及时跟随变化的现象。调试过程中可采用低速直线撒手测试、连续 S 弯测试评估转向回正效果，并配合舵机中值完成参数修正。
+车轮内倾与前轮前束主要改变轮胎接地姿态，影响小车高速直线行驶稳定性。负压小车的底盘贴地效果主要依靠负压风扇提供，但是车轮机械几何参数依旧会改变轮胎侧向摩擦特性。前束角度过大会增大行驶阻力；前束角度过小，车辆高速行驶时容易发生左右摆头抖动。装配阶段优先保证左右车轮几何对称，尽可能减小机械装配误差，在此基础上再通过软件完成进一步补偿微调。
+ 
+图2.2 小车底盘及车轮
+2.3 重心布局与底盘高度匹配
+车模重心是影响弯道速度的重要因素。电池、主板、负压电机和摄像头支架是主要质量来源，其中电池虽然容量只有 300mAh，但对小车而言仍是显著载荷。电池固定位置应尽量靠近车体中心线并降低高度，使车辆在进入弯道时不因惯性造成明显侧倾。
+底盘高度需要兼顾负压效果和通过性。底盘过高时负压风扇难以在车底形成稳定压差，贴地能力下降；底盘过低时容易在赛道接缝、元器件图案边缘或轻微翘曲处发生刮擦。调试时应从低速运行开始，观察底盘是否有接触痕迹，再逐步提高速度。
+负压电机通过螺丝孔固定在底板上，负压风扇通过螺丝孔固定在负压电机上。该结构应重点检查三处：电机固定面是否平整，风扇旋转是否与底板发生干涉，导线是否被风扇吸入或与轮胎摩擦。每次比赛前均应进行负压电机空转检查，确认无异常振动和异响后再上赛道。
+
+图2.3 小车底盘
+2.4 摄像头固定
+摄像头采用碳素杆支架固定。将摄像头固定在碳素杆支架上，并在连接处打胶加固；再将碳素杆对准主板安装支架的对应孔位，把螺丝拧入碳素杆内的螺丝孔；最后对受力点再次打胶，防止高速振动引起角度变化。
+摄像头角度调试应在机械固定前完成初步定位。若摄像头过度俯视，近处赛道占据图像比例过大，算法对远端弯道预判不足；若过度仰视，近处边线会落在图像下方甚至超出视野，车辆进入弯道时修正滞后。最终角度应保证图像下部能看到车前近端路径，图像中上部能保留足够预瞄距离。
+固定完成后需做“静态图像一致性”检查：车辆放在同一条直线赛道上，多次轻触车体和摄像头支架，观察图像中左右边线位置是否回到原点；如果每次触碰后边线偏移量不同，说明支架或胶点存在松动，需要重新加固。
+
+图2.4 摄像头固定
+2.5 机械系统小结
+先保证装配对称和固定可靠，再通过软件参数提升速度。若机械部分存在松动或偏差，算法会把这种不确定性放大，最终表现为同一路段多次运行结果不一致。后续调试中，机械检查表应与软件日志一起使用。当车辆在同一参数下突然出现误判、丢线或出弯不稳时，应先检查摄像头角度、主板固定、电池位置、负压风扇和编码器线缆，再修改控制参数。
+
+第三章 硬件系统设计及实现
+3.1 硬件整体架构
+硬件系统围绕 TC264 主控板展开，外接摄像头、编码器、IMU、电机驱动、负压电机控制、电源转换和调试接口。硬件设计的重点是让传感器采样与执行机构输出在同一控制周期内稳定工作，并保证电源和信号布线不会在高速工况下互相干扰。
+硬件整体架构采用模块化思路：电源模块提供多路稳定电压，主控模块完成计算和控制，传感器模块负责输入，驱动模块负责输出，调试模块负责参数和日志。模块化并不意味着物理上完全分离，而是要求每个功能在原理图、PCB 和程序初始化中都有清晰边界。
+
+图3.1 PCB整体架构
+3.2 TC264 核心与拓展电路
+TC264 负责图像数据处理、编码器速度读取、PWM 输出、串口通信、按键扫描和参数保存。相较于只做简单循迹的系统，疯狂电路组需要更多状态判断和保护逻辑，因此主控程序必须留出足够的周期余量。硬件上应优先保证摄像头接口、编码器接口和 PWM 输出引脚稳定可靠。
+
+图3.2 TC264核心电路
+主控拓展电路需要考虑三类信号：高速或准高速数据线，如摄像头数据和时钟；周期性计数信号，如编码器 A/B 相；功率控制信号，如电机 PWM 和负压控制。高速信号走线应尽量短并减少跨分割，编码器信号应远离大电流回路，PWM 控制线应避免与摄像头数据线长距离并行。
+调试过程中，主控拓展电路还承担“问题隔离”的作用。例如摄像头初始化失败时，需要能通过串口或显示输出错误状态；编码器计数异常时，需要单独读取计数值并确认方向；电机输出异常时，需要能够关闭 PWM 并进入保护状态。
+3.3 电源电路设计
+电源电路是整车可靠性的基础。3S 锂电池电压较高，主控、摄像头、IMU 和编码器通常需要经过稳压后供电。主驱电机和负压电机工作时电流变化快，若功率路径与控制路径没有合理隔离，可能导致摄像头图像出现条纹、主控复位或串口通信异常。
+电源部分包含总电源开关、5V 主电源、3.3V 系统电源、摄像头受控电源。整机电源开关由 AON6403 NMOS 与 2 位拨码开关实现，BZT52C16 稳压管完成输入过压钳位，拨码输出 NSLEEP 信号可控制驱动芯片休眠，并配有状态指示灯。
+电池输入经 SS54 肖特基防反接，送入 TPS82130 降压芯片输出 5V，通过分压电阻设定输出电压，输出端多级电容滤波，LED 指示 5V 电源状态。5V 输入至 RT9013-33GB LDO 生成系统 3.3V，为主控、逻辑器件供电；另一路同型号 LDO 为摄像头提供可控 3.3V 电源，支持摄像头断电复位，各级电源均配置滤波电容与电源指示灯。
+整体供电架构：电池输入→电源开关控制→TPS82130 输出 5V→两路 LDO 分别输出系统 3.3V 与摄像头可控 3.3V，具备防反接、过压保护、状态指示功能。
+电源设计遵循三点原则：第一，大电流路径尽量短，电池、驱动和电机之间形成清晰回路；第二，控制电源入口附近布置足够的滤波和去耦，降低电机启动对主控的影响；第三，传感器电源与数字地连接应保持连续，避免因地弹引起阈值漂移。
+
+图3.4 主板电源电路
+在实际调试中，电源问题常表现为“低速正常、高速异常”。例如直道加速时图像突然丢帧、负压电机开启后编码器速度跳变、电机 PWM 输出后主控重启等。出现这些现象时，不能只调整软件阈值，而应先测量电池电压、稳压输出和驱动输入波形。
+3.4 电机驱动与负压控制
+主驱动采用两片 DRV8701 预驱芯片，外接 TPN2R703NL NMOS 管搭建两组 H 桥，驱动两路直流电机。电源端使用 1N5819 实现反接保护，搭配 10μF+0.1μF 电容完成电源滤波；芯片电荷泵外围电容为上管 MOS 提供栅极驱动电压。电机回路串联自恢复保险丝实现硬件过流保护；nSLEEP 控制芯片休眠，nFAULT 输出故障状态给主控。SN74HC125 对 MCU 的 PWM、方向信号做缓冲驱动，保证控制信号质量[5]。
+负压系统采用AI8051 为主控芯片，引出烧录调试接口，通过 BATADC 电阻分压采集电池电压；电阻网络处理霍尔换向检测信号。FD6288Q 三相栅极驱动芯片接收六路 PWM，配合自举二极管、自举电容驱动 NMOS 构成三相全桥，驱动无刷电机。SE8050X2-HF 将电池电压降压输出 5V，为主控及逻辑外设供电；板载状态指示灯，实现运行与故障可视化[2]。
+程序中将主驱电机和负压电机分别控制。主驱电机根据目标速度闭环调节，负压电机根据赛道模式、速度档位和保护状态设置占空比。进入决赛新增赛段、连续弯道或高曲率区域时，可适当提高负压占空比；在低速调试、起步等待和异常保护状态下，应降低或关闭负压输出。
+
+图3.4.1 drv电机驱动电路
+
+图3.4.2 ai8051负压驱动电路
+3.5 调试交互与外设接口
+调试交互电路包括按键、显示屏/无线通信接口。比赛现场调参时间有限，若每次修改都需要重新编译下载，效率会很低。因此关键参数应通过按键或上位机在线修改，并能保存到 Flash。
+摄像头、编码器、IMU、电机、负压电机和电源接口均应在装车后可以检查。接口附近若空间允许，应留出测试点，便于示波器或万用表快速定位问题。
+无线串口或虚拟示波器用于输出中线误差、目标速度、实际速度、舵机输出、赛道状态、丢线计数和电池电压等信息。调试数据不应过多影响控制周期，因此发送频率需要低于控制频率，或者只在关键状态变化时发送。
+
+图3.6  主板外设接口
+3.6 PCB 设计与检查
+PCB 设计阶段需要同时考虑电气连接、机械安装和调试可达性。顶层和底层主要承担器件摆放、接口连接和关键信号走线，内层用于电源和地参考。由于整车空间有限，不能简单追求最短走线，还要保证接口与实际线束方向一致。
+顶层布局应优先确定主控、摄像头接口、编码器接口和电源入口的位置。底层布局用于补充走线和安装避让。内层电源和地平面应尽量完整，尤其是摄像头和主控附近不宜出现不必要的割裂。对电机驱动和负压输出相关走线，应按电流能力设置线宽，并避开敏感采样信号。
+PCB 设计完成后，需要进行三类检查：原理图网络检查，确认接口定义和程序引脚一致；DRC 检查，确认线宽、间距、过孔和丝印符合加工要求；装配检查，确认孔位、支架、线束和器件高度与车体结构匹配。
+
+图3.6.1 PCB顶层
+
+图3.6.2 PCB底层
+3.7 硬件系统小结
+硬件系统的设计目标是保证传感器数据可信、执行输出稳定、调试接口可用。对于本车而言，摄像头图像质量、编码器速度稳定性、电源抗干扰能力和负压输出可靠性直接决定软件算法的上限。硬件调试中若发现异常，应先通过单模块测试确认输入输出，再进行整车联调。
+
+
+第四章 软件系统设计及实现
+4.1 软件控制程序整体思路
+软件系统采用分层结构：底层驱动负责摄像头、编码器、PWM、GPIO、PIT、串口和 Flash；中间层负责图像处理、速度估计、姿态判断、参数管理；应用层负责赛道状态机、速度规划、电机控制和保护。这样的结构与杭电示例报告中的“软件整体思路—图像处理—循迹扫线—中线拟合—特殊元素—控制思路”一致，但结合本车的 TC264、MT9V034 和负压系统进行了调整[1]。
+主循环不直接堆叠所有计算，而是按任务周期执行。摄像头帧完成标志置位后，程序复制或读取图像缓冲区，完成二值化、边线搜索和元素判断；定时中断或周期任务读取编码器并更新速度闭环；低频任务处理按键、显示、串口和参数保存。
+为了适配预赛和决赛，软件中保留 track_mode 参数。该参数不是简单改变最高速度，而是同时影响元素判定阈值、丢线保护计数、决赛新增赛段速度、负压占空比和日志记录。这样可以在不改变主体算法的情况下完成两种赛道的快速切换。 
+4.2 灰度图像处理
+MT9V034 灰度摄像头输出的图像首先进入二值化流程。二值化阈值可以采用固定阈值，也可以根据图像区域亮度进行动态调整。由于比赛现场光照可能变化，完全固定阈值容易在强反光或暗区失效；但动态阈值如果没有限幅，也可能被电子元器件图案和阴影干扰。因此实际程序采用“基础阈值 + 区域修正 + 上下限约束”的方式。
+二值化后，程序从图像下方开始逐行搜索左右边线。下方行距离车体最近，边线宽度较大，作为起始点更稳定；向上搜索时根据上一行边线位置设置搜索窗口，可以减少元器件图案带来的误判。若某一行无法找到左右边线，则记录丢线标志，并由补线算法结合相邻行斜率和历史中线进行推测[4]。
+在普通直道中，左右边线基本连续，中线可由两侧边线平均得到；在弯道、交叉干扰或决赛新增复杂区域中，可能只有单侧边线可靠，此时需要根据可靠边线和赛道宽度估计另一侧边线。图像处理的输出不仅包括中线，还包括有效行数、丢线行数、曲率指标、左右边界变化率和元素候选标志。
+4.3 基本循迹扫线
+基本扫线从图像底部的基准行开始。程序先在基准行附近寻找黑白跳变，确定左右边界；随后逐行向上延伸。每向上一行，搜索窗口围绕上一行边界展开，而不是在整行范围内盲目扫描。这样可以降低计算量，也能提高连续赛道上的抗噪声能力。
+若搜索过程中发现连续若干行丢失同一侧边线，程序会判断是否进入特殊元素或强干扰区域。短暂丢线可通过上一行斜率补偿，连续丢线则降低有效预瞄行权重，并触发速度保护。对于疯狂电路组，电子元器件图形会在局部造成黑色干扰，因此算法不能把所有黑色区域都当作赛道边线，而应结合连续性和宽度约束。
+扫线结果会生成 left_line、right_line、mid_line 三组数组。mid_line 是后续控制的主要依据，但调试时仍需输出左右边线，因为很多误判来自单侧边界错误。附录中给出了基础扫线函数和补线函数的代码框架。
+4.4 赛道中线拟合
+中线拟合的目标是从离散行坐标中得到稳定的横向误差和曲率指标。直接使用某一行中线容易受到局部噪声影响，因此程序在有效行区间内选取多个预瞄行，并对中线进行加权。近端行权重用于保证车辆不过度偏离当前赛道，远端行权重用于提前进入弯道。
+动态打角行是本车控制中的重要参数。低速或图像不稳定时，预瞄行靠近车体，控制更保守；高速直道时，预瞄行上移，车辆提前感知远端弯道；进入决赛新增赛段或高曲率区域时，预瞄行和速度同时调整，避免远端复杂图形造成转向过猛。
+中线拟合还会输出曲率等级。曲率等级不是精确几何曲率，而是由多行中线差分得到的经验指标。直道、缓弯、急弯和疑似特殊元素分别对应不同速度和舵机参数。
+4.5 控制输出接口
+软件最终输出包括舵机目标值、主驱电机 PWM、负压电机 PWM 和调试数据。输出前需要进行限幅和斜率限制，防止单帧误差导致执行机构突变。舵机输出围绕中值展开，主驱电机输出由速度环给出，负压输出由速度等级和赛道状态共同决定。
+控制周期结束后，程序会更新调试数据帧。数据帧包括 track_mode、state、line_error、curve_level、target_speed、real_speed、servo_pwm、motor_pwm、fan_pwm、lost_count 和 battery_voltage。调试时通过这些字段可以判断问题发生在图像、状态机、速度环还是执行输出[3]。
+
+
+第五章 智能车调试说明
+5.1 电机速度闭环
+电机速度控制采用 PI 思路。编码器周期性读取速度，目标速度由赛道状态和曲率等级给出。比例项提高响应速度，积分项消除稳态误差。由于小车惯量较小，积分项需要限幅，否则从低速进入高速或从高速减速时容易产生过冲[6]。
+速度规划遵循“直道快、弯道稳、元素保守、异常降速”的原则。直道有效行数多、曲率小，可以提高目标速度；弯道和新增复杂赛段降低目标速度；丢线、低电压、编码器异常或摄像头异常时进入保护速度。
+主驱电机 PWM 输出还需要斜率限制。即使速度环计算得到较大变化，也不应立即施加到电机上，否则会造成电源波动和车身姿态突变。斜率限制可以让车辆加速更平顺，减少图像抖动。
+5.2 负压控制与保护
+负压控制与速度控制相关，但不完全等同。直道高速时需要一定负压保持贴地，急弯和新增复杂赛段需要更高负压提升侧向稳定性，低速调试或等待发车时可降低负压减少功耗。
+保护逻辑包括电池电压保护、摄像头帧超时保护、编码器异常保护和连续丢线保护。任一保护触发后，程序降低目标速度，限制主驱 PWM，并根据情况关闭或降低负压输出。保护状态不会立即退出，需要连续若干帧恢复正常后才逐步恢复速度。
+控制算法的调试顺序为：先完成摄像头和扫线稳定性测试，再低速整车循迹，然后加入速度闭环，最后启用负压和决赛模式。若顺序颠倒，多个问题会同时出现，难以判断根因。
+
+
+
+
+
+第六章  开发工具、制作与调试过程
+本车软件基于逐飞 TC264 开源库进行开发，底层使用库中提供的 GPIO、PWM、PIT、编码器、MT9V03X 摄像头、IMU660RC 和串口等接口。开发过程按“底层外设单测—图像处理验证—低速循迹—速度闭环—负压联调—预赛/决赛模式验证”的顺序推进。
+制作阶段首先完成 PCB 焊接和电源检查。通电前用万用表检查电源与地之间是否短路，确认稳压输出无异常后再插入主控和传感器。摄像头、编码器、IMU 和电机驱动均单独测试，确认初始化返回值、数据变化方向和输出响应正确。
+调试阶段使用无线串口和上位机记录关键变量。图像调试关注阈值、有效行数、左右边线和中线；控制调试关注目标速度、实际速度、主驱 PWM、和状态机；现场调试关注起跑稳定性、入弯提前量、出弯回正、连续复杂路段和电池电压下降后的表现。
+表6  调试项目与判定依据
+
+第七章  总结与展望
+全文从总体方案、机械结构、硬件电路、软件算法、控制策略、实车调试以及整车技术参数多个维度进行论述，细化各模块设计细节，同时对比分析预赛与决赛之间的赛道工况差异。
+整套负压竞速智能车已形成完整的软硬件设计闭环。机械结构保证摄像头、主控板、电池以及负压机构的可靠安装；硬件电路完成主控运行、传感器信号采集、电机驱动输出与人机调试接口功能；软件实现灰度图像处理、赛道解析、状态机调度、速度规划与闭环控制；附录整理核心代码框架，方便查阅与复核关键算法逻辑。
+结合现阶段实车测试结果，系统仍存在可优化提升的空间。第一，针对决赛新增赛道场景持续调优算法，提升复杂赛道下识别的稳定性；第二，完善调试日志回放工具，依托图像、车体状态、控制输出记录，实现赛后快速排查定位问题。
+智能小车竞速性能受机械装配、硬件电路、软件算法共同影响，只有对各部分细节持续打磨迭代，才能够进一步提升小车整体竞速水平。
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+第八章 参考文献
+谭丽萍,肖雯娟,赵靖远. 基于嵌入式视觉的智能移动平台控制系统设计与实现[J].微纳电子与智能制造,2026,8(2):13-19.DOI:10.19816/j.cnki.10-1594/tn.2026.02.013.
+刘陈平. 模块化电调电源设计与优化[J].电子制作,2026,34(8):72-76.DOI:10.16589/j.cnki.cn11-3571/tn.2026.08.022.
+张振湦.智能车传动控制技术及路径跟踪方法研究[D].北京石油化工学院,2025.DOI:10.27849/d.cnki.gshyj.2025.000113. 
+吴赛燕. 基于微控制器的智能车图像处理技术研究[J].数字通信世界,2025,(4):7-9.
+石磊,安玳宁. 智能控制技术在无刷直流电机控制系统中的应用[J].集成电路应用,2024,41(7):186-187.DOI:10.19339/j.issn.1674-2583.2024.07.082.
+李国亮. 一种用于智能小车的驱动系统设计与实现[J].自动化应用,2017,(6):76-77+150.
+
+
+
+
+
+
+
+
+附录
+附录A  主循环与任务调度
+#include "zf_common_headfile.h"
+
+#define IMG_H               MT9V03X_H
+#define IMG_W               MT9V03X_W
+#define SERVO_MID           7500
+#define SERVO_MIN           6200
+#define SERVO_MAX           8800
+#define MOTOR_PWM_MAX       6000
+
+typedef enum
+{
+    TRACK_PRELIMINARY = 0,
+    TRACK_FINAL       = 1,
+} track_mode_t;
+
+typedef enum
+{
+    STATE_NORMAL = 0,
+    STATE_ELEMENT_CONFIRM,
+    STATE_ELEMENT_IN,
+    STATE_FINAL_EXTEND,
+    STATE_LOST_PROTECT,
+} car_state_t;
+
+volatile uint8 image_ready = 0;
+track_mode_t track_mode = TRACK_PRELIMINARY;
+car_state_t car_state = STATE_NORMAL;
+
+int16 left_line[IMG_H];
+int16 right_line[IMG_H];
+int16 mid_line[IMG_H];
+int16 line_error = 0;
+int16 target_speed = 0;
+int16 real_speed = 0;
+
+static void board_device_init(void)
+{
+    clock_init(SYSTEM_CLOCK_300M);
+    debug_init();
+    pit_ms_init(CCU60_CH0, 5);
+    pwm_init(SERVO_PWM, 50, SERVO_MID);
+    pwm_init(MOTOR_PWM, 17000, 0);
+    pwm_init(FAN_PWM, 20000, 0);
+    encoder_init(ENCODER_1, ENCODER_1_A, ENCODER_1_B);
+    encoder_init(ENCODER_2, ENCODER_2_A, ENCODER_2_B);
+    imu660rc_init(IMU660RC_QUARTERNION_120HZ);
+    mt9v03x_init();
+}
+
+int main(void)
+{
+    board_device_init();
+    load_user_param();
+
+    while(1)
+    {
+        if(image_ready)
+        {
+            image_ready = 0;
+            image_binary_process(mt9v03x_image, binary_image);
+            find_baseline_hang(binary_image);
+            repair_lost_line();
+            update_track_state();
+            line_error = get_preview_error();
+            target_speed = speed_plan_by_state();
+        }
+
+        key_menu_task();
+        debug_upload_task();
+        safety_check_task();
+    }
+}
+
+附录B  图像二值化与基础扫线
+static uint8 get_threshold(uint8 image[IMG_H][IMG_W])
+{
+    uint32 sum = 0;
+    uint16 cnt = 0;
+    for(uint8 y = 20; y < IMG_H - 10; y += 2)
+    {
+        for(uint8 x = 10; x < IMG_W - 10; x += 2)
+        {
+            sum += image[y][x];
+            cnt++;
+        }
+    }
+
+    uint8 ave = (uint8)(sum / cnt);
+    if(ave < 70)  ave = 70;
+    if(ave > 150) ave = 150;
+    return ave;
+}
+
+void image_binary_process(uint8 src[IMG_H][IMG_W], uint8 dst[IMG_H][IMG_W])
+{
+    uint8 threshold = get_threshold(src);
+    for(uint8 y = 0; y < IMG_H; y++)
+    {
+        for(uint8 x = 0; x < IMG_W; x++)
+        {
+            dst[y][x] = (src[y][x] > threshold) ? 255 : 0;
+        }
+    }
+}
+
+void find_baseline_hang(uint8 img[IMG_H][IMG_W])
+{
+    int16 center = IMG_W / 2;
+    int16 last_left = center - 25;
+    int16 last_right = center + 25;
+
+    for(int16 y = IMG_H - 2; y >= 5; y--)
+    {
+        int16 search_left = limit_int16(last_left - 18, 1, IMG_W - 2);
+        int16 search_right = limit_int16(last_right + 18, 1, IMG_W - 2);
+        left_line[y] = -1;
+        right_line[y] = -1;
+
+        for(int16 x = center; x >= search_left; x--)
+        {
+            if(img[y][x] == 255 && img[y][x - 1] == 0)
+            {
+                left_line[y] = x;
+                break;
+            }
+        }
+
+        for(int16 x = center; x <= search_right; x++)
+        {
+            if(img[y][x] == 255 && img[y][x + 1] == 0)
+            {
+                right_line[y] = x;
+                break;
+            }
+        }
+
+        if(left_line[y] > 0)  last_left = left_line[y];
+        if(right_line[y] > 0) last_right = right_line[y];
+        if(left_line[y] > 0 && right_line[y] > 0)
+            mid_line[y] = (left_line[y] + right_line[y]) / 2;
+        else
+            mid_line[y] = -1;
+    }
+}
+
+附录C  补线与动态预瞄
+static int16 line_width_ref = 58;
+static uint8 lost_count = 0;
+
+void repair_lost_line(void)
+{
+    for(int16 y = IMG_H - 2; y >= 5; y--)
+    {
+        if(left_line[y] > 0 && right_line[y] > 0)
+        {
+            mid_line[y] = (left_line[y] + right_line[y]) / 2;
+            continue;
+        }
+
+        if(left_line[y] > 0 && right_line[y] < 0)
+        {
+            right_line[y] = left_line[y] + line_width_ref;
+            mid_line[y] = left_line[y] + line_width_ref / 2;
+        }
+        else if(right_line[y] > 0 && left_line[y] < 0)
+        {
+            left_line[y] = right_line[y] - line_width_ref;
+            mid_line[y] = right_line[y] - line_width_ref / 2;
+        }
+        else
+        {
+            lost_count++;
+            if(y < IMG_H - 3 && mid_line[y + 1] > 0)
+                mid_line[y] = mid_line[y + 1];
+        }
+
+        mid_line[y] = limit_int16(mid_line[y], 1, IMG_W - 2);
+    }
+}
+
+int16 get_preview_error(void)
+{
+    uint8 preview_row;
+    if(car_state == STATE_FINAL_EXTEND)
+        preview_row = 38;
+    else if(target_speed > 260)
+        preview_row = 32;
+    else
+        preview_row = 45;
+
+    if(mid_line[preview_row] < 0)
+        preview_row = 52;
+    return (int16)(mid_line[preview_row] - IMG_W / 2);
+}
+附录D  编码器读取、电机输出与 PID 控制代码
+typedef struct
+{
+    float kp;
+    float ki;
+    float kd;
+    float integral;
+    float last_error;
+    float out_min;
+    float out_max;
+} pid_t;
+
+pid_t motor_pid = { .kp = 18.0f, .ki = 1.2f, .kd = 0.0f, .out_min = -MOTOR_PWM_MAX, .out_max = MOTOR_PWM_MAX };
+pid_t servo_pd  = { .kp = 36.0f, .ki = 0.0f, .kd = 20.0f, .out_min = -1300, .out_max = 1300 };
+
+float pid_calc(pid_t *pid, float target, float measure)
+{
+    float error = target - measure;
+    pid->integral += error;
+    pid->integral = limit_float(pid->integral, -800.0f, 800.0f);
+
+    float out = pid->kp * error + pid->ki * pid->integral + pid->kd * (error - pid->last_error);
+    pid->last_error = error;
+    return limit_float(out, pid->out_min, pid->out_max);
+}
+
+void control_5ms_task(void)
+{
+    int16 enc_l = encoder_get_count(ENCODER_1);
+    int16 enc_r = encoder_get_count(ENCODER_2);
+    encoder_clear_count(ENCODER_1);
+    encoder_clear_count(ENCODER_2);
+    real_speed = (enc_l + enc_r) / 2;
+
+    float servo_delta = pid_calc(&servo_pd, 0, line_error);
+    int16 servo_out = SERVO_MID + (int16)servo_delta;
+    servo_out = limit_int16(servo_out, SERVO_MIN, SERVO_MAX);
+    pwm_set_duty(SERVO_PWM, servo_out);
+
+    float motor_delta = pid_calc(&motor_pid, target_speed, real_speed);
+    int16 motor_out = motor_slope_limit((int16)motor_delta);
+    pwm_set_duty(MOTOR_PWM, limit_int16(motor_out, 0, MOTOR_PWM_MAX));
+
+    uint16 fan_out = fan_pwm_by_state(car_state, target_speed);
+    pwm_set_duty(FAN_PWM, fan_out);
+}
+附录E  速度规划、负压输出与保护
+int16 speed_plan_by_state(void)
+{
+    int16 speed = g_param.base_speed;
+    uint8 curve_level = get_curve_level(mid_line);
+
+    if(curve_level == CURVE_STRAIGHT)
+        speed += 35;
+    else if(curve_level == CURVE_SMALL)
+        speed += 10;
+    else if(curve_level == CURVE_BIG)
+        speed -= 35;
+
+    if(car_state == STATE_ELEMENT_IN)
+        speed -= 40;
+
+    if(car_state == STATE_FINAL_EXTEND)
+        speed = MIN(speed, g_param.final_speed_limit);
+
+    if(car_state == STATE_LOST_PROTECT || battery_low_flag)
+        speed = 80;
+
+    return limit_int16(speed, 60, 320);
+}
+
+uint16 fan_pwm_by_state(car_state_t state, int16 speed)
+{
+    uint16 pwm = g_param.fan_base_pwm;
+
+    if(speed > 260)
+        pwm += 300;
+    if(state == STATE_ELEMENT_IN || state == STATE_FINAL_EXTEND)
+        pwm += 500;
+    if(state == STATE_LOST_PROTECT || battery_low_flag)
+        pwm = 2500;
+
+    return limit_uint16(pwm, 0, 6500);
+}
+
+void safety_check_task(void)
+{
+    if(mt9v03x_finish_flag == 0 && camera_timeout_ms > 100)
+        car_state = STATE_LOST_PROTECT;
+
+    if(get_battery_voltage_mv() < 10500)
+        battery_low_flag = 1;
+
+    if(abs(real_speed) < 3 && target_speed > 180)
+        motor_block_cnt++;
+    else
+        motor_block_cnt = 0;
+
+    if(motor_block_cnt > 40)
+        car_state = STATE_LOST_PROTECT;
+}
+
+附录E  摄像头初始化与异常检测
+uint8 camera_lost_cnt = 0;
+uint8 binary_image[IMG_H][IMG_W];
+
+void camera_init_task(void)
+{
+    uint8 ret = mt9v03x_init();
+    if(ret != 0)
+    {
+        debug_printf("MT9V03X init failed:%d\r\n", ret);
+        camera_error_flag = 1;
+    }
+    else
+    {
+        mt9v03x_set_exposure_time(350);
+        mt9v03x_set_gain(64);
+        camera_error_flag = 0;
+    }
+}
+
+void camera_frame_task(void)
+{
+    if(mt9v03x_finish_flag)
+    {
+        mt9v03x_finish_flag = 0;
+        camera_lost_cnt = 0;
+        image_ready = 1;
+    }
+    else
+    {
+        camera_lost_cnt++;
+        if(camera_lost_cnt > 20)
+        {
+            camera_error_flag = 1;
+            car_state = STATE_LOST_PROTECT;
+        }
+    }
+}
+
+void camera_debug_draw(void)
+{
+    for(uint8 y = 8; y < IMG_H - 4; y += 4)
+    {
+        if(left_line[y] > 0)
+            ips200_draw_point(left_line[y], y, RGB565_RED);
+        if(right_line[y] > 0)
+            ips200_draw_point(right_line[y], y, RGB565_BLUE);
+        if(mid_line[y] > 0)
+            ips200_draw_point(mid_line[y], y, RGB565_GREEN);
+    }
+}
+
+附录F  编码器测速与方向校准
+typedef struct
+{
+    int16 raw_left;
+    int16 raw_right;
+    int16 speed_left;
+    int16 speed_right;
+    int16 speed_avg;
+    int8  dir_left;
+    int8  dir_right;
+} encoder_data_t;
+
+encoder_data_t encoder_data;
+
+void encoder_direction_check(void)
+{
+    encoder_data.raw_left = encoder_get_count(ENCODER_1);
+    encoder_data.raw_right = encoder_get_count(ENCODER_2);
+
+    if(encoder_data.raw_left > 0)
+        encoder_data.dir_left = 1;
+    else if(encoder_data.raw_left < 0)
+        encoder_data.dir_left = -1;
+
+    if(encoder_data.raw_right > 0)
+        encoder_data.dir_right = 1;
+    else if(encoder_data.raw_right < 0)
+        encoder_data.dir_right = -1;
+
+    encoder_clear_count(ENCODER_1);
+    encoder_clear_count(ENCODER_2);
+}
+
+void encoder_speed_update(void)
+{
+    encoder_data.raw_left = encoder_get_count(ENCODER_1);
+    encoder_data.raw_right = encoder_get_count(ENCODER_2);
+    encoder_clear_count(ENCODER_1);
+    encoder_clear_count(ENCODER_2);
+
+    encoder_data.speed_left = low_pass_filter(encoder_data.raw_left, encoder_data.speed_left, 0.35f);
+    encoder_data.speed_right = low_pass_filter(encoder_data.raw_right, encoder_data.speed_right, 0.35f);
+    encoder_data.speed_avg = (encoder_data.speed_left + encoder_data.speed_right) / 2;
+    real_speed = encoder_data.speed_avg;
+}
+
+附录G  电机输出初始化与急停保护
+void motor_output_init(void)
+{
+    pwm_init(MOTOR_PWM, 17000, 0);
+    pwm_init(FAN_PWM, 20000, 0);
+    pwm_set_duty(MOTOR_PWM, 0);
+    pwm_set_duty(FAN_PWM, 0);
+    current_motor_pwm = 0;
+    current_fan_pwm = 0;
+}
+
+int16 motor_slope_limit(int16 target_pwm)
+{
+    const int16 step_up = 120;
+    const int16 step_down = 220;
+
+    if(target_pwm > current_motor_pwm + step_up)
+        current_motor_pwm += step_up;
+    else if(target_pwm < current_motor_pwm - step_down)
+        current_motor_pwm -= step_down;
+    else
+        current_motor_pwm = target_pwm;
+
+    return limit_int16(current_motor_pwm, 0, MOTOR_PWM_MAX);
+}
+
+void emergency_stop(void)
+{
+    target_speed = 0;
+    current_motor_pwm = 0;
+    current_fan_pwm = 0;
+    pwm_set_duty(MOTOR_PWM, 0);
+    pwm_set_duty(FAN_PWM, 0);
+    pwm_set_duty(SERVO_PWM, SERVO_MID);
+    car_state = STATE_LOST_PROTECT;
+}
+
+附录H 车模技术检查表
+第二十一届全国大学生智能汽车竞赛
+车模技术检查表
+
+一、车模技术检查表
+
+ 
+
+
+
+
+
+
+
+
+
+
+二、车模照片
+1、车模外观照片
+
+
+
+
+
+2、电路板PCB图
+主驱一体板
+
+
+
+
+
+
+
+
+3、电路板原理图
+主驱一体板原理图
+
+
+
+
+
+
+===== TABLE 1 =====
+模块 | 主要器件/对象 | 功能
+电源模块 | 3S 锂电池、电源转换电路 | 为主控、传感器、驱动和负压系统供电
+主控制器 | TC264 | 任务调度、图像处理、控制输出和通信
+赛道采集 | MT9V034 灰度摄像头 | 获取赛道图像并提供二值化数据
+速度反馈 | 1024 线增量式编码器 | 测量轮速并构成电机闭环
+姿态检测 | IMU660RC | 观测角速度、加速度和异常冲击
+执行机构 | 直流电机、负压无刷电机 | 完成行驶驱动和负压吸附
+调试交互 | 按键、显示屏/无线模块 | 参数调整、日志输出和状态检查
+
+===== TABLE 2 =====
+调试项目 | 观察变量 | 通过判定
+摄像头初始化 | mt9v03x_init 返回值、帧标志 | 上电后稳定输出图像帧
+基础扫线 | left/right/mid_line、lost_count | 直道和普通弯道边线连续
+编码器读取 | encoder_get_count、速度方向 | 悬空测试计数方向正确
+电机控制 | servo_pwm、line_error | 低速循迹无明显振荡
+速度闭环 | target_speed、real_speed、motor_pwm | 加减速平顺且误差可收敛
+负压系统 | fan_pwm、车体姿态、电压 | 开启后无异常振动和复位
+赛道模式 | track_mode、state、日志 | 预赛/决赛切换后策略一致
+
+===== TABLE 3 =====
+队伍名称 | 海豹球球队
+参赛学校 | 洛阳理工学院
+赛题组别 | 疯狂电路
+检查项目 | 规格
+1.车模类型是什么？ | 1.逐飞N30Pro
+1.车模总体尺寸 | 1.长：135mm 宽：130mm 高：210mm
+1.车模总重量（带电池） | 1.140g
+传感器种类、规格(型号)数量。 是否使用自带MCU的成品传感器模块？型号是什么？ | 1.逐飞摄像头*1 编码器*2 2.无
+1. 是否增加伺服电机？ 2. 如果有种类、个数和作用？ | 1.增加1个无刷电机 2.1103负压电机
+电路功耗 所有电容总容量 | 1.1.52W 2.1002uF
+赛道信息检测精度 赛道信息检测频率 | 1.82*60 2.200Hz
+电池的种类、规格和数量？ | 1.逐飞  95c 300mAh * 1
+车模电路板个数及功能。 其中是否有购买成品电路板？ | 1个 主驱一体集成板*1 2.无
+自制电路板是否标记有学校名称、队伍名称、制作日期等信息？ 标示信息在PCB的哪一层？ | 1.是 2.覆铜层

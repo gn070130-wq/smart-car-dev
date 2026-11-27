@@ -1,0 +1,1211 @@
+第二十一届全国大学生
+智能汽车竞赛
+
+技 术 报 告
+
+
+学    校：成都信息工程大学
+队伍名称：漏电皮卡丘
+参赛队员：李国平
+          徐良俊
+          夏铭浩
+带队教师：刘  俊
+          龚柯梦
+
+
+关于技术报告和研究论文使用授权的说明
+
+	 本人完全了解全国大学生智能汽车竞赛关于保留、使用技术报告和研究论文的规定，即：参赛作品著作权归参赛者本人，比赛组委会可以在相关主页上收录并公开参赛作品的设计方案、技术报告以及参赛模型车的视频、图像资料，并将相关内容编纂收录在组委会出版论文集中。
+
+参赛队员签名：	李国平 徐良俊 夏铭浩	
+带队教师签名：	   刘 俊   龚柯梦  		
+日        期：	      2026.8.18    	   
+
+
+
+
+第一章	引言
+全国大学生智能车竞赛是从2006开始，由教育部高等教育司委托高等学校自动化类教学指导委员会举办的旨在加强学生实践、创新能力和培养团队精神的一项创意性科技竞赛，至今已经成功举办了二十届。
+在2025年十月十八日竞赛组委会召开的竞赛研讨会中，总结了前面二十届竞赛举办经验和教训，汇总了改革方向，促进大赛能够更好的服务于“立足培养、重在参与、鼓励探索、追求卓越”的竞赛宗旨。竞赛理念逐步过渡到以学生为中心的竞赛模式。其核心就是将竞赛的权利逐步从教师为中心过渡到学生为中心，让参加竞赛的学生的主动性在竞赛内容的选择权、参与程度、决定权等方面得到更大的发挥， 使得大赛真正成为学生知识学习、技能培养、品格养成的平台，学生成为比赛的积极参与者和创造者。
+竞赛分为分赛区比赛和全国总决赛两个阶段，都将在2026年暑期（7月、8月）在承办学校完成。参赛队伍的名次（成绩）由赛车现场成功完成赛道比赛时间来决定。参加全国总决赛的队伍同时须提交车模技术报告。
+参赛选手组成参赛队伍，使用竞赛秘书处统一指定的竞赛车模套件、微控制器平台，自主构思车模控制方案进行系统设计，包括传感器信号采集处理、电机驱动、转向舵机控制以及决策算法软件开发等，完成智能车参赛作品工程制作及调试。
+本文主要报告内容框架安排如下：
+第二章 对车模设计制作的主要思路以及实现的技术方案进行概要说明。
+第三章 对车模机械部分设计与自制电路板的安装进行说明。
+第四章 对硬件电路设计进行说明。
+第五章 微处理器控制软件主要理论、算法及代码设计介绍。
+第六章 对开发工具、制作、安装及调试过程进行说明。
+第七章 模型车的主要技术参数说明
+第八章 结论
+
+
+第二章	系统总体方案设计概要
+2.1设计思路
+比赛任务是自制缩微轻量车模，利用光电或者摄像头传感器导引车模，在电路图赛道上运行，通过电路中所有电路回路。赛道引导方式为白色电路，电路中包括常见的电子元器件。具体规格参见《智能车竞赛疯狂电路组比赛赛道制作说明与计分标准》。电路回路中元器件中心设置有车模通过检测传感器，能够检测车模是否通过该器件；电路图中包括有绝缘区域，其中设置有车模通过检测传感器，检测车模是否通过绝缘区域。
+基于上述比赛任务与赛道特性，本车模控制系统以摄像头图像采集识别为核心循迹方式，通过摄像头实时采集赛道白色电路轨迹图像信息，传输至单片机主控单元进行图像处理、轨迹识别与车体偏差计算，根据车体与标准轨迹的偏移量输出精准控制指令，动态调节车体姿态与行驶状态，实现车模沿电路轨迹稳定、精准循迹行驶，保障完整遍历所有电路回路与指定区域。
+整套硬件系统由核心电路模块与外设执行模块组成，其中电路核心模块包含单片机主控电路、电源降压电路、电机驱动电路等，为系统稳定供电、信号处理与控制输出提供硬件支撑。系统配套外设包含测速编码器、车体驱动直流有刷电机、负压吸附直流无刷电机，分别实现车速实时检测、车模行进驱动、赛道贴合负压吸附功能，有效提升车模行驶稳定性与轨迹贴合度，满足复杂疯狂电路赛道的行驶要求。
+
+
+图2.1 小车系统模块说明
+2.2各模块技术方案
+主控芯片：使用TC264DA作为整个系统主控，使用AURIX Development Studio (ADS)编写控制程序，将传感器数据进行综合处理，对驱动电路输出控制信号，控制电机转动，并与无线调试模块进行信息交互。
+传感器模块：采用逐飞科技 MT9V034 总钻风全局快门数字摄像头作为视觉采集单元，摄像头实时获取赛道图像数据，完成图像感光、像素输出后将数字图像信号传输至单片机主控，由主控完成图像预处理、阈值分割、轨迹提取等算法处理，解析得到车体相对赛道白色电路轨迹的偏移信息。姿态传感器使用意法半导体的LSM6DSRTR芯片，与主控进行SPI通讯传输姿态信息；编码器使用逐飞科技的1024线增量式编码器获取速度信息。
+降压模块：使用TPS54302降压5V后再用三路RT9013-3.3GB降压至3V3，为主控、摄像头和其他外设供电。其中无刷驱动模块使用SE8650X2-HF降压至5V后给负压主控使用。
+有刷电机驱动：使用芯片DRV8701E与4片外置N沟道MOSFET构成H桥驱动电路，使用缓冲芯片SN74HC125PWR将单片机控制信号与驱动芯片信号接收端进行隔离，保护主控。
+负压无刷驱动：使用AI8051U作为主控，FD6288作为驱动，外置6个NMOS管构成无刷电机驱动，用于控制负压的1103无刷电机转动。
+第三章	系统机械部分安装及改造
+3.1车模主体结构的安装
+车模底板、侧边板、顶板均使用榫卯结构拼接，使用螺丝螺母进行固定，其中顶板前的螺丝孔用于固定电路板和碳素杆，侧边板用于固定车轴、电机及编码器。
+
+图3.1 车模结构示意图
+3.2编码器、驱动电机、轮毂的安装
+编码器、驱动电机、轮毂均固定在侧边板上，三者通过齿轮啮合。
+其中编码器通过螺丝固定在侧边板上。
+
+图3.2.1 编码器安装示意图
+
+轮毂通过螺杆、法兰轴承、防滑螺母固定，电机固定在两个轮毂中间使用齿轮传动。
+
+图3.2.2 轮毂、电机安装示意图
+3.3摄像头的安装
+摄像头使用打印件与碳素杆相连，碳素杆与车体上层板连接，各部件使用螺丝固定，用螺纹胶、热熔胶等进行加固处理。
+
+图3.3 摄像头安装示意图
+3.4其他机械机构的调整
+在调试过程中，为更好适应赛道元素和增加车模灵敏度，我们进行了部分结构优化：
+侧边板高度调整：通过降低侧边板来降低车模重心，提升过弯稳定性，但需确保底盘离地间隙合适，间隙过大会导致负压漏气减弱效果，间隙过小可能导致底盘剐蹭。
+传动系统调整：电机齿轮啮合需松紧适中，避免过紧增加阻力或过松导致动力损失；驱动轴与电机的连接需稳固，确保动力传输效率。
+摄像头位置调整；摄像头固定的高度和角度决定车模的前瞻大小，摄像头相对车身越高，俯角越小，前瞻量越大，便于提前完成转向预判，若前瞻过小，则对弯道的预判不足。
+电池放置位置调整；电池放置过高会导致整车重心上移，行驶稳定性变差；放置靠后易引发高速过弯甩尾、姿态失控。经过多次调试，最终将电池布置于底板与主板之间，有效降低整车重心、优化前后配重，提升车模行驶稳定性。
+
+第四章	电路设计说明
+4.1主控电路说明
+根据比赛任务要求，需要在主板集成TC264DA主控、LSM6DSRTR陀螺仪、5V/3V3降压、无刷电机驱动、有刷电机驱动、摄像头接口、编码器接口、屏幕接口、轻触按键等
+4.1.1降压电路
+	使用TPS54302降压5V后再通过三路RT9013降压为3.3V分别给主控、摄像头、其他外设单独供电，单独供电可以减少供电纹波，避免图像采集产生噪点。其中无刷驱动模块使用SE8650X2-HF降压至5V后给负压主控使用。
+ 
+ 
+图4.1.1 降压电路原理图
+4.1.2主控外围电路
+使用 TC264DA 主控单片机需要构建外围电路，包含电源供电电路、复位电路、晶振时钟电路、JTAG 下载调试接口，同时引出多路数字 I/O 端口与 ADC 模拟输入接口。供电电路完成电平稳压滤波，为芯片提供稳定工作电源；晶振为单片机提供系统时钟；复位与下载接口实现程序下载与系统复位；各类引脚引出，便于外接摄像头、电机驱动、编码器等外设，完成信号采集与控制输出。
+
+图4.1.2主控外围电路原理图
+4.1.3陀螺仪
+采用 LSM6DSRTR六轴姿态传感器，通过SPI与主控通信，搭配电源滤波电容，采集三轴加速度与三轴陀螺仪数据，经算法解算得到车身俯仰、横滚姿态角。
+
+图4.1.3 陀螺仪模块原理图
+4.1.4电池电压采集电路
+使用两个大电阻对电池电压进行分压，再用单片机ADC通道采集两电阻连接中心的电压，通过计算得出此时电池电量，可避免电池过放。
+
+图4.1.4 电池电压采集原理图
+4.2驱动电路说明
+4.2.1有刷电机驱动
+有刷电机驱动用DRV8701E栅极驱动芯片配合四路AON7544 NMOS管搭建H桥功率驱动电路，通过SN74HC125PWR缓冲器完成主控信号隔离缓冲，实现行进电机的PWM调速与正反转控制。
+
+图4.2.1 有刷电机驱动原理图
+4.2.2无刷电机电调
+负压驱动模块使用AI8051U作为主控芯片，FD6288Q三相栅极驱动芯片，驱动六路TPN2R703NL NMOS管构成三相全桥电路，实现负压电机的三相PWM调速，外围配置RC吸收、稳压保护、电压采样及多级电源滤波电路。
+
+图4.2.2 无刷电机电调原理图
+4.3其他外设电路说明
+按键、TFT显示屏、蓝牙模块、摄像头、编码器五类外设接口。
+
+图4.3 其他外设接口原理图
+
+
+第五章	软件系统设计及实现
+5.1视觉图像循迹原理
+疯狂电路组竞赛赛道为纯平面场地，赛道地面铺设白色引导线构成完整闭合行驶路径，赛道路径元素涵盖直线、十字路口、T 型三叉路口、直角弯道等常规平面路况。车模搭载 MT9V034 摄像头作为视觉感知核心传感器，实时采集赛道灰度图像，依靠图像算法解析白色引导线的空间位置，完成自主循迹行驶。图像数据采集完成后，系统会执行整套图像预处理流程：
+首先采用快速大津法自适应二值化算法，对原图隔行隔列采样降低运算开销，统计图像整体灰度分布，通过最大化前景与背景灰度类间方差自动求解最优分割阈值，同时将阈值限制在 70~120 区间，有效规避场地光线不均、地面反光、地面污渍阴影带来的阈值失效问题，输出黑白二值图像，其中白色像素对应赛道引导线，黑色像素代表地面背景。随后执行断线补全程序，分别横向、纵向遍历图像像素，识别白色引导线上长度不超过 15 像素的微小断裂空隙并自动填充白色像素，解决标线磨损、地面反光遮挡造成的引导线断线、边线丢失问题，保证引导线轮廓完整连续。
+预处理完成后通过迷宫边界跟踪算法提取赛道左右两条边线完整轮廓点集，从图像底部区域搜寻边线种子起始点，采用四邻域遍历方式持续跟踪边线，完整记录左右边线全部坐标序列，同时设置图像边界、画面越界终止条件，区分赛道合并、赛道分离两种状态，为路径识别与误差计算提供完整边线数据。系统通过多行、多列边界扫描函数统计图像前、后、左、右四个方位的白色引导线数量，匹配预设 T 型、十字路口特征模板，结合左右边线间距变化判定三叉路口，单独设计逻辑识别左右直角弯道，输出直行、左转、右转三种行驶状态，为前瞻误差计算与路径规划提供路况判断依据。
+轨迹偏差计算环节会根据当前识别到的行驶状态动态选取对应前瞻边线坐标，采集连续多组前瞻点坐标求取平均值得到赛道中心参考点，以摄像头图像底部作为车身基准位置，利用反正切函数将横向、纵向坐标差值转换为车身相对赛道中心线的角度误差，该角度误差将作为整车闭环控制系统的核心输入量，最终实现平面赛道下稳定、连续的视觉循迹。
+5.2 PID控制算法
+本车模控制系统采用转向 PD 外环串联速度 PID 内环的双闭环串联控制结构，配合左右轮独立差速方案实现转向调节，适配平面赛道直行、直角弯、T 型三叉、十字交叉等各类路况稳定行驶。系统将视觉循迹算法输出的赛道角度偏差作为转向外环 PD 控制器的误差输入，仅使用比例与微分两项完成车身偏转量计算，舍弃积分环节，避免车辆经过多岔路口时出现积分饱和、转向动作卡顿的问题。比例环节根据车身偏离赛道中心线的角度大小输出基础纠偏控制量，车身偏移程度越大，纠偏力度越强，能够快速将车身拉回赛道中心；微分环节实时抑制场地光线变化、图像噪点带来的轨迹抖动，削弱车身高频震荡，提升行驶平稳性。
+转向 PD 控制器输出的调节量用于分配左右两轮基础速度差值，以此实现差速转向。速度环作为底层内环闭环，接收转向外环下发的左右轮目标转速，以编码器实时采集的车轮实际转速作为反馈信号，采用位置式 PID 算法对左右轮速度独立闭环稳压控制。速度 PID 能够动态修正电机输出 PWM 占空比，有效补偿电池电压下降、电机长时间工作发热带来的车轮速度衰减，实现直道匀速行驶、弯道平顺减速。整车依靠左右独立轮速差完成转向动作，直行工况下左右轮目标速度保持一致；当车辆行驶至弯道、三岔、十字路口存在轨迹偏差时，控制器自动减小内侧车轮转速、提升外侧车轮转速，依靠两轮稳定速度差完成平滑转向，该差速控制方案响应速度快、控制线性度高，能够适配平面赛道全部路径元素。  
+位置式 PID 通用公式：
+
+式中：为当前时刻 PID 输出值；为当前时刻误差值；为上一时刻误差值；为比例系数；为积分系数；为微分系数。
+
+图5.2循迹算法流程图
+5.3前瞻多点均值误差加权算法
+传统单点取误差算法仅依靠单组边线像素坐标计算车身相对赛道的偏移量，在平面赛道场地光线波动、地面反光、白色引导线磨损遮挡等干扰条件下，误差数值会出现剧烈跳变；同时在弯道、三岔路口场景下，单一前瞻点路径预判能力不足，赛道贴合度较差，大曲率弯道容易出现冲出赛道的情况，顺向、逆向弯道行驶控制效果也难以同时兼顾。
+依托迷宫跟踪算法提取的完整左右边线坐标序列，可以使用前瞻多点均值加权误差算法，根据直行、左转弯、右转弯三种不同路况动态切换前瞻取点策略，采集连续 5~10 组边线坐标求取平均值，利用多点均值滤波平滑单点像素噪声造成的误差突变；针对直角弯道场景，程序自动增大前瞻采样距离，提前预判弯道走向，实现预转向与提前减速。
+算法针对不同行驶工况设计差异化取点逻辑：直行状态下同步采集左右边线多组前瞻点共同计算赛道中心，误差输出线性稳定，长距离直行行驶抖动极小；左转工况仅使用左侧边线前瞻坐标计算中心位置，规避右转弯道、左三叉路口右侧边线丢失导致误差失效的问题；右转工况仅依靠右侧边线前瞻点完成中心计算，适配右直角、右三叉路径。当系统识别到 T 型、十字岔路口时，算法自动限制误差输出幅值，防止路口转向调节量过大引发车身甩尾、冲出赛道。算法通过反正切函数将横向、纵向坐标差值转换为角度误差，对比传统像素偏移误差，角度误差不受摄像头成像远近、车身前后小幅偏移影响，归一化效果更好，整套算法仅需调整少量前瞻参数，调参逻辑简洁直观。多点均值滤波天然具备图像抗干扰能力，可降低转向 PD 控制器微分系数，抑制整车高频抖动，在直线、直角弯、各类岔路等全部平面赛道场景下综合性能优于传统单点循迹误差算法。
+第六章	开发工具、制作、安装、调试过程说明
+6.1开发工具
+6.1.1软件开发工具
+本项目软件开发采用 AURIX Development Studio（ADS）作为集成开发环境，针对英飞凌 AURIX 系列 TC264DA主控芯片开展智能车程序开发。AURIX Development Studio 是英飞凌官方推出、面向 TriCore 架构 AURIX 系列单片机的免费集成开发工具，软件基于 Eclipse 开源框架搭建，支持标准 C 语言进行程序开发，配套提供 iLLD 底层硬件驱动库，封装了芯片时钟、GPIO、ADC、PWM、通信接口等各类外设的底层调用接口，大幅降低硬件驱动开发难度。该开发环境集成工程管理、代码编辑、语法检查、编译链接、在线仿真调试、程序下载烧录等全套开发功能，支持 TC264DA多核内核的调试与监控，可实时查看寄存器变量、内存数据，方便对循迹算法、外设驱动逻辑进行调试验证。工程文件层级划分清晰，便于对摄像头采集处理、编码器测速、电机控制、负压机构控制等功能模块进行分模块管理，能够完成底层外设驱动、图像预处理、轨迹识别、车体闭环控制算法以及赛事业务逻辑代码的编写、编译与调试工作，为疯狂电路组智能车整套软件的开发、调试与功能验证提供了稳定可靠的软件环境支撑。
+
+图6.1 ADS开发界面图
+6.1.2硬件开发工具
+本项目硬件设计主要采用嘉立创 EDA 与 SolidWorks 两款工具完成。嘉立创 EDA 用于电路原理图绘制与 PCB 版图设计，完成主控、驱动电路、各类外设接口的原理图绘制，实现元器件布局、布线、规则检查，输出生产文件用于印刷电路板加工。SolidWorks 为三维建模软件，完成智能车车体结构零件的三维建模，对车架、传感器安装座、电机固定支架等结构进行尺寸设计与装配校验，完成结构零件图纸输出，为整车机械结构加工提供依据。
+6.1.3串口助手-Vofa+
+VOFA+ 串口助手作为本项目的上位机辅助工具，通过串口与主控芯片进行数据通信。可以向单片机发送PID参数并接收单片机上传的加速度、车轮转速等运行数据，支持数据可视化，将各类参数以波形形式展示，便于观测算法运行状态，为参数分析提供辅助。
+6.2调试过程
+系统调试按照先硬件后软件、先模块后整体的顺序开展，依次完成硬件电路检测、传感器单独验证、各功能模块分调、控制算法参数整定、元器件与绝缘区识别逻辑调试，最后进行整车联合调试。
+首先开展硬件电路检查。上电前对照原理图，使用万用表检查电路板，确认电源回路有无短路，核对各元器件焊接是否存在虚焊、错焊问题。上电之后测量各档电源电压，确认 3.3V、5V 等供电电压输出正常，排除电源、硬件故障，保证主控芯片、驱动芯片、传感器等器件供电可靠，重点检查负压风机驱动电路供电输出，确保吸附机构硬件基础正常。
+硬件确认无误后，进行各个传感器的独立功能调试。依次测试摄像头、陀螺仪、编码器、按键等外设，测试是否能读取摄像头图像并且清晰无噪点，图像无割裂；除识别白色电路轨迹外，同时验证摄像头对赛道元器件、绝缘区域图像特征的采集效果；读取陀螺仪返回角度、加速度是否正常；读取编码器输出脉冲，验证车轮转动时转速数据可以正常更新；确认按键输入、串口数据收发功能正常，保证各类传感器可以正确采集外部信号。
+完成传感器验证后，开展各个软件模块的单独调试。分别调试电机驱动模块、负压风机驱动模块、串口通信模块。编写简单测试程序，测试电机能否正常输出 PWM、实现正反转；测试负压驱动模块，验证负压可以按照 PWM 信号调节转速；借助 VOFA + 上位机观察串口输出数据，确认数据上传正常，保证各个功能模块可以独立正常工作。同时调试图像识别模块，测试图像算法能否正确区分电路走线、元器件输出对应的识别标志位。
+模块调试完成后，进行控制算法的参数整定。本车采用转向外环、速度内环串联双闭环位置式 PID 架构，遵循先内环后外环的调参顺序。首先调试速度内环 PID，固定转向输出，给定目标速度，只整定速度环 Kp、Ki、Kd 参数，观察编码器反馈的实际轮速，直至左右轮可以稳定跟随设定速度，消除速度抖动与静差。速度内环调试稳定后，再调试转向外环 PD，将循迹算法输出的轨迹偏差作为转向环输入，整定转向环 PD 参数，使小车可以根据轨迹偏差输出合理的差速转向量。
+算法参数初步整定完成后，进行整车联合调试。将循迹算法、元器件与绝缘区域识别逻辑、双闭环 PID、负压吸附控制全部整合，在实际赛道上开展测试。除测试小车直道行驶、过弯道运行状态外，重点验证车模经过元器件中心、绝缘区域时的识别与通行逻辑，保证赛道检测传感器可以判定车模成功通过对应区域。根据实车表现，微调PID 各项参数，优化负压吸力，解决车辆偏移、过弯抖动、元器件漏识别等问题，反复迭代，最终实现整车能够完整遍历赛道全部电路回路，稳定完成全部比赛任务。
+6.3安装过程注意事项
+整车机械与电气安装质量直接影响智能车的运行效果，安装过程需要从电路焊接、器件安装、机械装配、接线等方面遵守如下注意事项。
+在电路板焊接安装方面，焊接元器件时避免虚焊、漏焊与焊锡短路，焊接完成后清理板上残留焊锡。主控、驱动芯片注意焊接温度，防止高温损坏芯片。电源部分做好检查，确认电源正负极不可接反，防止上电瞬间烧毁芯片与外设。接插件安装牢固，避免车辆行驶振动出现接触不良。
+摄像头安装为重点部分。本车搭载逐飞MT9V034全局快门数字摄像头，安装过程需严格把控安装高度与俯仰角度，保证前方赛道走线、元器件可完整成像，同时使用打印件、碳素杆牢固固定摄像头，避免行车震动导致画面抖动、识别异常；摄像头排线应避免硬折、挤压；同时合理规划摄像头安装位置，可搭配偏振片减弱环境光干扰，避免赛道反光影响特征识别。编码器安装保证齿轮紧固无间隙，防止车轮转动出现丢脉冲，影响速度环闭环控制精度。
+机械结构装配上，车架、电机支架、摄像头固定座使用螺丝紧固到位，防止车辆行驶、墙面吸附震动造成部件松动。车轮安装保证同轴，两轮高度一致，避免车体倾斜。负压风扇安装密封到位，保证吸附效果。
+安装完成后，上电前再次使用万用表检查电源有无短路，其中碳纤维底板具有导电性，应做好与主板之间的绝缘处理，待确认接线无误后再上电测试。上电后不要立刻在赛道上进行测试，先静态验证传感器、电机、负压工作状态，确认无异常再开展实车调试。
+
+第七章	模型车主要技术参数说明
+模型车主要技术参数
+
+第八章  总结
+为积极准备全国大学生智能汽车竞赛疯狂电路组别，小组成员查阅竞赛相关资料，确定整体设计方案，依次开展机械结构设计、硬件电路绘制、车模装配以及软件程序开发工作，经过反复修改迭代，完成了智能车的开发，形成了本套设计方案。
+本技术报告完整介绍了智能车的整体设计思路，包含机械结构、硬件电路以及控制算法三大部分。机械结构上使用SolidWorks完成零部件建模与装配，针对赛道工况调整整车重心，优化摄像头、负压风机的安装结构。硬件电路采用模块化设计，主控选用英飞凌TC264DA，使用嘉立创EDA完成原理图与PCB设计，划分主控最小系统、外设供电、电机驱动、负压驱动、外设接口等功能模块，经过多次焊接测试与故障排查，确定最终硬件方案。软件部分使用C语言在AURIX Development Studio环境下进行开发，借助VOFA+工具观测运行数据。循迹采用前瞻多点均值误差加权算法，配合转向‑速度双闭环位置式PID控制，实现直道加速、弯道减速，兼顾行驶稳定性与竞速性能。
+长达数月的备赛过程中，学校和学院为我们提供了实验场地、器材经费等方面的支持。在此感谢学院领导、指导老师以及学长给予我们的指导与帮助，也感谢竞赛组委会举办本次智能车竞赛，为我们提供实践锻炼的平台。
+经过反复迭代调试与赛区赛场的实战历练，团队收获了大量贴近实际工程场景的开发经验，也真切意识到方案尚存不少改进空间。受限于自身知识水平，部分工况的处理逻辑考虑仍不够完善，整车仍有继续挖掘优化的潜力。本技术报告凝结了团队每一位成员的付出，完整记录下从方案构思、硬件搭建、代码编写，到反复排错调参的全部过程。备赛的这段经历，不仅提升了我们硬件设计、算法调试与故障分析的实操能力，更让我们体会到团队分工配合、协同攻坚的重要意义，是大学学习中一段弥足珍贵的经历。
+参考文献
+[1]胡寿松.自动控制原理 [M].6 版.北京：科学出版社，2013.
+[2]吴西伟，沈世斌.基于 CMOS 摄像头循迹的四轮智能车控制系统设计 [J]. 自动化技术与应用，2017,36 (07):88‑91,95. 
+[3]谭浩强. C 程序设计 [M].5 版.北京：清华大学出版社，2017.
+[4]王威，陈良.基于位置式 PID 的视觉智能车循迹控制算法研究 [J]. 实验科学与技术，2020,18 (02):41‑44. 
+[5]王加安，戴鹏，蒋波文.基于 TC264 的智能小车控制系统 [J]. 电子制作，2021,29 (18):7‑9.
+[6]卓晴，黄开胜，邵贝贝.学做智能车：挑战 “飞思卡尔” 杯 [M]. 北京：北京航空航天大学出版社，2007.
+[7]童诗白，华成英．模拟电子技术基础 [M] ．北京: 高等教育出版社，2001. 
+[8]阎石．数字电子技术基础 [M] ．北京: 高等教育出版社，2000. 
+[9]英飞凌科技.AURIX™ TC26x 系列用户手册 [Z]. 英飞凌官方技术文档，2020.
+
+
+附录A	电路原理图
+
+图A-1 主驱一体主板原理图
+
+
+附录B	车模外观图
+
+图B-1 车模俯视图
+
+图B-2 车模侧视图
+
+
+图B-3 主板俯视图
+
+附录C	核心算法子程序
+/*
+ * line_scanning.c
+ *
+ *  Created on: 2026年3月24日
+ *      Author: A
+ */
+
+#include "zf_common_headfile.h"
+#include "line_scanning.h"
+
+#include <stdint.h>
+#include <string.h>
+#include "math.h"
+
+#define M_PI 3.1415926f
+
+#define LED    P20_6
+#define LED_ON  gpio_set_level(LED, 0);
+#define LED_OFF gpio_set_level(LED, 1);
+
+#define Black 0
+#define White 255
+
+int16_t L_Edge = 0;
+int16_t R_Edge = MT9V03X_W - 1;
+int16_t F_Edge = 0;
+int16_t B_Edge = MT9V03X_H - 1;
+
+uint8_t img_lgp[MT9V03X_H][MT9V03X_W];
+
+uint8_t meet = 0;//相遇
+uint8_t part = 0;//分开
+
+float yaw = 0.0f;
+
+int16_t goal = 0;//获取误差的点数
+
+float angle_error = 0;//误差
+
+uint8_t forward = 0;//前瞻
+
+uint8_t Stop_flag = 0;//停止
+
+uint8_t three_way_flag = 0;//三叉
+uint8_t three_way_state = 0;//三叉状态
+uint8_t three_way_lock = 0;//三叉锁
+static car_state last_state = normal;
+static uint16_t last_three_way_num = 0;
+
+static uint8 Last_Start_Flag = 0;
+
+uint8_t turn_flag = 0;//三叉转向
+
+//四周边线数量
+uint8_t front = 0;
+uint8_t back = 0;
+uint8_t left = 0;
+uint8_t right = 0;
+
+uint8_t three_way_num = 0;//三叉数量
+
+element_state elements[] = {
+        {0,1,1,1},//前T
+        {1,1,1,0},//左T
+        {1,1,0,1},//右T
+        {1,1,1,1}//十字
+};
+
+car_state current_state;
+
+turn_state current_turn_state;
+
+
+
+//二值化
+//-------------------------------------------------------------------------------------------------------------------
+//  @brief     二值化
+//  @return     uint8
+//  @since
+//  Sample usage:   threshold(img_input,img_output,MT9V03X_W,MT9V03X_H,100);
+//---------------------------------------------------------------------------------------------------------------
+void threshold(uint8_t *img_data, uint8_t *output_data, int width, int height, int thres)
+{
+  for(int y=0; y<height; y++){
+    for(int x=0; x<width; x++){
+      output_data[x+y*width] = img_data[x+y*width]>thres ? 255 : 0;
+    }
+  }
+}
+
+
+/*begin  大津法比赛   begin*/
+//快速大津法二值化 ;
+//-------------------------------------------------------------------------------------------------------------------
+//  @brief      快速大津
+//  @return     uint8
+//  @since
+//  Sample usage:   OTSU_Threshold = otsuThreshold(mt9v03x_image_dvp[0]);//大津法阈值
+//-------------------------------------------------------------------------------------------------------------------
+uint8 otsuThreshold_fast(uint8 *image)   //注意计算阈值的一定要是原图像
+{
+    #define GrayScale 256
+
+    int Pixel_Max=0;
+    int Pixel_Min=255;
+    uint16 width = MT9V03X_W;
+    uint16 height = MT9V03X_H;
+    int pixelCount[GrayScale];  //各像素GrayScale的个数pixelCount 一维数组
+    float pixelPro[GrayScale];  //各像素GrayScale所占百分比pixelPro 一维数组
+    int i, j, pixelSum = width * height/4;  //pixelSum是获取总的图像像素个数的1/4，相应下面轮询时高和宽都是以2为单位自增
+    int threshold = 0;
+    uint8* data = image;  //指向像素数据的指针
+
+    //清零
+    for (i = 0; i < GrayScale; i++)
+    {
+        pixelCount[i] = 0;
+        pixelPro[i] = 0;
+    }
+
+    uint32 gray_sum=0;  //每次执行到这会将gray_sum清零
+    //统计灰度级中每个像素在整幅图像中的个数
+    for (i = 0; i < height; i+=2)   //高
+    {
+        for (j = 0; j < width; j+=2)    //宽
+        {
+            pixelCount[(int)data[i * width + j]]++;  //将当前的点的像素值作为计数数组的下标
+            gray_sum+=(int)data[i * width + j];       //灰度值总和
+            if(data[i * width + j]>Pixel_Max)   Pixel_Max=data[i * width + j];
+            if(data[i * width + j]<Pixel_Min)   Pixel_Min=data[i * width + j];
+        }
+    }
+
+    //计算每个像素值的点在整幅图像中的比例
+    for (i = Pixel_Min; i < Pixel_Max; i++)
+    {
+        pixelPro[i] = (float)pixelCount[i] / pixelSum;
+    }
+
+    //遍历灰度级[0,255]
+    float w0, w1, u0tmp, u1tmp, u0, u1, deltaTmp, deltaMax = 0;
+
+    w0 = w1 = u0tmp = u1tmp = u0 = u1 = deltaTmp = 0;
+    for (j = Pixel_Min; j < Pixel_Max; j++)
+    {
+
+        w0 += pixelPro[j];  //背景部分每个灰度值的像素点所占比例之和   即背景部分的比例
+        u0tmp += j * pixelPro[j];  //背景部分 每个灰度值的点的比例 *灰度值
+
+        w1=1-w0;
+        u1tmp=gray_sum/pixelSum-u0tmp;
+
+        u0 = u0tmp / w0;              //背景平均灰度
+        u1 = u1tmp / w1;              //前景平均灰度
+        deltaTmp = (float)(w0 *w1* (u0 - u1)* (u0 - u1)) ;
+        if (deltaTmp > deltaMax)
+        {
+            deltaMax = deltaTmp;
+            threshold = (uint8)j;
+        }
+        if (deltaTmp < deltaMax)
+        {
+            break;
+        }
+
+    }
+
+    if(threshold<70){
+        threshold = 70;
+    }
+    if(threshold>120)
+        threshold = 120;
+
+    return threshold;
+}
+
+// 补线
+//-------------------------------------------------------------------------------------------------------------------
+//  @brief     补线
+//  @return
+//  @since
+//  Sample usage:
+//---------------------------------------------------------------------------------------------------------
+void line_makeup_complete(void)
+{
+    uint8_t max_cap = 15;//最大补全
+    uint16_t h, w;
+    int16_t left_white_col, right_white_col;
+    int16_t top_white_row, bot_white_row;
+    int16_t gap_len, fill_x, fill_y;
+
+    for(w = L_Edge + 20; w <= R_Edge - 20; w+=2)
+    {
+        h = F_Edge;
+        while(h <= B_Edge)
+        {
+            if(img_lgp[h][w] == White)
+            {
+                top_white_row = h;
+                h++;
+                while(h <= B_Edge && img_lgp[h][w] == Black)
+                {
+                    h++;
+                }
+                if(h <= B_Edge && img_lgp[h][w] == White)
+                {
+                    bot_white_row = h;
+                    gap_len = bot_white_row - top_white_row - 1;
+                    if(gap_len > 0 && gap_len <= max_cap)
+                    {
+                        for(fill_y = top_white_row + 1; fill_y < bot_white_row; fill_y++)
+                        {
+                            img_lgp[fill_y][w] = White;
+                        }
+                    }
+                    h++;
+                }
+            }
+            else
+            {
+                h++;
+            }
+        }
+    }
+    for(h = F_Edge; h <= B_Edge; h+=2)
+    {
+        w = L_Edge + 20;
+        while(w <= R_Edge - 20)
+        {
+            if(img_lgp[h][w] == White)
+            {
+                left_white_col = w;
+                w++;
+                while(w <= R_Edge - 20 && img_lgp[h][w] == Black)
+                {
+                    w++;
+                }
+                if(w <= R_Edge - 20 && img_lgp[h][w] == White)
+                {
+                    right_white_col = w;
+                    gap_len = right_white_col - left_white_col - 1;
+                    if(gap_len > 0 && gap_len <= max_cap)
+                    {
+                        for(fill_x = left_white_col + 1; fill_x < right_white_col; fill_x++)
+                        {
+                            img_lgp[h][fill_x] = White;
+                        }
+                    }
+                    w++;
+                }
+            }
+            else
+            {
+                w++;
+            }
+        }
+    }
+
+}
+
+// 总运算，大津+二值
+//-------------------------------------------------------------------------------------------------------------------
+//  @brief     总值
+//  @return     uint8
+//  @since
+//  Sample usage:   opening((uint8_t *)img_tmp,(uint8_t *)output_data,MT9V03X_W,MT9V03X_H,3);
+//---------------------------------------------------------------------------------------------------------
+void img_main(uint8_t *img_data, uint8_t *output_data){
+    //uint8_t img_tmp[MT9V03X_H][MT9V03X_W];
+
+    int threshold_OUST = otsuThreshold_fast(img_data);
+
+    threshold((uint8_t *)img_data,(uint8_t *)output_data,MT9V03X_W,MT9V03X_H,threshold_OUST);
+
+    line_makeup_complete();
+}
+
+// 限制函数
+//-------------------------------------------------------------------------------------------------------------------
+//  @brief     限制一个变量取值的范围
+//  @return
+//  @since
+//  Sample usage:   int8_t value = int16_t limit(int16_t value, int16_t min, int16_t max)
+//---------------------------------------------------------------------------------------------------------
+int16_t limit(int16_t value, int16_t min, int16_t max)
+{
+    if (value < min)  return min;
+    if (value > max)  return max;
+    return value;
+}
+
+// 找起始点
+//-------------------------------------------------------------------------------------------------------------------
+//  @brief     寻找指定行的左右种子点
+//  @return    uint8_t(返回1说明扫到左右种子点,0则没有)
+//  @since
+//  Sample usage:   uint8_t a = find_start(第几行,存入左边第几个点,存入右边第几个点);
+//---------------------------------------------------------------------------------------------------------
+int16_t Max_Num = 350;
+int16_t L_Line[350][2];
+int16_t L_Num = 0;
+int16_t R_Line[350][2];
+int16_t R_Num = 0;
+//[第几个点][0/1],0->row,1->col
+//v1.3
+uint8_t find_start(uint8_t Row, int16_t L, int16_t R)
+{
+    uint8_t l_flag = 0;
+    uint8_t r_flag = 0;
+    if (Row < F_Edge || Row > B_Edge) return 0;
+    int search_w = R_Edge - L_Edge + 1;
+    for (int i = 2; i + 2 < search_w;i ++)
+    {
+        if (l_flag == 0)
+        {
+            if(img_lgp[Row][i - 2] == Black){
+                if(img_lgp[Row][i - 1] == Black){
+                    if(img_lgp[Row][i] == White){
+                        if(img_lgp[Row][i + 1] == White){
+                            if(img_lgp[Row][i + 2] == White){
+                                L_Line[L][0] = Row;
+                                L_Line[L][1] = i;
+//                                L_Num = L + 1;
+                                l_flag = 1;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        if (r_flag == 0)
+        {
+            if(img_lgp[Row][R_Edge - (i - 2)] == Black){
+                if(img_lgp[Row][R_Edge - (i - 1)] == Black){
+                    if(img_lgp[Row][R_Edge - i] == White){
+                        if(img_lgp[Row][R_Edge - (i + 1)] == White){
+                            if(img_lgp[Row][R_Edge - (i + 2)] == White){
+                                R_Line[R][0] = Row;
+                                R_Line[R][1] = R_Edge - i;
+//                                R_Num = R + 1;
+                                r_flag = 1;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        if (l_flag == 1 && r_flag == 1)
+        {
+            break;
+        }
+    }
+    if (l_flag == 1 && r_flag == 1) {L_Num = L + 1;R_Num = R + 1;return 1;}
+    return 0;
+}
+
+//辅助迷宫法扫线
+//-------------------------------------------------------------------------------------------------------------------
+//  @brief     访问指定坐标状态
+//  @return
+//  @since
+//  Sample usage:   int i = Check_Point(int16_t i, int16_t j);
+//---------------------------------------------------------------------------------------------------------
+int Check_Point(int16_t i, int16_t j)
+{
+    // 强边界：越界直接返回黑，不访问数组
+    if(i < 0 || i > MT9V03X_H - 1 || j < 0 || j > MT9V03X_W - 1)
+        return Black;
+
+    // 赛道区域外也返回黑
+    if(i < F_Edge || i > B_Edge || j < L_Edge || j > R_Edge)
+        return Black;
+
+    return img_lgp[i][j];
+}
+
+//迷宫法扫线
+//-------------------------------------------------------------------------------------------------------------------
+//  @brief     扫线
+//  @return
+//  @since
+//  Sample usage:   maze();
+//---------------------------------------------------------------------------------------------------------
+void maze(void)
+{
+    memset(L_Line, 0, sizeof(L_Line));
+    memset(R_Line, 0, sizeof(R_Line));
+
+    L_Num = 0;
+    R_Num = 0;
+    meet = 0;
+    part = 0;
+
+    // 扫线数量
+    #define MAX_SCAN_POINT 250
+
+    int8 Dir[4][2] =
+    {
+        {-1, 0},
+        { 0, 1},
+        { 1, 0},
+        { 0,-1}
+    };
+
+    for(uint8_t i = B_Edge - 3; i > limit(B_Edge - 20, F_Edge + 1, B_Edge - 20); i--)
+    {
+        if(find_start(i, L_Num, R_Num))
+        {
+            break;
+        }
+    }
+
+    if(L_Num == 1 && R_Num == 1)
+    {
+        diuxian_flag = 0;
+        uint16_t L_End = 0;
+        uint16_t R_End = 0;
+        int16_t L_Dir = 0;
+        int16_t R_Dir = 0;
+
+        // 循环次数给够，让它能扫满
+        for(uint16_t i = 0; i < 500; i++)
+        {
+            if(L_Num >= Max_Num - 10 || R_Num >= Max_Num - 10)
+            {
+                L_End = 1;
+                R_End = 1;
+                break;
+            }
+
+            if(L_Num >= MAX_SCAN_POINT || R_Num >= MAX_SCAN_POINT)
+            {
+                L_End = 1;
+                R_End = 1;
+                break;
+            }
+
+            if(L_End && R_End) break;
+
+            // --------------------- 左边线 ---------------------
+            if(!L_End)
+            {
+                int16_t now_row = limit(L_Line[L_Num - 1][0],F_Edge,B_Edge);
+                int16_t now_col = limit(L_Line[L_Num - 1][1],L_Edge,R_Edge);
+
+                if(now_row <= F_Edge + 2 || now_row >= B_Edge - 2 ||
+                   now_col <= L_Edge + 2 || now_col >= R_Edge - 2)
+                {
+                    L_End = 1;
+                }
+                else
+                {
+                    int16_t found = 0;
+                    for(int16_t k = 0; k < 4; k++)
+                    {
+                        int16_t dir = (L_Dir + 3 + k) % 4;
+                        int16_t next_row = limit(now_row + Dir[dir][0],F_Edge,B_Edge);
+                        int16_t next_col = limit(now_col + Dir[dir][1],L_Edge,R_Edge);
+
+                        if(Check_Point(next_row, next_col) == White)
+                        {
+                            L_Dir = dir;
+                            L_Line[L_Num][0] = next_row;
+                            L_Line[L_Num][1] = next_col;
+                            L_Num++;
+                            found = 1;
+                            break;
+                        }
+                    }
+                    if(found == 0) L_End = 1;
+                }
+            }
+
+            // --------------------- 右边线 ---------------------
+            if(!R_End)
+            {
+                int16_t now_row = limit(R_Line[R_Num - 1][0],F_Edge,B_Edge);
+                int16_t now_col = limit(R_Line[R_Num - 1][1],L_Edge,R_Edge);
+
+                if(now_row <= F_Edge + 2 || now_row >= B_Edge - 2 ||
+                   now_col <= L_Edge + 2 || now_col >= R_Edge - 2)
+                {
+                    R_End = 1;
+                }
+                else
+                {
+                    int16_t found = 0;
+                    for(int16_t k = 0; k < 4; k++)
+                    {
+                        int16_t dir = (R_Dir + 5 - k) % 4;
+                        int16_t next_row = limit(now_row + Dir[dir][0],F_Edge,B_Edge);
+                        int16_t next_col = limit(now_col + Dir[dir][1],L_Edge,R_Edge);
+
+                        if(Check_Point(next_row, next_col) == White)
+                        {
+                            R_Dir = dir;
+                            R_Line[R_Num][0] = next_row;
+                            R_Line[R_Num][1] = next_col;
+                            R_Num++;
+                            found = 1;
+                            break;
+                        }
+                    }
+                    if(found == 0) R_End = 1;
+                }
+            }
+            if(abs(L_Line[L_Num - 1][0] - R_Line[R_Num - 1][0]) <= 1 && abs(L_Line[L_Num - 1][1] - R_Line[R_Num - 1][1]) <= 1)
+            {
+                if(meet == 0)
+                {
+                    if(abs(L_Line[L_Num - 1][1] + R_Line[R_Num - 1][1] - MT9V03X_W) < 70)
+                    {
+                        meet = 1;
+                    }
+                }
+                int16_t max_row = L_Line[L_Num - 1][0];
+                if(R_Line[R_Num - 1][0] > max_row)
+                {
+                    max_row = R_Line[R_Num - 1][0];
+                }
+                if(max_row < F_Edge + 20)
+                {
+                    break;
+                }
+                else
+                {
+                    for(int16_t i = max_row - 5;i > limit(max_row - 20,F_Edge + 5,max_row - 20);i --)
+                    {
+                        if(find_start(i, L_Num, R_Num))
+                        {
+                            L_End = 0;
+                            R_End = 0;
+                            break;
+                        }
+                    }
+                }
+            }
+            else if(abs(L_Line[L_Num - 1][1] - R_Line[R_Num - 1][1]) >= 20 && part == 0)
+            {
+                part = 1;
+            }
+        }
+    }
+    else
+    {
+        diuxian_flag = 1;
+        L_Num = 0;
+        R_Num = 0;
+        return;
+    }
+}
+
+//三叉的三个判断条件
+//-------------------------------------------------------------------------------------------------------------------
+//  @brief
+//  @return
+//  @since
+//  Sample usage:
+//---------------------------------------------------------------------------------------------------------
+uint8_t check(int i)
+{
+    if(elements[i].F != front) return 0;
+    if(elements[i].B != back) return 0;
+    if(elements[i].L != left) return 0;
+    if(elements[i].R != right) return 0;
+    return 1;
+}
+
+uint8_t check_T(int i)
+{
+    if(L_Num <= 0 || R_Num <= 0) return 0;
+    if(i == 0 || i == 3)//前T和十字
+    {
+        if(L_Line[L_Num - 1][1] < L_Edge + 3 && R_Line[R_Num - 1][1] > R_Edge - 3)
+        {
+            return 1;
+        }
+        else
+        {
+            return 0;
+        }
+    }
+    else if(i == 1)//左T
+    {
+        if(L_Line[L_Num - 1][1] < L_Edge + 3 && R_Line[R_Num - 1][0] < F_Edge + 3)
+        {
+            return 1;
+        }
+        else
+        {
+            return 0;
+        }
+    }
+    else if(i == 2)//右T
+    {
+        if(L_Line[L_Num - 1][0] < F_Edge + 3 && R_Line[R_Num - 1][1] > R_Edge - 3)
+        {
+            return 1;
+        }
+        else
+        {
+            return 0;
+        }
+    }
+    return 0;
+}
+
+uint16_t get_distance(uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2)
+{
+    uint16_t distance = ((x2 - x1)*(x2 - x1) + (y1 - y2)*(y1 - y2));
+    if(distance > 65534)
+    {
+        distance = 65534;
+    }
+    return distance;
+}
+
+uint8_t check_distance()
+{
+    if(L_Num < 60 || R_Num < 60) return 0;
+    uint16_t dis1 = get_distance(L_Line[L_Num-1][0],L_Line[L_Num-1][1],R_Line[R_Num-1][0],R_Line[R_Num-1][1]);
+    uint16_t dis2 = get_distance(L_Line[L_Num-21][0],L_Line[L_Num-21][1],R_Line[R_Num-21][0],R_Line[R_Num-21][1]);
+    uint16_t dis3 = get_distance(L_Line[L_Num-41][0],L_Line[L_Num-41][1],R_Line[R_Num-41][0],R_Line[R_Num-41][1]);
+    uint16_t dis4 = get_distance(L_Line[L_Num-61][0],L_Line[L_Num-61][1],R_Line[R_Num-61][0],R_Line[R_Num-61][1]);
+
+    if(dis1 > dis2 && dis2 > dis3 && dis3 > dis4)
+    {
+        return 1;
+    }
+    else
+    {
+        return 0;
+    }
+}
+
+
+//检测直角
+//-------------------------------------------------------------------------------------------------------------------
+//  @brief
+//  @return
+//  @since       左直角返回1,右直角返回2
+//  Sample usage:
+//---------------------------------------------------------------------------------------------------------
+uint8_t check_rightangle()
+{
+    if(L_Num <= 0 || R_Num <= 0) return 0;
+    uint8_t yuzhi = 6;
+    if(front == 0 && back == 1 && left == 1 && right == 0)
+    {
+        if(L_Line[L_Num - 1][1] < L_Edge + yuzhi && R_Line[R_Num - 1][1] < L_Edge + yuzhi)
+        {
+            return 1;
+        }
+        else
+        {
+            return 0;
+        }
+    }
+    else if(front == 0 && back == 1 && left == 0 && right == 1)
+    {
+        if(L_Line[L_Num - 1][1] > R_Edge - yuzhi && R_Line[R_Num - 1][1] > R_Edge - yuzhi)
+        {
+            return 2;
+        }
+        else
+        {
+            return 0;
+        }
+    }
+    return 0;
+}
+
+//行扫描和列扫描
+//-------------------------------------------------------------------------------------------------------------------
+//  @brief
+//  @return
+//  @since
+//  Sample usage:
+//---------------------------------------------------------------------------------------------------------
+uint8_t Col_Boundary_Scan(uint8_t Col, uint8_t sta, uint8_t end)
+{
+    uint8_t count = 0;
+    for(uint8_t i = sta + 2;i < end + 1 - 2;i ++)
+    {
+        if(img_lgp[i - 2][Col] == 0){
+            if(img_lgp[i - 1][Col] == 0){
+                if(img_lgp[i][Col] == 0){
+                    if(img_lgp[i + 1][Col] == 255){
+                        if(img_lgp[i + 2][Col] == 255){
+                            count ++;
+                            if(count > 254)
+                            {
+                                count = 254;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return count;
+}
+uint8_t Row_Boundary_Scan(uint8_t Row, uint8_t sta, uint8_t end)
+{
+    uint8_t count = 0;
+    for(uint8_t i = sta + 2;i < end + 1 - 2;i ++)
+    {
+        if(img_lgp[Row][i - 2] == 0){
+            if(img_lgp[Row][i - 1] == 0){
+                if(img_lgp[Row][i] == 0){
+                    if(img_lgp[Row][i + 1] == 255){
+                        if(img_lgp[Row][i + 2] == 255){
+                            count ++;
+                            if(count > 254)
+                            {
+                                count = 254;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return count;
+}
+//元素处理
+//-------------------------------------------------------------------------------------------------------------------
+//  @brief     元素
+//  @return
+//  @since
+//  Sample usage:  element();
+//---------------------------------------------------------------------------------------------------------
+void element()
+{
+    front = 0;
+    back = 0;
+    left = 0;
+    right = 0;
+    if(L_Num <= 0 || R_Num <= 0) return;
+    uint8_t front_1 = Row_Boundary_Scan(F_Edge + 2, L_Edge + 2, R_Edge - 2);
+    uint8_t front_2 = Row_Boundary_Scan(F_Edge + 4, L_Edge + 2, R_Edge - 2);
+    uint8_t front_3 = Row_Boundary_Scan(F_Edge + 8, L_Edge + 2, R_Edge - 2);
+    uint8_t back_1 = Row_Boundary_Scan(B_Edge - 2, L_Edge + 2, R_Edge - 2);
+    uint8_t back_2 = Row_Boundary_Scan(B_Edge - 4, L_Edge + 2, R_Edge - 2);
+    uint8_t back_3 = Row_Boundary_Scan(B_Edge - 8, L_Edge + 2, R_Edge - 2);
+    uint8_t left_1 = Col_Boundary_Scan(L_Edge + 2, F_Edge + 8, B_Edge - 8);
+    uint8_t left_2 = Col_Boundary_Scan(L_Edge + 4, F_Edge + 8, B_Edge - 8);
+    uint8_t left_3 = Col_Boundary_Scan(L_Edge + 8, F_Edge + 8, B_Edge - 8);
+    uint8_t right_1 = Col_Boundary_Scan(R_Edge - 2, F_Edge + 8, B_Edge - 8);
+    uint8_t right_2 = Col_Boundary_Scan(R_Edge - 4, F_Edge + 8, B_Edge - 8);
+    uint8_t right_3 = Col_Boundary_Scan(R_Edge - 8, F_Edge + 8, B_Edge - 8);
+
+    front = front_1 < front_2 ? (front_1 < front_3 ? front_1 : front_3) : (front_2 < front_3 ? front_2 : front_3);
+    back  = back_1  < back_2  ? (back_1  < back_3 ? back_1  : back_3) : (back_2  < back_3 ? back_2  : back_3);
+    left  = left_1  < left_2  ? (left_1  < left_3 ? left_1  : left_3) : (left_2  < left_3 ? left_2  : left_3);
+    right = right_1 < right_2 ? (right_1 < right_3 ? right_1 : right_3) : (right_2 < right_3 ? right_2 : right_3);
+
+        current_state = normal;
+        three_way_state = 10;//初始化，防止为0到3，随便给的10
+        for (int i = 0; i < sizeof(elements)/sizeof(elements[0]); i++)
+        {
+             if (check(i))
+             {
+                  if (check_T(i))
+                  {
+                       if (check_distance())
+                       {
+                            current_state = three_way;
+                            if(last_state == normal && three_way_flag == 0)
+                            {
+                                three_way_num ++;
+                                three_way_flag = 1;
+                            }
+//                            LED_ON;
+                            break;
+                       }
+                  }
+             }
+        }
+
+        last_state = current_state;
+
+       if(Last_Start_Flag == 0 && Start_Flag == 1)
+       {
+           three_way_num = 0;
+       }
+       if(three_way_num >= Stop_flag)
+       {
+           Start_Flag = 0;
+       }
+       Last_Start_Flag = Start_Flag;
+
+}
+
+//转向状态获取
+//-------------------------------------------------------------------------------------------------------------------
+//  @brief
+//  @return
+//  @since
+//  Sample usage:  get_turn_state
+//---------------------------------------------------------------------------------------------------------
+void get_turn_state()
+{
+        if(check_rightangle() == 1)//左直角
+        {
+            current_turn_state = turn_left;
+        }
+        else if(check_rightangle() == 2)//右直角
+        {
+            current_turn_state = turn_right;
+        }
+        if(three_way_num > last_three_way_num)
+        {
+            switch(three_way_num - 1)
+            {
+                case 0:current_turn_state = turn_left;break;
+                case 1:current_turn_state = turn_right;break;
+                case 2:current_turn_state = turn_right;break;
+
+                case 3:current_turn_state = turn_left;break;
+                case 4:current_turn_state = turn_left;break;
+                case 5:current_turn_state = turn_right;break;
+                case 6:current_turn_state = turn_right;break;
+                case 7:current_turn_state = turn_right;break;
+                case 8:current_turn_state = turn_left;break;
+                case 9:current_turn_state = turn_right;break;
+                case 10:current_turn_state = turn_left;break;
+                case 11:current_turn_state = turn_right;break;
+                case 12:current_turn_state = turn_right;break;
+                case 13:current_turn_state = turn_left;break;
+                case 14:current_turn_state = turn_right;break;
+                case 15:current_turn_state = straight;break;
+                case 16:current_turn_state = turn_left;break;
+                case 17:current_turn_state = turn_left;break;
+                case 18:current_turn_state = straight;break;
+                case 19:current_turn_state = turn_left;break;
+                case 20:current_turn_state = turn_right;break;
+                case 21:current_turn_state = turn_right;break;
+                case 22:current_turn_state = turn_left;break;
+                case 23:current_turn_state = turn_left;break;
+                case 24:current_turn_state = turn_left;break;
+                case 25:current_turn_state = turn_left;break;
+                case 26:current_turn_state = turn_left;break;
+                case 27:current_turn_state = straight;break;
+                case 28:current_turn_state = turn_left;break;
+                case 29:current_turn_state = turn_left;break;
+                case 30:current_turn_state = turn_left;break;
+                case 31:current_turn_state = turn_right;break;
+                case 32:current_turn_state = turn_left;break;
+                case 33:current_turn_state = turn_right;break;
+                case 34:current_turn_state = turn_left;break;
+                case 35:current_turn_state = turn_left;break;
+                case 36:current_turn_state = turn_right;break;
+                case 37:current_turn_state = turn_right;break;
+                case 38:current_turn_state = turn_left;break;
+                case 39:current_turn_state = turn_right;break;
+                case 40:current_turn_state = turn_right;break;
+                case 41:current_turn_state = turn_left;break;
+                case 42:current_turn_state = turn_left;break;
+                case 43:current_turn_state = turn_left;break;
+                case 44:current_turn_state = turn_left;break;
+                case 45:current_turn_state = turn_left;break;
+                case 46:current_turn_state = straight;break;
+                case 47:current_turn_state = turn_left;break;
+                case 48:current_turn_state = turn_left;break;
+                case 49:current_turn_state = turn_right;break;
+                case 50:current_turn_state = turn_left;break;
+                case 51:current_turn_state = turn_left;break;
+                case 52:Start_Flag = 0;break;
+                default:break;
+
+            }
+            turn_distance =0;
+            yaw = imu660.yaw;
+        }
+        last_three_way_num = three_way_num;
+}
+
+//误差获取
+//-------------------------------------------------------------------------------------------------------------------
+//  @brief
+//  @return
+//  @since
+//  Sample usage:  get_angle()
+//---------------------------------------------------------------------------------------------------------
+float get_angle()
+{
+    float error = 0;
+    float dy = 0;
+    float dx = 0;
+    float average_y = 0;
+    float average_x = 0;
+    static float last_error = 0.0f;
+    int16_t Num = 0;
+
+    switch(current_turn_state)
+    {
+        case straight:
+                Num = (R_Num >= L_Num) ? L_Num : R_Num;
+                if(Num < 20)
+                {
+                    return 0;
+                }
+//                if(meet == 1 || part == 1)
+//                {
+//                    goal = Num - 6;
+//                }
+//                else
+                    if(Num >= forward + 6)
+                {
+                    goal = forward;
+                }
+                    else
+                    {
+                        goal = Num - 6;
+                    }
+                average_y = 1.0 * (R_Line[goal][1] + R_Line[goal + 1][1] + R_Line[goal + 2][1] + R_Line[goal + 3][1] + R_Line[goal + 4][1] + L_Line[goal][1] + L_Line[goal + 1][1] + L_Line[goal + 2][1] + L_Line[goal + 3][1] + L_Line[goal + 4][1]) / 10;
+                average_x = 1.0 * (R_Line[goal][0] + R_Line[goal + 1][0] + R_Line[goal + 2][0] + R_Line[goal + 3][0] + R_Line[goal + 4][0] + L_Line[goal][0] + L_Line[goal + 1][0] + L_Line[goal + 2][0] + L_Line[goal + 3][0] + L_Line[goal + 4][0]) / 10;
+                dy = -(1.0 * (L_Edge + R_Edge) / 2 - average_y);
+                dx = (1.0 * B_Edge - average_x);
+
+            break;
+        case turn_left:
+                if(L_Num < 20)
+                {
+                    return 0;
+                }
+                if(check_rightangle() == 1)
+                {
+                    goal = (forward + 20 > L_Num - 6) ? (L_Num - 6) : (forward + 20);
+                }
+                else if(L_Num >= forward + 6)
+                {
+                    goal = forward;
+                }
+                else
+                {
+                    goal = L_Num - 6;
+                }
+                average_y = 1.0 * (L_Line[goal][1] + L_Line[goal + 1][1] + L_Line[goal + 2][1] + L_Line[goal + 3][1] + L_Line[goal + 4][1]) / 5;
+                average_x = 1.0 * (L_Line[goal][0] + L_Line[goal + 1][0] + L_Line[goal + 2][0] + L_Line[goal + 3][0] + L_Line[goal + 4][0]) / 5;
+                dy = -(1.0 * (L_Edge + R_Edge) / 2 - average_y);
+                dx = (1.0 * B_Edge - average_x);
+
+            break;
+        case turn_right:
+            if(R_Num < 20)
+            {
+                return 0;
+            }
+            if(check_rightangle() == 2)
+            {
+                goal = (forward + 20 > R_Num - 6) ? (R_Num - 6) : (forward + 20);
+            }
+            else if(R_Num >= forward + 6)
+            {
+                goal = forward;
+            }
+            else
+            {
+                goal = R_Num - 6;
+            }
+                average_y = 1.0 * (R_Line[goal][1] + R_Line[goal + 1][1] + R_Line[goal + 2][1] + R_Line[goal + 3][1] + R_Line[goal + 4][1]) / 5;
+                average_x = 1.0 * (R_Line[goal][0] + R_Line[goal + 1][0] + R_Line[goal + 2][0] + R_Line[goal + 3][0] + R_Line[goal + 4][0]) / 5;
+                dy = -(1.0 * (L_Edge + R_Edge) / 2 - average_y);
+                dx = (1.0 * B_Edge - average_x);
+
+            break;
+        default:break;
+    }
+
+    if(Start_Flag != 1)
+    {
+        tft180_draw_line((L_Edge + R_Edge) / 2 / 2,B_Edge / 2,average_y / 2,average_x / 2,RGB565_GREEN);
+    }
+
+    if(fabs(dx)>1.0f)
+    {
+        error = (atan2f(dy, dx) * 180.0f / M_PI);
+    }
+    else
+    {
+        return 0;
+    }
+
+
+//        if(meet == 1 || (part == 1 && current_turn_state == straight && left == 0 && right == 0))
+//        {
+//            error /= 5;
+//        }
+
+//        if((three_way_state == 1 && current_turn_state == turn_right) || (three_way_state == 2 && current_turn_state == turn_left))
+//        {
+//            error /= 5;
+//        }
+
+//    if(fabs(error-last_error)>35)
+//    {
+//        error = last_error*0.5f + error*0.5f;
+//    }
+//    last_error = error;
+
+    return error;
+}
+
+
+===== TABLE 1 =====
+名称 | 小车参数
+车模总质量 | 约127g
+车模长度 | 约170mm
+车模宽度 | 约160mm
+车模高度 | 约200mm
+传感器种类及个数 | MT9V034 总钻风摄像头1个、1024线编码器2个、LSM6DSRTR姿态传感器1个
+驱动电机数量 | N30有刷直流电机两个
+无刷电机个数 | 1103无刷电机一个
+赛道信息检测精度 | 约20mm
+赛道信息检测频度 | 100次/秒以上
+电路功耗 | 空载约5W，峰值带载约25W
+电容总容量 | 约1000uF

@@ -1,8 +1,8 @@
-> 当前本机策略：完整内容保存在GitHub；轻量skill按需联网读取。此前D盘全量缓存和本机展开源码已清理，离线安装说明仅供可选恢复。
+> **存储策略（用户确认）**：全部 Skill 以本 GitHub 仓库为唯一权威源；本机不保留全文，按需联网读取。
 
-# 智能车开发与调试 Skill
+# 智能车开发与调试 Skill（含九赛道全集）
 
-用于 Codex 的智能车竞赛开发技能，支持代码分析、整套重构、视觉巡线、目标识别、状态机、PID/LADRC、硬件联调、运行日志和模型调用检查。
+用于 Codex/Cursor 的智能车竞赛开发技能：代码分析与重构、视觉巡线、目标识别、状态机、PID/LADRC、硬件联调、运行日志、模型调用检查；并内置国赛九赛道知识库与算法灌入（见 `skills/`）。
 
 资料来自53份走马观碑参赛报告，以及固定版本的开源项目解析。本轮新增13个仓库地址的结构与算法梳理，保存714份文件/归档成员的校验记录与2682个函数定义候选；另保留之前的ZouMaGuanBei解析。镜像和同提交来源明确标注，文件数量不代表逐行验证或实车成功率。
 
@@ -11,6 +11,7 @@
 ## 从这里开始
 
 - [技能入口](SKILL.md)
+- [九赛道 + 总控 + ML 灌入](skills/README.md)
 - [多仓库结构与算法集合](references/multi-repo/overview.md)
 - [代码问题、离线反例与误报排除](references/multi-repo/findings.md)
 - [深度学习模型调用与验证](references/multi-repo/model-runtime.md)
@@ -36,14 +37,15 @@
 ## 目录
 
 ```text
-SKILL.md                 技能指令和按任务路由
+SKILL.md                 统一入口与调试路由
+skills/                  九赛道知识库 + smartcar-competition + smartcar-ml-optimize
 agents/                  技能展示信息
 assets/                  车模配置、模型契约、日志列模板
-references/              分主题知识、报告正文、项目解析与证据
+references/              走马观碑专题、多仓解析、53份报告正文
 scripts/                 报告检索、源码索引、遥测和模型检查
-tools/validate.py        不依赖板卡的仓库完整性与工具行为检查
-assets/upstream/         可直接浏览的实际应用源码及模型
-assets/upstream-archives/ 完整快照，本机已安装；GitHub中位于Release附件
+tools/validate.py        仓库完整性与工具行为检查
+assets/upstream/         应用源码及模型（若已纳入）
+assets/upstream-archives/ 完整快照见 Release 附件
 ```
 
 常用命令：

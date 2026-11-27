@@ -1,0 +1,713 @@
+
+第二十一届全国大学生智能汽车竞赛
+
+技 术 报 告
+
+
+
+学        校：成都理工大学工程技术学院
+队伍名称：成理工程十队 
+参赛队员：蔡灵阳，辜潇俊，周哲育，邱什谣 
+带队教师：张轩弋，朱里红
+
+
+
+关于技术报告和研究论文使用授权的说明
+
+本人完全了解全国大学生智能汽车竞赛关保留、使用技术报告和研究论文的规定，即：参赛作品著作权归参赛者本人，比赛组委会可以在相关主页上收录并公开参赛作品的设计方案，技术报告以及参赛模型车的视频、图像资料，并将相关内容收录在组委会出版论文集中。
+
+
+
+
+
+
+
+
+
+
+
+引  言
+全国大学生智能汽车竞赛是一项以智能汽车为研究对象，涵盖控制、模式识别、传感技术、电子、电气、计算机、机械等多学科的科技创意性设计赛事。该竞赛由主要路径识别、速度采集、角度控制及车速控制等模块组成，以"立足培养、重在参与、鼓励探索、追求卓越"为指导思想，面向全国大学生开展具有探索性的工程实践活动。其核心任务是设计制作在特定赛道上能自主行驶且具有优越性能的智能模型汽车这类复杂工程问题，鼓励大学生组成团队，综合运用多学科知识，旨在促进高等学校素质教育，培养大学生的综合知识运用能力、基本工程实践能力和创新意识，激发大学生从事工程技术开发和科学研究探索的兴趣和潜能，倡导理论联系实际、求真务实的学风和团队协作的人文精神。
+随着人工智能、传感器技术和自动控制技术的飞速发展，智能交通系统已成为当代科技发展的重要方向。智能汽车作为智能交通系统的核心载体，其研究与开发不仅推动了自动驾驶技术的进步，更为未来交通方式的变革提供了技术支撑。在这一背景下，全国大学生智能汽车竞赛作为教育部高等学校自动化类专业教学指导委员会主办的重要赛事，已成为培养大学生创新能力和实践能力的重要平台，吸引了全国数千所高校的积极参与，成为高校自动化、电子信息、计算机等相关专业的重要实践教学环节。
+第二十一届全国大学生智能汽车竞赛由教育部高等学校自动化类专业教学指导委员会主办，竞赛旨在通过智能汽车的设计、制作和调试，进一步培养大学生的工程实践能力、创新思维和团队合作精神。该赛事至今已成功举办二十一届，不仅为高校提供了展示教学成果的舞台，更为培养具有创新精神和实践能力的高素质工程技术人才奠定了坚实基础。
+
+
+
+一．总体方案设计
+本章主要介绍了智能车系统总体方案的选定和设计思路。
+1.1 设计方案综述
+实现目标是定位识别，所以采用精度较高的4096线编码器。摄像头用两个，一个openart Plus用于坐标点识别，整体的赛道和边界识别，一个openart mini用于图片识别。总体硬件设计是分块设计，两块驱动板，一块主控。
+根据第二十一届全国大学生智能汽车竞赛竞速赛规则相关规定，我们的智能车系统采用 M型车模（四个麦克纳姆轮），车模微控制器使用RT1064单片机，在Keil5和openmv IDE开发环境中进行软件开发。制作的车模需要完成摄像头识别屏幕上箱子的坐标，然后从车库出发，依次根据关卡搬运箱子至规定位置同时识别箱子上的图像，最后小车返回车库。因此，对于图像识别以及车模的控制是这个赛题组的关节。
+1.2 硬件方案设计
+AI视觉组限制芯片厂商只能为NXP，故选择官方推荐的RT1064, 该芯片的主频高，可以满足彩色摄像头使用，硬件资源丰富。
+
+图1.2 RT1064
+1.3 机械设计方案
+基于逐飞科技发布的IPS屏幕支架方案和车模自身的结构特点，我们设计了一款专用于数据采集的屏幕支架。该支架采用上下双层板结构设计，上下板均预留了规则排列的孔洞，为碳杆和摄像头提供了灵活的安装调节空间。通过在不同孔位安装碳杆，可以精确控制摄像头的高度和角度，满足不同拍摄场景的需求。
+支架在前方、左侧和右侧均设置了挡板，形成半封闭的拍摄环境。这种设计能够有效阻挡外界光线的干扰，避免环境光照变化对摄像头识别造成影响。挡板结构从物理层面隔绝了杂散光，确保拍摄画面的光照稳定性，从而提高数据采集的准确性和一致性。
+整体而言，该支架设计兼顾了结构稳定性、安装灵活性和抗干扰能力。孔洞设计便于快速调整，碳杆材质轻便坚固，三向挡板有效规避了光照等外界因素的干扰。这一设计方案为数据采集提供了可靠的硬件支撑，极大程度地保证了采集数据的质量，为后续的模型训练奠定了良好的基础。
+
+图 1.3 屏幕支架结构设计
+
+考虑到实际运行环境中的温度影响和设备长时间运行产生的热量积累，我们在屏幕支架上专门设计了一套散热系统。该系统配置了散热风扇，主要用于解决屏幕因高温导致的性能问题。在炎热天气或设备长时间运行的情况下，屏幕及周边电子元件会产生显著热量。过高的工作温度会导致屏幕出现卡顿现象，严重时会明显降低显示帧率，直接影响数据采集的稳定性和连续性。为解决这一问题，我们在支架结构中集成散热风扇，通过主动风冷方式加速热量散发。
+散热风扇的安装位置经过精心设计，能够在不影响摄像头拍摄视野的前提下，为屏幕及周边关键部件提供持续的气流循环。这种主动散热方案有效控制了设备的工作温度，防止因过热导致的性能下降问题，确保了数据采集过程的稳定性和数据质量的一致性。
+
+图1.3 散热风扇实物图
+
+图1.3 屏幕支架实物图
+二．原理图PCB 设计
+2.1 主控板原理图
+主控板功能架构
+主控板以逐飞科技RT1064最小系统板作为核心控制器，采用5V主供电与3.3V外设供电的双路电源架构。作为系统的中央处理单元，RT1064主要承担三大核心功能：
+（1）实时采集并处理智能车速度、位姿及转向角度等传感器反馈信息    
+（2）通过通信接口与OpenART摄像头模块进行数据交互，实现目标识别与路径规划；
+（3）运行闭环控制算法，生成精确的电机控制指令，驱动小车稳定高速行驶。
+主控板集成了完整的功能模块：电源管理模块（包含DC-DC降压、LDO稳压及上电时序控制电路）、摄像头接口（CSI标准）、双路通信接口（USART2/USART3）、编码器接口（电机转速反馈）、2.0寸IPS显示屏接口、指示灯（电源/状态双指示）、蜂鸣器、风扇接口及电机驱动接口等。
+主控板通过专用电源线为电机驱动板供电，形成完整的电源分配网络，确保各模块协同工作。
+
+图2.1   RT1064主控板原理图
+
+
+
+图2.1 5V稳压模块
+
+
+5V稳压电路采用LM2596SX降压芯片，将电池VBAT 输入电压降压至稳定5V，芯片最大输出电流3A。电路采用SS34 肖特基续流二极管与33μH 功率电感构成 Buck 降压拓扑；输入端与输出端配置组合滤波电容，实现纹波抑制，保障输出电源稳定性。该 DC-DC 降压方案对比7805这类线性稳压器转换效率更高、发热更小，可为串口模块、陀螺仪、显示屏、编码器等外设提供5V 供电，输出能力可满足智能车系统全部外设的功耗需求；该5V输出同时作为后级受控负载开关与 LDO 电路的供电输入，构成系统完整电源树。芯片工作开关频率150kHz，集成过流保护与过热关断保护，提升电源系统可靠性。
+。
+
+图2.1  3.3V外设供电电路
+
+3.3V 外设供电电路采用RT9013-33GU5 低压差线性稳压器（LDO），将5V 输入稳定降至3.3V，最大输出电流500mA。输入端配置100nF 去耦电容，输出端采用10μF 与100nF 组合滤波方案；芯片 EN 引脚接收 CR 控制信号，控制 LDO 整体开启与关断，输出可控的3V3-CR 电源。该 LDO 具备低噪声、快速响应、低纹波的特点，适合对电源质量要求敏感的数字和模拟外设，如 IMU 陀螺仪、2.0IPS 显示屏、串口通信模块等。相比 DC-DC 降压方案，LDO虽然理论效率略低（约66%），但电路简单、成本低廉、无需电感元件，同时集成短路、过流、热关断保护，是3.3V 低功耗外设供电的理想选择，与系统5V 电源通路构成完整电源树架构，共同支撑RT1064 主控板各外设的稳定运行。
+
+图2.1  5V上电时序控制电路
+
+5V上电时序电路采用SY6280AAC 低损耗功率分配开关芯片（U2），实现5V 电源的时序控制管理。芯片通过 EN 使能引脚接收 CR 控制信号，控制5V‑CR 电源输出的开启与关断。输入端配置100nF 去耦电容（C5）进行滤波，ISET 引脚通过4.7kΩ电阻（R2）设置约1.45A 的过流保护阈值。SY6280AAC 为高侧负载开关，导通电阻最大值80mΩ（典型值63mΩ），具备快速使能响应小于1μs，关断静态电流小于1μA；芯片集成反向电流阻断、输出放电、过流短路保护与过温自动重试功能。通过受控电源输出，有效抑制上电电源冲击、防止电压跌落，确保RT1064 主控板及各外设在稳定的电源环境下有序启动，为整个智能车系统提供安全可靠的电源管理保障。
+
+
+
+图 2.1 主控版3D图
+
+图 2.1 主控板实物图
+
+2.2 电机驱动板原理图
+电机驱动板功能架构
+电机驱动板使用两片DRV8701E 单路全桥驱动芯片设计，集成两路独立的电机驱动电路（电机1驱动、电机2驱动），每路全部采用 N 沟道 MOSFET 搭建 H 桥功率级，依靠芯片电荷泵驱动上管，支持正转、反转、制动及滑行四种工作模式，通过 PWM 调速实现0-100%全范围转速控制，满足智能车加速、减速的动态功率需求。驱动板设有信号输入接口接收RT1064 主控板的 PH、EN、nSLEEP 控制信号，配合缓冲电路增强信号驱动能力；电源输入端子接收供电，电机接口同时输出电机驱动电源与编码器反馈信号；使能信号及状态指示灯电路，直观反映驱动芯片工作状态，实现硬件层面的状态监测。
+DRV8701E 芯片内置过流、过热、欠压保护机制。驱动板采用物理隔离设计，能够有效抑制电机功率回路噪声对主控板敏感外设的干扰，形成主控板 PWM 控制→驱动板功率放大→电机转动→编码器反馈的闭环控制架构，确保智能车的精准运动控制
+
+
+图 2.2 电机驱动原理图
+
+PCB走线
+
+图 2.2 电机驱动走线图
+实物图
+
+图 2.2 驱动3D图
+
+图 2.2 驱动实物图
+	
+
+三．运动控制与决策方案
+优秀的软件控制程序是智能车高速稳定完成比赛任务的基础。根据智能视觉组推箱子比赛流程，我们按照逻辑顺序对小车控制各部分内容进行阐述。主要有，地图获取与解析，箱子编号识别，路径规划，全向运动控制，视觉坐标矫正，推箱执行与误推验证，自主回库。具体流程如下图所示。
+系统以 NXP RT1064DVL6A 为主控，配备两个摄像头：摄像头1（OpenMV，UART2）从正上方识别 A4 纸地图，负责地图数据、坐标矫正和推箱验证；摄像头2（OpenArt Mini，UART4）负责识别箱子和目标点上的编号。主控依靠四路编码器里程计和 IMU660 姿态解算实现定位，用麦轮底盘全向移动。比赛三个关卡由主控顺序完成：关卡1 为自动配对纯推箱，关卡2 为观察识别，关卡3 为炸弹开路。
+
+3.1地图获取与解析部分
+主控出库到位后，向摄像头1 发送 @map$ 命令。摄像头1 把地图解析为 140 字符的字符串回传，主控在 UART2 中断中接收，校验帧头帧尾后置位接收标志。主循环发现标志后调用 astar_map_load，把字符串写入全局栅格地图 g_map_codes（14×10）。地图元素编码为：0 空地、1 墙壁、3 箱子、4 目标点、5 炸弹。等待地图设有 10s 超时，摄像头1 掉线时放弃本轮回到空闲，不会死等。
+﻿
+3.2箱子编号识别部分
+箱子和目标点上都贴有编号。摄像头2 视野有限，车模需要行驶到观察点停车识别。规划阶段先生成观察路径，每个观察点记录车头朝向和被观察元素的类型。车模到达观察点后，观察箱子发 @sp$，观察目标点发 @sn$，摄像头2 回复 @n$（编号 0-9）。主控把编号交给 ID 分类器：编号相同的箱子与目标点自动配对，同一编号有多个元素时用 BFS 搜索取最近的一对。全部配齐后，剩余观察点不再行驶，提前进入推箱规划，省下绕行时间。
+3.3路径规划
+规划模块全部运行在主控内部，静态内存，没有动态分配，适合嵌入式环境。求解分四层：底层是 A* 与 IDA* 寻路；往上是 push_box_astar 单箱求解，IDA* 在外层搜索推箱动作序列，A* 在内层判断车模能否绕到推箱位置；再往上是 multi_box_pair_solve 多箱配对，DFS 分支定界搜索箱子到目标点的最优分配；最上层是 path_build_solve，按配对结果逐个求解并蒸馏出车模行驶拐点，同时记录每个拐点处箱子的期望状态，供推箱验证使用。
+
+关卡2 先由 build_observation_path 生成观察路径。关卡3 有炸弹，先由 bomb_open_path_pair_solve 给炸弹和墙体做瓶颈优先配对，path_build_bomb 构建炸弹推入路径并应用爆炸效果，墙体被永久清除后再在开阔地图上继续规划。执行顺序最后用 reorder_pairs_nearest 按就近原则重排，减少车模往返。
+
+3.4全向运动控制
+车模采用麦轮底盘，控制有三个环：位置环、速度环、角度环。位置环是位置式 PID，由当前位置与目标位置偏差算出 X/Y 方向速度 vx、vy；角度环用 IMU660 Mahony 四元数解算的偏航角闭环，输出角速度 w；两者再与速度环串级。麦轮逆运动学把 vx、vy、w 解算成四轮转速，经速度斜坡限制加速度后，交给增量式 PID 速度环控制电机。
+位置控制内部是 XY 到 YAW 的两步状态机：先到位 X/Y（误差 1.0 以内），再校准偏航（误差 1.0° 以内），到位后持续监控三轴漂移，超阈值自动回退重新校准。偏航偏差超过 5° 时按原地旋转处理，直接输出偏航 PID，位置环不参与，避免转圈时位置环捣乱。编码器由 5ms 定时中断采集，四路脉冲经麦轮正解累计成世界坐标，位置环反馈即来自里程计。
+3.5视觉坐标矫正
+里程计跑久了会积累误差，打滑、碰撞都会让计数位置偏离实际位置。主控每完成一个路径点（间隔可配置），停车向摄像头1 发 @pcoord$，摄像头1 返回车模在图像中的实际栅格坐标。主控把误差按一阶收敛缓变注入矫正偏移，单帧注入量硬限幅 0.5cm，不做位置跳变。里程计逐步收敛到真实位置，位置环不会因阶跃产生微分尖峰和超调。矫正窗口最多等 125 帧，样本不足就放弃本次矫正继续走。
+3.6推箱执行与误推验证
+车模沿拐点序列逐个停车行驶。规划阶段已算出每个推箱拐点处箱子的期望状态：delivered=0 表示箱子应仍在途中某格，delivered=1 表示箱子应已进入目标点。车模在推箱拐点停稳后，向摄像头1 发 @check(x,y,B)$ 或 @check(x,y,T)$，摄像头1 核对图像中该格的实际状态，回复 @b1$、@b0$ 或 @t1$、@t0$。主控对回复做 3 帧多数表决，过滤单帧误判；窗口内一帧都没收到时自动重发一次，第二次仍无回复按通过处理，防止摄像头抖动卡死流程。
+
+验证不通过说明箱子被推偏。主控发 @map$ 让摄像头1 重扫地图，以新地图里箱子的真实位置和车模当前栅格坐标为起点重新规划，替换未行驶的路径段继续比赛。单轮最多修正 3 次，超限直接回库，保证比赛总能收场。
+
+3.7自主回库
+推箱完成后，主控发最后一次视觉矫正请求，矫正结束驱动回出发点停车，回到空闲。关卡切换时车模在发车区停留约 4s，期间重新采集 IMU 陀螺零偏（50 帧），再自动出库进入下一关。三关全部完成停在发车区，比赛结束。
+
+四．图像处理算法
+本章介绍摄像头1（OpenMV，UART2）端图像处理算法的设计与实现。摄像头1垂直安装于车模顶部，以固定机位俯拍屏幕地图，图像处理程序运行在摄像头内部，按“场地识别—采样点生成—透视矫正—元素分类—车模定位”的流水线顺序处理图像，并将地图数据与车模坐标通过串口回传主控。
+4.1图像采集与预处理
+摄像头配置为RGB565色彩格式、QVGA分辨率（320×240）、帧率60fps。
+4.2场地识别与采样点生成
+游戏场地为蓝色背景。程序在预置的感兴趣区域（ROI，23,39,267,189）内运行。地图划分为14×10共140个栅格，每个栅格设置一个采样点。采样点按行均匀生成：步长取场地边长整除栅格数，除不尽的余数通过误差累加逐行补偿，保证采样点在整个场地内等间距分布且不漂移。每个采样点同时记录像素坐标与地图坐标，作为后续元素分类与坐标换算的基本单元。
+4.3透视矫正与角点检测
+由于摄像头安装存在高度差与安装倾角，图像中的场地呈梯形畸变，直接按均匀网格采样会把场地外的像素混入地图。为此程序先检测场地在屏幕上的真实角点：在标准矩形四角各取边长1/8的小矩形，分别对这四个矩形内的像素点进行判断分类，把属于场地内的像素点提取出来，分别求坐标位于四角的极值点，即为真实的场地矩形角点。随后以标准矩形角点为源点、真实角点为映射目标，构建8×8线性方程组，采用列选主元的高斯消元法求解3×3透视变换矩阵H，将全部140个采样点经H变换映射至真实位置，消除梯形畸变。该矩阵的逆变换同时用于车模像素坐标向地图坐标的反解。
+4.4地图元素分类
+元素分类逐采样点进行。读取每个采样点的RGB值后按颜色特征依次判定：蓝色像素（红蓝差与绿蓝差均不小于125）判为地面；黄色像素（红蓝差与绿蓝差均不小于100）判为箱子；红色像素中红绿差不小于100且红蓝差大于80判为炸弹，其余红绿差不小于100判为目标点；其余判为墙体。分类完成后，各格子按编码0空地、1墙壁、3箱子、4目标点、5炸弹输出，组成14×10共140字符的地图字符串，经串口一次性回传主控写入栅格地图。程序同时对箱子与目标点的数量进行比对，数量不一致时打印警告，避免推箱规划进入无解状态。
+
+4.5车模定位与跟踪
+车模顶部贴有绿色识别标记。定位采用三级确认加十字扫描：先判断上一帧中心点是否仍为车模颜色，若否则在其四邻域像素中搜索，仍找不到时以车模LAB阈值执行色块搜索、取最大色块中心作为兜底；随后以确认点为中心向上下左右四个方向逐像素扫描，直至扫描到非车模像素，取四向边界的几何中心作为车模中心，消除车模形状不对称带来的偏心误差。连续帧的车模中心经指数滑动平均滤波（权重0.78）平滑后输出，抑制抖动。车模像素坐标经透视逆变换换算为栅格坐标，随坐标矫正帧发送给主控。
+4.6元素状态检测与推箱验证
+推箱过程中需要对箱子与目标点的状态实时核验。单点像素判定受噪声影响大，箱子检测采用九宫格采样：以格子中心为基准，向四周各偏移1/4格宽，采样3×3共9个点，统计黄色像素个数，不少于4个才判定为箱子，兼顾抗干扰与灵敏度。地面与目标点的判定直接采用颜色阈值。收到主控的check命令后，程序按B模式核对指定格子是否存在箱子、按T模式核对该格是否为空地且非目标点，将结果b1/b0、t1/t0回传，供主控多帧表决判断是否推偏。
+五．视觉识别
+5.1 视觉识别思路
+视觉系统主要的任务，是十种动漫人物的识别。根据官方建议，我们选择支持神经网络模型部署的Openart mini完成视觉任务。
+
+图5.1 Openart mini摄像头
+Openart mini支持多种深度学习任务，能够简易地完成神经网络模型的部署。 
+5.2 模型训练
+	5.2.1数据集实拍
+   本数据采集系统采用双机协同工作模式，两台计算机均部署点点精灵自动化脚本，实现精准同步的数据采集。系统启动前，需要两人同时配合在两台电脑上分别手动布置专用脚本，确保数据采集的准确性和一致性。
+电脑A运行游戏系统，连接外部显示屏。其部署的点点精灵脚本专门负责数据集的预处理与管理。脚本的执行流程为：从官方提供的数据集中按顺序读取图片，每六张为一组，依次拖入游戏系统的图片文件夹中。当该组图片完成拍摄后，脚本自动清除已拍摄的图片，随后加载下一组六张图片，如此循环往复，直至整个数据集采集完毕。此设计有效避免了数据冗余，确保了系统资源的合理利用。
+电脑B运行OpenMV IDE，部署专用的拍摄控制脚本。该脚本的核心功能是根据电脑A所展示的不同视角方向，在OpenMV模块中执行连续拍摄任务。脚本实时监测电脑A的视角状态，确保摄像头拍摄角度与游戏系统展示的画面精确匹配。通过这一机制，OpenMV能够在不同视角切换时快速响应，连续采集高质量的训练图像数据。数据采集的关键环节在于两台电脑脚本的精准同步。在准备就绪后，同时启动两台电脑上的点点精灵脚本。这一同步启动动作是确保数据有效性的核心前提。若启动时间存在偏差，将导致拍摄角度与展示画面不匹配，产生无效的训练数据。因此，系统要求通过协调指令或同步信号，在同一时刻触发两台电脑的脚本执行。
+在采集过程中，需持续监控两台电脑的工作状态，确保脚本执行的一致性。若发现异步情况，马上暂停脚本的运行，重新校准后再次同步启动。完成全部数据采集后，对拍摄结果进行逐一验证，确保每张图片的角度准确性和数据有效性，删除存储文件夹内拍摄到的废片，为后续模型训练奠定可靠基础。最后合计总共数据集28365张。
+5.2.2 数据集训练
+采用NXP eIQ Portal进行模型训练，选用MobileNetV2作为基础网络架构。MobileNetV2是由Google提出的轻量级卷积神经网络，采用深度可分离卷积和倒残差结构设计。深度可分离卷积将标准卷积分解为深度卷积和逐点卷积两步，大幅降低计算量；倒残差结构通过先扩展后压缩的方式，在保持信息流的同时减少内存占用。这种架构设计使MobileNetV2在保持较高精度的同时显著降低计算复杂度，特别适合资源受限的嵌入式部署场景。
+
+图 5.22 训练参数设置
+权重初始化采用ImageNet预训练权重，利用大规模数据集学习到的通用特征提升收敛速度。ImageNet数据集包含超过1400万张标注图像，涵盖2万多个类别，其预训练权重已学习到丰富的视觉特征表示，能够为下游任务提供良好的特征提取基础。
+输入尺寸设置为96×96像素的3通道RGB格式。这一尺寸选择在保持足够特征信息的同时有效控制了计算复杂度和内存占用，适合部署在资源受限的嵌入式设备上。所有采集的图像数据在训练前均需预处理为统一的96×96×3格式。
+学习率设置为0.0001，采用保守配置确保训练稳定性。较低的学习率有助于模型在训练初期稳定收敛，避免因梯度更新过大导致的训练震荡。学习率衰减功能保持关闭，模型在整个训练过程中维持恒定的学习率，此配置简化了训练流程，便于快速验证模型结构。
+批大小设置为300，即每次迭代处理300个样本。较小的批大小有助于模型更快地更新参数，同时降低内存占用。在训练数据量有限的情况下，此设置能够在训练效率和梯度估计稳定性之间取得平衡。
+
+图 5.22 训练进程图
+
+
+训练过程共进行138轮迭代，通过充分的训练轮数确保模型收敛到较优状态。每一轮训练都会完整遍历整个数据集，使模型有充足的机会学习数据中的特征模式。量化感知训练、剪枝和聚类等优化选项均保持关闭，适用于初期实验阶段，便于后续根据需求进行模型优化。经过138轮训练，模型在所有类别上的识别准确率均达到99%以上
+
+图 5.22 模型训练结果
+六．系统调试
+6.1 开发调试工具
+		6.1.1 Keil uVision5 
+此外，我们也使用了Keil uVision5软件作为开发工具。Keil MDK-ARM是Keil软件公司出品的支持ARM微控制器的一款IDE。MDK-ARM包含了工业标准的Keil C编译器、宏汇编器、调试器、实时内核等组件。具有业行领先的ARM C/C++编译工具链，完美支持Cortex-M、Cortex-R4、ARM7和ARM9系列器件，包含世界上品牌的芯片。比如：ST、Atmel、Freescale、NXP、TI等众多大公司微控制器芯片。
+
+图6.1.1 Keil调试界面
+		6.1.2 OpenMV IDE
+摄像头的调试我们使用OpenMV IDE,此集成开发环境支持OpenMV Cam与Openart mini Cam的Python语言嵌入式开发，具有强大的文本编辑器、调试终端和带直方图显示的帧缓冲查看器；支持深度学习模型部署，内置多种图像处理算法。 
+
+图6.1.2 OpenMV IDE调试界面
+七．智能车主要参数说明
+车模种类：M车
+IPS五英寸磁吸彩屏
+散热风扇，IMU660RA陀螺仪
+长31.5cm，宽20.2cm，高15cm
+Openart Plus摄像头一个，Openart mini摄像头一个
+四个普地4096编码器
+RT1064核心板一个
+2200mAh，11V锂电池一个，附带自制电压计
+自制主控板一个、自制电机前驱动板一个、自制电机后驱动板一个
+八．总结
+自报名参加全国大学智能汽车竞赛以来，我们小组成员秉持着严谨务实、创新进取的态度，从查找资料、设计机构、组装车模、编写程序一步步扎实推进，经过反复的实验验证和方案优化，最终完成了既定目标，确定了现行的技术设计方案。这一过程凝聚了团队的智慧与汗水，也体现了我们对智能汽车技术的深刻理解与创新探索。
+在此份技术报告中，我们主要介绍了备赛阶段的基本思路与创新思想，涵盖机械结构、电路设计以及控制算法三大核心领域。在机械结构方面，我们创新性地设计科学合理，能够高效完成指定任务，同时兼顾了结构的稳定性与灵活性。在电路设计方面，我们采用模块化设计理念，将系统划分为最小系统、主板、电机驱动等独立模块，分别进行针对性设计。每个模块均经过多轮实验测试与参数优化，不断调整电路布局和元器件选型，最终确定了性能最优、稳定可靠的电路方案。在程序开发方面，我们使用C语言进行系统编程，充分利用开发工具进行调试与优化。小组成员通过多次讨论与头脑风暴，不断改进程序逻辑与算法效率，最终设计出一套通用性强、稳定性高的软件系统，为竞赛任务的顺利执行提供了可靠的软件保障。
+
+九．附录
+9.1 参考文献
+[1]童诗白，华成英．模拟电子技术基础[M]．北京. 高等教育出版社．2000
+[2]陶永华,尹怡欣,葛芦生,新型 PID 控制及其应用[M].北京:机械工业出版社,1998.
+[3] 秦永元 惯性导航（第三版） 9787030664082 2020-11
+[4]赵世钰 IMU基于互补滤波的姿态解算探究 2023-12
+
+
+9.2 代码
+9.2.1 四元数姿态解算代码
+void imu660ra_attitude_update_quaternion (float dt)
+{
+    float ax, ay, az;
+    float gx, gy, gz;
+    float norm;
+    float vx, vy, vz;
+﻿
+    static uint16_t stationary_cnt = 0;
+    int is_stationary_confirmed = 0;
+    float ex, ey, ez;
+
+    imu660ra_get_acc();
+    imu660ra_get_gyro();
+    imu660ra_get_temp();
+    imu_temp = imu660ra_temp_transition(imu660ra_temp_raw);
+﻿
+    ax = imu660ra_acc_transition(imu660ra_acc_x);
+    ay = -imu660ra_acc_transition(imu660ra_acc_y);
+    az = -imu660ra_acc_transition(imu660ra_acc_z);
+﻿
+    /* 减去静态校准零偏 + 在线EMA零偏，得到去偏加速度计值(g，机体坐标系）
+     * acc_bias_z = az_mean - 1.0g, 减去后 imu_acc_body_z ≈ +1g（正常重力值）
+     * Mahony 姿态解算仍使用原始 ax/ay/az（含重力+偏置），需重力作为绝对参考 */
+    imu_acc_body_x = ax - acc_bias_x;
+    imu_acc_body_y = ay - acc_bias_y;
+    imu_acc_body_z = az - acc_bias_z;
+﻿
+    float acc_horiz_raw = sqrtf(ax * ax + ay * ay);    // 用于静止检测
+﻿
+    /* 陀螺仪 度/秒 → rad/s (方向翻转+零偏补偿+尺度校正) */
+    float gyro_x_raw =  imu660ra_gyro_transition(imu660ra_gyro_x);
+    float gyro_y_raw = -imu660ra_gyro_transition(imu660ra_gyro_y);
+    float gyro_z_raw = -imu660ra_gyro_transition(imu660ra_gyro_z);
+﻿
+    gyro_x = gyro_x_raw - gyro_x_bias;
+    gyro_y = gyro_y_raw - gyro_y_bias;
+    gyro_z = gyro_z_raw - gyro_z_bias - gyro_z_bias_online;  // 含温度感知EMA零偏
+﻿
+    gx = gyro_x * M_PI / 180.0f;
+    gy = gyro_y * M_PI / 180.0f;
+    gz = gyro_z * M_PI / 180.0f;
+﻿
+    float gz_bias_residual = gz;    // PI补偿前Z轴残差（用于静止检测）
+﻿
+    // 加速度归一化
+    norm = sqrt(ax * ax + ay * ay + az * az);
+    if(norm > 0.0001f)
+    {
+        ax /= norm;
+        ay /= norm;
+        az /= norm;
+    }
+﻿
+    // 由四元数推算重力方向参考向量
+    vx = 2.0f * (quaternion.x * quaternion.z - quaternion.w * quaternion.y);
+    vy = 2.0f * (quaternion.w * quaternion.x + quaternion.y * quaternion.z);
+    vz = quaternion.w * quaternion.w - quaternion.x * quaternion.x - quaternion.y * quaternion.y + quaternion.z * quaternion.z;
+﻿
+    // 参考向量 × 测量向量（叉积大小反映角度偏差）
+    ex = ay * vz - az * vy;
+    ey = az * vx - ax * vz;
+    ez = ax * vy - ay * vx;
+﻿
+    {
+        is_stationary_confirmed = (fabsf(gx) < 0.003f && fabsf(gy) < 0.003f
+            && fabsf(gz_bias_residual) < 0.005f && acc_horiz_raw < 0.12f);
+    }
+﻿
+    if (is_stationary_confirmed)
+        stationary_cnt++;
+    else
+        stationary_cnt = 0;
+﻿
+    /* 误差积分（消除稳态误差），yaw无绝对参考故Ki_Z用更大增益 */
+    exInt += ex * Ki_XY * dt;
+    eyInt += ey * Ki_XY * dt;
+    ezInt += ez * Ki_Z * dt;
+﻿
+    // PI补偿：用加速度计误差修正陀螺仪漂移
+    gx += Kp * ex + exInt;
+    gy += Kp * ey + eyInt;
+    gz += Kp * ez + ezInt;
+﻿
+    // 四元数更新（一阶龙格-库塔法）
+    float gx_dt = gx * dt;
+    float gy_dt = gy * dt;
+    float gz_dt = gz * dt;
+    float theta_sq = gx_dt * gx_dt + gy_dt * gy_dt + gz_dt * gz_dt;
+    float cos_half_theta, sin_half_theta_over_theta;
+﻿
+    if (theta_sq < 1.0e-6f)
+    {
+        // 小角度近似，避免除零
+        cos_half_theta = 1.0f - theta_sq * 0.125f;
+        sin_half_theta_over_theta = 0.5f - theta_sq * 0.020833333f;
+    }
+    else
+    {
+        float half_theta = sqrtf(theta_sq) * 0.5f;
+        cos_half_theta = cosf(half_theta);
+        sin_half_theta_over_theta = sinf(half_theta) / (half_theta * 2.0f);
+    }
+﻿
+    // 构造增量四元数 dq = [cos(theta/2), (wx/theta)*sin(theta/2), ...]
+    float dq_w = cos_half_theta;
+    float dq_x = gx_dt * sin_half_theta_over_theta;
+    float dq_y = gy_dt * sin_half_theta_over_theta;
+    float dq_z = gz_dt * sin_half_theta_over_theta;
+﻿
+    // 四元数乘法: q_new = q x dq（JPL惯例）
+    float qw = quaternion.w * dq_w - quaternion.x * dq_x - quaternion.y * dq_y - quaternion.z * dq_z;
+    float qx = quaternion.w * dq_x + quaternion.x * dq_w + quaternion.y * dq_z - quaternion.z * dq_y;
+    float qy = quaternion.w * dq_y - quaternion.x * dq_z + quaternion.y * dq_w + quaternion.z * dq_x;
+    float qz = quaternion.w * dq_z + quaternion.x * dq_y - quaternion.y * dq_x + quaternion.z * dq_w;
+﻿
+    quaternion.w = qw;
+    quaternion.x = qx;
+    quaternion.y = qy;
+    quaternion.z = qz;
+      
+﻿
+    // 由四元数解算偏航角
+    attitude_angle.yaw = atan2(2.0f * (quaternion.w * quaternion.z + quaternion.x * quaternion.y),
+                               1.0f - 2.0f * (quaternion.y * quaternion.y + quaternion.z * quaternion.z)) * 180.0f / M_PI;
+﻿
+    /* debug 输出去偏后的加速度计值（g），便于分析互补滤波效果 */
+    // debug_buf[0] = imu660ra_acc_x;
+    // debug_buf[1] = imu660ra_acc_y;
+    // debug_buf[2] = imu660ra_acc_z;
+    // debug_buf[3] = imu660ra_gyro_x;
+    // debug_buf[4] = imu660ra_gyro_y;
+    // debug_buf[5] = imu660ra_gyro_z;
+    // 由四元数解算横滚角和俯仰角
+    {
+        float qw = quaternion.w, qx = quaternion.x, qy = quaternion.y, qz = quaternion.z;
+        float asin_arg = 2.0f * (qw * qy - qz * qx);
+        if (asin_arg > 1.0f)  asin_arg = 1.0f;
+        if (asin_arg < -1.0f) asin_arg = -1.0f;
+        attitude_angle.roll  = atan2f(2.0f * (qw * qx + qy * qz),
+                                      1.0f - 2.0f * (qx * qx + qy * qy)) * 180.0f / M_PI;
+        attitude_angle.pitch = asinf(asin_arg) * 180.0f / M_PI;
+    }
+﻿
+    /* 温度感知 EMA 零偏跟踪
+     * 仅在静止时更新，温变快时加速 EMA 收敛，温变慢时保持慢速滤波 */
+    if (is_stationary_confirmed)
+    {
+        static float prev_imu_temp = 23.0f;
+        static uint8_t temp_first = 1;
+        if (temp_first) { prev_imu_temp = imu_temp; temp_first = 0; }
+        float temp_rate = fabsf(imu_temp - prev_imu_temp) / dt;  // dt=0.01s → °C/s
+        prev_imu_temp = imu_temp;
+﻿
+        float temp_boost = 1.0f;
+        if      (temp_rate > 0.5f)  temp_boost = 5.0f;   // 极快温变
+        else if (temp_rate > 0.1f)  temp_boost = 3.0f;   // 快速温变
+        else if (temp_rate > 0.02f) temp_boost = 2.0f;   // 中速温变
+﻿
+        float conf_boost = 1.0f;
+        if (stationary_cnt > 500)       conf_boost = 3.0f;
+        else if (stationary_cnt > 200)  conf_boost = 2.0f;
+﻿
+        float alpha_z = 0.001f * temp_boost * conf_boost;
+        if (alpha_z > 0.05f) alpha_z = 0.05f;
+﻿
+        /* 静止时 gyro_z 理论上应为零，非零值即为当前零偏估计误差 */
+        gyro_z_bias_online += alpha_z * gyro_z;
+        ezInt = 0.0f;   // 避免 PI 积分项双重补偿
+    }
+    // 限幅防止异常数据污染
+    if (gyro_z_bias_online >  0.5f) gyro_z_bias_online =  0.5f;
+    if (gyro_z_bias_online < -0.5f) gyro_z_bias_online = -0.5f;
+﻿
+    /* 陀螺仪Z轴积分 → gyro_yaw（用于坐标旋转）
+     * 纯陀螺积分不受线性加速度干扰，互补滤波向 Mahony yaw 收敛消除漂移 */
+    gyro_yaw_rate = gyro_z;
+    gyro_yaw += gyro_yaw_rate * dt;
+﻿
+    // 归一化 [-180, 180]
+    gyro_yaw = fmodf(gyro_yaw, 360.0f);
+    if (gyro_yaw > 180.0f)       gyro_yaw -= 360.0f;
+    else if (gyro_yaw < -180.0f) gyro_yaw += 360.0f;
+﻿
+    /* 互补滤波：运动自适应拉向 Mahony yaw */
+    {
+        float mahony_yaw = attitude_angle.yaw;
+        float yaw_err = mahony_yaw - gyro_yaw;
+        if (yaw_err > 180.0f)       yaw_err -= 360.0f;
+        else if (yaw_err < -180.0f) yaw_err += 360.0f;
+﻿
+        float motion_level = fabsf(gyro_z);
+        #define GYRO_TAU_STATIC    2.0f   // 静止：强拉 Mahony
+        #define GYRO_TAU_MOVING   10.0f   // 运动：弱拉 Mahony
+        #define GYRO_MOTION_LO     2.0f
+        #define GYRO_MOTION_HI    10.0f
+﻿
+        float tau_adaptive;
+        if (motion_level <= GYRO_MOTION_LO) {
+            tau_adaptive = GYRO_TAU_STATIC;
+        } else if (motion_level >= GYRO_MOTION_HI) {
+            tau_adaptive = GYRO_TAU_MOVING;
+        } else {
+            float frac = (motion_level - GYRO_MOTION_LO) / (GYRO_MOTION_HI - GYRO_MOTION_LO);
+            tau_adaptive = GYRO_TAU_STATIC + frac * (GYRO_TAU_MOVING - GYRO_TAU_STATIC);
+        }
+﻿
+        /* tau 平滑 EMA（防状态突变导致互补修正跳变） */
+        static float gyro_tau_smoothed = 0.0f;
+        static uint8_t gyro_tau_inited = 0;
+        if (!gyro_tau_inited) { gyro_tau_smoothed = tau_adaptive; gyro_tau_inited = 1; }
+        gyro_tau_smoothed += 0.1f * (tau_adaptive - gyro_tau_smoothed);
+        tau_adaptive = gyro_tau_smoothed;
+﻿
+        gyro_yaw += yaw_err * (dt / tau_adaptive);
+    }
+}
+
+9.2.2 全向移动代码
+void mecanum_calc(float vx, float vy, float w)
+{
+    wheel[0] = (vx - vy + w);
+    wheel[1] = (vx + vy - w);
+    wheel[2] = (vx - vy - w);
+    wheel[3] = (vx + vy + w);
+}
+void Motor_target_Control(void)
+{
+    motor_en_speed(0, wheel[0]);
+    motor_en_speed(1, wheel[1]);
+    motor_en_speed(2, wheel[2]);
+    motor_en_speed(3, wheel[3]);
+}
+
+9.2.3 图像识别代码
+# 确认车模像素位置
+def car_center_confirm(roi, car_coor=car_map):
+    global IMG
+
+    error = False
+
+    car_cx = car_coor[0]
+    car_cy = car_coor[1]
+
+    # 首先判断坐标点是不是车模
+    # 取周围四个像素再次确认落点是否是车模
+    if not is_car((car_cx, car_cy)):
+        # print(" car_center_confirm(): 中心点不是车模")
+        error = True
+        directions = (
+            (-1,0),     # 左点
+            (1,0),      # 右
+            (0,-1),     # 上
+            (0,1)       # 下
+        )
+        for d in directions:
+            x = car_cx+d[0]
+            y = car_cy+d[1]
+            if Is_out_IMG_range((x,y)):
+                continue
+            if is_car((x, y)):
+                car_cx = x
+                car_cy = y
+                error = False
+
+        if error:
+            # print(" car_center_confirm(): 修正车模位置")
+
+            car_blobs = IMG.find_blobs([car_color],roi=roi, area_threshold=8)
+            if(len(car_blobs)>0):
+                car_blob = max(car_blobs, key=lambda b: b.area())
+                car_cx = car_blob.cx()
+                car_cy = car_blob.cy()
+
+    left = car_cx
+    right = car_cx
+    up = car_cy
+    down = car_cy
+
+    # 左扫描
+    while left > roi[0]:
+        left -= 1
+        if not is_car((left, car_cy)):
+            break
+    # 右扫描
+    while right < roi[0]+roi[2]:
+        right += 1
+        if not is_car((right, car_cy)):
+            break
+    # 上扫描
+    while up > roi[1]:
+        up -= 1
+        if not is_car((car_cx, up)):
+            break
+    # 下扫描
+    while down < roi[1]+roi[3]:
+        down += 1
+        if not is_car((car_cx, down)):
+            break
+
+    # print(f" up {up}")
+    # print(f" down {down}")
+    # print(f" right {right}")
+    # print(f" left {left}")
+    # print('')
+
+    car_cx = (right + left)//2
+    car_cy = (down + up)//2
+
+    if not error:
+        car_cx = EMA(car_coor[0], car_cx, 78)
+        car_cy = EMA(car_coor[1], car_cy, 78)
+
+    return car_cx, car_cy
+
+# 地图元素分类, 返回箱子和目标索引
+def Element_classification():
+    global IMG
+    global MAP_W
+    global Map_point
+
+    box_index_list = []
+    goal_index_list = []
+    index = 0
+
+    for p in Map_point:
+        r, g, b = IMG.get_pixel(p.pixel_x, p.pixel_y)
+        # 蓝色优先
+        if (b-r >= 125 and b-g >= 125) or (g-r >= 50 and r < 150):
+            p.ID_information(0,'_')
+            # IMG.draw_circle(p.pixel_x, p.pixel_y, 1, color=(255,255,255), fill=False)
+        # 黄色箱子
+        elif Is_box(coor=(p.map_x,p.map_y)):
+            p.ID_information(3,'$')
+            box_index_list.append(index)
+        # 炸弹
+        elif (r-g>=100 and r-b>80):
+            p.ID_information(5,'*')
+        # 粉色目标
+        elif (r-g>=100):
+            p.ID_information(4,'.')
+            goal_index_list.append(index)
+        # 墙
+        else:
+            p.ID_information(1,'#')
+        index += 1
+
+
+    len_box_list = len(box_index_list)
+    len_goal_list = len(goal_index_list)
+    if len_box_list != len_goal_list:
+        print(" Element_classification(): 箱子: %d" % len_box_list)
+        print(" Element_classification(): 目标: %d" % len_goal_list)
+        print(" Element_classification(): 箱子和目标数量不匹配！！！")
+        print(" Element_classification(): 箱子和目标数量不匹配！！！")
+        print(" Element_classification(): 箱子和目标数量不匹配！！！")
+    # 打印地图
+    for p in Map_point:
+        print(p.char,end=' ')
+        if p.map_x == MAP_W - 1:
+            print('')
+    print('')
+
+    return box_index_list, goal_index_list
+
+# 采样点矫正
+# 参数 real_rect_point: 真实矩形点位
+# 参数 stand_rect: 标准矩形(x,y,w,h)
+def MapPoint_Calibrate(stand_rect, real_rect_point):
+    global Map_point
+
+    x,y,w,h = stand_rect
+    stand = ([x,y], [x+w,y],
+            [x,y+h],[x+w,y+h])
+    H = get_perspective_transform(stand,real_rect_point)
+    for p in Map_point:
+        u, v = pixel_transformation(H,(p.pixel_x,p.pixel_y))
+        p.pixel_x = u
+        p.pixel_y = v
+
+# 在轮廓寻找极值点即角点
+def CornerPoint_find(stand_rect):
+    global IMG
+
+    points = CornerPoint_Cloud(stand_rect)
+
+    min_sum = 999
+    max_sum = -999
+    min_diff = 999
+    max_diff = -999
+
+    for (x, y) in points:
+        s = x + y
+        d = x - y
+
+        if s < min_sum:
+            min_sum = s
+            top_left = (x, y)
+
+        if s > max_sum:
+            max_sum = s
+            bottom_right = (x, y)
+
+        if d > max_diff:
+            max_diff = d
+            top_right = (x, y)
+
+        if d < min_diff:
+            min_diff = d
+            bottom_left = (x, y)
+
+    # top_left = (top_left[0]-1, top_left[1]-1)
+    # top_right = (top_right[0]+1, top_right[1]-1)
+    # bottom_left = (bottom_left[0]-1, bottom_left[1]+1)
+    # bottom_right = (bottom_right[0]+1, bottom_right[1]+1)
+
+    return top_left, top_right, bottom_left, bottom_right
+
+# 地图采样点生成
+# 参数1: 矩形范围 (x,y,w,h)
+def MapPoint_creat(StandRect):
+    global MAP_W, MAP_H
+    global Map_point
+    x0 = StandRect[0]
+    y0 = StandRect[1]
+    pixel_w = StandRect[2]
+    pixel_h = StandRect[3]
+    step_x = pixel_w // MAP_W
+    step_y = pixel_h // MAP_H
+    rem_x = pixel_w % MAP_W
+    rem_y = pixel_h % MAP_H
+    err_x = 0
+    err_y = 0
+    cy = y0 + step_y // 2
+    index = 0
+    for j in range(MAP_H):
+        cx = x0 + step_x // 2
+        err_x = 0
+        for i in range(MAP_W):
+            Map_point[index] = Map_Point(cx, cy, i, j)
+            index += 1
+            err_x += rem_x
+            if err_x >= MAP_W:
+                cx += 1
+                err_x -= MAP_W
+            cx += step_x
+        err_y += rem_y
+        if err_y >= MAP_H:
+            cy += 1
+            err_y -= MAP_H
+        cy += step_y
+    Map_point = tuple(Map_point)
+
+
+# 调参时框选地图大致范围, 返回较为标准的矩形范围
+# 参数 Game_rect: (x, y, w, h)
+def StandRect_creat(Game_rect):
+    global IMG
+
+    game_venue_blobs = IMG.find_blobs([game_venue_color], roi=Game_rect, area_threshold=Game_rect[2]*Game_rect[3]//8, merge=True, margin=Game_rect[2]+5)
+    if(len(game_venue_blobs)>0):
+        game_venue_blob = max(game_venue_blobs, key=lambda b: b.area())
+
+        return game_venue_blob.rect()
+    else:
+        return None
+
+
+
+def Init_map():
+    global IMG
+    global car_map, car_pixel
+    global box_coor_list, goal_coor_list
+    global Game_rect, Standard_Game_rect, Real_rect_point
+
+    IMG = sensor.snapshot()
+    # 场地初确认
+    Standard_Game_rect = StandRect_creat(Game_rect)
+
+    MapPoint_creat(Standard_Game_rect)
+
+    # 校准点位
+    Real_rect_point = CornerPoint_find(Standard_Game_rect)
+
+    MapPoint_Calibrate(Standard_Game_rect,Real_rect_point)
+
+    box_index_list, goal_index_list = Element_classification()
+
+    box_coor_list = indexes_to_coor_List(box_index_list)
+    goal_coor_list = indexes_to_coor_List(goal_index_list)
+
+    print(f" Init_map(): box_coor_list {box_coor_list}")
+    print(f" Init_map(): goal_coor_list {goal_coor_list}")
+
+    # 车模位置确认
+    car_pixel = car_center_confirm(Game_rect)
+    car_map = PixelCoor_to_MapCoor(car_pixel, Standard_Game_rect, coor_Trans_mod=True)
+
+===== TABLE 1 =====
+参赛队员签名： | 
+带队教师签名： | 张轩弋，朱里红
+日        期： | 2026.8.15

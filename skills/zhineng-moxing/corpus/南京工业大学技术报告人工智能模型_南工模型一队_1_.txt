@@ -1,0 +1,1038 @@
+第二十一届全国大学生
+智能汽车竞赛
+技 术 报 告
+（人工智能模型组）
+学    校：南京工业大学
+队伍名称：南工模型一队
+参赛队员：王梓、张铭洋、王康、孙宇涵、张志豪
+带队教师：孙冬梅、朱行健
+
+关于技术报告和研究论文使用授权的说明
+
+本人完全了解第二十一届全国大学生智能汽车竞赛关于保留、使用技术报告和研究论文的规定，即：参赛作品著作权归参赛者本人，比赛组委会可以在相关主页上收录并公开参赛作品的设计方案、技术报告以及参赛模型车的视频、图像资料，并将相关内容编纂收录在组委会出版论文集中。
+
+
+
+参赛队员签名：
+带队教师签名：
+
+日        期：2026年8月17日
+
+目    录
+第一章　引言	1
+1.1　竞赛背景与意义	1
+1.2　竞赛任务概述	1
+1.3　本文主要工作与章节安排	2
+第二章　系统总体方案设计	3
+2.1　任务分析与设计目标	3
+2.2　系统总体架构	3
+2.3　关键技术路线选择	4
+2.4　系统工作流程	5
+第三章　车模机械结构设计	7
+3.1　车模选型与总体布局	7
+3.2　转向机构调整	7
+3.3　传感器与板卡安装	7
+3.4　整车尺寸与照片	7
+第四章　电路设计说明	9
+4.1　主控与 AI&AR 模块	9
+4.2　电源设计	9
+4.3　电机驱动与舵机电路	11
+4.4　传感器与接口电路	14
+4.5　电路原理图与实物	15
+第五章　上位机软件设计（RK3588S）	19
+5.1　软件总体架构与线程模型	19
+5.2　视频采集与 AR 融合输入	19
+5.3　赛道中心线感知算法	20
+5.4　目标检测感知	22
+5.5　场景决策状态机	22
+5.6　转向控制	24
+5.7　速度规划与 50 Hz 控制发送	25
+5.8　上下位机通信协议设计	25
+第六章　下位机软件设计（TC264）	27
+6.1　双核任务划分	27
+6.2　通信接收与帧解析	27
+6.3　速度闭环控制	28
+6.4　舵机控制	28
+6.5　整车状态监测与安全自检	28
+第七章　全局视觉定位方案	31
+7.1　系统组成与部署	31
+7.2　ArUco 标记检测	32
+7.3　世界坐标系标定	32
+7.4　车辆位姿解算	32
+7.5　稳定化与滤波	32
+7.6　数据接口与 AR 引擎对接	33
+第八章　开发工具、制作、安装与调试过程说明	35
+8.1　开发环境与工具链	35
+8.2　调试方法与流程	35
+8.3　典型问题与解决	36
+第九章　模型车主要技术参数说明	39
+9.1　整车基本参数	39
+9.2　电气参数	39
+9.3　车载传感器	40
+9.4　执行器与伺服电机	40
+9.5　赛道信息检测精度与频率	40
+第十章　结论	43
+参考文献	i
+附录A　电路板详细设计原理图	iii
+A.1　TC264 核心板原理图	iii
+A.2　主板电源模块原理图	iv
+A.3　主板功能模块原理图	v
+A.4　主板 PCB	v
+A.5　DRV8701 双路电机驱动板 PCB 与 BOM	vi
+附录B　程序源代码（核心算法子程序）	ix
+B.1　HSV 掩码与形态学处理（perception/track_centerline_perceptor.py）	ix
+B.2　稳健行中心估计（同文件）	ix
+B.3　整线身份锁定（同文件）	x
+B.4　中心线时序融合（同文件）	x
+B.5　导航路牌场景决策（main.py）	xi
+B.6　上下位机通信协议（protocol.py）	xii
+B.7　下位机帧接收与实时指令处理（TC264 code/USB.c）	xii
+B.8　下位机速度闭环（TC264 code/control.c）	xiii
+B.9　模糊自适应 PID 计算（TC264 code/pid_fuzzy.c）	xiv
+B.10　定位标定：RANSAC 单应性（aruco_core/coordinate_transformer.py）	xv
+B.11　车辆位姿解算（定位方案/pos_sender_test_linear.py）	xvi
+附录C　车模技术检查表	xix
+
+
+摘    要
+本文介绍了南京工业大学“南工模型一队”参加第二十一届全国大学生智能汽车竞赛人工智能模型组的智能车系统设计方案。本车基于大赛指定的人工智能与增强现实（AI&AR）融合模块，以 RK3588S 板卡为上位机、Infineon TC264 单片机为下位机，采用“上位机感知决策＋下位机执行控制”的分层架构：上位机从 X-Verse AR 引擎共享内存中获取虚实融合视频流，以 HSV 多实例中心线感知为巡线主链，结合 PP-YOLOE 目标检测与“百度 OCR＋文心大模型”的路牌语义解析，由 DirectLineFollower 几何控制器生成速度与舵角指令，经自定义帧协议以 50 Hz 发送至下位机；下位机完成指令解析、10 ms 速度闭环控制与舵机 PWM 输出，实现车辆的稳定自主行驶。针对本届比赛“定位方案自研”的考点，团队自主开发了基于全局相机与 ArUco 标记的视觉定位系统：通过地面参考标记硬锁定、RANSAC 单应性标定、双边航向解算与卡尔曼滤波，实现约 2.2 ms/帧处理耗时的稳定位姿估计（航向标准差约 1.3°、标定可用率 99.5%），并通过 UDP 与 AR 引擎对接。上位机工程包含 100 项自动化回归测试，实车调试覆盖普通巡线、出租车避让、行人避让和导航路牌识别等场景。
+关键词：智能汽车；人工智能模型组；RK3588S；TC264；多实例中心线；PP-YOLOE；文心大模型；ArUco 定位
+
+主要符号及缩略语说明
+
+
+第一章　引言
+1.1　竞赛背景与意义
+全国大学生智能汽车竞赛要求参赛队完成模型车的机械、电路、控制算法和整车调试。车辆需要在规定赛道内自主行驶，参赛队不能在发车后进行人工干预[1]。
+第二十一届全国大学生智能汽车竞赛设置人工智能模型组。该组别面向未来智能驾驶系统的关键能力培养，以真实物理赛道为基础，通过虚拟对象叠加构建虚实融合驾驶环境（Mixed Reality Driving Environment）：车辆在真实赛道内行驶的同时，系统实时叠加虚拟行人、虚拟路牌、虚拟目标物（金币、特效奖励、任务道具）等信息，要求参赛者基于“纯视觉”方案完成感知、理解、决策与执行的全链条任务，综合运用目标检测、字符识别（OCR）、视觉大模型、强化学习与智能体规划等人工智能技术，构建完整的“AI 驱动型自主智能车”能力体系[2]。
+本队伍为南京工业大学“南工模型一队”，五位队员分别承担视觉感知、场景决策、嵌入式控制、全局定位与系统集成调试等工作，在孙冬梅、朱行健两位老师的指导下，完成了从方案论证、系统搭建到实车调试的工作。
+1.2　竞赛任务概述
+本届人工智能模型组竞赛分为线上资格赛、线下分区赛（区域赛）与全国总决赛三个阶段。区域赛现场比赛要点如下[3][4]：
+赛道与计时：赛道为室内循环赛道，赛前固定不再刷新，与现场实体完全一致；车辆需连续完成三圈自主行驶，全赛道设置 6 个隐藏穿越面，单圈至少成功穿越其中 5 个并通过拱门，方认定为完成有效一圈；比赛总时长为 12 分钟，全程最多 3 次正式发车机会，成绩按“净胜时间＝赛道物理用时＋任务罚时－奖励抵扣”计算，排位遵循“圈数优先、时间次之”原则。
+核心任务：（1）虚拟行人“鬼探头”避让——行人在指定区间随机出现并横向步入车道，车辆必须实时识别行人位置与运动趋势，采取减速绕行或紧急制动等策略，禁止碰撞，且不得采用固定时序、固定位置的规则硬编码方式规避，碰撞一次罚时 20 秒；（2）路牌导航——第二圈与第三圈各设置一处虚拟路牌，一处指向直道、一处指向岔道，顺序由系统赛前随机生成，全程恰好进入一次岔道，车辆须基于 OCR 与大模型理解路牌语义并选择正确道路分支，驶入错误岔路一次罚时 30 秒；（3）金币收集——赛道内分布若干虚拟金币，在不影响安全的前提下尽可能收集，每枚奖励抵扣 3 秒；（4）车辆避让——与虚拟出租车相遇时安全绕行；（5）自主泊车、神秘任务等任务在后续阶段考核。相较往届，本届区域赛全面移除了红绿灯相关任务，并取消了官方定位套件的销售，自研定位方案成为正式考点之一[5]。
+车辆与技术规范：车模由参赛队自由选型（阿克曼结构底盘），车身最大高度不超过 15 cm、最大长度不超过 35 cm、宽度不超过 22 cm，且须为无车壳状态；摄像头须平视前方、安装高度不超过 15 cm，建议安装在车身水平中心附近；计算须在大赛指定的 AI&AR 融合模块（RK3588S）上完成，禁止使用外接高算力设备；发车后车辆必须完全依靠车载模型自主决策行驶，严禁一切远程遥控与 SSH 介入[3][4][5]。
+1.3　本文主要工作与章节安排
+围绕上述任务，本文按竞赛技术报告要求组织如下：第一章介绍竞赛背景与规则；第二章给出系统总体设计方案；第三章、第四章分别介绍车模机械结构设计与电路设计；第五章详细介绍上位机（RK3588S）软件系统，包括中心线感知、目标检测、场景决策状态机、转向与速度控制及通信协议；第六章介绍下位机（TC264）软件设计；第七章介绍自主开发的全局视觉定位方案；第八章说明开发工具与调试过程；第九章为模型车主要技术参数；第十章总结全文并展望后续改进方向。
+
+第二章　系统总体方案设计
+2.1　任务分析与设计目标
+分析本届规则，系统设计需要满足以下目标：
+（1）纯视觉感知：环境感知只能依赖车载摄像头，虚拟对象（行人、出租车、路牌、金币等）叠加在真实赛道画面之上，感知算法必须同时处理真实道路与虚拟物体，并具有抗光照变化与抗干扰能力；
+（2）实时性：车辆最高目标速度约 2.0m/s，控制指令须以 50 Hz 稳定输出，感知—决策—执行全链路延迟须控制在数十毫秒量级；
+（3）鲁棒性与泛化性：路牌直行/岔道顺序赛前随机、行人出现位置随机，规则明确禁止固定时序、固定位置触发的硬编码控制，要求算法具备真实的理解与决策能力；
+（4）定位自研：官方定位模块仅用于裁判系统，参赛队须自行解决车辆定位问题，定位精度与更新频率直接影响 AR 叠加效果与轨迹类任务的完成质量；
+（5）安全与规范：满足车身与摄像头尺寸规范、无车壳要求，发车后完全自主运行，不依赖任何远程操作。
+2.2　系统总体架构
+系统采用“感知—决策—执行”分层架构，如图 2.1 所示。感知层由车载摄像头获取 AR 融合视频流，由自研全局视觉定位系统提供车辆位姿；决策层为 RK3588S 上位机，运行赛道中心线感知、PP-YOLOE 目标检测、OCR 与大模型语义解析、场景决策状态机与转向/速度控制器；执行层为 TC264 下位机，完成速度闭环与舵机控制。上下位机之间通过 USB-UART 串口以自定义帧协议通信，控制指令 50 Hz 下传、电池与速度遥测上行；定位系统通过 UDP 将位姿数据送入 RK3588S 上的 AR 引擎。
+
+图 2.1　系统总体架构
+2.3　关键技术路线选择
+2.3.1　巡线主链：传统视觉＋多实例中心线
+赛道为蓝色箭头铺装的连续道路，其几何特征是稳定、可解释且与光照变化可控的。深度学习检测模型虽然泛化能力强，但输出存在帧间跳变、边界精度低、易受虚拟叠加物遮挡等问题，不适合直接作为高速循迹的控制基准。因此本文采用传统计算机视觉作为巡线主链：在 HSV 颜色空间提取蓝色道路掩码，提取多个独立中心线实例并进行整线身份锁定与时序融合，得到帧间连续、逐行稠密的道路中心线与左右边界；检测模型仅作为场景分支，为出租车、行人、路牌等虚拟元素提供类别与位置信息，不替代中心线实例。
+2.3.2　AI 能力：PP-YOLOE 检测＋百度 OCR＋文心大模型
+竞赛要求 AI 算法基于飞桨（PaddlePaddle）框架与文心大模型实现[2]。本文选用 PP-YOLOE 目标检测模型，经 RKNN 工具链转换后在 RK3588S 的 NPU 上异步推理，检测出租车、行人、导航路牌等虚拟目标；路牌语义解析采用“百度 OCR＋文心大模型”两级流水线，OCR 提取文字后由大模型解析为直行/左转/右转的行驶方向，同时支持视觉大模型直接看图判断的多模态分支，转向结果由识别到的路牌内容决定。
+2.3.3　执行控制：TC264 下位机＋速度闭环
+下位机选用 Infineon TC264 双核单片机，负责 10 ms 速度闭环、舵机 PWM 输出、编码器测速、电量监测与安全自检。将执行层与感知层解耦，使 50 Hz 控制链路不受视觉帧率波动影响，同时上下位机通过带校验的定长帧协议通信，保证指令的实时性与可靠性。
+2.3.4　定位方案：全局相机＋ArUco 标记视觉定位
+针对本届“自研定位方案”考点，团队开发了基于全局俯拍相机与 ArUco 基准标记的视觉定位系统：车顶粘贴唯一识别标记，场地铺设 4 个已知世界坐标的参考标记，通过 RANSAC 单应性建立像素—世界坐标映射，实时解算车辆位置与航向，经卡尔曼滤波平滑后以 UDP 协议送入 AR 引擎，与比赛现场定位模块的数据接口保持一致。详细设计见第七章。
+2.4　系统工作流程
+系统上电后，下位机完成外设初始化并进入等待状态；上位机启动后首先与 AR 引擎共享内存、串口建立连接，前 3 秒保持停车并输出舵机中位，随后等待连续 10 帧有效中心线确认后解锁行驶。正常行驶中，上位机按“最新帧采集→HSV 中心线感知→异步检测/OCR 场景策略→控制器更新→50 Hz 发送”的流水线循环运行；当出现行人、出租车、路牌等场景目标时，场景状态机切换控制线与速度目标，任务完成后自动返回普通巡线状态；当完全丢线或视觉超时 250 ms 时，系统固定向右搜线并平滑降速，保证安全。程序退出或异常时，上位机固定发送“0 m/s＋舵机中位”停车帧，下位机在通信断开时同样执行安全停车。
+
+第三章　车模机械结构设计
+车模采用前轮转向、后轮驱动的阿克曼底盘。板卡、计算模块和定位标记沿车体纵向分层布置，在满足竞赛尺寸限制的同时兼顾摄像头视野、模块散热、线束维护和重心位置。
+3.1　车模选型与总体布局
+底盘前部布置转向机构，中后部布置动力电池、主板与 RK3588S 计算模块。主板靠近执行器和电源线束，便于缩短大电流回路；计算模块通过上层支架固定，并保留接口和散热空间。整车上方安装定位标记支架，标记平面保持完整可见，固定结构计入车身外廓。
+车模采用 i 车模底盘，实测轴距为 200 mm、轮距为 158 mm，轮胎尺寸为 65 mm。板卡和电池沿底盘纵向布置，较重部件尽量靠近底盘中部，以减小转向时的附加惯性。
+3.2　转向机构调整
+转向机构使用 CS-3210 舵机驱动前轮连杆。舵机控制频率为 100 Hz，软件中位为 1510 us，控制限位为 1150~1850 us。安装与调试时先在中位脉宽下固定舵盘，再检查左右极限位置，保证连杆、转向杯和轮胎在全行程内无机械干涉。前轮前束及左右转角一致性通过连杆长度进行机械校正。
+3.3　传感器与板卡安装
+现有实车中，TC264 主板、电机驱动板和 RK3588S 模块均采用螺柱或支架固定，板间连接线沿车体内部布置。定位标记安装在车体上方独立平面上，便于场地相机稳定识别。安装完成后需复核转向全行程、车轮跳动和线束弯折范围，避免运动部件与板卡、支架或导线发生干涉。
+车载摄像头安装高度为 115 mm，低于竞赛规定的 150 mm 高度上限。摄像头俯仰角以视野覆盖前方赛道为准，安装时使车体中线靠近画面中心。软件中的图像裁剪范围和中心位置参数可用于修正安装偏差。
+3.4　整车尺寸与照片
+安装定位标记后的整车外廓尺寸为 300 mm×195 mm×120 mm（长×宽×高）。对应竞赛限值分别为 350 mm、220 mm 和 150 mm，三个方向均留有余量。
+
+图 3.1　安装定位标记后的整车俯视图
+
+图 3.2　整车左侧、正面与右侧实拍
+
+第四章　电路设计说明
+整车电气系统由 RK3588S AI&AR 融合模块、TC264 核心板、自制四层主板、电机驱动板及执行器组成。主板原理图工程为 Icar.epro2，共包含电源模块、核心板和功能模块三页；PCB 使用 Top、Inner1、Inner2、Bottom 四个铜层。本章依据原理图与当前 TC264 工程的实际引脚配置说明硬件结构，完整原理图见附录 A。
+4.1　主控与 AI&AR 模块
+下位机采用英飞凌 AURIX TC264 核心板，以双排插座安装在自制底板中央。TC264 承担舵机 PWM、电机驱动、编码器采集、电池电压采样、按键与声光提示等强实时任务；RK3588S 负责图像感知、场景识别和路径决策。两级控制器通过异步串口交换控制帧，当前程序将主通信配置为 UART2：TX=P33.9，RX=P33.8。
+RK3588S 的 5 V 供电从主板 U2 接口引出，供电支路具有独立开关 SW1、自恢复保险丝 F1 以及共模电感 L5。这样可将计算平台的启停与电机动力支路分开，并抑制长线供电中的共模干扰。主板还引出 UART1（TX=P33.12、RX=P33.13）作为蓝牙调参与调试接口，避免与 RK3588S 主通信串口复用。
+表 4.1　主控模块与通信接口
+
+4.2　电源设计
+电池由 CN1 接入 12VIN。输入端使用 Q1（IRLR7843）与 D1（BZT52C16）组成保护网络，主动力支路经 SW2、共模电感 L4 和 C33/C32 滤波后形成 VBAT。VBAT 一路直接送往外置电机驱动板，另两路分别经 TPS5430 降压得到 5 V 和 6.5 V；5 V 再经 AMS1117-3.3 生成 3.3 V。PGND 与 EGND 通过 R13（0 Ω）单点连接，使功率回流与计算/逻辑回流在布线层面分区。
+表 4.2　主板电源树
+
+R58=300 kΩ、R59=100 kΩ 构成 1:4 电阻分压，将 VBAT 引入 TC264 的 ADC_A20，用于软件侧电池电压监测。主板原理图共配置 16 只离散电容，标称容量合计 1008.4 μF，其中 220 μF 电容承担降压输入/输出端的低频储能，10~22 μF 电容用于各支路缓冲，100 nF 电容用于高频去耦。该统计不包含 TC264 核心板、RK3588S 模块和外置电机驱动板内部电容。
+
+图 4.1　主板电源模块原理图
+4.3　电机驱动与舵机电路
+主板不在板上集成功率 H 桥，而是通过 U1 和 J1 连接外置有刷电机驱动板。J1 引出 P00.0、P00.1、P00.3、P00.4 四路 ATOM/PWM 控制信号，每路串联 100 Ω 电阻，用于限制瞬态电流并减小高速边沿振铃。外置驱动板采用两只 DRV8701ERGET 和八只 TPH1R403NL 功率 MOSFET，每只 DRV8701 配合四只 MOSFET 构成一路全桥，因此硬件可驱动两路有刷直流电机。SN74HC125PWR 用于控制信号缓冲。
+驱动板控制接口丝印包含 nSLEEP、3V3、1PWM、1DIR、2PWM、2DIR 和 GND，功率侧设置 VBAT/GND 输入及电机 1、电机 2 两组输出。当前 TC264 程序启用P00.1 作为 PWM、P00.4 作为方向控制；P00.0/P00.3 为另一通道预留。因此报告区分驱动板的双路硬件能力与整车软件当前只启用一路的实际状态。
+
+表 4.3　DRV8701 双路电机驱动板主要参数
+
+舵机由 H1 三针接口连接，接口提供 6.5 V、PGND 和 P21.5 控制信号。6.5 V 支路单独采用 U5（TPS5430）降压，避免舵机堵转或快速换向时的电流波动直接冲击 5 V 逻辑电源。原理图中 R6 标注 43 kΩ、R9 标注 10 kΩ，按 TPS5430 的 1.221 V 反馈基准计算输出约为 6.47 V，与 6.5 V 网络命名相符。
+
+图 4.2　DRV8701 双路电机驱动板 PCB 正反面
+
+图 4.3　DRV8701 双路电机驱动板实物正反面
+
+图 4.4　电机驱动板在车体上的安装位置
+4.4　传感器与接口电路
+P1 为 SPI 显示接口。当前 IPS114 驱动使用硬件 SPI3：SCK=P02.7、MOSI=P02.6、RST=P02.0、DC=P02.1、CS=P02.3、BLK=P02.2，其中时钟和数据线各串联 100 Ω 电阻。四个板载按键分别接 P14.3、P14.1、P15.5、P15.1，并通过 10 kΩ 电阻上拉至 3.3 V。
+蜂鸣器采用 SS8050 三极管低端驱动，P00.5 经 4.7 kΩ 基极电阻控制，10 kΩ 电阻提供关断下拉；蜂鸣器由 5 V 供电。板上另设 LED_1、LED_2 指示输出及收发指示灯。核心板接口还引出 ADC_A20、外部中断、WS2812、SPI0/SPI1 和多路 PWM 网络，为编码器、扩展传感器和调试功能保留连接条件。
+
+图 4.5　主板执行器与人机交互接口原理图
+4.5　电路原理图与实物
+PCB 采用四层结构，中央布置 TC264 核心板插座，左侧集中布置电池输入、保护与降压电源，右侧布置电机、舵机和串口接口，下侧布置按键，缩短了功率回路并便于整车装调。电源、执行器与逻辑接口按功能分区，四角设置机械安装孔。
+
+图 4.6　自制主板 PCB 布局预览
+
+图 4.7　自制主板实物正反面
+
+图 4.8　主板在车体上的安装位置
+附录 A 给出主板三页原理图、主板 PCB 预览以及电机驱动板 PCB 和 BOM。
+
+第五章　上位机软件设计（RK3588S）
+5.1　软件总体架构与线程模型
+上位机软件运行于大赛 AI&AR 融合模块（RK3588S），使用 Python 3 与 OpenCV 开发，主体工程为 Icar_CV 巡线系统。为保证感知、控制、显示互不阻塞，软件采用多线程流水线架构，如图 5.1 所示：
+（1）CaptureWorker 采集线程：持续从 AR 引擎共享内存读取最新融合帧，只保留最新帧，旧帧允许覆盖；（2）主视觉循环：串行执行中心线感知、场景决策与控制器更新，是系统的控制主链；（3）DetPerceptor：RKNN 异步目标检测，与中心线感知并行，每 2 个视觉帧运行一次，其余帧复用缓存；（4）OCRPerceptor：按需后台线程，仅在导航路牌满足提交条件时执行“OCR＋大模型”请求，不阻塞主链；（5）DisplayWorker：独立刷新调试画面并处理退出事件，关闭显示不影响控制；（6）ControlWorker：固定 50 Hz 发送线程，将最新控制指令封装成帧发送给 TC264，当视觉指令超过 250 ms 未更新时仍保持发送并平滑趋近安全速度与右搜线舵角。
+
+图 5.1　上位机软件线程架构
+5.2　视频采集与 AR 融合输入
+比赛画面由 X-Verse AR 引擎将虚拟对象叠加到真实摄像头画面之上。上位机通过两种方式获取融合视频流：其一为共享内存（shm_ar_video），在同一块板卡上实现低延迟传输；其二为 HTTP MJPEG 流，便于跨设备调试。共享内存帧头包含帧序号（fid）与宽高，读取时通过“读前读后双校验帧序号”保证帧完整性，帧序号未变化时直接跳过，避免重复处理；共享内存断开时自动重连。相机采集分辨率 640×480、请求帧率 60 FPS；感知处理宽度为 432 px，在远处细节与 NPU/CPU 计算开销之间取得平衡。
+实车调试时通过上位机叠加画面同步观察 HSV 掩码、锁定中心线、左右边界、目标检测框和场景状态。相关信息同时写入运行日志，用于离线复核轨迹切换、视觉丢失和场景决策过程。
+5.3　赛道中心线感知算法
+赛道中心线感知是巡线控制的基础，全部在 CPU 上以传统视觉方法实现，处理流程如图 5.2 所示。其核心思想是：保留多条独立中心线实例，按整条曲线锁定身份，输出帧间连续、逐行稠密的中心线与左右边界。
+
+图 5.2　赛道中心线感知算法流程
+5.3.1　HSV 掩码与 ROI
+首先将 ROI（图像纵向 35%～81%）内的 BGR 图像转换到 HSV 空间，按蓝色范围（H: 95~120，S: 60~255，V: 80~255）阈值分割得到道路掩码，随后执行开、闭形态学运算滤除孤立噪点、弥合箭头内部纹理，并将导航路牌所在区域从掩码中剔除，避免路牌立柱等干扰连通性。
+5.3.2　连通组件与行对称中心观测
+对掩码提取连通组件，每个组件独立记录。与常见的“二值化后逐行取中值”不同，本文对每个有效行提取组件左右边界，计算行对称中心 (L+R)/2，再用中位数绝对偏差（MAD）剪裁后的稳健中位数估计组件中心序列，并记录上下端点、宽度、面积与形态。该做法能有效抑制箭头内部纹理造成的蛇形中心线。
+@classmethod
+def _robust_center(cls, values, fallback):
+    values = np.asarray(values, dtype=np.float64).ravel()
+    if values.size == 0:
+        return float(fallback)
+    median = cls._linear_quantile(values, 0.5)
+    deviation = np.abs(values - median)
+    mad = cls._linear_quantile(deviation, 0.5)
+    if mad > 0.0:
+        values = values[deviation <= 3.0 * mad]
+    return cls._linear_quantile(values, 0.5) if values.size else median
+5.3.3　组件链与二次曲线拟合
+按纵向进展、端点距离、横向间隔、链代价与历史曲线距离等约束，将相邻组件连接为链，每条链拟合为以行坐标为自变量的二次曲线
+	x(y) = a·y² + b·y + c	（公式1）
+每帧最多保留 2 条高分链、维持 2 个轨迹实例。二次曲线形式天然贴合赛道近垂直走向，且每个实例保存其“行→中心 x”的逐行映射（_row_centers），供后续整线匹配与时序融合使用。
+5.3.4　整线身份锁定
+轨迹候选之间按共同覆盖行上的整条曲线距离进行匹配，近端与远端同时参与，避免仅在近端相近就误切换。当上一帧锁定轨迹与新候选距离超出阈值时，新候选须连续 3 帧满足确认条件才允许替换旧实例；确认期间继续输出旧锁定线，减少候选单帧切换引起的舵机抖动。
+if self.last_selected_rows:
+    distances = [...]            # 各候选与上一帧锁定线的整线距离
+    best = min(near_indices, key=lambda index: distances[index])
+    if distances[best] <= track_curve_match_distance_norm:
+        return best              # 直接延续旧线
+    # 新候选需连续 track_switch_confirm_frames=3 帧确认
+    if self.pending_track_count >= 3:
+        return candidate
+    return -1                    # 确认期间继续输出旧锁定线
+5.3.5　时序融合与边界重建
+对选中实例的中心线逐行执行移动限幅（单帧最大步长 3% 图像宽度）后，以 α=0.35 与上一帧结果指数融合；左右边界以 α=0.55 融合并限幅 5%。边界重建以左边界为主要参考，对右边界突然外扩、尖折与局部异常进行检测与局部重建；当 OCR 判定导航方向为 RIGHT 时，在 5 秒内改用右边界反拟合左边界（左边界＝右边界－稳定道路宽度），但输出边界仍保持左右语义，控制器不改变行驶侧。
+感知状态机输出三种状态：CV_LINE（实例有效或处于确认保持）、CV_KEEP_LAST（遮挡期沿用旧线并衰减置信度）、CV_LOST（无可用锁线）。
+5.3.6　普通控制线构造
+控制器优先从稳定边界构造逐行目标线：
+	normal_x(row) = left(row) + k·(right(row) − left(row))	（公式2）
+直道 k=0.50；普通右弯按曲率将 k 平滑提高至 0.55，使车辆略微内切避免冲出弯道外侧；出租车、行人、导航场景不参与该内移。当边界不可信（宽度过小、或车辆锚点推导出的道路位置超出走廊容差）时，本帧回退到锁定中心线骨架，避免在错误边界上继续控制。
+5.4　目标检测感知
+检测模型采用 PP-YOLOE，经 RKNN 工具链量化为 model/ppdet.rknn（输入 512×512，单图像输入），在 RK3588S 的 NPU 上通过 RKNNLite 运行时异步推理，并使用多 NPU 核心推理池提升吞吐。检测输出经置信度过滤与逐类 NMS 后，得到出租车（taxi）、行人（pedestrian）、导航路牌（navi sign）与停止/通行标志（stop/go sign）等目标的类别与检测框。检测每 2 个视觉帧执行一次，其余帧复用缓存，且通过“先提交异步检测、再执行中心线感知、最后取结果”的调度方式与 CPU 计算重叠，不阻塞中心线主链。非 RK3588S 平台自动降级禁用检测，仅保留巡线功能。
+5.5　场景决策状态机
+场景决策依据检测框高度（近似距离）与道路几何进行分级触发，总体状态机如图 5.3 所示。所有场景在完成动作后自动返回普通巡线状态。
+
+图 5.3　场景决策状态机
+5.5.1　出租车避让
+当出租车检测框高度达到 20 px 时触发避让：用 1 s 从普通中线平滑移动到道路左边界（CV_TAXI_ENTER_LEFT→CV_TAXI_LEFT_FIFTH），沿左边界绕行；出租车消失后，立即用 1 s 平滑返回道路中线（CV_TAXI_RETURN_CENTER），速度继续按普通 1.0~1.3 m/s 曲线运行。出租车位于道路右半侧且前方仍是右弯入口时，右舵按 0.75 增益调整并保留 4~8° 转弯权限，避免绕行时冲出弯道外侧。
+5.5.2　行人避让（鬼探头）
+行人检测框高度达到 23 px 时进入等待判断，目标速度降至 0.30 m/s 缓行（CV_PEDESTRIAN_CREEP）；框高达到 35 px 仍未满足放行条件时立即停车（CV_PEDESTRIAN_STOP）。放行条件为：先观察到行人进入锁定预测车辆走廊，再越过走廊左/右预测线；连续 3 个画面帧无行人、或预测区连续空闲 3 s，也允许起步。等待期间舵角保持进入状态时的值，避免动态中心线变化导致停车时打舵。
+5.5.3　导航路牌识别与岔道决策
+检测到导航路牌后，先降至 0.30 m/s 慢行靠近，以检测框下边中点相对画面中线的归一化横向误差乘 18° 增益修正朝向（上限 10°）；当框高严格大于 46 px 且右边距严格大于 1 px 时，提交“百度 OCR＋文心大模型”异步解析请求，将路牌文字解析为 LEFT/RIGHT/STRAIGHT 行驶方向；OCR 未决且框高严格大于 60 px 时停车等待，请求最多等待 5 s，超时取消并执行 STRAIGHT 回退。解析为 RIGHT 时，先以最低速度强制右打 12°持续 3 s 完成入弯，随后 5 s 内改用右边界参考重建左边界，控制线仍为左 2/5；决策完成后 5 s 内忽略同一路牌。该设计完全由语义解析驱动转向，路牌文字变化时不需要修改固定位置或圈次参数。
+5.5.4　停止/通行标志
+检测到停止标志（stop sign）时，优先使用标志上方的远端线控制，必要时从下方趋势延伸；通行标志（go sign）使用远端线或沿稳定道路继续行驶。所有生成的控制线仍受道路走廊约束，不盲目生成道路外目标。
+表 5.1　场景决策参数一览
+
+5.6　转向控制
+实际控制器为 DirectLineFollower 几何前瞻控制器。其基础几何量包括：（1）bearing_deg——车辆锚点指向前瞻点的方位角；（2）heading_deg——中心线局部航向；（3）curve_strength——由近、远航向变化形成的曲率强度；（4）lane_position——车辆在稳定道路边界间的横向位置。控制器在此基础上叠加多重保护：近远前瞻冲突保护、右弯入弯预判与弯尾保持、大偏差增益、道路边缘保护与右弯内侧保护、One Euro 自适应滤波、舵角死区、角速度与单视觉帧步长限制，以及异常舵角方向门控。Stanley 控制器以影子（shadow）模式运行，仅记录候选舵角用于对比，不改变实际输出；MPC 控制器保留实现与测试，因缺少真实地面标定暂未接入实车主链。
+控制器只消费当前锁定实例及其稳定边界，不生成也不消费 planned_path，保证控制基准与感知输出严格一致。
+5.7　速度规划与 50 Hz 控制发送
+目标速度随舵角绝对值平滑降低，其规划公式为
+	v = v_base − (v_base − v_min)·(|δ| / δ_max)^γ	（公式3）
+其中 v_base=1.30 m/s、v_min=1.00 m/s、δ_max=26°、γ=1.70，规划曲线如图 5.4 所示；急弯在连续确认后进一步以降速前馈压至 1.00 m/s。目标速度再经控制器速度滤波与50 Hz 加速度包络（最大加速度 1.0 m/s²、最大减速度 3.0 m/s²，紧急停车立即归零）平滑后，由 ControlWorker 以固定 50 Hz 封装成帧发送。视觉指令超时 250 ms 时，发送线程继续运行，速度平滑趋近 1.00 m/s，舵角趋近 +12° 右搜线；硬停车场景立即发送零速；程序退出固定发送“0 m/s＋中位 PWM”停车帧。
+
+图 5.4　速度随舵角规划曲线
+5.8　上下位机通信协议设计
+上下位机通过 USB-UART 串口（115200 bps）通信，采用自定义可变长帧协议，帧结构如图 5.5 所示：帧头 0x42（兼容 0x82）、地址/命令码、帧总长（4~30 字节）、载荷与校验（前 N−1 字节累加取低 8 位）。核心控制帧（地址 0x01）载荷为float32 目标速度（m/s）＋uint16 舵机 PWM，共 10 字节；下位机对控制帧做接收中断内的实时处理，保证指令时效。遥测方向，下位机上报电池电量与电压（0x07）、实测速度（0x08）与按键时长（0x06），上位机据此监控整车状态。其余命令码用于速度模式、舵机阈值、蜂鸣器、WS2812 灯效与自检流程。
+
+图 5.5　上位机—下位机通信帧格式
+
+第六章　下位机软件设计（TC264）
+下位机基于 Infineon TC264 双核单片机（AURIX 系列，200 MHz 双 TriCore 内核），开发环境为 ADS v1.8.0，底层驱动采用逐飞 TC264 开源库。下位机不参与感知，只负责任务执行：接收上位机指令、闭环调速、舵机输出与整车状态监测，其双核任务划分如图 6.1 所示。
+
+图 6.1　TC264 双核任务划分
+6.1　双核任务划分
+CPU0 作为系统核：初始化 IPS114 TFT 显示屏、SOC 电量计（CW2015，软件 I²C）、周期定时器与 WS2812 灯带，主循环中执行电量采样、状态显示（速度/舵机/电压/串口参数等）、灯效切换，并通过 UART1 输出调试数据帧。CPU1 作为控制核：初始化按键、外部中断、编码器（正交解码）、舵机 PWM 与电机 PWM，主循环中执行 USB 帧解析、GPIO/按键处理与 ICAR 综合处理。周期中断分工为：1 ms 中断运行电机控制线程（内部按 10 ms 节拍执行速度闭环），10 ms 中断采样编码器，2 ms 中断执行电量计时序与 USB 通信计时；USART 接收中断完成帧级解析，按键通过外部中断（EXTI）处理。两核通过共享参数结构体 icar_Param 交换数据。
+6.2　通信接收与帧解析
+上位机数据经 USB 转 UART 进入 TC264。接收中断将字节写入 FIFO 缓冲，同时在 USART1 中断服务函数内完成帧级解析状态机：识别帧头（0x42/0x82）、校验帧长（4~30）、逐字节组帧，帧尾以累加校验通过后拷贝至完成缓冲。对控制帧（地址 0x01）在中断内立即解包 float32 速度与 uint16 舵机 PWM 并写入共享参数，保障 50 Hz 指令的实时性；其余命令（速度模式、舵机阈值、蜂鸣器、灯效、自检等）在主循环中处理。当通信未连接或断开时，速度闭环不使能、电机输出置零，保证车辆安全。
+6.3　速度闭环控制
+速度环以 10 ms 为控制周期：由正交解码编码器计数值换算实际车速，与目标速度作差后送入 PID 控制器，输出限幅 ±10000（约 95% 占空比，防止 MOS 损坏）后驱动电机 PWM。控制器支持两种模式：增量式 PID（常规模式）与模糊自适应 PID（位置式）——后者将误差 e 与误差变化率 ec 模糊化为 NB、NM、NS、ZO、PS、PM、PB 七个等级，依据 7×7 规则表在线调整 ΔKp、ΔKi、ΔKd，加权平均去模糊化后叠加到基准参数上，在加速、制动等不同工况下自适应调节，并配以积分限幅与积分衰减抑制超调。控制框图如图 6.2 所示。
+
+图 6.2　速度闭环控制框图
+6.4　舵机控制
+舵机由 100 Hz PWM 驱动，中位约 1500 us（实车标定 1510 us），左右限位 1150/1850 us，对应机械转角 ±38°。上位机下发的 PWM 值经中值补偿（补偿实车中位与理论中位之差）与限幅后直接输出；同时提供角度接口，按“角度/最大角 ×（限位−中位）”线性换算 PWM，便于自检与调试。
+6.5　整车状态监测与安全自检
+下位机持续监测：电池电压与电量（CW2015 电量计，带电池建模信息与电压突变防护）、编码器速度、串口连接状态。上电时执行蜂鸣器提示与各执行器自检流程（电机正反转、舵机扫掠、通信、灯效、按键），异常通过蜂鸣器与 TFT 显示错误码；通信断开或上位机停车帧到达时立即停止电机输出。
+
+第七章　全局视觉定位方案
+本届竞赛鼓励参赛队自主开发定位方案，定位方案是正式考点之一。团队自主设计并实现了基于全局俯拍相机与 ArUco 基准标记的视觉定位系统：由一台架设于场地上方的相机俯拍全场，实时识别车顶标记与地面参考标记，解算车辆在世界坐标系中的位置与航向，经滤波平滑后以 UDP 送入 RK3588S 上的 AR 引擎，为增强现实叠加与整车状态提供车端定位信息，数据接口与比赛现场定位模块保持一致。
+7.1　系统组成与部署
+系统由三部分组成：（1）标记布置——车顶粘贴唯一车辆标记（ID 0），场地四角铺设 4 个已知世界坐标的参考标记（ID 1~4），全部为带白边的方形 ArUco 标记；（2）采集端——全局 USB 摄像头（640×480，请求 100 FPS，MJPEG 模式）架设于场地上方俯拍，由 Windows 上位机处理；（3）接收端——RK3588S 上运行的 AR 引擎监听 UDP 9005 端口，接收 JSON 格式的 robot_position 位姿数据。部署示意如图 7.1 所示。
+
+图 7.1　全局视觉定位系统部署示意图
+定位系统在场地上方布置全局相机，地面参考 Tag 用于建立场地坐标系，车顶 Tag 用于输出车辆中心位置与航向。调试界面叠加角点、锁定状态、单应性重投影结果和 UDP 位姿，便于现场检查标定质量与数据链路。
+7.2　ArUco 标记检测
+检测基于 OpenCV ArUco 模块。针对 640×480 分辨率下远处小标记的特点，对检测参数做了专项优化：角点细化方法由 NONE 改为 SUBPIX 亚像素细化（窗口 5），使 5 cm 小标记的角点噪声大幅降低；放宽 minCornerDistanceRate 至 0.01 与 maxErroneousBitsInBorderRate 至 0.45，兼顾小标记通过率与误检抑制；支持对暗角/低对比帧的图像增强（对比度/亮度）与可选去畸变。
+7.3　世界坐标系标定
+参考标记像素坐标与其世界坐标构成点对集，用于求解像素—世界映射：可见参考标记达到 4 个及以上时，采用 RANSAC 单应性估计（阈值取场地对角线 0.5%），兼顾透视建模与粗差剔除；恰好 3 个时退化为仿射变换。为保证坐标系稳定，采取三重措施：（1）标定标记中心先经 EMA 稳定再参与求解；（2）新解与旧解仅在参考标记集合与模式不变时按 α=0.30 平滑混合，集合变化时立即接受新解；（3）标定刷新限频 0.25 s。每次求解输出重投影误差与内点数，用于在线监控标定质量。
+7.4　车辆位姿解算
+车辆标记的四个角点经映射矩阵变换到世界坐标，位置取四角中心；航向角由标记两条平行边（0→3 与 1→2）的方向矢量平均得到，锚定于四角中心，四角点全部参与，相比单边估计使单帧角度噪声约减半。解算结果经 ±180° 环绕归一化后输出 (x, y, yaw)。
+7.5　稳定化与滤波
+针对角点抖动、短时遮挡与设备异常，系统设计了分层稳定化机制：
+（1）地面标记硬锁定：参考标记静止不动，其角点连续 5 帧识别稳定（散度小于 3 px）后即被冻结，之后每帧识别结果只用于核对位置，不再写回；单帧漏检时继续使用冻结位置兜底（最长 15 s），连续 3 帧偏离冻结位置超过 6 px（说明相机被移动）时自动解除并重新锁定。数值模拟显示，极端漏检（每标记 60% 概率）下，标定可用率由无锁定的 45.2% 提升至 99.5%。
+（2）位姿滤波：提供卡尔曼、One Euro 与 EMA 三种滤波可选；卡尔曼滤波对位置与航向独立建模，可开启 20~30 ms 预测补偿链路延迟；航向可选环绕安全的 EMA 滤波（如 α=0.35）与整数滞回发送抑制取整边界抖动。
+（3）丢帧兜底：车辆标记短时丢失时，在保持期内（holdover）发送最后有效滤波位姿；并启用“裁剪放大找回”机制——围绕标记最后出现位置裁剪放大 2 倍再检测，找回小且糊的瞬时丢失；地面标记漏检由硬锁定兜底。
+（4）设备看门狗：连续 3 s 收不到新帧时自动重开摄像头，标定状态保留，期间以最后有效位姿兜底发送。
+实测表明：本机 640×480、5 标记场景下完整处理链路约 2.2 ms/帧（检测约 2.0 ms、锁定/标定/位姿约 0.2 ms），处理上限约 450 FPS，定位更新频率等于相机实际帧率；航向标准差由旧链路（整数角点＋单边＋不平滑）的约 4.3° 降至新链路的约 1.3°。
+7.6　数据接口与 AR 引擎对接
+位姿以严格 JSON 格式通过 UDP 发送：{"type":"robot_position","pos":[x,0,z],"euler":[0.0,yaw,0.0]}，其中 pos 为世界坐标（高度默认 0，图像纵坐标映射为世界 z 轴），yaw 单位度、默认保留 2 位小数。发送端目标地址由配置文件指定，RK3588S 端 AR 引擎（X-Verse）监听 9005 端口解析该数据，数据格式与比赛现场定位模块接口一致，训练和比赛时无需修改接收端协议。处理流程如图 7.2 所示。
+
+图 7.2　定位数据处理流程
+
+第八章　开发工具、制作、安装与调试过程说明
+8.1　开发环境与工具链
+表 8.1　开发环境一览
+
+8.2　调试方法与流程
+上位机提供 camera（实车相机＋串口）、video（离线视频回放）、serial（视频输入＋串口发送）三种运行模式。调试遵循“先离线后实车、先低速后高速、一次只改一组参数”的原则：
+（1）单元测试：上位机建有控制、MPC、Stanley、OCR 回退与场景决策的自动化回归测试，当前基线 100 项全部通过；修改后须通过编译检查、YAML 配置解析与全量测试方可上车；（2）视频回归：用赛道录像逐帧验证掩码、组件链、实例锁定与控制线叠加，统计 CV_LINE/CV_KEEP_LAST/CV_LOST 帧数、SEARCH_RIGHT 原因与场景状态进度；（3）架空台架：验证舵机方向与中位（1510 us）、视觉超时右搜、行人/OCR 硬停车与退出停车帧；（4）实车分段验证：先普通巡线，再依次开放出租车、行人、导航路牌场景，最后组合场景全流程测试，每次记录视频、配置差异、状态统计与 PWM 现象。
+
+图 8.1　模型车场景行驶与调试
+8.3　典型问题与解决
+表 8.2　典型问题与解决措施
+
+
+第九章　模型车主要技术参数说明
+本章汇总车模结构、电气、传感器、执行器和软件运行参数。
+9.1　整车基本参数
+表 9.1　整车基本参数
+
+9.2　电气参数
+表 9.2　整车电气参数
+
+9.3　车载传感器
+表 9.3　车载传感器清单
+
+9.4　执行器与伺服电机
+表 9.4　执行器清单
+
+9.5　赛道信息检测精度与频率
+表 9.5　检测精度与频率
+
+
+第十章　结论
+本车采用 RK3588S 与 TC264 分层控制。RK3588S 完成赛道中心线提取、目标检测、路牌识别和场景决策，并以 50 Hz 下发速度与舵机指令；TC264 完成串口解析、10 ms 速度闭环和执行器控制。HSV 多实例中心线用于普通巡线，PP-YOLOE 用于出租车、行人和路牌检测，路牌文字由百度 OCR 与文心大模型解析。
+全局定位采用场地俯拍相机和 ArUco 标记。定位程序完成角点检测、单应性标定、车辆位姿解算和 UDP 发送，单帧处理耗时约 2.2 ms。整车已经完成普通巡线、出租车避让、行人避让和导航路牌识别的分段实车调试。
+后续调试重点为左弯赛道参数、导航路牌网络延迟和高速状态下的定位抖动。Stanley、MPC 控制器保留在工程中，完成舵角与地面坐标标定后再进行实车对比。
+
+参考文献
+[1] 卓晴. 第二十一届全国大学生智能汽车竞赛技术报告要求细则[EB/OL]. https://zhuoqing.blog.csdn.net/article/details/163553155.
+[2] 全国大学生智能汽车竞赛组委会. 第21届智能车竞赛人工智能模型比赛细则[EB/OL]. https://zhuoqing.blog.csdn.net/article/details/154697945.
+[3] 全国大学生智能汽车竞赛组委会. 第二十一届全国大学生智能汽车竞赛 人工智能模型组赛题规则手册（省赛/区域赛）[EB/OL]. https://blog.csdn.net/zhuoqingjoking97298/article/details/157722712.
+[4] 全国大学生智能汽车竞赛组委会·裁判组. 第二十一届全国大学生智能汽车竞赛人工智能模型组区域赛现场比赛手册 V3.0[Z]. 2026.7.
+[5] 全国大学生智能汽车竞赛人工智能模型组. 智能模型组别规则补充说明（赛事更改通知）[EB/OL]. https://zhuoqing.blog.csdn.net/article/details/158582421.
+[6] XU S, WANG X, LV W, et al. PP-YOLOE: An Evolved Version of YOLO[J]. arXiv preprint arXiv:2203.16250, 2022.
+[7] 百度飞桨. PaddleDetection 目标检测开发套件[EB/OL]. https://github.com/PaddlePaddle/PaddleDetection.
+[8] 百度智能云. 文字识别 OCR 技术文档 / 千帆大模型平台文心一言技术文档[EB/OL]. https://cloud.baidu.com/.
+[9] OpenCV. Detection of ArUco Markers 官方文档[EB/OL]. https://docs.opencv.org/.
+[10] 成都逐飞科技. TC264 开源库说明文档[Z]. 2022.
+
+附录A　电路板详细设计原理图
+本附录收录 Icar.epro2 的核心板、电源模块和功能模块三页原理图、主板 PCB 预览，以及 DRV8701 双路电机驱动板的 PCB 和 BOM。
+A.1　TC264 核心板原理图
+
+附图 A.1　TC264 核心板接口原理图
+附表 A.1　核心板页主要网络映射
+
+A.2　主板电源模块原理图
+
+附图 A.2　主板电源模块原理图
+A.3　主板功能模块原理图
+
+附图 A.3　主板功能模块原理图
+A.4　主板 PCB
+
+附图 A.4　主板四层 PCB 布局预览
+A.5　DRV8701 双路电机驱动板 PCB 与 BOM
+
+附图 A.5　DRV8701 双路电机驱动板 PCB 正反面
+
+附表 A.2　DRV8701 电机驱动板 BOM 结构摘要
+
+驱动板电容包括 4 只 100 nF、6 只 1 μF、2 只 10 μF 和 1 只 220 μF，共 13 只，标称容量合计 246.4 μF。完整整理表见项目“_原理图分析/电机驱动板BOM.csv”。
+
+附录B　程序源代码（核心算法子程序）
+依据技术报告要求，本附录收录系统核心算法子程序。完整工程源代码（上位机 Icar_CV、下位机 TC264_BAIDU 与定位方案三个工程）随报告一并提交。为节省篇幅，个别代码做了少量删节并以“……”标注。
+B.1　HSV 掩码与形态学处理（perception/track_centerline_perceptor.py）
+    def _make_mask(self, frame):
+        h, w = frame.shape[:2]
+        self._ensure_cache(h, w)
+        t0 = time.perf_counter()
+        roi_bgr = frame[self._roi_y0:self._roi_y1]
+        hsv = cv2.cvtColor(roi_bgr, cv2.COLOR_BGR2HSV)
+        roi_mask = cv2.inRange(hsv, self._hsv_lower, self._hsv_upper)
+        if bool(self.cfg.get("use_bgr_aux", False)):
+            b, g, r = cv2.split(roi_bgr)
+            b16, g16, r16 = b.astype(np.uint16), g.astype(np.uint16), r.astype(np.uint16)
+            br = int(round(float(self.cfg.get("b_over_r_ratio", 1.15)) * 100.0))
+            bg = int(round(float(self.cfg.get("b_over_g_ratio", 0.90)) * 100.0))
+            blue_ok = (
+                (b16 >= int(self.cfg.get("b_min", 80))) &
+                (b16 * 100 >= r16 * br) &
+                (b16 * 100 >= g16 * bg)
+            )
+            roi_mask[~blue_ok] = 0
+        hsv_ms = (time.perf_counter() - t0) * 1000.0
+ 
+        t1 = time.perf_counter()
+        open_iterations = max(0, int(self.cfg.get("open_iterations", 1)))
+        close_iterations = max(0, int(self.cfg.get("close_iterations", 1)))
+        if open_iterations:
+            roi_mask = cv2.morphologyEx(
+                roi_mask, cv2.MORPH_OPEN, self._mask_open_kernel,
+                iterations=open_iterations)
+        if close_iterations:
+            roi_mask = cv2.morphologyEx(
+                roi_mask, cv2.MORPH_CLOSE, self._mask_close_kernel,
+                iterations=close_iterations)
+        for x1, y1, x2, y2 in self._navi_sign_exclusions:
+            x0 = max(0, int(np.floor(min(x1, x2))))
+            x1i = min(w, int(np.ceil(max(x1, x2))) + 1)
+            y0 = max(self._roi_y0, int(np.floor(min(y1, y2))))
+            y1i = min(self._roi_y1, int(np.ceil(max(y1, y2))) + 1)
+            if x1i > x0 and y1i > y0:
+                roi_mask[y0 - self._roi_y0:y1i - self._roi_y0, x0:x1i] = 0
+        morphology_ms = (time.perf_counter() - t1) * 1000.0
+        mask = np.zeros((h, w), dtype=np.uint8)
+        mask[self._roi_y0:self._roi_y1] = roi_mask
+B.2　稳健行中心估计（同文件）
+    def _robust_center(cls, values, fallback):
+        values = np.asarray(values, dtype=np.float64).ravel()
+        if values.size == 0:
+            return float(fallback)
+        median = cls._linear_quantile(values, 0.5)
+        deviation = np.abs(values - median)
+        mad = cls._linear_quantile(deviation, 0.5)
+        if mad > 0.0:
+            values = values[deviation <= 3.0 * mad]
+B.3　整线身份锁定（同文件）
+    def _select_instance(self, instances):
+        if not instances:
+            self.pending_track_rows = {}
+            self.pending_track_count = 0
+            return -1
+        near_indices = [
+            index for index, instance in enumerate(instances)
+            if instance.get("near_support", False)
+        ]
+        if not near_indices:
+            self.pending_track_rows = {}
+            self.pending_track_count = 0
+            return -1
+        if self.last_selected_rows:
+            distances = [
+                self._distance_to_rows(item, self.last_selected_rows)
+                if index in near_indices else 1.0
+                for index, item in enumerate(instances)
+            ]
+            best = min(near_indices, key=lambda index: distances[index])
+            if distances[best] <= float(
+                    self.cfg.get("track_curve_match_distance_norm", 0.10)):
+                self.pending_track_rows = {}
+                self.pending_track_count = 0
+                return best
+            candidate = max(
+                near_indices,
+                key=lambda index: instances[index].get(
+                    "selection_score", instances[index]["score"]))
+            candidate_rows = instances[candidate].get("_row_centers", {})
+            pending_distance = self._distance_to_rows(
+                instances[candidate], self.pending_track_rows)
+            if self.pending_track_rows and pending_distance <= float(
+                    self.cfg.get("track_pending_match_distance_norm", 0.06)):
+                self.pending_track_count += 1
+            else:
+                self.pending_track_rows = dict(candidate_rows)
+                self.pending_track_count = 1
+            if self.pending_track_count >= max(
+                    1, int(self.cfg.get("track_switch_confirm_frames", 3))):
+                self.pending_track_rows = {}
+                self.pending_track_count = 0
+                return candidate
+            return -1
+        self.pending_track_rows = {}
+        self.pending_track_count = 0
+B.4　中心线时序融合（同文件）
+    def _stabilize_instance(self, instance):
+        current_rows = instance.get("_row_centers", {})
+        if not current_rows or not self.last_selected_rows:
+            return instance
+        frame_h, frame_w = instance["skeleton"].shape[:2]
+        rows = np.asarray(sorted(current_rows), dtype=np.int32)
+        current_x = np.asarray([
+            current_rows[int(row)] for row in rows
+        ], dtype=np.float32)
+        previous_y = np.asarray(
+            sorted(self.last_selected_rows), dtype=np.float32)
+        previous_x = np.asarray([
+            self.last_selected_rows[int(row)] for row in previous_y
+        ], dtype=np.float32)
+        stable_x = current_x.copy()
+        overlap = (rows >= previous_y[0]) & (rows <= previous_y[-1])
+        hard_rebuild_rows = set(
+            int(row) for row in instance.get(
+                "_right_rebuild_rows", []))
+        hard_rebuild = np.asarray([
+            int(row) in hard_rebuild_rows for row in rows
+        ], dtype=bool)
+        temporal_overlap = overlap & ~hard_rebuild
+        max_step = float(
+            self.cfg.get("track_temporal_max_step_norm", 0.03)) * frame_w
+        alpha = float(np.clip(
+            self.cfg.get("track_temporal_alpha", 0.35), 0.0, 1.0))
+        if np.any(temporal_overlap):
+            old_x = np.interp(
+                rows[temporal_overlap], previous_y, previous_x)
+            blended_delta = alpha * (
+                current_x[temporal_overlap] - old_x)
+            stable_x[temporal_overlap] = old_x + np.clip(
+                blended_delta, -max_step, max_step)
+B.5　导航路牌场景决策（main.py）
+def _navi_sign_policy(
+        detection, frame_shape, cfg, decision_resolved=False):
+    policy = {
+        "visible": False,
+        "bbox": None,
+        "height_px": 0.0,
+        "right_margin_px": 0.0,
+        "slow_active": False,
+        "stop_active": False,
+        "ocr_ready": False,
+    }
+    if not isinstance(detection, dict):
+        return policy
+    bbox = detection.get("bbox")
+    if bbox is None or len(bbox) != 4:
+        return policy
+    try:
+        x1, y1, x2, y2 = [float(value) for value in bbox]
+    except (TypeError, ValueError):
+        return policy
+    if x2 <= x1 or y2 <= y1:
+        return policy
+    frame_width = int(frame_shape[1])
+    height = y2 - y1
+    right_margin = float(frame_width) - x2
+    ocr_height = max(0.0, float(cfg.get(
+        "navi_ocr_min_height_px", 42.0)))
+    stop_height = max(ocr_height, float(cfg.get(
+        "navi_stop_height_px", 42.0)))
+    right_margin_min = max(0.0, float(cfg.get(
+        "navi_ocr_right_margin_px", 1.0)))
+    unresolved = not bool(decision_resolved)
+    policy.update({
+        "visible": True,
+        "bbox": tuple(int(round(value)) for value in bbox),
+        "height_px": float(height),
+        "right_margin_px": float(right_margin),
+        "slow_active": bool(unresolved),
+        "stop_active": bool(unresolved and height >= stop_height),
+        "ocr_ready": bool(
+            unresolved and height > ocr_height and
+            right_margin > right_margin_min),
+    })
+B.6　上下位机通信协议（protocol.py）
+def compute_checksum(data: bytes) -> int:
+    return sum(data) & 0xFF
+ 
+ 
+def pack_frame(address: int, payload: bytes = b"") -> bytes:
+    frame_len = 3 + len(payload) + 1
+    if frame_len > USB_FRAME_LENMAX:
+        raise ValueError(f"帧过长: {frame_len} > {USB_FRAME_LENMAX}")
+    head = bytes([USB_FRAME_HEAD, address, frame_len])
+    partial = head + payload
+    checksum = compute_checksum(partial)
+    return partial + bytes([checksum])
+ 
+ 
+def unpack_frame(data: bytes) -> dict | None:
+    if len(data) < USB_FRAME_LENMIN:
+        return None
+    if data[0] not in (USB_FRAME_HEAD, USB_FRAME_HEAD_ALT):
+        return None
+    length = data[2]
+    if length < USB_FRAME_LENMIN or length > USB_FRAME_LENMAX:
+        return None
+    if len(data) < length:
+        return None
+    frame = data[:length]
+    checksum = frame[-1]
+    expected = compute_checksum(frame[:-1])
+    return {
+        "address": frame[1],
+        "payload": frame[3:-1],
+        "checksum_valid": (checksum == expected),
+        "length": length,
+    }
+ 
+ 
+# ── 命令帧构建器 (上位机 → TC264) ─────────────────────────
+ 
+def build_control_frame(speed_mps: float, servo_pwm: int) -> bytes:
+    """CONTROL (0x01) 帧: float32 速度 + uint16 舵机 PWM。帧长 10 字节。"""
+    payload = struct.pack("<fH", speed_mps, servo_pwm)
+    return pack_frame(USB_ADDR_CONTROL, payload)
+B.7　下位机帧接收与实时指令处理（TC264 code/USB.c）
+void USART1_IRQHandler(void)
+{
+    uint8_t Uart1Res;
+    uart_query_byte(UART_INDEX_1, &Uart1Res);// 接收数据 查询式 有数据会返回 TRUE 没有数据会返回 FALSE
+    if((Uart1Res == USB_FRAME_HEAD||Uart1Res == 0x82) && !usbStr.receiveStart)//监测帧头
+    {
+       usbStr.receiveStart = true;
+       usbStr.receiveBuff[0] = USB_FRAME_HEAD;
+       usbStr.receiveBuff[2] = USB_FRAME_LENMIN;
+       usbStr.receiveIndex = 1;
+    }
+    else if(usbStr.receiveIndex == 2)   //接收帧长度
+    {
+       usbStr.receiveBuff[usbStr.receiveIndex] = Uart1Res;
+       usbStr.receiveIndex++;
+ 
+       if(Uart1Res > USB_FRAME_LENMAX || Uart1Res < USB_FRAME_LENMIN) //帧长错误
+       {
+          usbStr.receiveBuff[2] = USB_FRAME_LENMIN;
+          usbStr.receiveIndex = 0;
+          usbStr.receiveStart = false;
+       }
+    }
+    else if(usbStr.receiveStart && usbStr.receiveIndex < USB_FRAME_LENMAX)
+    {
+       usbStr.receiveBuff[usbStr.receiveIndex] = Uart1Res;
+       usbStr.receiveIndex++;
+    }
+ 
+    //接收帧完毕
+    if((usbStr.receiveIndex >= USB_FRAME_LENMAX || usbStr.receiveIndex >= usbStr.receiveBuff[2]) && usbStr.receiveIndex > USB_FRAME_LENMIN)
+    {
+        uint8_t check = 0;
+        uint8_t length = USB_FRAME_LENMIN;
+ 
+        length = usbStr.receiveBuff[2];
+        for(int i=0;i<length-1;i++)
+           check += usbStr.receiveBuff[i];
+ 
+        if(check == usbStr.receiveBuff[length-1])//校验位
+        {
+           memcpy(usbStr.receiveBuffFinished,usbStr.receiveBuff,USB_FRAME_LENMAX);
+           usbStr.receiveFinished = true;
+ 
+           //智能车控制指令特殊处理（保障实时性）
+           if(USB_ADDR_CONTROL  == usbStr.receiveBuffFinished[1])
+           {
+               Bint16_Union bint16_Union;
+               Bint32_Union bint32_Union;
+               for(int i=0;i<4;i++)
+                  bint32_Union.U8_Buff[i] = usbStr.receiveBuffFinished[3+i];
+ 
+               bint16_Union.U8_Buff[0] = usbStr.receiveBuffFinished[7];
+               bint16_Union.U8_Buff[1] = usbStr.receiveBuffFinished[8];
+ 
+               SERVO_SetPwmValueCorrect(bint16_Union.U16);
+               //SERVO_SetPwmValue(bint16_Union.U16);
+               icar_Param.ServoPwmSet = bint16_Union.U16;         //方向
+               icar_Param.SpeedSet = bint32_Union.Float;          //速度
+               icar_Param.SpeedMaxRecords_now=0;
+ 
+               gpio_toggle_level(led_1);
+               gpio_toggle_level(led_2);
+B.8　下位机速度闭环（TC264 code/control.c）
+void MOTOR_ControlLoop(float speed)
+{
+    if(speed > MOTOR_SPEED_MAX)
+        speed = MOTOR_SPEED_MAX;
+    else if(speed < -MOTOR_SPEED_MAX)
+        speed = -MOTOR_SPEED_MAX;
+ 
+    icar_Param.vi_Ref=speed;
+    //icar_Param.vi_Ref = (float)(speed*MOTOR_CONTROL_CYCLE / icar_Param.MOTOR_DiameterWheel /SPEED_WUCHA/ PAI * icar_Param.MOTOR_EncoderLine * 4.0f * icar_Param.MOTOR_ReductionRatio);
+    //float goal_pwm=PID_MoveCalculate(&icar_Param)
+ 
+    MOTOR_SetPwmValue(PID_MoveCalculate(&icar_Param));
+B.9　模糊自适应 PID 计算（TC264 code/pid_fuzzy.c）
+fp32 PID_calc(pid_type_def *pid, fp32 set, fp32 ref)
+{
+    if (pid == NULL)
+    {
+        return 0.0f;
+    }
+ 
+    pid->error[2] = pid->error[1];
+    pid->error[1] = pid->error[0];
+    pid->set = set;
+    pid->fdb = ref;
+    pid->error[0] = set - ref;
+    if (pid->mode == PID_POSITION)//模糊PID
+    {
+ 
+        pid->Dbuf[2] = pid->Dbuf[1];
+        pid->Dbuf[1] = pid->Dbuf[0];
+        pid->Dbuf[0] = (pid->error[0] - pid->error[1]);
+        deltapid(pid->error[0],pid->Dbuf[0]);
+ 
+        pid->Pout  = abs_1f(pid->Kp+pid_delta[0]) * pid->error[0];
+        pid->Iout += abs_1f(pid->Ki+pid_delta[1]) * pid->error[0];
+        pid->Dout  = abs_1f(pid->Kd+pid_delta[2]) * pid->Dbuf[0];
+        LimitMax(pid->Iout, pid->max_iout);
+        pid->out = pid->Pout + pid->Iout + pid->Dout;
+        LimitMax(pid->out, pid->max_out);
+ 
+ 
+        //PID_pm->Integ_e += limit_abs1f(PID_pm->e, PID_pm->e_max) * PID_pm->dt; // 【积分分离】限制e的幅值
+        //PID_pm->Integ_e = limit_abs1f(PID_pm->Integ_e, PID_pm->Integ_e_max);   // 限制integ_e的幅值
+        //PID_pm->Integ_e = PID_pm->Integ_e * PID_pm->damp;                      //damp为积分随着时间的衰减系数
+ 
+        //PID_pm->out = kp * PID_pm->e + kd * PID_pm->de + ki * PID_pm->Integ_e;
+    }
+    else if (pid->mode == PID_DELTA)//增量式PID
+    {
+        pid->Pout = pid->Kp * (pid->error[0] - pid->error[1]);
+        pid->Iout = pid->Ki * pid->error[0];
+        pid->Dbuf[2] = pid->Dbuf[1];
+        pid->Dbuf[1] = pid->Dbuf[0];
+        pid->Dbuf[0] = (pid->error[0] - 2.0f * pid->error[1] + pid->error[2]);
+        pid->Dout = pid->Kd * pid->Dbuf[0];
+        pid->out += pid->Pout + pid->Iout + pid->Dout;
+        LimitMax(pid->out, pid->max_out);
+    }
+    return pid->out;
+B.10　定位标定：RANSAC 单应性（aruco_core/coordinate_transformer.py）
+    def calibrate(self, pixel_coords_dict):
+        """Update calibration using all visible configured reference markers."""
+        cfg = config.get_config()
+        valid_marker_ids = sorted(
+            set(cfg.WORLD_COORDINATES).intersection(pixel_coords_dict)
+        )
+        if len(valid_marker_ids) < cfg.MIN_MARKER_COUNT or len(valid_marker_ids) < 3:
+            return False
+ 
+        alpha = getattr(cfg, "CALIBRATION_SMOOTH_ALPHA", 0.20)
+        src_points = self._stabilize_pixels(valid_marker_ids, pixel_coords_dict, alpha)
+        dst_points = np.asarray(
+            [cfg.WORLD_COORDINATES[mid] for mid in valid_marker_ids],
+            dtype=np.float32,
+        )
+ 
+        if len(valid_marker_ids) >= 4:
+            span = np.ptp(dst_points, axis=0)
+            field_diagonal = float(np.linalg.norm(span))
+            threshold = getattr(cfg, "HOMOGRAPHY_RANSAC_THRESHOLD", None)
+            if threshold is None:
+                threshold = max(field_diagonal * 0.005, 1e-4)
+            homography, mask = cv2.findHomography(
+                src_points,
+                dst_points,
+                cv2.RANSAC,
+                float(threshold),
+            )
+            if homography is None or homography.shape != (3, 3):
+                return False
+            if not np.isfinite(homography).all():
+                return False
+            inlier_mask = (
+                np.ones(len(valid_marker_ids), dtype=bool)
+                if mask is None
+                else mask.ravel().astype(bool)
+            )
+            inlier_count = int(np.count_nonzero(inlier_mask))
+            if inlier_count < max(4, cfg.MIN_MARKER_COUNT):
+                return False
+ 
+            # Blend with the previous solution (same reference set and mode
+            # only) so per-refresh solve noise does not wobble the world frame.
+            homography = self._blend_transform(
+                homography.astype(np.float64), valid_marker_ids, "homography_ransac"
+            )
+            try:
+                inverse = np.linalg.inv(homography)
+            except np.linalg.LinAlgError:
+                return False
+            projected = cv2.perspectiveTransform(
+                src_points.reshape(-1, 1, 2), homography
+            ).reshape(-1, 2)
+ 
+            self.homography_matrix = homography
+            self.homography_matrix_inv = inverse.astype(np.float64)
+            self.affine_matrix = None
+            self.affine_matrix_inv = None
+            self.transform_mode = "homography_ransac"
+        else:
+            # Exactly three tags: preserve the target project's fast fallback.
+            affine = cv2.getAffineTransform(src_points[:3], dst_points[:3])
+            affine = self._blend_transform(
+                affine.astype(np.float64), valid_marker_ids, "affine3"
+            )
+            full_affine = np.vstack([affine, [0.0, 0.0, 1.0]])
+            try:
+                full_inverse = np.linalg.inv(full_affine)
+            except np.linalg.LinAlgError:
+                return False
+            projected = cv2.transform(
+                src_points.reshape(-1, 1, 2), affine
+            ).reshape(-1, 2)
+            inlier_mask = np.ones(3, dtype=bool)
+            inlier_count = 3
+            self.affine_matrix = affine
+            self.affine_matrix_inv = full_inverse[:2, :].astype(np.float64)
+            self.homography_matrix = None
+            self.homography_matrix_inv = None
+            self.transform_mode = "affine3"
+ 
+        errors = np.linalg.norm(projected - dst_points, axis=1)
+        self.is_calibrated = True
+        self.last_reprojection_error = float(
+            np.sqrt(np.mean(errors[inlier_mask] ** 2))
+        )
+        self.last_inlier_count = inlier_count
+        self.last_marker_ids = tuple(valid_marker_ids)
+B.11　车辆位姿解算（定位方案/pos_sender_test_linear.py）
+def compute_vehicle_pose(
+    transformer,
+    vehicle_id: int,
+    corners,
+    ids,
+    corner_alpha: float = 0.0,
+    corner_smooth_state=None,
+):
+    if ids is None or corners is None:
+        if corner_smooth_state is not None:
+            corner_smooth_state.pop("corners", None)
+        return None
+ 
+    flat_ids = ids.flatten()
+    matches = np.where(flat_ids == int(vehicle_id))[0]
+    if matches.size == 0:
+        if corner_smooth_state is not None:
+            corner_smooth_state.pop("corners", None)
+        return None
+ 
+    marker_corners_px = np.array(corners[int(matches[0])][0], dtype=np.float64)
+ 
+    # Optional per-corner EMA so a flickering tag does not rattle the heading.
+    if corner_alpha > 0.0 and corner_smooth_state is not None:
+        previous = corner_smooth_state.get("corners")
+        if previous is not None and previous.shape == marker_corners_px.shape:
+            marker_corners_px = previous + corner_alpha * (marker_corners_px - previous)
+        corner_smooth_state["corners"] = marker_corners_px.copy()
+ 
+    center_px = np.mean(marker_corners_px, axis=0)
+    cx, cy = float(center_px[0]), float(center_px[1])
+ 
+    if not transformer.get_calibration_status():
+        return None
+ 
+    # Heading from BOTH parallel side edges of the tag (c0->c3 and c1->c2),
+    # anchored at the four-corner center. Using all four corners roughly
+    # halves the yaw noise of the old single-edge (c1->c2) estimate.
+    edge_a = marker_corners_px[2] - marker_corners_px[1]
+    edge_b = marker_corners_px[3] - marker_corners_px[0]
+    if float(np.dot(edge_a, edge_b)) < 0.0:
+        heading_px = edge_a  # degenerate quad: fall back to a single edge
+    else:
+        heading_px = edge_a + edge_b
+ 
+    p1w = transformer.pixel_to_world(cx, cy, z=0.0)
+    p2w = transformer.pixel_to_world(
+        cx + float(heading_px[0]), cy + float(heading_px[1]), z=0.0
+    )
+    if p1w is None or p2w is None:
+        return None
+ 
+    dx = float(p2w[0] - p1w[0])
+    dy = float(p2w[1] - p1w[1])
+    if math.hypot(dx, dy) < 1e-9:
+        return None
+    yaw_deg = norm_angle_deg(-math.degrees(math.atan2(dy, dx)))
+
+附录C　车模技术检查表
+本表用于提交前检查车模结构、控制器、传感器和执行器配置。
+附表 C.1　模型车提交前技术自检表
+
+
+===== TABLE 1 =====
+符号/缩略语 | 含义
+RK3588S | 瑞芯微高性能 AI 处理器，大赛 AI&AR 融合模块核心板卡
+TC264 | Infineon AURIX 系列双核单片机，下位机主控
+NPU | 神经网络处理器（Neural-network Processing Unit）
+RKNN | 瑞芯微神经网络推理框架（含 RKNNLite 运行时）
+PP-YOLOE | 飞桨 PaddleDetection 的高性能目标检测模型
+OCR | 光学字符识别（Optical Character Recognition）
+LLM | 大语言模型（Large Language Model），本文指文心大模型
+VLM | 视觉大模型（Vision Language Model）
+HSV | 色调-饱和度-明度颜色空间
+ROI | 感兴趣区域（Region of Interest）
+ArUco | OpenCV 提供的二进制方形基准标记及其检测算法
+RANSAC | 随机采样一致性（Random Sample Consensus）
+PID | 比例-积分-微分控制
+PWM | 脉宽调制（Pulse Width Modulation）
+UART | 通用异步收发传输器
+UDP | 用户数据报协议
+AR | 增强现实（Augmented Reality）
+FPS | 每秒帧数（Frames Per Second）
+SHM | 共享内存（Shared Memory）
+EMA | 指数滑动平均（Exponential Moving Average）
+
+===== TABLE 2 =====
+模块 | 主要连接 | 当前用途
+RK3588S | 5 V；UART2 P33.9/P33.8 | 视觉感知、场景决策与控制指令下发
+TC264 核心板 | 底板双排插座；3.3 V I/O | 实时控制、采样与执行器驱动
+UART1 扩展口 H3 | P33.12/P33.13；3.3 V；PGND | 蓝牙调参及串口调试
+
+===== TABLE 3 =====
+电源轨 | 主要器件 | 负载与保护
+VBAT | Q1、D1、SW2、L4、C33/C32 | 电机驱动输入及两路降压输入
+VCC_5V | U20 TPS5430、L8、D5、C36/C35/C34/C37 | TC264 外设与 RK3588S 供电
+6.5 V | U5 TPS5430、L7、D3、C15/C16/C9/C10 | 舵机独立供电
+VCC_3V3 | U3 AMS1117-3.3、C5-C8 | TC264 底板逻辑与接口
+
+===== TABLE 4 =====
+项目 | 配置 | 说明
+栅极驱动 | 2 × DRV8701ERGET | 每路控制一组外置 MOSFET 全桥
+功率级 | 8 × TPH1R403NL | 每路四管，共两路有刷电机输出
+逻辑缓冲 | SN74HC125PWR | PWM/DIR 等控制信号缓冲
+当前软件通道 | PWM=P00.1；DIR=P00.4 | P00.0/P00.3 作为另一通道预留
+板载电容 | 13 只；合计 246.4 μF | 4×100 nF、6×1 μF、2×10 μF、1×220 μF
+
+===== TABLE 5 =====
+场景 | 触发条件 | 主要动作 | 关键参数
+出租车 | 框高 ≥ 20 px | 1 s 平滑贴左边界绕行，消失后 1 s 返回中线 | 进入/返回融合 1.0 s
+行人 | 框高 ≥ 23 px | 0.30 m/s 缓行；≥35 px 未放行即停车 | 缓行 0.30 m/s，停车 35 px
+导航路牌 | 检测到路牌 | 0.30 m/s 靠近；OCR 解析后直行/右转 | OCR 提交 >46 px，停车 >60 px，超时 5 s
+停止/通行标志 | 检测到标志 | 远端线控制或沿路继续 | 走廊约束
+
+===== TABLE 6 =====
+部分 | 开发环境/工具 | 说明
+上位机 | Python 3 + OpenCV + NumPy/PyYAML | RK3588S 上运行；pyserial 串口、multiprocessing 共享内存
+AI 部署 | 飞桨 PaddleDetection + RKNN-Toolkit Lite | PP-YOLOE 模型训练后经 RKNN 工具链转换为 ppdet.rknn
+OCR/大模型 | 百度 OCR API + 文心大模型（ERNIE） | 路牌文字识别与方向解析；支持视觉大模型直接看图
+下位机 | ADS v1.8.0（AURIX Development Studio） | TC264 开发环境，基于逐飞 TC264 开源库
+定位端 | Python 3 + OpenCV（ArUco） | Windows 上位机实时检测与位姿解算
+调试工具 | 视频回放、可视化叠加、串口助手、示波器 | 架空台架与实车分段验证
+
+===== TABLE 7 =====
+问题 | 现象 | 解决措施
+中心线帧间跳变 | 候选轨迹单帧切换导致舵机抖动 | 整线身份锁定＋连续 3 帧确认＋时序限幅融合
+箭头纹理干扰 | 中心线呈蛇形 | 组件行对称中心＋MAD 稳健估计
+路牌 OCR 延迟 | 到岔口仍未出结果 | 异步提交＋分级停车＋5 s 超时直行回退
+定位角点抖动 | yaw 标准差约 4.3° | SUBPIX 亚像素＋双边航向平均＋单应性平滑，降至约 1.3°
+地面标记漏检 | 标定可用率低 | 硬锁定兜底，可用率 45.2%→99.5%
+摄像头掉线 | 长时间运行无帧 | 看门狗自动重开＋位姿保持兜底
+高速运动模糊 | 车速高时丢标记 | 固定短曝光(1/250~1/500 s)＋裁剪放大找回
+
+===== TABLE 8 =====
+参数 | 数值 | 说明
+车模底盘型号 | i 车模 | 阿克曼式前轮转向底盘
+整车外廓尺寸 | 300 mm×195 mm×120 mm | 长×宽×高，含定位标记固定结构
+竞赛尺寸限值 | ≤350 mm×220 mm×150 mm | 长、宽、高均符合限制
+轴距 | 200 mm | 前后轮轴中心距
+轮距 | 158 mm | 左右轮中心距
+轮胎尺寸 | 65 mm | 轮胎外径
+摄像头安装高度 | 115 mm | 低于 150 mm 限值
+
+===== TABLE 9 =====
+参数 | 数值 | 说明
+动力电池 | 航模电池，2200 mAh | 整车动力与控制系统供电
+主板离散电容 | 1008.4 μF | 16 只，按主板原理图统计
+电机驱动板离散电容 | 246.4 μF | 13 只，按 PCB BOM 统计
+主板及驱动板电容总容量 | 1254.8 μF | 两块自制电路板离散电容合计
+主板电压轨 | VBAT、6.5 V、5 V、3.3 V | TPS5430 降压与 SPX1117M3-L-3-3 稳压
+
+===== TABLE 10 =====
+传感器 | 数量 | 用途
+车载摄像头 | 1 | 赛道与虚拟对象感知
+编码器（正交解码） | 1 | 驱动轮转速/车速反馈
+
+===== TABLE 11 =====
+执行器 | 数量 | 说明
+驱动电机 | 1 | 后轮驱动，12 kHz PWM 闭环调速
+转向舵机 | 1 | CS-3210，100 Hz PWM，软件中位 1510 us
+额外伺服电机 | 0 | 未加装其他伺服机构
+
+===== TABLE 12 =====
+项目 | 数值
+图像采集 | 640×480 @ 60 FPS（AR 共享内存）
+中心线感知 | 每视觉帧一次（CPU，432 px 处理宽度）
+目标检测 | PP-YOLOE，512×512，NPU 推理，每 2 帧一次
+控制指令发送 | 50 Hz 固定
+速度闭环周期 | 10 ms
+定位更新 | ≤ 相机帧率（60~100 Hz），处理约 2.2 ms/帧
+视觉超时保护 | 250 ms 无更新即降级右搜
+
+===== TABLE 13 =====
+功能 | 网络/物理引脚 | 连接对象
+主通信 | UART2_TX P33.9；UART2_RX P33.8 | RK3588S
+调试通信 | UART1_TX P33.12；UART1_RX P33.13 | H3/蓝牙
+舵机 | P21.5 | H1，6.5 V 供电
+电机控制 | P00.0、P00.1、P00.3、P00.4 | J1/外置驱动板
+显示屏 | SPI3 P02.7/P02.6；P02.0-P02.3 | P1/IPS114
+电池采样 | ADC_A20 | R58/R59 分压
+按键 | P14.3、P14.1、P15.5、P15.1 | SW3-SW6
+扩展 | EXTI、WS2812、SPI0/SPI1 | 传感器与调试扩展
+
+===== TABLE 14 =====
+类别 | 型号/参数 | 数量 | 作用
+栅极驱动器 | DRV8701ERGET | 2 | 两路有刷电机全桥驱动
+功率 MOSFET | TPH1R403NL | 8 | 每路四管组成全桥
+逻辑缓冲器 | SN74HC125PWR | 1 | 控制信号缓冲
+保护二极管 | B5819W；BZT52C3V3 | 3 | 辅助保护与钳位
+电容 | 100 nF/1 μF/10 μF/220 μF | 13 | 去耦、旁路与母线储能
+开关/指示 | SW1；LED1/LED2 | 1/2 | 板载开关与状态指示
+
+===== TABLE 15 =====
+检查项目 | 技术状态/实测值 | 自检结论
+车模底盘 | i 车模，阿克曼式前轮转向 | 已确认
+整车长度 | 300 mm（限值 350 mm） | 符合
+整车宽度 | 195 mm（限值 220 mm） | 符合
+整车高度 | 120 mm（限值 150 mm） | 符合
+摄像头安装高度 | 115 mm（限值 150 mm） | 符合
+车壳 | 未安装封闭式车壳 | 符合
+环境感知方式 | 车载摄像头 1 个，纯视觉感知 | 符合
+车载计算平台 | 官方 RK3588S AI&AR 融合模块 | 符合
+主控制器 | TC264 | 已确认
+转向舵机 | CS-3210，共 1 个 | 已确认
+额外伺服电机 | 0 个 | 符合
+驱动电机 | 1 个 | 数量已确认
+编码器 | 1 个 | 数量已确认
+动力电池 | 航模电池，2200 mAh | 容量已确认
+主板及驱动板电容总容量 | 1254.8 μF | 两块自制电路板合计

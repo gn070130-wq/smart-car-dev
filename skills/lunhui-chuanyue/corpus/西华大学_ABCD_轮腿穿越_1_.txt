@@ -1,0 +1,797 @@
+第二十一届全国大学生智能汽车竞赛
+
+技  术  报  告
+
+
+学	校： 西华大学
+队伍名称： ABCD
+参赛队员： 余霁淼
+陈雯静
+易潇宇
+何宗霖
+带队教师： 徐学彬 雷霞
+
+
+
+
+
+
+
+
+
+关于技术报告和研究论文使用授权的说明
+本人完全了解全国大学生智能汽车竞赛关保留、使用技术报告和研究论文的规定，即：参赛作品著作权归参赛者本人，比赛组委会可以在相关主页上收录并公开参赛作品的设计方案、技术报告以及参赛模型车的视频、图像资料，并将相关内容编纂收录在组委会出版论文集中。
+ 
+参赛队员签名：余霁淼 陈雯静
+易潇宇 何宗霖
+
+带队教师签名：徐学彬 雷霞
+
+                                            日	  期：2026.8.16
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+摘要
+本文围绕第二十一届全国大学生智能汽车竞赛轮腿穿越组别的竞赛任务，基于 V 型轮腿车模完成了智能车的整体设计与实现。系统以英飞凌 CYT4BB7 单片机为核心控制单元，搭建 MT9V034 摄像头与 IMU660RB 惯性传感器融合的感知方案：摄像头负责元素图像采集与路径特征提取，陀螺仪输出车体姿态与航向数据，共同支撑平衡控制与路径导航功能。机械设计采用低重心、低重量、高强度的优化策略，通过 3D 打印定制支架完成传感器与电路模块的安装，在控制整车质量的同时提升动态稳定性。硬件采用主控与驱动分离的模块化架构，通过 DC-DC 与 LDO 多级稳压方案满足不同器件的供电需求，提升系统运行可靠性。软件层面采用串级 PID 算法实现车模直立平衡控制；图像处理通过二值化提取赛道与特殊元素，实现稳定的路径跟踪。经实际场地测试验证，该车模可稳定完成竞赛科目，系统响应迅速、抗扰能力强，整体性能满足竞赛要求。
+关键词：智能车，PID，CYT4BB7
+
+Abstract
+This paper focuses on the competition tasks of the wheel-leg traversal category in the 21st National University Student Smart Car Competition, and completes the overall design and implementation of the smart car based on a V-shaped wheel-leg vehicle model.
+The system takes the Infineon CYT4BB7 microcontroller as the core control unit, and constructs a multi-sensor fusion perception scheme integrating an MT9V034 camera and an IMU660RB inertial sensor. The camera is responsible for track element image acquisition and path feature extraction, while the inertial sensor outputs vehicle attitude and heading data, which jointly support the functions of balance control and path navigation.
+For mechanical design, the optimization strategy of low center of gravity, light weight and high strength is adopted. Custom mounting brackets fabricated by 3D printing are used for the installation of sensors and circuit modules, which improves dynamic stability while controlling the overall vehicle mass.
+The hardware adopts a modular architecture with separated main control and drive modules. A multi-stage voltage regulation scheme composed of DC-DC converters and LDOs is applied to meet the power supply requirements of different devices, enhancing the operational reliability of the system.
+On the software level, a cascade PID algorithm is implemented to achieve the upright balance control of the vehicle. Track boundaries and special elements are extracted via image binarization to realize stable path tracking.
+Verified by on-site field tests, the vehicle model can complete all competition tasks stably. The system features fast response and strong disturbance rejection capability, and its overall performance meets the competition requirements.
+Keywords: Intelligent Vehicle, PID,CYT4BB7
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+第一章 引言
+全国大学生智能汽车竞赛是融合机械设计、嵌入式控制、传感技术与智能算法的综合性科技竞赛，旨在培养大学生的工程实践能力与创新思维。第二十一届全国大学生智能汽车竞赛轮腿穿越组别，以轮腿式平衡车模为载体，要求车模具备稳定直立行驶与自主循迹能力，对系统的机械可靠性、硬件稳定性与算法鲁棒性均提出了较高要求。
+轮腿式移动平台的平衡控制与自主导航是当前移动机器人领域的研究热点。在直立控制方向，串级PID控制架构凭借分层调控的优势被广泛应用于两轮直立系统，通过角度环与角速度环的协同配合，可同时保障系统的稳态控制精度与动态抗干扰能力；针对轮腿机构的独有特性，通过调节腿部姿态改变整车重心分布实现加减速，进一步丰富了平衡控制的调节手段。在路径导航领域，纯追踪算法以其简洁的几何模型与较低的算力需求，成为嵌入式智能车路径跟踪的主流方案，结合惯性导航技术可在无外部定位信号的场景下实现自主循迹。在环境感知方向，基于摄像头的元素识别技术已发展成熟，通过图像预处理与特征提取可快速获取元素与赛道信息，为车辆自主行驶提供可靠的环境依据。
+本文针对轮腿穿越组的竞赛任务要求，完成了智能车控制系统的整体设计与实现。系统以英飞凌CYT4BB7单片机为控制核心，融合惯性传感器与摄像头构建多源感知体系；采用串级PID算法实现车模直立平衡控制，结合惯性导航与纯追踪算法完成路径导航，并同步完成了机械结构优化与硬件电路设计。经实际场地测试验证，系统可稳定完成各竞赛科目，基本满足竞赛要求。
+本报告后续章节安排如下：第二章介绍车模机械结构的设计与优化方案；第三章阐述硬件系统的电路架构与模块设计；第四章说明软件系统的整体架构与核心控制算法；第五章介绍系统的开发工具与调试过程；第六章给出模型车的主要技术参数；最后为结论与参考文献部分。
+
+
+
+
+
+第二章 车模机械结构设计
+智能车中的控制都是在一定的机械结构基础上实现的，因此在设计整个软件架构和算法之前一定要对整个车模的机械结构有一个感性的认识，然后建立相应的数学模型。从而再针对具体的设计方案来调整赛车的机械结构，并在实际的调试过程中不断的改进和提高。本章将主要介绍智能车车模的机械结构和调整方案。
+2.1 整车机械结构
+根据此次竞赛规则要求，轮腿穿越组别允许自制车模，我们采用的是博思威龙公司生产的V车模。整车机械结构围绕低重心、轻量化、高刚性的原则优化布局，为直立平衡控制与路径导航提供稳定的机械基础。
+车体采用碳板作为主控板安装平台，在保证结构刚性、削弱振动干扰的同时控制上层重量，避免整车重心过度抬升。电池组通过3D打印定制电池板固定于车模底部，下沉式布局有效压低重心，同时可靠限位电池，防止行驶中电池滑动造成重心偏移；陀螺仪直接安装于底部电池板上，紧邻整车质心，姿态数据采集更精准。前端视觉摄像头采用碳素杆支架支撑，前置布局保障图像采集的前瞻性，碳素杆材质可有效抑制画面抖动。整体排布紧凑合理，兼顾装配调试便利性与系统运行稳定性。下图是我们车模整体机械结构情况。
+
+
+图2.1 车模整体机械结构
+
+2.2 电池安装 
+为优化整车重心分布、提升轮腿车模的动态平衡性能，我们采用了电池底部布置的结构方案。使用3D打印的电池板，将电池安装固定在车体底板下方。这种下沉式布局有效压低了整车重心，能够显著增强车模在高速行驶、转向及越障过程中的抗侧倾能力，提升动态行驶稳定性。同时，电池板可对电池形成牢固的限位约束，避免车模在加减速、路面颠簸工况下电池发生滑动偏移，防止整车重心出现非预期变化，以此保障平衡控制系统的稳态精度与运行可靠性。安装方式如下图所示。
+
+
+图2.2 电池安装
+
+2.3 陀螺仪安装 
+陀螺仪是轮腿车平衡控制与路径导航的核心传感器，其安装位置的选择直接决定姿态解算与路径导航的准确性，对整套控制系统的性能有着关键影响。在确定安装方案时，我们围绕感知精度与抗振稳定性两个核心目标展开验证：既要保证传感
+
+器能够灵敏捕捉车体的姿态变化，真实反馈车体运动状态，也要尽可能削弱行驶过程中机械振动对测量信号的干扰，避免姿态解算出现偏差。
+经过不断测试与方案对比，我们最终将陀螺仪固定在车模底部的电池板上。该位置紧邻整车质心，采集到的姿态数据能够真实反映车体的整体运动状态，避免了安装位置偏置带来的姿态测量偏差；同时电池板自身具备良好的结构刚性，能够为传感器提供稳固的安装基底，有效抑制路面颠簸与机构运动带来的高频振动干扰，最终在测量精度与机械稳定性之间取得了理想的平衡效果。安装方式如下图所示。
+
+
+图2.3 陀螺仪安装
+
+2.4 摄像头安装
+MT9V034摄像头是车模元素识别的核心传感器，其安装结构与位置直接影响元素信息采集的质量与控制响应速度。我们将摄像头布置在车模前端，支撑支架采用碳素杆材质制作，碳素杆兼具质量轻、结构刚性强的特点，能够有效削弱行驶过程中路面颠簸与车体振动向摄像头的传递，避免图像出现抖动模糊，保障图像采集的稳定性与清晰度。靠前的安装位置能够让摄像头提前获取前方赛道的图像信息，大幅提升路径识别的前瞻性，为转向决策、障碍预判预留充足的响应时间，保障视觉导航的实时性。同时我们对碳素杆支架的长度、固定方式进行了多轮调试，严格控制前端附加质
+量对整车重心的影响，避免车头配重过重干扰车体俯仰平衡，在充分发挥前置视觉感知优势的前提下，兼顾了整车行驶稳定性与平衡控制精度。安装方式如下图所示。
+
+
+图2.4 摄像头安装
+
+2.5 驱动板安装
+电机驱动板通过3D打印件将其直接固定于车的正后方，打印件上下两边伸出用于保护驱动板，防止其因碰撞而损坏。安装方式如下图所示。
+
+
+图2.5 驱动板安装
+
+2.6 轮胎选择与安装
+在轮胎选型方面，为提升车辆行驶性能，我们对原车配套轮胎进行更换。选用摩擦力更强、尺寸更大的越野轮胎：一方面，更大的摩擦力能够有效提升轮胎抓地性能，车辆加减速、转向过程中不易打滑，增强控制稳定性；另一方面，该轮胎尺寸特性可以让车辆具备更好的通过能力，能够平稳应对科目三各类障碍元素，满足多场景行驶要求。同时，为了让越野轮胎适配车模原有电机，我们通过3D打印制作了转接件，便于轮胎安装。
+
+
+图2.6 轮胎安装
+
+第三章 硬件系统设计
+3.1 硬件电路系统设计方案
+硬件电路是整个系统的基础，其设计直接影响整机运行的稳定性。本着可靠、模块化的原则，电路划分为单片机最小系统、电源模块、电机驱动模块等单元。
+电源采用分级降压架构，路径为12V→5V→3.3V。先由两个DC-DC芯片 TPS565201DDCR 将 12V 降至 5V 分别为核心板和外设——蜂鸣器、GPS模块、TFT、无线串口、IMU模块供电，芯片外围配置输入输出滤波电容（47μF、100nF）、功率电感（3.3μH）和反馈电阻网络，保证输出电压精度与纹波抑制；5V 后接 LDO 降压至 3.3V，用于按键和摄像头。
+电机驱动模块以 CYT2BL3 为控制核心，设计为双路电调，驱动左右侧电机。整体电源分配清晰，各级均经合理滤波去耦，确保各模块获得稳定供电，提升系统抗干扰能力与运行可靠性。
+3.2 电源管理模块
+电源模块是控制系统的能量核心，其性能优劣直接决定了整机能否稳定运行，因此在系统设计时需慎重选型。为保证智能车在室外高速行驶场景下具备充足的续航能力，我们选用了容量为 1500mAh 的 3S 航模锂电池，为主控板及驱动模块提供整机供电。
+电源模块主要由三部分构成：即 12V-5V 给核心板供电部分、12V-5V 给外设供电部分、5V-3.3V 部分。第一、二部分是基于 TPS565201DDCR 设计的，在该环节中，由于输入输出压差较大，若采用线性稳压方案将产生显著的热耗散，不仅降低能量利用效率，还会给系统热管理带来负担。因此我们选用同步降压 DC-DC 芯片 TPS565201DDCR 实现该级转换，其依托电感储能原理，具备发热量小、转换效率高的优势，最大输出电流可达 5A，能够充分满足后级负载的功率需求。外围配合 3.3μH 功率电感及 47μF、100nF 输出电容，有效抑制开关纹波，确保 5V 母线电压稳定纯净，为无线串口、IMU、蜂鸣器、TFT 及 GPS 等模块提供可靠供电。
+
+
+第三部分 5V 降 3.3V，采用LDO芯片TPRT9013。
+
+
+图3.3 5V 降 3.3V模块
+
+3.3 传感器模块设计
+根据竞赛任务的实际需求，我们选用了总钻风摄像头和 IMU660RB 陀作为核心感知传感器。传感器的应用首先在于选型，为匹配比赛场景对视觉信息与姿态测量的要求，我们查阅了大量产品资料，并进行了充分的对比测试，最终确定采用总钻风摄像头完成图像采集，IMU660RB 陀螺仪用于实时获取车体姿态与角速度信息，二者协同工作，为控制算法提供准确可靠的数据支撑。
+
+
+
+3.4 无刷电机
+采用组委会规定的两个 BDS3620 无刷电机，该电机具备良好的输出特性，能够为小车提供稳定可靠的动力输出。
+
+
+图3.6 无刷电机
+
+第四章 软件系统设计
+控制程序是人的思想在车模体现，程序要体系化，模块化，稳定化，目标是将硬件电路和机械性能发挥到最大，让车模用最快的速度完成比赛。
+4.1 平衡控制
+在车模运动控制方面，系统采用多环位置式 PID 控制架构，整合直立平衡控制与速度调节功能，各控制环路均基于位置式 PID 算法实现，其离散计算表达式为：
+     公式1
+式中，u(k)为第k时刻的控制输出量，e(k)为第k时刻的系统偏差，Kp、Ki、Kd分别为比例系数、积分系数和微分系数。
+其中直立平衡控制采用双环串级结构，由外环俯仰角度环与内环俯仰角速度环级联构成。外环以车体目标俯仰角度为设定值，将 IMU660RB 解算得到的实时俯仰角度作为反馈量计算角度偏差，经位置式 PID 运算后输出内环的期望角速度指令；内环以陀螺仪采集的实时俯仰角速度为反馈信号，快速跟踪外环输出的角速度目标值，经位置式 PID 运算输出无刷电机的驱动占空比，动态调节电机输出力矩以修正车体姿态偏差，兼顾姿态控制的稳态精度与系统动态响应速度。
+
+
+图4.1 直立环串级PID
+
+速度调节环路同样采用位置式 PID 算法，以设定的目标车速与采集的实际转速差值作为输入偏差，运算输出的控制量直接作用于腿部舵机：通过改变舵机占空比调节舵机输出角度，带动腿部产生前后俯仰动作，进而改变整车重心的前后位置，利用重心偏移形成的重力分力实现车模的平稳加速与减速。该速度调节方式与直立平衡双环相互协同，在加减速过程中可通过姿态环实时修正车体倾角，保障行驶过程中的直立稳定性与平顺性。
+
+
+图4.2 速度环PID
+
+4.2 路径导航
+路径导航采用惯性导航与纯追踪算法相结合的自主循迹方案，无需依赖外部GPS定位，仅通过车载传感器即可完成路径记录与复现。惯性导航模块融合IMU输出的偏航角与磁编码器采集的车轮转速，通过运动积分实时解算车体的坐标位置，并以固定步长离散记录轨迹点，形成基准行驶路径。路径跟踪基于纯追踪算法实现，以上一时刻匹配的最近轨迹点为基准，在局部限定范围内搜索当前位置对应的最近轨迹点，再向前选取固定距离的预瞄点，通过几何计算得到目标航向与车体当前航向的偏差，经角度归一化后输出至转向控制环节，通过差速修正行驶方向，完成车模对基准路径的稳定跟踪。该方案运算量适配单片机算力，跟踪过程平滑连续，可与直立平衡、速度调节控制环路协同工作。
+
+
+图4.3 惯性导航记录轨迹函数
+
+4.3 图像处理
+图像处理部分大致分为赛道循迹与台阶跳变特征检测两部分。赛道循迹首先对摄像头采集的灰度图像进行二值化，再通过由近至远的搜索方式结合历史赛道信息完成循迹，有效应对赛道遮挡、短暂丢线等异常情况。同时对提取的赛道中线进行平滑滤波处理，降低识别抖动，最终输出稳定的赛道中心偏差数据，为车辆直行循迹提供依据。
+台阶跳变点检测是程序选取图像中部多列像素点纵向扫描，利用差比和算法计算，以此判定黑白边界跳变位置；收集多处采样得到的跳变点，通过误差约束剔除异常采样值，对有效点位求取平均值，输出稳定的跳变纵向位置。
+4.4.菜单、状态机
+菜单承担人机交互功能，支持在不重新下载程序的前提下修改参数，实现快速现场调试。菜单基于索引表架构搭建，使用枚举变量映射各个菜单页面，依托上、下、确认、返回四颗按键完成操作控制。理论上支持数量不限的可调参数，能够依据不同页面功能展示对应信息，可完成参数修改、一键发车等操作，极大提升调试便捷性。
+
+
+
+图4.4 部分菜单代码
+
+我们使用状态机管理车模完整运行流程，针对竞赛赛道不同科目、各类赛道元素划分独立运行状态。各状态封装对应的参数、运动控制逻辑，状态之间依据触发条件有序切换。通过状态机对整车任务进行分层调度，规范车辆循迹、识别跳变标识、执行特殊动作等一系列行为，避免多任务逻辑混乱，保障车模能够有序、稳定地依次完成全部竞赛任务。
+
+第五章 开发工具、制作、安装、调试过程说明
+5.1 开发工具
+5.1.1 软件开发工具
+本车控制系统的软件开发基于IAR Embedded Workbench for Arm集成开发环境开展，该工具是面向 Arm 架构微控制器的专业嵌入式开发平台，完全适配英飞凌 TRAVEO™系列 CYT4BB7 单片机的程序开发与在线调试需求。
+该开发环境整合了代码编辑、编译构建、仿真调试与程序烧录等全流程功能，形成了完整的开发工具链。其内置的高度优化 C/C++ 编译器可针对单片机硬件架构生成精简高效的机器代码，兼顾程序运行速度与存储占用，能够满足平衡控制、图像处理、路径导航等模块的实时性要求。调试阶段支持 SWD 接口在线仿真，可实现断点设置、单步运行、变量与寄存器实时观测等功能，便于开发人员快速定位程序逻辑问题与参数异常，有效提升系统调试效率。同时，该环境支持外设寄存器的直接访问与配置，为底层驱动开发与硬件功能调试提供了便利，是本系统软件开发与调试验证的核心工具。
+5.1.2 硬件开发工具
+嘉立创 EDA 是嘉立创集团自主研发、拥有完整知识产权的国产电子设计自动化工具，支持网页云端运行与本地客户端离线使用，适配 Windows、Mac、Linux 多平台。软件完整覆盖原理图绘制、电路仿真、PCB 布局布线、封装库编辑、3D 预览等硬件开发全流程，分为标准版与专业版，个人用户可免费使用。
+平台内置海量共享元器件库，器件封装与立创商城元器件数据联动，设计阶段可直接查询器件规格、库存信息；内置实时电气规则检测（DRC），能够提前排查布线冲突、间距违规等工艺问题。完成 PCB 设计后，可一键输出生产所需 Gerber 文件、坐标文件，无缝对接嘉立创 PCB 打样与 SMT 贴片服务，实现电路设计、元器件选型、制版加工的一体化流程。 软件上手门槛较低，同时支持主流 EDA 文件导入导出，广泛应用于电子竞赛、学生项目、创客开发与中小型硬件研发，本次轮腿车主控电路板设计便采用该软件完成开发。
+
+调试过程
+
+5.2.1 上位机调试
+在系统调试阶段，我们采用逐飞助手作为上位机调试工具。这是一款面向嵌入式开发的多功能调试软件，集成了串口通信、虚拟示波器、摄像头图像实时显示等多项实用功能。
+实际调试中，我们主要通过该软件完成两类核心观测：一是实时显示摄像头采集的原始画面与处理后的赛道图像，直观验证路径识别、边线提取等算法的运行效果，便于快速调整二值化阈值、搜索范围等图像处理参数；二是利用虚拟示波器功能，以波形形式实时展示 IMU 姿态角、电机转速、PID 控制输出等关键变量，直观分析平衡控制的动态响应特性与稳态精度，辅助排查参数匹配问题与系统扰动影响。这种可视化的调试方式大幅缩短了参数整定与问题定位的周期，有效提升了整车系统的调试效率。
+
+
+图5.1 逐飞助手示波器
+
+5.2.2 参数调试
+针对室外场地调试需求，系统设计了按键交互搭配 LCD 屏幕的参数调试方案。通过按键可完成多级菜单切换、参数数值增减、参数固化存储与科目模式切换等操作，屏幕同步实时显示 PID 参数、传感器数据、车辆运行状态等核心信息。该方案无需外接电脑，即可在现场根据车模实时运行状态，快速调整平衡倾角、转向增益、速度阈
+值等关键参数，高效适配不同路面工况与赛道场景，大幅提升了现场调试的效率与灵活性。
+
+
+图5.2 菜单参数调试
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+         
+第六章 模型车的主要技术参数
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+第七章 结论
+本文围绕第二十一届全国大学生智能汽车竞赛轮腿穿越组任务要求，完成了轮腿平衡智能车的机械结构、硬件电路与控制软件全流程设计调试。系统以英飞凌 CYT4BB7 单片机为核心，采用串级 PID 方案实现直立平衡控制，通过调节轮腿姿态改变整车重心完成速度调控，结合惯性导航与纯追踪算法实现自主路径导航；机械端采用底部电池低重心布局，搭配 3D 打印定制结构件与碳素杆摄像头支架，调试采用按键离线调参结合逐飞助手上位机的方案。经测试，车模可稳定完成直立行驶、元素识别与路径复现，整体性能基本满足竞赛技术要求。
+测试中也发现系统仍存在多处不足：轮腿运动与路面颠簸产生的机械振动会干扰 IMU 姿态解算，高速、越障工况下平衡稳定性有所下降；固定阈值图像处理对光照变化适应性不够强，强光、阴影场景下元素识别易出现偏差；惯性导航存在固有累积误差，长距离行驶后轨迹复现偏移量会逐步增大；高速下重心调节与直立平衡环的动态耦合效果仍有提升空间。
+针对上述问题，后续可从多方向优化：引入卡尔曼滤波并配合结构减振设计，抑制振动干扰、提升姿态解算精度；加入自适应二值化与光照补偿机制，增强复杂光照下赛道识别的鲁棒性；进一步优化速度环与直立环的耦合控制策略，提升车模高速与越障情况下的稳定性。
+本次实践表明，轮腿平衡车是机械、硬件与算法高度耦合的系统，单一环节的优化难以实现整车性能突破，需多维度协同配合。嵌入式控制系统设计必须紧密结合实车反复调试，在有限硬件资源下兼顾实时性与可靠性。本次项目积累的经验，为后续相关研究打下了坚实基础。
+
+
+
+
+
+
+
+
+
+参考文献
+[1] 童诗白，华成英。模拟电子技术基础 [M].4 版。北京：高等教育出版社，2006. 
+[2] 刘金琨。先进 PID 控制及其 MATLAB 仿真 [M]. 北京：电子工业出版社，2003. 
+[3] 王磊，陈勇，刘佳。基于像素差比和梯度运算的图像边缘检测方法 [J]. 计算机工程与应用，2020,56 (12):241-246. 
+[4] 刘辉，马国梁，刘阳。轮腿式移动平台运动建模与轨迹跟踪控制研究 [J]. 北京理工大学学报，2024,44 (6):589-596. 
+[5] 卓晴，黄开胜，邵贝贝。学做智能车 —— 挑战 “飞思卡尔” 杯 [M]. 北京：北京航空航天大学出版社，2007. 
+[6] 李洋，周志峰，吴健。智能车视觉循迹丢线容错识别算法研究 [J]. 电子技术应用，2022,48 (05):89-93.
+[7] 刘孙东，唐飞。基于有限状态机的嵌入式菜单系统设计 [J]. 单片机与嵌入式系统应用，2018,18 (06):64-67. 
+[8] 陈宝军。基于嘉立创 EDA 的嵌入式硬件电路设计实践 [J]. 电子制作，2023 (14):38-40. 
+[9] 王斌，张兴宇。五连杆轮腿机器人运动学建模与轨迹规划 [J]. 机械传动，2023,47 (08):34-40. 
+[10] 王宇，吴振忠。嵌入式视觉图像自适应二值化与邻域去噪算法研究 [J]. 计算机仿真，2021,38 (09):221-225. 
+[11] 张磊。直流电机驱动电路稳定性设计与干扰抑制研究 [J]. 电气技术，2022,23 (03):76-79. 
+[12] 林浩宇。嵌入式智能车人机交互参数调试系统设计 [J]. 电子产品世界，2022,29 (07):52-55.
+
+附录A：程序源代码
+void system_init (void)
+{
+//    uart_elrs_init();//遥控初始化
+  
+    //按键初始化
+    gpio_init(KEY1, GPI, 0, GPI_PULL_DOWN);               // 初始化 KEY1 输入 默认低电平 下拉输入
+    gpio_init(KEY2, GPI, 0, GPI_PULL_DOWN);               // 初始化 KEY2 输入 
+    gpio_init(KEY3, GPI, 0, GPI_PULL_DOWN);               // 初始化 KEY3 输入 
+    gpio_init(KEY4, GPI, 0, GPI_PULL_DOWN);               // 初始化 KEY4 输入
+	gpio_init(KEY5, GPI, 0, GPI_PULL_DOWN);               // 初始化 KEY5 输入
+    
+    //屏幕、菜单初始化
+    tft180_set_dir(TFT180_PORTAIT);
+    tft180_init();
+    Menu_init();
+	
+    //GPS初始化
+    gnss_init(TAU1201);
+    for(int8 i=0;i<COORDINATE_WIDTH;i++)//GPS数据初始化
+    {
+     GPS_coordinates.Longitude[i]=0;
+     GPS_coordinates.Latitude[i]=0;
+    }
+	
+	//flash初始化
+	flash_init();
+	read_special_point();
+    
+    //蜂鸣器初始化
+    gpio_init(Buzzer_IO, GPO, GPIO_LOW, GPO_PUSH_PULL);     // 初始化 BUZZER_PIN 输出 默认低电平 推挽输出模式
+    
+    //陀螺仪初始化
+    while(1)
+    {
+        if(imu660rb_init())
+        {
+           printf("\r\n imu660rb init error.");                                 // imu660ra 初始化失败
+        }
+        else
+        {
+           break;
+        }                                             
+    }
+	
+    small_driver_uart_init();		// 初始化驱动通讯功能
+	DSR_Fix_Init();
+    pid_init(&angle_pid_zx,angle_kp_zx,angle_ki_zx,angle_kd_zx);//角度环参数初始化
+    pid_init(&gyro_pid_zx,gyro_kp_zx,gyro_ki_zx,gyro_kd_zx);//角速度环参数初始化
+
+    pit_ms_init(PIT_CH1, 5);
+    pit_ms_init(PIT_CH0, 1);
+	
+}
+uint8 GD_yz=140;
+int16 zzf_wc=0;
+uint8 zzf_tbd=0;
+uint8 state=0;
+uint8 state_last=0;
+uint8 GD_yz_last=0;
+uint8 key_num_01=0;
+uint32 send_data_test = 0;
+uint8 fybh_js = 0;
+// 定义数据接收回调函数 如果另外一个核心发送信息 此核心会触发中断并且可以在回调函数读取数据
+void my_ipc_callback(uint32 receive_data)
+{
+ 	zzf_wc=(receive_data%1000)-105;
+	zzf_tbd=(receive_data/10000)%1000;
+}
+
+int dj_jd=0;
+int dj_csh=1;
+int angle_bh = 0;
+int angle_bh_last = 0;
+int bh=1;
+
+uint16 speed_bh_js=0;
+uint8 speed_bh_flag=0;
+uint8 tbd_last=0;
+int main(void)
+{
+    clock_init(SYSTEM_CLOCK_250M); 	// 时钟配置及系统初始化<务必保留>
+    debug_init();                       // 调试串口信息初始化
+    // 此处编写用户代码 例如外设初始化代码等
+    
+    system_init();
+//	interrupt_set_priority(CPUIntIdx3_IRQn, 0); 
+    
+    SCB_DisableDCache(); // 关闭DCache
+    
+    ipc_communicate_init(IPC_PORT_1, my_ipc_callback);          // 初始化IPC模块 选择端口1 填写中断回调函数
+    // 此处编写用户代码 例如外设初始化代码等
+    while(true)
+    {
+			// 此处编写需要循环执行的代码
+		if(gnss_flag)
+		{
+			gnss_flag = 0;
+			gnss_data_parse();           
+		}
+		GPS_now.Latitude=gnss.latitude;
+		GPS_now.Longitude=gnss.longitude;
+		
+		 
+      
+		if(state!=state_last||tiao!=tbd_last||GD_yz!=GD_yz_last)
+		{
+			ipc_send_data(state+tiao*100+GD_yz*10000); 
+			tbd_last=tiao;
+			state_last=state;
+			GD_yz_last=GD_yz;
+		}
+		if(state==4) state=0;
+			
+		if(bz>100)fybh_js = 1;
+		if(diyi==0)
+			{
+			  	if((angle_bh>65||angle_bh<-65) && fybh_js)
+				{
+					while(Get_KEY_Value()==0)
+					{
+						bh = 0;
+						steer_state = 3;
+					}
+					bh = 1;
+					steer_state = 1;
+				}
+				if(dj_csh)
+				{
+				pwm_init (TCPWM_CH09_P05_0,300,0);//左1 max下:6920   min上：1020 
+				pwm_init (TCPWM_CH10_P05_1,300,0);//左2 max上:7120   min下：1220
+				pwm_init (TCPWM_CH11_P05_2,300,0);//右1 max上:7920   min下：2120
+				pwm_init (TCPWM_CH12_P05_3,300,0);//右2 max下:7820   min上：2020
+				dj_csh=0;
+				}
+			}
+
+//		tft180_show_float(0,LINE_6,Pitch,3,3);
+		 
+		if(Run_flag)
+		{
+			if(dj_jd==1200){jxzz=-3.8;}
+			else if(dj_jd==0){jxzz=-3.8;}
+			else if(dj_jd==-500){jxzz=-3.8;}
+		}
+		
+		if(state!=5){
+			Menu_change();//菜单显示 
+		}
+		else{
+			key_num_01=Get_KEY_Value();
+			if(key_num_01==KEY_BACK)state=0;
+		}
+void steer_out(int speed,int step,int state)
+{
+    switch(state)
+    {
+    case 1:  // 行驶状态：平滑逼近期望值
+      {
+        sd_out=speed_pid(-speed/4,speed_qw/4,speed_kp,speed_ki,Run_flag);
+        steer_zz(dj_jd,dj_tt_bc); //舵机角度设置
+        
+        if(car_state == CAR_STATE_SUB_3_DBQ||(car_state==CAR_STATE_INS_SUB_3_DBQ && bzw))hg_angle_out =hg_pid(Pitch,hg_angle_qw,hd_kd2);
+        int num = sd_out - curVal;
+		if(car_state != CAR_STATE_INS_SUB_3_PD)
+		{
+			if(sub_flag == 1){
+				if((num>1200||num<-1200)&&sub_2_state!=2)step=170;//科目三850/90科目一1200
+			}
+			if(sub_flag == 2||sub_flag == 3)
+			{
+				if((num>850||num<-850)&&sub_2_state!=2)step=170;//科目三850/90科目一1200
+			}
+		}
+        if (num > step) {
+            curVal += step;
+        } else if (num < -step) {
+            curVal -= step;
+        } else {
+            curVal = sd_out;
+        }
+		
+        // 低通滤波：平滑输出，减少抖动
+        curVal = (curVal * 15 + lastVal*5) / 20;
+        lastVal = curVal;
+        steer_kz(curVal,hg_angle_out, speed_max);
+//        if(car_state == CAR_STATE_INS_SUB_3_DB )
+//        {    
+//            if(ABS(speed)<80)db_duz_js++;
+//            else db_duz_js=0;
+//            if(db_duz_js>10)steer_jump_db();
+//        }
+        break;
+      }
+    case 2://跳跃状态
+      {
+          steer_jump();
+        break;
+      }
+    case 3://保护状态
+      {
+          z1=Z1_MIN+500;
+        z2=Z2_MAX-500;
+        y1=Y1_MAX-500;
+        y2=Y2_MIN+500;
+        break;
+      }
+      default:
+      {         
+        break;
+      }
+    }
+    
+    pwm_set_duty(TCPWM_CH09_P05_0,z1);//输出给舵机
+    pwm_set_duty(TCPWM_CH10_P05_1,z2);
+    pwm_set_duty(TCPWM_CH11_P05_2,y1);
+    pwm_set_duty(TCPWM_CH12_P05_3,y2);
+    
+}
+#define DT               0.005f    // 200Hz解算，采样周期5ms（必须与调用频率匹配）
+//#define NORM_THRESH      0.001f      // 归一化防除零阈值，避免计算错误
+
+#define ACC_STATIC_RANGE 0.1f      // 静止判断阈值
+#define INT_LIMIT        1.0f      // 积分限幅值
+#define INIT_TIME        0.5f      // 首次收敛0.5秒
+
+
+float kp_base=0.5f;
+float ki_base=0.01f;
+float kp_init=20.0f;
+
+
+
+float q00 = 1.0f, q11 = 0.0f, q22 = 0.0f, q33 = 0.0f; // 单位四元数（初始水平姿态）
+float Yaw_1 =0.0f,Roll = 0.0f,Pitch = 0.0f;                 // 输出：横滚角、俯仰角（单位°）
+float ez_int=0.0f, ex_int = 0.0f, ey_int = 0.0f;              // 积分误差（Ki修正用，消除静态漂移）
+
+
+uint32 imu_count = 0;
+float kp_current;
+float ki_current;
+float filter_ax,filter_ay,filter_az;
+float filter_gx,filter_gy,filter_gz;
+  float acc_alpha;
+void IMU_Update_Roll_Pitch(float gx, float gy, float gz, 
+                           int16 raw_ax, int16 raw_ay, int16 raw_az)
+{
+  float q00_t,q11_t,q22_t,q33_t;
+  float ax,ay,az;
+  
+  float integral_gain;
+
+    gx *= Gyro_Gr;
+    gy *= Gyro_Gr;
+    gz *= Gyro_Gr;//转为弧度/秒
+  
+     ax = (float)raw_ax / 4098.0f; 
+     ay = (float)raw_ay / 4098.0f;
+     az = (float)raw_az / 4098.0f;//加速度转为g
+     
+     
+     
+     float acc_norm = sqrt(ax*ax + ay*ay + az*az);
+           if (acc_norm>=0.9f && acc_norm<=1.1f)//判断是否静止
+        {
+            kp_current = kp_base;
+            ki_current = ki_base;
+            integral_gain=1.0f;//静止
+            acc_alpha=0.8f;
+        }
+        else
+        {
+            kp_current = kp_base*0.5f;
+            ki_current = ki_base;
+            integral_gain=0.1f;//运动
+            acc_alpha=0.5f;
+
+        }
+
+        
+//        filter_gx = filter_gx * 0.6f +0.4f * gx;
+//        filter_gy = filter_gy * 0.6f +0.4f * gy;
+//        filter_gz = filter_gz * 0.6f +0.4f * gz;
+
+     
+     filter_ax=filter_ax*acc_alpha+ax*(1-acc_alpha);//加速度低通滤波
+     filter_ay=filter_ay*acc_alpha+ay*(1-acc_alpha);
+     filter_az=filter_az*acc_alpha+az*(1-acc_alpha);
+     
+
+     
+    // 加速度归一化
+    float norm_a = sqrt(filter_ax*filter_ax + filter_ay*filter_ay + filter_az*filter_az);
+    
+    if(norm_a < 0.1f) return;     // 防除零，异常值直接退出更新
+    filter_ax /= norm_a; filter_ay /= norm_a; filter_az /= norm_a;
+
+    float gx_map = gx;   float gy_map = gy;   float gz_map = gz; // 陀螺轴映射+符号
+    float ax_map = filter_ax;   float ay_map = filter_ay;   float az_map = filter_az; // 加速度同步映射+符号
+
+
+    // 根据当前四元数计算重力向量在机体坐标系投影
+    float gx_q = 2 * (q11*q33 - q00*q22);
+    float gy_q = 2 * (q00*q11 + q22*q33);
+    float gz_q = q00*q00 - q11*q11 - q22*q22 + q33*q33;
+    
+    // 重力叉乘误差
+    float ex = ay_map * gz_q - az_map * gy_q;
+    float ey = az_map * gx_q - ax_map * gz_q;
+    float ez = ax_map * gy_q - ay_map * gx_q;
+
+    
+    if (imu_count < (uint32)(INIT_TIME / DT))//初始0.5s增大kp加速收敛
+    {
+        kp_current = kp_init;
+        imu_count++;
+    }
+            
+    
+    // 积分累积静态误差
+    ex_int += (ex * DT)*integral_gain;
+    ey_int += (ey * DT)*integral_gain;
+    ez_int += (ez * DT)*integral_gain;
+
+    
+    ex_int = (ex_int > INT_LIMIT) ? INT_LIMIT : (ex_int < -INT_LIMIT) ? -INT_LIMIT : ex_int;
+    ey_int = (ey_int > INT_LIMIT) ? INT_LIMIT : (ey_int < -INT_LIMIT) ? -INT_LIMIT : ey_int;
+    ez_int = (ez_int > INT_LIMIT) ? INT_LIMIT : (ez_int < -INT_LIMIT) ? -INT_LIMIT : ez_int;//积分限幅
+
+    // 陀螺动态准+加速度稳态准，融合后无漂移且响应快
+    gx_map += kp_current * ex + ki_current * ex_int;
+    gy_map += kp_current * ey + ki_current * ey_int;
+    gz_map += kp_current * ez + ki_current * ez_int;
+
+    
+    q00_t=q00;  q11_t=q11;  q22_t=q22;  q33_t=q33;
+
+    //更新四元数微分方程
+     q00 = q00_t+(-q11_t*gx_map - q22_t*gy_map - q33_t*gz_map) * 0.5f * DT;
+     q11 = q11_t+( q00_t*gx_map + q22_t*gz_map - q33_t*gy_map) * 0.5f * DT;
+     q22 = q22_t+( q00_t*gy_map - q11_t*gz_map + q33_t*gx_map) * 0.5f * DT;
+     q33 = q33_t+( q00_t*gz_map + q11_t*gy_map - q22_t*gx_map) * 0.5f * DT;
+  
+
+    // 四元数归一化
+    float norm_q = sqrt(q00*q00 + q11*q11 + q22*q22 + q33*q33);
+    if(norm_q > 0.001f) 
+    {
+    q00 /= norm_q; 
+    q11 /= norm_q; 
+    q22 /= norm_q;
+    q33 /= norm_q;
+    }
+
+    // 四元数解算Roll/Pitch
+    Roll  = atan2(2*(q00*q11 + q22*q33), 1 - 2*(q11*q11 + q22*q22)) * (180.0f / M_PI); // 横滚角（°）
+    Roll+=180.0f;
+  if(Roll>180.0f){Roll-=360.0f;}
+        else if(Roll<-180.0f){Roll+=360.0f;}
+   // Roll = atan2(2*(q00*q11 - q22*q33), q00*q00 - q11*q11 - q22*q22 + q33*q33) * (180.0f / M_PI);
+  Pitch = asin(2*(q00*q22 - q11*q33)) * (180.0f / M_PI);    // 俯仰角（°）
+       // Yaw_1 = atan2(2*(q11*q22 + q00*q33), q00*q00 + q11*q11 - q22*q22 - q33*q33) * (180.0f / M_PI);
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+附录B：车模技术检查表
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+附录C：车模照片
+
+图C-1 车模正视图
+
+图C-2 车模俯视图
+
+图C-3 车模侧视图
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+附录D：电路板PCB图
+
+图D-1 主控板PCB
+
+图D-2 驱动板PCB
+
+图D-3 磁编PCB
+
+
+
+
+
+
+
+附录E：电路板原理图
+
+图E-1 主控板原理图
+
+图E-2 双路驱动板原理图
+
+
+图E-3 磁编原理图
+
+===== TABLE 1 =====
+图 3.1 核心板供电模块 | 图3.2 5V稳压模块
+
+===== TABLE 2 =====
+图 3.4 摄像头模块 | 图 3.5 IMU660RB
+
+===== TABLE 3 =====
+车模尺寸 | 长 | 19.8cm
+车模尺寸 | 宽 | 21cm
+车模尺寸 | 高 | 34cm
+车重 | 车重 | 1.1kg
+电路功耗 | 电路功耗 | 100w
+所有电容总容量 | 所有电容总容量 | 500uF
+传感器 | 磁编码器 | 2个
+传感器 | 摄像头 | 1个
+传感器 | 陀螺仪 | 1个
+除了车模原有的驱动电机、舵机 之外伺服电机个数 | 除了车模原有的驱动电机、舵机 之外伺服电机个数 | 0个
+赛道信息检测 | 精度(近/远) | 2cm/3cm
+赛道信息检测 | 频率 | 500 hz
+
+===== TABLE 4 =====
+队伍名称 | ABCD | ABCD | ABCD | ABCD
+参赛学校 | 西华大学 | 西华大学 | 西华大学 | 西华大学
+赛题组组别 | 轮腿穿越组 | 轮腿穿越组 | 轮腿穿越组 | 轮腿穿越组
+检查项目 | 规格 （选手自行填写） | 符合 （） | 不符合（） | 备注
+1.车模类型是什么？ | V车 |  |  | 允许自制
+车模整体尺寸： （包括传感器在内）长，宽，高(mm) | 长：19.8cm 宽：21cm 高：34cm |  |  | 今年比赛车模尺寸没有限制
+传感器种类、规格(型号)数量。  是否使用自带MCU的成品传感器模块？型号是什么？ | 1.摄像头 MT9V03X       1个 陀螺仪 IMU660RB      1个 磁编码器 MENC15A     2个  2.否 |  |  | 
+控制转向舵机型号是否自行改装舵机？ 防伪易损标签是否完整？ | 否   是 |  |  | 
+1. 是否增加伺服电机？ 2. 如果有种类、个数和作用？ | 否 |  |  | 
+电路中微处理器型号和个数？ | CYT4BB7                1个 CYT2BL3                1个 |  |  | 
+是否具有其它可编程器件，个数与作用？ | 否 |  |  | 
+是否有无线通讯装置？ 如果有种类和个数？ | 否 |  |  | 
+电池的种类、规格和数量？ | 3S锂电池  1500mAh 30C 1个 |  |  | 
+1. 是否使用GPS导航？ 2. 是否没有使用RTK？ | 1.否 2.是 |  |  | 
+后轮驱动电机是否是原车模电机？ 是否具有防伪易损标签？ | 是 是 |  |  | 
+轮胎是否是原车同款轮胎？ 轮胎的尺寸（直径和宽度）是否小于等于原车膜尺寸？ | 否   否 |  |  | 
+车轮轴距、轮距是否改装？ 改装参数是什么？ | 否 |  |  | 
+车模驱动轮传动机构是否改装？ 改装方式是什么？ | 否 |  |  | 
+是否更换过原装车模中的机械元器件？更换后的规格 是什么？ | 否 |  |  | 。
+车模电路板个数及功能。 其中是否有购买成品电路板？ | 1. 主控板                 1个  电机驱动板             1个 陀螺仪板               1个 磁编码器板             2个 CYT4BB7最小系统板      1个              2.是,CYT4BB7最小系统板 |  |  | 
+自制电路板是否标记有学校名称、队伍名称、制作日期等信息？ 标示信息在PCB的哪一层？ | 是 顶层铜层 西华大学 ABCD 2025.5.23 |  |  | 请在表格中注明电路板队伍信息的内容。
+其它待说明内容 |  |  |  | 
+检查人员签名： | 检查意见： | 检查意见： | 检查意见： | 检查意见：

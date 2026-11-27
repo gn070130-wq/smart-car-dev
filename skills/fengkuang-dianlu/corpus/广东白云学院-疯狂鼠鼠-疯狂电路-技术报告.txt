@@ -1,0 +1,731 @@
+
+
+
+第二十一届全国大学生智能汽车竞赛技术报告
+
+学校：广东白云学院
+队伍名称：疯狂鼠鼠
+参赛队员：林梓驰 农雨 龙可
+带队老师：马嘉锐 刘海云
+
+
+
+
+引 言
+全国大学生智能汽车竞赛作为教育部倡导的核心学科竞赛，始终致力于推动自动控制、人工智能与嵌入式技术在工程实践中的融合创新。第二十一届赛事继续为各参赛队伍提供展示自主创新能力的平台。广东白云学院“疯狂鼠鼠”队参加疯狂电路组比赛，围绕自制车模的机械结构、硬件电路、视觉识别与控制算法展开系统设计与调试。
+本队车模采用自制结构，以PCB板作为车模底板，选用英飞凌TC264D双核微控制器作为主控，配合MT9V034全局快门摄像头、LSM6DSR陀螺仪及逐飞科技编码器实现多传感器融合。行进电机采用逐飞科技N30电机，由DRV8701桥驱动；负压电机采用1202.5无刷电机，由STCG12K128无刷驱动板控制。电池选用180mAh 3S锂电池。整车在轻量化、高动态响应与复杂赛道适应性之间进行了多轮迭代优化。
+本报告将从自制车模整体设计、电路设计、程序设计、调试与总结四个方面，对车模的制作思路、实现方案及关键技术进行说明，并在附录中给出核心算法源码与车模技术参数。
+
+
+
+
+第一章：机械结构设计
+1.1整车布局
+为适应疯狂电路组赛道对车模尺寸、重量及动态性能的要求，本队采用全自制车模方案。车模底板与上拉板均使用了PCB印制电路板，车模底板同时兼做主控板、上拉板兼做调参版，有效减小了整车重量与体积。机械连接方面，PCB底板与两侧电机碳纤维板支架通过“榫卯结构”进行连接，同时车模中部使用了铝合金柱加强车模整体刚性，防止车模底板变形。车模底板相关电路与上拉板通过FPC软排线进行连接。整车设计力求紧凑、可靠，为后续算法调试奠定机械基础。
+图1.3  车模背面图   
+1.2动力系统布局
+在动力系统布局上，两侧N30电机分别驱动左右轮，通过差速实现转向控制。电机编码器安装于车模尾部，通过齿轮传动，用于实时反馈转速供速度闭环使用。
+
+图1.4  动力系统结构
+1.3摄像头布局
+车模前部预留摄像头安装支架，俯仰角40°，支架高度约14cm，摄像头通过软排线与主板连接，保证图像信号稳定传输。
+
+图1.5  摄像头布局
+
+1.4抽吸式负压
+PCB底板中部布置与负压风扇安装位，使用1202.5无刷负压电机与FDM 3D打印扇叶为车模提供足够的下压力，提高高速过弯时的抓地力。
+
+图1.6  抽吸式负压
+
+
+
+第二章：电路设计
+2.1 主板电路设计
+主板主要由TC264D单片机最小系统、DRV8701有刷电机驱动、TPS82130降压模块、STC32G12K128控制的无刷电调组成。电源部分以180mAh 3S锂电池为输入。通过TPS82130 DCDC降压芯片将电池电压降至5V，为负压无刷主控与两路3.3V LDO供电；再通过多路LDO产生3.3V，为TC264D主控、MT9V034摄像头、LSM6DSR陀螺仪编码器等数字逻辑电路独立供电。
+
+图2.1  主板主控部分电路图①
+
+图2.2  主板主控部分电路图②
+
+
+电机驱动采用DRV8701双H桥芯片，驱动左右两路N30减速电机。DRV8701支持PWM调速与方向控制，峰值电流满足N30电机启动及加减速需求。主控TC264D通过GTM模块输出PWM信号至DRV8701，并通过GPIO控制电机转向。
+
+图2.3  行进电机驱动电路图
+外设接口方面，主板引出摄像头接口、陀螺仪SPI接口、编码器输入接口、调试串口、调试接口、按键等接口。
+
+
+图2.4  调参板电路图
+2.2 负压无刷驱动设计
+负压电机采用致盈1202.5无刷电机，由STC32G12K128单片机控制EG2134栅极驱动芯片控制MOS管进行无刷电机的驱动。STC32G12K128通过接收TC264D输出的PWM调速信号，输出三相驱动波形，实现无刷电机转速闭环。调试中，负压电机在启动阶段采用逐级升压策略，避免瞬时大电流拉低系统电压，影响摄像头与主控稳定工作。
+
+图2.5  无刷电机驱动电路图
+2.3 调试与显示模块
+为方便赛道快速调参，与减轻车模重量，车模配备了1.14寸IPS显示屏模块。该模块通过BTB连接器与车模调参板进行连接可以方便快速地插拔。显示屏通过SPI与主控通信，实时显示摄像头图像、边界线、当前车速、电池电压及运行状态。串口调试支持命令行方式在线修改PID参数、目标速度等关键变量，并可将参数写入Flash掉电保存，避免重复烧录程序。
+
+图2.6  显示屏电路图
+
+第三章：程序设计
+3.1 图像采集与预处理
+图像采集采用MT9V034全局快门摄像头，通过TC264D的CIF接口以DMA方式传输灰度图像。为兼顾曝光与帧率，设置较低曝光时间并配合赛道补光，保证在高速运动中图像清晰。
+    图像预处理包括分块大津法二值化、膨胀腐蚀滤波和边界搜索。大津法按图像远、中、近三个区域分别计算自适应阈值，克服赛道光照不均问题；膨胀腐蚀用于填补白线细小断裂并消除噪点；边界搜索从图像底部向上扫描，利用上一行边界位置约束当前行搜索窗口，提高运算效率并抑制虚线、交叉路口等复杂情况下的误跟踪。
+
+3.2 控制算法
+控制系统采用“图像偏差—转向误差—速度分配—速度闭环”的分层结构。
+    首先，图像处理模块根据前瞻点与图像中线的横向偏差计算得到Error。该误差经P控制与P²非线性项、误差微分项及陀螺仪角速度阻尼项综合后，输出转向误差Err。Err正值表示需向右转，负值表示需向左转。
+    其次，根据Err的大小和符号动态调整左右轮目标速度：直行时两轮目标速度接近一致；左转时降低左轮、提高右轮；右转时降低右轮、提高左轮。在部分高难度赛段还会切换路径规划模式。
+    最后，左右轮目标速度分别经过独立的位置式PID速度闭环，输出PWM占空比至DRV8701驱动N30电机。速度环周期2ms，转向控制周期3ms，保证系统响应实时性。
+3.3 姿态感知与惯导辅助
+姿态感知采用LSM6DSR六轴陀螺仪，通过IIC接口与TC264D通信。程序以1ms周期读取加速度与角速度数据，利用Mahony互补滤波算法进行四元数姿态解算，提取偏航角yaw_current，并累加得到连续转角Accum_Angle。
+    在图像丢线或特定路径规划段，系统切换到惯导模式，以Accum_Angle作为转向依据，保证车模在盲跑、十字路口、断路区等场景下仍能按预定角度行驶。
+3.4 路径规划
+针对复杂赛道，程序内置路径规划表。每个路口根据预存策略决定直行、左转或右转。摄像头检测到路口特征（如角点、十字、T型）后，路径计数器递增并查表执行对应动作。该方式显著提升了多路口赛道的稳定性与可重复性。
+3.5 开发工具与调试过程
+本车模软件开发基于AURIX Development Studio（ADS）v1.9.4集成开发环境，使用C语言编写，依托逐飞科技TC264开源库完成底层驱动配置。硬件调试工具包括数字万用表、示波器、可调稳压电源及串口助手。
+    制作与调试过程主要分为四个阶段：第一阶段完成PCB底板与主板的设计、打样与焊接，验证电源输出及关键信号通断；第二阶段组装机械结构，安装电机、编码器、摄像头及负压风扇，调整重心与摄像头角度；第三阶段移植开源库，依次调试图像采集、二值化、边界搜索、姿态解算、速度闭环等模块；第四阶段在赛道上进行整车联调，根据实际运行表现调整PID参数、速度规划与路径规划表。
+	调试过程中，队伍通过显示屏实时观察图像处理结果，通过串口在线修改参数并保存到Flash，显著提高了调参效率。同时，对电池电压、电机电流、陀螺仪零偏等进行了定期监测，确保系统稳定可靠。
+
+
+
+
+
+
+
+第四章：结 论
+本报告详细介绍了广东白云学院“疯狂鼠鼠”队在第二十一届全国大学生智能汽车竞赛疯狂电路组中的车模制作方案。车模以自制PCB底板为核心机械结构，配合N30电机、DRV8701驱动、1202.5无刷负压电机、STCG12K128无刷驱动、TC264D主控、MT9V034摄像头、LSM6DSR陀螺仪及逐飞科技编码器，构成了一套完整的智能循迹系统。
+    在控制策略上，队伍采用了图像偏差非线性控制、动态差速分配、独立PID速度闭环以及基于路径规划表的多路口决策，结合陀螺仪姿态解算实现惯导辅助。经过多次迭代调试，车模在直道稳定性、弯道响应速度与复杂路口通过性方面均达到了预期目标。
+	当然，系统在动态极限、参数鲁棒性以及图像预处理速度上仍有提升空间。后续可考虑引入更高效的图像处理算法、更精细的速度规划策略以及更完善的故障保护机制。
+
+
+
+
+
+
+附件A：重要功能程序源码
+一、电机速度与转向控制
+static float PID_Motor_Calc_L(PID *pp, float Now_Point, float SetPoint)
+{
+    float err = SetPoint - Now_Point;
+
+    // 误差累计 + 积分限幅（抗饱和）
+    pp->Integral += err;
+    if (pp->Integral > PID_SPEED_INTEG_LIMIT)
+        pp->Integral = PID_SPEED_INTEG_LIMIT;
+    else if (pp->Integral < -PID_SPEED_INTEG_LIMIT)
+        pp->Integral = -PID_SPEED_INTEG_LIMIT;
+
+    // 位置式PID计算
+    float output = pp->Kp * err
+                 + pp->Ki * pp->Integral
+                 + pp->Kd * (err - pp->Last_Error);
+
+    // 输出限幅
+    if (output > MOTOR_PWM_MAX)       output = MOTOR_PWM_MAX;
+    else if (output < -MOTOR_PWM_MAX) output = -MOTOR_PWM_MAX;
+
+    pp->Last_Error = err;
+    return output;
+}
+void get_err(void)
+{
+    static float err_last = 0.0f, err_prev = 0.0f;
+
+    // 保存历史误差
+    err_prev = err_last;
+    err_last = My_Image_Pictire.Error;
+
+    // 转向
+    float err_abs = (err_last >= 0.0f) ? err_last : -err_last;
+
+//    Err1 = (int16_t)(error.Kp * err_last                              // P
+//            + error.kp_two * err_last * err_abs);                     // P2
+//
+//    Err2 = error.Kd * (err_last - err_prev)                           // image_D
+//            + error.GKd * imu_gyro_z;                                 // IMU_D
+//
+//    Err = Err1 + Err2;
+
+    Err = (int16_t)(error.Kp * err_last                               // P
+          + error.kp_two * err_last * err_abs                         // P2
+          + error.Kd * (err_last - err_prev)                          // image_D
+          + error.GKd * imu_gyro_z);                                  // IMU_D
+
+    // 误差限幅
+    if (Err < ERR_MIN) Err = ERR_MIN;
+    if (Err > ERR_MAX) Err = ERR_MAX;
+}
+void motor_control(void)
+{
+    static int32_t encoder_sum = 0;
+
+    if (My_Car == Car_Start)
+    {
+        // ===== 电机初始化只执行一次 =====
+        if (!Motor_Init) {
+            Motor_Init = ~Motor_Init;
+
+            // 清空积分和历史误差，防止启动冲击
+            speed_l.Integral = 0.0f;
+            speed_r.Integral = 0.0f;
+            speed_l.Last_Error = 0.0f;
+            speed_r.Last_Error = 0.0f;
+        }
+
+        get_speed();
+
+        // 里程计算（编码器累加，注意溢出后负号问题）
+        encoder_sum += (int32_t)speed_L + (int32_t)speed_R;
+        Encoder_Mileage = (float)encoder_sum * encoder_inv_scale * 0.5f;
+        Mileage_cm = Encoder_Mileage * Mileage_Conversion;
+
+        // 根据转向误差确定速度分配系数
+        static float Spd_factor_L = 1.00f;
+        static float Spd_factor_R = 1.00f;
+
+        if (Err < 0) {
+#ifdef Motor_No_Debug
+            if (roadtype == Turn_Left) {
+                Spd_factor_L = 0.50f;
+                Spd_factor_R = 1.20f;
+
+                if(road_count >= 67 && road_count <= 75){
+                    Speed_Goal = 300;                       // 惯导最大转弯速度
+                }
+                else{
+                    Speed_Goal = 380;                       // 常态转弯速度
+                }
+
+                if(-Err >= 30){
+                    error.Kp = 1.00f;
+                    error.kp_two = 0.036f;
+                    error.GKd = 0.18f;
+                }
+                else if(-Err > 0 && -Err < 30){
+                    error.Kp = 1.35f;
+                    error.kp_two = 0.030f;
+                    error.GKd = 0.21f;
+                }
+            }
+            else if(roadtype != Turn_Left && roadtype != Turn_Right){
+                Spd_factor_L = 0.90f;
+                Spd_factor_R = 1.00f;
+
+                if(road_count >= 67 && road_count <= 75){
+                    Speed_Goal = 330;                       // 惯导最大直行速度
+                }
+                else{
+                    Speed_Goal = 400;                       // 常态直行速度
+                }
+
+                error.Kp = 1.35f;
+                error.kp_two = 0.020f;
+                error.GKd = 0.22f;
+            }
+#endif
+        }
+        else if (Err > 0) {
+#ifdef Motor_No_Debug
+            if (roadtype == Turn_Right) {
+                Spd_factor_R = 0.50f;
+                Spd_factor_L = 1.20f;
+
+                if(road_count >= 67 && road_count <= 75){
+                    Speed_Goal = 300;                       // 惯导最大转弯速度
+                }
+                else{
+                    Speed_Goal = 380;                       // 常态转弯速度
+                }
+
+                if(Err >= 30){
+                    error.Kp = 1.00f;
+                    error.kp_two = 0.036f;
+                    error.GKd = 0.18f;
+                }
+                else if(Err > 0 && Err < 30){
+                    error.Kp = 1.35f;
+                    error.kp_two = 0.030f;
+                    error.GKd = 0.21f;
+                }
+            }
+            else if(roadtype != Turn_Left && roadtype != Turn_Right){
+                Spd_factor_R = 0.90f;
+                Spd_factor_L = 1.00f;
+
+                if(road_count >= 67 && road_count <= 75){
+                    Speed_Goal = 330;                       // 惯导最大直行速度
+                }
+                else{
+                    Speed_Goal = 400;                       // 常态直行速度
+                }
+
+                error.Kp = 1.35f;
+                error.kp_two = 0.020f;
+                error.GKd = 0.22f;
+            }
+#endif
+        }
+        else if(Err == 0){
+#ifdef Motor_No_Debug
+            Spd_factor_R = Spd_factor_L = 1.00f;
+
+            if(road_count >= 67 && road_count <= 75){
+                Speed_Goal = 330;                       // 惯导最大直行速度
+            }
+            else{
+                Speed_Goal = 400;                       // 常态直行速度
+            }
+
+            error.Kp = 1.00f;
+            error.kp_two = 0.020f;
+            error.GKd = 0.22f;
+#endif
+        }
+
+        Err_Goal_Err_R = (int)((Speed_Goal - Err) * Spd_factor_R);
+        Err_Goal_Err_L = (int)((Speed_Goal + Err) * Spd_factor_L);
+
+        // PID 速度环
+        Speed_OUT_R = (int16_t)PID_Motor_Calc_R(&speed_r, speed_R, (float)Err_Goal_Err_R);
+        Speed_OUT_L = (int16_t)PID_Motor_Calc_L(&speed_l, speed_L, (float)Err_Goal_Err_L);
+
+//        Speed_OUT_L = Speed_OUT_R = 4000;
+
+        // ==================== 电机硬件输出控制 ====================
+        if (Speed_OUT_L >= 0)       {   pwm_set_duty(MOTOR_L, Speed_OUT_L);  gpio_set_level(DIR_L, 1);   }
+        else                        {   pwm_set_duty(MOTOR_L, -Speed_OUT_L); gpio_set_level(DIR_L, 0);   }
+        if (Speed_OUT_R >= 0)       {   pwm_set_duty(MOTOR_R, Speed_OUT_R);  gpio_set_level(DIR_R, 1);   }
+        else                        {   pwm_set_duty(MOTOR_R, -Speed_OUT_R); gpio_set_level(DIR_R, 0);   }
+    }
+    else
+    {
+        if(Motor_Init){
+            // 停车 + 刹车
+            static uint8 Stop_Time = 0;
+            Stop_Time++;
+            if(Stop_Time % 40 == 0){
+                if(Motor_Fan_Duty >= 460){
+                    Motor_Fan_Duty -= 20;
+                    Motor_Fan_Duty = (Motor_Fan_Duty >= 450) ? Motor_Fan_Duty : 450;
+                }
+                pwm_set_duty(ATOM1_CH1_P15_7, Motor_Fan_Duty);
+            }
+
+            Led_Set(LED_R,8000,LED_G,0,LED_B,0);
+
+            speed_L = speed_R = 0;
+            Speed_OUT_L = 0;
+            Speed_OUT_R = 0;
+            speed_l.Integral = 0.0f;
+            speed_r.Integral = 0.0f;
+
+            pwm_set_duty(MOTOR_L, 0);
+            pwm_set_duty(MOTOR_R, 0);
+
+            Buzzer_Set(GPIO_HIGH);
+
+        }
+    }
+}
+
+二、图像二值化与边界搜索
+uint8 block_otsu_threshold(uint8 *image, uint16 col, uint16 row_start, uint16 row_end){
+    uint32 histogram[256] = {0};
+    uint32 pixel_sum = 0;
+
+    uint16 row, col_idx;
+
+    uint32 pixel_count = (uint32)(row_end - row_start) * col;
+
+    for (row = row_start; row < row_end; row++){
+        for (col_idx = 0; col_idx < col; col_idx++){
+            uint8 gray = image[row * col + col_idx];
+            histogram[gray]++;
+            pixel_sum += gray;
+        }
+    }
+
+    uint8 min_gray = 0, max_gray = 255;
+    for (min_gray = 0; min_gray < 256 && histogram[min_gray] == 0; min_gray++);
+    for (max_gray = 255; max_gray > min_gray && histogram[max_gray] == 0; max_gray--);
+
+    if (max_gray == min_gray) return max_gray;
+    if (min_gray + 1 == max_gray) return min_gray;
+
+    float max_variance = 0.0f;
+    uint8 best_threshold = min_gray;
+    uint32 background_count = 0;
+    uint32 background_sum = 0;
+
+    for (uint8 threshold = min_gray; threshold < max_gray; threshold++){
+        background_count += histogram[threshold];
+        background_sum += histogram[threshold] * threshold;
+
+        uint32 foreground_count = pixel_count - background_count;
+        if (foreground_count == 0) continue;
+
+        uint32 foreground_sum = pixel_sum - background_sum;
+
+        float background_mean = (float)background_sum / background_count;
+        float foreground_mean = (float)foreground_sum / foreground_count;
+
+        float variance = (float)background_count * foreground_count *
+                         (background_mean - foreground_mean) *
+                         (background_mean - foreground_mean);
+
+        if (variance > max_variance){
+            max_variance = variance;
+            best_threshold = threshold;
+        }
+    }
+    return best_threshold;
+}
+void image_binarize(uint8 (*src_image)[COL])
+{
+    threshold_far  = block_otsu_threshold(src_image[0], COL, BLOCK_FAR_START,  BLOCK_FAR_END);
+    threshold_mid  = block_otsu_threshold(src_image[0], COL, BLOCK_MID_START,  BLOCK_MID_END);
+    threshold_near = block_otsu_threshold(src_image[0], COL, BLOCK_NEAR_START, BLOCK_NEAR_END);
+
+    if (threshold_far  < THRESHOLD_MIN) threshold_far  = THRESHOLD_MIN;
+    if (threshold_far  > THRESHOLD_MAX) threshold_far  = THRESHOLD_MAX;
+    if (threshold_mid  < THRESHOLD_MIN) threshold_mid  = THRESHOLD_MIN;
+    if (threshold_mid  > THRESHOLD_MAX) threshold_mid  = THRESHOLD_MAX;
+    if (threshold_near < THRESHOLD_MIN) threshold_near = THRESHOLD_MIN;
+    if (threshold_near > THRESHOLD_MAX) threshold_near = THRESHOLD_MAX;
+
+    uint8 *src = src_image[0];
+    uint8 *dst = &Pixle_image[0][0];
+    uint16 row, col;
+    const uint16 col_end = COL & ~0x03u;
+
+    for (row = BLOCK_FAR_START; row < BLOCK_FAR_END; row++){
+        uint8 thr = threshold_far;
+        for (col = 0; col < col_end; col += 4){
+            *dst++ = (*src++ > thr) ? WHITE : BLACK;
+            *dst++ = (*src++ > thr) ? WHITE : BLACK;
+            *dst++ = (*src++ > thr) ? WHITE : BLACK;
+            *dst++ = (*src++ > thr) ? WHITE : BLACK;
+        }
+        for (; col < COL; col++){
+            *dst++ = (*src++ > thr) ? WHITE : BLACK;
+        }
+    }
+
+    for (row = BLOCK_MID_START; row < BLOCK_MID_END; row++){
+        uint8 thr = threshold_mid;
+        for (col = 0; col < col_end; col += 4){
+            *dst++ = (*src++ > thr) ? WHITE : BLACK;
+            *dst++ = (*src++ > thr) ? WHITE : BLACK;
+            *dst++ = (*src++ > thr) ? WHITE : BLACK;
+            *dst++ = (*src++ > thr) ? WHITE : BLACK;
+        }
+        for (; col < COL; col++){
+            *dst++ = (*src++ > thr) ? WHITE : BLACK;
+        }
+    }
+
+    for (row = BLOCK_NEAR_START; row < BLOCK_NEAR_END; row++){
+        uint8 thr = threshold_near;
+        for (col = 0; col < col_end; col += 4){
+            *dst++ = (*src++ > thr) ? WHITE : BLACK;
+            *dst++ = (*src++ > thr) ? WHITE : BLACK;
+            *dst++ = (*src++ > thr) ? WHITE : BLACK;
+            *dst++ = (*src++ > thr) ? WHITE : BLACK;
+        }
+        for (; col < COL; col++){
+            *dst++ = (*src++ > thr) ? WHITE : BLACK;
+        }
+    }
+}
+void Search_Line_Bias(Image_date *img , uint8* image){
+    uint8 l_find_flag, r_find_flag;
+    uint8 last_left, last_right;
+
+    uint8 *lb = img->left_border;
+    uint8 *rb = img->right_border;
+    uint8 *mid = img->middle_line;
+    const uint8 left_start  = img->Left_Start_Col;
+    const uint8 right_start = img->Right_Start_Col;
+    const uint8 border_dev  = img->Border_Deviation;
+    const uint8 col_max     = COL - 1;
+    const uint8 mid_col     = COL / 2;
+
+    memset(lb,  0,          sizeof(img->left_border) );
+    memset(rb,  col_max,    sizeof(img->right_border));
+    memset(mid, mid_col,    sizeof(img->middle_line) );
+
+    {
+        uint8 *row_ptr = image + (ROW - 1) * COL;
+
+        l_find_flag = 0;
+        for(uint8 col = left_start; col < right_start; col++){
+            if(row_ptr[col] == BLACK && row_ptr[col + 1] == WHITE){
+                l_find_flag = 1;
+                lb[ROW - 1] = col;
+                break;
+            }
+        }
+        if(!l_find_flag) lb[ROW - 1] = left_start;
+
+        r_find_flag = 0;
+        for(uint8 col = right_start; col > left_start; col--){
+            if(row_ptr[col] == BLACK && row_ptr[col - 1] == WHITE){
+                r_find_flag = 1;
+                rb[ROW - 1] = col;
+                break;
+            }
+        }
+        if(!r_find_flag) rb[ROW - 1] = right_start;
+
+        last_left  = lb[ROW - 1];
+        last_right = rb[ROW - 1];
+        mid[ROW - 1] = (rb[ROW - 1] + lb[ROW - 1]) >> 1;
+    }
+
+    for(uint8 row = ROW - 2; row > 0; row--){
+        uint8 *row_ptr = image + row * COL;
+
+        uint8 l_search_start = (last_left > border_dev) ?
+                               (last_left - border_dev) : 0;
+
+        l_find_flag = 0;
+        for(uint8 col = l_search_start; col <= right_start - 20; col++){
+            if(row_ptr[col] == BLACK && row_ptr[col + 1] == WHITE){
+                l_find_flag = 1;
+                lb[row] = col;
+                break;
+            }
+        }
+        if(!l_find_flag) lb[row] = left_start;
+
+        uint8 r_search_start = (last_right + border_dev < col_max) ?
+                               (last_right + border_dev) : col_max;
+
+        r_find_flag = 0;
+        for(uint8 col = r_search_start; col >= left_start + 20; col--){
+            if(row_ptr[col] == BLACK && row_ptr[col - 1] == WHITE){
+                r_find_flag = 1;
+                rb[row] = col;
+                break;
+            }
+            if(col == 0) break;
+        }
+        if(!r_find_flag) rb[row] = right_start;
+
+        last_left  = lb[row];
+        last_right = rb[row];
+        mid[row] = (rb[row] + lb[row]) >> 1;
+    }
+}
+
+三、姿态解算
+void IMU_Update(void)
+{
+    /* 1. 全局变量一次性加载到局部寄存器变量 */
+    float q0 = q.q0, q1 = q.q1, q2 = q.q2, q3 = q.q3;
+    float ax_l = ax, ay_l = ay, az_l = az;
+    float gx_l = gx, gy_l = gy, gz_l = gz;
+
+    /* 2. 加速度归一化 */
+    float norm = sqrtf(ax_l*ax_l + ay_l*ay_l + az_l*az_l);
+    if(norm < 0.01f) return;
+
+    float inv_norm = 1.0f / norm;
+    ax_l *= inv_norm;
+    ay_l *= inv_norm;
+    az_l *= inv_norm;
+
+    /* 3. 预计算四元数乘积（仅保留vx/vy/vz真正需要的8项） */
+    float q0q0 = q0*q0, q1q1 = q1*q1, q2q2 = q2*q2, q3q3 = q3*q3;
+    float q0q1 = q0*q1, q0q2 = q0*q2, q1q3 = q1*q3, q2q3 = q2*q3;
+
+    /* 重力参考向量 */
+    float vx = 2.0f * (q1q3 - q0q2);
+    float vy = 2.0f * (q0q1 + q2q3);
+    float vz = q0q0 - q1q1 - q2q2 + q3q3;
+
+    /* 误差计算 */
+    float ex = (ay_l*vz - az_l*vy);
+    float ey = (az_l*vx - ax_l*vz);
+    float ez = (ax_l*vy - ay_l*vx);
+
+    exInt += ex * Ki * DT;
+    eyInt += ey * Ki * DT;
+    ezInt += ez * Ki * DT;
+
+    gx_l += Kp*ex + exInt;
+    gy_l += Kp*ey + eyInt;
+    gz_l += Kp*ez + ezInt;
+
+    /* 4. 四元数微分（临时变量保存增量，防止覆盖后影响后续dq计算） */
+    float half_dt = 0.5f * DT;
+    float dq0 = half_dt * (-q1*gx_l - q2*gy_l - q3*gz_l);
+    float dq1 = half_dt * ( q0*gx_l + q2*gz_l - q3*gy_l);
+    float dq2 = half_dt * ( q0*gy_l - q1*gz_l + q3*gx_l);
+    float dq3 = half_dt * ( q0*gz_l + q1*gy_l - q2*gx_l);
+
+    q0 += dq0;
+    q1 += dq1;
+    q2 += dq2;
+    q3 += dq3;
+
+    /* 5. 内联归一化（消除Quaternion_Normalize函数调用） */
+    float norm_q = sqrtf(q0*q0 + q1*q1 + q2*q2 + q3*q3);
+    if(norm_q > 0.0001f) {
+        float inv_norm_q = 1.0f / norm_q;
+        q0 *= inv_norm_q;
+        q1 *= inv_norm_q;
+        q2 *= inv_norm_q;
+        q3 *= inv_norm_q;
+    }
+
+    /* 6. 提取偏航角（用归一化后的新q0-q3计算，不再读全局） */
+    float q0q0_n = q0*q0, q1q1_n = q1*q1, q2q2_n = q2*q2, q3q3_n = q3*q3;
+    float q1q2_n = q1*q2, q0q3_n = q0*q3;
+
+    yaw_current = atan2f(2.0f * (q1q2_n + q0q3_n),
+                         q0q0_n + q1q1_n - q2q2_n - q3q3_n) * 57.2958f;
+
+    /* 7. 跳变处理（条件判断替代fabs函数调用） */
+    float delta = yaw_current - Last_Yaw;
+    if(delta > 180.0f)       delta -= 360.0f;
+    else if(delta < -180.0f) delta += 360.0f;
+
+    if((delta >= 0.003f) || (delta <= -0.003f)) {
+        Accum_Angle += delta;
+    }
+
+    if(!yaw_init) {
+        yaw_init = 1;
+        Accum_Angle = 0.00f;
+    }
+    Last_Yaw = yaw_current;
+
+    /* 8. 写回全局（保持外部可见性与原始代码一致） */
+    q.q0 = q0; q.q1 = q1; q.q2 = q2; q.q3 = q3;
+    ax = ax_l; ay = ay_l; az = az_l;
+    gx = gx_l; gy = gy_l; gz = gz_l;
+}
+
+四、路径规划
+RoadType plan_decide(RoadType detected, uint8 path_count){
+    (void)detected;
+    (void)path_count;
+
+    if (current_plan == NULL) return Turn_None;
+
+    if (road_count >= current_plan->length) {
+        My_Car = Car_Stop;
+        LCD_Fill = 1;
+        LCD_Flag = 0;
+        return Turn_None;
+    }
+
+    RoadType act = current_plan->actions[road_count];
+
+    if (act == Go_Straight) {
+        return Go_Straight;
+    }
+    else if (act == Turn_Left && path_info.Left_Mark) {
+        return Turn_Left;
+    }
+    else if (act == Turn_Right && path_info.Right_Mark) {
+        return Turn_Right;
+    }
+
+    return Turn_None;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+附件B：车模技术检查表
+一、车模技术检查表
+
+ 
+二、车模照片
+1、车模外观照片
+
+图表 5 车模正视图
+
+图表 6 车模侧视图
+
+图表 7 车模俯视图
+   
+2、电路板PCB图
+
+图表 8 主板-正面
+
+图表 9 主板-反面
+
+图表 10调参板-正面
+
+图表 11 调参板-反面
+
+图表 12 屏幕板-正面
+
+图表 13 屏幕板-反面
+
+图表 14摄像头板-正面
+
+图表 15摄像头板-反面
+
+图表 16 FPC陀螺仪软板-正面
+
+图表 17 FPC陀螺仪软-反面
+
+3、电路板原理图
+
+图表 18主板原理图1
+
+图表 19主板原理图2
+
+图表 20主板原理图3
+
+图表 21主板原理图4
+图表 22主板原理图5
+
+图表 23调参板原理图
+
+图表 24屏幕板原理图
+
+图表 25摄像头板原理图
+
+图表 26陀螺仪板
+
+
+===== TABLE 1 =====
+图1.1  车模正面图             图1.2  车模侧面图 | 
+ | 
+
+===== TABLE 2 =====
+队伍名称 | 疯狂鼠鼠 | 疯狂鼠鼠 | 疯狂鼠鼠 | 疯狂鼠鼠
+参赛学校 | 广东白云学院 | 广东白云学院 | 广东白云学院 | 广东白云学院
+赛题组组别 | 疯狂电路 | 疯狂电路 | 疯狂电路 | 疯狂电路
+检查项目 | 四轮自制车模 | 符合 （） | 不符合（） | 备注
+1.车模类型是什么？ | 自制车模 |  |  | 自制
+车模整体尺寸： （包括传感器在内）长，宽，高(mm) | 自制车模 |  |  | 今年比赛车模尺寸没有限制
+传感器种类、规格(型号)数量。 是否使用自带MCU的成品传感器模块？型号是什么？ | 图像传感器：MT9V034*1 姿态传感器：LSM6DSR*1 编码器：1024线编码器*2 未使用自带MCU的成品传感器模块 |  |  | 
+控制转向舵机型号是否自行改装舵机？ 防伪易损标签是否完整？ | 无 |  |  | 
+1. 是否增加伺服电机？ 2. 如果有种类、个数和作用？ | 无 |  |  | 
+电路中微处理器型号和个数？ | TC264D*1 STC32G12K128*1 |  |  | 
+是否具有其它可编程器件，个数与作用？ | 无 |  |  | 
+是否有无线通讯装置？ 如果有种类和个数？ | 无 |  |  | 
+电池的种类、规格和数量？ | 180毫安3s锂电池*1 |  |  | 
+1. 是否使用GPS导航？ 2. 是否没有使用RTK？ | 无 |  |  | 
+后轮驱动电机是否是原车模电机？ 是否具有防伪易损标签？ | 无 |  |  | 
+轮胎是否是原车同款轮胎？ 轮胎的尺寸（直径和宽度）是否小于等于原车膜尺寸？ | 无 |  |  | 
+车轮轴距、轮距是否改装？ 改装参数是什么？ | 无 |  |  | 
+车模驱动轮传动机构是否改装？ 改装方式是什么？ | 无 |  |  | 
+是否更换过原装车模中的机械元器件？更换后的规格 是什么？ | 无 |  |  | 。
+车模电路板个数及功能。 其中是否有购买成品电路板？ | 电路板个数：4 主板：控制车模行驶 调参板：控制车模菜单 屏幕板：显示车模参数 摄像头板：采集数据 否 |  |  | 
+自制电路板是否标记有学校名称、队伍名称、制作日期等信息？ 标示信息在PCB的哪一层？ | 是 铜层及阻焊层 广东白云学院 疯狂鼠鼠 2026 |  |  | 请在表格中注明电路板队伍信息的内容。
+其它待说明内容 | 无 |  |  | 
+检查人员签名： | 检查意见： | 检查意见： | 检查意见： | 检查意见：

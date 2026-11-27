@@ -1,0 +1,2321 @@
+第二十一届全国大学生
+智能汽车竞赛
+技  术  报  告
+
+学    校：  成都大学
+队伍名称：  你还爱我对不队
+参赛队员：  李霁洋
+郭中科
+刘佳纬
+带队教师：  施开波
+陈二阳
+关于技术报告和研究论文使用授权的说明
+
+本人完全了解全国大学生智能汽车竞赛关保留、使用技术报告和研究论文的规定，即：参赛作品著作权归参赛者本人，比赛组委会可以在相关主页上收录并公开参赛作品的设计方案、技术报告以及参赛模型车的视频、图像资料，并将相关内容编纂收录在组委会出版论文集中。
+
+参赛队员签名：    
+   
+带队教师签名：
+
+                                    日期：2026.8.18
+
+
+
+
+摘 要
+本文设计的智能车系统以英飞凌TC264D为核心控制单元，在AURIX Development Studio开发环境下完成程序设计。车体前方的总钻风灰度摄像头采集赛道图像，主控对图像进行二值化、边界提取和中线计算；编码器反馈车轮速度，闭环算法根据赛道偏差完成左右轮差速转向与速度控制。有刷电机由DRV8701E驱动外部H桥，无刷负压电机采用逐飞开源AI8051电调方案。通过软硬件联合调试，系统能够稳定完成图像采集、路径识别、速度闭环和差速控制，整体方案结构清晰、运行可靠。
+
+关键词：智能车，TC264D，总钻风灰度摄像头，DRV8701E，AI8051电调，差速控制
+
+
+引  言
+	 全国大学生智能汽车竞赛是以“立足培养、重在参与、鼓励探索、追求卓越”为指导思想，鼓励创新的一项创意性科技竞赛，是面向全国大学生的一种具有探索性工程实践活动。组委会提供汽车标准模型以及电机，使用指定单片机为核心控制模块，并通过使用道路传感器对黑白赛道或者电磁引导进行循迹。要求智能车能够在设计的跑道上自动识别并行驶，智能车竞速以时间来排名。其智能车设计涵盖了控制、模式识别、传感技术、汽车电子、电气、计算机、机械、能源等多学科知识。竞赛融科学性、趣味性为一体，充分发挥了参赛队伍的想象力，来实现完成赛道任务，制作自己的智能车。
+	在报告中，我们组通过对智能小车的整体设计方案，电路设计，算法以及调试过程进行介绍，阐述我们对于本次比赛任务的思考和创意。
+
+第一章 系统总体设计
+	在本章中简要介绍智能车系统的整体设计内容，在后面的章节会分别对于机械结构与控制部分以及图像算法部分对于智能车系统进行分析。
+1.1系统总体方案的选定
+	根据第二十一届全国大学生智能汽车竞赛相关要求，本系统采用自制车模和TC264D微控制器，以灰度摄像头获取赛道信息，并结合编码器和陀螺仪完成运动状态检测。硬件与基础驱动主要参考逐飞科技开源，在此基础上完成电路设计、程序编写和参数调整。
+系统选用TC264D作为主控。该主控具有双内核和较丰富的定时器、PWM、通信及外部中断资源，主频最高可达200 MHz，能够满足灰度图像处理与运动控制并行运行的需要。软件上将图像采集与处理、控制运算和人机交互合理分配，降低任务之间的相互影响。总钻风灰度摄像头负责采集赛道图像，正交编码器提供轮速反馈，左右驱动轮通过差速实现转向。
+1.2系统总体方案的设计
+	系统由五个主要部分组成：电源模块、TC264D主控模块、总钻风灰度图像采集模块、电机与负压驱动模块、人机交互与调试模块。主控接收摄像头和编码器数据，经图像算法计算赛道中线及偏差，再产生左右有刷电机的控制量；AI8051电调根据给定信号驱动无刷电机，为车模提供负压吸附。
+1.电源模块：将电池输入转换为12V、5V和3.3V等电源，为电机驱动、摄像头、主控和传感器提供稳定供电，并配置必要的滤波和储能。
+2.主控模块：TC264D完成图像数据接收与处理、元素识别、速度和转向控制以及故障保护，是整车的计算与控制中心。
+3.赛道检测模块：总钻风灰度摄像头采集前方赛道，程序通过阈值分割、边界搜索和中线拟合获得控制所需的横向偏差与前瞻信息。
+4.执行与驱动模块：DRV8701E驱动外部MOSFET组成的H桥控制有刷电机，AI8051开源电调控制无刷负压电机；编码器反馈有刷电机行进速度用于构成速度闭环。
+5.人机交互模块：通过五向按键和IPS屏显示摄像头图像、关键状态与参数，便于现场快速检查和整定。
+
+
+第二章  机械结构调整及优化
+2.1差速转向结构
+车模采用左右轮差速完成转向，左右轮安装的对称性、轮距和滚动阻力会直接影响直线稳定性与转向响应。装配时保证左右轮轴平行、轮胎接地一致，并尽量减小机械间隙。
+ 
+
+图2.1、图2.2 车模左右侧结构
+2.2车身
+车体采用紧凑的分层布置方式，将电池、主控板和驱动部分尽量靠近底盘中心，摄像头通过支架安装在车体前方。装配时兼顾重心、散热、走线和维护空间，使左右质量分布尽量均衡。
+2.3编码器的安装
+编码器将车轮转动转换为正交脉冲信号，TC264D通过定时器接口读取脉冲数量和方向，从而计算左右轮速度。安装时应保证联轴或齿轮传动同轴、啮合适中，避免松动、偏心和机械振动造成速度测量波动。
+
+图2.4 编码器与车体安装
+2.4电机齿轮与车轮齿轮盘啮合调整
+良好的齿轮啮合能够降低传动噪声和周期性速度波动。调节时先松开电机固定螺钉，缓慢改变电机与齿轮盘的中心距，确认齿轮能够顺畅转动且不存在明显旷量后再锁紧。左右两侧的啮合状态应尽量一致，以减少差速控制中的固定偏差。
+装配完成后先进行低占空比开环测试，观察空载电流、噪声和轮速是否一致，再进入闭环调试。若出现周期性抖动，应检查齿轮偏心、轮轴阻力和编码器安装位置。
+
+图2.5 驱动轮与传动结构
+
+第三章 硬件电路方案设计
+3.1主控核心
+智能车主控采用英飞凌TC264D。为了减小体积和连接器接触不良带来的风险，主控、电源、传感器接口和部分驱动电路集中在自制PCB上。TC264D外围电路包括晶振、复位、调试下载、去耦等部分，布线时重点保证电源完整性与高速信号回流路径。
+
+图3.1 TC264D主控核心与控制板
+3.2各类外设接口
+控制板提供总钻风摄像头、左右编码器、陀螺仪、IPS屏、五向按键和调试串口等接口。各接口按照电压等级进行供电与电平匹配，并在连接器附近配置去耦或保护器件，便于整车运行和现场调试。
+
+ 
+图3.2 外设接口与用户指示电路
+3.3电源电路
+整车采用分级供电。电池端为动力部分和无刷电调提供较高电压，DC-DC电路产生5V再由稳压电路得到3.3V供TC264D、陀螺仪等外设使用，摄像头使用单独LDO降压出3.3V供电。不同功率回路合理分区并共地，降低电机开关噪声对图像和主控的影响。
+电源输入端设置滤波，主控与传感器附近布置去耦电容；大电流走线采用较宽铜皮并开窗，并避免与摄像头时钟及模拟采样信号长距离并行。
+
+图3.4 整车电源转换电路
+电池输入首先经过保护与滤波，一路供给有刷驱动和无刷电调，另一路进入降压电路生成系统低压电源。 
+12V母线经DC-DC降压得到5V，经过LDO降压成3.3V，为摄像头单独供电，保证小纹波以及足够的过流
+同时5V再经稳压得到3.3V，分别为TC264D核心，编码器以及屏幕等外设供电。各支路独立去耦，便于抑制负载变化带来的电压波动。
+、
+3.4有刷电机驱动电路以及无刷电调电路
+有刷电机驱动采用TI DRV8701E栅极驱动器配合外部N沟道MOSFET组成H桥。TC264D输出PWM和方向信号，DRV8701E完成高低侧MOSFET驱动，并通过合理的滤波和保护设计提升开关可靠性。无刷负压部分采用逐飞开源AI8051电调方案，由电调完成三相换相、预驱和转向检测，主控只需给出目标控制信号。
+ 
+图3.5 DRV8701E有刷电机H桥驱动电路
+
+图3.6 AI8051无刷电调主控与电源输入电路
+
+控制板正反面PCB如图3.7所示。布局时将主控、低压电源和信号接口集中布置，大电流驱动回路缩短走线并增加铺铜和开窗。
+ 
+图3.7 控制板PCB正反面
+AI8051电调的预驱、转向检测和三相输出电路如图3.8所示。功率MOSFET靠近输出端布置，并预留足够的散热和电流余量。
+
+
+图3.8 AI8051电调预驱、转向检测与三相输出电路
+3.5控制板实车安装
+
+图3.9 控制板在车体上的安装位置
+控制板安装在底盘中央区域，摄像头、编码器、电机与无刷电调通过飞控减震柱连接，起到一定的缓震效果，有利于陀螺仪的数据稳定与清晰。装车时将动力线与图像、编码器等弱信号线分开布置，并保留散热和检修空间。
+ 
+图3.10 整车侧面布置
+
+第四章 软件算法系统设计
+软件系统完成图像采集、赛道边界提取、特殊元素判断、左右轮差速控制、速度闭环和无刷负压控制。程序按固定周期调度，并对摄像头帧完成、编码器采样和故障状态进行检查，使各功能模块相互独立且执行时序稳定。
+4.1程序系统整体设计
+TC264D双核分别承担图像处理和实时控制任务：图像侧在新一帧到达后完成阈值分割、边界搜索和中线计算；控制侧周期读取编码器与陀螺仪数据，计算左右轮目标速度并更新PWM。核间只交换必要的偏差、元素状态和速度目标，减少任务阻塞。
+4.1.1程序整体运行流程图 
+
+
+图4.1 程序整体运行流程图
+4.2图像识别算法
+4.2.1灰度图像处理思路
+总钻风灰度摄像头按设定分辨率输出灰度图像。为了提升图像处理效率，首先通过主控芯片将原始图像压缩成一半，然后通过大津法计算全局阈值。为适应环境亮度变化，阈值可根据图像灰度分布动态调整。
+1）二值化处理
+二值化根据阈值将灰度像素划分为赛道与背景。动态阈值对光照变化的适应性更好。程序根据现场环境选择手动增添动态阈值，并通过小区域滤波去除孤立噪点。
+调试时在不同亮度、阴影和反光条件下采集图像，观察边界连续性和中线稳定性。最终以识别可靠性和运算时间为依据确定阈值范围，避免只针对单一场地参数进行优化。
+4.2.2基本循迹爬线思路
+1）扫线
+两侧扫线从图像底部向上逐行搜索15像素点高度，以图像左右边界作为扫线起始位置，分别向中线寻找连续边界像素，直到扫出黑白跳变点作为爬线起始点。
+2）爬线
+以起始点左右边界点为种子，分别沿左右边界向上爬行，最大爬行150步：
+左边界：采用逆时针八邻域扫描（优先方向为右下→下→左下→…），寻找前一点周围的白点，并记录黑白边界点。
+右边界：采用顺时针八邻域扫描（优先方向为左下→下→右下→…），同样记录边界点。
+    爬行过程中，同时记录边界点坐标、触摸图像边缘的情况（上、下、左、右），并保存最远触摸点坐标（用于直角或三极管识别）。爬行结束后，分别计算左右边界点的平均横坐标和边界宽度。
+
+4.2.3特殊元素识别与路径规划
+基于边界触摸标志和边界宽度判断：
+1）直角处理
+右直角：根据四方位判断图像底部赛道边缘触摸且右侧触摸，左侧未触摸，顶部未触摸，且右侧触摸点纵坐标超过阈值，同时两侧边界平均X差值小于 12，则认为触发右直角。   
+左直角：类似条件，但左侧触摸且右侧未触摸，则左转,且采用帧计数确认（连续帧满足），避免误触发。
+2）三极管（T字路口）及MOS管断路处理
+三极管识别：当顶部和底部均触摸，且一侧（左或右）触摸，两侧边界平均X差值大于1，且对应触摸点纵坐标足够大时，根据预定义的路径规划数组决定转向方向（0=直行，1=左转，2=右转）。
+MOS管断路处理：通过检测图像最左列（X=2）和最右列（X=91）的连续白色段长度，判断是否为断路（长度≤10且 >=1）。若检测到断路且符合路径规划（直行或转向），则启动特殊处理（如强制直行或按规划转向），并更新计数器。
+路径规划数组存储每个三极管/MOS管处的期望动作，程序根据已过的元素数量查询对应指令，实现复杂路线记忆。
+3）转弯结束判断
+当陀螺仪判断转够一定角度且中心线最高点横坐标偏差小于 30时，认
+小车已回到直道，恢复直线状态。
+将左右边界点按纵坐标（Y）对齐，当左右边界 Y 相等时，计算中点横坐标。若该行赛道宽度小于阈值，则将该中点存入中心点数组。同时记录中心点中最高的点（最小 Y）及其横坐标，用于转弯结束判断。最后计算所有中心点的平均横坐标作为当前偏差。
+4.2.4 误差计算与控制量输出
+根据当前状态标志 state_flag 计算最终偏差 Final Sum：
+直线（state=1）：偏差=中心点平均横坐标-图像中线（固定为47），即常规中线跟踪。
+右转（state=2）：偏差固定为 +45，强制右转。
+左转（state=3）：偏差固定为-45，强制左转。
+该偏差值将传递给下层 PID 控制器，用于转向舵机或差速控制。
+4.3 转向控制方案
+4.3.1 串级转向控制总体结构
+本系统采用位置环与角速度环串级的差速转向结构。摄像头图像由 CPU1 完成处理，输出赛道中心偏差 Final_Sum；CPU0 在 CCU60_CH1 的 1 ms 周期中读取该偏差、陀螺仪角速度 avl_gyro_z 和左右编码器数据，执行转向与速度控制。task_point 负责选择直行、左转或右转状态，并为不同路况调用独立的方向环参数。
+控制器的信号流为：图像偏差经过位置 PD 生成期望角速度expect_gyro，角速度 PD 再将期望角速度与陀螺仪反馈进行比较，得到差速补偿 speed_dis_out；速度环输出基础 PWM 后，分别减去和加上该补偿，形成左右电机的最终 PWM。该结构将路径误差、车体姿态和电机执行机构分层处理，有利于提高循迹稳定性。
+
+图4.8 控制系统程序流程图
+4.3.2 位置环与角速度环 PD 控制
+位置环以图像处理得到的 Final_Sum 作为横向误差 e_p，采用离散 PD 计算期望角速度：
+e_p(k)=Final_Sum(k)，Δe_p(k)=e_p(k)-e_p(k-1)
+expect_gyro(k)=Kp_pos·e_p(k)+Kd_pos·Δe_p(k)        （公式 4-1）
+为抑制图像突变，位置误差变化量被限制在 ±20.3；期望角速度被限制在 ±2000。进入左转或右转任务时，程序根据 task_point 将期望角速度分别固定为 -1300 或 +1300，使车辆能够按照识别到的转弯方向稳定完成转向。
+角速度环的误差定义为 e_g(k)=-expect_gyro(k)-avl_gyro_z(k)，其 PD 输出为：
+speed_dis_out(k)=Kp_gyro·e_g(k)+Kd_gyro·[e_g(k)-e_g(k-1)]        （公式 4-2）
+角速度误差变化量限制在 ±300，差速补偿输出限制在 ±6500。最终左右轮控制量分别为 PWM_L=speed_pid.out-speed_dis_out、PWM_R=speed_pid.out+speed_dis_out，从而实现差速转向。
+4.3.3 转弯状态管理与安全限幅
+图像算法检测到转弯后置位 turning_state，控制中断记录当前航向角 yaw_turn_first 并进入转弯状态，同时清零三组方向 PID 的历史误差和输出，避免上一段直线控制状态对转弯造成冲击。当当前航向角与起始航向角的差值达到 ±62° 时，程序置位 end_turning_state、退出转弯状态并再次清零方向环状态。
+控制器对速度增量、速度输出、期望角速度、角速度微分项、方向输出和最终 PWM 均设置限幅，并通过 limit_check 统计溢出次数。当控制周期超过设定时间、protect_flag 触发或完成规定数量的转弯时，主循环关闭控制使能并将电机 PWM 清零，保证车辆能够安全停车。
+4.4 电机速度控制算法
+4.4.1 编码器反馈与增量式 PI
+速度环以左右编码器在 1 ms 内的计数增量作为反馈。程序读取 GPT12 编码器计数后立即清零，并通过一阶低通滤波得到 encoder_left.encoder_count 和 encoder_right.encoder_count，取两轮平均值 speed_final_average 作为车模当前速度。
+速度误差定义为 e(k)=speed_target(k)-speed_final_average(k)，增量式 PI 的计算过程为：
+Δu(k)=Kp·[e(k)-e(k-1)]+Ki·e(k)
+u(k)=u(k-1)+Δu(k)                                     （公式 4-3）
+其中 u(k) 为基础速度控制量 speed_pid.out。程序先将 Δu 限制在 ±5000，再将累加后的 u(k) 限制在 ±6500，防止积分累加和瞬时误差使 PWM 超出驱动器允许范围。
+4.4.2 PI 参数整定与实验波形
+参数整定采用阶跃响应与实车试跑相结合的方法。先在直道上给定目标速度，观察编码器反馈的上升时间、超调量和稳态误差，再逐步调整 Kp 和 Ki。当前工程中速度环参数为 Kp=70、Ki=0.56，速度输出上限为 6500，速度增量上限为 5000；方向环的直行、左转和右转参数分别保存在独立结构体中。
+调试时，程序通过 UART2 按 VOFA+ JustFloat 协议发送浮点数据：每个数据转换为 4 个字节，发送帧尾 0x00 0x00 0x80 0x7F。实际波形可用于同时观察编码器速度、Final_Sum、speed_dis_out、speed_pid.out 和 expect_gyro，判断速度跟踪、差速补偿与转向响应之间的匹配关系。
+
+图4.9 VOFA+ 实时控制波形
+4.4.3 S 曲线加速与动态速度策略
+为减小起步时的机械冲击，SpeedRamp_Update() 在每个 1 ms 控制周期内使用三次 S 曲线更新目标速度。令 t 为已运行时间与 ramp_time 的比值，则 0≤t＜1 时：
+speed_target(t)=speed_target_max·(3t²-2t³)        （公式 4-4）
+当前工程将直行目标速度上限设置为 180，ramp_time 设置为 0.2 s；左转和右转任务使用 speed_turn=185，并在进入对应任务时重新设置速度斜坡上限。这样既能避免目标速度突变，又能使控制器在任务切换和转弯阶段保持连续输出。
+动态速度策略通过 task_point、速度斜坡、差速补偿和保护条件共同实现：直行使用常规方向参数，转弯使用左右转专用参数和转弯速度；当图像保护、运行时间或转弯次数达到限制时立即停止输出。
+第五章 开发工具、平台调试说明
+5.1开发工具
+TC264D主控程序在AURIX Development Studio环境下编写、编译和调试，工程基于逐飞开源库完成底层外设初始化，并在其上实现图像处理、元素识别和运动控制。AI8051电调使用对应的开源工程与下载工具独立维护。
+AURIX Development Studio集成了编译器、调试器和工程管理工具，可通过调试接口观察变量、断点和外设状态。开发过程中将底层驱动、图像算法、控制算法和参数管理分层组织，便于单独验证和后续维护。
+5.2调试软件
+调试软件包括逐飞助手、VOFA+和Matlab。逐飞助手用于观察图像及关键变量，VOFA+用于绘制实时波形，Matlab用于离线分析控制数据和辅助整定。
+5.2.1 图像调试
+摄像头车模在调试过程中需要大量的测试，智能车的搭建与芯片的性能与存储大小限制了其调试方式，所以采用无线图传采集运行时的图像信息。 
+5.2.2 控制调试
+电机速度、目标值、偏差和PID输出通过串口发送到VOFA+，以波形方式比较响应速度、超调量和稳态误差。
+通过让电机转动固定时间，可设定多段阶跃目标值或步进目标值来分别测试电机响应速度与跟随程度，后将连续数据通过串口传输至上位机绘制波形。
+
+图 5.1 Vofa+调试过程
+5.3 赛场调试
+通过屏幕、拨码、按键与软件菜单配合，可以完成对软件所有参数（二值化阈值、不同元素速度、元素转角偏移、转向差速系数等）的现场快速更改，可大大节省编译与下载所耗费的时间。
+
+第六章 模型车的主要技术参数说明
+6.1改造后的车模总体结构与布置
+车模采用四轮差速底盘，摄像头安装在前方支架顶部，控制板、电池和驱动模块集中在底盘区域。实际质量与尺寸应以赛前装车后的测量值为准。
+
+图6.1 车模三维结构示意
+整车正面可观察摄像头支架、主控板和左右驱动轮的相对位置，结构以紧凑、低重心和方便维护为主要目标。
+ 
+图6.2 车模底部宽度
+侧面布置重点保证摄像头视野不受遮挡，同时缩短连接线并避免支架在高速运行中产生明显振动。
+
+图6.3 车模底部长度
+车模背部保留电池、连接器和调试接口的操作空间，动力线与信号线分开固定。
+
+图6.4 车模实际高度
+主控板采用飞控缓震柱固定方式安装，并通过合理走线减少插接件松动和运动干涉。
+
+图6.5 主控板与车身安装细节
+6.2电路功耗
+整车功耗主要来自有刷驱动电机和无刷负压电机，主控、摄像头及传感器功耗相对较小。峰值电流随赛道工况和负压设定变化，电池、线束、MOSFET和连接器均按峰值电流留有余量，最终最大功耗数据大约240W,最小功耗数据大约96W。
+6.3传感器种类以及个数
+整车使用总钻风灰度摄像头1个、正交编码器2个、陀螺仪1个；IPS屏和五向按键用于显示与参数设置。
+6.4除驱动电机和负压无刷电机外的执行器数量
+本车模未使用额外舵机或其他伺服执行器，转向由左右有刷电机差速实现。
+6.5赛道信息检测精度与频率
+图像采集频率由总钻风摄像头配置决定，控制程序以每帧完成信号更新赛道信息，并在固定控制周期内使用最新结果。实际检测精度受安装高度、镜头视野和二值化效果影响，赛前通过标定和实测确认。
+第七章 结论
+本文介绍了基于TC264D和总钻风灰度摄像头的智能车总体方案，从机械结构、硬件电路、图像算法和运动控制四个方面说明了系统实现。主控完成图像识别和双电机差速控制，DRV8701E驱动有刷电机，逐飞开源AI8051电调驱动无刷负压电机。实车调试表明，各模块能够协同工作，方案具有较好的可实现性与维护性。
+第二十一届全国大学生智能汽车竞赛已有较成熟的器件、驱动库和调试工具可供参考。本系统在逐飞开源方案基础上完成硬件整合和软件适配，并针对自身车模结构进行参数调整。
+备赛过程中对灰度图像的固定阈值、动态阈值和边界搜索方法进行了比较，最终采用计算量适中且便于现场调整的处理流程；控制部分采用差速转向PD与左右轮速度PI相结合的方式，并通过编码器反馈提高一致性。
+系统仍有进一步优化空间，例如提高复杂光照下的边界连续性、完善故障诊断和降低整车电磁干扰。通过反复装配、测试和参数整定，团队积累了从电路设计、嵌入式开发到整车联调的完整工程经验。
+
+第八章 致谢
+备赛期间，我们小组遇到了不少挑战，从最初的传感器选型、方案确定，到后来的软硬件联调，每一步都并不轻松。但在一次次的攻克难题中，我们的技术能力不断提升，心态也日渐成熟。而这一路走来，离不开学校、老师和学长们的鼎力支持。
+首先，我们要感谢学校和学院对这次比赛的重视，场地和经费方面都得到了学校和学院的大力支持。没有他们的支持，我们绝对上不了赛场。其次，我们要感谢指导老师的悉心教导，没有他们在方向上的指导和整体思路的规划安排，我们很难有今天的成果。接着，我们要感谢指导学长们对我们的经验传授与技术上的支持，感谢我们和谐的实验室氛围，感谢同学们在赛道制作和其它方面的帮助。同时也感谢比赛组委会能组织这样一项有意义的比赛。
+最后，也要谢谢各大智能车群，csdn，B站相互分享经验的车友们，一场比赛使得大家拥有相同目标，是竞争，亦是学习，合作。
+
+参考文献
+[1] Infineon Technologies. AURIX TC26xD User's Manual [Z].
+[2] Texas Instruments. DRV8701 Brushed DC Motor Full-Bridge Gate Driver Datasheet [Z].
+[3] 逐飞科技. TC264开源库、总钻风摄像头及AI8051电调相关资料 [Z].
+[4] 王正, 姚佳伶. 一种鲁棒模型预测控制的智能车路径跟踪控制策略[J]. 重庆理工大学学报(自然科学), 2025, 39(23): 37-45. 
+[5] 吴晓建, 张明华, 王爱春, 等. 基于超螺旋滑模及前馈补偿的智能车侧向运动控制[J]. 湖南大学学报(自然科学版), 2024, 51(2): 151-162. 
+
+附录
+附录.A  图像参考程序：
+#include "image.h"
+#include "Control.h"
+
+uint8_t data_ready_flag_for_core0=0;//图像双核缓冲标志
+
+//存储各种处理之后的图像
+uint8 imgZip[my_camera_h][my_camera_w];
+uint8 img_binary[my_camera_h][my_camera_w];
+uint8_t img_copy[my_camera_h][my_camera_w];
+
+//////////////////SPI图传内容/////////////////////
+uint8 img_SPI[my_camera_h][my_camera_w];
+uint8 xy_x1_boundary[BOUNDARY_NUM], xy_x2_boundary[BOUNDARY_NUM], xy_x3_boundary[BOUNDARY_NUM];
+uint8 xy_y1_boundary[BOUNDARY_NUM], xy_y2_boundary[BOUNDARY_NUM], xy_y3_boundary[BOUNDARY_NUM];
+//////////////////SPI图传内容/////////////////////
+
+//经过方差法计算出的最佳阈值
+uint8_t nowThreshold;
+
+//中线偏置
+int16_t Middle_Line_x = my_camera_w / 2;
+int16_t Middle_Line_x_left = my_camera_w / 4;
+int16_t Middle_Line_x_right = (my_camera_w * 3) / 4;
+int16_t center_point_x_average = 47;
+
+//陀螺仪补偿值
+int16_t Gyr_Sum = 0;
+uint8_t Gyr_dir = 0;
+//计时器
+uint32_t tim;
+
+//判断标志位
+uint8_t state_flag = 1;
+uint8_t turning_state;
+uint8_t end_turning_state = 1;
+uint8_t protect_flag = 0;   //0为未保护 1为保护
+uint8_t ban_transisitor = 0;
+uint8_t Direction_Planning = 0;
+
+//中线参数
+#define Boundary_point_gap 50
+
+//转弯参数
+uint8_t Img_Gap_left = 22;
+uint8_t Img_Gap_right = 22;
+#define frame_judge 1
+
+
+/***************************************************
+  * @brief    取绝对值
+  * @param    value
+  * @return   |value|
+  * @note     无
+  *************************************************/
+int my_abs(int value)
+{
+    return value >= 0 ? value : -value;
+}
+
+/***************************************************
+  * @brief    压缩2倍图像
+  * @param    压缩前图像:Image_src[MT9V03X_H][MT9V03X_W] 压缩后图像:uint8 Image_tar[my_camera_h][my_camera_w]
+  * @return   无
+  * @note     优化了计算效率和内存访问
+  *************************************************/
+void Get_Zip_Image_Factor2(uint8 Image_src[MT9V03X_H][MT9V03X_W],
+                           uint8 Image_tar[my_camera_h][my_camera_w])
+{
+    const int tar_w = MT9V03X_W / 2;
+    const int tar_h = MT9V03X_H / 2;
+    for (int i = 0; i < tar_h; i++)
+    {
+        uint8 *src_row0 = (uint8*)&Image_src[i*2][0];
+        uint8 *src_row1 = src_row0 + MT9V03X_W;
+        uint8 *tar_row = (uint8*)&Image_tar[i][0];
+        for (int j = 0; j < tar_w; j++)
+        {
+            uint16 sum = src_row0[0] + src_row0[1] + src_row1[0] + src_row1[1];
+            tar_row[j] = sum >> 2;  // 除以4用移位
+            src_row0 += 2;
+            src_row1 += 2;
+        }
+    }
+}
+
+/***************************************************
+  * @brief    使用直方图法求阈值
+  * @param    image[my_camera_h][my_camera_w]  求阈值的图片
+  * @return   Threshold
+  * @note     优化了计算效率和内存访问
+  *************************************************/
+uint8_t Iterative_Threshold_Fast(unsigned char image[][my_camera_w],
+                                 uint8 start_y, uint8 start_x,
+                                 uint8 end_h, uint8 end_w)
+{
+    uint32_t hist[256] = {0};
+    // 一次遍历，统计直方图
+    for (int i = start_y; i < end_h; i++) {
+        for (int j = start_x; j < end_w; j++) {
+            hist[image[i][j]]++;
+        }
+    }
+
+    uint8_t threshold = 128;
+    uint8_t new_threshold;
+    do {
+        uint32_t sum1 = 0, count1 = 0;
+        uint32_t sum2 = 0, count2 = 0;
+        for (int g = 0; g < 256; g++) {
+            if (g > threshold) {
+                sum1 += g * hist[g];
+                count1 += hist[g];
+            } else {
+                sum2 += g * hist[g];
+                count2 += hist[g];
+            }
+        }
+        uint8_t mean1 = count1 ? sum1 / count1 : 0;
+        uint8_t mean2 = count2 ? sum2 / count2 : 0;
+        new_threshold = (mean1 + mean2) / 2;
+        if (abs(new_threshold - threshold) <= 1) break;
+        threshold = new_threshold;
+    } while (1);
+    return threshold;
+}
+
+/***************************************************
+  * @brief    大津法求阈值
+  * @param
+  * @return   无
+  * @note     优化了计算效率和内存访问
+  *************************************************/
+uint8 otsuThreshold_fast(void)
+{
+    #define GrayScale 256
+
+    int width = MT9V03X_W / 2;
+    int height = MT9V03X_H / 2;
+    int bottom_start = height / 2;
+    int start_x = 2;
+    int end_x = width - 2;
+
+    uint16 pixelCount[GrayScale] = {0};
+    uint16 bottomPixelCount[GrayScale] = {0};
+    uint32 pixelSum = 0;
+    uint32 gray_sum = 0;
+    uint32 bottomGraySum = 0;
+    uint32 bottomGraySumSq = 0;
+    uint32 bottomPixelSum = 0;
+    uint8 Pixel_Max = 0;
+    uint8 Pixel_Min = 255;
+
+
+    for (int i = 0; i < height; i += 2)
+    {
+        uint8 *row = imgZip[i];
+        int is_bottom = (i >= bottom_start);
+        for (int j = start_x; j < end_x; j += 2)
+        {
+            uint8 val = row[j];
+            pixelCount[val]++;
+            gray_sum += val;
+            pixelSum++;
+
+            if (is_bottom)
+            {
+                bottomPixelCount[val]++;
+                bottomPixelSum++;
+                bottomGraySum += val;
+                bottomGraySumSq += (uint32)val * val;
+            }
+
+            if (val > Pixel_Max) Pixel_Max = val;
+            if (val < Pixel_Min) Pixel_Min = val;
+        }
+    }
+
+    if (pixelSum == 0) return 100;
+
+    // ---------- 前缀锟酵ｏ拷uint32 锟姐够锟斤拷锟斤拷锟揭讹拷锟杰猴拷 ~1.13M锟斤拷----------
+    uint16 prefixCount[GrayScale];
+    uint32 prefixGraySum[GrayScale];
+    uint32 cumCount = 0;
+    uint32 cumGray = 0;
+    for (int g = Pixel_Min; g <= Pixel_Max; g++)
+    {
+        cumCount += pixelCount[g];
+        cumGray += (uint32)g * pixelCount[g];
+        prefixCount[g] = (uint16)cumCount;
+        prefixGraySum[g] = cumGray;
+    }
+    uint32 totalCount = prefixCount[Pixel_Max];
+    uint32 totalGray = prefixGraySum[Pixel_Max];
+    float invN = 1.0f / totalCount;
+
+    // ---------- Otsu锟斤拷float锟斤拷TC1.6 硬锟斤拷 FPU锟斤拷----------
+    uint8 bestTh = 0;
+    float maxVar = 0.0f;
+
+    for (int th = Pixel_Min; th < Pixel_Max; th++)
+    {
+        uint32 cnt0 = prefixCount[th];
+        if (cnt0 == 0 || cnt0 == totalCount) continue;
+
+        uint32 cnt1 = totalCount - cnt0;
+        uint32 sum0 = prefixGraySum[th];
+        uint32 sum1 = totalGray - sum0;
+        float diff = (float)sum0 / cnt0 - (float)sum1 / cnt1;
+        float var = (float)cnt0 * invN * (float)cnt1 * invN * diff * diff;
+
+        if (var > maxVar)
+        {
+            maxVar = var;
+            bestTh = th;
+        }
+    }
+
+    // ---------- Otsu 锟斤拷锟叫ｏ拷锟  & 锟阶诧拷锟斤拷锟斤拷统锟斤拷 ----------
+    uint32 cnt0 = prefixCount[bestTh];
+    uint32 sum0 = prefixGraySum[bestTh];
+    float mean0 = (float)sum0 / cnt0;
+    float mean1 = (float)(totalGray - sum0) / (totalCount - cnt0);
+    float class_gap = mean1 - mean0;
+
+    uint32 white_cnt = totalCount - cnt0;
+    float white_ratio = (float)white_cnt * invN;
+
+    float bg_std = 0.0f;
+    uint8 bg_ref = 100;
+    if (bottomPixelSum > 0)
+    {
+        uint32 cum = 0;
+        for (int g = 0; g < GrayScale; g++)
+        {
+            cum += bottomPixelCount[g];
+            if (cum >= bottomPixelSum * 0.95f)
+            {
+                bg_ref = g;
+                break;
+            }
+        }
+        float bg_mean = (float)bottomGraySum / bottomPixelSum;
+        float bg_var = (float)bottomGraySumSq / bottomPixelSum - bg_mean * bg_mean;
+        if (bg_var > 0) bg_std = sqrtf(bg_var);
+    }
+
+    uint8 final_th = bestTh;
+
+    // Otsu 锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷锟阶碉拷太锟斤拷 OR 锟斤拷锟斤拷值锟斤拷太小锟斤拷锟街碉拷锟角★拷锟斤拷锟斤拷 vs 锟斤拷锟解”锟斤拷
+    int otsu_unreliable = (white_ratio < 0.04f) || (class_gap < 30.0f);
+
+    if (otsu_unreliable && bottomPixelSum > 0)
+    {
+        // 锟斤拷锟斤拷应偏锟狡ｏ拷锟斤拷锟斤拷越强锟斤拷bg_std 越锟襟）ｏ拷偏锟斤拷越锟斤拷
+        int offset = 20 + (int)(bg_std * 0.5f);
+        if (offset > 40) offset = 40;
+        int new_th = bg_ref + offset;
+        final_th = (new_th > 70) ? new_th : 70;
+    }
+
+    // 锟睫凤拷
+    if (final_th < 50) final_th = 50;
+    if (final_th > 160) final_th = 160;
+
+    // 帧锟斤拷平锟斤拷
+    static uint8 prev_th = 100;
+    final_th = (prev_th * 3 + final_th) / 4;
+    prev_th = final_th;
+
+    return final_th;
+}
+
+/********************************/
+//图像二值化变量
+uint8 img_threshold_group[3];    //划分阈值区域   上中下
+
+uint8 close_Threshold = 0;
+uint8 mid_Threshold = 0;  //根据需求调整
+uint8 far_Threshold = 0;
+
+uint8 white_num_row[my_camera_h];    //存储每行白点数
+uint8 white_num_col[my_camera_w];    //存储每列白点数
+uint16_t white_num_sum;              //整个屏幕的总白点数
+/********************************/
+/******************************************************************************
+* 函数名称     : Get_img_binary
+* 描述         : 进行图像二值化并进行(可选)噪点去除
+* 进入参数     : void
+* 注:         腐蚀和扩张操作耗费很长时间，谨慎添加使用
+* 返回参数     : void
+******************************************************************************/
+void Get_img_binary(void)
+{
+    // 1. 初始化数组
+    memset(img_binary, Black, sizeof(img_binary));  //先把屏幕全黑
+    memset(img_SPI, Black, sizeof(img_SPI));
+    memset(white_num_row, 0, sizeof(white_num_row));
+    memset(white_num_col, 0, sizeof(white_num_col));
+    white_num_sum = 0;
+
+    img_threshold_group[0] = nowThreshold - far_Threshold;      //远景       ///远景多降，能清晰识别更远
+    img_threshold_group[1] = nowThreshold - mid_Threshold;      //中景
+    img_threshold_group[2] = nowThreshold + close_Threshold;    //近景       //近景少加，能看清最近
+
+    uint8_t threshold_group_num = 0;
+    int Loop[9][2] = {{0,1},{1,1},{1,0},{1,-1},{0,-1},{-1,-1},{-1,0},{-1,1}};  //一个像素点的八个邻域点
+
+    for(int8_t i = 0;i <= my_camera_h-1 ;i++)
+    {
+        for(int8_t j = 0;j <= my_camera_w-1 ;j++)
+        {
+            uint8_t White_Num = 0;
+            uint8_t Black_Num = 0;
+            if(i >= 0 && i < 20)  //当位于远景时
+            {
+                threshold_group_num = 0;
+                if(imgZip[i][j] >= img_threshold_group[threshold_group_num])
+                {
+                    img_binary[i][j] = White;
+                    white_num_row[i]++;  //计算每行白点数
+                    white_num_col[j]++;  //计算每列白点数
+                    white_num_sum++;
+
+                }
+
+            }
+            else if(i >= 20 && i < 40)  //当位于中景时
+            {
+                threshold_group_num = 1;
+                if(imgZip[i][j] >= img_threshold_group[threshold_group_num])
+                {
+                    img_binary[i][j] = White;
+                    white_num_row[i]++;  //计算每行白点数
+                    white_num_col[j]++;  //计算每列白点数
+                    white_num_sum++;
+                }
+            }
+            else if(i >= 40 && i < 60)  //当位于近景时
+            {
+                threshold_group_num = 2;
+                if(imgZip[i][j] >= img_threshold_group[threshold_group_num])
+                {
+                    img_binary[i][j] = White;
+                    white_num_row[i]++;  //计算每行白点数
+                    white_num_col[j]++;  //计算每列白点数
+                    white_num_sum++;
+                }
+            }
+        }
+    }
+//////////////////////////////保护小车///////////////////////////////////////////
+    if(white_num_sum <= 100)
+    {
+        protect_flag = 1;
+    }
+    else if(white_num_sum > 100)
+    {
+        protect_flag = 0;
+    }
+//////////////////////////////保护小车///////////////////////////////////////////
+}
+
+/********************************/
+// 起点信息
+uint16_t start_center_y = 0;
+uint16_t start_point_l_x = 0,start_point_r_x = 0;
+uint16_t deal_bottom=my_camera_h-1;
+uint16_t l_point_x = 0, r_point_x = 0;
+uint16_t bottom_center_x;
+uint16_t bottom_center_y;
+int16_t left_point[10];
+int16_t right_point[10];
+uint16_t left_point_num = 0;
+uint16_t right_point_num = 0;
+int16_t left_Point_Gap = 0;
+int16_t right_Point_Gap = 0;
+int16_t current_left_Point_Gap = 60;
+int16_t current_right_Point_Gap = 60;
+/********************************/
+/******************************************************************************
+* 函数名称     : find_track_start_point
+* 描述         : 在图像底部寻找赛道左右边界的起点
+* 进入参数     : void
+* 返回参数     : uint8_t 1:成功找到起点 0:未找到起点
+******************************************************************************/
+uint8_t find_track_start_point(void)
+{
+    memset(left_point, 0, sizeof(left_point));
+    memset(right_point, 0, sizeof(right_point));
+    bottom_center_x = 47;
+    bottom_center_y = 59;
+    left_point_num = 0;
+    right_point_num = 0;
+    left_Point_Gap = 0;
+    right_Point_Gap = 0;
+    current_left_Point_Gap = 60;
+    current_right_Point_Gap = 60;
+
+    for(uint16_t i = deal_bottom; i > deal_bottom - 15 ; i--)    // 从底部向上搜索合适的起始行（使用行白点数作为判断条件）
+    {
+        uint8_t l_found = 0, r_found = 0;
+        start_center_y = i;
+        if(transistor_Num == 100)  //特殊运放处巡线处理
+        {
+            for(uint16_t j = 1; j < my_camera_w - 2; j++) // 从左向右寻找左边界（黑到白跳变）
+            {
+                if(img_binary[i][j] == Black && img_binary[i][j+1] == White && img_binary[i][j+2] == White)
+                {
+                    left_point[left_point_num] = j + 1;
+                    left_point_num ++;
+                    l_found = 1;
+                }
+            }
+            for(uint16_t m = 0; m < left_point_num; m++)
+            {
+                left_Point_Gap = my_abs(Middle_Line_x - left_point[m]);
+                if(left_Point_Gap < current_left_Point_Gap)
+                {
+                    current_left_Point_Gap = left_Point_Gap;
+                    l_point_x = left_point[m];
+                }
+            }
+        }
+        else
+        {
+            for(uint16_t j = 1; j < my_camera_w - 2; j++) // 从左向右寻找左边界（黑到白跳变）
+            {
+                if(img_binary[i][j] == Black && img_binary[i][j+1] == White && img_binary[i][j+2] == White)
+                {
+                    l_point_x = j + 1;
+                    l_found = 1;
+                    break;
+                }
+            }
+        }
+
+        for(uint16_t j = my_camera_w - 2; j > 1; j--) // 从右向左寻找右边界（白到黑跳变）
+        {
+            if(img_binary[i][j-1] == White && img_binary[i][j] == White && img_binary[i][j+1] == Black)
+            {
+                r_point_x = j;
+                r_found = 1;
+                break;
+            }
+        }
+        uint16_t Start_Point_Gap = my_abs(r_point_x - l_point_x);   //在赛道比较脏的情况下使用
+//        if(l_found && r_found && Start_Point_Gap < 30)
+          if(l_found && r_found)
+        {
+               start_point_l_x = l_point_x; //此处获取到左扫右点的起始点的X坐标
+               start_point_r_x = r_point_x; //此处获取到右扫左点的起始点的X坐标
+               bottom_center_x = (l_point_x + r_point_x) / 2;
+               bottom_center_y = i;
+               return 1;
+        }
+    }
+    return 0;
+}
+
+/********************************/
+//8领域变量区域
+uint8_t img_boundary[my_camera_h][my_camera_w]; //边界点
+BoundaryPoint Total_boundary[2000];   // 边界点数组
+BoundaryPoint left_boundary[1000];   // 左边界点数组
+BoundaryPoint right_boundary[1000];  // 右边界点数组
+Corner_Point corner_points[100];     //拐点数组
+uint16_t left_boundary_len = 0;      // 左边界点数量
+uint16_t right_boundary_len = 0;     // 右边界点数量
+
+uint16_t left_boundary_x_sum;
+int16_t left_boundary_average_x;
+uint16_t right_boundary_x_sum;
+int16_t right_boundary_average_x;
+int16_t boundary_gap;
+uint16_t last_white_x_l,last_white_y_l,last_white_x_r,last_white_y_r,boundary_point_num,corner_point_num;
+BoundaryTouchFlags total_touch_flags;
+int start_dir,enter_dir;
+
+Four_Edge_Point left_edge_point;
+Four_Edge_Point right_edge_point;
+Four_Edge_Point up_edge_point;
+Four_Edge_Point down_edge_point;
+
+
+uint16_t tmp_right_corner_point_x;
+uint16_t tmp_left_corner_point_x;
+uint16_t tmp_right_corner_point_y;
+uint16_t tmp_left_corner_point_y;
+
+uint16_t right_corner_point_x;
+uint16_t left_corner_point_x;
+uint16_t right_corner_point_y = 0;
+uint16_t left_corner_point_y = 0;
+/********************************/
+/******************************************************************************
+* 函数名称     : trace_boundary
+* 描述         : 赛道8邻域爬线 + 四方位判断
+* 进入参数     : start_x_l, start_y_l,start_x_r,start_y_r - 起始点坐标
+* 返回参数     : void
+******************************************************************************/
+
+void trace_boundary(uint16_t start_x_l, uint16_t start_y_l,uint16_t start_x_r,uint16_t start_y_r)
+{
+    int Loop_left[8][2] =  {{1,0}, {1,-1}, {0,-1}, {-1,-1}, {-1,0}, {-1,1}, {0,1}, {1,1}}; //一个像素点的八个邻域点 (x,y) 这个是逆时针扫描左边界的
+    int Loop_right[8][2] = {{-1,0}, {-1,-1}, {0,-1}, {1,-1}, {1,0}, {1,1}, {0,1}, {-1,1}}; //一个像素点的八个邻域点 (x,y) 这个是顺时针扫描右边界的
+
+    memset(img_boundary, 0, sizeof(img_boundary));
+    memset(Total_boundary, 0, sizeof(Total_boundary));
+
+    total_touch_flags.touch_top = 0;
+    total_touch_flags.touch_bottom = 0;
+    total_touch_flags.touch_left = 0;
+    total_touch_flags.touch_right = 0;
+    uint16_t tmp_left_point_y = 0;
+    uint16_t tmp_right_point_y = 0;
+    up_edge_point.x = 47;
+    up_edge_point.y = 0;
+    left_edge_point.x = 47;
+    left_edge_point.y = 0;
+    right_edge_point.x = 47;
+    right_edge_point.y = 0;
+
+    left_boundary_x_sum = 0;
+    left_boundary_average_x = 0;
+    right_boundary_x_sum = 0;
+    right_boundary_average_x = 0;
+    boundary_gap = 0;
+
+    boundary_point_num = 0;
+    left_boundary_len = 0;
+    right_boundary_len = 0;
+    corner_point_num = 0;
+
+    last_white_x_l = start_x_l;
+    last_white_y_l = start_y_l;
+    Total_boundary[boundary_point_num].x = start_x_l;
+    Total_boundary[boundary_point_num].y = start_y_l;
+//    img_boundary[start_y_l][start_x_l] = Yellow; // 标记已访问
+    boundary_point_num++;
+
+    last_white_x_r = start_x_r;
+    last_white_y_r = start_y_r;
+    Total_boundary[boundary_point_num].x = start_x_r;
+    Total_boundary[boundary_point_num].y = start_y_r;
+//    img_boundary[start_y_r][start_x_r] = Yellow; // 标记已访问
+    boundary_point_num++;
+
+    int found_radius = 0;
+    int First_dir = -1;
+
+    for(uint16_t m = 0;m < 150; m++)
+    {
+        uint8_t find_point_flag = 0;
+        if(First_dir == -1)
+        {
+            start_dir = 0;
+        }
+        else
+        {
+            enter_dir = (First_dir + 4) % 8;  // 初始进入方向：从起点到第一个白色点的方向的反方向
+            start_dir = (enter_dir + 1) % 8;
+        }
+        for(uint8_t k = 0; k < 8; k++)
+        {
+            int16_t nx_l = last_white_x_l + Loop_left[(start_dir+k) % 8][0];
+            int16_t ny_l = last_white_y_l + Loop_left[(start_dir+k) % 8][1];
+            if(nx_l < 0 || nx_l >= my_camera_w || ny_l < 0 || ny_l >= my_camera_h)
+                continue;
+            int prev_k = ((start_dir+k) % 8 == 0) ? 7 : ((start_dir+k) % 8 - 1);
+            int16_t last_nx_l = last_white_x_l + Loop_left[prev_k][0];
+            int16_t last_ny_l = last_white_y_l + Loop_left[prev_k][1];
+
+            if(img_binary[last_ny_l][last_nx_l] == White && img_binary[ny_l][nx_l] == Black)
+            {
+                last_white_x_l = nx_l;
+                last_white_y_l = ny_l;
+                Total_boundary[boundary_point_num].x = nx_l;       //记录边界点的X坐标
+                Total_boundary[boundary_point_num].y = ny_l;       //记录边界点的Y坐标
+                img_SPI[ny_l][nx_l] = White;
+//                xy_x1_boundary[boundary_point_num] = nx_l;         //SPI图传记录边界点的X坐标
+//                xy_y1_boundary[boundary_point_num] = ny_l;         //SPI图传记录边界点的y坐标
+
+                boundary_point_num ++;
+                left_boundary[left_boundary_len].x = nx_l;
+                left_boundary[left_boundary_len].y = ny_l;
+                left_boundary_x_sum += left_boundary[left_boundary_len].x;
+                left_boundary_len ++;
+
+
+                if(ny_l == 3)
+                {
+                    total_touch_flags.touch_top = 1;   //上
+                    up_edge_point.x = nx_l;
+                    up_edge_point.y = ny_l;
+                }
+                if(ny_l == my_camera_h - 5)
+                {
+                    total_touch_flags.touch_bottom = 1;   //下
+                }
+                if(nx_l == 2 && ny_l >= 5 && ny_l <= 55)
+                {
+                    total_touch_flags.touch_left = 1;   //左
+                    if(ny_l >= tmp_left_point_y)
+                    {
+                        tmp_left_point_y = ny_l;
+                        left_edge_point.x = nx_l;
+                        left_edge_point.y = ny_l;
+                    }
+                }
+                if(nx_l == my_camera_w - 2 && ny_l >= 5 && ny_l <= 55)
+                {
+                    total_touch_flags.touch_right = 1;   //右
+                    if(ny_l >= tmp_right_point_y)
+                    {
+                        tmp_right_point_y = ny_l;
+                        right_edge_point.x = nx_l;
+                        right_edge_point.y = ny_l;
+                    }
+                }
+                find_point_flag = 1;
+                if(First_dir == -1)
+                {
+                    First_dir = k;
+                }
+                else
+                {
+                    First_dir = (start_dir+k) % 8;
+                }
+                break;   //当找到八领域的相邻白点时跳出循环
+            }
+            else
+            {
+
+            }
+         }
+        if(find_point_flag == 0) break;
+    }
+
+    First_dir = -1;
+    for(uint16_t m = 0;m < 150; m++)
+    {
+        uint8_t find_point_flag = 0;
+        if(First_dir == -1)
+        {
+            start_dir = 0;
+        }
+        else
+        {
+            enter_dir = (First_dir + 4) % 8;  // 初始进入方向：从起点到第一个白色点的方向的反方向
+            start_dir = (enter_dir + 1) % 8;
+        }
+        for(uint8_t k = 0; k < 8; k++)
+        {
+            int16_t nx_r = last_white_x_r + Loop_right[(start_dir+k) % 8][0];
+            int16_t ny_r = last_white_y_r + Loop_right[(start_dir+k) % 8][1];
+            if(nx_r < 0 || nx_r >= (my_camera_w - 1) || ny_r < 0 || ny_r >= my_camera_h)
+                continue;
+            int prev_k = ((start_dir+k) % 8 == 0) ? 7 : ((start_dir+k) % 8 - 1);
+            int16_t last_nx_r = last_white_x_r + Loop_right[prev_k][0];
+            int16_t last_ny_r = last_white_y_r + Loop_right[prev_k][1];
+            if(img_binary[last_ny_r][last_nx_r] == White && img_binary[ny_r][nx_r] == Black)
+            {
+                last_white_x_r = nx_r;
+                last_white_y_r = ny_r;
+                Total_boundary[boundary_point_num].x = nx_r;       //记录边界点的X坐标
+                Total_boundary[boundary_point_num].y = ny_r;       //记录边界点的Y坐标
+                img_SPI[ny_r][nx_r] = White;
+//                xy_x1_boundary[boundary_point_num] = nx_r;         //SPI图传记录边界点的X坐标
+//                xy_y1_boundary[boundary_point_num] = ny_r;         //SPI图传记录边界点的y坐标
+
+                boundary_point_num ++;
+                right_boundary[right_boundary_len].x = nx_r;
+                right_boundary[right_boundary_len].y = ny_r;
+                right_boundary_x_sum += right_boundary[right_boundary_len].x;
+                right_boundary_len ++;
+
+                if(ny_r == 3)
+                {
+                    total_touch_flags.touch_top = 1;   //上
+                    up_edge_point.x = nx_r;
+                    up_edge_point.y = ny_r;
+                }
+                if(ny_r == my_camera_h - 2)
+                {
+                    total_touch_flags.touch_bottom = 1;   //下
+                }
+                if(nx_r == 2 && ny_r >= 5 && ny_r <= 55)
+                {
+                    total_touch_flags.touch_left = 1;   //左
+                    if(ny_r >= tmp_left_point_y)
+                    {
+                        tmp_left_point_y = ny_r;
+                        left_edge_point.x = nx_r;
+                        left_edge_point.y = ny_r;
+                    }
+                }
+                if(nx_r == my_camera_w - 2 && ny_r >= 5 && ny_r <= 55)
+                {
+                    total_touch_flags.touch_right = 1;   //右
+                    if(ny_r >= tmp_right_point_y)
+                    {
+                        tmp_right_point_y = ny_r;
+                        right_edge_point.x = nx_r;
+                        right_edge_point.y = ny_r;
+                    }
+                }
+                find_point_flag = 1;
+                if(First_dir == -1)
+                {
+                    First_dir = k;
+                }
+                else
+                {
+                    First_dir = (start_dir+k) % 8;
+                }
+                break;   //当找到八领域的相邻白点时跳出循环
+            }
+         }
+        if(find_point_flag == 0) break;
+     }
+    left_boundary_average_x = left_boundary_x_sum / left_boundary_len;
+    right_boundary_average_x = right_boundary_x_sum / right_boundary_len;
+    boundary_gap = my_abs(right_boundary_average_x - left_boundary_average_x);
+}
+
+
+/********************************/
+//中心点变量区域
+Center_Point center_points_new[150];
+uint8_t center_point[my_camera_h][my_camera_w];
+uint16_t center_point_num;
+uint16_t center_point_x_sum;
+uint8_t center_point_num_row[my_camera_h];    //判断每行的中点数量
+
+int8_t top_center_x_gap;
+uint8_t top_center_x = 47;
+uint8_t top_center_y = 59;
+/********************************/
+/******************************************************************************
+* 函数名称     : find_center_point
+* 描述         : 双指针获取爬线后的中点坐标,同时记录最低点和最高点
+* 进入参数     : void
+* 返回参数     : void
+******************************************************************************/
+
+void find_center_point(void)
+{
+        memset(center_points_new, 0, sizeof(center_points_new));
+        memset(center_point_num_row, 0, sizeof(center_point_num_row));
+
+        top_center_x_gap = 0;
+        center_point_x_sum = 0;
+        center_point_num = 0;
+        top_center_x = 47;
+        top_center_y = 59;
+
+        uint16_t left_idx = 0;
+        uint16_t right_idx = 0;
+
+        while (left_idx < left_boundary_len && right_idx < right_boundary_len)
+        {
+            uint16_t left_y = left_boundary[left_idx].y;
+            uint16_t right_y = right_boundary[right_idx].y;
+            if (left_y == right_y)
+            {
+            // 相同Y坐标，计算中点
+            uint16_t left_x = left_boundary[left_idx].x;
+            uint16_t right_x = right_boundary[right_idx].x;
+            int16_t Point_Gap = my_abs(right_x - left_x);
+            // 检查有效性
+            if (right_x > left_x)  // 宽度合理检查
+            {
+            if (center_point_num < 150 && Point_Gap < Boundary_point_gap)
+            {
+                  center_points_new[center_point_num].y = left_y;
+                  center_points_new[center_point_num].x = (left_x + right_x) / 2;
+                  center_point_x_sum += center_points_new[center_point_num].x;
+                  if(center_points_new[center_point_num].y <= top_center_y)
+                  {
+                      top_center_x = center_points_new[center_point_num].x;
+                      top_center_y = center_points_new[center_point_num].y;
+                  }
+                  center_point_num++;
+            }
+            }
+            left_idx++;
+            right_idx++;
+            }
+            else if (left_y > right_y)
+            {
+             left_idx++;           // 左边界Y更大（更靠下），移动左指针
+            }
+            else if (left_y < right_y)
+            {
+             right_idx++;          // 右边界Y更大，移动右指针
+            }
+        }
+        center_point_x_average = center_point_x_sum / center_point_num;
+        top_center_x_gap = my_abs(top_center_x - Middle_Line_x);
+
+}
+
+/********************************/
+//直角拐弯处理函数
+uint8_t Right_frames_judge_r = frame_judge;
+uint8_t Right_frames_judge_l = frame_judge;
+uint8_t Right_ban_flag = 0;
+uint8_t Right_flag1 = 0;
+uint8_t Right_flag2 = 0;
+uint8_t Right_flag3 = 0;
+/********************************/
+
+/******************************************************************************
+* 函数名称     : trace_Right_angle
+* 描述         : 直角拐弯处理
+* 进入参数     : void
+* 返回参数     : void
+******************************************************************************/
+void trace_Right_angle(void)
+{
+
+      if(total_touch_flags.touch_top == 0&& total_touch_flags.touch_left == 0 && total_touch_flags.touch_right == 1 && total_touch_flags.touch_bottom == 1 && right_edge_point.y >= Img_Gap_right && state_flag == 1 && end_turning_state == 1 && boundary_gap < 12)
+      {
+        Right_frames_judge_r --;
+        if(Right_frames_judge_r == 0 && ban_transisitor == 0)
+        {
+          turning_state = 1; //标志着此时是需要直角右拐弯
+          state_flag = 2;
+          end_turning_state = 0;
+          Right_frames_judge_r = frame_judge;
+        }
+      }
+      else
+      {
+          Right_frames_judge_r = frame_judge;
+      }
+      if(total_touch_flags.touch_top == 0 && total_touch_flags.touch_left == 1 && total_touch_flags.touch_right == 0 && total_touch_flags.touch_bottom == 1 && left_edge_point.y >= Img_Gap_left && state_flag == 1 && end_turning_state == 1 && boundary_gap < 12)
+      {
+        Right_frames_judge_l --;
+        if(Right_frames_judge_l == 0 && ban_transisitor == 0)
+        {
+          turning_state = 1; //标志着此时是需要直角左拐弯
+          state_flag = 3;
+          end_turning_state = 0;
+          Right_frames_judge_l = frame_judge;
+        }
+      }
+      else
+      {
+          Right_frames_judge_l = frame_judge;
+      }
+}
+
+/********************************/
+//MOS管断路处理函数
+uint8_t MOS_Left_Flag_over;
+uint8_t MOS_Right_Flag_over;
+uint8_t MOS_Judge_Flag = 0;
+uint8_t MOS_of_Curves_Sign = 0;
+uint8_t ban_MOS = 0;
+uint8_t MOS_Series_of_Curves_Sign = 0;
+
+uint8_t MOS_Left_Flag;
+uint8_t MOS_Right_Flag;
+
+uint16_t MOS_Right_Top_point_y;
+uint16_t MOS_Right_Bottom_point_y;
+uint16_t MOS_Left_Top_point_y;
+uint16_t MOS_Left_Bottom_point_y;
+uint16_t MOS_Right_Gap;
+uint16_t MOS_Left_Gap;
+
+uint8_t MOS_Judge_frames = 2;
+/********************************/
+
+/******************************************************************************
+* 函数名称     :MOS_Disconnect
+* 描述        :MOS管断路处理
+* 进入参数     : void
+* 返回参数     : void
+******************************************************************************/
+void MOS_Disconnect(void)
+{
+    MOS_Left_Flag = 0;
+    MOS_Right_Flag = 0;
+
+    MOS_Left_Flag_over = 0;
+    MOS_Right_Flag_over = 0;
+
+    MOS_Right_Top_point_y = 0;
+    MOS_Right_Bottom_point_y = 0;
+    MOS_Left_Top_point_y = 0;
+    MOS_Left_Bottom_point_y = 0;
+    MOS_Right_Gap = 0;
+    MOS_Left_Gap = 0;
+
+    //CCD扫线判断MOS管
+    for(uint16_t i = 5; i < 55; i++)    // 从顶部向下搜索左侧
+    {
+        if(img_binary[i][2] == Black && img_binary[i+1][2] == Black && img_binary[i+2][2] == White)  //先找到最底部点
+        {
+            MOS_Left_Top_point_y = i+1;
+            break;
+        }
+    }
+    for(uint16_t m = 55; m > 5; m--)    // 从底部向上搜索左侧
+    {
+        if(img_binary[m][2] == Black && img_binary[m-1][2] == Black && img_binary[m-2][2] == White)  //先找到最底部点
+        {
+            MOS_Left_Bottom_point_y = m-1;
+            break;
+        }
+    }
+    for(uint16_t j = 5; j < 55; j++)    // 从顶部向下搜索右侧
+    {
+        if(img_binary[j][91] == Black && img_binary[j+1][91] == Black && img_binary[j+2][91] == White)  //先找到最底部点
+        {
+            MOS_Right_Top_point_y = j+1;
+            break;
+        }
+    }
+
+    for(uint16_t n = 55; n > 5; n--)    // 从底部向上搜索右侧
+    {
+        if(img_binary[n][91] == Black && img_binary[n-1][91] == Black && img_binary[n-2][91] == White)  //先找到最底部点
+        {
+            MOS_Right_Bottom_point_y = n-1;
+            break;
+        }
+    }
+
+    if(MOS_Left_Top_point_y != 0 && MOS_Left_Bottom_point_y != 0)
+    {
+        MOS_Left_Gap = MOS_Left_Bottom_point_y - MOS_Left_Top_point_y;
+        if(MOS_Left_Gap <= 10 && MOS_Left_Gap > 1)
+        {
+            MOS_Left_Flag = 1;
+        }
+    }
+    if(MOS_Right_Top_point_y != 0 && MOS_Right_Bottom_point_y != 0)
+    {
+        MOS_Right_Gap = MOS_Right_Bottom_point_y - MOS_Right_Top_point_y;
+        if(MOS_Right_Gap <= 10 && MOS_Right_Gap > 1)
+        {
+            MOS_Right_Flag = 1;
+        }
+
+    }
+    //CCD扫线判断MOS管
+
+    if((MOS_Left_Flag == 1 || MOS_Right_Flag == 1) && MOS_Series_of_Curves_Sign == 0 && (MOS_Left_Bottom_point_y >= Img_Gap_left || MOS_Right_Bottom_point_y >= Img_Gap_right) && state_flag == 1 && end_turning_state == 1 && MOS_Judge_Flag == 1 && Direction_Planning == 0)
+    { //MOS管直行处理
+        ban_transisitor = 1;
+        MOS_Series_of_Curves_Sign = 1;
+    }
+    if(total_touch_flags.touch_bottom == 1 && MOS_Left_Flag == 0 && MOS_Right_Flag == 0 && MOS_Series_of_Curves_Sign == 1)
+    {
+        MOS_Judge_frames --;
+        if(MOS_Judge_frames == 0)
+        {
+            transistor_Num++;
+            ban_transisitor = 0;
+            MOS_Series_of_Curves_Sign = 0;
+            MOS_Judge_Flag = 0;
+        }
+    }
+    else
+    {
+        MOS_Judge_frames = 3;
+    }
+
+
+    if(total_touch_flags.touch_top == 1 && total_touch_flags.touch_left == 0 && total_touch_flags.touch_right == 0 && total_touch_flags.touch_bottom == 1 && MOS_Right_Bottom_point_y >= Img_Gap_right && MOS_Right_Flag == 1 && state_flag == 1 && end_turning_state == 1 && MOS_Judge_Flag == 1)
+    { //MOS管右拐处理
+        if(Gyr_dir == 2 && ban_transisitor == 0)
+        {
+            transistor_Num ++;
+            end_turning_state = 0;
+            turning_state = 1;
+            state_flag = 2;
+            MOS_Judge_Flag = 0;
+        }
+    }
+
+    if(total_touch_flags.touch_top == 1 && total_touch_flags.touch_left == 0 && total_touch_flags.touch_right == 0 && total_touch_flags.touch_bottom == 1 && MOS_Left_Bottom_point_y >= Img_Gap_left && MOS_Left_Flag == 1 && state_flag == 1 && end_turning_state == 1 && MOS_Judge_Flag == 1)
+    { //MOS管左拐处理
+        if(Gyr_dir == 1 && ban_transisitor == 0)
+        {
+            transistor_Num ++;
+            end_turning_state = 0;
+            turning_state = 1;
+            state_flag = 3;
+            MOS_Judge_Flag = 0;
+        }
+     }
+
+    if(total_touch_flags.touch_top == 0 && total_touch_flags.touch_bottom == 1 && state_flag == 1 && end_turning_state == 1 && MOS_Judge_Flag == 1 && ban_MOS == 0)
+    {
+        if(Gyr_dir == 1 && MOS_Left_Bottom_point_y >= Img_Gap_left)  //MOS管左拐
+        {
+            if(MOS_Left_Flag == 1 && MOS_Right_Flag == 1 && ban_transisitor == 0)
+            {
+                transistor_Num ++;
+                end_turning_state = 0;
+                turning_state = 1;
+                state_flag = Direction_Planning;
+                MOS_Judge_Flag = 0;
+            }
+        }
+        if(Gyr_dir == 2 && MOS_Right_Bottom_point_y >= Img_Gap_right)  //MOS管右拐
+        {
+            if(MOS_Left_Flag == 1 && MOS_Right_Flag == 1 && ban_transisitor == 0)
+            {
+                transistor_Num ++;
+                end_turning_state = 0;
+                turning_state = 1;
+                state_flag = Direction_Planning;
+                MOS_Judge_Flag = 0;
+            }
+        }
+
+    }
+
+}
+
+/********************************/
+//三极管处理函数
+uint8_t transistor_Num = 0;
+
+uint8_t transistor_Judge_frames_r = frame_judge;
+uint8_t transistor_Judge_frames_l = frame_judge;
+uint8_t transistor_Judge_frames_t = frame_judge;
+
+uint8_t Special_flag = 0;
+/********************************/
+/******************************************************************************
+* 函数名称     :trace_transistor
+* 描述         : 三极管拐弯处理
+* 进入参数     : void
+* 返回参数     : void
+******************************************************************************/
+void trace_transistor(void)
+{
+
+    Final_Road();           //路径规划
+
+    MOS_Disconnect();      //MOS管断路处理
+
+    if(total_touch_flags.touch_top == 1 && total_touch_flags.touch_right == 1 && total_touch_flags.touch_left == 0 && total_touch_flags.touch_bottom == 1 && right_edge_point.y >= Img_Gap_right && state_flag == 1 && end_turning_state == 1 && boundary_gap >= 12) //右转的T字口
+    {
+        transistor_Judge_frames_r --;
+        if(transistor_Judge_frames_r == 0 && ban_transisitor == 0)
+        {
+            transistor_Judge_frames_r = frame_judge;
+            transistor_Num ++;          // 经过的三极管数量
+            end_turning_state = 0;
+            turning_state = 1;
+            state_flag = Direction_Planning;
+            MOS_Judge_Flag = 0;
+        }
+    }
+    else
+    {
+        transistor_Judge_frames_r = frame_judge;
+    }
+
+    if(total_touch_flags.touch_top == 1 && total_touch_flags.touch_left == 1 && total_touch_flags.touch_right == 0 && total_touch_flags.touch_bottom == 1 && left_edge_point.y >= Img_Gap_left && state_flag == 1 && end_turning_state == 1 && boundary_gap >= 12) //左转的T字口
+    {
+        transistor_Judge_frames_l --;
+        if(transistor_Judge_frames_l == 0 && ban_transisitor == 0)
+        {
+            transistor_Judge_frames_l = frame_judge;
+            transistor_Num++;          // 经过的三极管数量
+            end_turning_state = 0;
+            turning_state = 1;
+            state_flag = Direction_Planning;
+            MOS_Judge_Flag = 0;
+
+        }
+    }
+    else
+    {
+        transistor_Judge_frames_l = frame_judge;
+    }
+
+    if(total_touch_flags.touch_top == 0 && total_touch_flags.touch_left == 1 && total_touch_flags.touch_right == 1 && total_touch_flags.touch_bottom == 1  && state_flag == 1 && end_turning_state == 1 && boundary_gap >= 12) //左右转的T字口
+    {
+        if(Gyr_dir == 1 && left_edge_point.y >= Img_Gap_left)   //T字形左转
+        {
+            transistor_Judge_frames_t --;
+            if(transistor_Judge_frames_t == 0 && ban_transisitor == 0)
+            {
+                transistor_Judge_frames_t = frame_judge;
+                transistor_Num++;
+                end_turning_state = 0;
+                turning_state = 1;
+                state_flag = Direction_Planning;
+                MOS_Judge_Flag = 0;
+
+            }
+        }
+        if(Gyr_dir == 2 && right_edge_point.y >= Img_Gap_right)   //T字形右转
+        {
+            transistor_Judge_frames_t --;
+            if(transistor_Judge_frames_t == 0 && ban_transisitor == 0)
+            {
+                transistor_Judge_frames_t = frame_judge;
+                transistor_Num++;
+                end_turning_state = 0;
+                turning_state = 1;
+                state_flag = Direction_Planning;
+                MOS_Judge_Flag = 0;
+            }
+        }
+    }
+    else
+    {
+        transistor_Judge_frames_t = frame_judge;
+    }
+
+}
+
+/********************************/
+//最终路径规划函数
+uint8_t transistor_frames_judge;
+uint8_t Series_of_Curves_Sign = 0;
+uint8_t End_Judge_frames = 3;
+uint8_t Road_Planning[100] = {0};   //0为直走,1为左转,2为右转，3为MOS管左转，4为MOS管右转,5为MOS管直走
+
+/********************************/
+/******************************************************************************
+* 函数名称     : Final_Road
+* 描述         : 最终路径规划
+* 进入参数     : void
+* 返回参数     : void
+******************************************************************************/
+void Final_Road(void)
+{
+
+     if(Road_Planning[transistor_Num] == 3)
+     {
+         MOS_Judge_Flag = 1;
+         Direction_Planning = 3;
+         Gyr_dir = 1;
+     }
+     if(Road_Planning[transistor_Num] == 4)
+     {
+         MOS_Judge_Flag = 1;
+         Direction_Planning = 2;
+         Gyr_dir = 2;
+     }
+     if(Road_Planning[transistor_Num] == 5)
+      {
+          MOS_Judge_Flag = 1;
+          Direction_Planning = 0;
+          Gyr_dir = 0;
+      }
+
+    if(Road_Planning[transistor_Num] == 0 && MOS_Judge_Flag == 0)
+    {
+        if((total_touch_flags.touch_right == 1 || total_touch_flags.touch_left == 1) && Series_of_Curves_Sign == 0 && (left_edge_point.y >= Img_Gap_left || right_edge_point.y >= Img_Gap_right) && state_flag == 1 && boundary_gap >= 12)
+        {
+            ban_transisitor = 1;
+            Series_of_Curves_Sign = 1;
+        }
+
+        if(total_touch_flags.touch_bottom == 1 && total_touch_flags.touch_right == 0 && total_touch_flags.touch_left == 0 && Series_of_Curves_Sign == 1)
+        {
+            End_Judge_frames --;
+            if(End_Judge_frames == 0)
+            {
+                transistor_Num++;
+                ban_transisitor = 0;
+                Series_of_Curves_Sign = 0;
+            }
+        }
+        else
+        {
+            End_Judge_frames = 3;
+        }
+
+    }
+    else if(Road_Planning[transistor_Num] == 1 && MOS_Judge_Flag == 0)
+    {
+        Direction_Planning = 3;
+        Gyr_dir = 1;
+
+    }
+    else if(Road_Planning[transistor_Num] == 2 && MOS_Judge_Flag == 0)
+    {
+        Direction_Planning = 2;
+        Gyr_dir = 2;
+    }
+
+
+}
+
+///******************************************************************************
+//* 函数名称     : End_of_turning_state
+//* 描述         : 转弯结束标志
+//* 进入参数     : void
+//* 返回参数     : void
+//******************************************************************************/
+void End_of_turning_state(void)
+{
+   if(end_turning_state == 1 && top_center_x_gap <= 30)
+//   if(end_turning_state == 1)
+   {
+       state_flag = 1;
+   }
+}
+
+/********************************/
+//误差处理函数
+int16_t Final_Sum = 0;
+int16_t Last_Final_Sum = 0;
+/********************************/
+/******************************************************************************
+* 函数名称     : Error_Gap
+* 描述         : 图像误差处理
+* 进入参数     : void
+* 返回参数     : void
+******************************************************************************/
+void Error_Gap(void)
+{
+    switch(state_flag)
+    {
+        //这里是需要区分直线，直角拐弯，三极管拐弯然后计算不同的误差 这个的前提也是必须清晰才行
+        case(1): //根据四方位判断此时为直线处理
+        {
+           task_point = TASK_STRAIGHT;
+           if(center_point_x_average <= 0)
+           {
+               center_point_x_average = 47;
+           }
+           if(right_boundary_average_x <= 0)
+           {
+               right_boundary_average_x = 47;
+           }
+           if(left_boundary_average_x <= 0)
+           {
+               left_boundary_average_x = 47;
+           }
+           Final_Sum = center_point_x_average - Middle_Line_x;  //默认循中线
+           break;
+        }
+        case(2): //根据四方位判断此时为右拐弯处理
+        {
+           task_point = TASK_TURN_RIGHT;
+           Final_Sum = 45;
+           break;
+        }
+        case(3): //根据四方位判断此时为左拐弯处理
+        {
+           task_point = TASK_TURN_LEFT;
+           Final_Sum = -45;
+           break;
+        }
+    }
+
+}
+
+
+//总函数
+void ljw_camera_deal(void)
+{
+    data_ready_flag_for_core0 = 0;
+    Get_Zip_Image_Factor2(mt9v03x_image, imgZip);    //把mt9v03x_image获取的原始图像压缩成imgZip,已优化，目前380us跑完
+    nowThreshold = otsuThreshold_fast();
+//    nowThreshold = Iterative_Threshold_Fast(imgZip, 0, 0, my_camera_h, my_camera_w);    //利用直方图法来计算出当前最佳的灰度阈值，已优化,目前900us跑完
+    Get_img_binary();     //将灰度图进行二值化处理,灰度阈值就是用到这里的
+    memcpy(img_copy[0], img_binary[0], MY_CAMERA_SIZE); //复制图像来显示
+
+    if(find_track_start_point())
+    {
+        trace_boundary(start_point_l_x, start_center_y,start_point_r_x, start_center_y);   //优化后的爬线代码
+        End_of_turning_state();   //用来接收陀螺仪拐弯结束标志
+        find_center_point();    //找中线以及中线的最高，中间，最低点
+        trace_Right_angle();   //直角拐弯处理
+        trace_transistor();    //三极管 + MOS管拐弯处理
+        Error_Gap();  //计算不同状态下的小车误差
+    }
+    data_ready_flag_for_core0 = 1;          //图像处理标志位，避免1核0和抢数据
+
+/////////////////////测试代码运行时间////////////////////////
+//        system_start();
+//        tim = system_getval_us();
+/////////////////////测试代码运行时间////////////////////////
+}
+附录.B  Main.c程序源代码：
+#include "zf_common_headfile.h"
+附录.B  主程序调度参考代码：
+{
+    printf("收到Ctrl+C,程序即将退出\n");
+    exit(0);
+}
+
+void cleanup()
+{
+    printf("程序异常退出,执行清理操作\n");
+    // 关闭电机
+    out_flag=1;
+    motor_flag=0;
+    servo_flag=0;
+    Burush_flag=0;
+    Burush_go=0;
+    turn_down_flag =1;
+    pwm_set_duty(MOTOR_LEFT_PWM, 0);   
+    pwm_set_duty(MOTOR_RIGHT_PWM, 0);    
+    pwm_set_duty(SERVO_MOTOR1_PWM, 0); 
+
+    pwm_set_duty(PWM_1, 0);   
+    pwm_set_duty(PWM_2, 0);  
+}
+int main(int, char**) 
+{
+     // 注册清理函数
+    atexit(cleanup);
+
+     // 注册SIGINT信号的处理函数
+    signal(SIGINT, sigint_handler);
+    All_Init();
+    // printf("11");
+    MainMenu_Set();
+    Burush_flag=1;
+    if(Burush_flag==0)
+    {
+        LCD_ShowString(44,112,"Burush failed  init",red,Level_colour[0]);
+    }
+    else if(Burush_flag==1)
+    {
+        LCD_ShowString(44,112,"Burush success init",green,Level_colour[0]);
+    }
+    Real_width_change();
+    lcd_close();
+
+    if(Image_Lock==1)
+    {
+        Biao=8;
+        Element_Garage_out.Lock=Lock;
+        Element_Garage_out.State=1;
+        Up_LongLine_Tactics = Up_LongLine_Centre;
+
+    }
+
+    Servo_limit_pid_max = (Servo_Mid - Servo_Min)/Servo_Mid *100 / Kp;
+    Servo_limit_pid_min = (Servo_Max - Servo_Mid)/Servo_Mid *100 / Kp;
+    printf("max =%lf,min=%lf \n",Servo_limit_pid_max,-Servo_limit_pid_min);
+    // float pwm_num=52500;
+    // lcd_start();
+    // while(1)
+    // {
+
+    //     if(Key_Scan(KEY_LEFT)==1)
+    //     {
+    //         pwm_num+=50;
+    //     }
+    //     if(Key_Scan(KEY_RIGHT)==1)
+    //     {
+    //         pwm_num-=50;
+    //     }
+    //     LCD_ShowFloatNum1(0,0,pwm_num,5,1,Level_colour[0],Level_colour[1]);
+    //     pwm_set_duty(SERVO_MOTOR1_PWM, (uint16)(pwm_num));
+    // }
+    
+
+    while(1)
+    { 
+        // dl1b_get_distance(); 
+        // IMU_Get();
+        // imu963ra_get_acc();
+        // imu963ra_get_gyro();
+        // struct timespec start, end;
+        // clock_gettime(CLOCK_MONOTONIC, &start); // 开始时间 
+        if(wait_image_refresh() < 0)
+        {
+            // 摄像头未采集到图像，这里需要关闭电机，关闭电调等。
+            exit(0);
+        }
+        else
+        {
+          
+            image_process();
+          
+            if(Element_List_Speed==0) Speed_Decision();
+            else if(Element_List_Speed==1) Speed_List_Decision();
+            if(ips!=14)
+            {
+            Servo_Control();
+            }
+           
+            
+
+           
+
+            // clock_gettime(CLOCK_MONOTONIC, &end);   // 结束时间
+
+            // // // 计算耗时（纳秒级）
+            // if(motor_flag==1 && out_flag==0)
+            // {
+            //     long long ns = (end.tv_sec - start.tv_sec) * 1000000000LL;
+            //     if (end.tv_nsec >= start.tv_nsec) {
+            //         ns += (end.tv_nsec - start.tv_nsec);
+            //     } else {
+            //         ns -= (start.tv_nsec - end.tv_nsec);
+            //     }
+                
+            //     printf("耗时：%lld ns (%.6f ms)\n", ns, (double)ns / 1000000.0);
+            // }
+            // look_dog=0;
+           
+        }
+       
+        
+        do
+        {
+            if(Key_Scan(KEY_GO)==1 )
+            {
+                Burush_go = 1;
+                Burush_control(Small_duty);
+                system_delay_ms(500);
+                Burush_control(Small_duty);
+                system_delay_ms(1500);
+                motor_flag=1;
+            }
+            static uint8 on=0;
+            if(Key_Scan(KEY_MID)==1)
+            {
+                if(on==0)
+                {
+                    lcd_start();
+                    lcd_clear();
+                    Width_get();
+                }
+                on++;
+                // search_border();
+            }
+            if(on>=1)
+            {
+                Image_Debug();
+            }
+            
+
+        } while (0);
+   
+        if(motor_flag==1 && out_flag==0)
+        {
+               //AV_init();
+               AV_snapshot();
+        }
+    }
+    return 0;
+}
+
+
+附录.C  Pit.cpp程序源代码：
+#include "Pit.h"
+附录.C  参数与调试参考代码：
+uint8 turn_down_flag=0;
+uint8 Time_Lock=0;
+uint8 Time_sum=0;
+uint8 Out_side_go=0;
+int i=0;
+
+float speed1;
+float speed2;
+float speed;
+// int16 speed1,speed2;
+ENCODER encoder_left(ENC_LEFT,ENC_DIR_L);
+ENCODER encoder_right(ENC_RIGHT, ENC_DIR_R);
+void Encoder_get(void)
+{
+    // speed1=(int16)encoder_left.pulse_counter_update();
+    // speed2=(int16)-encoder_right.pulse_counter_update();
+    speed1 = (float)encoder_left.pulse_counter_update();
+    speed2 = (float)-encoder_right.pulse_counter_update();
+}
+void pit_callback()
+{
+   
+        Encoder_get();
+        // speed1=encoder_get_count(ENCODER_left)/15;
+        // speed2=-(encoder_get_count(ENCODER_right)/15);
+    if(turn_down_flag ==0)
+    {
+        if(motor_flag==1&&out_flag==0)
+        {
+            // look_dog+=1;
+            // if(look_dog>=20)
+            // {
+            //     printf("look out");
+            //     exit(0);
+            // }
+          
+            // if(speed1 > speed )
+            // {
+            //     speed = speed1;
+            // }
+            // if( speed2 > speed)
+            // {
+            //     speed = speed2;
+            // }
+          
+
+            //一边加一边减//
+            // set_pid_Right_Motor_target(Limit_ab_float(Motor_Speed_R+Turn_Pid_R.actual_val,0,100));
+            // PID_Right_Motor_realize((float)speed2);
+
+            // set_pid_Left_Motor_target(Limit_ab_float(Motor_Speed_L-Turn_Pid_R.actual_val,0,100));
+            // PID_Left_Motor_realize((float)speed1);
+
+            //   单减   //
+            if(Turn_Pid_R.actual_val>0)
+            {
+                set_pid_Right_Motor_target(Limit_ab_float(Motor_Speed_R,0,100));
+                PID_Right_Motor_realize((float)speed2);
+
+                set_pid_Left_Motor_target(Limit_ab_float(Motor_Speed_L-2*Turn_Pid_R.actual_val,0,100));
+                PID_Left_Motor_realize((float)speed1);
+            }
+            else
+            {
+                set_pid_Right_Motor_target(Limit_ab_float(Motor_Speed_R+2*Turn_Pid_R.actual_val,0,100));
+                PID_Right_Motor_realize((float)speed2);
+
+                set_pid_Left_Motor_target(Limit_ab_float(Motor_Speed_L,0,100));
+                PID_Left_Motor_realize((float)speed1);
+            }
+
+            Motor_SpeedSet(MOTOR_RIGHT,Limit_ab_int(Right_Motor_pid.actual_val,-10000,10000));
+            Motor_SpeedSet(MOTOR_LEFT,Limit_ab_int(Left_Motor_pid.actual_val,-10000,10000));
+           
+            //超时处理//
+            i++;
+           
+            
+
+            /********************************CZP********************************** */
+            // set_pid_CZP_Motor_target(Motor_Speed_L);
+            // PID_CZP_Motor_realize((speed1+speed2)/2);
+
+            // Motor_SpeedSet(MOTOR_RIGHT ,(int)(Limit_ab_float(CZP_Motor_pid.actual_val+CZP_Turn_pid.actual_val, -10000.0, 10000.0)));
+            // Motor_SpeedSet(MOTOR_LEFT  ,(int)(Limit_ab_float(CZP_Motor_pid.actual_val-CZP_Turn_pid.actual_val, -10000.0, 10000.0)));
+
+            // if(Turn_Pid_R.actual_val > 0)
+            // {
+            //     set_pid_Right_Motor_target(Limit_ab_float(Motor_Speed_R,0,100));
+            //     PID_Right_Motor_realize((float)speed2);
+            //     set_pid_Left_Motor_target(Limit_ab_float(Motor_Speed_L-(Turn_Pid_R.actual_val * 1.2),0,100));
+            //     PID_Left_Motor_realize((float)speed1);
+            // }
+            // else
+            // {
+            //     set_pid_Right_Motor_target(Limit_ab_float(Motor_Speed_R+(Turn_Pid_R.actual_val * 1.2),0,100));
+            //     PID_Right_Motor_realize((float)speed2);
+            //     set_pid_Left_Motor_target(Limit_ab_float(Motor_Speed_L,0,100));
+            //     PID_Left_Motor_realize((float)speed1);
+            // }
+
+            // Motor_SpeedSet(MOTOR_RIGHT,Limit_ab_int(Right_Motor_pid.actual_val,-10000,10000));
+            // Motor_SpeedSet(MOTOR_LEFT,Limit_ab_int(Left_Motor_pid.actual_val,-10000,10000));
+
+
+
+
+            /********************************CZP********************************** */
+
+            // printf("speed1=%lf,speed2=%lf,Turn_val=%lf\n",speed1,speed2,Turn_Pid_R.actual_val);
+        }
+        else
+        {
+            static int time=0;
+            if((out_flag==1 || (Time_sum>0 && motor_flag==0 ) ) && Burush_go ==1)
+                time++;
+            if(time>1000)
+            {
+                time_out=1;
+                time=1001;
+            }
+            set_pid_Right_Motor_target(0);
+            PID_Right_Motor_realize((float)speed2);
+
+            set_pid_Left_Motor_target(0);
+            PID_Left_Motor_realize((float)speed1);
+
+            Motor_SpeedSet(MOTOR_RIGHT,Limit_ab_int(Right_Motor_pid.actual_val,-10000,10000));
+            Motor_SpeedSet(MOTOR_LEFT,Limit_ab_int(Left_Motor_pid.actual_val,-10000,10000));
+            // if(Key_Scan(KEY_UP)==1)
+            // {
+            //     printf("Max_speed=%lf\n",speed);
+            // }
+        }
+    }
+    else
+    {
+        pwm_set_duty(MOTOR_LEFT_PWM, 0);   
+        pwm_set_duty(MOTOR_RIGHT_PWM, 0);    
+        pwm_set_duty(SERVO_MOTOR1_PWM, 0); 
+    
+        pwm_set_duty(PWM_1, 0);   
+        pwm_set_duty(PWM_2, 0);  
+    }
+
+    if(i>=900)
+    {
+        Time_sum+=1;
+        i=0;
+    }
+    if(Time_sum>Time_Lock)
+    {
+        // out_flag=1;
+        out_flag=1;
+        motor_flag=0;
+        
+        // servo_flag=0;
+        // Burush_flag=0;
+    
+    }
+    // printf("speed1=%d,speed2=%d,speed=%lf\n",speed1,speed2,Motor_speed);
+    // if(abs(speed1-Motor_speed)>=2 || abs(speed2-Motor_speed)>=2)
+    //     printf("speed1=%lf,speed2=%lf\n",speed1,speed2);
+    // else
+    // printf("speed1=%lf,speed2=%lf,speed=%lf\n",speed1,speed2,Motor_speed);
+    // UDP_Send_speed();
+    if(Key_Scan(KEY_RST)==1)
+    {
+        out_flag=1;
+        motor_flag=0;
+        servo_flag=0;
+        Burush_flag=0;
+        pwm_set_duty(MOTOR_LEFT_PWM, 0);   
+        pwm_set_duty(MOTOR_RIGHT_PWM, 0);    
+        pwm_set_duty(SERVO_MOTOR1_PWM, 0); 
+    
+        pwm_set_duty(PWM_1, 0);   
+        pwm_set_duty(PWM_2, 0);  
+        
+        // lcd_clear();
+        // LCD_ShowString(0,0,"ready to reinit",Level_colour[1],Level_colour[0]);
+        exit(0);
+    }
+    
+    
+    if(Element_Circle_LeftSide.State==7 || Element_Circle_RightSide.State==7)
+    {
+        Circle_sum = Circle_sum +(speed1 + speed2)/2;
+    }
+    else if(Element_Ramp.State==2 || Element_Ramp.State==1)
+    {
+        Ramp_Sum  = Ramp_count + (speed1 + speed2)/2;
+    }
+    else if(Element_Garage_out.State==2)
+    {
+        Garage_Sum = Garage_Sum + (speed1 + speed2)/2;
+    }
+    else if(Element_Garage.State==2 || Element_Garage.State==1)
+    {
+        Garage_stop_Sum = Garage_stop_Sum + (speed1 + speed2)/2;
+    }
+    else if(Element_Left_Block.Lock==1 || Element_Right_Block.Lock==1)
+    {
+        Block_Sum     =Block_Sum + (speed1 + speed2)/2;
+    }
+    
+
+}
+
+
+
+
+
+
+
+#include "zf_common_headfile.h"
+#include "Control.h"
+
+uint16_t turn_time_count = 0;
+
+TASK_POINT task_point = TASK_STRAIGHT;
+LIMIT_CHECK limit_check = {0};          // 限幅溢出函数
+PID_SPEED speed_pid = {0};              // 速度环PID
+
+// 方向环PID -- 包含直行和左右转弯3套参数
+PID_DIR pid_dir_pos = {0};
+PID_DIR pid_dir_gyro = {0};
+PID_DIR pid_dir_pos_left = {0};
+PID_DIR pid_dir_gyro_left = {0};
+PID_DIR pid_dir_pos_right = {0};
+PID_DIR pid_dir_gyro_right = {0};
+
+
+Encoder_Data encoder_left = {0};              // 左编码器数据
+Encoder_Data encoder_right = {0};             // 右编码器数据
+
+SpeedRamp_t ramp = {0};
+
+PID_SPEED speed_left_pid_new = {0};              // 速度环PID=============================完全闭环=============================
+PID_SPEED speed_right_pid_new = {0};             // 速度环PID=============================完全闭环=============================
+
+volatile int speed_target = 0;
+volatile int speed_target_max = 150;
+volatile int speed_dis_original = 0;    // 速度差原始值
+volatile int speed_dis_feedback = 0;    // 速度差反馈值
+int speed_final_average = 0;            // 速度平均值
+volatile float speed_dis_out = 0;       // 角度环的输出，用于速度差补偿
+volatile float turn_yaw_begin = 0.0f;
+volatile float turn_yaw_now = 0.0f;
+
+volatile float dec = 0;
+volatile float pos_d_err = 0;
+volatile float d_gyro = 0;
+volatile float dir_dec = 0;
+volatile int yichu_count = 0;
+volatile float encoder_all_left = 0;
+volatile float encoder_all_right = 0;
+volatile float speed_turn = 35.0f;
+
+// 发车前初始化
+void varyble_init(void)
+{
+    Pid_Init();
+    encoder_right.encoder_count_original = 0;
+    encoder_right.encoder_count = 0;
+    encoder_left.encoder_count_original = 0;
+    encoder_left.encoder_count = 0;
+    encoder_clear_count(ENCODER_1);
+    encoder_clear_count(ENCODER_2);
+    
+    speed_dis_original = 0;
+    speed_dis_feedback = 0;
+    speed_final_average = 0;
+    speed_dis_out = 0;
+    yichu_count = 0;
+}
+
+void Pid_Init(void)
+{
+     speed_target = 0;
+     speed_target_max = (int)Flash.tar_speed;
+
+     speed_pid.Kp = Flash.speed_kp;
+     speed_pid.Ki = Flash.speed_ki;
+     speed_pid.Kd = Flash.speed_kd;
+     speed_pid.err = 0;
+     speed_pid.err_last = 0;
+     speed_pid.out = 0;
+     speed_pid.dec_limit = 6500;
+     speed_pid.out_limit = 6500;
+
+
+     pid_dir_gyro.Kp =  Flash.gyro_kp;
+     pid_dir_gyro.Kd =  Flash.gyro_kd;
+     pid_dir_gyro.Ki = 0;
+     pid_dir_gyro.err = 0;
+     pid_dir_gyro.err_last = 0;
+     pid_dir_gyro.out = 0;
+
+     pid_dir_pos.Kp =  Flash.dir_kp;
+     pid_dir_pos.Kd =  Flash.dir_kd;
+     pid_dir_pos.err = 0;
+     pid_dir_pos.err_last = 0;
+     pid_dir_pos.out = 0;
+
+     pid_dir_gyro_left.Kp =  Flash.gyro_kp_left;
+     pid_dir_gyro_left.Kd =  Flash.gyro_kd_left;
+     pid_dir_gyro_left.Ki = 0;
+     pid_dir_gyro_left.err = 0;
+     pid_dir_gyro_left.err_last = 0;
+     pid_dir_gyro_left.out = 0;
+
+     pid_dir_pos_left.Kp =  Flash.dir_kp_left;
+     pid_dir_pos_left.Kd =  Flash.dir_kd_left;
+     pid_dir_pos_left.err = 0;
+     pid_dir_pos_left.err_last = 0;
+     pid_dir_pos_left.out = 0;
+
+     pid_dir_gyro_right.Kp =  Flash.gyro_kp_right;
+     pid_dir_gyro_right.Kd =  Flash.gyro_kd_right;
+     pid_dir_gyro_right.Ki = 0;
+     pid_dir_gyro_right.err = 0;
+     pid_dir_gyro_right.err_last = 0;
+     pid_dir_gyro_right.out = 0;
+
+     pid_dir_pos_right.Kp =  Flash.dir_kp_right;
+     pid_dir_pos_right.Kd =  Flash.dir_kd_right;
+     pid_dir_pos_right.err = 0;
+     pid_dir_pos_right.err_last = 0;
+     pid_dir_pos_right.out = 0;
+
+
+     ramp.speed_target = 0.0f;
+     ramp.speed_target_max = Flash.tar_speed;
+     ramp.ramp_time = Flash.other_ramp_time;
+     ramp.elapsed_time = 0.0f;
+
+     speed_turn = Flash.other_turn_speed;
+
+
+}
+
+// 速度环增量式PID公式
+void PID_Speed_Control(PID_SPEED *pid, int target, int measure)
+{
+
+    //1 保存上次误差
+    pid->err_last = pid->err;
+    //2 当前误差
+    pid->err = target - measure;
+    //3 增量PI
+    dec = pid->Kp * (pid->err - pid->err_last)
+        + pid->Ki * pid->err;
+    //4 增量限幅
+    if(dec > pid->dec_limit) 
+    {
+        dec = pid->dec_limit;
+        limit_check.speed_dec += 1;
+    }
+    if(dec < -pid->dec_limit) 
+    {
+        dec = -pid->dec_limit;
+        limit_check.speed_dec += 1;
+    }
+    //5 输出累加
+    pid->out += dec;
+    //6 输出限幅
+    if(pid->out > pid->out_limit)  
+    {
+        pid->out = pid->out_limit;
+        limit_check.speed_out += 1;
+    }
+    if(pid->out < -pid->out_limit) 
+    {
+        pid->out = -pid->out_limit;
+        limit_check.speed_out += 1;
+    }
+}
+
+volatile float expect_gyro = 0;
+// 方向环PD公式
+void PID_Direction_Control(PID_DIR *pos_pid, PID_DIR *gyro_pid , float err_position)
+{
+    // static float dec = 0;
+    /*==================== 1. 位置环（PD） ====================*/
+    // 保存上次误差
+    pos_pid->err_last = pos_pid->err;
+    // 当前误差
+    pos_pid->err = err_position;
+    // 微分（带简单抗突变）
+    pos_d_err = pos_pid->err - pos_pid->err_last;
+    if(pos_d_err > 20.3f)
+    {
+        limit_check.dir_d_err += 1;
+        pos_d_err = 20.3f;   // 抑制突变
+    }
+
+    if(pos_d_err < -20.3f)
+    {
+        limit_check.dir_d_err += 1;
+        pos_d_err = -20.3f;   // 抑制突变
+    }
+    // PD 输出（目标角速度）
+    expect_gyro = pos_pid->Kp * pos_pid->err
+                + pos_pid->Kd * pos_d_err;
+    // 限幅
+    if(expect_gyro > limit_gyro)  {expect_gyro = limit_gyro;limit_check.dir_expect_gyro += 1;}
+    if(expect_gyro < -limit_gyro) {expect_gyro = -limit_gyro;limit_check.dir_expect_gyro += 1;}
+    /*==================== 2. 角速度环（PD） ====================*/
+    // 保存上次误差
+    gyro_pid->err_last = gyro_pid->err;
+    // 当前误差
+    gyro_pid->err = - expect_gyro - avl_gyro_z;  // 左偏了expect_gyro为正
+    // pid_dir_gyro.err = 0 - avl_gyro_z; 
+    // PD（这里也可以改成 PI，看需求） 
+    d_gyro = gyro_pid->err - gyro_pid->err_last;
+    if(d_gyro > 300)  {d_gyro = 300;limit_check.d_gyro += 1;}
+    if(d_gyro < -300) {d_gyro = -300;limit_check.d_gyro += 1;}
+    dir_dec = gyro_pid->Kp * gyro_pid->err
+            + gyro_pid->Kd * d_gyro;
+    // 输出
+    gyro_pid->out = dir_dec;
+    // 限幅
+    if(gyro_pid->out > 6500)  {gyro_pid->out = 6500;limit_check.dir_out += 1;}
+    if(gyro_pid->out < -6500) {gyro_pid->out = -6500;limit_check.dir_out += 1;}
+
+    // 最终输出
+    speed_dis_out = gyro_pid->out;
+}
+
+// 每1ms调用一次
+float SpeedRamp_Update(SpeedRamp_t *ramp)
+{
+    // 1ms = 0.001s
+    ramp->elapsed_time += 0.001f;
+
+    float t = ramp->elapsed_time / ramp->ramp_time;
+    if (t >= 1.0f)
+    {
+        t = 1.0f;
+        ramp->speed_target = ramp->speed_target_max;
+    }
+    else
+    {
+        ramp->speed_target = ramp->speed_target_max * (3.0f * t * t - 2.0f * t * t * t);
+    }
+
+    return ramp->speed_target;
+}
+
+
+uint8_t zuo_ing = 0;
+uint8_t you_ing = 0;
+float yaw_turn_first = 0.0f;
+
+uint8_t turn_count = 0;
+
+float angle_diff(float current, float target)
+{
+    float diff = current - target;
+    while (diff > 180)  diff -= 360;
+    while (diff < -180) diff += 360;
+    return diff;
+}
+
+#define guandao 0
+
+
+void ljy_isr_headle(void)
+{
+#if !guandao
+    if (turning_state == 1)
+    {
+        turning_state = 0;
+        turn_time_count = 0;
+        yaw_turn_first = yaw;
+        zuo_ing = 1;
+        turn_count++;
+
+        pid_dir_gyro.err = 0;
+        pid_dir_gyro.err_last = 0;
+        pid_dir_gyro.out = 0;
+        pid_dir_pos.err = 0;
+        pid_dir_pos.err_last = 0;
+        pid_dir_pos.out = 0;
+        pid_dir_gyro_left.err = 0;
+        pid_dir_gyro_left.err_last = 0;
+        pid_dir_gyro_left.out = 0;
+        pid_dir_pos_left.err = 0;
+        pid_dir_pos_left.err_last = 0;
+        pid_dir_pos_left.out = 0;
+
+        pid_dir_gyro_right.err = 0;
+        pid_dir_gyro_right.err_last = 0;
+        pid_dir_gyro_right.out = 0;
+        pid_dir_pos_right.err = 0;
+        pid_dir_pos_right.err_last = 0;
+        pid_dir_pos_right.out = 0;
+    }
+    if (zuo_ing == 1)
+    {
+        float diff = angle_diff(yaw, yaw_turn_first);
+        if (diff >= 60 || diff <= -60 )  // 左转达到 65 度
+        {
+            end_turning_state = 1;
+            zuo_ing = 0;
+
+            pid_dir_gyro.err = 0;
+            pid_dir_gyro.err_last = 0;
+            pid_dir_gyro.out = 0;
+            pid_dir_pos.err = 0;
+            pid_dir_pos.err_last = 0;
+            pid_dir_pos.out = 0;
+
+            pid_dir_gyro_left.err = 0;
+            pid_dir_gyro_left.err_last = 0;
+            pid_dir_gyro_left.out = 0;
+            pid_dir_pos_left.err = 0;
+            pid_dir_pos_left.err_last = 0;
+            pid_dir_pos_left.out = 0;
+
+            pid_dir_gyro_right.err = 0;
+            pid_dir_gyro_right.err_last = 0;
+            pid_dir_gyro_right.out = 0;
+            pid_dir_pos_right.err = 0;
+            pid_dir_pos_right.err_last = 0;
+            pid_dir_pos_right.out = 0;
+        }
+
+    }
+#endif
+
+    switch (task_point)
+    {
+    case TASK_STRAIGHT:
+    {
+        ramp.speed_target_max = speed_target_max;
+        speed_target = (int)SpeedRamp_Update(&ramp);
+        PID_Direction_Control(&pid_dir_pos, &pid_dir_gyro, Final_Sum);
+        Speed_Control_begin(speed_target + speed_dis_out, speed_target - speed_dis_out);
+#if run
+       Ljy_set_motor_pwm((int)speed_pid.out - (int) speed_dis_out, (int)speed_pid.out + (int)speed_dis_out);
+#endif
+        break;
+    }
+    case TASK_TURN_RIGHT: 
+    {
+        turn_time_count++;
+        ramp.speed_target_max = speed_turn;
+        speed_target = (int)SpeedRamp_Update(&ramp);
+        PID_Direction_Control(&pid_dir_pos_right, &pid_dir_gyro_right, Final_Sum);
+        Speed_Control_begin(speed_target * 1 + speed_dis_out, speed_target * 1 - speed_dis_out);
+#if run
+       Ljy_set_motor_pwm((int)speed_pid.out - (int) speed_dis_out, (int)speed_pid.out + (int)(speed_dis_out));
+#endif
+       break;
+    }
+
+    case TASK_TURN_LEFT:
+    {
+        turn_time_count++;
+        ramp.speed_target_max = speed_turn;
+        speed_target = (int)SpeedRamp_Update(&ramp);
+        PID_Direction_Control(&pid_dir_pos_left, &pid_dir_gyro_left, Final_Sum);
+        Speed_Control_begin(speed_target * 1 + speed_dis_out, speed_target * 1 - speed_dis_out);
+#if run
+       Ljy_set_motor_pwm((int)speed_pid.out - (int)(speed_dis_out), (int)speed_pid.out + (int)speed_dis_out);
+#endif
+       break;
+    }
+    default:
+        break;
+    }
+    if((int)speed_pid.out - (int)(speed_dis_out) > 9900 || (int)speed_pid.out + (int)(speed_dis_out)> 9900)
+    {
+        limit_check.final_pwm += 1;
+    }
+}
+
+
+int abs_val(int x) {
+    return x >= 0 ? x : -x;
+}
+
+#include "IfxGpt12_IncrEnc.h"
+void Speed_Control_begin(float Left_Target_Speed, float Right_Target_Speed)
+{
+
+#if mode_fuya
+    encoder_left.encoder_count_original = - (int16)IfxGpt12_T3_getTimerValue(&MODULE_GPT120);
+    IfxGpt12_T3_setTimerValue(&MODULE_GPT120, 0);
+    LPF_1_int(20, 1.0e-3, encoder_left.encoder_count_original, &encoder_left.encoder_count, &lpf_encoder_left);
+    
+    encoder_right.encoder_count_original = -(int16)IfxGpt12_T5_getTimerValue(&MODULE_GPT120);
+    IfxGpt12_T5_setTimerValue(&MODULE_GPT120, 0);
+    encoder_right.encoder_count_original =  abs_val(encoder_right.encoder_count_original);
+    LPF_1_int(20, 1.0e-3, encoder_right.encoder_count_original, &encoder_right.encoder_count, &lpf_encoder_right);
+
+    // encoder_all_left += encoder_left.encoder_count;
+    // encoder_all_right += encoder_right.encoder_count;
+    speed_final_average = (encoder_left.encoder_count + encoder_right.encoder_count) / 2;
+    PID_Speed_Control(&speed_pid, speed_target, speed_final_average);
+#endif
+
+#if !mode_fuya
+    encoder_left.encoder_count_original = -(int16)IfxGpt12_T3_getTimerValue(&MODULE_GPT120);
+    IfxGpt12_T3_setTimerValue(&MODULE_GPT120, 0);
+    LPF_1_int(20, 1.0e-3, encoder_left.encoder_count_original, &encoder_left.encoder_count, &lpf_encoder_left);
+
+    encoder_right.encoder_count_original = (int16)IfxGpt12_T2_getTimerValue(&MODULE_GPT120);
+    IfxGpt12_T2_setTimerValue(&MODULE_GPT120, 0);
+    LPF_1_int(20, 1.0e-3, encoder_right.encoder_count_original, &encoder_right.encoder_count, &lpf_encoder_right);
+
+    // encoder_all_left += encoder_left.encoder_count;
+    // encoder_all_right += encoder_right.encoder_count;
+    speed_final_average = (encoder_left.encoder_count + encoder_right.encoder_count) / 2;
+    PID_Speed_Control(&speed_pid, speed_target, speed_final_average);
+#endif
+}
+

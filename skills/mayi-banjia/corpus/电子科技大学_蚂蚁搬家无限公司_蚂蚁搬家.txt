@@ -1,0 +1,673 @@
+第二十一届全国大学生
+智能汽车竞赛
+
+技 术 报 告
+
+
+学    校：电子科技大学
+队伍名称：蚂蚁搬家无限公司
+参赛队员：潘孝洋、康黎滨、
+芮于博、倪雪峰
+
+带队教师：王培丞、马文建
+
+
+
+
+
+关于技术报告和研究论文使用授权的说明
+
+
+本人完全了解全国大学生智能汽车竞赛关保留、使用技术报告和研究论文的规定，即：参赛作品著作权归参赛者本人，比赛组委会可以在相关主页上收录并公开参赛作品的设计方案、技术报告以及参赛模型车的视频、图像资料、并将相关内容编纂收录在组委会出版论文集中。
+
+
+参赛队员签名：       潘孝洋      
+     康黎滨      
+     芮于博      
+     倪雪峰      
+带队教师签名：     王培丞      
+     马文建      
+日        期：  2026-8-14      
+
+
+
+
+
+摘 要
+本文以第二十一届全国大学生智能车竞赛为背景，介绍了蚂蚁搬家组别智能车控制系统的软硬件及机械结构和开发流程。该比赛采用学生自主设计车模，以恩智浦NXP的RT1021芯片作为核心控制器，以OPENART MINI摄像头作为视觉采集于计算单元，要求赛车在最短时间内完成蚂蚁搬运物体的任务。整个系统涉及车模机械结构调整、传感器电路设计及信号处理、控制算法和策略优化等多个方面。赛车才用摄像头捕获实时画面利用轻量级的神经网络对物品进行识别于追踪，通过双车之间的协同控制做到不同物品（沙包、泰迪熊、网球）的搬运。
+关键词：RT1021、智能车、视觉处理、神经网络、控制算法、双车协同
+
+Abstract
+This article is based on the 21st National College Students' Intelligent Vehicle Competition. It introduces the software, hardware and mechanical structure of the intelligent vehicle control system for the Ant Moving Group, as well as the development process. This competition requires students to design the vehicle model independently, using the NXP RT1021 chip as the core controller, and the OPENART MINI camera as the visual acquisition and computing unit. The racing car is required to complete the task of transporting objects for ants within the shortest time. The entire system involves multiple aspects such as the adjustment of the mechanical structure of the vehicle model, the design of sensor circuits and signal processing, control algorithms and strategy optimization. The racing car uses the camera to capture real-time images and uses a lightweight neural network to identify and track the items, and through the coordinated control between the two vehicles, different items (sand bags, teddy bears, tennis balls) can be transported.
+Key words: RT1021, intelligent vehicle, visual processing, neural network, control algorithm, dual-vehicle coordination
+
+
+
+
+第一章  引言
+为加强大学生实践、创新能力和团队精神的培养，促进高等教育教学改革， 2005 年 10 月受教育部高等教育司委托，教育部高等学校自动化专业教学指导分委员会创办了全国大学生智能汽车竞赛，并被教育部批准列入国家教学质量与教学改革工程资助项目。在全国数百所高校的支持下，参赛学生总规模超过 33 万人次，学生收获和竞赛声誉保持高位。2020 年第十五届起，全国大学生智能汽车竞赛转为中国自动化学会主办。
+全国大学生智能汽车竞赛是一项以“立足培养、重在参与、鼓励探索、 追求卓越”为指导思想，面向全国大学生开展的具有探索性的工程实践活动。它以在特定赛道上能自主行驶且具有优越性能的智能汽车这类复杂工程问题为任务，鼓励大学生组成团队，综合运用多学科知识，提出、分析、设计、开发并研究智能汽车的机械结构、电子线路、运动控制和经济成本等问题，激发大学生从事工程技术开发和科学研究探索的兴趣和潜能，倡导理论联系实际、求真务实的学风和团队协作的人文精神。
+该竞赛融科学性、趣味性和观赏性为一体，是以迅猛发展、前景广阔的汽车电子为背景，涵盖自动控制、模式识别、传感技术、电子、电气、计算机、机械与汽车等多学科专业的创意性比赛。该竞赛规则透明，评价标准客观，坚持公开、公平、公正的原则，保证竞赛向健康、普及，持续的方向发展
+本届全国大学生智能汽车竞赛全国总决赛竞赛组别分为十一个大类，分别进行比赛，我队参与蚂蚁搬家组。此次比赛我们选择自制车模，使用OPENART MINI摄像头与恩智浦RT1021主控芯片，完成本次比赛设计。蚂蚁作为今年改革新组别，相较于以往智能车跑赛道的组别，今年创新性地开创了智能车协作完成任务的组别。
+本篇技术报告主要包括机械系统、硬件系统、软件系统等，详尽地阐述了我们的设计方案，具体表现在硬件电路的设计以及控制算法的部分想法，希望能和其他学校的同学交流沟通，更进一步。
+第二章  车模整体设计思路
+2.1机械设计概述
+根据本届大赛组委会对蚂蚁搬家的竞赛规则，我们采取自制车模方案，并不学习沿用逐飞提供参考车模范式。从整体机械设计上迭代了三代最终完成车模的设计。车模采用PCB作为底板的设计，使用恩智浦RT1021的核心板为主控芯片，通过各项连接件连接齿轮、电机、摄像头等模块。蚂蚁组别中包含主从双车的协作，方便整体方案的统一两车的设计为对称设计，除了多加的红外发射模块以及摄像头以外车模其余部分完全相同。
+2.2硬件设计概述
+硬件电路是小车平稳运行的基础，在尝试多种硬件电路后，确定了一套可靠的设计方案，满足性能需求。将电路设计得尽量简洁，缩减电路板面积，尤其减轻电路重量，减轻整车重量，并且采用主驱一体的设计，将驱动电源核心板全部继承于一块总异形电路板之上。其中之一的创新点在于摒弃了经典DRV8701驱动方案，结合赛题电流小并且不需要高速转动电机特点，选用全集成H桥驱动芯片减少驱动电路占用空间。
+2.3软件设计概述
+完整的软件控制是小车运行的核心。蚂蚁组别对控制以及视觉部分要求更高，搬运任务整体设计复杂。其中核心传感器模块中包括TOF、IMU陀螺仪、无线串口、高精度编码器。IMU陀螺仪实时解算自身姿态角配合编码器统计的电机转动量解算蚂蚁自身的实时坐标位置方便后续路径的规划。无线串口底层采用UART协议，队内设计一套通信数据包包含数据的指令类型、数据本体、校验位，使得主从车之间通信稳定可靠。TOF传感器用于蚂蚁对砖块以及物品的避障。视觉部分采用逐飞提供的使用OPENART摄像头运行YOLOv3模型方案，实现多目标的检测与追踪。具体的目标检测方案采用yolo模型+颜色检测的方案让物品的识别又快又准。控制方案中采用从车时刻跟随主车保持相对静止状态，主车把握搬运任务中的状态机切换完成整体的搬运任务。
+
+
+第三章  硬件设计
+3.1供电电源设计
+整体电源降压处理为12V降为5V和3.3V，首先将3S电池的电压降低到7.4V，选择SCT2450这个DC-DC电源芯片设计外围电路来进行降压，最大输出电流较大，符合要求，可供各类5V的电源使用，并且后续方便再度降压。
+
+图一 DC-DC降压电路
+3.2传感器电源设计
+	由于摄像头和IMU惯性导航模块对供电稳定性要求较高，需要分别独立使用LDO降压芯片供电，以保证数据稳定性。选择RT9013-33这款LDO芯片，纹波较小，符合要求。
+
+图二 LDO降压电路
+
+3.3电机驱动设计
+	由于蚂蚁搬家组别使用电机为n20电机，通过其电流并不大，实际测试负载堵转电流也不超过0.5A故，摒弃原先DRV8701+MOS的方案，采用AT8236全H桥集成芯片。信号从核心板发出后先经过缓冲器HC244芯片防止电流倒灌。
+
+图三 缓冲电路
+
+图四 电机驱动电路
+3.4红外发射板设计
+蚂蚁方案选择从车时刻紧跟主车运动，类似于第二十届双车追随方案，于是需要二者之间的信息传递。学习逐飞提供的双车追随方案，设计红外发射板配合红外滤波片让从车摄像头能紧跟主车运动。
+
+图五 红外发射板电路
+3.5外接屏幕含按键板子设计
+由于蚂蚁归属于缩微赛道，今年对重量要求严苛，于是屏幕与按键调参方案选择使用FPC排线引出主板，在另一块控制板中对主板进行修改。
+
+图六 外接屏幕含按键电路设计
+
+
+
+
+
+第四章  机械设计
+全国大学生智能汽车竞赛对小车的体积和稳定性提出了极高的要求。模型车需要在  50 cm的紧凑空间内，承载驱动电机、PCB 主控板以及各类传感器。在高速转弯和急停的过程中，底盘和高空结构会受到巨大的冲击力与倾覆力矩。针对这些难题，团队独立设计并打样了一整套轻量化、高刚性的机械结构。
+2.1 三轮全向轮运动学与动力学建模
+为了实现在狭窄赛道内的任意方向平移与原地旋转，小车采用了呈  均匀分布的三轮全向轮底盘结构。全向轮的外圈分布着许多可以自由滚动的微型辊子，辊子的旋转轴线与主轮轴线垂直。这种几何特性使得小车可以在不改变车头朝向的前提下，完成高难度的避障平移与弧线巡线。
+2.1.1 正运动学与逆运动学矩阵推导
+设小车几何中心的平移速度在车体坐标系下分别为 （前向速度）和 （横向速度），小车自转的角速度为 。三个全向轮按逆时针顺序均匀排列，分布半径为 （即轮子中心到小车几何中心的距离）。各轮轴线与坐标轴的夹角分别为 、 和 。设三个全向轮的线速度分别为 ，主轮半径为 。
+根据速度矢量合成原理，小车整体运动是平移速度与自转速度的叠加。将小车平移速度和自转速度投影到各个全向轮的主切向方向上，得到逆运动学方程：
+
+
+
+底盘主控芯片可通过编码器测得三个轮子的实际转速，需要反推出小车当前在场地上的实际速度。对逆运动学矩阵求逆，得到正运动学解算公式：
+
+
+
+通过这个正运动学矩阵，算法可以在极短时间内完成底盘里程计的积分计算，精确获取小车在避障过程中的位移变化。
+在实际控制中，里程计系统还结合了 IMU660RA 解算的绝对航向角，进一步提升位移精度。
+2.1.2 全向轮底盘动力学与电机力学分析
+当小车以最大加速度  向任意角度  进行加速或急停时，小车整体受到的牵引力为 （ 为小车整车质量）。此时，三个全向轮需要输出不同的驱动力 。
+假设小车沿  方向加速，驱动力在笛卡尔坐标系下的分解公式为：
+
+
+
+当小车进行纯横向平移（，即避障横移）时，受力情况最为特殊。此时 ，将该条件代入动力学方程求得：
+
+这个计算结果表明，小车在纯横向平移时，三号轮完全不提供驱动力，所有的加速与制动冲击力完全由一号轮和二号轮等量反向承担。此时单个电机承受的负载达到了极限值：
+
+已知全向轮半径为2cm，小车整体质量约为265g，选用空载转速800rpm，负载转速700rpm的电机，堵转力矩3.2kg·cm、额定力矩0.8kg·cm。假设冲击系数为2.0，在加速度为1.5m/s^2的情况下代入公式，峰值力矩仅为0.008kg·cm，远小于负载最大限度。
+2.2 底盘一体化加强筋座设计
+底盘一体化加强筋座（以下简称“一体筋”）是整车的核心承载骨架，用来将驱动电机、主控板和高空立杆牢牢固定在一起，重量为9.86g。如图 2.1 - 2.4所示。
+
+2.1 一体筋建模展示
+
+2.2 一体筋顶视图
+
+2.3一体筋侧视图（1）
+
+2.4 一体筋侧视图（2）
+一体筋采用了三轴  对称的 Y 型结构。中间的圆筒插入 23cm 高的立杆，三条臂向外延伸。在中心圆筒与三条臂交界的地方，设计了平滑的斜坡过渡。三条臂的末端直接一体成型为编码器固定板，省去了额外的螺丝接头，以在减重的同时避免分体组装产生的累积公差。
+底部的形状适应PCB底板，全向轮和联轴器整体向内收缩于缺口内部。整车装配完成后，尺寸控制在   35cm的限制内。
+2.2.1 根部弯矩与应力集中分析
+为了验证一体筋对高空立杆的支撑刚度，我们将高空立杆与中心圆筒简化为悬臂梁受力模型。设高空传感器及云台的总质量为 ，立杆高度为 （）。当小车以最大加速度  紧急制动时，高空质心处会产生一个横向惯性力 ：
+
+该惯性力作用在 23cm 高度上，对一体筋中心圆筒根部产生的最大弯矩  为：
+
+如果圆筒根部未做斜坡过渡，其环形截面的抗弯截面模量为 。根部承受的最大弯曲应力  为：
+
+式中， 为 PLA-CF 材料的许用弯曲应力。在负载与运动条件不变的情况下，圆筒与三臂交界处的斜坡过渡增大了根部截面的面积惯性矩 ，从而大幅降低了 ，减小了一体筋变形和抖动的幅度。
+2.3  PCB底板的设计与装配
+在减重的要求下，队伍采用PCB电路板直接作为底盘。电路板被夹在上方的一体筋底座和下方的电机座中间。螺丝穿过一体筋末端的固定孔以及 PCB 底板上的预留通孔，直接与下侧的 3D 打印电机座螺纹配合。这种结构把电机运行时产生的反作用力，均匀分散到了一体筋与 PCB 板的大面积接触面上。这样既保证了电机座具有极高的刚度，又避免了螺丝单点受力损坏 PCB 内部的铜箔走线。
+电机座固定的电机轴上安装齿轮，与一体筋上搭载的编码器配合，在轮轴的空间内即可完成传动功能，无需占据额外空间。
+
+2.5 电机-编码器连接结构实物展示
+2.3.1结构的支撑刚度与消抖计算
+小车在急停和高速转向时，电机产生的反转力矩会作用在安装座上。如果结构的支撑刚度不足，电机座会产生微小的弹性变形，这会导致齿轮咬合间隙发生变化并产生震动，进而影响编码器读数干扰控制。
+团队对这个夹心结构的抗弯支撑刚度进行了简化计算。将螺丝锁紧区域简化为受压的矩形组合截面，总的等效抗弯刚度  为一体筋、PCB 板以及 3D 打印电机座三者刚度的叠加：
+
+式中， 分别为 PLA-CF 材料、FR-4 玻纤 PCB 板以及电机座材料的杨氏模量； 为各自对应的截面惯性矩； 为锁紧区域的有效受力长度。
+由于 PCB 板（FR-4 材料）的杨氏模量较高，将其作为夹心层紧紧夹在中间，使整体组合截面的面积惯性矩大幅增加，组合刚度  比单层塑料固定提升了 2 倍以上。
+2.3.2三轮全向轮运动对电机座的受力与抖动影响计算
+三轮全向轮底盘在进行原地自转、直线加速以及紧急制动（急停）时，电机座会受到不同方向的动态冲击力矩。由于全向轮的辊子与地面存在倾斜接触，这些力会通过轮轴直接传导到电机座和对夹螺丝上。
+1. 原地高速旋转时的切向力与扭转力矩计算
+当小车以角加速度  进行原地自转时，三个全向轮同时输出切向驱动力。设小车旋转中心到全向轮中心的距离（分布半径）为 ，单个全向轮及轮轴的转动惯量为 ，小车整车的转动惯量为 。
+小车自转所需的总驱动力矩为 。分配到单个电机上的输出力矩  为：
+
+式中， 为电机轴的角加速度。
+该力矩作用在电机座上，会在对夹螺丝锁紧区域产生一个反作用扭转力矩 。设电机座两颗对夹螺丝的中心距为 ，单个螺丝承受的额外剪切力  为：
+
+当旋转角加速度  较大时，剪切力  会反复拉扯 PCB 上的螺丝过孔。得益于三层对夹结构，摩擦力分担了绝大部分剪切力，保证螺丝不易松动。
+2. 直线直线加速与急停时的倾覆力矩计算
+在直线方向以最大加速度  加速或急停时，小车质心高度  处会产生巨大的惯性力 （ 为小车总质量）。
+根据三轮全向轮的物理分布，前向急停时，前方单轮或后方双轮需要承担主要的制动地面摩擦力 。对于受力最大的单个电机座，其轮轴端部承受的地面反作用力  包含水平制动力与动态转移载荷：
+
+力  作用在电机轴端（距离电机座安装面的悬臂距离为 ），这会对电机座产生一个强烈的悬臂弯矩 ：
+
+该弯矩试图将电机座从 PCB 底板上撬开。设螺丝锁紧面边缘到力矩中心的距离为 ，电机座底面受到的最大张应力  为：
+
+式中， 为对夹锁紧区域的面积惯性矩。螺母、一体筋、电机座三层结构将锁紧面积  扩大了数倍，大幅降低了 ，防止螺丝松动导致电机座翘起。
+
+2.4 前置平面推杆机构设计
+比赛规则严格规定，推板与物品接触的部分必须是绝对的平面，不能使用曲面或勾抓结构。团队在满足规则的前提下，设计了倾角斜平面推杆，重量约为6.5g。如图 2.6 -2.7所示。
+
+2.6 推杆建模展示
+
+2.7 推杆参数图示
+推杆的前端为一块平整的长条板，后方的支撑骨架能够将推球时的反作用力平均地传回底盘，防止一侧受力不均影响动力。我们在骨架内部做了大面积掏空，减轻车头悬空部位的重量，减少对重心的影响。推杆根部有两个螺丝孔，通过两颗螺丝锁紧在底盘前面的耳座上，双点锁紧的方式保证了推杆在撞击时不会松动。
+2.5 后轮防卡挡料护板设计
+在实车测试过程中，团队发现赛道上的障碍球在小车旋转和平移时，容易滚动到后轮附近并卡死全向轮。为此，团队追加设计了后轮防卡护板，重量为0.805g，如图 2.8-2.9所示。
+
+2.8 护板建模展示
+
+
+2.9 护板参数图示
+
+护板的外侧为一条带弧度的长条板，末端向内弯曲形成抛物线弧面。障碍物碰到护板时，弧面会把物体推开，引导其滑离轮子区域。护板顶部设计有一个螺丝孔和一个突角。突角末端延伸至底盘边缘，进一步引导物体远离传动部件。
+护板的厚度仅为 ，紧贴全向轮布置。护板的外边缘未超过规则尺寸边界，合计重量仅 。
+
+2.6 推杆间隙保护板设计
+前置推杆向前伸出时，推杆骨架和车身之间会留下一个三角形的缝隙。在多球赛道上，多余的障碍球容易塞进这个缝隙中，导致小车卡死或行驶偏航。针对这个死角，团队设计了侧面扇形保护板，重量为3.34g，如图 2.10-2.11 所示。
+
+2.10 间隙保护板建模展示
+
+2.11间隙保护板参数图示
+保护板拥有一个大弧度的扇形外壁，弧面从推杆前端一直延伸到推杆一侧的轮子外侧，将推杆与车体之间的缝隙完全封死。外界的球体碰到保护板后，会顺着弧面滑走，无法进入车身内部。
+由于保护板的包络面积较大，结构上采用了扇骨式的拓扑骨架。在保留外圈弧形框和中间支撑骨架的基础上，大面积挖空中央非受力区域。保护板底部与推杆共用同一个固定轴，下沿线型与前全向轮保持着  的安全动态间隙，既封住了缝隙，又不会干扰轮子的正常旋转。
+
+2.7 可调角度传感器云台座设计
+摄像头和 ToF 深度传感器安装在约23cm 高的立杆顶部。小车急停时高空惯性极大，传统的螺丝固定容易被震松，导致传感器俯仰角发生偏转。为此，以鼠牙齿盘为灵感，我们设计了一套端面齿轮锁紧云台，如图 2.12-2.15 所示。
+2.12 外齿轮结构建模展示
+
+2.13 外齿轮结构参数图示
+
+2.14内齿轮结构建模展示
+
+2.15 内齿轮结构参数图示
+云台的调节端带有外齿轮，套接端带有匹配的内齿圈。两部分组合在一起后，通过中心螺丝穿过并锁紧。齿轮结构能够将角度锁定。在能自由调节俯仰角以适配不同调试情况的同时，即使小车发生剧烈碰撞，摄像头俯仰角也不会改变。
+齿轮周向均匀分布着细小齿槽，单齿对应的角度约为 。在调试时，将齿圈拔出一点进行旋转，即可实现定量的角度微调。云台的支架采用了 L 型结构，并在直角转弯处加装了一块三角形加强筋，保证了悬臂的抗弯强度。云台底部设有圆孔套筒，可以直接套接在立杆顶端。整个云台固定件（包含固定摄像头和tof）的重量仅为 ，在能保证传感器位置稳定的前提下，极大地减轻了空中结构重量。
+2.8 杆动态抖动抑制与振动学分析
+在小车高速行驶、急停以及避障平移过程中，安装于中心杆顶端的传感器模块易发生大幅晃动，降低视觉算法的识别精度。为此，团队从单自由度受迫振动模型出发，对高空云台杆的动态响应进行了振动学建模与结构优化。
+2.8.1 杆件高空抖动的振动学建模
+将高空立杆与顶端传感器简化为端部带质点的悬臂梁振动系统。设顶端传感器及云台的总质量为 ，立杆的有效高度为 （），立杆材料的杨氏模量为 ，截面惯性矩为 。
+悬臂梁顶部的等效弯曲刚度  为：
+
+该振动系统的一阶固有频率  为：
+
+当小车电机的旋转激励频率  接近系统的固有频率  时，立杆会发生共振；同时，如果刚度  不足，较低的固有频率会导致急停后的残余晃动时间过长。
+2.8.2 减抖消振结构优化
+根据固有频率公式 ，要彻底减少高空抖动，核心在于提升固有频率 ，使其远离电机的低频激励区。团队采取了以下结构改进：
+改变根部拓扑结构（增大截面惯性矩 ）：
+在一体筋圆管处，采用下大上小的变截面结构，将根部包络直径扩大。由于截面惯性矩  与截面尺寸呈 4 次方正比关系，扩大根部尺寸使截面惯性矩  提升了数倍，大幅增大了刚度 。
+顶端轻量化设计（降低高空质量 ）：
+固有频率  与顶端质量  的平方根成反比。团队将传感器固定连接件的重量削减至 ，并剔除了铁质螺丝，改用轻量化紧固件。高空质量  的下降推高了系统的固有频率，使急停后的残余晃动能在极短时间内收敛。  通过上述力学与结构优化，高空立杆的一阶固有频率被大幅推高，避开了小车正常行驶的振动频率区间，解决了高空视觉传感器的抖动问题。
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 软件设计
+完整的软件控制是智能汽车稳定、高效运行的核心大脑。本系统以恩智浦 RT1021 芯片作为双车主控，搭载 OPENART MINI 视觉采集与计算单元。系统摒弃了传统的单车孤立运行模式，采用了“领导者-跟随者（Leader-Follower）”的主从协同控制架构。主车负责全局状态机的流转、路径规划与任务决策，从车则通过视觉追踪与前馈融合，实现高动态下的相对静止跟随。本章将从视觉图像处理、主从通信解耦、核心战术流转、底层运动学驱动及调试工具等维度进行详细阐述。
+5.1 软件架构
+系统的软件控制架构分为决策层、感知层与执行层三个核心维度。主控 MCU 通过定时器中断（20ms 周期）高频读取 IMU 姿态数据、TOF 测距数据与编码器速度，并通过 LPUART 异步总线与视觉协处理器、从车进行高频通信。 在全局决策上，主车由一套严密的有限状态机驱动，涵盖了开局发车、锚点导航、视觉逼近、轴权绕桩、定向盲推、极速撤退与回城等完整流程。
+
+图一：执行、决策、感知三层包含内容与联系图
+5.2 视觉图像处理
+5.2.1 先检后跟与 ROI 色度自适应机制
+主车视觉部分的代码核心是一条面向“先检后跟”的感知链路。系统首先在 OPENART 平台上加载轻量级 TFLite YOLOv3 模型，对画面中的网球（ID:0）、沙袋（ID:1）、泰迪熊（ID:2）进行初步语义检测。 为了克服赛场（尤其是体育馆环境）中复杂的光照突变和地胶反光，系统在目标跟踪环节并非简单将 YOLO 结果直接透传，而是创新性地引入了 ROI 色度跟踪和颜色自适应机制。程序根据目标核心区域的 Lab 色域统计特征，自动生成并动态更新跟踪阈值。当目标靠近画面下方时，系统会触发“近距重采样、颜色重校准”逻辑，有效过滤了地板反光和阴影干扰。
+5.2.2 视觉滤波与跳变抑制
+视觉模块通过 UART 发送 9 字节的固定数据帧，包含 0xAA 与 0x55 的帧头、目标 ID、坐标高低位、置信度状态及校验和。在主控接收端，为防止识别误差导致的车头抽搐，引入了单帧跳变抑制与指数低通滤波策略：
+（Exponential Moving Average, EMA）
+其中滤波系数  和  设定为 0.8，同时规定单帧坐标突变（）被严格限幅在 30 像素以内。
+
+图二：视觉流程图
+5.2.3 逆透视映射（IPM）与物理系转换
+为了将平面像素坐标转换为具备物理意义的距离，系统集成了逆透视映射（Inverse Perspective Mapping）算法。结合摄像头安装的高度机械外参  mm、俯仰角  及相机内参（，），将视觉捕获的目标底部像素精确投影到世界平面：
+
+
+该算法为车辆逼近物体时的深度估计和提前减速提供了可靠的几何依据。
+5.3 主从协同与通信解耦控制
+5.3.1 高频通信协议与从车视觉跟随
+蚂蚁组别的双车协同依赖于 LPUART 总线（波特率 115200）进行高频通讯。我们设计了一套严密的 10 字节通信协议，数据帧以 0x5A 和 0xA5 作为双帧头，中间携带指令码（CMD）、16 位整型的 X/Y 全局坐标与 Yaw 角度，并在末尾附加严格的累加校验和（Checksum）。
+
+图二：通信协议流程图     图三：状态切换流程图
+本系统双车通信固定采用 10 字节数据帧结构，协议字段定义严格匹配驱动代码：第0~1字节为固定双帧头（0x5A、0xA5），第2字节为协同指令码；第3~8字节分别存储16位全局X、Y坐标与车体偏航角Yaw，支持正负姿态数据解析；最后1字节为前9字节数据累加校验和，可有效过滤总线干扰、杜绝脏数据导致的协同异常，保障双车高频协同的稳定性。
+从车视觉的重点在于接收主车信息、处理视觉定位、融合前馈再输出运动。从车通过跟踪主车尾部的红外发射靶标计算视觉误差，并同样经过跳变阈值过滤与指数低通滤波进行平滑。即便视觉短暂失效，通过超时机制（300ms），系统能平滑过渡至仅依赖前馈的惯性跟随，确保了实际车队协同的鲁棒性。
+5.3.2 运动学指令解耦
+在“领导-跟随”架构中，系统进行了深度的系统级控制解耦： 主车仅下发车体坐标系下 X 轴和 Y 轴的前馈平移速度，而从车的偏航角（Yaw）全权交由从车自身的视觉闭环去控制。 在主车正常寻物与推物阶段，发送给从车的目标偏航角强制赋为 0。这种解耦彻底避免了主车因底盘微小滑移产生的陀螺仪偏航补偿指令与从车视觉循迹发生“指令打架”，消除了从车的超调与甩尾现象。
+5.4 核心策略
+5.4.1 局部里程计（Odometry）模型
+系统基于直径 38.0mm 的全向轮与每圈 1024 脉冲的高精度编码器，结合 IMU660RA 解算的绝对航向角，开发了局部里程计系统。通过正运动学解算出小车自身的平移量，再利用旋转矩阵将其映射至全局场地坐标系：
+
+
+该模块使小车具备了在无视觉参考下的绝对空间定位能力。
+
+
+5.4.2 锚点导航策略
+针对国赛决赛需推运 5 个不同物品的任务需求，系统摒弃了效率低下且容易受反光干扰的“原地自转扫场”方案，创新性地引入了“锚点导航法”。 在每次完成推与撤退后，主车会根据上一物品的 ID重新规划下一个最佳观测点。例如，在推完右侧的熊后，主车依靠里程计高速导航至 (X=2400.0, Y=800.0) 的黄金锚点，并在到达后将车头精准对准正前或侧边（MAIN_YAW = 90.0）再开启视觉识别。这种大范围物理坐标跑动策略，将寻物的容错率提升。
+5.5 底层运动控制
+5.5.1 平滑加速器
+为了彻底解决长距离导航时，误差瞬间过大导致的速度阶跃及由此引发的起步弹射、从车拉扯甩尾等物理恶化现象，系统在底层控制流中加入了 S 型平滑限幅滤波器 ramp_speed。 算法在每一个 10ms 的控制周期内，对解析出的目标速度增量进行严格限幅（MAX_ACCEL = 20.0）。在起步阶段（START_Y / START_X），限幅进一步收紧至 10.0。该机制使得底盘在肉眼难以察觉的毫秒级缓冲内，平滑地推至极速。既消解了电机的瞬态过载，又保证了高速转场的分秒必争。
+5.5.2 高速电机前馈与增量式 PID
+为了匹配 1:50 减速比的高速电机（空载 800rpm），团队通过大量开环稳态测试，利用线性回归算法提取了极高精度的前馈动力数学模型：
+
+由于精确的前馈模型承担了绝大部分稳态动力输出，控制系统的 PID 闭环补偿被针对性地“削弱”。在通用 pid.py 的计算中，采用了极小的比例系数作为底盘动态减震器，过滤地胶的轻微摩擦扰动；同时使用适中的积分系数充当推力储备。当车辆推重物（如沙袋）受阻时，积分项能迅速累积误差，在极短时间内爆发出庞大的破障扭矩，实现了“空跑丝滑不抖，遇阻瞬间爆发”的控制手感。
+5.5.3 动态双区防碰撞避障
+为应对决赛中新增的砖块障碍，主车整合了基于 DL1X 激光测距传感器的横移避障逻辑。系统依据全局坐标，将赛场划分为无缓冲防误触的“搬运区内”与长缓冲防砖块的“搬运区外”。 在推阶段，当检测到危险距离，系统会在当前的平滑前向速度上直接叠加横向避障矢量，并通过乘以 0.4 的衰减系数主动减弱推进力以防物品脱出，实现了极速推物下的流畅切线绕障。
+
+第六章  总结
+技术报告主要介绍了备赛时的思路，设计机械设计、电路设计以及软件控制算法，分别对应队内四人的职责，准备竞赛周期很长，期间经历校赛、省赛、区域赛到如今即将迈向国赛，队伍在试错中成长，各自都将自身所学或特长用于竞赛本身。
+蚂蚁搬家组别作为第二十一届智能车改革后的新组别，相较于之前奋力跑赛道的小车，蚂蚁更强调双车之间的协作与任务意识，半年来的备赛经验简易融合在整份技术报告之中。机械部分迭代三次才有了如今稳定方案，期间尝试过各类连接方式，硬件电路部分更多是配合机械方案并做到稳定与适度创新，二者配合将蚂蚁整车的重量降低。软件承载赛题最关键部分，期间方案的迭代优化次数更是数不胜数，从原先双车分别寻找物品协作方案到如今红外追踪相对静止方案，控制策略上队内投入精力非常多，串口通信、坐标解算等等部分，最终才确定了一套稳定可靠的方案内容。视觉部分也是逐步克服难题，在不断试错与尝试中提高视觉的准确率与稳定性。
+在备赛过程中学到了非常多知识，感谢电子科技大学老师以及学长的指导，队伍在不断发现问题、尝试方案、不止创新中努力，感谢队友的倾力付出，感谢成电自动化学院的倾力支持为我们解决了耗材以及比赛的路费报销等等，让我们有了坚实的依靠能够全身心地投入到比赛当中。同时再感谢智能车比赛舞台，让我们能够将所学应用到实践体会工程实际工作内容，提高动手能力与团队协作能力。
+最后再次感谢所有队友让成电蚂蚁走到如此之远，正如赛题一样，多只蚂蚁才能协作将任务完成，如今已经走到了比赛的尾声，当给予个华丽的谢幕，更当是功不唐捐,玉汝于成！
+“我欲穿花寻路，直入白云深处，浩气展虹霓。”
+
+附录 A  核心算法子程序
+##A.1 通用PID控制器
+适用于电机速度闭环、航向角闭环、视觉循迹等多个环节，采用积分限幅与输出限幅防止积分饱和。
+```python
+class PID:
+    def __init__(self, kp, ki, kd, out_max=10000, out_min=-10000):
+        self.kp = kp
+        self.ki = ki
+        self.kd = kd
+        self.out_max = out_max
+        self.out_min = out_min
+        self.last_error = 0.0
+        self.integral = 0.0
+        self.output = 0.0
+
+    def update(self, setpoint, measurement):
+        error = setpoint - measurement
+        self.integral += error
+        # 积分限幅，防止积分饱和
+        if self.integral > self.out_max:
+            self.integral = self.out_max
+        elif self.integral < self.out_min:
+            self.integral = self.out_min
+
+        derivative = error - self.last_error
+        self.output = (self.kp * error) + (self.ki * self.integral) + (self.kd * derivative)
+        self.last_error = error
+
+        # 输出限幅
+        if self.output > self.out_max:
+            self.output = self.out_max
+        elif self.output < self.out_min:
+            self.output = self.out_min
+        return self.output
+
+    def reset(self):
+        self.last_error = 0.0
+        self.integral = 0.0
+        self.output = 0.0
+```
+
+## A.2 三路全向底盘逆运动学
+
+将车体坐标系下的期望速度 (v_x, v_y, ω) 解算为三个全向轮（左前 M1、右前 M2、后轮 M3）的轮速。
+
+```python
+import math
+
+def inverse_kinematics(v_x, v_y, omega):
+    """三路全向底盘逆运动学解算，输出三轮目标速度"""
+    # M1 (左前轮)
+    target_m1 = -0.5 * v_x - 0.866 * v_y + omega
+    # M2 (右前轮)
+    target_m2 = -0.5 * v_x + 0.866 * v_y + omega
+    # M3 (后轮)
+    target_m3 = 1.0 * v_x + omega
+    return int(target_m1), int(target_m2), int(target_m3)
+```
+
+## A.3 编码器与IMU融合里程计
+
+每 20ms 由定时器调用：将三路编码器脉冲增量换算为轮子位移，经正运动学解算得到车体坐标位移，再用 IMU 航向角旋转到全局坐标系并积分累加，得到小车在场地中的全局坐标。
+
+```python
+def update(self, d1_pulses, d2_pulses, d3_pulses, imu_yaw_deg):
+    """里程计更新：编码器脉冲 + IMU 航向角 -> 全局坐标(X, Y)，单位 mm"""
+    # 1. 脉冲增量 -> 轮子实际移动距离(mm)
+    dist1 = d1_pulses * self.MM_PER_PULSE
+    dist2 = d2_pulses * self.MM_PER_PULSE
+    dist3 = d3_pulses * self.MM_PER_PULSE
+
+    # 2. 正运动学解算：车体坐标系下的平移距离
+    dx_robot = (2.0 * dist3 - dist1 - dist2) / 3.0
+    dy_robot = (dist2 - dist1) / 1.73205
+
+    # 3. 坐标旋转：用 IMU 航向角将车体位移映射到全局坐标系
+    yaw_rad = math.radians(imu_yaw_deg)
+    self.heading_yaw = yaw_rad
+    dx_global = dx_robot * math.cos(yaw_rad) - dy_robot * math.sin(yaw_rad)
+    dy_global = dx_robot * math.sin(yaw_rad) + dy_robot * math.cos(yaw_rad)
+
+    # 4. 积分累加得到全局坐标
+    self.global_x += dx_global
+    self.global_y += dy_global
+    return self.global_x, self.global_y
+```
+
+## A.4 相机逆透视变换IPM
+
+利用相机内参（焦距、光心）与安装外参（高度、俯仰角），将视觉模块上报的目标底边像素坐标还原为地面上的真实物理坐标，是"像素定位 -> 全局坐标"的关键桥梁。
+
+```python
+def pixel_to_world(self, u, v):
+    """像素坐标 -> 地面物理坐标（逆透视变换）
+    输入：目标底边像素坐标 (u, v)
+    输出：目标相对摄像头投影中心的物理距离 (X_mm, Y_mm)"""
+    # 1. 归一化相机坐标
+    x_cam = (u - self.cx) / self.fx
+    y_cam = (v - self.cy) / self.fy
+
+    # 2. 射线与地面平面相交计算（逆透视核心）
+    sin_theta = math.sin(self.pitch_rad)
+    cos_theta = math.cos(self.pitch_rad)
+    denominator = sin_theta + y_cam * cos_theta
+    if denominator <= 0.001:
+        return 0.0, 0.0  # 目标悬空或超过地平线
+    t = self.H / denominator
+
+    # 3. 真实物理相对坐标
+    x_ground = t * x_cam
+    y_ground = t * (cos_theta - y_cam * sin_theta)
+    return x_ground, y_ground
+```
+
+## A.5 双车无线协同通信协议
+
+主车与从车之间通过 UART 传输 10 字节定长帧：双帧头 + 指令码 + X/Y/Yaw 三组 16 位数据 + 校验和；接收端采用有限状态机逐字节解析，并用 0xCC ACK 应答实现可靠握手，避免指令丢失。
+
+```python
+def send_cmd(self, cmd, x=0, y=0, yaw=0):
+    """发送协同指令
+    :param cmd: 0x01(前往坐标), 0x02(发起推球), 0x11(从机ACK到达)等
+    :param x/y/yaw: 全局坐标与目标角度"""
+    x_int = int(x) & 0xFFFF
+    y_int = int(y) & 0xFFFF
+    yaw_int = int(yaw) & 0xFFFF
+
+    frame = bytearray(10)
+    frame[0] = 0x5A  # 帧头1
+    frame[1] = 0xA5  # 帧头2
+    frame[2] = int(cmd) & 0xFF
+    frame[3] = (x_int >> 8) & 0xFF
+    frame[4] = x_int & 0xFF
+    frame[5] = (y_int >> 8) & 0xFF
+    frame[6] = y_int & 0xFF
+    frame[7] = (yaw_int >> 8) & 0xFF
+    frame[8] = yaw_int & 0xFF
+    frame[9] = sum(frame[0:9]) & 0xFF  # 校验和
+    self.uart.write(frame)
+
+def update(self):
+    """在主循环高频调用，用状态机解析堆叠的串口数据"""
+    updated_this_loop = False
+    if self.uart.any():
+        data = self.uart.read()
+        if data is None:
+            return False
+        for byte in data:
+            if self.state == 0:
+                if byte == 0x5A:
+                    self.rx_buf[0] = byte
+                    self.state = 1
+                    self.rx_index = 0
+            elif self.state == 1:
+                if byte == 0xA5:
+                    self.rx_buf[1] = byte
+                    self.state = 2
+                else:
+                    self.state = 0
+            elif self.state == 2:
+                self.rx_buf[self.rx_index + 2] = byte
+                self.rx_index += 1
+                if self.rx_index >= 7:
+                    self.state = 3
+            elif self.state == 3:
+                self.rx_buf[9] = byte
+                check_sum = sum(self.rx_buf[:9]) & 0xFF
+                if byte == check_sum:  # 校验成功，更新数据
+                    self.cmd = self.rx_buf[2]
+                    vx = (self.rx_buf[3] << 8) | self.rx_buf[4]
+                    if vx > 32767: vx -= 65536
+                    self.val_x = vx
+                    vy = (self.rx_buf[5] << 8) | self.rx_buf[6]
+                    if vy > 32767: vy -= 65536
+                    self.val_y = vy
+                    vyaw = (self.rx_buf[7] << 8) | self.rx_buf[8]
+                    if vyaw > 32767: vyaw -= 65536
+                    self.val_yaw = vyaw
+                    self.is_updated = True
+                    updated_this_loop = True
+                self.state = 0
+    return updated_this_loop
+```
+
+## A.6 双车编队规划
+
+围绕目标物计算主车、从车的两个 45° 夹角预置点位（P1/P2），再依据主车当前位置就近分配角色，最后用向量叉积判定两车相对目标物的左右关系，确定各自的推球朝向角，保证两车呈"V"字形夹持推球。
+
+```python
+def plan_dual_formation(self, master_x, master_y, ball_x, ball_y, item_type):
+    """双车编队规划：返回主/从车预置点与朝向角"""
+    self.target_ball_x = ball_x
+    self.target_ball_y = ball_y
+
+    # 目标物到搬运区四条边界的距离
+    dt = self.VZ_Y_MAX - ball_y
+    db = ball_y - self.VZ_Y_MIN
+    dl = ball_x - self.VZ_X_MIN
+    dr = self.VZ_X_MAX - ball_x
+
+    min_dist = min(dt, db, dl, dr)
+    prep_dist = min(min_dist, 500.0)   # 预置距离不超过搬运区边界
+    offset_45 = prep_dist
+
+    # —— 核心：按目标物靠近的边界，选择两个45°夹角的预置点 ——
+    if min_dist == dt:  # 目标靠近上边界：从下方推
+        min_dist2 = min(db, dl, dr)
+        if min_dist2 <= 400.0:
+            if min_dist2 == dl:
+                P1 = (ball_x, ball_y + offset_45, 180.0)
+                P2 = (ball_x - min_dist2, ball_y, -90.0)
+            else:
+                P1 = (ball_x + min_dist2, ball_y, 90.0)
+                P2 = (ball_x, ball_y + offset_45, 180.0)
+        else:
+            P1 = (ball_x + offset_45, ball_y + offset_45, 135.0)
+            P2 = (ball_x - offset_45, ball_y + offset_45, -135.0)
+    # 其余 db / dl / dr 分支与 dt 分支逻辑对称，从略
+
+    # 根据主车当前位置就近分配预置点
+    dist_M_to_P1 = abs(master_x - P1[0]) + abs(master_y - P1[1])
+    dist_M_to_P2 = abs(master_x - P2[0]) + abs(master_y - P2[1])
+    if dist_M_to_P1 < dist_M_to_P2:
+        Master_Prep, Slave_Prep = P1, P2
+    else:
+        Master_Prep, Slave_Prep = P2, P1
+
+    # 按物品类型确定推球方向（沿+X为0°，逆时针为正）
+    if item_type not in ['ball', 'sandbag', 'bear']:
+        item_type = 'ball'
+    if item_type == 'ball':
+        push_angle = 0.0
+    elif item_type == 'sandbag':
+        push_angle = 90.0
+    elif item_type == 'bear':
+        push_angle = -90.0
+
+    # 叉积判断两车相对目标物的左右关系，确定各自朝向角（±45°）
+    vec_M_x, vec_M_y = ball_x - Master_Prep[0], ball_y - Master_Prep[1]
+    vec_S_x, vec_S_y = ball_x - Slave_Prep[0], ball_y - Slave_Prep[1]
+    cross_product = vec_M_x * vec_S_y - vec_M_y * vec_S_x
+
+    if cross_product > 0:
+        master_f_angle = self.normalize_angle(push_angle - 45.0)
+        slave_f_angle  = self.normalize_angle(push_angle + 45.0)
+    else:
+        master_f_angle = self.normalize_angle(push_angle + 45.0)
+        slave_f_angle  = self.normalize_angle(push_angle - 45.0)
+
+    return Master_Prep, Slave_Prep, master_f_angle, slave_f_angle, push_angle
+```
+
+## A.7 主车同步推球状态机与ToF防碰撞
+
+主车主控程序的核心状态机之一：同步推球阶段，视觉PID负责横向夹球与前后跟随补偿，ToF 与从车阻塞标志共同触发横向闪避决策，最终合成车体速度。
+
+```python
+elif current_state == ST_SYNC_PUSH:
+    # 保持朝向推球方向
+    omega = pid_yaw.update(get_shortest_angle_target(master_f_yaw, current_yaw), current_yaw)
+
+    if vis.is_updated and vis.target_id == locked_item_id:
+        vis.is_updated, last_seen, VISION_SEEN = False, time.ticks_ms(), True
+        # 视觉 -> 逆透视 -> 目标物全局坐标
+        real_x_mm, real_y_mm = ipm.pixel_to_world(vis.val_1, vis.val_2)
+        yaw_rad = math.radians(current_yaw)
+        locked_item_x = odom.global_x + (real_y_mm + 42.0) * (-math.sin(yaw_rad)) + real_x_mm * math.cos(yaw_rad)
+        locked_item_y = odom.global_y + (real_y_mm + 42.0) * math.cos(yaw_rad) + real_x_mm * math.sin(yaw_rad)
+
+        # X轴：左右偏移纠正（把球死死夹在中间）
+        target_vx = -pid_vision_push.update(160, vis.val_1)
+        hold_vx = FILTER_ALPHA * target_vx + (1.0 - FILTER_ALPHA) * hold_vx
+
+        # Y轴：前后掉队动态补偿（目标夹球距离 55mm）
+        target_vy = -pid_vision_push_vy.update(55.0, real_y_mm)
+        hold_vy = FILTER_ALPHA * target_vy + (1.0 - FILTER_ALPHA) * hold_vy
+    else:
+        if not VISION_SEEN or time.ticks_diff(time.ticks_ms(), last_seen) > 500:
+            hold_vx = 0.0
+            hold_vy = 0.0  # 丢球时清空补偿
+
+    # 交叉ToF阻塞状态更新（带回滞，防止抖动）
+    if 0 < raw_tof < DANGER_DIST:
+        curr_blocked = True
+    elif raw_tof >= SAFE_DIST:
+        curr_blocked = False
+    else:
+        curr_blocked = my_blocked
+    if curr_blocked and not my_blocked:
+        my_blocked = True
+    elif not curr_blocked and my_blocked:
+        my_blocked = False
+    any_blocked = my_blocked or mate_blocked
+
+    # 核心决策：任一车遇阻 -> 双车同步横向闪避
+    if any_blocked:
+        dodge_timer = time.ticks_ms()
+        if push_dodge_val == 0.0:
+            if push_yaw == 0.0:
+                push_dodge_val = -30.0 if locked_item_x < 1600 else 30.0
+            else:
+                push_dodge_val = -30.0 if locked_item_y < 1200 else 30.0
+            send_reliable(0x28 if push_dodge_val > 0 else 0x29)
+    else:
+        if push_dodge_val != 0.0 and time.ticks_diff(time.ticks_ms(), dodge_timer) > 300:
+            push_dodge_val = 0.0
+            send_reliable(0x2A)  # 清除闪避
+
+    # 最终速度合成：基础推球速度 + 闪避速度 + 视觉补偿
+    if push_dodge_val != 0.0:
+        if push_yaw == 0.0:
+            v_g_x, v_g_y = push_dodge_val, PUSH_SPEED
+        elif push_yaw == 90.0:
+            v_g_x, v_g_y = -PUSH_SPEED, push_dodge_val
+        else:
+            v_g_x, v_g_y = PUSH_SPEED, push_dodge_val
+    else:
+        if push_yaw == 0.0:
+            v_g_x, v_g_y = 0.0, PUSH_SPEED
+        elif push_yaw == 90.0:
+            v_g_x, v_g_y = -PUSH_SPEED, 0.0
+        else:
+            v_g_x, v_g_y = PUSH_SPEED, 0.0
+
+    v_robot_x_base, v_robot_y_base = global_velocity_to_local(v_g_x, v_g_y, current_yaw)
+    v_robot_x = v_robot_x_base + hold_vx
+    v_robot_y = v_robot_y_base + hold_vy
+```
+
+## A.8 K210视觉识别与目标坐标上报
+
+K210 视觉模块采用"颜色阈值粗检 + MobileNet 分类确认 + 动态 ROI 跟踪"三级策略识别目标物，并封装成 9 字节定长帧通过 UART 上报主控板。
+
+```python
+def send_data_to_mainboard(target_id, val_1, val_2, status=0):
+    """向主控板发送9字节视觉帧：帧头 + 目标ID + 数据 + 校验和"""
+    v1_int = int(val_1) & 0xFFFF
+    v2_int = int(val_2) & 0xFFFF
+    frame = bytearray(9)
+    frame[0] = 0xAA
+    frame[1] = 0x55
+    frame[2] = int(target_id)
+    frame[3] = (v1_int >> 8) & 0xFF
+    frame[4] = v1_int & 0xFF
+    frame[5] = (v2_int >> 8) & 0xFF
+    frame[6] = v2_int & 0xFF
+    frame[7] = int(status)
+    frame[8] = sum(frame[0:8]) & 0xFF  # 校验和
+    uart.write(frame)
+
+# —— 主循环核心：颜色阈值粗检 + MobileNet分类确认 + 动态ROI跟踪 ——
+img = sensor.snapshot()
+item_blobs = img.find_blobs(search_thresh, roi=search_roi, pixels_threshold=pix_thres, merge=True)
+if item_blobs:
+    # 尺寸过滤，剔除全黑桌面等假色块
+    valid_blobs = [b for b in item_blobs if b.w() < 180 and b.h() < 180]
+    if valid_blobs:
+        # 取离车最近的目标（Y坐标最大）
+        closest_blob = max(valid_blobs, key=lambda b: b.y())
+        cx, cy = closest_blob.cx(), closest_blob.cy()
+        # 以目标为中心截取96x96区域送入MobileNet分类确认
+        nn_roi = max(0, min(cx - 48, 320 - 96)), max(0, min(cy - 48, 240 - 96)), 96, 96
+        if net:
+            for obj in tf.classify(net, img, roi=nn_roi):
+                output = obj.output()
+                predictions = sorted(zip(labels, output), key=lambda x: x[1], reverse=True)
+                top_label, top_score = predictions[0]
+                if top_score > 0.60:  # 置信度门限确认
+                    pixel_x = closest_blob.cx()
+                    pixel_y_bottom = closest_blob.y() + closest_blob.h()
+                    target_id_to_send = item_id_map[current_target_item]
+                    send_data_to_mainboard(target_id_to_send, pixel_x, pixel_y_bottom)
+update_track_roi_dynamic(closest_blob.rect())  # 动态ROI跟踪
+
+附录 B  电路原理图
+

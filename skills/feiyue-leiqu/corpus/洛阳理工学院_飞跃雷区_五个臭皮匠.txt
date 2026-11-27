@@ -1,0 +1,1166 @@
+第二十一届全国大学生
+智能汽车竞赛
+技术报告
+
+
+
+
+
+
+
+
+
+
+
+
+关于技术报告和研究论文使用授权的说明
+
+
+本人完全了解全国大学生智能汽车竞赛关保留、使用技术报告和研究论文的规定，即:参赛作品著作权归参赛者本人，比赛组委会可以在相关主页上收录并公开参赛作品的设计方案、技术报告以及参赛模型车的视频、图像资料，并将相关内容编纂收录在组委会出版论文集中
+
+
+
+参赛队员签名: 王思瑜 柴晓曦 王建豪 张沙莉 邵林航    
+带队教师签名: 张伟民 郭超
+日期: 2026.8.9 
+
+
+
+
+
+
+
+第一章 引言
+1.1.课题背景
+全国大学生智能汽车竞赛是一项融合自动控制、机器视觉、嵌入式系统、传感器、电机驱动和机械设计的综合性工程实践竞赛。参赛队伍需要自主完成机械结构、电路系统、控制软件和运动算法设计，并使作品在规定场地内稳定完成比赛任务。
+第21届全国大学生智能汽车竞赛“飞跃雷区”组由一台可悬停飞行器和一辆自制地面车模组成。系统需要在室内平面光标赛道中识别亮起的信标灯，控制飞行器和车模协同运动，最终由车模到达信标位置并完成灭灯。
+由于车模上不允许安装用于检测信标的环境感知传感器，信标检测主要由飞行器上的摄像头完成。因此，飞行器不仅负责稳定飞行，还承担场地观察、目标识别、视觉定位和信息传输等任务；地面车模则根据飞机端发送的位置误差完成全向移动。
+本队采用双摄像头视觉方案。一路摄像头由CYT4BB7处理，另一路由CYT2BL3处理。双摄像头具有不同的有效观察范围，可提高信标距离发生变化时的识别连续性。CYT4BB7采用双核架构，其中CM7_1负责本地摄像头处理、第二路视觉数据接收、双摄来源选择以及信标灯和车模灯板识别；CM7_0负责飞行器姿态、高度、速度和位置控制，并向地面车模发送视觉误差。
+视觉系统同时识别亮起的信标灯和车模上的灯板，并根据灯板方向计算信标相对于车模的纵向误差和横向误差。小车接收到误差后，通过位置外环、航向保持环、麦克纳姆轮运动学分解和四路电机速度内环，逐步移动到信标位置并完成灭灯。
+系统总体流程为：
+
+
+图1.1 系统总体流程图
+
+1.2.赛题任务与规则约束
+比赛开始后，飞行器起飞并利用机载双摄像头搜索亮起的信标灯，同时识别车模上的灯板。视觉系统根据目标位置生成飞行器控制所需的视觉信息，并计算车模灯板与信标灯之间的纵向误差和横向误差。
+飞机端将车模误差和数据有效标志发送给小车。小车对通信数据进行解析和校验，再由纵向、横向位置控制器计算车体速度。随后，控制器根据麦克纳姆轮运动学关系得到四轮目标速度，并利用编码器反馈和四路速度闭环调节电机输出，使车模到达信标位置并通过机械接触完成灭灯。
+根据飞跃雷区组相关规则，参赛作品还需满足以下要求：
+飞行器应能放置在50×50cm范围内；
+地面车模应能放置在30×30cm范围内；
+飞行器保护网罩孔眼应小于4cm，乒乓球不能穿过；
+飞行器与车模之间的线缆长度不得超过1.5m；
+飞行器不安装独立电池，由车模通过线缆供电；
+信标检测传感器应安装在飞行器上，车模不得直接检测信标。
+作品的尺寸、质量、网罩孔径和线缆长度将在第三章中结合实物测量结果进行说明。
+1.3.系统主要技术难点
+1.3.1.双摄目标识别
+信标与摄像头之间的距离变化较大，单摄像头难以同时兼顾远距离识别能力和近距离观察范围。本系统利用两台摄像头扩展有效识别范围，并通过连续帧判断和来源保持策略减少摄像头切换造成的误差跳变。
+1.3.2.信标和车模灯板识别
+信标灯和车模灯板均表现为图像中的高亮区域，容易受到背景反光和图像噪声影响。系统需要根据灰度、面积、形状和连续帧位置等特征区分两类目标，并利用主成分分析方法计算灯板方向。
+1.3.3.双摄坐标统一
+两台摄像头的安装方向和成像参数不同，其坐标不能直接混合使用。系统对第二路摄像头的数据进行方向转换，并且只在信标和灯板来自同一标定摄像头时计算车模误差，避免跨摄像头坐标直接相减。
+1.3.4.双核实时协同
+图像处理计算量较大，飞行控制又具有严格的实时性要求。本系统使用CM7_1处理视觉任务，使用CM7_0完成飞行控制，并通过共享内存和帧序号传递视觉结果，从而降低图像处理对控制周期的影响。
+1.3.5.飞行器串级控制
+飞行器需要同时完成高度、水平位置、速度、姿态角和角速度控制。本系统使用视觉、光流、TOF和IMU构成多级串级控制，使飞行器在目标识别过程中保持稳定运动。
+1.3.6.通信与安全保护
+视觉数据需要经过双摄通信、双核共享内存和飞机—车模通信链路。系统通过帧头、校验、有效标志和帧序号判断数据状态。小车超过150 ms未收到有效数据时，立即停止电机并清除PID历史状态，避免失联后继续运动。
+1.3.7.车模全向控制
+车模采用四轮麦克纳姆轮结构。控制器将视觉纵向、横向误差转换为车体速度，并结合航向修正量完成四轮速度分解，再利用编码器反馈控制四个电机，实现二维位置跟随
+第二章 系统总体方案
+2.1.系统设计目标
+根据飞跃雷区组的比赛任务，本系统需要利用安装在飞行器上的摄像头检测亮起的信标灯和车模灯板，获得飞行器、车模与信标之间的相对位置信息。在此基础上，控制飞行器完成空中定位，并引导地面车模运动至信标位置，最终通过机械接触完成灭灯。
+系统设计需要满足以下目标：
+在不同目标距离下稳定识别信标灯和车模灯板；
+保证图像处理和飞行控制任务互不干扰；
+实现飞行器水平位置、姿态和高度的闭环控制；
+准确计算车模相对于信标的纵向和横向误差；
+实现飞机端与小车端之间的实时通信；
+控制麦克纳姆轮车模完成前后、横向及斜向运动；
+在视觉失效或通信中断时及时停止运动；
+满足飞行器、车模、保护网罩和线缆等规则限制。
+2.2.系统总体组成
+本系统主要由飞行器平台、双摄视觉系统、飞行控制系统、地面车模和通信供电系统五部分组成，其功能如表2.1所示。
+
+表2.1 系统总体组成表
+
+2.2.1.飞行器平台
+飞行器平台由四旋翼机架、保护网罩、四个无刷电机、双摄像头、CYT4BB7双核控制器、IMU、TOF、光流模块以及供电通信线缆组成。
+飞行器承担以下任务：
+搭载双摄像头观察比赛场地；
+获取信标灯和车模灯板位置；
+根据视觉信息进行水平位置调整；
+根据TOF信息维持飞行高度；
+根据IMU和光流信息完成姿态及速度闭环；
+将车模相对信标的误差发送给地面车模。
+2.2.2.双摄视觉系统
+双摄视觉系统由两台安装在飞行器上的摄像头组成。一路摄像头直接连接飞机端CYT4BB7，由CM7_1完成图像处理；另一路摄像头由独立的CYT2BL3处理，识别结果通过UART发送给CYT4BB7。
+采用双摄方案的主要目的是扩大有效识别范围。当信标距离较远时，系统选择远距离识别效果较好的摄像头；目标距离变化或当前摄像头识别失效时，系统根据连续帧有效性切换视觉来源，从而提高信标识别的连续性。
+双摄系统不直接对两路坐标求平均，而是对信标灯和车模灯板分别选择有效来源。只有信标灯和车模灯板来自同一台经过标定的摄像头时，才计算车模相对信标的位置误差。
+2.2.3.地面车模
+地面车模采用四轮麦克纳姆轮结构，主要由车模控制器、车载灯板、四个驱动电机、四路编码器、IMU、电机驱动板和灭灯机械结构组成。
+车载灯板为飞行器视觉系统提供车模位置和方向标志。车模控制器接收飞机端发送的纵向误差、横向误差和有效标志，通过位置外环、航向保持环和四轮速度内环控制车模移动。
+麦克纳姆轮底盘能够在保持车头方向基本不变的情况下完成前后、横向和斜向运动，适合根据二维视觉误差直接修正车模位置。
+2.2.4.通信与供电系统
+系统包含两条主要通信链路：
+CYT2BL3与飞机端CYT4BB7之间的双摄通信链路；
+飞机端CYT4BB7与地面车模之间的控制通信链路。
+CYT2BL3通过串口发送第二路摄像头的信标位置、灯板位置、灯板方向和有效标志。飞机端CM7_1完成双摄选择后，通过共享内存将最终视觉结果传递给CM7_0。CM7_0对车模误差进行处理后，通过串口发送给地面车模。
+飞行器不使用独立电池，由车模通过长度不超过1.5 m的线缆供电。线缆同时需要满足供电电流、通信可靠性和运动柔性要求。
+2.3.双核任务分配
+飞机端CYT4BB7采用双核并行处理方案，其任务分配如表2.2所示。
+
+表2.2 双核任务分配
+
+CM7_1每完成一帧图像处理后，将信标误差、灯板位置、车模误差、有效标志和摄像头来源写入共享内存，并更新视觉帧序号。CM7_0读取共享数据时，根据帧序号判断视觉结果是否更新。两个核心分别进行数据缓存清理和失效操作，保证共享数据的一致性。
+该方案将图像处理与飞行控制分离，避免图像处理时间波动影响飞控周期。
+2.4.系统工作流程
+系统运行流程分为初始化、目标识别、飞行器定位、车模跟随和灭灯五个阶段。
+2.4.1.系统初始化
+系统上电后，分别初始化双摄像头、CYT2BL3、CYT4BB7双核、IMU、TOF、光流、串口、车模编码器和电机驱动。飞行器完成传感器零偏校准，车模清零位置环和速度环状态。
+2.4.2.信标与车模识别
+两路摄像头采集场地图像，分别提取亮起的信标灯和车模灯板。视觉算法对候选区域的亮度、面积、形状和连续帧位置进行判断，并使用PCA方法估计车模灯板方向。
+CYT4BB7根据两路数据的有效性和连续性选择最终视觉来源。若视觉数据失效，则不向控制系统输出有效运动误差。
+2.4.3.飞行器位置控制
+视觉系统计算目标相对于摄像头参考位置的误差。飞机端将视觉误差输入水平位置环，并结合光流速度、IMU姿态和TOF高度信息，生成四个旋翼电机的控制量，使飞行器保持稳定并调整水平位置。
+2.4.4.车模位置控制
+视觉系统计算信标灯与车模灯板之间的坐标差，并根据灯板方向将其投影为车模坐标系下的纵向误差和横向误差：
+                                          公式1
+                                          公式2
+式中，和 为信标与灯板的图像坐标差，和 为灯板方向向量。飞机端将两个误差和有效标志发送给车模。车模通过纵向、横向位置控制器得到车体速度，再结合航向修正量进行麦克纳姆轮速度分解，最后由四路速度内环控制电机运行。
+2.4.5.到位灭灯
+随着车模逐渐接近信标，纵向误差和横向误差不断减小。车模通过低速运动和位置修正到达信标所在区域，并利用车体上的机械结构接触信标，完成灭灯。随后，视觉系统继续搜索下一处亮起的信标。
+2.5.信息流与控制周期
+系统中的主要数据流如表2.3所示：
+
+表2.3
+
+主要任务周期如表2.4所示：
+
+表2.4
+
+2.6.安全与异常处理
+双摄数据长时间未更新时，将对应摄像头标记为失效；
+信标和灯板未同时有效时，不生成车模运动误差；
+飞行控制核使用帧序号判断视觉数据是否为新数据；
+飞行器未解锁或高度、姿态异常时限制相关控制输出；
+飞机端通过有效标志控制车模是否采用当前误差；
+小车超过150 ms未收到有效数据时立即停车；
+停车后清零位置环、航向环和四轮速度环历史状态；
+电机控制量设置输出限幅，避免异常指令产生过大驱动力。
+
+第三章 机械结构设计
+3.1.机械系统设计要求
+飞跃雷区参赛系统由四旋翼飞行器和地面车模组成。机械结构既要满足比赛规则中的尺寸和安全限制，也要保证双摄视觉、飞行控制、车模运动和灭灯任务能够稳定完成。
+本系统机械设计主要考虑以下要求：
+飞行器最大外廓不超过50cm×50cm
+地面车模最大外廓不超过30cm×30cm
+飞行器保护网罩孔眼尺寸小于4cm
+飞行器与车模之间的线缆长度不超过1.5m
+飞行器不安装摄像头云台，摄像头采用固定安装方式；
+双摄像头视场应满足远、近距离目标识别要求；
+线缆不得与旋翼、车轮和灭灯机构发生干涉；
+车模灯板应便于机载摄像头识别；
+车模应能可靠接触并触发信标灯。
+在满足上述要求的基础上，机械结构还应具有质量分布均匀、连接可靠、拆装方便和易于维护等特点。
+3.2.飞行器总体结构
+本系统采用四旋翼飞行器作为空中平台。飞行器主要由机架、四个电机、旋翼、保护网罩、双摄像头支架、主控板、IMU、TOF、光流模块以及供电通信线缆组成，其整体结构如图3.1所示。
+
+
+
+图3.1 飞行器总体结构
+飞行器机架采用碳纤维制作，主要承载电机、控制板、摄像头和传感器。各部件尽量沿机体中心对称布置，以减小重心偏移对姿态控制的影响。主控板和传感器通过螺钉、尼龙柱和减振垫固定，避免飞行过程中发生松动。
+飞行器重心应尽量接近四个电机组成区域的几何中心。双摄像头、保护网罩和线缆固定件安装完成后，需要重新检查重心位置。若重心出现明显偏移，可通过调整控制板、传感器或线缆固定点的位置进行修正。
+
+3.3.旋翼保护网罩
+为避免高速旋转的桨叶与人员、线缆或场地设施发生接触，飞行器外部安装了旋翼保护网罩。保护网罩采用碳纤维制作。
+保护网罩设计需要同时满足安全性、强度和轻量化要求。网罩孔眼尺寸应小于4cm，并保证乒乓球无法从孔眼中穿过。网罩外缘应覆盖旋翼运动范围，在发生轻微碰撞时能够先于桨叶接触障碍物。
+本队保护网罩乒乓球穿越测试结果为无法穿过。保护网罩结构如图3.2所示。
+
+
+图3.2 保护网罩及孔眼尺寸测量
+安装保护网罩后，应重新测试飞行器的悬停油门、姿态波动和电机温升，以判断网罩附加质量和空气阻力对飞行性能的影响。
+3.4.双摄像头安装结构
+本系统在飞行器上安装两台摄像头。其中，一台摄像头连接CYT4BB7视觉处理核心，另一台摄像头连接CYT2BL3视觉处理节点。双摄结构主要用于扩大系统的有效识别范围，提高信标距离变化时的视觉连续性。
+根据比赛规则，飞行器上不允许增加摄像头云台，因此两台摄像头均采用固定支架安装。
+两台摄像头的安装需要考虑以下因素：
+镜头视场应覆盖飞行器下方主要比赛区域；
+摄像头视场之间应具有一定重叠区域；
+飞行器机架和保护网罩不得遮挡镜头；
+两个摄像头的安装方向必须固定且便于标定；
+支架应具有足够刚度，避免飞行振动造成视角变化；
+摄像头位置变化后应重新进行坐标方向和识别参数校准。
+本队两台摄像头的安装位置和方向如图3.3所示
+
+。
+图3.3 双摄像头安装结构
+
+3.5.飞行器传感器安装
+飞行器上安装了IMU、TOF和光流等传感器。不同传感器对机械安装位置有不同要求。
+IMU应安装在靠近飞行器重心的位置，并保证芯片坐标轴与飞行器坐标轴方向一致。为降低电机和机架振动对测量结果的影响，IMU控制板通过减振垫进行固定。
+TOF传感器安装在飞行器底面，测量方向指向地面，用于获取飞行高度。其测量视场内应避免出现机架、线缆或其他结构遮挡。
+光流模块安装在飞行器底部，镜头朝向地面，用于测量飞行器的水平运动速度。光流镜头周围应保留足够视野，并避免线缆摆动进入其观察区域。
+各传感器的安装位置如图3.4所示。
+
+
+图3.4 飞行器传感器安装位置
+
+3.6.供电与通信线缆结构
+根据比赛规则，飞行器不使用独立电池，而是由地面车模通过线缆供电。本系统的线缆同时包含供电线、通信线，从车模端固定点连接至飞行器端固定点。
+线缆结构设计需要兼顾载流能力和柔韧性。线径过小会造成较大压降，影响飞行器电机输出；线缆过粗或过硬则会增加飞行器负载，并在运动过程中产生较大的牵引力。
+本队使用线缆，实际长度为1.2m。
+线缆走线应避开以下区域：
+飞行器旋翼和保护网罩边缘；
+TOF和光流传感器视场；
+车模麦克纳姆轮；
+编码器和电机传动部分；
+车模灭灯机构的运动范围。
+线缆固定方式及长度测量如图3.5所示。
+
+
+图3.5飞行器与车模之间的线缆结构
+
+3.7.地面车模结构
+地面车模采用四轮麦克纳姆轮底盘，由车架、四个麦克纳姆轮、四个驱动电机、车模控制板、电机驱动板、电池、车载灯板和灭灯机构组成，如图3.6所示。
+
+图3.6 地面车模总体结构
+四个麦克纳姆轮按照左前轮、左后轮、右前轮和右后轮进行编号。车轮滚子安装方向应满足全向运动要求，其布置方式如图3.7所示。
+
+
+图3.7 麦克纳姆轮布置
+车模控制板、电机驱动板和电池尽量安装在车架内部，并保持左右质量分布基本均衡。电池应采用可靠的固定结构，避免车模横向运动或急停时发生位移。线路应沿车架固定，不得靠近车轮和电机输出轴。
+麦克纳姆轮底盘能够实现前后、横向、斜向和旋转运动，适合根据视觉系统给出的二维位置误差直接调整车模位置。
+3.8.车载灯板结构
+车模顶部安装有视觉识别灯板，用于向飞行器上的摄像头提供车模位置和方向信息。灯板由红外灯珠组成，通过尼龙柱安装在车架上方。
+灯板设计主要考虑以下要求：
+在飞行器正常工作高度下能够被摄像头稳定识别；
+与场地信标灯在形状或结构上具有可区分性；
+能够通过灯板外形或亮点分布计算车模方向；
+不被飞行器线缆或车模其他部件遮挡；
+安装牢固，车模运动过程中不得改变方向；
+外廓不得超出车模尺寸限制。
+灯板的中心位置应尽量与车模运动中心对应。若二者存在固定偏移，应在视觉误差计算中进行补偿。
+车载灯板结构如图3.8所示。
+
+
+图3.8 车载灯板结构
+
+3.9.主要机械参数
+完成整机装配后，对飞行器、车模、保护网罩和线缆进行测量，结果记录于表3.2。
+
+表3.2 参赛系统主要机械参数
+
+第四章 硬件系统设计
+4.1.硬件系统总体结构
+本系统硬件由飞行器端控制系统、地面车模控制系统、车载LED灯板、通信链路和集中供电系统组成。飞行器端负责双摄视觉处理、姿态测量、高度测量、水平速度测量和四旋翼电机控制；地面车模端负责接收飞机端发送的二维位置误差，完成姿态测量、四轮速度采集和麦克纳姆轮电机控制。
+系统采用多个控制节点协同工作的结构。飞机端CYT4BB7使用两个CM7核心，分别承担飞行控制和视觉处理任务；另一台摄像头由CYT2BL3独立处理。飞机端将最终视觉误差发送给车模端CYT4BB7，车模根据误差控制四个麦克纳姆轮电机。
+系统主要硬件连接关系如图4.1所示
+
+
+图4.1系统硬件总体结构
+
+4.2.飞机端主控制器
+飞机端采用英飞凌TRAVEO T2G系列CYT4BB7作为主控制器。该控制器包含两个Cortex-M7核心，能够将计算量较大的图像处理任务与实时性要求较高的飞行控制任务分开执行。
+
+
+
+
+图4.2 飞机端主控制板原理图（部分）
+
+图4.3 飞机端主控制板PCB图
+
+图4.4 飞机端主控制板实物图
+4.3.飞行器电机驱动系统
+飞行器采用四个RS2205电机作为动力执行机构。四个电机按照机体位置编号为电机1、电机2、电机3和电机4。CYT4BB7通过四路PWM信号控制电子调速器，调节各电机转速，实现升降、俯仰、横滚和偏航运动。
+代码中四路PWM资源配置见表4.1。
+
+表4.1 飞行器电机控制接口
+
+
+图4.5 飞行器电机安装
+
+图4.6 飞行器电机驱动系统实物
+
+4.4.地面车模控制器
+地面车模使用独立的CYT4BB7作为主控制器。当前车模控制程序运行在CM7_0核心，主要完成视觉通信接收、IMU航向读取、编码器采集、位置外环、航向保持、麦克纳姆轮速度分解、四轮速度内环和电机PWM输出。
+
+
+图4.7 车模端主控制板原理图
+
+图4.8 车模端主控制板PCB图
+
+图4.9 车模端主控制板实物图
+4.5.车模传感器与电机驱动
+4.5.1.车模IMU
+车模使用IMU660RC获取航向信息。程序将其配置为120 Hz四元数输出模式，主要用于修正车模前后和横向运动时的车头偏转。
+IMU安装于靠近车模几何中心的位置，其坐标轴应与车体坐标轴保持一致。IMU只用于车模自身姿态反馈，不用于检测信标，符合赛题对车模环境感知传感器的限制。具体安装见图4.9 车模端主控制板实物图
+4.5.2.四路编码器
+四个驱动电机分别配置编码器，CYT4BB7利用定时器正交解码功能读取车轮转动计数。编码器数据每5 ms读取并清零一次，作为四轮速度内环的反馈量。
+
+图4.10 车轮电机及编码器安装
+
+4.5.3.车模电机驱动
+车模采用四路独立电机驱动，分别控制左前、左后、右前和右后电机。每一路电机驱动包含方向控制信号和PWM控制信号，PWM频率设置为17 kHz。
+
+表4.5 车模电机驱动接口
+
+电机驱动芯片采用DRV8701，其工作电压为9-12.6V。驱动电路通过方向信号控制电机正反转，通过PWM占空比调节电机转速。
+
+
+图4.11 车模电机驱动电路原理图
+
+
+图4.12 车模电机驱动电路PCB图
+
+图4.13 车模电机驱动电路实物图
+
+4.6.车载LED灯板及驱动电路
+地面车模顶部安装可见光LED灯板，用于向飞行器上的摄像头提供车模位置和方向信息。灯板由LED灯珠按照三角形排列，使视觉系统能够提取灯板中心和主方向。
+灯板设计应满足以下要求：
+在飞行器正常工作高度下具有足够亮度；
+LED排列具有明确方向特征；
+各LED亮度基本一致；
+不因电池电压变化产生明显闪烁；
+不被线缆或其他车体结构遮挡；
+符合比赛规定的LED驱动芯片要求。
+
+
+图4.14 车载LED灯板驱动电路原理图
+
+
+图4.15 车载LED灯板驱动电路PCB图
+
+图4.16 车载LED灯板驱动电路实物图
+
+4.7.自制PCB设计
+4.7.1.分电板
+
+图4.17 分电板原理图
+
+
+图4.18 分电板PCB图
+
+图4.19 分电板实物图
+
+第五章 双摄视觉与通信设计
+5.1.双摄视觉系统总体流程
+本系统使用两台安装在飞行器上的摄像头获取场地图像。其中一路摄像头由飞机端CYT4BB7的CM7_1核心处理，另一路摄像头由CYT2BL3独立处理。CYT2BL3将识别结果通过UART发送至CM7_1，CM7_1对两路结果进行有效性判断和来源选择，并将最终视觉信息发布给CM7_0飞行控制核心。
+视觉系统需要完成两类目标识别：
+识别场地中当前亮起的信标灯；
+识别车模上的LED灯板及其方向。
+系统整体流程如下：
+
+
+图5.1 双摄视觉系统总体流程
+
+5.2.图像采集与预处理
+两路视觉系统均使用MT9V03X摄像头获取灰度图像。CYT4BB7本地摄像头使用的处理分辨率为188×120像素。摄像头完成一帧采集后设置图像完成标志，视觉核随后进行二值化、连通域分析和目标筛选。
+由于信标灯和车模LED灯板的亮度、面积及形状存在差异，本系统分别设置二值化阈值。当前程序中的初始参数见表5.1。
+
+表5.1 本地摄像头主要视觉参数
+
+上述参数可以根据比赛场地光照进行在线调节。曝光时间过长会使信标和灯板区域发生扩散，过短则可能造成远距离信标像素不足。因此，调试时需要结合实际飞行高度和场地亮度选择合适参数。
+5.3.信标灯与车模灯板识别
+两路摄像头采集灰度图像后，分别使用不同阈值提取信标灯和车模LED灯板。图像处理主要包括二值化、连通域提取、候选区域筛选和连续帧判断。
+信标候选区域主要根据亮度、面积、位置和连续帧运动情况进行筛选。为减少单帧噪声和背景反光的影响，候选目标需要连续多帧满足条件后才被标记为有效；目标短时丢失时，系统保留上一帧结果，连续丢失达到规定帧数后再清除目标。
+车模灯板由多个LED组成。程序提取灯板区域后，计算灯板中心，并采用主成分分析方法获得灯板主方向。灯板中心用于确定车模位置，主方向用于建立车模自身的前后和左右坐标轴。
+
+
+图5.2 原始图像、信标二值图和灯板二值图
+
+5.4.车模相对信标误差计算
+设信标中心坐标为，车模灯板中心坐标为 两者的图像坐标差为：
+                                              公式3
+设灯板主方向向量为：
+                                                公式4
+将图像坐标差投影到车模自身坐标系，可得纵向误差：
+                                         公式5
+横向误差为：
+                                         公式6
+采用该方法后，即使车模在图像中发生旋转，视觉系统仍能得到相对于车模运动方向的前后、左右误差。
+只有信标识别有效、灯板识别有效、灯板方向有效，并且信标和灯板来自同一摄像头时，系统才将误差标记为有效。否则将误差清零，防止错误数据进入控制器。
+5.5.双摄选择与双核数据交换
+两台摄像头的安装方向和有效识别范围不同，因此不能直接将两路坐标求平均。本系统分别判断两路视觉结果是否有效，并采用来源保持策略选择最终结果。
+双摄选择的基本原则如下：
+当前摄像头识别有效时，优先保持原来源；
+新来源需要连续有效一定帧数后才允许切换；
+CYT2BL3数据长时间未更新时，将其判定为失效；
+CYT2BL3坐标经过方向转换后统一到CYT4BB7坐标系；
+信标和灯板必须来自同一摄像头才能计算车模误差。
+最终摄像头来源使用字符表示：
+标识	含义
+4	CYT4BB7本地摄像头
+2	CYT2BL3摄像头
+W	无有效来源
+CM7_1完成双摄选择后，将信标位置、灯板位置、车模误差、有效标志、摄像头来源和视觉帧序号写入共享内存。CM7_0通过帧序号判断数据是否更新，并通过缓存清理和缓存失效操作保证双核数据一致。
+
+5.6.通信协议与异常保护
+5.6.1.双摄通信
+CYT2BL3与CYT4BB7的CM7_1通过UART1通信，波特率为115200 bit/s。通信帧由双字节帧头、数据类型、数据长度、视觉数据和校验和组成。
+数据中包含：
+信标位置；
+灯板位置；
+车模纵向和横向误差；
+信标、灯板及灯板方向有效标志；
+目标面积和评分；
+灯板方向；
+图像帧序号。
+完整24字节数据区定义放入附录中的通信协议表，正文不再逐字节展开。
+5.6.2.飞机与车模通信
+飞机端CM7_0通过UART6发送数据，车模端通过UART5接收，通信波特率同样为115200 bit/s，数据发送周期为10 ms。
+飞机端主要发送以下信息：
+飞机端在发送前对误差进行平滑处理，并根据飞机端和车模端坐标方向完成符号转换。车模端只有在通信帧完整、校验正确且有效标志成立时才更新位置误差。
+5.6.3.异常保护
+系统在视觉和通信链路中设置了多级保护：
+第二路摄像头数据长时间未更新时，将其标记为失效；
+双核共享数据帧序号不更新时，飞控停止使用旧视觉误差；
+信标或灯板识别失效时，不输出有效车模误差；
+通信帧校验失败时，车模不更新控制数据；
+车模超过150 ms未收到有效数据时，清零目标速度和PID状态并停止电机。
+
+第六章 空地运动控制算法
+6.1.空地控制系统总体结构
+本系统的运动控制分为飞行器控制和地面车模控制两部分。飞行器利用视觉、IMU、TOF和光流信息完成位置、高度及姿态控制；地面车模根据飞机端发送的纵向、横向误差完成全向运动。
+系统控制关系如下：
+
+
+
+图6.1 空地运动控制总体框图
+
+6.2.飞行器控制任务调度
+飞机端使用CYT4BB7的CM7_0执行飞行控制。不同控制任务按照不同周期运行，任务分配见表6.1。
+
+表6.1 飞行器控制任务周期
+
+6.3.飞行器高度控制
+飞行器使用TOF测量当前高度，并结合垂直加速度进行高度速度估计。高度控制采用高度位置环与高度速度环串级结构。
+设目标高度为，当前高度为，则高度误差为：
+                                            公式7
+高度位置环根据高度误差计算目标垂直速度：
+                                         公式8
+高度速度环根据目标垂直速度和估计垂直速度计算油门修正量：
+                                    公式9
+最终基础油门为：
+                                 公式10
+其中，为飞行器悬停基础油门。高度位置环负责消除高度偏差，高度速度环负责改善高度变化过程中的响应速度和稳定性。
+当TOF数据无效或高度估计尚未稳定时，系统清除高度控制器历史状态，避免错误数据造成油门突变。
+6.4.飞行器水平位置控制
+飞行器水平方向采用视觉位置环、光流速度环、姿态角环和角速度环组成的串级控制结构。
+视觉系统输出水平方向误差和。位置环根据视觉误差计算水平速度目标：
+                                            公式11
+                                            公式12
+其中，为与飞行高度相关的比例系数。程序根据当前飞行高度对位置环输出进行缩放，使相同像素误差在不同高度下对应不同的运动速度。
+光流模块测得飞行器实际水平速度 和 ，速度环输出姿态角目标：
+                                          公式13
+                                          公式14
+式中，为Pitch目标角，为Roll目标角。飞行器通过产生小角度倾斜获得水平加速度，逐步减小视觉位置误差。
+视觉误差连续未更新或有效标志清除时，系统复位相应位置环，防止继续使用旧视觉数据。
+6.5.飞行器姿态控制与电机混控
+飞行器Pitch和Roll方向均采用姿态角环与角速度环串级控制。设目标姿态角为，当前姿态角为，则姿态角环输出目标角速度：
+                                        公式15
+角速度环根据陀螺仪反馈计算电机修正量：
+                                       公式16
+Yaw方向同样采用角度环和角速度环，以维持飞行器航向稳定。
+飞行器最终四电机混控关系为：
+                                公式17
+其中，、和 分别为Pitch、Roll和Yaw控制器输出。混控后的PWM还需要进行上下限处理，防止电机指令超出有效范围。
+6.6.车模控制系统总体结构
+地面车模采用位置外环、航向保持环和四轮速度内环组成的控制结构。飞机端发送纵向误差和横向误差，小车根据误差计算车体速度，再通过麦克纳姆轮运动学分解得到四轮目标速度。
+车模任务周期如下：
+
+表6.2车模任务周期
+
+6.7.车模位置与航向控制
+车模使用两个位置式PID分别处理纵向和横向误差：
+                                         公式18
+其中，为车体前后速度，为车体横向速度，为外环输出缩放系数。负号由摄像头坐标方向和车模运动方向的定义决定。
+车模通过IMU660RC获取Yaw角，以为目标航向。航向误差为：                                                            公式19
+旋转修正量为：
+                                                 公式20
+6.8.麦克纳姆轮运动学分解
+车模四个车轮分别编号为左前轮LF、左后轮LB、右前轮RF和右后轮RB。根据当前车轮安装方向，车体速度分解关系为：
+                                          公式21
+其中，、、和 分别为四个车轮的目标速度。
+该分解使车模能够实现：
+时前后运动；
+时横向平移；
+时旋转修正；
+和  同时非零时斜向运动。
+6.9.四轮速度内环
+四个麦克纳姆轮分别采用独立增量式PI控制器。设某一车轮目标速度为，实际编码器速度为，则速度误差为：
+                        公式22
+增量式PID输出变化量为：
+公式23
+当前程序中 ，实际采用增量式PI控制。电机输出为：
+                                         公式24
+6.10.启停与异常保护
+为保证空地系统运行安全，控制程序设置了以下保护措施：
+飞行器未解锁时清除飞行控制状态；
+视觉帧连续未更新时复位飞行位置环；
+TOF或光流数据无效时停止使用对应反馈；
+信标或车模灯板识别无效时，不发送有效车模误差；
+车模超过150 ms未收到有效通信数据时立即停车；
+车模停车时清零位置环、航向环和四轮速度环状态；
+所有位置、速度和PWM输出均设置限幅；
+模式切换时清除旧目标速度，防止沿用上一次控制输出。
+
+第七章 系统开发及调试工具
+7.1.软件开发环境
+本系统涉及飞机端CYT4BB7、第二路视觉处理节点CYT2BL3和车模端CYT4BB7三个嵌入式控制节点。各节点均采用C语言开发，并基于英飞凌TRAVEO T2G系列微控制器及逐飞科技开源库完成底层外设配置。
+系统主要开发工具见表7.1。
+
+表7.1 系统主要开发工具
+
+7.2.CYT4BB7开发环境
+飞机端和车模端均采用CYT4BB7控制器，并使用IAR Embedded Workbench 9.40.1进行软件开发。工程文件包含两个Cortex-M7核心对应的入口文件、中断服务文件、用户功能模块和底层驱动库。
+IAR开发流程如下：
+使用IAR打开CYT4BB7工程文件；
+选择对应核心和编译配置；
+配置头文件路径、宏定义和链接文件；
+编译用户程序及底层驱动；
+通过调试器下载程序；
+运行程序并观察变量、中断及外设状态；
+根据测试结果修改参数并重新编译。
+
+
+图7.1 CYT4BB7软件开发环境
+
+7.3.程序下载
+完成程序编写和参数配置后，使用IAR Embedded Workbench 9.40.1对工程进行编译，并通过双模DAP调试器将程序下载到对应控制器中。本系统包含飞机端CYT4BB7、车模端CYT4BB7和CYT2BL3视觉节点，因此需要分别完成三个控制节点的程序下载。
+程序下载前，首先检查工程目标芯片、编译配置、头文件路径和链接文件是否正确。确认无误后执行工程编译，并根据IAR输出窗口中的提示检查错误和警告。编译通过后，将下载器分别连接控制板的调试接口和计算机USB接口，为目标控制板正常供电，再执行程序下载。
+CYT4BB7包含两个CM7核心。飞机端需要分别编译CM7_0和CM7_1对应的工程目标，其中CM7_0程序主要包括飞行控制、传感器处理、电机混控及车模通信，CM7_1程序主要包括图像处理、第二路视觉数据接收和双摄来源选择。下载时应确保两个核心程序版本相互对应，避免共享内存数据结构或功能接口不一致。
+车模端同样采用CYT4BB7控制器，但当前控制程序主要运行于CM7_0，下载内容包括通信接收、位置控制、航向保持、麦克纳姆轮速度分解和四轮速度闭环等功能。CYT2BL3节点则下载第二路摄像头的图像采集、目标识别和视觉数据发送程序。
+7.4.分阶段调试方法
+系统按照由内到外、由单模块到整机的顺序进行调试。
+表7.2 系统调试阶段
+该方法能够将复杂系统拆分为若干可独立验证的模块。当整机出现异常时，可以根据数据流逐级定位问题，降低多模块同时调试的难度。
+
+
+图7.2 使用逐飞助手调试时的波形图
+
+第八章 结论与展望
+本文围绕第21届全国大学生智能汽车竞赛飞跃雷区组的任务要求，设计并实现了一套由四旋翼飞行器、双摄视觉系统和麦克纳姆轮车模组成的空地协同系统。系统利用安装在飞行器上的摄像头识别亮起的信标灯和车模LED灯板，计算目标位置信息，并控制飞行器和地面车模协同完成信标搜索、位置调整及灭灯任务。
+针对单摄像头难以兼顾不同识别距离的问题，本系统采用CYT4BB7与CYT2BL3组成的双摄视觉方案。CYT2BL3独立处理一路摄像头图像，并通过UART将识别结果发送至飞机端CYT4BB7；CYT4BB7的CM7_1核心处理本地摄像头图像，完成信标灯、车模灯板及灯板方向识别，并根据两路结果的有效性和连续性选择最终视觉来源。
+视觉系统根据车模灯板的主方向，将信标灯与灯板之间的图像坐标差转换为车模坐标系下的纵向误差和横向误差。最终视觉结果通过共享内存传递给CYT4BB7的CM7_0核心。CM7_0负责飞行器姿态、高度、光流速度和视觉位置控制，并通过串口将车模误差及有效标志发送给地面车模。
+地面车模采用四轮麦克纳姆轮结构。车模端根据接收到的纵向误差和横向误差，通过位置外环计算车体平移速度，并利用IMU航向信息进行方向修正。随后，控制器通过麦克纳姆轮运动学分解得到四轮目标速度，再利用编码器反馈和四路增量式PI控制器调节电机输出，使车模移动至信标位置并通过机械接触完成灭灯。
+系统软件采用分层、模块化设计。飞机端将视觉处理与飞行控制分配至两个核心，以减小图像处理对飞控实时性的影响；车模端将通信接收、位置外环和速度内环设置为不同周期任务。系统还通过连续帧确认、视觉有效标志、数据校验、共享数据帧序号和通信超时停车等措施，提高了视觉与通信链路的可靠性。
+本系统仍存在一定不足。双摄视觉容易受到场地光照、背景反光、目标遮挡及飞行器姿态变化的影响，在远距离、图像边缘或摄像头切换过程中可能出现识别不稳定和误差跳变。两路摄像头尚未完成统一空间标定，目前只有信标与车模灯板来自同一摄像头时才能可靠计算相对误差。此外，保护网罩、供电线缆、气流和机体振动会影响飞行稳定性；麦克纳姆轮受地面摩擦、电机差异和低速死区影响，可能出现运动偏斜或末端灭灯定位不准。系统还包含双摄、核间及飞机—车模等多条通信链路，其时延和异常保护仍需进一步验证。
+后续将对两台摄像头进行统一标定，并结合目标距离、识别置信度和环境光照优化摄像头选择、曝光及二值化参数，同时利用IMU姿态信息补偿飞行倾斜造成的视觉误差。控制方面将继续整定飞行器水平位置环及速度环，完善飞行器状态与车模启停的协调逻辑，并优化车模低速控制和末端接近策略。机械方面将改进灭灯机构和线缆固定结构，减小线缆牵引并提高灭灯成功率；同时建立视觉、飞控、通信和车模状态的同步记录机制，为后续参数调整与故障分析提供依据。
+本文完成了飞跃雷区空地协同系统的总体方案、机械结构、硬件电路、双摄视觉、通信协议以及运动控制算法设计。系统利用双摄像头识别信标灯和车模灯板，通过CYT4BB7双核完成视觉处理和飞行控制，并由地面麦克纳姆轮车模根据视觉误差移动至信标位置完成灭灯。
+测试结果表明，该方案具备完成比赛任务的基本能力。后续仍需围绕双摄标定、视觉抗干扰、飞行器二维定位、空地协调、车模低速控制和灭灯结构开展进一步优化，以提高系统在复杂比赛环境中的稳定性、准确性和任务成功率。
+
+
+附录A 核心算法子程序
+基于 PCA 方向的车模误差计算
+误差投影代码
+if(best_blob_valid &&
+   best_car_valid &&
+   best_car_dir_valid)
+{
+    float real_cx;
+    float real_cy;
+    float edx;
+    float edy;
+
+    real_cx = (float)car_x_cam -
+              best_car_hx * CAR_CENTER_OFFSET;
+
+    real_cy = (float)car_y_cam -
+              best_car_hy * CAR_CENTER_OFFSET;
+
+    edx = (float)beacon_x_cam - real_cx;
+    edy = (float)beacon_y_cam - real_cy;
+
+    car_err_fwd = (int16_t)(
+        edx * best_car_hx +
+        edy * best_car_hy
+    );
+
+    car_err_lat = (int16_t)(
+        edx * best_car_hy -
+        edy * best_car_hx
+    );
+
+    car_err_OK = 1U;
+}
+else
+{
+    car_err_fwd = 0;
+    car_err_lat = 0;
+    car_err_OK = 0U;
+}
+双摄视觉来源选择
+static char dual_cam_choose_center_candidate(
+    uint8_t local_ok,
+    uint8_t remote_ok,
+    int16_t local_x,
+    int16_t local_y,
+    int16_t remote_x,
+    int16_t remote_y)
+{
+    if(local_ok && remote_ok)
+    {
+        int32_t local_dist_sq =
+            (int32_t)local_x * local_x +
+            (int32_t)local_y * local_y;
+
+        int32_t remote_dist_sq =
+            (int32_t)remote_x * remote_x +
+            (int32_t)remote_y * remote_y;
+
+        return (local_dist_sq <= remote_dist_sq)
+               ? 'Z' : 'C';
+    }
+
+    if(local_ok)
+    {
+        return 'Z';
+    }
+
+    if(remote_ok)
+    {
+        return 'C';
+    }
+
+    return 'W';
+}
+视觉发布中的来源标志
+if(final_cam_mark == 'Z')
+{
+    vision_shared.selected_camera = '4';
+}
+else if(final_cam_mark == 'C')
+{
+    vision_shared.selected_camera = '2';
+}
+else
+{
+    vision_shared.selected_camera = 'W';
+}
+CM7_0 与 CM7_1 共享内存通信
+Cache 一致性处理
+static inline void Vision_CacheClean(
+    const void *address,
+    uint32_t size)
+{
+    uint32_t start;
+    uint32_t end;
+
+    start = ((uint32_t)address) &
+            ~(VISION_CACHE_LINE_SIZE - 1UL);
+
+    end = (((uint32_t)address) + size +
+           VISION_CACHE_LINE_SIZE - 1UL) &
+           ~(VISION_CACHE_LINE_SIZE - 1UL);
+
+    SCB_CleanDCache_by_Addr(
+        (void *)start,
+        (int32_t)(end - start)
+    );
+}
+
+static inline void Vision_CacheInvalidate(
+    const void *address,
+    uint32_t size)
+{
+    uint32_t start;
+    uint32_t end;
+
+    start = ((uint32_t)address) &
+            ~(VISION_CACHE_LINE_SIZE - 1UL);
+
+    end = (((uint32_t)address) + size +
+           VISION_CACHE_LINE_SIZE - 1UL) &
+           ~(VISION_CACHE_LINE_SIZE - 1UL);
+
+    SCB_InvalidateDCache_by_Addr(
+        (void *)start,
+        (int32_t)(end - start)
+    );
+}
+CM7_1 发布数据时：
+vision_shared.seq++;
+Vision_CacheClean(
+    (void *)&vision_shared,
+    sizeof(vision_data_t)
+);
+CM7_0 读取数据前：
+Vision_CacheInvalidate(
+    (void *)&vision_shared,
+    sizeof(vision_data_t)
+);
+一阶低通滤波
+static float vision_error_lpf_update(
+    vision_error_lpf_t *filter,
+    float input)
+{
+    if(filter->ready == 0U)
+    {
+        filter->value = input;
+        filter->ready = 1U;
+    }
+    else
+    {
+        filter->value +=
+            vision_error_lpf_alpha *
+            (input - filter->value);
+    }
+
+    return filter->value;
+}
+飞行姿态补偿
+static void vision_attitude_compensate(
+    float *err_x,
+    float *err_y)
+{
+    float roll_err;
+    float pitch_err;
+
+    if(vision_attitude_comp_enable == 0U)
+    {
+        return;
+    }
+
+    roll_err =eulerAngle.roll - roll_zero;
+
+    pitch_err =eulerAngle.pitch - pitch_zero;
+
+    *err_x -=vision_att_kx_roll_px * roll_err +vision_att_kx_pitch_px * pitch_err;
+
+    *err_y -=vision_att_ky_roll_px * roll_err +vision_att_ky_pitch_px * pitch_err;
+}
+车模速度回传与飞行器前馈补偿
+#define CAR_VELOCITY_FF_TIMEOUT_MS  (120U)
+
+volatile float car_velocity_ff_gain = 1.0f;
+volatile float car_velocity_ff_max = 150.0f;
+volatile float car_velocity_ff_lpf_alpha = 0.3f;
+void car_velocity_feedforward_update(
+    float fwd_speed,
+    float lat_speed,
+    uint8_t valid)
+{
+    if(valid == 0U)
+    {
+        car_velocity_valid = 0U;
+        return;
+    }
+
+    car_velocity_fwd_now = fwd_speed;
+    car_velocity_lat_now = lat_speed;
+    car_velocity_timeout_ms = 0U;
+    car_velocity_valid = 1U;
+
+    pitch_target =car_velocity_ff_pitch_sign *fwd_speed *car_velocity_ff_gain;
+
+    roll_target =car_velocity_ff_roll_sign *lat_speed *car_velocity_ff_gain;
+
+    pitch_car_velocity_feedforward =car_velocity_ff_lpf(pitch_car_velocity_feedforward,pitch_target);
+
+    roll_car_velocity_feedforward =car_velocity_ff_lpf(roll_car_velocity_feedforward,roll_target);
+}
+车模位置外环、航向环和麦克纳姆轮分解
+void car_control_position_outer_loop_10ms(void)
+{
+float target_vx_cmd = 0.0f;
+float target_vy_cmd = 0.0f;
+float control_err_fwd = err_fwd;
+float control_err_lat = err_lat;
+float near_cross_dir_fwd = 0.0f;
+float near_cross_dir_lat = 0.0f;
+uint8 fwd_near_gain_active = 0;
+uint8 lat_near_gain_active = 0;
+uint8 near_cross_ready = 0;
+// IMU 原始航向角先回绕，再加上安装零偏。
+current_yaw_angle = wrap_angle_deg(imu660rc_yaw) - 2.5f;
+if(!follow_enable || !car_comm_is_connected())
+{
+reset_all_motion_state();
+return;
+}
+// yaw 闭环：以累计后的目标航向角为参考，输出转向速度指令。
+vz_cmd = yaw_pid_calculate(&yaw_hold_pid, current_yaw_angle);
+
+// 视觉模式下，近距离误差先乘 NEG 再进入位置 PID。
+// err_fwd/err_lat 保留原始通信误差，control_err_fwd/control_err_lat 只作为控制输入。
+if(g_error_source == ERROR_SOURCE_VISION && car_error_valid)
+{
+// 记录最近几帧有效误差，供后面的“低速穿越”判断稳定方向。
+// 这里保留的是原始视觉误差，不改动 NEG 放大逻辑。
+near_cross_history_push(err_fwd, err_lat);
+control_err_fwd=apply_near_error_gain(err_fwd, NEAR_ERROR_GAIN_RANGE_FWD, &fwd_near_gain_active);
+control_err_lat=apply_near_error_gain(err_lat, NEAR_ERROR_GAIN_RANGE_LAT, &lat_near_gain_active);
+fwd_min_push_active = fwd_near_gain_active;
+lat_min_push_active = lat_near_gain_active;
+}
+else
+{
+fwd_min_push_active = 0;
+lat_min_push_active = 0;
+}
+fwd_min_push_cmd = fwd_min_push_active ? control_err_fwd : 0.0f;
+lat_min_push_cmd = lat_min_push_active ? control_err_lat : 0.0f;
+// 位置外环：误差 PID 输出作为车体前后/左右速度目标。
+target_vx_cmd = OUTER_SPEED_SCALE * pos_pid_calculate(&fwd_error_pid, control_err_fwd);
+target_vy_cmd = OUTER_SPEED_SCALE * pos_pid_calculate(&lat_error_pid, control_err_lat);
+// 当视觉误差已经变成 0 或无效时，使用最近几帧有效误差的平均方向做低速穿越。
+// 这样不会卡在“最后一帧抖动”上，仍然能带着很低的速度把信标灯压灭。
+if(g_error_source == ERROR_SOURCE_VISION)
+{
+near_cross_ready = near_cross_history_get(&near_cross_dir_fwd, &near_cross_dir_lat);
+if(!car_error_valid && near_cross_ready)
+{
+float near_cross_dir_sum = fabs(near_cross_dir_fwd) + fabs(near_cross_dir_lat);
+if(near_cross_dir_sum <= VISION_ERROR_EPSILON)
+{
+near_cross_dir_fwd = 1.0f;
+near_cross_dir_lat = 0.0f;
+near_cross_dir_sum = 1.0f;
+}
+
+target_vx_cmd = NEAR_CROSS_MIN_SPEED * near_cross_dir_fwd / near_cross_dir_sum;
+target_vy_cmd = NEAR_CROSS_MIN_SPEED * near_cross_dir_lat / near_cross_dir_sum;
+fwd_min_push_active = 1;
+lat_min_push_active = 1;
+fwd_min_push_cmd = target_vx_cmd;
+lat_min_push_cmd = target_vy_cmd;
+}
+}
+vx_cmd = target_vx_cmd;
+vy_cmd = target_vy_cmd;
+// 麦克纳姆轮分解：vx / vy / vz 转成四轮目标速度。
+left1_target_speed  = (int16)clamp_float_value(target_vx_cmd + target_vy_cmd + vz_cmd, -wheel_speed_max, wheel_speed_max);
+left2_target_speed  = (int16)clamp_float_value(target_vx_cmd - target_vy_cmd + vz_cmd, -wheel_speed_max, wheel_speed_max);
+right1_target_speed = (int16)clamp_float_value(target_vx_cmd - target_vy_cmd - vz_cmd, -wheel_speed_max, wheel_speed_max);
+right2_target_speed = (int16)clamp_float_value(target_vx_cmd + target_vy_cmd - vz_cmd, -wheel_speed_max, wheel_speed_max);     
+left1_speed_pid.target = left1_target_speed;
+left2_speed_pid.target = left2_target_speed;
+right1_speed_pid.target = right1_target_speed;
+right2_speed_pid.target = right2_target_speed;
+}
+
+void car_control_receive_vision_5ms(void)
+{
+system_ms += 10;
+// 轮询 NRF24L01 接收遥控器数据（无论当前误差源是哪个，都保持接收）
+{
+remote_error_data_t remote_err;
+remote_error_poll(&remote_err);
+}
+
+// 根据当前误差源更新误差
+update_vision_error_from_uart();
+// 周期性把小车速度发回飞机，供飞机端记录或闭环使用。
+car_control_send_speed_to_aircraft();
+}
+
+volatile uint8_t show_flag = 0;
+
+//示波器
+void shiboqi_show(void)
+{
+seekfree_assistant_oscilloscope_data.data[0] = err_lat;
+seekfree_assistant_oscilloscope_data.data[1] = err_fwd;
+seekfree_assistant_oscilloscope_data.data[2] = receive_data.c;
+seekfree_assistant_oscilloscope_send(&seekfree_assistant_oscilloscope_data);  
+}
+pid_controller.c
+#include "zf_common_headfile.h"
+#include "pid_controller.h"  // 包含头文件，确保结构体定义可见
+#include <math.h>
+
+// 位置式PID初始化
+void pos_pid_init(pos_pid_controller_t *pid, float kp, float ki, float kd, 
+                 float output_max, float output_min) {
+    pid->kp = kp;
+    pid->ki = ki;
+    pid->kd = kd;
+    pid->target = 0;
+    pid->last_error = 0;
+    pid->prev_error = 0;
+    pid->integral = 0;
+    pid->output = 0;
+    pid->output_max = output_max;
+    pid->output_min = output_min;
+}
+
+// 位置式PID计算（添加ki≠0判断，避免除零错误）
+float pos_pid_calculate(pos_pid_controller_t *pid, float current_value) {
+    float error = pid->target - current_value;
+    
+    // 积分项限幅，防止积分饱和
+    if (fabs(error) < 50 && pid->ki != 0) {  // 误差小且ki≠0时累加积分
+        pid->integral += error;
+        // 积分限幅
+        if (pid->integral > pid->output_max / pid->ki) {
+            pid->integral = pid->output_max / pid->ki;
+        } else if (pid->integral < pid->output_min / pid->ki) {
+            pid->integral = pid->output_min / pid->ki;
+        }
+    }
+    
+    // 位置式PID计算
+    pid->output = pid->kp * error + 
+                 pid->ki * pid->integral + 
+                 pid->kd * (error - pid->last_error);
+    
+    // 输出限幅
+    if (pid->output > pid->output_max) {
+        pid->output = pid->output_max;
+    } else if (pid->output < pid->output_min) {
+        pid->output = pid->output_min;
+    }
+    
+    // 更新误差历史
+    pid->prev_error = pid->last_error;
+    pid->last_error = error;
+    
+    return pid->output;
+}
+
+// 增量式PID初始化
+void inc_pid_init(inc_pid_controller_t *pid, float kp, float ki, float kd, 
+                 float output_max, float output_min) {
+    pid->kp = kp;
+    pid->ki = ki;
+    pid->kd = kd;
+    pid->target = 0;
+    pid->last_error = 0;
+    pid->prev_error = 0;
+    pid->output = 0;
+    pid->output_max = output_max;
+    pid->output_min = output_min;
+}
+
+// 【统一定义所有PID变量】只在这一个文件中定义
+inc_pid_controller_t left1_speed_pid; // 左1轮速度环PID
+inc_pid_controller_t right1_speed_pid;// 右1轮速度环PID
+inc_pid_controller_t left2_speed_pid; // 左2轮速度环PID
+inc_pid_controller_t right2_speed_pid;// 右2轮速度环PID
+pos_pid_controller_t roll_angle_pid;   // 控制左右倾斜
+pos_pid_controller_t pitch_angle_pid;  // 控制前后倾斜
+pos_pid_controller_t fwd_error_pid;    // 控制前后误差
+pos_pid_controller_t lat_error_pid;    // 控制左右误差
+pos_pid_controller_t yaw_hold_pid;     // 控制航向保持
+
+// 增量式PID计算
+float inc_pid_calculate(inc_pid_controller_t *pid, float current_value) {
+    float error = pid->target - current_value;
+    
+    // 增量式PID计算
+    float delta_output = pid->kp * (error - pid->last_error) + 
+                        pid->ki * error + 
+                        pid->kd * (error - 2 * pid->last_error + pid->prev_error);
+    
+    // 累加输出
+    pid->output += delta_output;
+    
+    // 输出限幅
+    if (pid->output > pid->output_max) {
+        pid->output = pid->output_max;
+    } else if (pid->output < pid->output_min) {
+        pid->output = pid->output_min;
+    }
+    
+    // 更新误差历史
+    pid->prev_error = pid->last_error;
+    pid->last_error = error;
+    
+    return pid->output;
+}
+pid_controller.h
+#ifndef PID_CONTROLLER_H
+#define PID_CONTROLLER_H
+
+#include "zf_common_headfile.h"
+
+// 位置式PID结构体
+typedef struct {
+    float kp;           // 比例系数
+    float ki;           // 积分系数
+    float kd;           // 微分系数
+    float target;       // 目标值
+    float last_error;   // 上一次误差
+    float prev_error;   // 上上次误差
+    float integral;     // 积分值
+    float output;       // 输出值
+    float output_max;   // 输出最大值
+    float output_min;   // 输出最小值
+} pos_pid_controller_t;
+
+// 增量式PID结构体
+typedef struct {
+    float kp;           // 比例系数
+    float ki;           // 积分系数
+    float kd;           // 微分系数
+    int16 target;       // 目标值
+    float last_error;   // 上一次误差
+    float prev_error;   // 上上次误差
+    float output;       // 输出值
+    float output_max;   // 输出最大值
+    float output_min;   // 输出最小值
+} inc_pid_controller_t;
+
+// 位置式PID初始化
+void pos_pid_init(pos_pid_controller_t *pid, float kp, float ki, float kd, 
+                 float output_max, float output_min);
+
+// 位置式PID计算
+float pos_pid_calculate(pos_pid_controller_t *pid, float current_value);
+
+// 增量式PID初始化
+void inc_pid_init(inc_pid_controller_t *pid, float kp, float ki, float kd, 
+                 float output_max, float output_min);
+
+// 增量式PID计算
+float inc_pid_calculate(inc_pid_controller_t *pid, float current_value);
+
+// 声明角度环PID
+extern pos_pid_controller_t roll_angle_pid;
+extern pos_pid_controller_t pitch_angle_pid;
+extern pos_pid_controller_t fwd_error_pid;
+extern pos_pid_controller_t lat_error_pid;
+extern pos_pid_controller_t yaw_hold_pid;
+
+// 声明速度环PID
+extern inc_pid_controller_t left1_speed_pid;
+extern inc_pid_controller_t right1_speed_pid;
+extern inc_pid_controller_t left2_speed_pid;
+extern inc_pid_controller_t right2_speed_pid;
+
+#endif
+
+附录B电路板详细设计原理图
+电调原理图
+
+
+
+车模电机drv驱动原理图
+
+四旋翼飞行器主板原理图
+
+
+
+
+
+
+
+车模主板原理图
+
+分电板原理图
+
+车模灯板原理图
+
+
+===== TABLE 1 =====
+学校 | 洛阳理工学院
+队伍名称 | 五个臭皮匠
+参赛队员 | 王思瑜 柴晓曦 王建豪 张沙莉 邵林航
+带队教师 | 张伟民 郭超
+
+===== TABLE 2 =====
+系统模块 | 主要组成 | 功能
+飞行器平台 | 四旋翼机架 无刷电机 保护网罩 | 搭载传感器并完成空中运动
+双摄视觉系统 | 两台总钻风摄像头 cyt4bb7 cyt2bl3 | 识别信标灯和车模灯板
+飞行控制系统 | IMU TOF 光流 cyt4bb7 | 完成姿态，高度，速度和位置控制
+地面车模 | 麦克纳姆轮，四个电机，编码器，IMU | 根据视觉误差运动至信标位置
+通信供电系统 | 串口，共享内存，连接线缆 | 传输视觉和控制数据，并为飞机供电
+
+===== TABLE 3 =====
+处理核心 | 主要任务
+CM7_1 | 本地图像采集、信标识别、灯板识别、灯板方向估计、CYT2BL3数据接收、双摄来源选择、误差计算
+CM7_1 | IMU姿态解算、TOF高度控制、光流速度控制、视觉位置控制、电机混控、小车通信和安全判断
+
+===== TABLE 4 =====
+数据 | 产生端 | 使用端 | 主要用途
+第二路视觉结果 | CYT2BL3 | CM7_1 | 双摄来源选择
+信标位置 | CM7_1 | CM7_0 | 飞行位置控制和状态判断
+灯板位置及方向 | CM7_1 | CM7_0 | 车模误差计算
+纵向、横向误差 | CM7_0 | 地面车模 | 车模位置控制
+IMU姿态 | 飞机IMU | CM7_0 | 姿态闭环
+TOF高度 | TOF模块 | CM7_0 | 高度闭环
+光流速度 | 光流模块 | CM7_0 | 水平速度闭环
+四轮速度 | 编码器 | 车模控制器 | 四轮速度闭环
+
+===== TABLE 5 =====
+控制节点 | 任务 | 周期
+飞机CM7_0 | IMU与基础飞控更新 | 1ms
+飞机CM7_0 | 高度、视觉和光流控制 | 5ms
+飞机CM7_0 | 小车通信节拍 | 10 ms
+车模控制器 | 四轮速度内环 | 5ms
+车模控制器 | 位置与航向外环 | 10 ms
+车模控制器 | 视觉数据接收 | 5ms
+
+===== TABLE 6 =====
+参数 | 实测值 | 规则要求 | 是否符合
+飞行器最大长度 | cm | ≤50cm | 是
+飞行器最大宽度 | cm | ≤50cm | 是
+保护网罩最大孔眼 | ＜4cm | ＜4cm | 是
+车模最大长度 | 30cm | ≤30cm | 是
+车模最大宽度 | 29cm | ≤30cm | 是
+车模最大高度 | ＜30cm | ＜30cm | 是
+飞行器与车模线缆长度 | 1.2m | ≤1.5m | 是
+
+===== TABLE 7 =====
+电机 | PWM通道
+电机1 | TCPWM_CH20_PO8_1
+电机2 | TCPWM_CH21_P08_2
+电机3 | TCPWM_CH19_PO8_0
+电机4 | TCPWM_CH22_PO8_3
+
+===== TABLE 8 =====
+电机 | 方向引脚 | PWM通道
+左前轮L1 | P05_3 | TCPWM_CH11_PO5_2
+左后轮L2 | P09_1 | TCPWM_CH24_P09_0
+右前轮R1 | P05_1 | TCPWM_CH09_PO5_0
+右后轮R2 | P10_3 | TCPWM_CH30_P10_2
+
+===== TABLE 9 =====
+参数 | 初始值 | 作用
+摄像头曝光时间 | 100 | 调节图像整体亮度
+信标低阈值 | 62 | 提取信标候选像素
+信标高阈值 | 220 | 筛选高亮信标区域
+车模灯板阈值 | 230 | 提取LED灯板区域
+
+===== TABLE 10 =====
+数据 | 含义
+纵向误差 | 车模与信标的前后位置偏差
+横向误差 | 车模与信标的左右位置偏差
+发送序号 | 判断数据是否连续更新
+有效标志 | 控制车模是否采用当前误差
+
+===== TABLE 11 =====
+控制任务 | 周期 | 主要功能
+基础飞控更新 | 1ms | IMU姿态、加速度和遥控状态更新
+飞行外环控制 | 5ms | 高度、视觉位置和光流速度控制
+通信与状态任务 | 10 ms | TOF节拍、按键、显示和车模通信
+图像处理 | 每个图像帧 | 目标识别和误差更新
+
+===== TABLE 12 =====
+控制任务 | 周期 | 主要功能
+四轮速度内环 | 5ms | 编码器反馈与电机PWM计算
+位置及航向外环 | 10 ms | 计算车体速度和四轮目标速度
+视觉通信接收 | 5ms | 接收误差并判断超时
+按键处理 | 5ms | 启停、模式和参数调节
+
+===== TABLE 13 =====
+工具 | 主要用途
+IAR Embedded Workbench | CYT4BB7、CYT2BL3程序开发、编译和调试
+CYT4BB7开源库 | UART、PWM、PIT等底层驱动GPIO、
+CYT2BL3开源库 | 第二路摄像头采集与通信
+Visual Studio Code | 代码浏览、检索和辅助编辑
+逐飞助手 | 波形观察和控制参数调试
+嘉立创EDA | 原理图和PCB设计
+SolidWorks | 支架、网罩和结构件设计
+
+===== TABLE 14 =====
+阶段 | 调试内容 | 判断依据
+硬件检查 | 电源、电机、传感器和通信接口 | 电压正常、无异常发热
+双摄调试: | 来源选择和坐标统一 | 切换稳定、误差方向一致
+飞行内环 | 角速度和姿态控制 | 无明显高频振荡
+高度与速度环 | TOF和光流控制 | 高度、速度能够稳定
+视觉位置环 | 飞行视觉跟随 | 误差逐渐收敛
+车模速度环 | 四轮编码器闭环 | 目标与实际速度接近
+车模位置环 | 二维误差跟随 | 横、纵向误差减小
+空地联合 | 通信、跟随和灭灯 | 系统连续完成任务

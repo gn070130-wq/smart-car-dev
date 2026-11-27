@@ -1,0 +1,338 @@
+第二十一届全国大学生智能汽车竞赛
+
+蚂蚁搬家组技术报告
+
+基于双三轮全向底盘的协同搬运系统设计
+
+
+技术报告及研究论文使用授权说明
+本人完全了解全国大学生智能汽车竞赛关于保留、使用技术报告和研究论文的规定，即：参赛作品著作权归参赛者本人，竞赛组委会可以在相关主页上收录并公开参赛作品的设计方案、技术报告以及参赛模型车的视频、图像资料，并可将相关内容编纂收录在组委会出版的论文集中。
+本报告所涉及的程序、原理图、机械结构和试验结论由参赛队在指导教师指导下完成。报告中标注为“估算”或“待实测”的参数不作为已完成的实车测试结论。
+
+参赛队员签名：
+
+
+
+
+
+带队教师签名：
+
+
+日期：2026年8月17日
+
+目录
+技术报告及研究论文使用授权说明	2
+目录	3
+第一章 引言	5
+1.1 赛题背景	5
+1.2 设计目标	5
+1.3 报告结构	5
+第二章 模型车总体设计方案	5
+2.1 双车总体构型	5
+2.2 主从车协同搬运思路	6
+2.3 目标发现与确认方案	6
+2.4 坐标化路径与避障思路	7
+2.5 系统总体架构	7
+第三章 机械结构与安装	8
+3.1 PCB底板一体化设计	8
+3.2 传感器与模块固定	8
+3.3 推杆与外部防护	8
+3.4 尺寸参数	8
+第四章 电路设计说明	9
+4.1 电源输入与保护	9
+4.2 5 V与3.3 V电源	9
+4.3 三路有刷电机驱动	10
+4.4 核心板与接口	11
+4.5 配置输入与通信	12
+4.6 电容总容量核算	13
+4.7 功耗估算	13
+第五章 微处理器控制理论与程序设计	14
+5.1 软件总体结构	14
+5.2 三轮全向运动学	14
+5.3 编码器里程计与坐标变换	14
+5.4 电机速度PID与航向保持	15
+5.5 主车任务状态机	15
+5.6 VL53L1X扫描与分段逼近	16
+5.7 OpenMV目标识别	16
+5.8 从车红外相对位姿闭环	16
+5.9 无线前馈与多源融合	17
+5.10 速度规划与停车保护	17
+5.11 异常处理	17
+第六章 开发工具与制作调试过程	18
+6.1 开发工具	18
+6.2 制作流程	18
+6.3 软件部署	18
+6.4 调试与验证状态	19
+第七章 模型车主要技术参数	19
+第八章 结论与改进方向	20
+参考文献	20
+附录A 详细电路原理图	20
+附录B 核心算法子程序	25
+附录C 正式代码清单与核验说明	29
+
+
+第一章 引言
+1.1 赛题背景
+第二十一届全国大学生智能汽车竞赛“蚂蚁搬家”组要求参赛队伍制作两辆搬运车模。两车需在无物理连接的条件下协同推动网球、玩具沙袋和泰迪熊等物体，使物体从场地中央区域移动到场地边界外或决赛规定的分类区域。比赛场地约为3.2 m×2.4 m，中央1 m见方区域用于随机摆放被搬运物体；决赛阶段还可能设置路面凸起和不超过3块的砖块障碍。
+赛题突出多车协同、目标发现、相对位姿保持、路径规划和低质量车模设计。两辆主搬运车模均采用指定的NXP RT1021 MicroPython核心板，并使用Python完成控制程序。车模在搬运过程中不得相互刚性连接，物体不得离地，推杆长度不超过10 cm、高度不超过5 cm，整车外形尺寸需小于30 cm。
+1.2 设计目标
+以两个等边三角形三轮全向底盘为基础，实现前进、横移和原地旋转等平面三自由度运动。
+主车完成任务决策、坐标里程计、目标测距和搬运路径控制，从车通过无线前馈与红外视觉闭环保持相对固定队形。
+利用固定推杆和双车相对位置控制共同施力，使物体在地面上稳定滚动或滑动。
+采用激光测距完成目标带发现与近距离逼近，并保留OpenMV目标识别、颜色复核和边界检测能力。
+以坐标和预设运动原语组织路径，为决赛障碍绕行和轨迹恢复提供统一基础。
+1.3 报告结构
+本报告依次介绍模型车总体方案、机械结构、电路设计、微处理器控制理论与程序结构、开发调试工具、主要技术参数以及当前系统的局限与改进方向；附录给出详细原理图、核心算法代码片段和正式代码清单。
+第二章 模型车总体设计方案
+2.1 双车总体构型
+主车和从车均以边长约14 cm的等边三角形电路板作为承力底板，三台N20有刷直流电机沿三角形三个方向布置，并配合全向轮构成三轮全向底盘。该构型结构对称、转动惯量小，不需要舵机即可完成纵向、横向和旋转运动，便于在有限场地中快速调整推杆位置和双车队形。
+
+图2-1 双车三轮全向模型车实物
+2.2 主从车协同搬运思路
+主车承担全局任务规划和运动指令生成，从车不简单复制三个轮子的PWM，而是接收主车在车体坐标系下的前向F、横向U和转向T指令，并结合自身视觉、编码器和IMU反馈进行二次闭环。这样既能保持整体动作同步，又能补偿两车电机差异、轮胎打滑和无线链路延迟。
+从车摄像头观测主车红外灯板上的两个亮点。双灯中心位置反映前后与横向偏差，灯间像素距离反映相对距离，双灯连线角度反映相对航向。控制器将这些误差与无线前馈叠加，使从车在直行、横移、旋转和停车阶段都尽量保持预定相对位姿。
+2.3 目标发现与确认方案
+目标发现采用“测距优先、视觉辅助确认”的分层方案。主车VL53L1X沿扫描方向连续测量距离，通过距离阈值的进入、保持和退出识别目标带边沿，并结合编码器坐标统计目标列或目标行。接近目标后，控制器使用分段速度逐步逼近，避免高速碰撞。OpenMV端独立实现了五类物体识别、网球颜色补检、棕熊与红沙袋颜色复核、目标锁定及黄色边界检测，可用于近距离类别确认和调试复核。
+
+2.4 坐标化路径与避障思路
+系统以发车点为坐标原点，利用三轮编码器推算车体前向和横向位移，再用IMU航向角将位移旋转到场地坐标系。搬运任务被拆分为“直行、横移、定角旋转、停止制动、目标逼近、推运和返航”等运动原语。对已知或已估计的障碍位置，可在场地坐标系中设置绕行触发区域，执行横移避让、越过障碍纵坐标、回到原列和恢复原队形的固定动作序列。
+
+2.5 系统总体架构
+
+图2-2 双车协同搬运系统总体架构
+第三章 机械结构与安装
+3.1 PCB底板一体化设计
+模型车没有采用独立金属或亚克力底盘，而是直接将整块电路板作为机械底板。PCB同时承担电源分配、信号连接、核心板安装、电机驱动和结构承力功能，减少了线束与转接板数量，也降低了整车质量和重心。三角形板边长约14 cm，三台电机沿三个顶点方向均匀分布，电机与全向轮的轴线满足120°几何关系。
+3.2 传感器与模块固定
+
+3.3 推杆与外部防护
+每辆车只设置一根直推杆，推杆不使用舵机或伺服机构，搬运方向完全由全向底盘和双车队形决定。推杆与车体的夹角根据目标受力和车体空间确定，长度控制在10 cm以内，高度控制在5 cm以内。车体外缘设置轻量化护框，用于避免轮胎、摄像头支架和电路板直接碰撞物体或场地设施。
+3.4 尺寸参数
+
+第四章 电路设计说明
+4.1 电源输入与保护
+电源入口采用XT30接口和机械开关。母线并联TVS瞬态抑制二极管SMCJ28A，用于吸收电机换向和插拔产生的浪涌；大容量电解电容承担低频储能，小容量陶瓷电容抑制高频尖峰。另一张一体板原理图中，电源入口设置220 μF电容和状态指示LED。
+
+图4-1 母线输入保护与储能电容
+4.2 5 V与3.3 V电源
+主电源通过SCT2450同步/非同步降压电路得到5 V，外围包含4.7 μH电感、SS54肖特基二极管、输入输出滤波电容和反馈补偿网络。5 V除为电机驱动逻辑和外设供电外，还通过RT9013-33GB低压差稳压器产生3.3 V，为核心板接口、逻辑缓冲和部分传感器提供稳定电源。SY6280负载开关配合使能端实现受控上电和时序管理。
+
+图4-2 电源输入、时序控制与5 V降压总图
+4.3 三路有刷电机驱动
+当前主控电驱一体板使用三片A4950双输入全桥驱动器，分别控制三台N20有刷直流电机。每路驱动设置100 μF母线去耦、100 nF高频去耦和250 mΩ电流采样电阻。PWM控制信号先经74LVC245缓冲器隔离和整形，并设置下拉电阻，保证MCU复位或高阻期间电机不会误动作。
+
+图4-3 三路A4950有刷电机驱动
+附加的分立驱动原理图采用两片IR2104半桥栅极驱动器、四只IRLR7843 MOSFET和自举二极管/电容构成一组全桥。该方案适用于较高电流或作为驱动版本对比，栅极串联5.1 Ω电阻限制开关尖峰，10 kΩ电阻保证关断。
+
+图4-4 IR2104与MOSFET构成的分立全桥
+4.4 核心板与接口
+核心控制器为NXP i.MX RT1021 BTB MicroPython核心板，主频最高500 MHz。底板引出三路编码器、IMU、显示屏、摄像头UART、激光测距接口、无线串口以及按键/配置输入。接口采用排针、板对板连接器和预留固定孔，便于模块替换和赛前维护。
+
+图4-5 RT1021 BTB核心板引脚映射
+
+图4-6 3.3 V稳压、传感器与通信接口
+4.5 配置输入与通信
+六路D8、D9、C8、C9、C14和C15输入采用4.7 kΩ上拉，通过连接器或按键形成稳定的高低电平布局编码。从车在启动阶段对六路输入进行200 ms稳定判定，形成6 bit布局掩码，再以50 ms周期通过无线串口发送给主车。无线串口本质上是通信模块，不属于赛道信息检测传感器。
+
+图4-7 按键与D8等配置采样接口
+4.6 电容总容量核算
+原理图截图包含局部放大和重复区域，因此电容容量按“元件编号去重”统计。下表仅统计主控电驱一体板图中可辨识的外置电容，不含RT1021核心板、摄像头、无线模块和传感器模块内部电容。
+
+图4-1和图4-4所示的另一版母线/分立全桥电路可见电容约为486.2 μF（484 μF母线储能加2.2 μF驱动去耦）。若该板与一体板二选一，不应相加；若实车确实同时安装，则整车可见外置电容约为1398.6 μF。最终提交值应按实际焊接BOM再次核对。
+4.7 功耗估算
+目前没有功率计实测记录。按3S锂电池标称11.1 V供电进行工程估算，RT1021核心板、显示、无线、IMU、VL53和摄像头等电子部分约3～6 W；三台N20电机在正常搬运时平均约8～14 W。由此估计单车典型运行功耗约12～20 W，起步、堵转或推运瞬态峰值约35～50 W。该数值为设计估算，不是实测指标；最终报告应以P=UI的实测平均值和峰值替换。
+第五章 微处理器控制理论与程序设计
+5.1 软件总体结构
+正式代码由主车RT1021程序、从车RT1021程序、主车OpenMV程序、从车OpenMV红外跟随程序以及预编译的MPY部署文件组成。主车配置文件封装测距驱动、电机PID、运动参数、布局解析和无线协议；主程序负责硬件初始化、10 ms控制中断、坐标里程计和任务状态机。从车配置文件保存多源融合参数和保护逻辑；从车主程序负责无线帧解析、视觉帧解析、模式切换、队形保持及三轮输出。
+5.2 三轮全向运动学
+将车体运动分解为前向速度F、横向速度U和转向速度T。三轮沿120°方向布置时，从车采用下式将车体速度转换为三轮目标速度：
+vR = F + T
+vL = -0.5F - 0.866U + T
+vB = -0.5F + 0.866U + T
+主车由于轮序和车体坐标定义不同，在程序中采用等价的线性组合。所有轮速在输出前进行统一比例限幅，使最大目标轮速不超过360，避免单轮饱和破坏运动方向。
+5.3 编码器里程计与坐标变换
+主车每10 ms读取三路编码器。根据三轮几何关系计算车体前向增量和横向增量，再使用IMU连续航向角将车体增量旋转到场地坐标系。程序对编码器每转脉冲数、轮周长和前向/横向比例分别标定，以补偿轮径、安装角度和地面打滑误差。
+ΔF = (√3/3)(nR - nL)kF
+ΔU = (nL + nR - 2nB)kU/3
+Δx = -ΔF·sinψ - ΔU·cosψ；  Δy = ΔF·cosψ - ΔU·sinψ
+5.4 电机速度PID与航向保持
+三台电机均使用离散PID速度闭环，误差为目标轮速与10 ms周期内编码器增量之差。主车参数为Kp=46、Ki=2、Kd=12，从车参数为Kp=45、Ki=2、Kd=13。积分项按目标方向限制，停车时清零；横移起步还加入短时Kick补偿克服静摩擦。
+PWM(k) = Kp·e(k) + Ki·Σe(k) + Kd·[e(k)-e(k-1)]
+直行和横移过程中，IMU航向误差经比例环转换为附加T分量。误差落入2°容差内不修正，超出容差后按最小转向量和最大转向量限幅，从而抑制全向轮横向运动产生的偏航。
+5.5 主车任务状态机
+
+图5-1 主车任务状态机
+状态机把整场任务分成可超时、可制动、可恢复的离散阶段。网球、玩具熊和沙袋分别向北、向东和向西推出；每次推运前均包含扫描、对准、稳定、复核和错位步骤，推运后执行主动制动并返回扫描线。所有物体完成后，根据当前位置到发车点的向量直接计算返航航向和距离。
+5.6 VL53L1X扫描与分段逼近
+VL53L1X使用400 kHz I²C，配置为长距离模式、33 ms测量预算和中心ROI。BandTracker以距离小于1300 mm作为进入目标带、距离大于1400 mm作为退出条件，并结合最大带宽、最少帧数和最小目标间隔过滤噪声。目标确认后，近距离逼近速度按距离分为150、110、60和30四档，在约100 mm处停止。
+5.7 OpenMV目标识别
+主车OpenMV使用QVGA RGB565图像和TFLite模型识别网球、红/蓝沙袋、白/棕熊五类目标。模型置信度与检测框面积共同过滤误检；网球同时使用绿色LAB阈值补检，棕熊与红沙袋在模型框内部进行颜色像素投票，并要求连续帧位置一致后才纠正类别。扫描模式统计连续帧目标数量，在数量稳定或达到最大帧数后通过UART返回目标列表。
+推运阶段可冻结当前目标类型并跟踪其最近位置，同时检测黄色边界胶带。返航模式还可检测红色砖块信标和南侧横向黄线。调试时启用绘框和日志，正式比赛应关闭绘图以降低计算和内存开销。
+5.8 从车红外相对位姿闭环
+从车OpenMV采用灰度图、固定曝光和固定增益，检测主车红外灯板上的两个最亮色块。程序先按面积选出两个灯，再按横坐标固定为左灯和右灯，避免两灯编号互换导致角度在0°与180°之间跳变。发送数据包括双灯中心、灯间距和连线角度。
+从车RT1021以目标中心cx=164.5 px、目标灯间距83 px和目标角度0°形成三类误差，对应前后、横向距离和相对航向修正。视觉超时500 ms后修正归零；无线控制超时400 ms后立即解除电机使能。
+5.9 无线前馈与多源融合
+
+图5-2 从车多源融合控制结构
+主车以460800 bit/s无线串口每10 ms发送一次16字节控制帧，内容包括序号、运行标志、运动模式、F/U/T、主车航向、主车角速度和CRC8。从车连续收到5个有效帧后才允许启动，并统计丢帧、坏帧和最大间隔。
+直行时，从车以无线F作为主要前馈，视觉只提供有界、渐进的纵向修正；横移时，无线U前馈负责主运动，编码器约束与主车垂直方向的漂移，IMU锁定本车航向，视觉以较低权重补偿长期误差；旋转时，控制器根据主车角速度和累计航向构造编队圆周运动，并设置反向保护、停转检测和恢复增益。
+5.10 速度规划与停车保护
+推运速度采用起步加速与末端减速共同约束的梯形近似。开始150 mm内从最低速度逐步升至上限，接近终点300 mm内按剩余距离降低速度。停止阶段不是简单把PWM置零，而是先依据实际轮速施加有限反向制动，再逐步恢复低权重视觉保持，降低惯性滑移和队形碰撞风险。
+5.11 异常处理
+主车对扫描、对准、推运、转向、退回和返航分别设置超时；异常时停止三台电机。
+VL53L1X首帧、启动、I²C和测量帧均有超时或异常恢复逻辑。
+从车无线控制超时400 ms即清除有效帧计数并停止驱动。
+视觉丢失时不继续使用旧姿态；转向反向时先等待主车角速度证据，避免从车立即反转碰撞。
+从车启动前校准陀螺零偏，并核对主程序与配置文件版本均为V88。
+第六章 开发工具与制作调试过程
+6.1 开发工具
+
+6.2 制作流程
+根据三轮120°几何关系完成PCB底板、电机孔位、核心板接口和传感器安装孔设计。
+焊接电源、稳压、电机驱动、接口和保护器件，分电源域进行短路与静态电流检查。
+单独验证三路电机方向、编码器符号、IMU航向符号和VL53L1X测距稳定性。
+标定轮速PID、轮径里程系数、前向/横向比例和航向保持参数。
+标定OpenMV曝光、红外阈值、LAB颜色阈值、模型置信度和目标中心。
+先进行主车单车坐标路径调试，再接入无线前馈和从车视觉闭环，最后进行双车推运与返航测试。
+6.3 软件部署
+RT1021端稳定模块被预编译为与固件匹配的.mpy文件，以降低启动编译大型Python源文件时的内存峰值。主车和从车各自部署main.py、主入口.mpy和配置.mpy，三个文件必须来自同一版本目录，不得混用。OpenMV端模型文件和脚本单独写入摄像头存储。
+6.4 调试与验证状态
+正式代码README记录V88已通过本地LF、ast.parse()、CPython compile()和MPY编译检查，但仍标记为board verification pending。本地静态检查不能替代RT1021脱离Thonny后的冷启动、无线协同、传感器时序和实车推运测试。报告中的控制频率来自代码配置，尺寸来自用户提供数据，功耗和重量仍需实测。
+第七章 模型车主要技术参数
+
+第八章 结论与改进方向
+本系统采用两辆等边三角形三轮全向车完成协同搬运。主车以RT1021为核心，结合编码器里程计、IMU航向、VL53L1X测距和任务状态机完成目标扫描、逼近、推运及返航；从车通过无线前馈和红外双灯视觉保持相对位姿，并使用编码器和IMU增强横移与转向稳定性。PCB底板一体化、无舵机全向运动和固定推杆方案兼顾了结构简洁、低质量和多方向运动能力。
+后续工作首先应完成整车重量、平均功耗、峰值功耗和实际电容BOM核对；其次应在最终烧录版本中确认主车OpenMV接收链路和决赛障碍状态机；再次应通过多次随机物体布局测试量化目标识别成功率、测距重复性、坐标累计误差、双车相对位置误差和任务完成时间。所有结果应区分本地静态检查、上板功能测试和完整赛道实测，避免将估算值作为竞赛实测指标。
+参考文献
+[1] 全国大学生智能汽车竞赛组委会. 第二十一届全国大学生智能汽车竞赛蚂蚁搬家组细则及MicroPython开发板相关说明[EB/OL]. https://blog.csdn.net/zhuoqingjoking97298/article/details/156342641, 访问日期：2026-08-17.
+[2] 全国大学生智能汽车竞赛组委会. 第21届智能车竞赛蚂蚁搬家组搬运任务说明[EB/OL]. https://blog.csdn.net/zhuoqingjoking97298/article/details/154691441, 访问日期：2026-08-17.
+[3] 全国大学生智能汽车竞赛组委会. 第二十一届全国大学生智能汽车竞赛技术报告要求细则[EB/OL]. https://blog.csdn.net/zhuoqingjoking97298/article/details/163553155, 访问日期：2026-08-17.
+[4] STMicroelectronics. VL53L1X Time-of-Flight ranging sensor datasheet[Z].
+[5] NXP Semiconductors. i.MX RT1020 Crossover Processors Data Sheet[Z].
+[6] 项目正式代码目录：main_car、follower_car及mpy部署文件，V88，2026-08-10.
+附录A 详细电路原理图
+以下原理图均来自用户提供截图。局部放大图与总图存在重复，电容统计已按元件编号去重。
+
+图A-1 母线输入保护与储能电容
+
+图A-2 IR2104与MOSFET构成的分立全桥驱动
+
+图A-3 SCT2450降压电源局部图
+
+图A-4 按键与D8配置采样接口
+
+图A-5 三路A4950有刷电机驱动
+
+图A-6 74LVC245缓冲与电机驱动局部图
+
+图A-7 电源输入、时序控制与5V降压总图
+
+图A-8 3.3V稳压、传感器与通信接口
+
+图A-9 RT1021 BTB核心板引脚映射
+附录B 核心算法子程序
+B.1 主车电机PID
+
+B.2 主车三轮里程计与坐标更新
+
+B.3 主车车体指令到三轮轮速及无线发送
+
+B.4 从车视觉误差控制
+
+B.5 从车三轮逆运动学与轮速限幅
+
+B.6 红外双灯定位与数据封包
+
+附录C 正式代码清单与核验说明
+
+
+===== TABLE 1 =====
+参赛学校 | 重庆大学
+队伍名称 | 吴彦组队
+参赛队员 | 孙意涵 许祖芬 唐俊哲 唐乾溢
+带队教师 | 李敏
+报告日期 | 2026年8月17日
+
+===== TABLE 2 =====
+
+
+===== TABLE 3 =====
+模块 | 安装方式 | 安装要求与作用
+RT1021 BTB核心板 | 板对板连接器/排针 | 位于底板中央，缩短信号回路并便于更换
+逐飞IMU660RC | 排针或预留安装孔 | 靠近车体几何中心并保持水平，减小振动和偏心影响
+VL53L1X激光测距 | 前向固定孔与排针 | 光轴与车体前向一致，避免推杆和轮胎遮挡
+OpenMV/OpenART摄像头 | 立柱与螺钉 | 主车用于目标识别，从车用于观测红外双灯
+逐飞编码器 | 电机轴端固定 | 三台电机各一只，完成轮速闭环和里程计
+无线串口 | 排针连接 | 主从车控制帧、状态帧和布局信息交互
+
+===== TABLE 4 =====
+项目 | 参数
+电路板边长 | 14 cm
+整车长度 | 22 cm
+整车宽度 | 19.5 cm
+不含摄像头高度 | 6 cm
+含摄像头总高度 | 18 cm
+整车质量 | 223g 227g
+
+===== TABLE 5 =====
+电路区域 | 主要电容 | 小计/μF
+5 V降压与时序 | 220+100+4.7+0.1+0.1+0.0047+220+47+0.1+0.1 | 592.1047
+三路A4950驱动 | 3×100 + 6×0.1 | 300.6
+3.3 V及接口去耦 | 4.7+0.1+4.7+10+0.1+0.1 | 19.7
+一体板外置电容合计 | 按元件编号去重 | 约912.4
+
+===== TABLE 6 =====
+工作内容 | 工具
+原理图与PCB设计 | 嘉立创EDA
+机械结构与安装件设计 | Fusion 360
+MicroPython代码编辑与版本管理 | Visual Studio Code
+RT1021板端下载、REPL和运行调试 | Thonny
+摄像头程序、阈值和模型调试 | OpenMV IDE / OpenART开发环境
+
+===== TABLE 7 =====
+参数项目 | 说明 | 数值
+底板形式 | 等边三角形PCB承力底板 | 边长14 cm
+整车外形 | 长×宽×高 | 22 cm×19.5 cm×6 cm（不含摄像头）
+整车最高点 | 含摄像头 | 18 cm
+整车质量 | 两辆主车分别称量 | 待实测
+驱动电机 | N20有刷直流电机 | 3台/辆
+舵机/伺服 | 未使用 | 0台
+主要传感器 | IMU660RC、VL53L1X、OpenMV摄像头、编码器 | 1+1+1+3=6个器件/辆（按当前描述）
+无线模块 | 逐飞无线串口 | 1个/辆；属于通信模块，不计入赛道检测传感器
+电机控制周期 | ticker 10 ms | 100 Hz
+IMU输出率 | 程序配置RATE_120HZ | 120 Hz
+无线控制帧 | 10 ms周期，460800 bit/s | 100 Hz
+VL53测量预算 | 33 ms | 理论上限约30 Hz
+OpenMV目标识别 | 代码注释约10 fps | 约10 Hz，需以现场模型耗时实测
+赛道信息检测 | 未采用连续循迹或专用赛道传感器 | 不适用；黄色边界仅作视觉辅助
+一体板外置电容 | 按原理图去重统计 | 约912.4 μF
+单车典型功耗 | 按11.1 V供电估算 | 约12～20 W，峰值35～50 W，待实测
+
+===== TABLE 8 =====
+183  class MotorPID:  184      def __init__(self, motor):  185          self.motor = motor  186          self.err_sum = 0.0  187          self.last_err = 0.0  188    189      def drop_integral(self):  190          self.err_sum = 0.0  191          self.last_err = 0.0  192    193      def update(self, target, actual, kick_duty=0):  194          error = target - actual  195          if target > 0:  196              next_sum = self.err_sum + error  197              self.err_sum = clamp(next_sum, 0.0, 10000.0)  198          elif target < 0:  199              next_sum = self.err_sum + error  200              self.err_sum = clamp(next_sum, -10000.0, 0.0)  201          else:  202              self.err_sum = 0.0  203          if target == 0 and abs(error) <= WHEEL_STOP_TICKS:  204              self.last_err = error  205              self.motor.duty(0)  206              return  207          delta = error - self.last_err  208          self.last_err = error  209          pwm = int(KP_SPD * error + KI_SPD * self.err_sum + KD_SPD * delta)  210          if kick_duty and target != 0 and abs(actual) <= KICK_TICKS:  211              pwm += kick_duty if target > 0 else -kick_duty  212          self.motor.duty(int(clamp(pwm, -10000, 10000)))  213
+
+===== TABLE 9 =====
+55  def control_tick(_):   56      global world_x_mm, world_y_mm, yaw_deg   57      global imu_last_wrapped, imu_continuous   58      left_ticks = enc_left.get()   59      right_ticks = enc_right.get()   60      bottom_ticks = enc_bottom.get()   61      wheel_ticks[0] = left_ticks   62      wheel_ticks[1] = right_ticks   63      wheel_ticks[2] = bottom_ticks   64      wrapped = float(imu_euler[2])   65      imu_continuous += IMU_YAW_SIGN * wrap_180(wrapped - imu_last_wrapped)   66      imu_last_wrapped = wrapped   67      if drive_enabled:   68          yaw_deg = imu_continuous   69          forward_mm = SQRT3_3 * (right_ticks - left_ticks) * \   70                       FORWARD_MM_PER_TICK   71          lateral_mm = (left_ticks + right_ticks - 2.0 * bottom_ticks) * \   72                       LATERAL_MM_PER_TICK / 3.0   73          yaw_rad = math.radians(yaw_deg)   74          world_x_mm += (-forward_mm * math.sin(yaw_rad) -   75                         lateral_mm * math.cos(yaw_rad))   76          world_y_mm += (forward_mm * math.cos(yaw_rad) -   77                         lateral_mm * math.sin(yaw_rad))   78          duty = 0   79          if kick_active and time.ticks_diff(kick_until_ms,   80                                            time.ticks_ms()) > 0:   81              duty = KICK_DUTY   82          pid_left.update(cmd_left, left_ticks, duty)   83          pid_right.update(cmd_right, right_ticks, duty)   84          pid_bottom.update(cmd_bottom, bottom_ticks)   85      else:   86          motor_left.duty(0)   87          motor_right.duty(0)   88          motor_bottom.duty(0)
+
+===== TABLE 10 =====
+89  def set_body_command(forward, lateral, turn, fast_straight=False):   90      global cmd_left, cmd_right, cmd_bottom   91      global push_start_remaining   92      global kick_active, kick_sign, kick_until_ms   93      if forward == 0:   94          push_start_remaining = None   95      if drive_enabled and turn == 0:   96          heading_error = yaw_error_to(heading_target_yaw_deg)   97          if abs(heading_error) > YAW_TOL_DEG:   98              turn = clamp(heading_error * YAW_KP, -YAW_MAX, YAW_MAX)   99              if abs(turn) < YAW_MIN:  100                  turn = YAW_MIN if turn > 0 else -YAW_MIN  101              if forward == 0 and lateral == 0 and \  102                      abs(turn) < ROTATE_SLOW_SPEED:  103                  turn = ROTATE_SLOW_SPEED if turn > 0 else \  104                      -ROTATE_SLOW_SPEED  105      if forward == 0 and lateral != 0:  106          sign = 1 if lateral > 0 else -1  107          if not kick_active or sign != kick_sign:  108              kick_until_ms = time.ticks_ms() + KICK_MS  109          kick_active = True  110          kick_sign = sign  111      else:  112          kick_active = False  113          kick_sign = 0  114          kick_until_ms = 0  115      cmd_left = int(-forward - lateral + turn)  116      cmd_right = int(forward - lateral + turn)  117      cmd_bottom = int(2.0 * lateral + turn)  118      if forward or lateral:  119          radio_mode = RADIO_MODE_TRANSLATE  120      elif turn:  121          radio_mode = RADIO_MODE_SPIN  122      else:  123          radio_mode = RADIO_MODE_STOP  124      radio_tick(forward, lateral, turn, drive_enabled, yaw_deg,  125                 radio_mode, bool(forward), bool(lateral), fast_straight)
+
+===== TABLE 11 =====
+708  def compute_visual(now, vision_fresh):  709      global vision_f_correction, vision_u_correction, vision_t_correction  710      global vision_cx_error, vision_dist_error, vision_angle_error  711      global vision_f_p, vision_u_p, vision_t_p  712      if not vision_fresh:  713          vision_f_correction = 0  714          vision_u_correction = 0  715          vision_t_correction = 0  716          return  717      f_error = (0 if abs(vision_cx_error) < c.VISION_F_DEADBAND_PX  718                 else vision_cx_error)  719      u_error = (0 if abs(vision_dist_error) < c.VISION_U_DEADBAND_PX  720                 else vision_dist_error)  721      t_error = (0 if abs(vision_angle_error) < c.VISION_T_DEADBAND_DEG  722                 else vision_angle_error)  723      f_target = c.clamp(  724          (c.VISION_F_KP * f_error +  725           c.VISION_F_KI * vision_f_integral) * c.VISION_F_DIRECTION,  726          c.VISION_F_MAX)  727      u_target = c.clamp(  728          c.VISION_U_KP * u_error * c.VISION_U_DIRECTION,  729          c.VISION_U_MAX)  730      t_target = c.clamp(  731          c.VISION_T_KP * t_error * c.VISION_T_DIRECTION,  732          c.VISION_T_MAX)  733      vision_f_p += c.clamp(f_target - vision_f_p, c.VISION_RAMP_STEP)  734      vision_u_p += c.clamp(u_target - vision_u_p, c.VISION_RAMP_STEP)  735      vision_t_p += c.clamp(t_target - vision_t_p, c.VISION_RAMP_STEP)  736      vision_f_correction = vision_f_p + vision_f_d  737      vision_u_correction = vision_u_p + vision_u_d  738      vision_t_correction = vision_t_p + vision_t_d
+
+===== TABLE 12 =====
+1269                      abs(yaw_delta) <= c.TURN_START_MAIN_YAW_MAX_DEG and 1270                      radio_scale > 0 and 1271                      turn_dir * target_t < 1272                      c.TURN_START_TARGET_T_MIN * radio_scale): 1273                  target_t = (turn_dir * c.TURN_START_TARGET_T_MIN * 1274                              radio_scale) 1275              u_limit = c.ORBIT_U_MAX 1276              t_limit = (c.TURN_RECOVERY_TARGET_T_MAX 1277                         if recovery else c.TARGET_T_MAX) 1278      target_f = c.clamp(target_f, f_limit) 1279      target_u = c.clamp(target_u, u_limit) 1280      target_t = c.clamp(target_t, t_limit) 1281      cmd_right = target_f + target_t 1282      cmd_left = -0.5 * target_f - 0.866 * target_u + target_t 1283      cmd_bottom = -0.5 * target_f + 0.866 * target_u + target_t 1284      cmd_left, cmd_right, cmd_bottom = c.clamp_wheels( 1285          cmd_left, cmd_right, cmd_bottom) 1286
+
+===== TABLE 13 =====
+15  IR_THRESHOLD = (150, 255)   16     17  # 初始化 OpenART 与主板通信的 UART (OpenART Plus 为 RT106x，外部引出通常为 UART(12))   18  uart = UART(12, 460800)   19     20  # ================= 封包发送函数 =================   21  def send_data_packet(cx, cy, dist, angle):   22      """   23      包结构: [0xAA, cx_H, cx_L, cy, dist, angle, sum, 0x55]   24      """   25      cx = int(cx); cy = int(cy); dist = int(dist); angle = int(angle)   26         27      # 范围限制   28      if cx > 500 or cx < 0: cx = 0   29      if cy > 255 or cy < 0: cy = 0   30      if dist > 255 or dist < 0: dist = 0   31      if angle > 255 or angle < 0: angle = 0   32         33      cx_H = (cx >> 8) & 0xFF   34      cx_L = cx & 0xFF   35      cy_byte = cy & 0xFF   36      dist_byte = dist & 0xFF   37      angle_byte = angle & 0xFF   38         39      # 校验和 (简单累加)   40      check_sum = (cx_H + cx_L + cy_byte + dist_byte + angle_byte) & 0xFF   41         42      data = bytearray([0xAA, cx_H, cx_L, cy_byte, dist_byte, angle_byte, check_sum, 0x55])   43      uart.write(data)   44     45  while True:   46      img = sensor.snapshot()   47         48      blobs = img.find_blobs([IR_THRESHOLD], pixels_threshold=10, area_threshold=10, merge=True)   49         50      if blobs and len(blobs) >= 2:   51          blobs.sort(key=lambda b: b.pixels(), reverse=True)   # 先按面积取最亮的两个灯   52          lamp_a, lamp_b = blobs[0], blobs[1]   53     54          # 【关键改动】再按 cx 把这两个灯固定成“左灯 lamp1 / 右灯 lamp2”   55          # 否则用面积排序，谁是1谁是2会来回变，导致 angle 在 0°/180° 之间乱跳，从车自转会抖   56          if lamp_a.cx() <= lamp_b.cx():   57              lamp1, lamp2 = lamp_a, lamp_b   # lamp1 = 左灯   58          else:   59              lamp1, lamp2 = lamp_b, lamp_a   60     61          x1, y1 = lamp1.cx(), lamp1.cy()   # 左灯坐标   62          x2, y2 = lamp2.cx(), lamp2.cy()   # 右灯坐标   63     64          center_x = (x1 + x2) // 2         # 两灯中心 X（跟随时锁 188）   65          center_y = (y1 + y2) // 2         # 两灯中心 Y（跟随时约 148）   66          pixel_distance = math.sqrt((x2 - x1)**2 + (y2 - y1)**2)   # 两灯像素间距（约 100）   67     68          # 从左灯指向右灯的连线角度：水平时约 0°；右灯偏低为正，右灯偏高会得到接近 180°   69          # 因为左右已固定，符号稳定，从车即可据此判断主车是顺/逆时针偏转   70          angle_rad = math.atan2(y2 - y1, x2 - x1)   71          angle_deg = math.degrees(angle_rad)   72          if angle_deg < 0:   73              angle_deg += 180              # 压到 0~180，从车端再折算成带符号的 -90~90   74     75          # 发送到单片机   76          send_data_packet(center_x, center_y, pixel_distance, angle_deg)   77      else:
+
+===== TABLE 14 =====
+文件 | 作用
+main_car/config.py | 主车参数、VL53L1X、PID、无线协议
+main_car/user_main.py | 主车硬件初始化、里程计和任务状态机
+main_car/zhuche_openmv_2.0.py | 物体识别、颜色复核、目标锁定和边界检测
+follower_car/follower_config.py | 从车融合控制参数与辅助状态类
+follower_car/user_main.py | 从车无线/视觉解析、融合控制和安全保护
+follower_car/congche_openmv_1.6.py | 红外双灯相对位姿检测
+mpy/main/* | 主车预编译部署文件
+mpy/follower/* | 从车预编译部署文件

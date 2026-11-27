@@ -1,0 +1,1600 @@
+第二十届全国大学生智能汽车竞赛
+技术报告
+学校名称 安徽师范大学
+队伍名称 一往无前队
+参赛队员 严承旭 曹俊豪 王思扬
+带队老师 蔺玉柱
+2026 年 8 月 17 日
+关于技术报告和研究论文使用授权的说明
+本人充分知晓第二十一届全国大学生智能汽车竞赛对技术报告、参赛作品的
+使用规范：参赛作品著作权归参赛团队所有，竞赛组委会有权公开展示本车模设
+计方案、技术报告、整车测试影像、硬件图纸，并将本文收录至赛事论文集。
+参赛队员签名：严承旭 曹俊豪 王思扬
+带队教师签名： 蔺玉柱
+日期：2026 年 8 月 17 日
+3
+摘要
+本文系统介绍了一往无前队在二十一届全国大学生智能汽车竞赛雁过留痕
+组中的系统方案。本次大赛采用大赛组委会统一指定的 C 车模，以 STC32G 为核
+心控制器，一个总转分摄像头作为信息采集，再通过逐飞编码器检测智能车的实
+时速度，使用，陀螺仪 imu660ra 获得车的偏角，使用舵机 SU400 控制车的偏转，
+使用 PID 控制算法检测电机的转速使，从而实现智能车载运动过程中转向和速度
+的闭环控制。为了提高车的稳定性，进行了大量的硬件与软件调试。
+为保证巡线的稳定性，我们还进行了中线提取，丢线补偿，特殊元素判断等
+算法。在打靶方面，我们使用了特殊的元素判断，单独判断靶纸的位置，然后通
+过位置的不一样性判断多激光打靶。
+关键词：智能车，雁过留痕，PID 闭环控制
+4
+目录
+摘要 ......................................................................... 3
+一、引言 ..................................................................... 5
+1.1 全国大学生智能汽车竞赛简介 ........................................... 5
+1.2 智能汽车制作要求及任务 ............................................... 5
+二、模型车设计制作思路及技术方案概要 ......................................... 6
+2.1 设计思路 ............................................................. 6
+2.2 技术方案概要 ......................................................... 6
+三、模型车机械结构设计 ....................................................... 6
+3.1 重心位置的调整和电池的放置 ........................................... 6
+3.2 摄像头的设计安装 ..................................................... 7
+3.3 多激光打靶方案设计思路 ............................................... 7
+3.4 编码器与姿态传感器的安装 ............................................. 8
+四、系统硬件设计 ............................................................. 8
+4.1 主控芯片选型与电路板设计 ............................................. 8
+4.2 电源管理模块 ......................................................... 9
+4.3 摄像头接口 ........................................................... 9
+4.4 电机驱动模块 ......................................................... 9
+4.5 人机交互模块 ........................................................ 10
+五、智车控制软件设能计说明 .................................................. 10
+5.1 赛道图像处理 ........................................................ 10
+5.2 赛道元素识别 ........................................................ 10
+5.3 紫外感光打靶 ........................................................ 11
+六、PID 控制算法实现 ........................................................ 11
+6.1 PID 控制原理简述 .................................................... 11
+6.2 车速闭环控制 ........................................................ 12
+6.3 循迹转向控制 ........................................................ 12
+七、系统的调试与运行 ........................................................ 12
+6.1 调试工具与环境 ...................................................... 12
+6.2 硬件调试 ............................................................ 12
+6.3 软件调试 ............................................................ 13
+6.4 运行测试 ............................................................ 13
+八、模型车主要技术参数说明 .................................................. 13
+九、结论 .................................................................... 14
+十、 参考文献 ............................................................... 14
+十一、附录 .................................................................. 15
+附录 A：程序源代码 ...................................................... 15
+附录 B：车模技术检查表 .................................................. 62
+5
+一、引言
+1.1 全国大学生智能汽车竞赛简介
+全国大学生智能汽车竞赛是以智能汽车为研究对象的创意性科技竞赛，是面
+向全国大学生的一种具有探索性的工程实践活动，是教育部倡导的大学生科技竞
+赛之一。
+本竞赛的起源可追溯至 2005 年。为加强大学生实践、创新能力和团队精神
+的培养，促进高等教育教学改革，教育部高等教育司以教高司函〔2005〕201 号
+文委托教育部高等学校自动化专业教学指导分委员会创办该项赛事。竞赛于
+2005 年 11 月正式启动，首届比赛吸引了来自全国 57 所大学的 112 个团队参赛。
+自 2006 年首届举办以来，竞赛规模不断扩大，已发展成为覆盖全国 30 个省市自
+治区、两百余所高校广泛参与的全国性大学生科技竞赛。竞赛在创办后入选中国
+高等教育学会《全国普通高校学科竞赛排行榜》，被列为教育部认可的 A类赛事。
+2020 年起，竞赛主办单位由教育部高等学校自动化类专业教学指导委员会转为
+中国自动化学会。
+竞赛以“立足培养，重在参与，鼓励探索，追求卓越”为指导思想，旨在促
+进高等学校素质教育，培养大学生的综合知识运用能力、基本工程实践能力和创
+新意识，激发大学生从事科学研究与探索的兴趣和潜能，倡导理论联系实际、求
+真务实的学风和团队协作的人文精神，为优秀人才的脱颖而出创造条件。
+竞赛过程涵盖了理论设计、实际制作、整车调试、现场比赛等环节，要求学
+生组成团队协同工作，初步体验一个工程性研究开发项目从设计到实现的全过程。
+竞赛内容以迅猛发展的汽车电子为背景，涉及自动控制、模式识别、传感技术、
+电子、电气、计算机、机械与汽车等多学科专业知识。竞赛规则透明，评价标准
+客观，坚持公开、公平、公正的原则。比赛形式包括竞速比赛与创意比赛两大类，
+分赛区预赛和全国总决赛一般安排在每年暑假期间。
+1.2 智能汽车制作要求及任务
+本组别要求使用四轮竞速车模（B 型或 C 型），以 STC 微控制器为主控芯片，
+电路板须自行设计并在嘉立创指定渠道制作。赛道为白色 PVC 材质，蓝色背景，
+不设路肩。车模须完成一周赛道运行，赛道包含直弯、十字路口、环岛、坡道及
+路障等元素。核心任务为紫外感光打靶——在铺设有紫外感光纸的路段，使用紫
+外激光将光斑精准投射于圆形目标区域内，区域外不得留痕。车模仅限使用单个
+摄像头进行赛道检测，不允许采用其他光电管检测赛道及感光纸，姿态传感器可
+酌情使用。比赛以完成时间和打靶精度综合评定成绩。
+6
+二、模型车设计制作思路及技术方案概要
+2.1 设计思路
+本组车模设计以满足竞赛要求、实现高效稳定行驶和精准打靶为核心目标。
+整体设计追求结构简洁、重量轻便，以提升车模灵活性和动力性能。传感器布局
+方面，以单个摄像头为核心，兼顾赛道检测与路标识别。紫外激光模组与云台的
+设计需兼顾响应速度与瞄准精度。电路设计遵循稳定可靠、低功耗原则，保障车
+模长时间运行的稳定性。
+2.2 技术方案概要
+车模采用 C 型四轮车模，以原车模结构为基础进行合理改装，安装摄像头、
+云台紫外激光模组、电路板等部件。以 STC 微控制器作为控制核心，接收摄像头
+采集的赛道图像信息，经图像处理后提取赛道中线与元素特征，运用 PID控制算
+法计算电机驱动信号，实现车模转向与速度控制。
+三、模型车机械结构设计
+车模的机械结构是智能车稳定运行的物理基础，直接影响行驶稳定性、传感
+器数据准确性以及打靶任务的执行精度。本组选用大赛组委会统一指定的C 型四
+轮竞速车模作为平台，以原车模结构为基础进行合理改装，在不改变车轮轴距、
+轮距及驱动传动机构的前提下，优化各部件布局与安装方式。
+C 型车模采用后轮驱动、前轮转向的方案，底盘设计较为宽大，具有较好的
+行驶稳定性。后轮采用滚珠差速器实现转弯差速，确保车模在弯道中左右轮能够
+以不同转速平稳转动，减少轮胎磨损并提高过弯稳定性。C 型车模相比 B型车模
+具有更低的底盘高度和更宽的车身，这为降低整车重心和提升高速过弯稳定性提
+供了有利条件。
+3.1 重心位置的调整和电池的放置
+重心位置是影响车模行驶稳定性的关键因素。智能车在高速行驶和过弯时会
+产生较大离心力，若重心偏高或分布不均，易导致车模侧翻、甩尾或在急弯处发
+生偏移。因此，降低整车重心并使质量分布均匀是机械设计的首要任务。
+C 型车模原结构中，电机及驱动部件安装于车身后部，尾部质量明显大于前
+端，导致后轮负载过重，过弯时后轮抓地力不足，容易发生侧滑。此外，C 型车
+模底盘较低，电池仓位于底盘中部，但原装电池固定方式使电池处于悬空状态，
+重心仍有优化空间。为解决此问题，本车模采取以下重心优化措施：
+7
+电池低位安装：电池是车模中最重的部件之一，其安装位置对重心影响最大。
+本方案将 2200mAh 3S 锂电池通过 3D 打印支架固定于车模底盘最低位置，充分利
+用 C 型车模底盘较低的先天优势，将电池紧贴底盘下表面安装，并尽量靠近车模
+几何中心区域。电池采用水平卧式放置，避免倾斜安装导致重心偏移。经实测，
+此布局使整车重心高度显著降低，有效抑制了过弯时的侧倾趋势。
+各部件高度控制：电路板采用紧凑布局，通过铜柱固定于底盘上方尽可能低
+的位置。C 型车模底盘面积充裕，为电路板的水平铺开提供了良好条件，避免了
+电路板叠放导致重心升高。摄像头安装高度经反复调试确定，在保证足够前瞻视
+野的前提下尽量压低。云台及紫外激光模块安装于车模顶部偏后位置，其重量较
+轻，对整体重心影响有限。通过上述措施，整车重心控制在车模底盘平面附近，
+处于车体总高度约 1/3 处，达到了较为理想的平衡状态。
+左右对称布局：编码器、电机驱动线等部件在安装时严格保持左右对称，避
+免单侧过重导致车模直线行驶时跑偏。C 型车模本身左右对称性良好，在此基础
+上进一步优化布线，实现了质量的均匀分布。
+3.2 摄像头的设计安装
+摄像头是车模获取赛道信息的核心传感器，本组严格按照赛规要求仅使用单
+个摄像头进行赛道检测。摄像头的安装需同时满足以下要求：视野开阔以获取足
+够的前瞻距离、图像畸变小以保证识别精度、安装稳固以抵抗行驶振动。
+支架选材与结构：摄像头支架采用碳素杆作为主支撑结构。碳素杆具有密度
+低（约 1.5 g/cm³）、抗弯模量高（可达 120 GPa）的优点，同等刚度下重量仅
+为铝合金的 60%，能够有效降低车模上部重量，避免重心上移。碳素杆底部通过
+铝合金法兰盘与 C 型车模底盘固定连接，法兰盘采用螺丝紧固方式，利用C 型车
+模底盘预留的安装孔位，确保支架在激烈行驶中不发生松动或位移。
+安装位置与角度：摄像头安装于车模前端中央的碳素杆上，位于车模纵向中
+轴线上，确保左右视野对称。C 型车模前端空间较为充裕，摄像头镜头中心离地
+高度约 20 厘米，镜头与碳素杆连接部位呈一定俯角，使摄像头能够同时获取近
+处赛道信息和足够的前瞻距离（约 40-50 厘米）。摄像头通过专用固定座与碳素
+杆连接，使用顶丝和螺丝双重紧固，防止摄像头角度在行驶中发生偏转。
+防抖与减振：为防止车模通过颠簸路段或坡道时碳素杆发生抖动影响图像质
+量，碳素杆底部采用铝合金固定件牢牢锁紧于底盘，杆体中部不设额外负重，保
+持较高的固有频率以避开行驶振动频段。C 型车模底盘刚度较高，进一步增强了
+支架的整体稳定性。
+光学优化：摄像头镜头前方加装偏振片，有效滤除赛道表面反光和环境杂散
+光，提高图像对比度与边缘清晰度，降低光照变化对识别稳定性的影响。
+3.3 多激光打靶方案设计思路
+8
+为提高打靶成功率并应对车模高速行驶时的姿态扰动，本系统采用多激光管
+并行照射的方案。其核心设计思路如下。
+提高容错率：车模在行驶中难以保持绝对静止，单一激光管易因瞬间抖动而
+偏离靶心。多激光管形成的“光斑阵列”可显著增大有效照射范围，确保至少一
+束激光命中目标。
+覆盖瞄准误差：通过合理布局，使多束激光在目标距离处形成略微分散的光
+斑分布，有效覆盖因云台指向误差或车模姿态变化带来的位置偏差。
+冗余设计：在激烈比赛中，单个激光管可能因震动、温度等因素发生功率波动，
+多激光管方案提供了硬件层面的冗余，保障了打靶任务的可靠性。
+3.4 编码器与姿态传感器的安装
+编码器：为精确测量车速，在两个后轮处各安装一个 1024 线正交编码器。
+编码器通过专用安装支架固定于电机尾部，其齿轮与电机输出轴齿轮精密啮合。
+安装时确保传动轴与电机轴保持平行，齿轮啮合间隙适中——间隙过小会发出刺
+耳卡齿声，间隙过大会产生明显迟滞。调整完成的齿轮传动机构运行噪声小、无
+卡滞，能够输出稳定的脉冲信号。C 型车模的电机固定座结构稳固，为编码器的
+可靠安装提供了良好条件。
+IMU 姿态传感器：六轴 IMU（含三轴加速度计和三轴陀螺仪）安装于车模重
+心位置附近的底盘上，通过双面胶或尼龙柱牢固固定。此位置能最准确地反映车
+模的真实姿态变化，为坡道检测和行驶稳定性控制提供可靠数据。
+四、系统硬件设计
+系统硬件设计遵循稳定可靠、轻量化、低功耗的基本原则。从方案论证到最
+终定稿，经过多次讨论与迭代优化。本车模电路部分主要包括主控单元、电源管
+理模块、摄像头接口、电机驱动模块、云台与激光驱动模块、人机交互模块六大
+组成部分。各模块设计以稳定可靠为首要原则，同时兼顾车模自身结构特点与轻
+量化需求。为尽量减轻车模负载、降低重心，电路设计力求简洁，减少元器件数
+量，缩小电路板面积，并注重 PCB 布局优化与信号走线合理性。
+4.1 主控芯片选型与电路板设计
+主控芯片选用 STC32G144K246 高性能单片机。该芯片采用 32 位 8051 内核，
+主频可达 35MHz，内置 144KB Flash 和 5KB SRAM，支持硬件乘除法器、DSP运算
+单元与浮点/三角函数运算器，具有强大的实时运算能力。其丰富的外设资源包
+括多路 PWM 输出、硬件正交编码器接口、高速 ADC 以及多个串行通信接口，能够
+充分满足赛道图像采集与处理、电机闭环控制、云台舵机驱动及激光管触发等多
+样化任务需求。STC32G144K246 的国产自主特性与高性价比优势，使其成为本组
+别的理想主控平台。
+9
+电路板为自行设计制作，在嘉立创指定渠道免费下单。主板正面覆铜层标注
+有学校名称、队伍名称、制作日期等信息，丝网层包含制作文件链接二维码，完
+全符合赛规要求。整板采用双层 PCB 设计，元器件排列紧凑有序，关键信号线（如
+摄像头数据线、编码器信号线）进行包地处理以减少电磁干扰，电源线与地线适
+当加宽以降低压降。
+4.2 电源管理模块
+电源采用 3S 锂电池（2200mAh） 供电，为整个系统提供能量来源。为满足
+不同模块的供电需求，电源管理模块设计为多路稳压输出。
+5V（DCDC）：采用高效同步降压 DCDC 转换器，为摄像头、编码器、IMU 等
+传感器供电。SCT2450 芯片最大输入电压范围宽，输出持续电流大，满足传感器
+组的总功耗需求。
+3.3V（LDO）：采用 RT9013 芯片，为 STC32G144K246 主控芯片供电。LDO 方
+案具有输出纹波小、噪声低的优势，确保主控芯片在高速运算时的电源质量。
+7.8V（舵机供电）：采用独立稳压模块，为云台双舵机提供稳定电源。舵机
+工作时电流波动较大，独立供电可有效避免对主控及其他传感器造成干扰。
+各电源输出端均配置适当容量的滤波电容（陶瓷电容与电解电容并联），并
+在输入端加入 TVS 管进行过压保护，确保电路在电池电压波动及电机启停冲击下
+的工作稳定性。
+4.3 摄像头接口
+本组严格按照赛规要求仅使用单个摄像头进行赛道检测。摄像头选用适宜嵌
+入式视觉应用的低成本 CMOS 摄像头模块，通过 DCMI 数字摄像头接口与
+STC32G144K246 连接。摄像头接口电路设计包含以下要点。
+数据线：8 位并行数据总线，直接连接 MCU 的 DCMI 接口引脚，实现高速图
+像数据传输。
+时钟与同步信号：PCLK（像素时钟）、HREF（行参考信号）、VSYNC（帧同
+步信号）分别接入 MCU 对应引脚，确保图像采集时序的准确性。
+电源滤波：摄像头供电端配低ESR 陶瓷电容，滤除高频噪声，保证图像质量。
+电平匹配：摄像头与 MCU 之间无需额外电平转换，直接兼容连接。
+4.4 电机驱动模块
+电机驱动模块用于驱动车模的两个后轮驱动电机，实现速度闭环控制。驱动
+电路的核心为专用直流电机驱动芯片，将 MCU 输出的 PWM 控制信号与方向信号转
+换为足以驱动电机的电流和电压。
+10
+驱动方案特点：
+支持电机正反转控制，实现车模的前进、后退与差速转向内置死区保护与过
+流保护功能，提高系统可靠性驱动能力充足，满足 C 型车模电机在高速行驶与急
+加减速时的功率需求。
+由于电机工作时功率较大、工作电流也较大，为防止电机驱动电路对主控芯
+片造成干扰，在驱动电路的输入级接入逻辑隔离芯片，实现控制信号的单向传输
+与电气隔离。电机驱动板与主控板分离设计，通过排线连接，有利于散热与布局
+灵活性。
+4.5 人机交互模块
+为方便现场调试与参数整定，硬件电路中配备了完整的人机交互模块
+IPS 屏幕：通过 SPI 接口与MCU 连接，实时显示摄像头采集的图像、赛道中
+线偏差、当前速度、打靶状态等关键信息，便于现场观察与故障排查。
+按键：多个独立按键接入 MCU 的 GPIO，用于现场参数调节（如 PID 系数、
+目标速度）、模式切换（调试模式/比赛模式）及菜单导航。
+蜂鸣器：由 MCU 的 PWM 或 GPIO 控制驱动，用于指示元素识别成功、进入打
+靶区域、打靶完成等关键状态，实现非视觉反馈。
+无线串口：通过 UART 接口连接无线透传模块，与上位机进行数据交互，实
+时传输图像数据、控制参数与运行日志，便于在 PC 端进行深度调试与数据分析。
+五、智车控制软件设能计说明
+软件设计主要分为赛道图像处理、紫外打靶识别与控制、速度与转向 PID
+控制三大模块。
+5.1 赛道图像处理
+摄像头采集灰度图像后，首先进行中值滤波去除噪声。采用动态阈值二值化
+算法，根据图像灰度分布计算最佳分割阈值，将赛道（白色）与背景（蓝色）分
+离。随后提取赛道左右边界，计算赛道中心线位置。在弯道、十字路口等元素处，
+结合历史数据与边缘特征判断丢线状态并进行补偿。
+赛道中线获取流程：动态阈值计算，图像二值化，左右边界扫描（由中点向
+两侧），丢线判断与边界补偿，赛道中心线计算。
+5.2 赛道元素识别
+11
+系统需识别以下表 1 中的赛道元素：
+表 1 赛道元素
+元素 识别方法
+直道 中心线偏差小且稳定
+弯道 中心线偏差持续增大
+十字路口 图像出现全白横条特征
+环岛 结合单边寻线与边界连续性判断
+坡道 通过 IMU 俯仰角变化及图像特征综合判断
+路障 图像中出现异常宽度变化
+5.3 紫外感光打靶
+紫外感光打靶是雁过留痕组的核心任务。具体实现流程如下：
+感光纸区域识别：摄像头检测到赛道旁特定颜色或形状标记时，进入打靶准
+备状态。
+目标定位：识别感光纸上圆形目标区域的中心坐标。
+云台指向控制：根据目标在图像中的位置，通过算法控制选择开启的激光通
+道，将紫外激光光斑对准靶心。
+照射与校验：开启紫外激光照射，同时监测光斑位置，进行实时微调。
+感光纸区域外不允许留有照射痕迹，因此云台控制需具备较高的指向精度，
+并在驶离感光纸区域后立即关闭激光。
+六、PID 控制算法实现
+6.1 PID 控制原理简述
+PID 控制是工业控制中经典的闭环控制算法，凭借结构简洁、鲁棒性强、参
+数整定便捷的特点，成为系统控制的首选方案。当控制对象模型未知或参数不确
+定时，依靠经验调试 PID 参数即可实现稳定控制，适配绝大多数工程场景。
+PID 控制的核心是偏差闭环调节：通过目标值与实时采集值的差值，经比例、
+积分、微分三项运算生成控制指令，修正系统输出，使实际值快速逼近目标值。
+12
+三项作用：比例项：快速响应偏差，偏差越大调节力度越强；积分项：消除
+稳态静差，避免系统长期存在固定偏差；微分项：预判偏差变化趋势，抑制超调、
+提升系统响应速度。
+6.2 车速闭环控制
+速度控制采用增量式 PID 算法，以编码器反馈的实际速度与目标速度的偏差
+为输入，计算电机 PWM 控制量：
+∆U(k) = Kp[e(k) − e(k−1)] + Kie(k) + Kd[e(k) − 2e(k−1) + e(k−2)]
+6.3 循迹转向控制
+转向控制采用位置式 PID，直接输出转向控制量，精准控制车轮差速实现循
+迹。以赛道中心线与车模预设中心线的偏差为输入：
+() =  ∗ () +  ()  + [() − (−1)]
+根据不同赛道元素，采用动态PID 参数切换策略，直道提高速度参数，弯道
+增强转向灵敏度，坡道适当降低车速以保证稳定性。
+控制逻辑：根据转向控制量调节左右轮转速差 —— 偏差向左则左降右升，
+偏差向右则右降左升，实现精准转向。
+七、系统的调试与运行
+6.1 调试工具与环境
+调试工具包括：Thonny 开发环境、示波器、万用表、无线串口模块及上位机
+软件。调试环境为实验室搭建的模拟赛道，包含直道、弯道、十字路口、环岛、
+坡道及感光纸打靶区域。
+6.2 硬件调试
+硬件调试依次进行电源模块电压测试、摄像头图像采集测试、编码器脉冲计
+数验证、云台舵机角度控制测试及紫外激光触发功能测试。确保各模块工作正常
+后进入系统集成调试。
+13
+6.3 软件调试
+软件调试分为：
+图像处理调试：通过上位机实时观察二值化效果与边界提取结果，调整阈值
+参数。
+PID 参数整定：通过无线串口实时监控速度、偏差、PWM 输出等数据，逐步
+优化 PID 参数。
+打靶调试：反复测试云台指向精度与激光照射响应时间，优化瞄准算法。
+6.4 运行测试
+经过反复测试与调优，车模能在赛道上稳定运行，顺利通过各赛道元素，并
+在感光纸区域完成紫外打靶任务。后续将进一步优化速度策略与瞄准精度，争取
+更好的比赛成绩。
+八、模型车主要技术参数说明
+表 2 模型车主要技术参数说明
+参数项目 规格
+车模类型 C型四轮竞速车模
+整车重量 约 850g
+尺寸（长×宽×高） 约 28cm × 18cm × 33cm
+主控芯片 STC系列微控制器
+传感器 摄像头×1、编码器×2、IMU×1
+执行器 驱动电机×2、云台舵机×2、紫外激光×1
+电池 3S锂电池 2200mAh
+电路功耗 约 8W
+最大行驶速度 约 3.2m/s
+赛道检测频率 约 125fps
+14
+九、结论
+本文详细介绍了雁过留痕组智能车的设计方案，涵盖车模机械结构、硬件电
+路、软件算法及调试过程。本组以 STC 微控制器为核心，单摄像头实现赛道识别，
+结合串级 PID 控制实现稳定行驶，并通过云台控制紫外激光完成感光打靶任务。
+经过大量实车测试，车模能够在室内赛道上稳定运行并完成核心打靶任务。
+由于时间与经验所限，本系统仍有优化空间，如进一步提升打靶精度、优化
+高速弯道稳定性等。后续将继续努力改进，争取在比赛中取得优异成绩。
+十、参考文献
+[1] 卓晴，黄开胜，邵贝贝.学做智能车 —— 挑战 “飞思卡尔” 杯 [M]. 北
+京：北京航空航天大学出版社，2007.
+[2] 胡寿松.自动控制原理 (第六版)[M]. 北京：科学出版社，2013.
+[3] 张毅刚.单片机原理及应用（第 4 版）[M]. 北京：高等教育出版社，2021.
+（涵盖单片机片内 ADC 模数转换原理）
+[4] 郭天祥.新概念 51 单片机 C 语言教程 —— 入门、提高、开发、拓展全攻
+略（第 2 版）[M]. 北京：电子工业出版社，2018.（单片机 C 编程、AD 采集
+实战）
+[5] 王盼宝.智能车制作：从元器件、机电系统、控制算法到完整的智能车设计
+[M]. 北京：清华大学出版社，2018.（智能车软硬件、传感器信号采集）
+[6] 闫琪，王江，熊小龙.智能车设计 “飞思卡尔杯” 从入门到精通 [M]. 北
+京：北京航空航天大学出版社，2014.（飞思卡尔单片机智能车开发）
+[7] 胡向东.传感器与检测技术（第 4 版）[M]. 北京：机械工业出版社，2021.
+（模拟信号采集、A/D 转换前端传感技术）
+[8] 阮毅，陈伯时.电力拖动自动控制系统 —— 运动控制系统（第 4 版）[M].
+北京：机械工业出版社，2017.（智能车电机调速、运动控制）
+[9] 林立，张俊亮.单片机原理及应用 —— 基于 Proteus 和 Keil C（第 4 版）
+[M]. 北京：电子工业出版社，2020.（单片机 ADC 接口仿真与硬件设计）
+[10] 王兆安，刘进军.电力电子技术（第 5 版）[M]. 北京：机械工业出版社，
+2009.（智能车电源、电机驱动功率电路）
+15
+十一、附录
+附录 A：程序源代码
+#include "main.h"
+// 定义 gyro_param_t类型的全局变量
+gyro_param_t gyro_offset;
+/**
+*
+* @brief 陀螺仪零飘初始化
+* @param void
+* @return void
+* @notes 初始化陀螺仪后调用
+* Example: Init_Gyro_Offset();
+*
+**/
+void Init_Gyro_Offset(void)
+{
+unsigned int i;
+gyro_offset.x_data = 0;
+gyro_offset.y_data = 0;
+gyro_offset.z_data = 0;
+for (i = 0; i < 500;i++)
+{
+// 获取陀螺仪 GYRO数据
+imu660ra_get_gyro();
+gyro_offset.x_data += imu660ra_gyro_x;
+gyro_offset.y_data += imu660ra_gyro_y;
+gyro_offset.z_data += imu660ra_gyro_z;
+system_delay_ms(1);
+}
+gyro_offset.x_data /= 500;
+gyro_offset.y_data /= 500;
+gyro_offset.z_data /= 500;
+}
+16
+float angle_z = 0;
+void integral()
+{
+angle_z = angle_z + 0.005*(imu660ra_gyro_z - gyro_offset.z_data);
+if(angle_z > 10000)
+angle_z = 10000;
+if(angle_z < -10000)
+angle_z = -10000;
+}
+#ifndef __angle_H
+#define __angle_H
+#include "main.h"
+// 存储陀螺仪的零点偏移数据
+typedef struct
+{
+float x_data;
+float y_data;
+float z_data;
+} gyro_param_t;
+extern gyro_param_t gyro_offset;
+extern float angle_z;
+void Init_Gyro_Offset(void);
+void integral();
+#endif
+#include "main.h"
+//?2?￡2?·?
+int xun_ji_speed =0; //?ù′??-?￡?ù?è
+//???ú?
+float direction_calculate = 0;
+float yaw_speed_d = 0;
+float dir_out = 0;
+//?ù?è?·
+float speed1 = 0; //μ±?°?ù?è
+17
+float speed2 = 0; //μ±?°?ù?è
+float left_target_speed = 0; //??±ê?ù?è
+float right_target_speed = 0; //??±ê?ù?è
+float err1 = 0, l_err1 = 0 ,ki1 = 3.2 , kp1 = 29,speed_out1 = 0; //11.7v对应 3.15
+29 12.6v对应 2.9 28
+float err2 = 0, l_err2 = 0 ,ki2 = 3.2 , kp2 = 29,speed_out2 = 0;
+//?ù?è
+float x = 0;
+float y = 0;
+float y_p = 0.9225;
+//?àà?
+float distance_out = 0;
+void distance()
+{
+distance_out = distance_out + 0.01*(speed1 + speed2);
+if(distance_out > 10000)
+distance_out = 10000;
+if(distance_out < -10000)
+distance_out = -10000;
+}
+void xun_ji()
+{
+//----------------------------???ú?·
+//íó?Yò?
+yaw_speed_d = -0.0652*(imu660ra_gyro_z - gyro_offset.z_data);
+if(yaw_speed_d > 500)
+{
+yaw_speed_d = 500;
+}
+else
+{
+if(yaw_speed_d < -500)
+{
+yaw_speed_d = -500;
+18
+}
+}
+//íó?Yò?
+dir_out = direction_calculate + yaw_speed_d;
+//?T·ù
+if(dir_out > 465)
+{
+dir_out =465;
+}
+else
+{
+if(dir_out < -465)
+{
+dir_out = -465;
+}
+}
+pwm_set_duty(PWME_CH1P_PA0, 4300+ dir_out); //??′ó ?ò×ó
+x = dir_out*0.00174;
+y = (x/(1 - 0.3333*x*x))*y_p;
+if(dir_out > 0)
+{
+left_target_speed = (1 - y) *xun_ji_speed;
+right_target_speed = xun_ji_speed;
+}
+else
+{
+left_target_speed = xun_ji_speed;
+right_target_speed = (1 + y) *xun_ji_speed;
+}
+speed1 = encoder_get_count(ENCODER_DIR_1);
+speed2 = -encoder_get_count(ENCODER_DIR_2);
+distance();
+encoder_clear_count(ENCODER_DIR_1);
+encoder_clear_count(ENCODER_DIR_2);
+err1 = left_target_speed - speed1;
+19
+speed_out1 += ki1*err1 +kp1*(err1 - l_err1);
+err2 = right_target_speed - speed2;
+speed_out2 += ki2*err2 +kp2*(err2 - l_err2);
+if(speed_out1 >= 5600)
+{
+speed_out1=5600;
+}
+if(speed_out1 <= -5600)
+{
+speed_out1=-5600;
+}
+if(speed_out2 >= 5600)
+{
+speed_out2=5600;
+}
+if(speed_out2 <= -5600)
+{
+speed_out2=-5600;
+}
+l_err1 = err1;
+l_err2 = err2;
+motor1(speed_out1);
+motor2(speed_out2);
+/* printf("lpwm%f\n ", speed_out1);speed_out1speed_out2speed_out2
+printf("add_left%f\n ", speed_out1);speed_out1
+printf("%d\n", speed1);speed_out1speed_out2
+printf("rpwm%f\n ", speed_out2);speed_out2
+printf("add_right%f\n ", speed_out2);
+*/
+}
+#ifndef __control_H
+#define __control_H
+#include "main.h"
+#define ENCODER_DIR_1 (PWMA_ENCODER) // 带方向编
+码器对应使用的编码器接口
+20
+#define ENCODER_DIR_PULSE_1 (PWMA_ENCODER_CH1P_P60) // PULSE 对
+应的引脚
+#define ENCODER_DIR_DIR_1 (PWMA_ENCODER_CH2P_P62) // DIR 对应
+的引脚
+#define ENCODER_DIR_2 (PWMC_ENCODER) // 带方向编
+码器对应使用的编码器接口
+#define ENCODER_DIR_PULSE_2 (PWMC_ENCODER_CH1P_P40) // PULSE 对
+应的引脚
+#define ENCODER_DIR_DIR_2 (PWMC_ENCODER_CH2P_P42) // DIR 对应
+的引脚
+extern float direction_calculate;
+extern float yaw_speed;
+extern float yaw_speed_d;
+extern float speed1;
+extern float speed2;
+extern float left_target_speed;
+extern float right_target_speed;
+extern float speed_out1;
+extern float speed_out2;
+extern float distance_out;
+extern int xun_ji_speed;
+extern float x;
+extern float y;
+void xun_ji();
+#endif
+#include "main.h"
+void motor_init()
+{
+//gpio
+gpio_init(IO_P77, GPO, 1, GPO_PUSH_PULL); //电机 1
+gpio_init(IO_P75, GPO, 0, GPO_PUSH_PULL); //电机 2
+//gpio
+//pwm
+pwm_init(PWMB_CH3_P76, 30000, 0); //电机 1
+pwm_init(PWMB_CH1_P74, 30000, 0); //电机 2
+21
+//pwm
+//舵机
+pwm_init(PWME_CH1P_PA0, 300, 4300);//PWME_CH4P_PA6
+//舵机
+//电调
+// pwm_init(PWMF_CH3_PA5, 50, 500);
+// pwm_init(PWMF_CH4_PA7, 50, 500);
+//电调
+}
+void motor1(int duty)
+{
+if(duty >0)
+{
+// PWM限幅
+if(duty > MOTOR_DUTY)
+{
+duty = MOTOR_DUTY;
+}
+// 正转
+pwm_set_duty(PWMB_CH3_P76,duty);
+gpio_set_level(IO_P77,1);
+}
+if(duty <0)
+{
+// PWM限幅
+if(duty < -MOTOR_DUTY)
+{
+duty = -MOTOR_DUTY;
+}
+// 反转
+pwm_set_duty(PWMB_CH3_P76,-duty);
+gpio_set_level(IO_P77,0);
+}
+if(duty ==0)
+{
+pwm_set_duty(PWMB_CH3_P76,0);
+}
+}
+22
+void motor2(int duty)
+{
+if(duty >0)
+{
+// PWM限幅
+if(duty > MOTOR_DUTY)
+{
+duty = MOTOR_DUTY;
+}
+// 正转
+pwm_set_duty(PWMB_CH1_P74,duty);
+gpio_set_level(IO_P75,1);
+}
+if(duty <0)
+{
+// PWM限幅
+if(duty < -MOTOR_DUTY)
+{
+duty = -MOTOR_DUTY;
+}
+// 反转
+pwm_set_duty(PWMB_CH1_P74,-duty);
+gpio_set_level(IO_P75,0);
+}
+if(duty ==0)
+{
+pwm_set_duty(PWMB_CH1_P74,0);
+}
+}
+#ifndef __motor_H
+#define __motor_H
+#include "main.h"
+// 电机限幅
+#define MOTOR_DUTY 10000
+void motor_init();
+void motor1(int duty);
+void motor2(int duty);
+#endif
+23
+#include "main.h"
+int NEAR_ROW = -1; // 预瞄行
+int NEAR_ROW2 = -1; // 预瞄行 2
+int not_white = 47; //固定判非白阈值 晚上 47 白天 47//原来 80
+int is_white = 90; //固定判白阈值//原来 170
+int bin_threshold = 60; //二值化阈值 晚上 49 白天 60 芜湖学院 80 比赛 105
+// 新增：最长白列列号全局变量
+int longest_white_col = -1;
+// ========== 1. 二值化图像缓存 ==========
+unsigned char bin_image[MT9V03X_H][MT9V03X_W];
+// ========== 2. 图像二值化 ==========
+/**
+* @brief 根据 bin_threshold 对原图二值化存入 bin_image
+* @note 像素 > bin_threshold 置 255(白)，否则 0(黑)
+*/
+void binarize_image(void)
+{
+int row, col;
+for (row = 0; row < MT9V03X_H; row++) {
+for (col = 0; col < MT9V03X_W; col++) {
+bin_image[row][col] = (mt9v03x_image[row][col] > bin_threshold) ?
+255 : 0;
+}
+}
+}
+// ========== 3. 显示二值图 ==========
+/**
+* @brief IPS200 屏显示二值图像
+* @note 数据源为 bin_image
+*/
+void display_binary_image(void)
+{
+ips200_show_gray_image(0, 120, bin_image[0], MT9V03X_W, MT9V03X_H, MT9V03X_W,
+MT9V03X_H, 0);
+}
+// ========== 4. 二值化+显示组合函数 ==========
+/**
+* @brief 执行图像二值化并刷新屏幕显示
+24
+*/
+void binarize_and_display(void)
+{
+binarize_image();
+display_binary_image();
+}
+/* 全局预定义搜索位置，编译时一次性算完，运行无开销 */
+static const int search_arr[7] =
+{
+IMG_WIDTH / 2,
+IMG_WIDTH / 4,
+3 * IMG_WIDTH / 4,
+IMG_WIDTH / 8,
+3 * IMG_WIDTH / 8,
+5 * IMG_WIDTH / 8,
+7 * IMG_WIDTH / 8
+};
+const float peak_array[82] =
+{
+/* 0 - 24 */
+0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, /* 0-9 */
+0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, /* 10-19 */
+0.0, 0.0, 0.0, 0.0, 0.0, /* 20-24 */
+/* 25 - 40 */
+80, /* 25 */
+81, /* 26 */
+82, /* 27 */
+83, /* 28 */
+84, /* 29 */
+85, /* 30 */
+86, /* 31 */
+87, /* 32 */
+88, /* 33 */
+89, /* 34 */
+90, /* 35 */
+91, /* 36 */
+92, /* 37 */
+94, /* 38 */
+97, /* 39 */
+100.0, /* 40 */
+25
+/* 41 - 81 */
+100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, /* 41-50
+*/
+100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, /* 51-60
+*/
+100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, /* 61-70
+*/
+100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, /* 71-80
+*/
+100.0 /*
+81 */
+};
+/**
+* @brief 差比和核心算法 C89标准
+* @param a: 像素 1 灰度 b:像素 2灰度
+* @retval 差比和计算结果
+*/
+int DiffSumCalc(int a, int b)
+{
+int sum;
+int diff;
+sum = a + b;
+diff = a - b;
+if(sum == 0)
+{
+return 0;
+}
+return (diff << 7) / sum; //移位表示乘法
+}
+int FindLongestWhiteColumnVertex(void)
+{
+int best_length = -1;
+int best_vertex = -1;
+int best_col = -1;
+int i;
+int col;
+int row;
+int last_white_row;
+int length;
+int vertex;
+for (i = 0; i < 7; i++)
+26
+{
+col = search_arr[i];
+row = 81;
+last_white_row = -1;
+length = 0;
+while (row >= 40) //白列最远端从 30 到 40
+{
+if (mt9v03x_image[row][col] > bin_threshold)
+{
+last_white_row = row;
+length++;
+row -= 5;
+}
+else
+{
+break;
+}
+}
+if (last_white_row >= 0)
+{
+vertex = last_white_row;
+if (length > best_length)
+{
+best_length = length;
+best_vertex = vertex;
+best_col = col;
+}
+// ==========新增判断：该列一直连通遍历到小于 42，直接锁
+定此列，跳出外层 for循环==========
+if(last_white_row <= 42)
+{
+break;
+}
+}
+}
+// 赋值给全局最长白列
+longest_white_col = best_col;
+if (best_vertex >= 0 && best_col >= 0)
+{
+int check_row;
+27
+int tr;
+check_row = best_vertex + 12;
+if (check_row >= 81)
+check_row = 81;
+while (check_row >= 40) //白列最远端从 30到 40
+{
+tr = DiffSumCalc(mt9v03x_image[check_row][best_col],
+mt9v03x_image[check_row - STEP][best_col]);
+if (tr > threshold)
+{
+NEAR_ROW = check_row;
+if(check_row <= 55) //白列近端从默认 40 到 55
+{
+NEAR_ROW2 = 55;
+}
+else
+{
+NEAR_ROW2 = check_row;
+}
+if(NEAR_ROW2 >= 81)
+NEAR_ROW2 = 81;
+return 0;
+}
+check_row--;
+}
+NEAR_ROW = 40;
+NEAR_ROW2 = 55;
+return 0;
+}
+else
+{
+NEAR_ROW = -1;
+NEAR_ROW2 = -1;
+return 0;
+}
+}
+/**
+* @brief 边界向内收缩校验函数
+* @param edge_x: 初次判定边线点
+* @param dir: 收缩方向 左边界+1右移 右边界-1左移
+* @retval 最终稳定合法边线
+28
+* 逐 1 像素内移，满足继续，不满足退回上一点，最大移动 STEP距离
+*/
+int ShrinkCheck(int edge_x, int dir)
+{
+int now_x = edge_x;
+int check_x;
+int move_cnt = 0;
+int tr;
+while(move_cnt < STEP)
+{
+check_x = now_x + dir;
+if(check_x <= 0 || check_x >= IMG_WIDTH - 1)
+break;
+if(dir > 0)
+tr = DiffSumCalc(mt9v03x_image[NEAR_ROW][check_x],
+mt9v03x_image[NEAR_ROW][check_x - STEP]);
+else
+tr = DiffSumCalc(mt9v03x_image[NEAR_ROW][check_x],
+mt9v03x_image[NEAR_ROW][check_x + STEP]);
+if(tr > threshold)
+{
+now_x = check_x;
+move_cnt++;
+}
+else
+{
+break;
+}
+}
+return now_x;
+}
+int white_ref = 255; /* 参考白像素灰度 */
+int start_x[120] = {0}; //扫线起点
+int left_edge[120] = {0};
+int right_edge[120] = {0};
+int mid_x[120] = {0};
+int line_lost[120] = {0}; /* 丢线标志 */
+void camera_init()
+{
+int i = 0;
+for(i = 0;i<120;i++)
+29
+{
+start_x[i] = -1;
+left_edge[i] = 0;
+right_edge[i] = IMG_WIDTH -1;
+mid_x[i] = IMG_WIDTH / 2;
+line_lost[i] = 0;
+}
+// 初始化最长白列变量
+longest_white_col = -1;
+}
+/**
+* @brief STC32 单行巡线主函数
+* @param now_row: 当前扫描行
+* @note C89规范：所有局部变量全部前置声明
+* 新增：丢线时保持上一次有效左右边界、中线
+*/
+void SingleLineScan(int now_row)
+{
+int current, next_p, next_2p;
+int i = 0;
+int left_first_ok = 0;
+int right_first_ok = 0;
+/* 静态变量：缓存上一次有效边界与中线，函数调用间保持值 */
+static int last_left = 0;
+static int last_right = IMG_WIDTH - 1;
+static int last_mid = IMG_WIDTH / 2;
+line_lost[now_row] = 0;
+start_x[now_row] = -1;
+left_edge[now_row] = 0;
+right_edge[now_row] = IMG_WIDTH - 1;
+//参考白点 //车近端会比远端暗，所以用近端计算的参考值需要加个小的补偿
+if((mt9v03x_image[110][93] + mt9v03x_image[110][94]) > 2*not_white)
+white_ref = (mt9v03x_image[110][93] + mt9v03x_image[110][94])/2 + 7;
+else
+if((mt9v03x_image[110][46] + mt9v03x_image[110][47]) > 2*not_white)
+white_ref = (mt9v03x_image[110][46] + mt9v03x_image[110][47])/2 + 7;
+else
+if((mt9v03x_image[110][140] + mt9v03x_image[110][141]) > 2*not_white)
+white_ref = (mt9v03x_image[110][140] +
+mt9v03x_image[110][141])/2 + 7;
+30
+else
+{
+/* 参考白点失效，判定丢线：复用历史边界 */
+line_lost[now_row] = 1;
+left_edge[now_row] = last_left;
+right_edge[now_row] = last_right;
+mid_x[now_row] = last_mid;
+return;
+}
+/* 筛选有效起始白点：优先最长白列，再遍历原搜索数组 */
+// 第一步：优先校验最长白列
+if(longest_white_col != -1)
+{
+if((DiffSumCalc(white_ref, mt9v03x_image[now_row][longest_white_col]) <
+threshold
+&& mt9v03x_image[now_row][longest_white_col] > not_white)
+|| (mt9v03x_image[now_row][longest_white_col] > is_white))
+{
+start_x[now_row] = longest_white_col;
+}
+}
+// 第二步：最长白列无效，再走原有 7 点遍历逻辑
+if(start_x[now_row] == -1)
+{
+for(i = 0; i < 7; i++)
+{
+if((DiffSumCalc(white_ref, mt9v03x_image[now_row][search_arr[i]]) <
+threshold
+&& mt9v03x_image[now_row][search_arr[i]] > not_white)
+|| (mt9v03x_image[now_row][search_arr[i]] > is_white))
+{
+start_x[now_row] = search_arr[i];
+break;
+}
+}
+}
+/* 未找到起始点 → 丢线，复用历史边界 */
+if(start_x[now_row] == -1)
+{
+line_lost[now_row] = 1;
+left_edge[now_row] = last_left;
+31
+right_edge[now_row] = last_right;
+mid_x[now_row] = last_mid;
+return;
+}
+/* ========== 先判断：起始点直接相邻步长位置是否满足差比和 ========== */
+/* 左侧起点直判 */
+if((start_x[now_row] - STEP) > 0)
+{
+if(DiffSumCalc(mt9v03x_image[now_row][start_x[now_row]],
+mt9v03x_image[now_row][start_x[now_row] - STEP]) > threshold)
+{
+left_first_ok = 1;
+}
+}
+/* 右侧起点直判 */
+if((start_x[now_row] + STEP) < IMG_WIDTH)
+{
+if(DiffSumCalc(mt9v03x_image[now_row][start_x[now_row]],
+mt9v03x_image[now_row][start_x[now_row] + STEP]) > threshold)
+{
+right_first_ok = 1;
+}
+}
+/* 左边界查找 */
+current = start_x[now_row];
+while(1)
+{
+next_p = current - STEP;
+next_2p = current - 2*STEP - 5;
+if(next_p <= 1)
+{
+left_edge[now_row] = 0;
+break;
+}
+if(DiffSumCalc(mt9v03x_image[now_row][current],
+mt9v03x_image[now_row][next_p]) > threshold)
+{
+if(DiffSumCalc(mt9v03x_image[now_row][current],
+mt9v03x_image[now_row][next_2p]) > threshold)
+{
+/* 仅起点第一次就满足，才执行向内收缩 */
+if(left_first_ok)
+32
+left_edge[now_row] = ShrinkCheck(current, 1);
+else
+left_edge[now_row] = current;
+break;
+}
+}
+current = current - 2;
+}
+/* 右边界查找 */
+current = start_x[now_row];
+while(1)
+{
+next_p = current + STEP;
+next_2p = current + 2*STEP + 5;
+if(next_p >= 186)
+{
+right_edge[now_row] = 187;
+break;
+}
+if(DiffSumCalc(mt9v03x_image[now_row][current],
+mt9v03x_image[now_row][next_p]) > threshold)
+{
+if(DiffSumCalc(mt9v03x_image[now_row][current],
+mt9v03x_image[now_row][next_2p]) > threshold)
+{
+/* 仅起点第一次就满足，才执行向内收缩 */
+if(right_first_ok)
+right_edge[now_row] = ShrinkCheck(current, -1);
+else
+right_edge[now_row] = current;
+break;
+}
+}
+current = current + 2;
+}
+mid_x[now_row] = (left_edge[now_row] + right_edge[now_row]) / 2;
+/* 本行识别正常 → 更新历史缓存，作为下一次丢线备用 */
+last_left = left_edge[now_row];
+last_right = right_edge[now_row];
+last_mid = mid_x[now_row];
+}
+33
+float x_cur = 93.5f;
+float y_cur = 80.0f;
+float preaim_error = 0.0f;
+float con1 = 0;
+float width1 = 0;
+float con2 = 0;
+float width2 = 0;
+float con = 0;
+float width = 0;
+float compensate_add = 0;
+void compensate()
+{
+static int current = 0;
+static int next_p = 0;
+compensate_add = 0;
+if(left_edge[NEAR_ROW] == 0 || right_edge[NEAR_ROW] == 187)
+{
+if(left_edge[NEAR_ROW] == 0 && right_edge[NEAR_ROW] == 187)
+{
+compensate_add = 0; // 修复原 == 笔误
+}
+else
+if(left_edge[NEAR_ROW] == 0)
+{
+current = NEAR_ROW;
+while(1)
+{
+compensate_add--;
+next_p = current + STEP;
+if(next_p >= 119)
+{
+break;
+}
+if(DiffSumCalc(mt9v03x_image[current][0],
+mt9v03x_image[next_p][0]) > threshold)
+{
+break;
+}
+current = current + 1;
+}
+}
+34
+else
+{
+current = NEAR_ROW;
+while(1)
+{
+compensate_add++;
+next_p = current + STEP;
+if(next_p >= 119)
+{
+break;
+}
+if(DiffSumCalc(mt9v03x_image[current][186],
+mt9v03x_image[next_p][186]) > threshold)
+{
+break;
+}
+current = current + 1;
+}
+}
+}
+}
+int ba_symmerical = 0 ;
+int ba_count=0;
+// ======================= 主图像处理函数 =======================
+void car_image(void)
+{
+static float kp = 23;
+static float kd = 36;
+static float ki = 0;
+static float quad = 0.0f;
+static float last_err = 0;
+static float integral = 0;
+#define A 15 // 变速积分分段阈值，可根据系统调节
+// 变速积分累加
+float abs_err = fabs(preaim_error);
+float f_coeff;
+if (mt9v03x_finish_flag == 1)
+{
+mt9v03x_finish_flag = 0;
+//巡线行：先计算最长白列
+// FindLongestWhiteColumnVertex();
+35
+NEAR_ROW=55;
+NEAR_ROW2=55;
+SingleLineScan(NEAR_ROW);
+SingleLineScan(NEAR_ROW2);
+// binarize_and_display();
+// ips200_show_gray_image(0, 0, mt9v03x_image[0], MT9V03X_W, MT9V03X_H,
+MT9V03X_W, MT9V03X_H, 0);
+//
+// //绘制左侧
+// ips200_draw_point(left_edge[20], 20, RGB565_WHITE);
+// // 绘制右侧
+// ips200_draw_point(right_edge[20], 20, RGB565_GREEN);
+// // 绘制起始
+// ips200_draw_point(start_x[20], 20, RGB565_YELLOW);
+// //绘制左侧
+// ips200_draw_point(left_edge[28], 28, RGB565_WHITE);
+// // 绘制右侧
+// ips200_draw_point(right_edge[28], 28, RGB565_GREEN);
+// // 绘制起始
+// ips200_draw_point(start_x[28], 28, RGB565_YELLOW);
+//加权赋值
+x_cur = (peak_array[NEAR_ROW] * mid_x[NEAR_ROW] + peak_array[NEAR_ROW2] *
+mid_x[NEAR_ROW2]) / (peak_array[NEAR_ROW] + peak_array[NEAR_ROW2]);
+y_cur = NEAR_ROW2;
+compensate();
+if(compensate_add > 0)
+{
+x_cur = x_cur + 0.25*(compensate_add + NEAR_ROW - 30);
+}
+else
+{
+if(compensate_add < 0)
+{
+x_cur = x_cur + 0.25*(compensate_add - NEAR_ROW + 30);
+}
+}
+//巡线行
+{
+if(l_s_j == 1 || r_s_j == 1)
+{
+36
+if(l_s_j == 1 && r_s_j == 1)
+{
+preaim_error= atan((93.5f - x_cur) / (181 - y_cur)) * 57.2958f;
+}
+else
+{
+if(l_s_j == 1)
+{
+if(avoid_left_state == 1)
+{
+// preaim_error = atan((93.5f - left_edge[NEAR_ROW] +
+15) / (185 - NEAR_ROW)) * 57.2958f;
+preaim_error =
+atan((93.5f - left_edge[NEAR_ROW] - 33) / (181 - NEAR_ROW)) * 57.2958f;
+}
+else
+{
+preaim_error= atan((93.5f - left_edge[NEAR_ROW] - 33)
+/ (181 - NEAR_ROW)) * 57.2958f;
+}
+}
+else
+{
+if(avoid_right_state == 1)
+{
+// preaim_error = atan((93.5f - right_edge[NEAR_ROW] -
+15) / (185 - NEAR_ROW)) * 57.2958f;
+preaim_error =
+atan((93.5f - right_edge[NEAR_ROW] + 33) / (181 - NEAR_ROW)) * 57.2958f;
+}
+else
+{
+preaim_error= atan((93.5f - right_edge[NEAR_ROW] + 33)
+/ (181 - NEAR_ROW)) * 57.2958f;
+}
+}
+}
+}
+else
+{
+preaim_error = atan((93.5f - x_cur) / (181 - y_cur)) * 57.2958f;
+}
+}
+37
+xun_ji_speed = 125;
+//control calculate
+if(abs(preaim_error) >= 17)
+{
+if(preaim_error>=0)
+{
+quad = 0.01*(preaim_error-17)*abs(preaim_error-17);
+}
+else
+{
+quad = 0.01*(preaim_error+17)*abs(preaim_error+17);
+}
+}
+else
+{
+quad = 0.0;
+}
+if (abs_err <= A)
+{
+f_coeff = 1.0f;
+}
+else
+{
+f_coeff = A / abs_err;
+}
+integral += f_coeff * preaim_error;
+// 积分限幅保持原有逻辑
+if(integral >= 75)
+{
+integral = 75;
+}
+if(integral <= -75)
+{
+integral = -75;
+}
+direction_calculate = kp * preaim_error + kd * (preaim_error - last_err)
++ ki*integral +quad;
+last_err = preaim_error;
+//control calculate
+38
+//元素行
+//打靶处理
+FindBlackRing75();
+SingleLineScan(20);
+SingleLineScan(28);
+SingleLineScan(50);
+SingleLineScan(75);
+SingleLineScan(90);
+//元素行
+straight();
+avoid_left();
+avoid_right();
+//计算巡线
+//巡线行
+{
+if(l_s_j == 1 || r_s_j == 1)
+{
+if(l_s_j == 1 && r_s_j == 1)
+{
+preaim_error= atan((93.5f - x_cur) / (181 - y_cur)) * 57.2958f;
+}
+else
+{
+if(l_s_j == 1)
+{
+if(avoid_left_state == 1)
+{
+// preaim_error = atan((93.5f - left_edge[NEAR_ROW] +
+15) / (185 - NEAR_ROW)) * 57.2958f;
+preaim_error =
+atan((93.5f - left_edge[NEAR_ROW] - 33) / (181 - NEAR_ROW)) * 57.2958f;
+}
+else
+{
+preaim_error= atan((93.5f - left_edge[NEAR_ROW] - 33)
+/ (181 - NEAR_ROW)) * 57.2958f;
+}
+}
+else
+{
+39
+if(avoid_right_state == 1)
+{
+// preaim_error = atan((93.5f - right_edge[NEAR_ROW] -
+15) / (185 - NEAR_ROW)) * 57.2958f;
+preaim_error =
+atan((93.5f - right_edge[NEAR_ROW] + 33) / (181 - NEAR_ROW)) * 57.2958f;
+}
+else
+{
+preaim_error= atan((93.5f - right_edge[NEAR_ROW] + 33)
+/ (181 - NEAR_ROW)) * 57.2958f;
+}
+}
+}
+}
+else
+{
+preaim_error = atan((93.5f - x_cur) / (181 - y_cur)) * 57.2958f;
+}
+}
+//control calculate
+if(abs(preaim_error) >= 17)
+{
+if(preaim_error>=0)
+{
+quad = 0.01*(preaim_error-17)*abs(preaim_error-17);
+}
+else
+{
+quad = 0.01*(preaim_error+17)*abs(preaim_error+17);
+}
+}
+else
+{
+quad = 0.0;
+}
+if (abs_err <= A)
+{
+f_coeff = 1.0f;
+}
+else
+{
+40
+f_coeff = A / abs_err;
+}
+integral += f_coeff * preaim_error;
+// 积分限幅保持原有逻辑
+if(integral >= 75)
+{
+integral = 75;
+}
+if(integral <= -75)
+{
+integral = -75;
+}
+direction_calculate = kp * preaim_error + kd * (preaim_error - last_err)
++ ki*integral +quad;
+last_err = preaim_error;
+//control calculate
+//计算巡线
+//保护
+// run = CheckRow90GrayProtect();
+//保护
+//element part
+// printf("la%d\n",avoid_left_state);
+// printf("ra%d\n",avoid_right_state);
+// printf("rstr%d\n",r_s_j);
+// printf("28wd%d\n",(right_edge[28] - left_edge[28]));
+// printf("20w%d\n",(right_edge[20] - left_edge[20]));
+// printf("%d",is_zebra);
+}
+}
+/* 75行黑环检测全局变量 */
+int ring_left_75 = -1; // 黑环左边界
+int ring_right_75 = -1; // 黑环右边界
+int ring_lost_75 = 0; // 黑环丢线标志 1=丢线 0=识别到
+/**
+* @brief 75行黑环左右边界检测（单步差比和判定）
+* @note 斑马线触发后，100内屏蔽黑环检测
+* 基于赛道左右边界向内搜索白→黑跳变，复用原差比和与收缩逻辑
+*/
+41
+void FindBlackRing75(void)
+{
+int row = 75;
+int current, next_p;
+int now_x, check_x, move_cnt, tr;
+int ring_width;
+ring_left_75 = -1;
+ring_right_75 = -1;
+ring_lost_75 = 0;
+/* 赛道本身丢线则直接返回 */
+if(line_lost[row] == 1 || left_edge[row] >= right_edge[row])
+{
+ring_lost_75 = 1;
+return;
+}
+/* ========== 黑环左边界：从赛道左边界向右搜，白→黑跳变 ========== */
+current = left_edge[row];
+while(1)
+{
+next_p = current + STEP;
+/* 搜到赛道右边界仍未找到，判定丢线 */
+if(next_p >= right_edge[row])
+{
+ring_left_75 = -1;
+break;
+}
+/* 单步差比和超阈值，判定为有效跳变 */
+if(DiffSumCalc(mt9v03x_image[row][current],
+mt9v03x_image[row][next_p]) > threshold)
+{
+/* 逐像素向内收缩校验，提升边界精度 */
+now_x = current;
+move_cnt = 0;
+while(move_cnt < STEP)
+{
+check_x = now_x + 1;
+if(check_x >= right_edge[row])
+break;
+tr = DiffSumCalc(mt9v03x_image[row][check_x],
+42
+mt9v03x_image[row][check_x - STEP]);
+if(tr > threshold)
+{
+now_x = check_x;
+move_cnt++;
+}
+else
+{
+break;
+}
+}
+ring_left_75 = now_x;
+break;
+}
+current += 2;
+}
+/* ========== 黑环右边界：从赛道右边界向左搜，白→黑跳变 ========== */
+current = right_edge[row];
+while(1)
+{
+next_p = current - STEP;
+/* 搜到赛道左边界仍未找到，判定丢线 */
+if(next_p <= left_edge[row])
+{
+ring_right_75 = -1;
+break;
+}
+/* 单步差比和超阈值，判定为有效跳变 */
+if(DiffSumCalc(mt9v03x_image[row][current],
+mt9v03x_image[row][next_p]) > threshold)
+{
+/* 逐像素向内收缩校验，提升边界精度 */
+now_x = current;
+move_cnt = 0;
+while(move_cnt < STEP)
+{
+check_x = now_x - 1;
+if(check_x <= left_edge[row])
+break;
+tr = DiffSumCalc(mt9v03x_image[row][check_x],
+43
+mt9v03x_image[row][check_x + STEP]);
+if(tr > threshold)
+{
+now_x = check_x;
+move_cnt++;
+}
+else
+{
+break;
+}
+}
+ring_right_75 = now_x;
+break;
+}
+current -= 2;
+}
+if(ring_left_75 == -1 || ring_right_75 == -1)
+{
+ring_lost_75 = 1;
+}
+else
+{
+ring_width = ring_right_75 - ring_left_75;
+if(ring_width < 14 || ring_width > 45)
+{
+ring_lost_75 = 1;
+ring_left_75 = -1;
+ring_right_75 = -1;
+}
+}
+}
+/**
+* @brief 90行灰度总和保护判断
+* @retval 1=该行灰度正常有效；0=该行灰度异常（过暗丢线/过亮过曝）
+* @note 适配 C251 16位 int 环境，使用无符号整型避免求和溢出
+*/
+int CheckRow90GrayProtect(void)
+{
+unsigned int gray_sum;
+int col;
+44
+gray_sum = 0;
+/* 累加第 90 行所有像素的灰度值 */
+for(col = 0; col < IMG_WIDTH; col+=4)
+{
+gray_sum += mt9v03x_image[90][col];
+}
+/* 保护阈值：可根据实际场地光线微调
+总和过小 = 全黑/严重丢线；总和过大 = 全白过曝
+参考范围：白底 PVC 赛道正常亮度下，整行和应处于中间区间 */
+if(gray_sum < 1000 || gray_sum > 6000)
+{
+return 0;
+}
+return 1;
+}
+#ifndef __image_H
+#define __image_H
+#include "main.h"
+/* 巡线全局参数 可根据摄像头分辨率修改 */
+#define threshold 24 /* 差比和阈值 */
+#define STEP 6 /* 巡线步长 */
+#define IMG_WIDTH MT9V03X_W /* 图像单行像素宽度 */
+extern int start_x[120]; //扫线起点
+extern int left_edge[120];
+extern int right_edge[120];
+extern int line_lost[120];
+extern int longest_white_col ;
+extern float preaim_error;
+extern int NEAR_ROW;
+extern int NEAR_ROW2;
+extern int l_loop_s;
+extern int r_loop_s;
+int DiffSumCalc(int a, int b);
+void camera_init();
+void car_image();
+int ShrinkCheck(int edge_x, int dir);
+45
+int CheckRow90GrayProtect(void);
+extern int ring_left_75; // 黑环左边界
+extern int ring_right_75; // 黑环右边界
+extern int ring_lost_75;
+void FindBlackRing75(void);
+#endif
+#include "main.h"
+void image_show()
+{
+ips200_show_gray_image(0, 0, mt9v03x_image[0], MT9V03X_W, MT9V03X_H,
+MT9V03X_W, MT9V03X_H, 0);
+ips200_show_int32(15*8,10*16,show_state,2);
+ips200_show_int32(15*8,11*16,line_lost[35],3);
+ips200_show_string(0*8, 12*16, "gray");
+ips200_show_uint8(15*8,12*16,mt9v03x_image[NEAR_ROW][93]);
+ips200_show_uint8(15*8,13*16,mt9v03x_image[116][93]);
+ips200_show_float(15*8,14*16,preaim_error,3,1);
+// ips200_show_string(0*8, 15*16, "left");
+// ips200_show_int32(5*8,15*16,left_edge[20],3);
+// ips200_show_int32(10*8,15*16,left_edge[NEAR_ROW],3);
+// ips200_show_int32(15*8,15*16,left_edge[90],3);
+// ips200_show_string(0*8, 16*16, "direction_calculate");
+// ips200_show_float(15*8,16*16,direction_calculate,3,1);
+// ips200_draw_point(93, 20, RGB565_RED);
+// ips200_draw_point(93, 20 + 1, RGB565_RED);
+// ips200_draw_point(93, 35, RGB565_RED);
+// ips200_draw_point(93, 35 + 1, RGB565_RED);
+// ips200_draw_point(93, 75, RGB565_RED);
+// ips200_draw_point(93, 75 + 1, RGB565_RED);
+// ips200_draw_point(93, 90, RGB565_RED);
+// ips200_draw_point(93, 90 + 1, RGB565_RED);
+// //绘制左侧
+// ips200_draw_point(left_edge[20], 20, RGB565_WHITE);
+//
+// // 绘制右侧

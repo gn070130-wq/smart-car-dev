@@ -1,0 +1,1314 @@
+第二十一届全国大学生
+智能汽车竞赛
+技
+ 
+术
+ 
+报
+ 
+告
+学
+ 
+   校：
+      哈尔滨工业大学        
+    
+队伍名称：
+        紫丁香
+七
+队          
+参赛
+队员：
+   尚博 申宇楠 李浩 刘杰彰  
+带队
+教师：
+          
+洪师楠
+            
+关于技术报告和研究论文使用授权的说明
+<w:t xml:space="preserve"> 
+本人完全了解第二十一届全国大学生智能汽车竞赛关于保留、使用技术报告和研究论文的规定，即：参赛作品著作权归参赛者本人，比赛组委会和恩智浦半导体公司可以在相关主页上收录并公开参赛作品的设计方案、技术报告以及参赛模型车的视频、图像资料，并将相关内容编纂收录在组委会出版论文集中。
+参赛队员签名：
+ 
+尚博
+ 
+申宇楠
+ 
+李浩
+ 
+刘杰彰
+                      带队教师签名：
+ 洪师楠
+ 
+日期：
+2026年8月14日
+摘  要
+本文详细介绍了哈尔滨工业大学
+“
+紫丁香
+七
+队
+”
+在第
+二十一
+届全国大学生智能汽车竞赛
+智能视觉组
+中的系统方案。本次比赛采用大赛组委会统一指定的
+M
+型车模，以
+RT1064
+为核心控制器
+以及逐飞科技公司开发的
+OpenART
+ Plus
+为主要识别处理器
+，要求
+智能车通过
+OpenART
+ Plus
+进行地图识别和图像分类。
+智能车采用
+总钻风
+检测
+智能车实时位置；通过编码器检测智能车的实时速度，使用陀螺仪获得车的偏角；使用
+P
+ID
+控制算法调节电机的转速，实现智能车在运动过程中速度和方向的闭环控制；
+为了提高模型车的速度和稳定性，使用
+上位机
+、
+按键、
+O
+LED
+模块等调试工具，进行了大量硬件与软件测试。实验结果表明，该系统设计方案可行。
+【关键词】智能车、视觉、
+OpenART
+ Plus
+、
+A
+I
+图像分类
+ 
+图像处理
+目录
+<w:tab w:val="left" w:pos="880"/><w:tab w:val="right" w:leader="dot" w:pos="8271"/></w:tabs><w:rPr><w:noProof/><w:sz w:val="22"/><w14:ligatures w14:val="standardContextual"/></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="24"/></w:rPr><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:rPr><w:sz w:val="24"/></w:rPr><w:instrText xml:space="preserve"> TOC \o "1-3" \h \z \u </w:instrText></w:r><w:r><w:rPr><w:sz w:val="24"/></w:rPr><w:fldChar w:fldCharType="separate"/></w:r><w:hyperlink w:anchor="_Toc237719571" w:history="1"><w:r w:rsidR="00AD56A4" w:rsidRPr="0031108B"><w:rPr><w:rStyle w:val="a8"/><w:rFonts w:ascii="黑体" w:eastAsia="黑体" w:hAnsi="黑体" w:cs="黑体"/><w:b/><w:bCs/><w:noProof/></w:rPr><w:t>第一章
+</w:r><w:r w:rsidR="00AD56A4" w:rsidRPr="0031108B"><w:rPr><w:rStyle w:val="a8"/><w:rFonts w:ascii="黑体" w:eastAsia="黑体" w:hAnsi="黑体" w:cs="黑体"/><w:b/><w:bCs/><w:noProof/></w:rPr><w:t>引言
+</w:r><w:r w:rsidR="00AD56A4"><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:fldChar w:fldCharType="begin"/></w:r><w:r w:rsidR="00AD56A4"><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:instrText xml:space="preserve"> </w:instrText></w:r><w:r w:rsidR="00AD56A4"><w:rPr><w:noProof/><w:webHidden/></w:rPr><w:instrText>PAGEREF _Toc237719571 \h</w:instrText></w:r><w:r w:rsidR="00AD56A4"><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:instrText xml:space="preserve"> </w:instrText></w:r><w:r w:rsidR="00AD56A4"><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr></w:r><w:r w:rsidR="00AD56A4"><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:fldChar w:fldCharType="separate"/></w:r><w:r w:rsidR="00AD56A4"><w:rPr><w:noProof/><w:webHidden/></w:rPr><w:t>1
+<w:tab w:val="right" w:leader="dot" w:pos="8271"/></w:tabs><w:rPr><w:noProof/><w:sz w:val="22"/><w14:ligatures w14:val="standardContextual"/></w:rPr></w:pPr><w:hyperlink w:anchor="_Toc237719572" w:history="1"><w:r w:rsidRPr="0031108B"><w:rPr><w:rStyle w:val="a8"/><w:rFonts w:ascii="Arial" w:eastAsia="黑体" w:hAnsi="Arial" w:cs="Times New Roman"/><w:bCs/><w:noProof/></w:rPr><w:t xml:space="preserve">1.1 
+智能车大赛介绍
+</w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:instrText xml:space="preserve"> </w:instrText></w:r><w:r><w:rPr><w:noProof/><w:webHidden/></w:rPr><w:instrText>PAGEREF _Toc237719572 \h</w:instrText></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:instrText xml:space="preserve"> </w:instrText></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:noProof/><w:webHidden/></w:rPr><w:t>1
+<w:tab w:val="right" w:leader="dot" w:pos="8271"/></w:tabs><w:rPr><w:noProof/><w:sz w:val="22"/><w14:ligatures w14:val="standardContextual"/></w:rPr></w:pPr><w:hyperlink w:anchor="_Toc237719573" w:history="1"><w:r w:rsidRPr="0031108B"><w:rPr><w:rStyle w:val="a8"/><w:rFonts w:ascii="Arial" w:eastAsia="黑体" w:hAnsi="Arial" w:cs="Times New Roman"/><w:bCs/><w:noProof/></w:rPr><w:t xml:space="preserve">1.2 
+第二十一届智能视觉组规则介绍
+</w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:instrText xml:space="preserve"> </w:instrText></w:r><w:r><w:rPr><w:noProof/><w:webHidden/></w:rPr><w:instrText>PAGEREF _Toc237719573 \h</w:instrText></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:instrText xml:space="preserve"> </w:instrText></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:noProof/><w:webHidden/></w:rPr><w:t>1
+<w:tab w:val="right" w:leader="dot" w:pos="8271"/></w:tabs><w:rPr><w:noProof/><w:sz w:val="22"/><w14:ligatures w14:val="standardContextual"/></w:rPr></w:pPr><w:hyperlink w:anchor="_Toc237719574" w:history="1"><w:r w:rsidRPr="0031108B"><w:rPr><w:rStyle w:val="a8"/><w:rFonts w:ascii="Arial" w:eastAsia="黑体" w:hAnsi="Arial" w:cs="Times New Roman"/><w:bCs/><w:noProof/></w:rPr><w:t xml:space="preserve">1.3 
+报告内容
+</w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:instrText xml:space="preserve"> </w:instrText></w:r><w:r><w:rPr><w:noProof/><w:webHidden/></w:rPr><w:instrText>PAGEREF _Toc237719574 \h</w:instrText></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:instrText xml:space="preserve"> </w:instrText></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:noProof/><w:webHidden/></w:rPr><w:t>2
+<w:tab w:val="left" w:pos="880"/><w:tab w:val="right" w:leader="dot" w:pos="8271"/></w:tabs><w:rPr><w:noProof/><w:sz w:val="22"/><w14:ligatures w14:val="standardContextual"/></w:rPr></w:pPr><w:hyperlink w:anchor="_Toc237719575" w:history="1"><w:r w:rsidRPr="0031108B"><w:rPr><w:rStyle w:val="a8"/><w:rFonts w:ascii="黑体" w:eastAsia="黑体" w:hAnsi="黑体" w:cs="黑体"/><w:b/><w:bCs/><w:noProof/></w:rPr><w:t>第二章
+</w:r><w:r w:rsidRPr="0031108B"><w:rPr><w:rStyle w:val="a8"/><w:rFonts w:ascii="黑体" w:eastAsia="黑体" w:hAnsi="黑体" w:cs="黑体"/><w:b/><w:bCs/><w:noProof/></w:rPr><w:t>机械结构设计
+</w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:instrText xml:space="preserve"> </w:instrText></w:r><w:r><w:rPr><w:noProof/><w:webHidden/></w:rPr><w:instrText>PAGEREF _Toc237719575 \h</w:instrText></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:instrText xml:space="preserve"> </w:instrText></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:noProof/><w:webHidden/></w:rPr><w:t>3
+<w:tab w:val="right" w:leader="dot" w:pos="8271"/></w:tabs><w:rPr><w:noProof/><w:sz w:val="22"/><w14:ligatures w14:val="standardContextual"/></w:rPr></w:pPr><w:hyperlink w:anchor="_Toc237719576" w:history="1"><w:r w:rsidRPr="0031108B"><w:rPr><w:rStyle w:val="a8"/><w:rFonts w:ascii="黑体" w:eastAsia="黑体" w:hAnsi="黑体"/><w:noProof/></w:rPr><w:t>第三章 硬件电路设计
+</w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:instrText xml:space="preserve"> </w:instrText></w:r><w:r><w:rPr><w:noProof/><w:webHidden/></w:rPr><w:instrText>PAGEREF _Toc237719576 \h</w:instrText></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:instrText xml:space="preserve"> </w:instrText></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:noProof/><w:webHidden/></w:rPr><w:t>5
+<w:tab w:val="right" w:leader="dot" w:pos="8271"/></w:tabs><w:rPr><w:noProof/><w:sz w:val="22"/><w14:ligatures w14:val="standardContextual"/></w:rPr></w:pPr><w:hyperlink w:anchor="_Toc237719577" w:history="1"><w:r w:rsidRPr="0031108B"><w:rPr><w:rStyle w:val="a8"/><w:noProof/></w:rPr><w:t xml:space="preserve">3.1 
+单片机系统设计
+</w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:instrText xml:space="preserve"> </w:instrText></w:r><w:r><w:rPr><w:noProof/><w:webHidden/></w:rPr><w:instrText>PAGEREF _Toc237719577 \h</w:instrText></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:instrText xml:space="preserve"> </w:instrText></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:noProof/><w:webHidden/></w:rPr><w:t>5
+<w:tab w:val="right" w:leader="dot" w:pos="8271"/></w:tabs><w:rPr><w:noProof/><w:sz w:val="22"/><w14:ligatures w14:val="standardContextual"/></w:rPr></w:pPr><w:hyperlink w:anchor="_Toc237719578" w:history="1"><w:r w:rsidRPr="0031108B"><w:rPr><w:rStyle w:val="a8"/><w:rFonts w:ascii="Arial" w:eastAsia="黑体" w:hAnsi="Arial" w:cs="Times New Roman"/><w:bCs/><w:noProof/></w:rPr><w:t>3.2
+调试电路设计
+</w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:instrText xml:space="preserve"> </w:instrText></w:r><w:r><w:rPr><w:noProof/><w:webHidden/></w:rPr><w:instrText>PAGEREF _Toc237719578 \h</w:instrText></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:instrText xml:space="preserve"> </w:instrText></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:noProof/><w:webHidden/></w:rPr><w:t>5
+<w:tab w:val="right" w:leader="dot" w:pos="8271"/></w:tabs><w:rPr><w:noProof/><w:sz w:val="22"/><w14:ligatures w14:val="standardContextual"/></w:rPr></w:pPr><w:hyperlink w:anchor="_Toc237719580" w:history="1"><w:r w:rsidRPr="0031108B"><w:rPr><w:rStyle w:val="a8"/><w:noProof/></w:rPr><w:t>3.3
+电机驱动电路
+</w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:instrText xml:space="preserve"> </w:instrText></w:r><w:r><w:rPr><w:noProof/><w:webHidden/></w:rPr><w:instrText>PAGEREF _Toc237719580 \h</w:instrText></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:instrText xml:space="preserve"> </w:instrText></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:noProof/><w:webHidden/></w:rPr><w:t>5
+<w:tab w:val="right" w:leader="dot" w:pos="8271"/></w:tabs><w:rPr><w:noProof/><w:sz w:val="22"/><w14:ligatures w14:val="standardContextual"/></w:rPr></w:pPr><w:hyperlink w:anchor="_Toc237719581" w:history="1"><w:r w:rsidRPr="0031108B"><w:rPr><w:rStyle w:val="a8"/><w:noProof/></w:rPr><w:t xml:space="preserve">3.4 
+传感器的选择
+</w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:instrText xml:space="preserve"> </w:instrText></w:r><w:r><w:rPr><w:noProof/><w:webHidden/></w:rPr><w:instrText>PAGEREF _Toc237719581 \h</w:instrText></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:instrText xml:space="preserve"> </w:instrText></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:noProof/><w:webHidden/></w:rPr><w:t>7
+<w:tab w:val="right" w:leader="dot" w:pos="8271"/></w:tabs><w:rPr><w:noProof/><w:sz w:val="22"/><w14:ligatures w14:val="standardContextual"/></w:rPr></w:pPr><w:hyperlink w:anchor="_Toc237719582" w:history="1"><w:r w:rsidRPr="0031108B"><w:rPr><w:rStyle w:val="a8"/><w:rFonts w:ascii="Arial" w:eastAsia="黑体" w:hAnsi="Arial" w:cs="Arial"/><w:noProof/></w:rPr><w:t xml:space="preserve">3.4.1 
+摄像头
+</w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:instrText xml:space="preserve"> </w:instrText></w:r><w:r><w:rPr><w:noProof/><w:webHidden/></w:rPr><w:instrText>PAGEREF _Toc237719582 \h</w:instrText></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:instrText xml:space="preserve"> </w:instrText></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:noProof/><w:webHidden/></w:rPr><w:t>7
+<w:tab w:val="right" w:leader="dot" w:pos="8271"/></w:tabs><w:rPr><w:noProof/><w:sz w:val="22"/><w14:ligatures w14:val="standardContextual"/></w:rPr></w:pPr><w:hyperlink w:anchor="_Toc237719583" w:history="1"><w:r w:rsidRPr="0031108B"><w:rPr><w:rStyle w:val="a8"/><w:rFonts w:ascii="Arial" w:eastAsia="黑体" w:hAnsi="Arial" w:cs="Arial"/><w:noProof/></w:rPr><w:t xml:space="preserve">3.4.2 
+编码器
+</w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:instrText xml:space="preserve"> </w:instrText></w:r><w:r><w:rPr><w:noProof/><w:webHidden/></w:rPr><w:instrText>PAGEREF _Toc237719583 \h</w:instrText></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:instrText xml:space="preserve"> </w:instrText></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:noProof/><w:webHidden/></w:rPr><w:t>7
+<w:tab w:val="right" w:leader="dot" w:pos="8271"/></w:tabs><w:rPr><w:noProof/><w:sz w:val="22"/><w14:ligatures w14:val="standardContextual"/></w:rPr></w:pPr><w:hyperlink w:anchor="_Toc237719584" w:history="1"><w:r w:rsidRPr="0031108B"><w:rPr><w:rStyle w:val="a8"/><w:noProof/></w:rPr><w:t xml:space="preserve">3.5 
+主控板
+</w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:instrText xml:space="preserve"> </w:instrText></w:r><w:r><w:rPr><w:noProof/><w:webHidden/></w:rPr><w:instrText>PAGEREF _Toc237719584 \h</w:instrText></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:instrText xml:space="preserve"> </w:instrText></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:noProof/><w:webHidden/></w:rPr><w:t>7
+<w:tab w:val="right" w:leader="dot" w:pos="8271"/></w:tabs><w:rPr><w:noProof/><w:sz w:val="22"/><w14:ligatures w14:val="standardContextual"/></w:rPr></w:pPr><w:hyperlink w:anchor="_Toc237719585" w:history="1"><w:r w:rsidRPr="0031108B"><w:rPr><w:rStyle w:val="a8"/><w:rFonts w:ascii="黑体" w:eastAsia="黑体" w:hAnsi="黑体"/><w:noProof/></w:rPr><w:t>第四章 软件控制设计
+</w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:instrText xml:space="preserve"> </w:instrText></w:r><w:r><w:rPr><w:noProof/><w:webHidden/></w:rPr><w:instrText>PAGEREF _Toc237719585 \h</w:instrText></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:instrText xml:space="preserve"> </w:instrText></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:noProof/><w:webHidden/></w:rPr><w:t>8
+<w:tab w:val="right" w:leader="dot" w:pos="8271"/></w:tabs><w:rPr><w:noProof/><w:sz w:val="22"/><w14:ligatures w14:val="standardContextual"/></w:rPr></w:pPr><w:hyperlink w:anchor="_Toc237719586" w:history="1"><w:r w:rsidRPr="0031108B"><w:rPr><w:rStyle w:val="a8"/><w:rFonts w:ascii="Arial" w:eastAsia="黑体" w:hAnsi="Arial" w:cs="Arial"/><w:noProof/></w:rPr><w:t xml:space="preserve">4.1.1 
+位置式
+PID
+</w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:instrText xml:space="preserve"> </w:instrText></w:r><w:r><w:rPr><w:noProof/><w:webHidden/></w:rPr><w:instrText>PAGEREF _Toc237719586 \h</w:instrText></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:instrText xml:space="preserve"> </w:instrText></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:noProof/><w:webHidden/></w:rPr><w:t>10
+<w:tab w:val="right" w:leader="dot" w:pos="8271"/></w:tabs><w:rPr><w:noProof/><w:sz w:val="22"/><w14:ligatures w14:val="standardContextual"/></w:rPr></w:pPr><w:hyperlink w:anchor="_Toc237719587" w:history="1"><w:r w:rsidRPr="0031108B"><w:rPr><w:rStyle w:val="a8"/><w:rFonts w:ascii="Arial" w:eastAsia="黑体" w:hAnsi="Arial" w:cs="Arial"/><w:noProof/></w:rPr><w:t xml:space="preserve">4.1.2 
+增量式
+PID
+</w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:instrText xml:space="preserve"> </w:instrText></w:r><w:r><w:rPr><w:noProof/><w:webHidden/></w:rPr><w:instrText>PAGEREF _Toc237719587 \h</w:instrText></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:instrText xml:space="preserve"> </w:instrText></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:noProof/><w:webHidden/></w:rPr><w:t>10
+<w:tab w:val="right" w:leader="dot" w:pos="8271"/></w:tabs><w:rPr><w:noProof/><w:sz w:val="22"/><w14:ligatures w14:val="standardContextual"/></w:rPr></w:pPr><w:hyperlink w:anchor="_Toc237719588" w:history="1"><w:r w:rsidRPr="0031108B"><w:rPr><w:rStyle w:val="a8"/><w:rFonts w:ascii="Arial" w:eastAsia="黑体" w:hAnsi="Arial" w:cs="Arial"/><w:noProof/></w:rPr><w:t>4.1.3 PID
+参数整定
+</w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:instrText xml:space="preserve"> </w:instrText></w:r><w:r><w:rPr><w:noProof/><w:webHidden/></w:rPr><w:instrText>PAGEREF _Toc237719588 \h</w:instrText></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:instrText xml:space="preserve"> </w:instrText></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:noProof/><w:webHidden/></w:rPr><w:t>11
+<w:tab w:val="right" w:leader="dot" w:pos="8271"/></w:tabs><w:rPr><w:noProof/><w:sz w:val="22"/><w14:ligatures w14:val="standardContextual"/></w:rPr></w:pPr><w:hyperlink w:anchor="_Toc237719589" w:history="1"><w:r w:rsidRPr="0031108B"><w:rPr><w:rStyle w:val="a8"/><w:rFonts w:ascii="Arial" w:eastAsia="黑体" w:hAnsi="Arial" w:cs="Arial"/><w:noProof/></w:rPr><w:t xml:space="preserve">4.1.4 
+麦轮速度分解
+</w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:instrText xml:space="preserve"> </w:instrText></w:r><w:r><w:rPr><w:noProof/><w:webHidden/></w:rPr><w:instrText>PAGEREF _Toc237719589 \h</w:instrText></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:instrText xml:space="preserve"> </w:instrText></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:noProof/><w:webHidden/></w:rPr><w:t>11
+<w:tab w:val="right" w:leader="dot" w:pos="8271"/></w:tabs><w:rPr><w:noProof/><w:sz w:val="22"/><w14:ligatures w14:val="standardContextual"/></w:rPr></w:pPr><w:hyperlink w:anchor="_Toc237719590" w:history="1"><w:r w:rsidRPr="0031108B"><w:rPr><w:rStyle w:val="a8"/><w:rFonts w:ascii="黑体" w:eastAsia="黑体" w:hAnsi="黑体"/><w:noProof/></w:rPr><w:t>第五章 系统调试
+</w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:instrText xml:space="preserve"> </w:instrText></w:r><w:r><w:rPr><w:noProof/><w:webHidden/></w:rPr><w:instrText>PAGEREF _Toc237719590 \h</w:instrText></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:instrText xml:space="preserve"> </w:instrText></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:noProof/><w:webHidden/></w:rPr><w:t>12
+<w:tab w:val="right" w:leader="dot" w:pos="8271"/></w:tabs><w:rPr><w:noProof/><w:sz w:val="22"/><w14:ligatures w14:val="standardContextual"/></w:rPr></w:pPr><w:hyperlink w:anchor="_Toc237719591" w:history="1"><w:r w:rsidRPr="0031108B"><w:rPr><w:rStyle w:val="a8"/><w:noProof/></w:rPr><w:t xml:space="preserve">5.1 
+开发调试工具
+</w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:instrText xml:space="preserve"> </w:instrText></w:r><w:r><w:rPr><w:noProof/><w:webHidden/></w:rPr><w:instrText>PAGEREF _Toc237719591 \h</w:instrText></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:instrText xml:space="preserve"> </w:instrText></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:noProof/><w:webHidden/></w:rPr><w:t>12
+<w:tab w:val="right" w:leader="dot" w:pos="8271"/></w:tabs><w:rPr><w:noProof/><w:sz w:val="22"/><w14:ligatures w14:val="standardContextual"/></w:rPr></w:pPr><w:hyperlink w:anchor="_Toc237719592" w:history="1"><w:r w:rsidRPr="0031108B"><w:rPr><w:rStyle w:val="a8"/><w:noProof/></w:rPr><w:t xml:space="preserve">5.2 
+人机交互工具
+</w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:instrText xml:space="preserve"> </w:instrText></w:r><w:r><w:rPr><w:noProof/><w:webHidden/></w:rPr><w:instrText>PAGEREF _Toc237719592 \h</w:instrText></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:instrText xml:space="preserve"> </w:instrText></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:noProof/><w:webHidden/></w:rPr><w:t>13
+<w:tab w:val="right" w:leader="dot" w:pos="8271"/></w:tabs><w:rPr><w:noProof/><w:sz w:val="22"/><w14:ligatures w14:val="standardContextual"/></w:rPr></w:pPr><w:hyperlink w:anchor="_Toc237719593" w:history="1"><w:r w:rsidRPr="0031108B"><w:rPr><w:rStyle w:val="a8"/><w:noProof/></w:rPr><w:t>5.3 WIFI
+及上位机调试
+</w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:instrText xml:space="preserve"> </w:instrText></w:r><w:r><w:rPr><w:noProof/><w:webHidden/></w:rPr><w:instrText>PAGEREF _Toc237719593 \h</w:instrText></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:instrText xml:space="preserve"> </w:instrText></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:noProof/><w:webHidden/></w:rPr><w:t>14
+<w:tab w:val="right" w:leader="dot" w:pos="8271"/></w:tabs><w:rPr><w:noProof/><w:sz w:val="22"/><w14:ligatures w14:val="standardContextual"/></w:rPr></w:pPr><w:hyperlink w:anchor="_Toc237719594" w:history="1"><w:r w:rsidRPr="0031108B"><w:rPr><w:rStyle w:val="a8"/><w:rFonts w:ascii="黑体" w:eastAsia="黑体" w:hAnsi="黑体"/><w:noProof/></w:rPr><w:t>第六章 结论
+</w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:instrText xml:space="preserve"> </w:instrText></w:r><w:r><w:rPr><w:noProof/><w:webHidden/></w:rPr><w:instrText>PAGEREF _Toc237719594 \h</w:instrText></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:instrText xml:space="preserve"> </w:instrText></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:noProof/><w:webHidden/></w:rPr><w:t>14
+<w:tab w:val="right" w:leader="dot" w:pos="8271"/></w:tabs><w:rPr><w:noProof/><w:sz w:val="22"/><w14:ligatures w14:val="standardContextual"/></w:rPr></w:pPr><w:hyperlink w:anchor="_Toc237719595" w:history="1"><w:r w:rsidRPr="0031108B"><w:rPr><w:rStyle w:val="a8"/><w:rFonts w:ascii="黑体" w:eastAsia="黑体" w:hAnsi="黑体" w:cs="黑体"/><w:b/><w:bCs/><w:noProof/></w:rPr><w:t>致谢
+</w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:instrText xml:space="preserve"> </w:instrText></w:r><w:r><w:rPr><w:noProof/><w:webHidden/></w:rPr><w:instrText>PAGEREF _Toc237719595 \h</w:instrText></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:instrText xml:space="preserve"> </w:instrText></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:noProof/><w:webHidden/></w:rPr><w:t>15
+<w:tab w:val="right" w:leader="dot" w:pos="8271"/></w:tabs><w:rPr><w:noProof/><w:sz w:val="22"/><w14:ligatures w14:val="standardContextual"/></w:rPr></w:pPr><w:hyperlink w:anchor="_Toc237719596" w:history="1"><w:r w:rsidRPr="0031108B"><w:rPr><w:rStyle w:val="a8"/><w:rFonts w:ascii="黑体" w:eastAsia="黑体" w:hAnsi="黑体"/><w:noProof/></w:rPr><w:t>参考文献
+</w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:instrText xml:space="preserve"> </w:instrText></w:r><w:r><w:rPr><w:noProof/><w:webHidden/></w:rPr><w:instrText>PAGEREF _Toc237719596 \h</w:instrText></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:instrText xml:space="preserve"> </w:instrText></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:noProof/><w:webHidden/></w:rPr><w:t>16
+<w:tab w:val="right" w:leader="dot" w:pos="8271"/></w:tabs><w:rPr><w:noProof/><w:sz w:val="22"/><w14:ligatures w14:val="standardContextual"/></w:rPr></w:pPr><w:hyperlink w:anchor="_Toc237719597" w:history="1"><w:r w:rsidRPr="0031108B"><w:rPr><w:rStyle w:val="a8"/><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体" w:cs="宋体"/><w:b/><w:bCs/><w:noProof/><w:kern w:val="0"/><w:lang w:bidi="ar"/></w:rPr><w:t>附录A
+</w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:instrText xml:space="preserve"> </w:instrText></w:r><w:r><w:rPr><w:noProof/><w:webHidden/></w:rPr><w:instrText>PAGEREF _Toc237719597 \h</w:instrText></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:instrText xml:space="preserve"> </w:instrText></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:noProof/><w:webHidden/></w:rPr><w:t>17
+<w:tab w:val="right" w:leader="dot" w:pos="8271"/></w:tabs><w:rPr><w:noProof/><w:sz w:val="22"/><w14:ligatures w14:val="standardContextual"/></w:rPr></w:pPr><w:hyperlink w:anchor="_Toc237719598" w:history="1"><w:r w:rsidRPr="0031108B"><w:rPr><w:rStyle w:val="a8"/><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体" w:cs="宋体"/><w:b/><w:bCs/><w:noProof/><w:kern w:val="0"/><w:lang w:bidi="ar"/></w:rPr><w:t>车模主要技术参数说明
+</w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:instrText xml:space="preserve"> </w:instrText></w:r><w:r><w:rPr><w:noProof/><w:webHidden/></w:rPr><w:instrText>PAGEREF _Toc237719598 \h</w:instrText></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:instrText xml:space="preserve"> </w:instrText></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:noProof/><w:webHidden/></w:rPr><w:t>17
+<w:tab w:val="right" w:leader="dot" w:pos="8271"/></w:tabs><w:rPr><w:noProof/><w:sz w:val="22"/><w14:ligatures w14:val="standardContextual"/></w:rPr></w:pPr><w:hyperlink w:anchor="_Toc237719599" w:history="1"><w:r w:rsidRPr="0031108B"><w:rPr><w:rStyle w:val="a8"/><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体" w:cs="宋体"/><w:b/><w:bCs/><w:noProof/><w:kern w:val="0"/><w:lang w:bidi="ar"/></w:rPr><w:t>附录B
+</w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:instrText xml:space="preserve"> </w:instrText></w:r><w:r><w:rPr><w:noProof/><w:webHidden/></w:rPr><w:instrText>PAGEREF _Toc237719599 \h</w:instrText></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:instrText xml:space="preserve"> </w:instrText></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:noProof/><w:webHidden/></w:rPr><w:t>19
+<w:tab w:val="right" w:leader="dot" w:pos="8271"/></w:tabs><w:rPr><w:noProof/><w:sz w:val="22"/><w14:ligatures w14:val="standardContextual"/></w:rPr></w:pPr><w:hyperlink w:anchor="_Toc237719600" w:history="1"><w:r w:rsidRPr="0031108B"><w:rPr><w:rStyle w:val="a8"/><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体" w:cs="宋体"/><w:b/><w:bCs/><w:noProof/><w:kern w:val="0"/><w:lang w:bidi="ar"/></w:rPr><w:t>模型分类任务源码
+</w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:instrText xml:space="preserve"> </w:instrText></w:r><w:r><w:rPr><w:noProof/><w:webHidden/></w:rPr><w:instrText>PAGEREF _Toc237719600 \h</w:instrText></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:instrText xml:space="preserve"> </w:instrText></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr></w:r><w:r><w:rPr><w:rFonts w:hint="eastAsia"/><w:noProof/><w:webHidden/></w:rPr><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:noProof/><w:webHidden/></w:rPr><w:t>19
+引言
+1.1 
+智能车大赛介绍
+全国大学生智能车竞赛受教育部高等教育司委托，由教育部高等自动化专业教学指导分委员会（以下简称自动化分教指委）主办全国大学生智能汽车竞赛。该竞赛以智能汽车为研究对象的创意性科技竞赛，是面向全国大学生的一种具有探索性工程实践活动，是教育部倡导的大学生科技竞赛之一，为加强大学生实践、创新能力和团队精神的培养，促进高等教育教学改革。该竞赛以
+“
+立足培养，重在参与，鼓励探索，追求卓越
+”
+为指导思想，旨在促进高等学校素质教育，培养大学生的综合知识运用能力、基本工程实践能力和创新意识，激发大学生从事科学研究与探索的兴趣和潜能，倡导理论联系实际、求真务实的学风和团队协作的人文精神，为优秀人才的脱颖而出创造条件。该竞赛由竞赛秘书处为各参赛队提供
+/
+购置规定范围内的标准硬软件技术平台，竞赛过程包括理论设计、实际制作、整车调试、现场比赛等环节，要求学生组成团队，协同工作，初步体会一个工程性的研究开发项目从设计到实现的全过程。该竞赛融科学性、趣味性和观赏性为一体，是以迅猛发展、前景广阔的汽车电子为背景，涵盖自动控制、模式识别、传感技术、电子、电气、计算机、机械与汽车等多学科专业的创意性比赛。该竞赛规则透明，评价标准客观，坚持公开、公平、公正的原则，保证竞赛向健康、普及、持续的方向发展。
+1.2 
+第二十一届智能视觉组规则介绍
+（
+1
+）车模
+车模型号要求：允许使用
+B
+、
+C
+、
+F
+、
+G
+、
+M
+、
+H
+、
+Y
+、
+Z
+成品车模。
+车模尺寸要求：车模作品及其附属物必须在地面的投影需要在
+ 35
+厘米×
+35
+厘米
+ 
+范围内。
+ 
+对于车模高度没有要求，
+ 
+但是，
+ 
+需要能够在车模上水平放置一块
+ 
+方位标识牌，
+ 
+标识牌最高不超过
+ 
+15
+厘米（±
+0.5
+厘米），
+ 
+而且上方没有折叠。
+固定车模方案：方便比赛时使用统一的车模方向标识牌，方便系统稳定的进行识别。
+（
+2
+）微控制器与传感器
+限定使用
+NXP
+公司的
+MCU
+做为小车的主
+控
+.
+ 
+推荐使用
+i.MXRT
+系列
+MCU
+。含
+MCU
+的图像处理平台限定使用基于
+NXP
+公司微控制器的
+OpenART
+、
+OpenART
+ Plus
+、
+MCXVision
+、
+MV5-RT/OMV-RT
+模块。普通传感器遵循智能车竞速组总则。
+（
+3
+）赛道与比赛任务
+场地大约为
+3.2
+×
+2.4
+米（与
+320
+×
+240
+图片比例一致），使用宽度为
+5
+厘米的黄色布基胶带贴在场地边缘，示意车模可活动范围。需要确保黄色胶带内的区域有
+3.2
+×
+2.4
+米。四个角落会贴上数字为
+15
+、
+16
+、
+17
+、
+18 
+的
+Apriltag
+码，用于系统自动定位场地位置并对全局进行逆透视校正。
+本届智能视觉组赛事采用虚实结合、硬件在环仿真竞赛模式，赛事任务由虚拟仿真软件设定，核心竞赛项目为推箱子任务。
+参赛小车可从两处发车区任选其一出发，发车后系统自动计时，整体任务目标是将场地内所有可移动箱子推送至对应目标点位。小车依靠摄像头采集车载无线屏幕展示的虚拟画面，结合俯视图与第一视角图像，完成虚拟场景识别与自身位置感知。场地内箱子与目标点位一一对应，箱子推送至指定位置后会自动消失，有效规避重复判定问题。场地设置有围墙边界，小车严禁穿越最外围围墙，违规越界将直接终止比赛，若误入内侧围墙区域会丢失实时定位，需退回合规区域后才能恢复定位。当所有箱子归位、箱子卡死无法移动、小车违规越界任意一种情况发生时，系统将立即停止计时，最终比赛用时由运行时长与罚时共同组成。场地设有炸弹特殊元素，可炸毁内侧围墙以优化行驶路径，最外围围墙无法被摧毁。同时赛事设置多梯度难度关卡，涵盖基础推箱子、图片分类推箱子等多种模式，可满足不同赛事阶段的考核需求。
+1.
+3
+ 
+报告内容
+在这份报告
+中
+,
+我们小组通过对小车设计制作
+的结构，
+电路
+，
+调试
+，
+车辆参数的
+介绍
+,
+尽力展现我们在制作调试过程中的思路和付出的汗水。
+具体表现在
+结构的设计
+制作
+,
+以及算法方面的
+思维
+想法。这份报告
+是我们小组三人共同努力，精益求精改进后的结果。
+机械结构设计
+智能车的核心是控制策略和算法，但是，机械结构也是限制赛车速度的巨大瓶颈，如果一辆赛车的程序架构很好，但是机械部分做的不好的话，其速度也会被大大的限制。除了对车身姿态的影响外，机械性能影响车的加减速响应速度，运行的对称性和稳定性等，因此，我们在不违反规则的情况下对小车进行了多方面的改造以使小车具有良好的运行性能。
+整体结构
+我们使用了
+M
+车模，车模以摄像头、编码器、陀螺仪作为传感器。
+图
+2.1
+ 
+车模照片
+2.2
+ 
+编码器的安装
+如果采用普通低转速编码器，在小车高速运转时很容易出现丢步的情况，进而有可能导致跑飞，我们选用
+抗磁方向正交
+编码器，该编码器体积小、质量轻、稳定性好、精度高，输出型号类型为
+CMOS
+信号，抗干扰能力强。安装时要仔细调节编码器齿轮与电机齿轮的啮合，保证阻尼适中，啮合太紧会增加电机负载，太松又会影响编码器测量精度或者打齿。
+2.3
+ 
+车模主要技术参数
+智能车主要技术参数包括物理尺寸、电路指标等，具体参数见表
+ 
+2.1
+。
+表
+2.1
+ 
+智能车主要技术参数
+<w:tblPr><w:tblW w:w="6680" w:type="dxa"/><w:jc w:val="center"/><w:tblLayout w:type="fixed"/><w:tblLook w:val="04A0" w:firstRow="1" w:lastRow="0" w:firstColumn="1" w:lastColumn="0" w:noHBand="0" w:noVBand="1"/></w:tblPr><w:tblGrid><w:gridCol w:w="2934"/><w:gridCol w:w="1606"/><w:gridCol w:w="2140"/></w:tblGrid><w:tr w:rsidR="00FA440C" w14:paraId="4223733B" w14:textId="77777777"><w:trPr><w:trHeight w:val="391"/><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2934" w:type="dxa"/><w:vMerge w:val="restart"/><w:tcBorders><w:top w:val="single" w:sz="4" w:space="0" w:color="auto"/><w:left w:val="single" w:sz="8" w:space="0" w:color="auto"/><w:bottom w:val="single" w:sz="4" w:space="0" w:color="auto"/><w:right w:val="single" w:sz="4" w:space="0" w:color="auto"/></w:tcBorders><w:vAlign w:val="bottom"/></w:tcPr><w:p w14:paraId="1D3B039A" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00000000"><w:pPr><w:spacing w:line="440" w:lineRule="exact"/><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr><w:t>车模整体尺寸：
+<w:tcPr><w:tcW w:w="1606" w:type="dxa"/><w:tcBorders><w:top w:val="single" w:sz="4" w:space="0" w:color="auto"/><w:left w:val="nil"/><w:bottom w:val="single" w:sz="4" w:space="0" w:color="auto"/><w:right w:val="single" w:sz="4" w:space="0" w:color="auto"/></w:tcBorders><w:noWrap/><w:vAlign w:val="bottom"/></w:tcPr><w:p w14:paraId="0AD62885" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00000000"><w:pPr><w:widowControl/><w:jc w:val="left"/><w:rPr><w:rFonts w:ascii="Times New Roman" w:eastAsia="宋体" w:hAnsi="Times New Roman" w:cs="宋体"/><w:kern w:val="0"/><w:sz w:val="24"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Times New Roman" w:eastAsia="宋体" w:hAnsi="Times New Roman" w:cs="宋体" w:hint="eastAsia"/><w:kern w:val="0"/><w:sz w:val="24"/></w:rPr><w:t>长（厘米）
+<w:tcPr><w:tcW w:w="2140" w:type="dxa"/><w:tcBorders><w:top w:val="single" w:sz="4" w:space="0" w:color="auto"/><w:left w:val="nil"/><w:bottom w:val="single" w:sz="4" w:space="0" w:color="auto"/><w:right w:val="single" w:sz="4" w:space="0" w:color="auto"/></w:tcBorders><w:noWrap/><w:vAlign w:val="bottom"/></w:tcPr><w:p w14:paraId="54DD200D" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00000000"><w:pPr><w:widowControl/><w:jc w:val="center"/><w:rPr><w:rFonts w:ascii="Times New Roman" w:eastAsia="宋体" w:hAnsi="Times New Roman" w:cs="宋体"/><w:kern w:val="0"/><w:sz w:val="24"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" w:cs="Times New Roman" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr><w:t>29.7cm
+<w:trPr><w:trHeight w:val="391"/><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2934" w:type="dxa"/><w:vMerge/><w:tcBorders><w:top w:val="single" w:sz="4" w:space="0" w:color="auto"/><w:left w:val="single" w:sz="8" w:space="0" w:color="auto"/><w:bottom w:val="single" w:sz="4" w:space="0" w:color="auto"/><w:right w:val="single" w:sz="4" w:space="0" w:color="auto"/></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="65087679" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00FA440C"><w:pPr><w:widowControl/><w:jc w:val="left"/><w:rPr><w:rFonts w:ascii="Times New Roman" w:eastAsia="宋体" w:hAnsi="Times New Roman" w:cs="宋体"/><w:kern w:val="0"/><w:sz w:val="24"/></w:rPr></w:pPr></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1606" w:type="dxa"/><w:tcBorders><w:top w:val="nil"/><w:left w:val="nil"/><w:bottom w:val="single" w:sz="4" w:space="0" w:color="auto"/><w:right w:val="single" w:sz="4" w:space="0" w:color="auto"/></w:tcBorders><w:noWrap/><w:vAlign w:val="bottom"/></w:tcPr><w:p w14:paraId="10B5EA35" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00000000"><w:pPr><w:widowControl/><w:jc w:val="left"/><w:rPr><w:rFonts w:ascii="Times New Roman" w:eastAsia="宋体" w:hAnsi="Times New Roman" w:cs="宋体"/><w:kern w:val="0"/><w:sz w:val="24"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Times New Roman" w:eastAsia="宋体" w:hAnsi="Times New Roman" w:cs="宋体" w:hint="eastAsia"/><w:kern w:val="0"/><w:sz w:val="24"/></w:rPr><w:t>宽（厘米）
+<w:tcPr><w:tcW w:w="2140" w:type="dxa"/><w:tcBorders><w:top w:val="nil"/><w:left w:val="nil"/><w:bottom w:val="single" w:sz="4" w:space="0" w:color="auto"/><w:right w:val="single" w:sz="4" w:space="0" w:color="auto"/></w:tcBorders><w:noWrap/><w:vAlign w:val="bottom"/></w:tcPr><w:p w14:paraId="2DE6BC76" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00000000"><w:pPr><w:widowControl/><w:jc w:val="center"/><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" w:cs="Times New Roman"/><w:sz w:val="24"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" w:cs="Times New Roman"/><w:sz w:val="24"/></w:rPr><w:t>2
+1cm
+<w:trPr><w:trHeight w:val="391"/><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2934" w:type="dxa"/><w:vMerge/><w:tcBorders><w:top w:val="single" w:sz="4" w:space="0" w:color="auto"/><w:left w:val="single" w:sz="8" w:space="0" w:color="auto"/><w:bottom w:val="single" w:sz="4" w:space="0" w:color="auto"/><w:right w:val="single" w:sz="4" w:space="0" w:color="auto"/></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="214E78FE" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00FA440C"><w:pPr><w:widowControl/><w:jc w:val="left"/><w:rPr><w:rFonts w:ascii="Times New Roman" w:eastAsia="宋体" w:hAnsi="Times New Roman" w:cs="宋体"/><w:kern w:val="0"/><w:sz w:val="24"/></w:rPr></w:pPr></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1606" w:type="dxa"/><w:tcBorders><w:top w:val="nil"/><w:left w:val="nil"/><w:bottom w:val="single" w:sz="4" w:space="0" w:color="auto"/><w:right w:val="single" w:sz="4" w:space="0" w:color="auto"/></w:tcBorders><w:noWrap/><w:vAlign w:val="bottom"/></w:tcPr><w:p w14:paraId="5A84700E" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00000000"><w:pPr><w:widowControl/><w:jc w:val="left"/><w:rPr><w:rFonts w:ascii="Times New Roman" w:eastAsia="宋体" w:hAnsi="Times New Roman" w:cs="宋体"/><w:kern w:val="0"/><w:sz w:val="24"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Times New Roman" w:eastAsia="宋体" w:hAnsi="Times New Roman" w:cs="宋体" w:hint="eastAsia"/><w:kern w:val="0"/><w:sz w:val="24"/></w:rPr><w:t>高（厘米）
+<w:tcPr><w:tcW w:w="2140" w:type="dxa"/><w:tcBorders><w:top w:val="nil"/><w:left w:val="nil"/><w:bottom w:val="single" w:sz="4" w:space="0" w:color="auto"/><w:right w:val="single" w:sz="4" w:space="0" w:color="auto"/></w:tcBorders><w:noWrap/><w:vAlign w:val="bottom"/></w:tcPr><w:p w14:paraId="25CBA360" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00000000"><w:pPr><w:widowControl/><w:jc w:val="center"/><w:rPr><w:rFonts w:ascii="Times New Roman" w:eastAsia="宋体" w:hAnsi="Times New Roman" w:cs="宋体"/><w:kern w:val="0"/><w:sz w:val="24"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" w:cs="Times New Roman" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr><w:t>15cm
+<w:trPr><w:trHeight w:val="391"/><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2934" w:type="dxa"/><w:tcBorders><w:top w:val="nil"/><w:left w:val="single" w:sz="8" w:space="0" w:color="auto"/><w:bottom w:val="single" w:sz="4" w:space="0" w:color="auto"/><w:right w:val="single" w:sz="4" w:space="0" w:color="auto"/></w:tcBorders><w:noWrap/><w:vAlign w:val="bottom"/></w:tcPr><w:p w14:paraId="1F79ED4D" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00000000"><w:pPr><w:widowControl/><w:jc w:val="left"/><w:rPr><w:rFonts w:ascii="Times New Roman" w:eastAsia="宋体" w:hAnsi="Times New Roman" w:cs="宋体"/><w:kern w:val="0"/><w:sz w:val="24"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Times New Roman" w:eastAsia="宋体" w:hAnsi="Times New Roman" w:cs="宋体" w:hint="eastAsia"/><w:kern w:val="0"/><w:sz w:val="24"/></w:rPr><w:t>无线通信模块
+<w:tcPr><w:tcW w:w="3746" w:type="dxa"/><w:gridSpan w:val="2"/><w:tcBorders><w:top w:val="single" w:sz="4" w:space="0" w:color="auto"/><w:left w:val="nil"/><w:bottom w:val="single" w:sz="4" w:space="0" w:color="auto"/><w:right w:val="single" w:sz="4" w:space="0" w:color="auto"/></w:tcBorders><w:noWrap/><w:vAlign w:val="bottom"/></w:tcPr><w:p w14:paraId="23917373" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00000000"><w:pPr><w:widowControl/><w:jc w:val="center"/><w:rPr><w:rFonts w:ascii="Times New Roman" w:eastAsia="宋体" w:hAnsi="Times New Roman" w:cs="宋体"/><w:kern w:val="0"/><w:sz w:val="24"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Times New Roman" w:eastAsia="宋体" w:hAnsi="Times New Roman" w:cs="宋体" w:hint="eastAsia"/><w:kern w:val="0"/><w:sz w:val="24"/></w:rPr><w:t>无
+<w:trPr><w:trHeight w:val="771"/><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2934" w:type="dxa"/><w:tcBorders><w:top w:val="nil"/><w:left w:val="single" w:sz="8" w:space="0" w:color="auto"/><w:bottom w:val="single" w:sz="4" w:space="0" w:color="auto"/><w:right w:val="single" w:sz="4" w:space="0" w:color="auto"/></w:tcBorders><w:vAlign w:val="bottom"/></w:tcPr><w:p w14:paraId="030367DC" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00000000"><w:pPr><w:widowControl/><w:jc w:val="left"/><w:rPr><w:rFonts w:ascii="Times New Roman" w:eastAsia="宋体" w:hAnsi="Times New Roman" w:cs="宋体"/><w:kern w:val="0"/><w:sz w:val="24"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Times New Roman" w:eastAsia="宋体" w:hAnsi="Times New Roman" w:cs="宋体" w:hint="eastAsia"/><w:kern w:val="0"/><w:sz w:val="24"/></w:rPr><w:t>微控制器型号和数量
+<w:tcPr><w:tcW w:w="3746" w:type="dxa"/><w:gridSpan w:val="2"/><w:tcBorders><w:top w:val="nil"/><w:left w:val="nil"/><w:bottom w:val="single" w:sz="4" w:space="0" w:color="auto"/><w:right w:val="single" w:sz="4" w:space="0" w:color="auto"/></w:tcBorders><w:noWrap/><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="34B40251" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00000000"><w:pPr><w:spacing w:line="360" w:lineRule="exact"/><w:ind w:firstLine="480"/><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" w:cs="Times New Roman"/><w:sz w:val="24"/></w:rPr><w:t>IMXRT1064
+:
+1
+个
+<w:trPr><w:trHeight w:val="748"/><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2934" w:type="dxa"/><w:tcBorders><w:top w:val="nil"/><w:left w:val="single" w:sz="8" w:space="0" w:color="auto"/><w:bottom w:val="single" w:sz="4" w:space="0" w:color="auto"/><w:right w:val="single" w:sz="4" w:space="0" w:color="auto"/></w:tcBorders><w:vAlign w:val="bottom"/></w:tcPr><w:p w14:paraId="6E26AD43" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00000000"><w:pPr><w:widowControl/><w:jc w:val="left"/><w:rPr><w:rFonts w:ascii="Times New Roman" w:eastAsia="宋体" w:hAnsi="Times New Roman" w:cs="宋体"/><w:kern w:val="0"/><w:sz w:val="24"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Times New Roman" w:eastAsia="宋体" w:hAnsi="Times New Roman" w:cs="宋体" w:hint="eastAsia"/><w:kern w:val="0"/><w:sz w:val="24"/></w:rPr><w:t>传感器种类和数量
+<w:tcPr><w:tcW w:w="3746" w:type="dxa"/><w:gridSpan w:val="2"/><w:tcBorders><w:top w:val="nil"/><w:left w:val="nil"/><w:bottom w:val="single" w:sz="4" w:space="0" w:color="auto"/><w:right w:val="single" w:sz="4" w:space="0" w:color="auto"/></w:tcBorders><w:vAlign w:val="bottom"/></w:tcPr><w:p w14:paraId="5CD1DD8C" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00000000"><w:pPr><w:spacing w:line="360" w:lineRule="exact"/><w:ind w:firstLineChars="100" w:firstLine="240"/><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr></w:pPr><w:proofErr w:type="spellStart"/><w:r><w:rPr><w:rFonts w:ascii="Times New Roman" w:hAnsi="Times New Roman" w:cs="Times New Roman" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr><w:t>OpenART
+ 
+Plus
+视觉模块
+2
+个
+陀螺仪：
+IMU660RA
+ 
+1
+个
+第三章 硬件电路设计
+智能车的硬件电路的稳定性、可靠性将直接影响智能车在高速运动状态下的性能，所以，我们在设计硬件电路的过程中充分考虑各种因素对车模运行的影响。本着可靠高效的原则，我们使
+P
+CB
+形状合适、布局合理、布线简单，使整个车模更加简洁高效。
+3.1
+ 
+单片机系统设计
+AI
+视觉组限制芯片厂商只能为
+NXP
+，故选择官方推荐的
+RT1064, 
+该芯片的主频高，可以满足摄像头使用，硬件资源丰富。
+图
+3.1 
+RT1064
+核心板
+3.2
+调试电路设计
+调试电路在车模调试过程中是必不可少的，可以直观的显示智能车的参数和状态，并且可以方便地修改参数。调试电路包括：五向按键、蓝牙、
+OLED
+接口、蜂鸣器、拨码等。
+3.3
+电机驱动电路
+驱动电路为智能车驱动电机提供控制和驱动，这部分电路的设计要求以能够通过大电流为主要指标。驱动电路的基本原理是
+ H 
+桥驱动原理，目前流行的
+H 
+桥驱动电路有：
+ H 
+桥集成电路，如
+ MC33886
+；集成半桥电路，如
+ BTN7971 
+等；
+MOS 
+管搭建的
+ H 
+桥电路。
+为了选出一个低功耗的驱动方案，我们对比三种电路都进行了搭建并测试，
+MC33886 
+的优点是电路简单，外围元件少，但缺点是内阻较大，通过电流有限，可以通过两片
+ MC33886 
+并联方式进行改善；
+BTN7971
+是集成半桥电路，电路简单，只需要简单的几个外围电阻，缺点是输入电压要高于
+5
+V
+才能正常工作，但是对于超级电容的宽输入范围的电压来说，需要升压电路给予其足够工作的电压，但是很难找到效率极高的升压芯片且升压电路设计也较为复杂；
+DRV8701E
+＋
+MOS
+管搭建的
+H 
+桥电路可以通过较大电流，且在电容电压较低时仍能正常工作。对比三种方案，我们选择了
+DRV8701E
+＋
+MOS
+管搭建的
+H 
+桥电路作为驱动电路，下面是电路原理图。
+（
+1
+）驱动电路
+（
+2
+）驱动电路
+图
+3.6
+ 
+驱动电路
+3.4
+ 
+传感器的选择
+3.4.1
+ 
+摄像头
+比赛所用的摄像头可以分为两类：一类为
+CCD
+摄像头，另一类为
+CMOS
+摄像头。
+CCD
+摄像头图像对比度高、动态特性好，但供电电压比较高，需要
+12V
+的工作电压。在智能车的实际运行中，电机加减速时会产生很大的冲击电流，会对
+12V
+的升压模块造成冲击。同时
+CCD
+摄像头的耗电也比较严重，这会使拍摄的图像稳定性不高。
+CMOS
+摄像头，体积小，图像稳定性较高，只需
+3.3V
+供电，耗电量低，但动态性能不如
+CCD
+摄像头好。智能车高速运行时，摄像头拍摄的图像可能会变得模糊。但为了保证系统的稳定性，最终决定选用
+CMOS
+摄像头。
+3.4.2
+ 
+编码器
+光电编码器是一种通过光电转换将输出轴上的机械几何位移量转换成脉冲或数字量的传感
+器
+,
+ 
+这也是目前应用最多的测速传感器之一。其获取信息准确、精度高、应用简单。
+ 
+采用正交式光电编码器，其供电电压为
+3.3V
+或
+5
+V
+，输出为小幅值的正弦信号。为了将此信号放大整形，设计了信号调理电路，其基本原理是使用一个运放做成比较器电路，调节参考电压，使输出变为
+0
+V-3.3V
+的方波信号，送入单片机进行运算。
+3.5
+ 
+主控板
+在本系统中我们的电路板的制作主要思想是分立工作、追求简洁，便于电路板的调试和安装等工作。主控由电源稳压电路，
+O
+LED
+屏，单片机系统以及各个传感器接口等组成。整个板子形状合理，可以充分利用
+H
+车模底板空间同时使重心降到最低。原理图如图
+3.8
+所示。
+图
+3.
+8
+ 
+主控板原理图
+第四章 软件控制设计
+高效的软件程序是智能车高速平稳
+运行
+的基础。我们设计的系统采用
+CMOS
+摄像头
+和
+OpenART
+ Plus
+进行识别，图像采集及处理
+是
+整个软件的核心内容。在智能车的转向和速度控制方面，我们使用
+PID
+控制算法，使智能车能够稳定快速
+在赛道中完成比赛
+。
+4.
+1
+ PID
+控制算法介绍
+在工程实际中，应用最为广泛的调节器控制规律为比例、积分、微分控制，简称
+PID
+控制，又称
+PID
+调节。
+PID
+控制器问世至今已有近
+70
+年历史，它以其结构简单、稳定性好、工作可靠、调整方便而成为工业控制的主要技术之一。当被控对象的结构和参数不能完全掌握，或得不到精确的数学模型时，控制理论的其它技术难以采用时，系统控制器的结构和参数必须依靠经验和现场调试来确定，这时应用
+PID
+控制技术最为方便。即当我们不完全了解一个系统和被控对象，或不能通过有效的测量手段来获得系统参数时，最适合用
+PID
+控制技术。
+PID
+控制，实际中也有
+PI
+和
+PD
+控制。
+PID
+控制器是一种线性控制器，它根据给定值与实际输出值构成控制偏差。将偏差的比例
+(P)
+、积分
+(I)
+和微分
+(D)
+通过线性组合构成控制量，对被控对象进行控制，故称
+PID
+控制器，原理框图如图
+4
+.
+19
+所示。
+图
+4.
+1
+ PID
+控制器原理框图
+在计算机控制系统中，使用的是数字
+PID
+控制器，控制规律为：
+                                    
+(
+公式
+4.1)
+          
+(
+公式
+4.2)
+式中
+k——
+采样序号，
+k = 0
+，
+1
+，
+2…
+；
+       r
+(k)
+——
+第
+k
+次给定值；
+c
+(k)
+——
+第
+k
+次实际输出值；
+           u
+(k)
+—— 
+第
+k
+次输出控制量；
+e
+(k)
+—— 
+第
+k
+次偏差；
+                e
+(k-1)
+—— 
+第
+k-1
+次偏差；
+KP——
+比例系数；
+                    TI——
+积分时间常数；
+TD——
+微分时间常数；
+                T——
+采样周期。
+简单说来，
+PID
+控制器各校正环节的作用如下：
+比例环节：及时成比例地反映控制系统的偏差信号，偏差一旦产生，控制器立即产生控制作用，以减少偏差。
+积分环节：主要用于消除静差，提高系统的无差度。积分作用的强弱取决于积分时间常数，越大，积分作用越弱，反之则越强。
+微分环节：能反映偏差信号的变化趋势
+(
+变化速率
+)
+，并能在该偏差信号变得太大之前，在系统中引入一个有效的早期修正信号，从而加快系统的动作速度，减小调节时间。
+数字
+PID
+控制算法通常分为位置式
+PID
+控制算法和增量式
+PID
+控制算法。
+4
+.1.1
+ 
+位置式
+PID
+位置式
+PID
+中，由于计算机输出的
+u 
+(k)
+ 
+直接去控制执行机构
+(
+如阀门
+)
+，
+u
+(k)
+的值和执行机构的位置
+(
+如阀门开度
+)
+是一一对应的，所以通常称公式
+(4.2)
+为位置式
+PID
+控制算法。
+位置式
+PID
+控制算法的缺点是：由于全量输出，所以每次输出均与过去的状态有关，计算时要对过去
+e
+(k)
+进行累加，计算机工作量大；而且因为计算机输出的
+u
+(k)
+对应的是执行机构的实际位置，如计算机出现故障，
+u
+(k)
+的大幅度变化，会引起执行机构位置的大幅度变化，这种情况往往是生产实践中不允许的，在某些场合，还可能造成严重的生产事故。因而产生了增量式
+PID 
+控制的控制算法，所谓增量式
+PID 
+是指数字控制器的输出只是控制量的增量
+△
+u
+(k)
+。
+4.
+1
+.2 
+增量式
+PID
+当执行机构需要的是控制量的增量
+(
+例如
+：驱动步进
+电机
+)
+时，可由式
+(4.2)
+推导出提供增量的
+PID
+控制算式。由式
+(4.2)
+可以推出式
+(4.3)
+，式
+(4.2)
+减去式
+(4.3)
+可得式
+(4.4)
+。
+(
+公式
+4.3)
+(
+公式
+4.4)
+式中
+；
+；
+公式
+(4.4)
+称为增量式
+PID
+控制算法，可以看出由于一般计算机控制系统采用恒定的采样周期
+T
+，一旦确定了
+KP
+、
+TI 
+、
+TD
+，只要使用前后三次测量值的偏差，即可由式
+(4.4)
+求出控制增量。
+增量式
+PID
+具有以下优点：
+(1) 
+由于计算机输出增量，所以误动作时影响小，必要时可用逻辑判断的方法关掉。
+(2) 
+手动
+/
+自动切换时冲击小，便于实现无扰动切换。此外，当计算机发生故障时，由于输出通道或执行装置具有信号的锁存作用，故能保持原值。
+(3) 
+算式中不需要累加。控制增量
+△
+u
+(k)
+的确定仅与最近
+k
+次的采样值有关，所以较容易通过加权处理而获得比较好的控制效果。
+但增量式
+PID
+也有其不足之处：积分截断效应大，有静态误差；溢出的影响大。使用时，常选择带死区、积分分离等改进
+PID
+控制算法。
+4.
+1
+.3 PID
+参数整定
+运用
+PID
+控制的关键是调整
+KP
+、
+KI
+、
+KD
+三个参数，即参数整定。
+PID
+参数的整定方法有两大类：一是理论计算整定法。它主要是依据系统的数学模型，经过理论计算确定控制器参数；二是工程整定方法，它主要依赖工程经验，直接在控制系统的试验中进行，且方法简单、易于掌握，在工程实际中被广泛采用。由于智能车系统是机电高耦合的分布式系统，并且要考虑赛道的具体环境，要建立精确的智能车运动控制数学模型有一定难度，而且我们对车身机械结构经常进行修正，模型参数变化较为频繁，理论计算整定法可操作性不强，最终我们采用了工程整定方法。此外，我们先后实验了几种动态改变
+PID
+参数的控制方法。
+4.
+1
+.
+4 
+麦轮速度分解
+ 
+ 
+麦
+轮底盘相较于传统两轮差分底盘，具备无约束全向运动能力，可独立完成前进、横向平移、原地自转三种基础运动，且三种运动可任意叠加组合，运动灵活性极高，能够很好适配虚实结合仿真场景下的精准对位、小范围微调、多角度推箱等复杂赛事任务。
+麦
+轮车模的整体合速度可拆解为车体坐标系下的前进速度、横向平移速度、车体自转角速度三个独立运动分量，通过运动学解算可将全局期望运动状态转化为四个
+麦
+轮的独立轮速，实现底盘的精准可控运动。
+在控制过程中，首先根据赛事任务需求与视觉算法输出的偏差数据，计算出小车当前所需的期望前进速度、期望横向平移速度以及期望自转角速度。基于
+麦
+轮底盘标准运动学模型，将三个维度的期望运动分量进行矩阵解算，分别推导得出四个独立车轮的目标转速。该解算方式可实现三个运动维度的解耦控制，有效避免前进、平移、自转运动之间的相互干扰，保证小车运动姿态稳定。
+完成各车轮期望速度计算后，系统将理论目标转速转换为编码器期望计数增量，并将该期望读数叠加至电机速度闭环控制环节中。通过速度环
+PID
+算法实时对比编码器反馈的实际转速与解算后的期望转速，动态调节电机
+PWM
+输出，实时修正车轮转速误差。通过该速度分解与闭环控制方案，可精准控制全向底盘的合成运动轨迹，让小车能够平稳、精准地完成直行、横移、转向、微调对位等动作，满足推箱子任务中精准贴箱、定点推送、避障绕行等高精度运动要求。
+第五章 系统调试
+5.1 
+开发调试工具
+  针对本组采用的
+NXP i.MX RT1064
+芯片，我们使用了主流的
+Keil uVision5
+（
+5.37
+）作为微控制器软件开发工具，搭配逐飞科技提供的
+DAP-Link
+下载编程烧录器进行程序烧录。在获取相关资料后，在
+Keil
+中安装该芯片的
+Pack
+包即可完成软件开发环境的搭建。
+  我们参考了逐飞提供的各功能模块的范例程序和库函数，并将库函数整理成实验室通用函数，符合个人的编程习惯，提高使用效率。
+图
+5
+.
+1
+ 
+MDK
+调试界面
+5.2
+ 
+人机交互工具
+在调试过程中需要不断地修改变量的值来达到整定参数的作用，对此我们选用了液晶
+屏
+配合按键和拨码开关的调试方法。此外，比赛的时候，修改参数我们同样用这个模块进行修改。
+其中
+液晶
+屏
+我们选用
+TFT
+液晶，该液晶具
+有可显示彩色
+，高分辨率等特点。界面如图
+5.2
+所示
+。按键采用五向按键便于操作。设计一个五向按键以及
+4
+个拨码开关进行调参，显示，方案选择等部分。
+图
+5
+.
+2
+ 
+液晶屏显示界面
+5.3
+ 
+W
+IFI
+及上位机调试
+ESP-01S
+是一款基于
+ESP8266
+芯片的
+WiFi
+模块，它提供了低成本、低功耗和高度集成的解决方案，适用于物联网和嵌入式应用，我们使用
+ESP-01S
+模块配合上位机进行实时观测车模运行状态。
+图
+5
+.
+3
+ 
+ESP-01S
+模
+块
+第六章 结论
+自报名参加
+全国大学智能
+汽车竞赛以来，我们小组成员从查找资料、设计机构、组装车模、编写程序一步一步的进行，最后终于完成了最初目标，定下了现在这个设计方案。
+在此份技术报告中，我们主要介绍了准备比赛时的基本思路，包括机械、电路以及最重要的控制算法的创新思想。在机械结构方面，我们
+采用全封闭的屏幕和摄像头的固定方案
+。在电路方面，我们以模块形式分类，主板、电机驱动
+、操作板
+等模块分别设计，经过不断实验，最后决定了最终的电路图。在程序方面，我们使用
+C
+语言编程，利用开发工具调试程序，经过小组成员不断讨论、改进，终于设计出一套比较通用稳定的程序。
+在备战过程中，
+我们遇到了很多挫折，一次次的校内比赛见证我们这个小队艰难的蜕变。
+因为时间仓促，水平有限，有很多疏漏或者错误，也很遗憾没有更加细致的写出整个设计方案，衷心希望老师对我们的工作提出宝贵的意见，给我们指点，让我们在今后的工作学习中获取更多的进步
+。
+致谢
+借书写技术报告的机会向
+哈工大智能车创新俱乐部这个像家一样的地方
+表示深深地谢意
+。
+同时也感谢在
+场地和经费方面都得到了学校和学院的大力支持，
+更要
+特别感谢一直支持和关注智能车比赛的学校和学院领导以及各位指导老师、指导学长，同时也感谢比赛组委会能组织这样一项有意义的比赛
+。
+参考文献
+[1] 
+卓晴，黄开胜，邵贝贝．学做智能车
+ 
+[M]
+．北京：北京航空航天大学出版社．
+2007.
+<w:tab w:val="left" w:pos="0"/></w:tabs><w:spacing w:before="60" w:line="340" w:lineRule="exact"/><w:rPr><w:rFonts w:ascii="Times New Roman" w:eastAsia="宋体" w:hAnsi="Times New Roman"/><w:szCs w:val="21"/></w:rPr></w:pPr><w:bookmarkStart w:id="58" w:name="_Ref193513607"/><w:r><w:rPr><w:rFonts w:ascii="Times New Roman" w:eastAsia="宋体" w:hAnsi="Times New Roman"/><w:szCs w:val="21"/></w:rPr><w:t xml:space="preserve">[2] 
+王淑娟，蔡惟铮，齐明．模拟电子技术基础
+ 
+[M]
+．北京：高等教育出版社．
+2009
+<w:tab w:val="left" w:pos="0"/></w:tabs><w:spacing w:before="60" w:line="340" w:lineRule="exact"/><w:rPr><w:rFonts w:ascii="Times New Roman" w:eastAsia="宋体" w:hAnsi="Times New Roman"/><w:szCs w:val="21"/></w:rPr></w:pPr><w:bookmarkStart w:id="59" w:name="光纤陀螺光源稳定性研究"/><w:bookmarkStart w:id="60" w:name="新型PID控制及其应用"/><w:r><w:rPr><w:rFonts w:ascii="Times New Roman" w:eastAsia="宋体" w:hAnsi="Times New Roman"/><w:szCs w:val="21"/></w:rPr><w:t xml:space="preserve">[3] 
+张军．
+AVR
+单片机应用系统开发典型实例
+ 
+[M]
+．北京：中国电力出版社，
+2005
+.
+<w:tab w:val="left" w:pos="0"/></w:tabs><w:spacing w:before="60" w:line="340" w:lineRule="exact"/><w:rPr><w:rFonts w:ascii="Times New Roman" w:eastAsia="宋体" w:hAnsi="Times New Roman"/><w:szCs w:val="21"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Times New Roman" w:eastAsia="宋体" w:hAnsi="Times New Roman"/><w:szCs w:val="21"/></w:rPr><w:t xml:space="preserve">[4] 
+张文春．汽车理论
+ 
+[M]
+．北京．机械工业出版社．
+2005.
+[5] 
+殷剑宏，吴开亚．
+图论及其算法
+ [M] 
+．中国科学技术大学出版社，
+2003.
+[6] 
+夏克俭
+．
+数据结构及算法
+ [M] 
+．北京：
+国防工业出版社
+，
+ 2001.
+[7] 
+邵贝贝．单片机嵌入式应用的在线开发方法
+ [M]
+．北京．清华大学出版社．
+2004.
+[8] 
+蔡述庭．
+“
+飞思卡尔
+”
+杯智能汽车竞赛设计与实践
+ 
+[M]
+．北京：北京航空航天大学
+出版社
+.
+ 2012.
+附录A
+车模主要技术参数说明
+</w:r><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体" w:cs="宋体" w:hint="eastAsia"/><w:b/><w:bCs/><w:kern w:val="0"/><w:sz w:val="30"/><w:szCs w:val="30"/><w:lang w:bidi="ar"/></w:rPr><w:tab/></w:r><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体" w:cs="宋体" w:hint="eastAsia"/><w:b/><w:bCs/><w:kern w:val="0"/><w:sz w:val="30"/><w:szCs w:val="30"/><w:lang w:bidi="ar"/></w:rPr><w:tab/></w:r></w:p><w:tbl><w:tblPr><w:tblW w:w="10199" w:type="dxa"/><w:jc w:val="center"/><w:tblBorders><w:top w:val="single" w:sz="4" w:space="0" w:color="auto"/><w:left w:val="single" w:sz="4" w:space="0" w:color="auto"/><w:bottom w:val="single" w:sz="4" w:space="0" w:color="auto"/><w:right w:val="single" w:sz="4" w:space="0" w:color="auto"/><w:insideH w:val="single" w:sz="4" w:space="0" w:color="auto"/><w:insideV w:val="single" w:sz="4" w:space="0" w:color="auto"/></w:tblBorders><w:tblLook w:val="04A0" w:firstRow="1" w:lastRow="0" w:firstColumn="1" w:lastColumn="0" w:noHBand="0" w:noVBand="1"/></w:tblPr><w:tblGrid><w:gridCol w:w="2929"/><w:gridCol w:w="3548"/><w:gridCol w:w="993"/><w:gridCol w:w="999"/><w:gridCol w:w="1730"/></w:tblGrid><w:tr w:rsidR="00FA440C" w14:paraId="21DAAD61" w14:textId="77777777"><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2929" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="4204413B" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00000000"><w:pPr><w:spacing w:line="360" w:lineRule="auto"/><w:ind w:firstLineChars="12" w:firstLine="29"/><w:jc w:val="center"/><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:b/><w:sz w:val="24"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:b/><w:sz w:val="24"/></w:rPr><w:t>队伍名称
+<w:tcPr><w:tcW w:w="7270" w:type="dxa"/><w:gridSpan w:val="4"/><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="3847497A" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00000000"><w:pPr><w:jc w:val="center"/><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:b/><w:sz w:val="24"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:b/><w:sz w:val="24"/></w:rPr><w:t>紫丁香七队
+<w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2929" w:type="dxa"/></w:tcPr><w:p w14:paraId="5D3A36D5" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00000000"><w:pPr><w:spacing w:line="360" w:lineRule="auto"/><w:ind w:firstLineChars="12" w:firstLine="29"/><w:jc w:val="center"/><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:b/><w:sz w:val="24"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:b/><w:sz w:val="24"/></w:rPr><w:t>参赛学校
+<w:tcPr><w:tcW w:w="7270" w:type="dxa"/><w:gridSpan w:val="4"/></w:tcPr><w:p w14:paraId="1D5665FE" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00000000"><w:pPr><w:spacing w:line="360" w:lineRule="auto"/><w:ind w:firstLineChars="110" w:firstLine="265"/><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:b/><w:sz w:val="24"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:b/><w:sz w:val="24"/></w:rPr><w:t>哈尔滨工业大学
+<w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2929" w:type="dxa"/></w:tcPr><w:p w14:paraId="34DE19CC" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00000000"><w:pPr><w:spacing w:line="360" w:lineRule="auto"/><w:ind w:firstLineChars="12" w:firstLine="29"/><w:jc w:val="center"/><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:b/><w:sz w:val="24"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:b/><w:sz w:val="24"/></w:rPr><w:t>赛题组组别
+<w:tcPr><w:tcW w:w="7270" w:type="dxa"/><w:gridSpan w:val="4"/></w:tcPr><w:p w14:paraId="47908332" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00000000"><w:pPr><w:spacing w:line="360" w:lineRule="auto"/><w:ind w:firstLineChars="110" w:firstLine="265"/><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:b/><w:sz w:val="24"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:b/><w:sz w:val="24"/></w:rPr><w:t>智能视觉
+<w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2929" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="160A9B64" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00000000"><w:pPr><w:ind w:firstLineChars="12" w:firstLine="29"/><w:jc w:val="center"/><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:b/><w:sz w:val="24"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:b/><w:sz w:val="24"/></w:rPr><w:t>检查项目
+<w:tcPr><w:tcW w:w="3548" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="2FF7FE6E" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00000000"><w:pPr><w:ind w:firstLineChars="686" w:firstLine="1653"/><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:b/><w:sz w:val="24"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:b/><w:sz w:val="24"/></w:rPr><w:t>规格
+（选手自行填写）
+<w:tcPr><w:tcW w:w="993" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="10FBA12A" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00000000"><w:pPr><w:ind w:firstLineChars="12" w:firstLine="29"/><w:jc w:val="center"/><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:b/><w:sz w:val="24"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:b/><w:sz w:val="24"/></w:rPr><w:t>符合
+（
+）
+<w:tcPr><w:tcW w:w="999" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="00EC0209" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00000000"><w:pPr><w:jc w:val="center"/><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:b/><w:sz w:val="24"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:b/><w:sz w:val="24"/></w:rPr><w:t>不符合（
+）
+<w:tcPr><w:tcW w:w="1730" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="7916D32E" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00000000"><w:pPr><w:jc w:val="center"/><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:b/><w:sz w:val="24"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:b/><w:sz w:val="24"/></w:rPr><w:t>备注
+<w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2929" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="3E9B513A" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00000000"><w:pPr><w:spacing w:line="440" w:lineRule="exact"/><w:ind w:firstLineChars="12" w:firstLine="29"/><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr><w:t>1.车模类型是什么？
+<w:tcPr><w:tcW w:w="3548" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="67880326" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00000000"><w:pPr><w:spacing w:line="360" w:lineRule="exact"/><w:ind w:firstLineChars="686" w:firstLine="1653"/><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:b/><w:sz w:val="24"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:b/><w:sz w:val="24"/></w:rPr><w:t>Y车模
+<w:tcPr><w:tcW w:w="993" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="67EDA3EA" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00FA440C"><w:pPr><w:spacing w:line="360" w:lineRule="exact"/><w:ind w:firstLineChars="12" w:firstLine="29"/><w:jc w:val="center"/><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:b/><w:sz w:val="24"/></w:rPr></w:pPr></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="999" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="22B6436B" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00FA440C"><w:pPr><w:spacing w:line="360" w:lineRule="exact"/><w:jc w:val="center"/><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:b/><w:sz w:val="24"/></w:rPr></w:pPr></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1730" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="45451991" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00FA440C"><w:pPr><w:spacing w:line="360" w:lineRule="exact"/><w:jc w:val="left"/><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr></w:pPr></w:p></w:tc></w:tr><w:tr w:rsidR="00FA440C" w14:paraId="5AB517C0" w14:textId="77777777"><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2929" w:type="dxa"/></w:tcPr><w:p w14:paraId="2594C7AE" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00000000"><w:pPr><w:spacing w:line="440" w:lineRule="exact"/><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr><w:t>车模整体尺寸：
+（包括传感器在内）长，宽，高
+(mm)
+<w:tcPr><w:tcW w:w="3548" w:type="dxa"/></w:tcPr><w:p w14:paraId="0E47BCFD" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00000000"><w:pPr><w:spacing w:line="360" w:lineRule="exact"/><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr><w:t>长：29.7cm
+宽：21cm
+高：15cm
+<w:tcPr><w:tcW w:w="993" w:type="dxa"/></w:tcPr><w:p w14:paraId="2DDE88B1" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00FA440C"><w:pPr><w:spacing w:line="360" w:lineRule="exact"/><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr></w:pPr></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="999" w:type="dxa"/></w:tcPr><w:p w14:paraId="4D2ECA76" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00FA440C"><w:pPr><w:spacing w:line="360" w:lineRule="exact"/><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr></w:pPr></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1730" w:type="dxa"/></w:tcPr><w:p w14:paraId="1719FABE" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00FA440C"><w:pPr><w:spacing w:line="360" w:lineRule="exact"/><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr></w:pPr></w:p></w:tc></w:tr><w:tr w:rsidR="00FA440C" w14:paraId="5BB17734" w14:textId="77777777"><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2929" w:type="dxa"/></w:tcPr><w:p w14:paraId="705CFA96" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00000000"><w:pPr><w:pStyle w:val="ab"/><w:spacing w:line="440" w:lineRule="exact"/><w:ind w:firstLineChars="0" w:firstLine="0"/><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr><w:t>传感器种类、规格
+(型号)
+数量。
+<w:tcPr><w:tcW w:w="3548" w:type="dxa"/></w:tcPr><w:p w14:paraId="3A064487" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00000000"><w:pPr><w:pStyle w:val="ab"/><w:spacing w:line="360" w:lineRule="exact"/><w:ind w:firstLineChars="0" w:firstLine="0"/><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr><w:t>陀螺仪IMU660RA *1、普地mini1024线编码器（抗磁）*4、
+OpenART
+ Plus摄像头模块*2、
+<w:tcPr><w:tcW w:w="993" w:type="dxa"/></w:tcPr><w:p w14:paraId="1D7FC896" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00FA440C"><w:pPr><w:spacing w:line="360" w:lineRule="exact"/><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr></w:pPr></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="999" w:type="dxa"/></w:tcPr><w:p w14:paraId="4A3ED84A" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00FA440C"><w:pPr><w:spacing w:line="360" w:lineRule="exact"/><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr></w:pPr></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1730" w:type="dxa"/></w:tcPr><w:p w14:paraId="67FC78C1" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00FA440C"><w:pPr><w:spacing w:line="360" w:lineRule="exact"/><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr></w:pPr></w:p></w:tc></w:tr><w:tr w:rsidR="00FA440C" w14:paraId="4C56581B" w14:textId="77777777"><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2929" w:type="dxa"/></w:tcPr><w:p w14:paraId="4236DFBB" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00000000"><w:pPr><w:pStyle w:val="ab"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="4"/></w:numPr><w:spacing w:line="440" w:lineRule="exact"/><w:ind w:firstLineChars="0"/><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr><w:t>控制转向舵机型号是否自行改装舵机？
+防伪易损标签是否完整？
+<w:tcPr><w:tcW w:w="3548" w:type="dxa"/></w:tcPr><w:p w14:paraId="699C45B2" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00000000"><w:pPr><w:pStyle w:val="ab"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="5"/></w:numPr><w:spacing w:line="360" w:lineRule="exact"/><w:ind w:firstLineChars="0"/><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr><w:t>无舵机
+2.标签完整
+<w:tcPr><w:tcW w:w="993" w:type="dxa"/></w:tcPr><w:p w14:paraId="02906921" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00FA440C"><w:pPr><w:spacing w:line="360" w:lineRule="exact"/><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr></w:pPr></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="999" w:type="dxa"/></w:tcPr><w:p w14:paraId="791DD181" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00FA440C"><w:pPr><w:spacing w:line="360" w:lineRule="exact"/><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr></w:pPr></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1730" w:type="dxa"/></w:tcPr><w:p w14:paraId="07FB3CC0" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00FA440C"><w:pPr><w:spacing w:line="360" w:lineRule="exact"/><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr></w:pPr></w:p></w:tc></w:tr><w:tr w:rsidR="00FA440C" w14:paraId="06CEF9DD" w14:textId="77777777"><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2929" w:type="dxa"/></w:tcPr><w:p w14:paraId="277EF327" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00000000"><w:pPr><w:spacing w:line="440" w:lineRule="exact"/><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr><w:t>1. 是否增加伺服
+电机
+？
+2. 如果有种类、个数和作用？
+<w:tcPr><w:tcW w:w="3548" w:type="dxa"/></w:tcPr><w:p w14:paraId="3FDED8D5" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00000000"><w:pPr><w:spacing w:line="360" w:lineRule="exact"/><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr><w:t>无
+<w:tcPr><w:tcW w:w="993" w:type="dxa"/></w:tcPr><w:p w14:paraId="63312A09" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00FA440C"><w:pPr><w:spacing w:line="360" w:lineRule="exact"/><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr></w:pPr></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="999" w:type="dxa"/></w:tcPr><w:p w14:paraId="7026801F" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00FA440C"><w:pPr><w:spacing w:line="360" w:lineRule="exact"/><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr></w:pPr></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1730" w:type="dxa"/></w:tcPr><w:p w14:paraId="100E11D6" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00FA440C"><w:pPr><w:spacing w:line="360" w:lineRule="exact"/><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr></w:pPr></w:p></w:tc></w:tr><w:tr w:rsidR="00FA440C" w14:paraId="7C32BF77" w14:textId="77777777"><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2929" w:type="dxa"/></w:tcPr><w:p w14:paraId="4D5452D3" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00000000"><w:pPr><w:pStyle w:val="ab"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="6"/></w:numPr><w:spacing w:line="440" w:lineRule="exact"/><w:ind w:firstLineChars="0"/><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr><w:t>电路中微处理器型号和个数？
+<w:tcPr><w:tcW w:w="3548" w:type="dxa"/></w:tcPr><w:p w14:paraId="36FA43B1" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00000000"><w:pPr><w:spacing w:line="360" w:lineRule="exact"/><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr><w:t>3个：主控
+ 
+MIMXRT1064*1，
+OpenART
+ Plus摄像头模块*2
+<w:tcPr><w:tcW w:w="993" w:type="dxa"/></w:tcPr><w:p w14:paraId="3A03AB60" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00FA440C"><w:pPr><w:spacing w:line="360" w:lineRule="exact"/><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr></w:pPr></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="999" w:type="dxa"/></w:tcPr><w:p w14:paraId="39D2660E" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00FA440C"><w:pPr><w:spacing w:line="360" w:lineRule="exact"/><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr></w:pPr></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1730" w:type="dxa"/></w:tcPr><w:p w14:paraId="57A1FB4E" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00FA440C"><w:pPr><w:spacing w:line="360" w:lineRule="exact"/><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr></w:pPr></w:p></w:tc></w:tr><w:tr w:rsidR="00FA440C" w14:paraId="03AD695B" w14:textId="77777777"><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2929" w:type="dxa"/></w:tcPr><w:p w14:paraId="41E83A28" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00000000"><w:pPr><w:pStyle w:val="ab"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="7"/></w:numPr><w:spacing w:line="440" w:lineRule="exact"/><w:ind w:firstLineChars="0"/><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr><w:t>是否具有其它可编程器件，个数与作用？
+<w:tcPr><w:tcW w:w="3548" w:type="dxa"/></w:tcPr><w:p w14:paraId="050BE92D" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00000000"><w:pPr><w:spacing w:line="360" w:lineRule="exact"/><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr><w:t>除主控单片机RT
+1064
+之外有两个
+OpenART
+ Plus摄像头模块，一个负责地图识别，一个负责人物和数字的分类
+<w:tcPr><w:tcW w:w="993" w:type="dxa"/></w:tcPr><w:p w14:paraId="34FD1241" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00FA440C"><w:pPr><w:spacing w:line="360" w:lineRule="exact"/><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr></w:pPr></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="999" w:type="dxa"/></w:tcPr><w:p w14:paraId="6BB21636" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00FA440C"><w:pPr><w:spacing w:line="360" w:lineRule="exact"/><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr></w:pPr></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1730" w:type="dxa"/></w:tcPr><w:p w14:paraId="2A0B0437" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00FA440C"><w:pPr><w:spacing w:line="360" w:lineRule="exact"/><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr></w:pPr></w:p></w:tc></w:tr><w:tr w:rsidR="00FA440C" w14:paraId="6F40D85D" w14:textId="77777777"><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2929" w:type="dxa"/></w:tcPr><w:p w14:paraId="2EAF8474" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00000000"><w:pPr><w:pStyle w:val="ab"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="8"/></w:numPr><w:spacing w:line="440" w:lineRule="exact"/><w:ind w:firstLineChars="0"/><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr><w:t>是否有无线通讯装置？
+如果有种类和个数？
+<w:tcPr><w:tcW w:w="3548" w:type="dxa"/></w:tcPr><w:p w14:paraId="26C2E96E" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00000000"><w:pPr><w:pStyle w:val="ab"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="9"/></w:numPr><w:spacing w:line="360" w:lineRule="exact"/><w:ind w:firstLineChars="0"/><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr><w:t>有
+2个：ESP8266串口
+wifi
+模块*1、逐飞高速
+wifi
+ 
+spi
+无线模块*1
+<w:tcPr><w:tcW w:w="993" w:type="dxa"/></w:tcPr><w:p w14:paraId="7AB06574" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00FA440C"><w:pPr><w:spacing w:line="360" w:lineRule="exact"/><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr></w:pPr></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="999" w:type="dxa"/></w:tcPr><w:p w14:paraId="5C3108B4" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00FA440C"><w:pPr><w:spacing w:line="360" w:lineRule="exact"/><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr></w:pPr></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1730" w:type="dxa"/></w:tcPr><w:p w14:paraId="6027BB14" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00FA440C"><w:pPr><w:spacing w:line="360" w:lineRule="exact"/><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr></w:pPr></w:p></w:tc></w:tr><w:tr w:rsidR="00FA440C" w14:paraId="00FB3BC6" w14:textId="77777777"><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2929" w:type="dxa"/></w:tcPr><w:p w14:paraId="25B9496B" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00000000"><w:pPr><w:pStyle w:val="ab"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="10"/></w:numPr><w:spacing w:line="440" w:lineRule="exact"/><w:ind w:firstLineChars="0"/><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr><w:lastRenderedPageBreak/><w:t>电池的种类、规格和数量？
+ 
+<w:tcPr><w:tcW w:w="3548" w:type="dxa"/></w:tcPr><w:p w14:paraId="50425B6C" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00000000"><w:pPr><w:spacing w:line="360" w:lineRule="exact"/><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr><w:t>格式ACE锂电池3s
+ 
+2200mah
+ 
+45c*1
+<w:tcPr><w:tcW w:w="993" w:type="dxa"/></w:tcPr><w:p w14:paraId="1CBA1800" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00FA440C"><w:pPr><w:spacing w:line="360" w:lineRule="exact"/><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr></w:pPr></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="999" w:type="dxa"/></w:tcPr><w:p w14:paraId="2A3782B5" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00FA440C"><w:pPr><w:spacing w:line="360" w:lineRule="exact"/><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr></w:pPr></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1730" w:type="dxa"/></w:tcPr><w:p w14:paraId="2E9E10E7" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00FA440C"><w:pPr><w:spacing w:line="360" w:lineRule="exact"/><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr></w:pPr></w:p></w:tc></w:tr><w:tr w:rsidR="00FA440C" w14:paraId="7A683C39" w14:textId="77777777"><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2929" w:type="dxa"/></w:tcPr><w:p w14:paraId="4130C3D7" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00000000"><w:pPr><w:pStyle w:val="ab"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="11"/></w:numPr><w:spacing w:line="440" w:lineRule="exact"/><w:ind w:firstLineChars="0"/><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr><w:t>后轮驱动电机是否是原车模电机？
+是否具有防伪易损标签？
+<w:tcPr><w:tcW w:w="3548" w:type="dxa"/></w:tcPr><w:p w14:paraId="58591D69" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00000000"><w:pPr><w:pStyle w:val="ab"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="12"/></w:numPr><w:spacing w:line="360" w:lineRule="exact"/><w:ind w:firstLineChars="0"/><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr><w:t>M车模4个电机均为原车模电机
+是
+<w:tcPr><w:tcW w:w="993" w:type="dxa"/></w:tcPr><w:p w14:paraId="7EB753D8" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00FA440C"><w:pPr><w:spacing w:line="360" w:lineRule="exact"/><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr></w:pPr></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="999" w:type="dxa"/></w:tcPr><w:p w14:paraId="5A188093" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00FA440C"><w:pPr><w:spacing w:line="360" w:lineRule="exact"/><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr></w:pPr></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1730" w:type="dxa"/></w:tcPr><w:p w14:paraId="79097206" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00FA440C"><w:pPr><w:spacing w:line="360" w:lineRule="exact"/><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr></w:pPr></w:p></w:tc></w:tr><w:tr w:rsidR="00FA440C" w14:paraId="33F50D46" w14:textId="77777777"><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2929" w:type="dxa"/></w:tcPr><w:p w14:paraId="0BDB5437" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00000000"><w:pPr><w:pStyle w:val="ab"/><w:spacing w:line="440" w:lineRule="exact"/><w:ind w:firstLineChars="0" w:firstLine="0"/><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr><w:t>轮胎是否是原车同款轮胎？
+<w:tcPr><w:tcW w:w="3548" w:type="dxa"/></w:tcPr><w:p w14:paraId="7728CA9E" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00000000"><w:pPr><w:pStyle w:val="ab"/><w:spacing w:line="360" w:lineRule="exact"/><w:ind w:firstLineChars="0" w:firstLine="0"/><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr><w:t>是
+<w:tcPr><w:tcW w:w="993" w:type="dxa"/></w:tcPr><w:p w14:paraId="4CB1C8A8" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00FA440C"><w:pPr><w:spacing w:line="360" w:lineRule="exact"/><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr></w:pPr></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="999" w:type="dxa"/></w:tcPr><w:p w14:paraId="5B6BA92D" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00FA440C"><w:pPr><w:spacing w:line="360" w:lineRule="exact"/><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr></w:pPr></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1730" w:type="dxa"/></w:tcPr><w:p w14:paraId="4C45FC83" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00FA440C"><w:pPr><w:spacing w:line="360" w:lineRule="exact"/><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr></w:pPr></w:p></w:tc></w:tr><w:tr w:rsidR="00FA440C" w14:paraId="2CF824B5" w14:textId="77777777"><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2929" w:type="dxa"/></w:tcPr><w:p w14:paraId="5B0B0E8B" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00000000"><w:pPr><w:pStyle w:val="ab"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="13"/></w:numPr><w:spacing w:line="440" w:lineRule="exact"/><w:ind w:firstLineChars="0"/><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr><w:t>车轮轴距、轮距是否改装？
+改装参数是什么？
+<w:tcPr><w:tcW w:w="3548" w:type="dxa"/></w:tcPr><w:p w14:paraId="10AEC091" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00000000"><w:pPr><w:pStyle w:val="ab"/><w:numPr><w:ilvl w:val="0"/><w:numId w:val="14"/></w:numPr><w:spacing w:line="360" w:lineRule="exact"/><w:ind w:firstLineChars="0"/><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr><w:t>否
+<w:tcPr><w:tcW w:w="993" w:type="dxa"/></w:tcPr><w:p w14:paraId="7295008A" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00FA440C"><w:pPr><w:spacing w:line="360" w:lineRule="exact"/><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr></w:pPr></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="999" w:type="dxa"/></w:tcPr><w:p w14:paraId="5942AE09" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00FA440C"><w:pPr><w:spacing w:line="360" w:lineRule="exact"/><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr></w:pPr></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1730" w:type="dxa"/></w:tcPr><w:p w14:paraId="6E1B6B81" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00FA440C"><w:pPr><w:spacing w:line="360" w:lineRule="exact"/><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr></w:pPr></w:p></w:tc></w:tr><w:tr w:rsidR="00FA440C" w14:paraId="3E79B8E0" w14:textId="77777777"><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2929" w:type="dxa"/></w:tcPr><w:p w14:paraId="46A4FC82" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00000000"><w:pPr><w:pStyle w:val="ab"/><w:spacing w:line="440" w:lineRule="exact"/><w:ind w:firstLineChars="0" w:firstLine="0"/><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr><w:t>车模驱动轮传动机构是否改装？
+<w:tcPr><w:tcW w:w="3548" w:type="dxa"/></w:tcPr><w:p w14:paraId="0E272226" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00000000"><w:pPr><w:spacing w:line="360" w:lineRule="exact"/><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr><w:t>否
+<w:tcPr><w:tcW w:w="993" w:type="dxa"/></w:tcPr><w:p w14:paraId="0E55D157" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00FA440C"><w:pPr><w:spacing w:line="360" w:lineRule="exact"/><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr></w:pPr></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="999" w:type="dxa"/></w:tcPr><w:p w14:paraId="0D4CBFAA" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00FA440C"><w:pPr><w:spacing w:line="360" w:lineRule="exact"/><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr></w:pPr></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1730" w:type="dxa"/></w:tcPr><w:p w14:paraId="5461940E" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00FA440C"><w:pPr><w:spacing w:line="360" w:lineRule="exact"/><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr></w:pPr></w:p></w:tc></w:tr><w:tr w:rsidR="00FA440C" w14:paraId="3402F793" w14:textId="77777777"><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2929" w:type="dxa"/></w:tcPr><w:p w14:paraId="5EB63068" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00000000"><w:pPr><w:pStyle w:val="ab"/><w:spacing w:line="440" w:lineRule="exact"/><w:ind w:firstLineChars="0" w:firstLine="0"/><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr><w:t>车模电路板个数及功能。
+<w:tcPr><w:tcW w:w="3548" w:type="dxa"/></w:tcPr><w:p w14:paraId="5C8E1B80" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00000000"><w:pPr><w:spacing w:line="360" w:lineRule="exact"/><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr><w:t>一.5个
+1）.
+主控板负责接收各个传感器信号并传送至单片机，输出单片机的输出信号
+2）.
+驱动板负责接收单片机的PWM信号并驱动电机运动并通过ADC检测电流
+3）.
+操作版负责显示并操作菜单以及识别结果的显示
+4）.
+摄像头负责检测视觉信息
+<w:tcPr><w:tcW w:w="993" w:type="dxa"/></w:tcPr><w:p w14:paraId="59B18CA6" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00FA440C"><w:pPr><w:spacing w:line="360" w:lineRule="exact"/><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr></w:pPr></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="999" w:type="dxa"/></w:tcPr><w:p w14:paraId="0B6DA369" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00FA440C"><w:pPr><w:spacing w:line="360" w:lineRule="exact"/><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr></w:pPr></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="1730" w:type="dxa"/></w:tcPr><w:p w14:paraId="0822A43A" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00FA440C"><w:pPr><w:spacing w:line="360" w:lineRule="exact"/><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="24"/></w:rPr></w:pPr></w:p></w:tc></w:tr></w:tbl><w:p w14:paraId="70E08636" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00FA440C"><w:pPr><w:widowControl/><w:jc w:val="left"/><w:outlineLvl w:val="0"/><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体" w:cs="宋体" w:hint="eastAsia"/><w:b/><w:bCs/><w:kern w:val="0"/><w:sz w:val="30"/><w:szCs w:val="30"/><w:lang w:bidi="ar"/></w:rPr></w:pPr></w:p><w:p w14:paraId="7089AE37" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00FA440C"><w:pPr><w:widowControl/><w:jc w:val="left"/><w:outlineLvl w:val="0"/><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体" w:cs="宋体" w:hint="eastAsia"/><w:b/><w:bCs/><w:kern w:val="0"/><w:sz w:val="30"/><w:szCs w:val="30"/><w:lang w:bidi="ar"/></w:rPr></w:pPr></w:p><w:p w14:paraId="6CED63B2" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00FA440C"><w:pPr><w:widowControl/><w:jc w:val="left"/><w:outlineLvl w:val="0"/><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体" w:cs="宋体" w:hint="eastAsia"/><w:b/><w:bCs/><w:kern w:val="0"/><w:sz w:val="30"/><w:szCs w:val="30"/><w:lang w:bidi="ar"/></w:rPr></w:pPr></w:p><w:p w14:paraId="6A169D45" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00FA440C"><w:pPr><w:widowControl/><w:jc w:val="left"/><w:outlineLvl w:val="0"/><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体" w:cs="宋体" w:hint="eastAsia"/><w:b/><w:bCs/><w:kern w:val="0"/><w:sz w:val="30"/><w:szCs w:val="30"/><w:lang w:bidi="ar"/></w:rPr></w:pPr></w:p><w:p w14:paraId="009C58C8" w14:textId="77777777" w:rsidR="00FA440C" w:rsidRDefault="00FA440C"><w:pPr><w:widowControl/><w:jc w:val="left"/><w:outlineLvl w:val="0"/><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体" w:cs="宋体" w:hint="eastAsia"/><w:b/><w:bCs/><w:kern w:val="0"/><w:sz w:val="30"/><w:szCs w:val="30"/><w:lang w:bidi="ar"/></w:rPr></w:pPr></w:p><w:p w14:paraId="5CA8B6FC" w14:textId="4327F92A" w:rsidR="00FA440C" w:rsidRDefault="00000000"><w:pPr><w:widowControl/><w:jc w:val="left"/><w:outlineLvl w:val="0"/><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体" w:cs="宋体" w:hint="eastAsia"/><w:b/><w:bCs/><w:kern w:val="0"/><w:sz w:val="30"/><w:szCs w:val="30"/><w:lang w:bidi="ar"/></w:rPr></w:pPr><w:bookmarkStart w:id="63" w:name="_Toc237719599"/><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体" w:cs="宋体" w:hint="eastAsia"/><w:b/><w:bCs/><w:kern w:val="0"/><w:sz w:val="30"/><w:szCs w:val="30"/><w:lang w:bidi="ar"/></w:rPr><w:lastRenderedPageBreak/><w:t>附录B
+模型分类任务源码
+import
+ sensor, image, time, 
+tf
+, 
+os
+, 
+pyb
+from
+ machine 
+import
+ 
+UART
+# 定义LED
+RED_LED_PIN
+ 
+=
+ 
+1
+BLUE_LED_PIN
+ 
+=
+ 
+3
+# 摄像头初始化
+sensor.reset
+()
+sensor.set_pixformat
+(
+sensor.
+RGB
+565
+)
+sensor.set_framesize
+(
+sensor.
+QVGA
+)
+#sensor.set_
+brightness(
+2000)
+sensor.skip
+_frames
+(
+time
+=
+30
+)
+sensor.set_auto_
+gain
+(
+False
+)
+sensor.set_auto_
+whitebal
+(
+False
+)
+clock 
+=
+ 
+time.clock
+()
+# 加载模型
+net_path
+ 
+=
+ 
+"/
+sd
+/mobilenet_713.tflite"
+labels 
+=
+ [
+line.rstrip
+() 
+for
+ line 
+in
+ 
+open
+(
+"/
+sd
+/mobilenet.txt"
+)]
+net 
+=
+ 
+tf.load
+(
+net_path
+)
+img_num
+ 
+=
+0
+# 初始化串口
+uart
+ 
+=
+ 
+UART(
+12
+, 
+baudrate
+=
+115200
+)
+# 初始关闭所有灯
+pyb.LED
+(
+RED_LED_PIN
+).off
+()
+pyb.LED
+(
+BLUE_LED_PIN
+).off
+()
+def
+ 
+send_data
+(
+byte_val
+):
+    
+global
+ 
+uart
+    
+HEAD1
+, 
+HEAD2
+, 
+HEAD3
+ 
+=
+ 
+0x
+FD
+, 
+0x
+FE
+, 
+0x
+FF
+    frame 
+=
+ 
+bytearray
+(
+[
+HEAD1
+, 
+HEAD2
+, 
+HEAD3
+, 
+byte_val
+ 
+&amp;
+ 
+0x
+FF
+])
+    
+uart.write
+(frame)
+while
+ 
+True
+:
+    
+clock.tick
+()
+    
+img
+ 
+=
+ 
+sensor.snapshot
+()
+    obj 
+=
+ 
+tf.classify
+(net, 
+img
+)[
+0
+]
+    outputs 
+=
+ 
+obj.output
+()
+    
+max_idx
+ 
+=
+ 
+outputs.index
+(
+max
+(outputs))
+    
+if
+ outputs[
+max_idx
+] 
+&gt;
+ 
+0.85
+ 
+and
+ 
+max_idx
+ 
+&lt;
+ 
+20
+:
+        
+send_data
+(
+max_idx
+)
+        
+# 红灯闪烁一次（亮100ms再灭）
+        
+#
+pyb.LED(
+BLUE_LED_PIN
+).on
+()
+        
+#
+time.sleep
+_
+ms(
+10)
+        
+#
+pyb.LED(
+BLUE_LED_PIN
+).off
+()
+      
+    
+else
+:
+        
+send_
+data
+(
+255
+)
+        
+#
+pyb.LED(
+RED_LED_PIN
+).on
+()
+        
+#
+time.sleep
+_
+ms(
+10)
+        
+#
+pyb.LED(
+RED_LED_PIN
+).off
+()
+      

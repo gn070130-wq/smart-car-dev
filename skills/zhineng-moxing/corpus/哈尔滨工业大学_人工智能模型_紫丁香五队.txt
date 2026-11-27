@@ -1,0 +1,2062 @@
+ 
+ 
+ 
+1 
+ 
+ 
+第二十一届全国大学生 
+智能汽车竞赛 
+ 
+技 术 报 告 
+ 
+ 
+学    校：哈尔滨工业大学 
+队伍名称：紫丁香五队 
+参赛队员：关家奇 
+          孙宇凡 
+          皇甫科良 
+          王瑞涵 
+          张菁 
+带队教师：王盼宝 宋凯 
+ 
+
+第二十届全国大学生智能汽车竞赛技术报告 
+ 
+ 
+2 
+ 
+关于技术报告和研究论文使用授权的说明 
+ 
+本人完全了解第 21 届全国大学生智能汽车竞赛关保留、使用技术报告和
+研究论文的规定，即：参赛作品著作权归参赛者本人，比赛组委会和恩智浦半
+导体公司可以在相关主页上收录并公开参赛作品的设计方案、技术报告以及参
+赛模型车的视频、图像资料，并将相关内容编纂收录在组委会出版论文集中。 
+ 
+参赛队员签名：关家奇 孙宇凡 皇甫科良 王瑞涵 张菁 
+参赛老师签名：王盼宝 宋凯 
+日        期：2026.8.14 
+ 
+ 
+ 
+3 
+ 
+摘要 
+本文介绍哈尔滨工业大学紫丁香五队第二十一届全国大学生智能汽车竞赛
+四轮C车模系统方案。系统采用RK3588和英飞凌TC264作为上下位机，OV13855
+摄像头采集图像，依托自研神经网络完成赛道分割与目标检测；编码器获取车速，
+舵机采用PD控制、电机采用PI控制实现闭环运动控制；通过机械调参、硬件电路
+设计与多手段调试，实现智能车稳定快速循迹。测试表明该方案运行可靠。 
+关键词：神经网络；PID；智能车；TC264  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+目录 
+目录 .................................................................................................................................................. 3 
+第一章  绪 论 ................................................................................................................................ 5 
+第二十届全国大学生智能汽车竞赛技术报告 
+ 
+ 
+4 
+ 
+1.1 智能车研究背景 .............................................................................................................. 5 
+1.2 方案总体介绍 .................................................................................................................. 5 
+1.3 本文结构 .......................................................................................................................... 6 
+第二章 机械结构设计及调整 ........................................................................................................ 6 
+2.1 整车布局 .......................................................................................................................... 6 
+2.2 电池选型与安装 .............................................................................................................. 8 
+2.3 转向舵机安装 .................................................................................................................. 8 
+2.4 前轮倾角调节 .................................................................................................................. 9 
+2.4.1 主销后倾 ................................................................................................................ 9 
+2.4.2 主销内倾 ................................................................................................................ 9 
+2.4.3 前轮前束 ................................................................................................................ 9 
+第三章 硬件电路设计 .................................................................................................................. 10 
+3.1 电源管理模块设计 ........................................................................................................ 10 
+3.2 驱动电路设计 ................................................................................................................. 11 
+3.3 调试电路设计 ................................................................................................................. 11 
+3.4 MCU 控制电路 ............................................................................................................... 12 
+3.5 传感器的选择 ................................................................................................................ 13 
+3.5.1 摄像头 .................................................................................................................. 13 
+3.5.2 编码器 .................................................................................................................. 14 
+第四章 软件控制设计 .................................................................................................................. 14 
+4.1 图像采集与处理 ............................................................................................................ 14 
+4.2 元素提取与逻辑策略 .................................................................................................... 15 
+4.2.1 神经网络模型识别 .............................................................................................. 15 
+4.2.2 模型推理效果图 .................................................................................................. 16 
+4.2.3 模式策略 .............................................................................................................. 16 
+4.3 PID 控制算法介绍 .......................................................................................................... 16 
+4.3.1 位置式 PID .......................................................................................................... 18 
+4.3.2 增量式 PID .......................................................................................................... 18 
+4.3.3 PID 参数整定 ....................................................................................................... 19 
+4.4 转向舵机的 PD 控制算法 ............................................................................................. 19 
+4.5 驱动电机的 PI 控制算法 ............................................................................................... 19 
+第五章 系统调试 .......................................................................................................................... 21 
+5.1  RK3588S 开发板及 TC264 的调试 ............................................................................. 21 
+5.2 人机交互工具 ................................................................................................................ 22 
+5.3 wifi 及上位机调试 .......................................................................................................... 22 
+第六章 模型车主要技术参数说明 .............................................................................................. 23 
+第七章：电路板详细设计原理图与核心算法子程序 ................................................................ 24 
+7.1 核心算法 ......................................................................................................................... 24 
+7.2 电路原理图 ..................................................................................................................... 29 
+结论 ................................................................................................................................................ 33 
+ 
+ 
+ 
+5 
+ 
+参考文献 ........................................................................................................................................ 40 
+附录 ................................................................................................................................................ 41 
+ 
+第一章  绪 论 
+1.1 智能车研究背景 
+智能车是一种高新技术密集型的新型汽车，以汽车电子为背景涵盖控制、
+模式识别、传感技术、电子、电气、计算机、机械等多科学的科技创意性设
+计，一般主要由路径识别、速度采集、角度控制及车速控制等模块组成。可实
+现自动驾驶、自动变速及自动识别道路等功能，是现代电子产业发展中一项重
+要的组成部分。 
+全国大学生智能车竞赛是从 2006 开始，由教育部高等教育司委托高等学
+校自动化类教学指导委员会举办的旨在加强学生实践、创新能力和培养团队精
+神的一项创意性科技竞赛，至今已经成功举办了十九届。在继承和总结前十九
+届比赛实践的基础上，竞赛组委会努力拓展新的竞赛内涵，设计新的竞赛内
+容，创造新的比赛模式，使得智能车竞赛在新时代更加适应新工科大学生培养
+理念。 
+在我国，教育部为了加强大学生实践、创新能力和团队合作精神的培养，
+委托教育部高等学校自动化专业教学指导分委员会主办了每年一度的全国大学
+生智能汽车竞赛。全国大学生智能汽车竞赛是在竞赛组委会提供的统一汽车模
+型平台上，使用飞思卡尔半导体公司的 8 位、16 位、32 位微控制器作为核心
+控制模块，通过设计道路识别传感器和电机驱动电路、编写相应软件及装配模
+型车，制作一个能够自主识别道路的模型汽车，按照规定路线（路线赛前未
+知）行进，以完成时间最短者为优胜。 
+1.2 方案总体介绍 
+根据竞赛规则相关规定，本智能车系统采用四轮 C 车模，采用上下位机分
+层控制架构。上位机选用瑞芯微 RK3588S（X-01 板卡），在 Ubuntu 开发环境
+中进行软件开发，通过板卡自带的 OV13855 彩色 RGB 摄像头采集赛道图像，
+依托自研多任务神经网络模型同时完成赛道区域分割与路牌、车辆、行人、金
+币等多类目标检测，进而提取赛道中心线并经决策引擎生成前视线与控制模
+第二十届全国大学生智能汽车竞赛技术报告 
+ 
+ 
+6 
+ 
+式；下位机采用英飞凌 TC264D 核心板，负责接收上位机通过串口下发的 7 字
+节控制帧（400Hz），驱动舵机与电机执行运动控制。车速通过 1024 线光电编
+码器采集，由下位机进行正交解码获得速度与路程信息；转向舵机采用一维模
+糊 PD 控制，驱动电机采用增量式 PI 控制，通过 PWM 信号控制驱动电路调整
+电机功率，并结合基于图像偏差的二次曲线映射动态设定目标速度，实现直道
+加速、弯道差速的闭环运动控制。 
+1.3 本文结构 
+本文一共分为七章。第一章介绍智能车比赛背景以及本套智能车系统整体
+实现方案；第二章围绕机械结构，阐述整车各部件安装与结构调整；第三章讲解
+系统硬件电路设计与器件选型；第四章阐述软件部分，包含图像处理、目标识别
+策略、舵机与电机控制算法；第五章介绍系统调试工具与调试方法；第六章给出
+智能车各项物理技术参数；第七章给出电路原理图以及核心算法子程序；最后为
+结论与参考文献 
+第二章 机械结构设计及调整 
+智能车的核心是控制策略和算法，但是，机械结构也是限制赛车速度的巨
+大瓶颈，如果一辆赛车的程序架构很好，但是机械部分做的不好的话，其速度
+也会被大大的限制。即当车速较高的时候，车模有明显的甩尾和侧翻现象，此
+时对车的机械结构要求很高。除了对车身姿态的影响外，机械性能影响车的加
+减速响应速度，运行的对称性和稳定性等，因此，我们在结构调整过程中综合
+考虑以使小车具有良好的运行性能。 
+2.1 整车布局 
+我们组采用的是四轮 C 车模，通过对轮胎合适地填充海绵和进行软化处
+理，具有极好的减震性和耐磨性。驱动电机为 RS-380，7.2V 的电机功率可达
+16W，额定电压 7.2V，额定电流 3.92A，额定转速 14060rpm。伺服电机为
+BDS-300 舵机，动作速度快，车模整体质量较轻。智能车的外形大致如图
+2.1。 
+(1) 车模底盘降低，用来降低重心。 
+(2) 舵机采用竖直姿态，方便控制。 
+ 
+ 
+ 
+7 
+ 
+(3) 对前轮倾角进行调节，保证车直线行驶的稳定性。 
+(4) 调整电池位置使中心尽量在车体中心 
+ 
+图 2.1 智能车外形图
+
+第二十届全国大学生智能汽车竞赛技术报告 
+ 
+ 
+8 
+ 
+2.2 电池选型与安装 
+原装车模使用的是 NiCd 电池，由于其体积大，质量大，在前期的使用过
+程中造成车在速度快产生甩尾和侧滑现象，此外 NiCd 电池质量分布不均，相
+当于增加车身不对称因素。最后我们选用格式 3S 电池，2300mAh 45C 能够保
+证电池较大的放电电流，从而带动电机持续转动；同时，通过合理选择电池位
+置以调节车体重心，使得整个车布局合理，加减速响应快。俯视图如图 2.2 所
+示。 
+ 
+图 2.2 俯视图 
+2.3 转向舵机安装 
+舵机转向是整个控制系统中延迟较大的一个环节，为了减小此时间常数，
+通过改变舵机的安装位置可以提高舵机的响应速度。通过分析舵机控制转向轮
+转向的原理可以发现，在相同的舵机转向条件下，转向连杆在舵机一端的连接
+点离舵机轴心距离越远，转向轮转向变化越快。这相当于增大力臂长度，提高
+线速度。 
+舵机安装方式有立式和卧式两种，比较两种方式发现，立式安装效果更
+好。 舵机安装时要保证左右对称，这样可以保证舵机左右转向时力臂相等且
+处于最 大范围，提升了舵机的响应速度。经理论分析，功率等于速度与扭矩
+的乘积，加大转向速度必然减少输出扭矩，扭矩过小会造成迟钝，所以安装时
+必须考虑到转向机构的响应速度与舵机扭矩之间的关系，获得最佳转向效果。 
+
+第四章 软件控制设计 
+ 
+ 
+9 
+ 
+2.4 前轮倾角调节 
+为了使汽车直线行驶稳定，转向轻便，转向后能自动回正，减少轮胎和转
+向系零件的磨损等，在转向轮、转向节和前轴之间须形成一定的相对安装位
+置，叫车轮定位。本系统所采用的智能车通过四条轮胎与地面接触，两个后轮
+同轴受到限位，无法调整，与智能车的前进方向保持平行，因此要改变智能车
+与地面的接触方式，调试出利于车转向、直线的四轮定位，只能通过调整前轮
+倾角各定位参数来实现。它的安装位置由主销内倾、主销后倾、前轮外倾和前
+轮前束四个项目决定。 
+2.4.1 主销后倾 
+主销后倾如图 2.4 所示，是指在纵向平面内主销轴线与地面垂直线之间的
+夹角，向前为负，向后为正。它在车辆转弯时会产生与车轮偏转方向相反的回
+正力矩，使车轮自动恢复到原来的中间位置上。所以，主销后倾角越大，车速
+越高，前轮自动回正的能力就越强。  
+ 
+图 2.4 主销后倾示意图 
+2.4.2 主销内倾  
+主销内倾是将主销（即转向轴线）的上端向内倾斜。从车前方看去，主销
+轴线与通过前轮中心的垂线之间形成一个夹角，即主销内倾角。轮胎调整为倾
+斜以后直线行走的时候是轮胎内侧着地，而当过弯的时候，由于惯性车体会要
+向弯道外侧倾斜，而这时候的外侧轮胎如果倾斜角度事先调整得当则正好可以
+胎面着地，从而使车辆在弯道获得最佳抓地力。使车轮转向后能及时自动回正
+和转向轻便。 
+2.4.3 前轮前束 
+车轮前束如图 2.7 所示。是指两轮之间的后距离数值与前距离数值之差，
+也指前轮中心线与纵向中心线的夹角。从上往下看，两个车轮指向的方向在前
+
+第二十届全国大学生智能汽车竞赛技术报告 
+ 
+ 
+10 
+ 
+端指向内称为车轮前束，指向外的则称为车轮后束。前轮前束的作用是保证汽
+车的行驶性能，减少轮胎的磨损。前轮在滚动时，其惯性力自然将轮胎向内偏
+斜，如果前束适当，轮胎滚动时的偏斜方向就会抵消，轮胎内外侧磨损的现象
+会减少。 
+ 
+图 2.7 车轮前束示意图 
+第三章 硬件电路设计 
+车模电路部分主要的模块包括：电源管理模块、传感器模块、驱动模块以
+及其他调试模块。各模块的总体设计原则是：稳定可靠且符合车模自身结构。 
+3.1 电源管理模块设计 
+电源输出的首要指标是可靠性，整个硬件系统的工作（无论是 X-01 板卡、
+英飞凌 TC264 单片机还是电机等等）完全由电源供电的可靠性决定，电源供电
+不稳定会引起损耗、单片机复位、传感器损毁等严重问题，尤其 X-01 板卡的成
+本较高，因此对于我们组别来说电源输出的稳定性极为重要。 
+车模采用格氏 3S 锂离子动力电池为整个系统供电，电池电压保持在
+11.7~12.6V，电池连接在主控板上通过两个接口分别向驱动板和 X-01 板卡供电。
+其中为避免电机驱动带来的高频干扰产生不良影响，我们在板卡的电源输入之
+前加入了共模滤波器进行滤波，并在板卡供电前端加入保险丝，以保障板卡的使
+用安全。 
+ 
+图 3.1 电源管理电路 
+
+第四章 软件控制设计 
+ 
+ 
+11 
+ 
+3.2 驱动电路设计 
+在栅极驱动芯片选择方面，我们选择 DRV8701E 芯片，一个电机只需要一
+路 PWM 即可实现电机的驱动，如图 3.2 所示。 
+ 
+图 3.2 电机驱动电路 
+3.3 调试电路设计 
+调试电路在车模调试过程中是必不可少的，可以直观的显示智能车的参数
+和状态，并且可以方便地修改参数。调试电路包括：五向按键、OLED 接口、
+拨码。我们将该部分电路和电机驱动电路集成到一块 PCB 上，两部分电路做隔
+离处理，方便调试操作。 
+
+第二十届全国大学生智能汽车竞赛技术报告 
+ 
+ 
+12 
+ 
+ 
+图 3.3 调试电路 
+3.4 MCU 控制电路 
+车模的控制部分由英飞凌单片机（我们采用了逐飞科技的 TC264D 核心
+板）完成，它负责向各个外设输出各种控制信号、从编码器等传感器获取信
+息，并完成板卡图像处理数据的接收，对于小车来说其作用至关重要。 
+ 
+
+第四章 软件控制设计 
+ 
+ 
+13 
+ 
+ 
+图 3.4 主控电路 
+此外，我们在主控板上进行了各种电源变换给单片机以及其他外设供电，从
+电池输入的电源分别经过一个 SY8105 转压电路和一个 SY8113 转压电路转为
+5V 和 7.4V，5V 通过三个 AMS1117 转压电路转为 3.3V 分别为单片机、编码器
+和陀螺仪等传感器供电；7.4V 给舵机稳定供电。 
+ 
+图 3.5 转压电路 
+3.5 传感器的选择 
+3.5.1 摄像头 
+车模使用的摄像头为 X-01 板卡自带的 OV13855 摄像头，1300 万像素，画
+质清晰，帧数高，图像稳定。 
+
+第二十届全国大学生智能汽车竞赛技术报告 
+ 
+ 
+14 
+ 
+3.5.2 编码器 
+光电编码器是一种通过光电转换将输出轴上的机械几何位移量转换成脉冲
+或数字量的传感器, 这也是目前应用最多的测速传感器之一。其获取信息准
+确、精度高、应用简单。  
+采用 1024 线编码器，其供电电压为 3.3V 或 5V，输出为小幅值的正弦信
+号。为了将此信号放大整形，设计了信号调理电路，其基本原理是使用一个运
+放做成比较器电路，调节参考电压，使输出变为 0V-3.3V 的方波信号，送入单
+片机进行运算。 
+第四章 软件控制设计 
+高效的软件程序是智能车高速平稳自动寻线的基础。我们设计的系统中上
+位机 rk3588s 板卡使用 OV13855 彩色 RGB 摄像头获取赛道信息，通过自研的
+神经网络模型同时完成赛道分割与多类目标检测，获取赛道中心线与各类目标
+信息，再经决策引擎处理后得到前视线与控制模式，最终通过串口通讯控制下
+位机，使智能车在基础赛道与特殊任务区均能稳定运行。在智能车的转向和速
+度控制方面，我们使用 PID 控制算法，使智能车能够稳定快速在赛道中循迹并
+完成比赛。 
+4.1 图像采集与处理 
+板卡采用彩色 RGB 摄像头采集赛道图像。图像送入板卡后，首先经自研
+神经网络模型分割出赛道区域，进而提取出赛道中心线，用于后续的循迹控
+制。对于等特殊任务区，模型识别到任务区标志后，将标志信息传递给图像处
+理部分，再由图像进行相应的线操作，使赛道中心线保持连续完整，保证智能
+车在各种任务区都能顺利通过。 
+ 
+
+第四章 软件控制设计 
+ 
+ 
+15 
+ 
+图 4.1.1 图像补线处理图 
+4.2 元素提取与逻辑策略 
+4.2.1 神经网络模型识别 
+针对赛道中路牌、车辆、行人、金币等多种目标，我们自研了一款多任务神
+经网络模型。 
+在数据集制作阶段，我们针对各种光线条件、各种角度下采集了各目标的图片。
+目标检测数据利用百度智能云平台进行标注，分割数据利用 isat-sam 工具进行标
+注。数据集制作完成后，本地自主训练，借助百度 AIStudio 平台进行模型转化，
+待准确率满足要求后，将模型转换为.rknn 格式并部署到板卡，利用 NPU 进行实
+际帧率测试。经过模型轻量化设计与量化，最终在保证识别精度的同时达到同步
+AR 渲染管线的运行帧率，满足实时循迹的需求。 
+ 
+图 4.2.1 目标检测数据标注 
+
+第二十届全国大学生智能汽车竞赛技术报告 
+ 
+ 
+16 
+ 
+4.2.2 模型推理效果图 
+对于赛道中的路牌任务区，系统首先通过 OCR 文字识别模型识别出路牌上
+的文字，再将识别结果送入百度文心大模型进行语义理解，判断当前应走的方向。
+大模型凭借强大的语言理解能力，能够有效处理各种复杂情况，鲁棒性优于规则
+匹配。判定方向后，系统控制智能车进行相应处理，实现不同语义下的正确行驶。 
+图 4.2.2 模型推理效果图 
+4.2.3 模式策略 
+系统将赛道中心线在指定行处的横向位置作为前视线，并结合当前工况动
+态计算前视线与控制模式，最终将结果打包为控制指令下发给下位机。控制指令
+为 7 字节控制帧，包含各个特殊坐标以及各个状态模式等信息，通过串口以
+400Hz 频率发送，实现上下位机的实时协同控制。 
+4.3 PID 控制算法介绍 
+在工程实际中，应用最为广泛的调节器控制规律为比例、积分、微分控
+制，简称 PID 控制，又称 PID 调节。PID 控制器问世至今已有近 70 年历史，
+它以其结构简单、稳定性好、工作可靠、调整方便而成为工业控制的主要技术
+之一。当被控对象的结构和参数不能完全掌握，或得不到精确的数学模型时，
+控制理论的其它技术难以采用时，系统控制器的结构和参数必须依靠经验和现
+场调试来确定，这时应用 PID 控制技术最为方便。即当我们不完全了解一个系
+统和被控对象，或不能通过有效的测量手段来获得系统参数时，最适合用 PID
+控制技术。PID 控制，实际中也有 PI 和 PD 控制。 
+PID 控制器是一种线性控制器，它根据给定值与实际输出值构成控制偏
+差。将偏差的比例(P)、积分(I)和微分(D)通过线性组合构成控制量，对被控对
+象进行控制，故称 PID 控制器，原理框图如图 4.19 所示。 
+
+第四章 软件控制设计 
+ 
+ 
+17 
+ 
+ 
+图 4.19 PID 控制器原理框图 
+在计算机控制系统中，使用的是数字 PID 控制器，控制规律为： 
+)()()( kckrke −=
+                                    (公式 4.1) 
+)]}1()([
+0
+)()({)( −−
+=
+++=  keke
+k
+j T
+TjeT TkeKku D I P
+          (公式 4.2) 
+式中 
+k——采样序号，k = 0，1，2…；       r(k)——第 k 次给定值； 
+c(k)——第 k 次实际输出值；           u(k)—— 第 k 次输出控制量； 
+e(k)—— 第 k 次偏差；                e(k-1)—— 第 k-1 次偏差； 
+KP——比例系数；                    TI——积分时间常数； 
+TD——微分时间常数；                T——采样周期。 
+简单说来，PID 控制器各校正环节的作用如下： 
+比例环节：及时成比例地反映控制系统的偏差信号，偏差一旦产生，控制
+器立即产生控制作用，以减少偏差。 
+积分环节：主要用于消除静差，提高系统的无差度。积分作用的强弱取决
+于积分时间常数，越大，积分作用越弱，反之则越强。 
+微分环节：能反映偏差信号的变化趋势(变化速率)，并能在该偏差信号变
+得太大之前，在系统中引入一个有效的早期修正信号，从而加快系统的动作速
+度，减小调节时间。 
+数字 PID 控制算法通常分为位置式 PID 控制算法和增量式 PID 控制算法。 
+
+第二十届全国大学生智能汽车竞赛技术报告 
+ 
+ 
+18 
+ 
+4.3.1 位置式 PID 
+位置式 PID 中，由于计算机输出的 u (k) 直接去控制执行机构(如阀门)，
+u(k)的值和执行机构的位置(如阀门开度)是一一对应的，所以通常称公式(4.2)为
+位置式 PID 控制算法。 
+位置式 PID 控制算法的缺点是：由于全量输出，所以每次输出均与过去的
+状态有关，计算时要对过去 e(k)进行累加，计算机工作量大；而且因为计算机
+输出的 u(k)对应的是执行机构的实际位置，如计算机出现故障，u(k)的大幅度
+变化，会引起执行机构位置的大幅度变化，这种情况往往是生产实践中不允许
+的，在某些场合，还可能造成严重的生产事故。因而产生了增量式 PID 控制的
+控制算法，所谓增量式 PID 是指数字控制器的输出只是控制量的增量△u(k)。 
+4.3.2 增量式 PID 
+当执行机构需要的是控制量的增量(例如：驱动步进电机)时，可由式(4.2)
+推导出提供增量的 PID 控制算式。由式(4.2)可以推出式(4.3)，式(4.2)减去式
+(4.3)可得式(4.4)。 
+)]}2()1([
+1
+0
+)()1({)1( −−−
+−
+=
+++−=−  keke
+k
+j T
+TjeT TkeKku D I P
+      (公式 4.3) 
+)]}1()([)()(
+)]}2()1(2)([)()]1()({[)(
+−−++=
+−+−−++−−=
+kekeKkeKkeK
+kekekeT TkeT TkekeKku
+DIP
+D
+I
+P
+   (公式
+4.4) 
+式中
+)1()()( −−= kekeke ；
+I
+PI
+T
+TKK = ；
+T
+TKK D PD =  
+公式(4.4)称为增量式 PID 控制算法，可以看出由于一般计算机控制系统采
+用恒定的采样周期 T，一旦确定了 KP、TI 、TD，只要使用前后三次测量值的
+偏差，即可由式(4.4)求出控制增量。 
+增量式 PID 具有以下优点： 
+(1) 由于计算机输出增量，所以误动作时影响小，必要时可用逻辑判断的
+方法关掉。 
+(2) 手动/自动切换时冲击小，便于实现无扰动切换。此外，当计算机发生
+故障时，由于输出通道或执行装置具有信号的锁存作用，故能保持原值。 
+第四章 软件控制设计 
+ 
+ 
+19 
+ 
+(3) 算式中不需要累加。控制增量△u(k)的确定仅与最近 k 次的采样值有
+关，所以较容易通过加权处理而获得比较好的控制效果。 
+但增量式 PID 也有其不足之处：积分截断效应大，有静态误差；溢出的影
+响大。使用时，常选择带死区、积分分离等改进 PID 控制算法。 
+4.3.3 PID 参数整定 
+运用 PID 控制的关键是调整 KP、KI、KD 三个参数，即参数整定。PID 参
+数的整定方法有两大类：一是理论计算整定法。它主要是依据系统的数学模
+型，经过理论计算确定控制器参数；二是工程整定方法，它主要依赖工程经
+验，直接在控制系统的试验中进行，且方法简单、易于掌握，在工程实际中被
+广泛采用。由于智能车系统是机电高耦合的分布式系统，并且要考虑赛道的具
+体环境，要建立精确的智能车运动控制数学模型有一定难度，而且我们对车身
+机械结构经常进行修正，模型参数变化较为频繁，理论计算整定法可操作性不
+强，最终我们采用了工程整定方法。此外，我们先后实验了几种动态改变 PID
+参数的控制方法。 
+4.4 转向舵机的 PD 控制算法 
+调节舵机占空比，观察舵机左右转动情况确定舵机左右极限值；初略设置舵
+机中值，占空比固定，车辆放置于直道行进，根据观察得行进路线进行微调，确
+定中值。在行驶中，运用 pid 将巡线偏差给到舵机占空比上实现方向控制。为适
+应不同速度、偏差大小等因素，我们采用一维模糊 PID，通过不同段偏差对应不
+同的 PID 参数，我们车辆适应性和稳定性得到提升。 
+4.5 驱动电机的 PI 控制算法 
+速度控制方面，采用增量式 PI 算法，核心策略为直道基础速度、弯道道差
+速（内轮减速，外轮基础速度），从而使得车身更好的跟踪曲线。通过反复调
+试，建立了基于图像黑线位置的二次曲线映射关系，用于动态设定速度目标值
+（PI 参考速度）。实际测试表明，该方案在直道与弯道切换时加减速响应灵
+敏，与舵机转向系统协同效果良好。 
+在程序中具体代码如下： 
+radio = -0.000022 * pwmtrue *pwmtrue + 0.021862 * pwmtrue - 
+4.563625;(公式 4.5) 
+通过调节给电机驱动输出的 PWM 信号的占空比来控制电机的转速，通过编
+码器采样得到电机的实际转速，通过恰当的比例控制与积分控制（不断将偏差输
+第二十届全国大学生智能汽车竞赛技术报告 
+ 
+ 
+20 
+ 
+入到 PI 控制器，控制器输入不同的占空比给电机驱动）来使得速度环较硬能够
+满足我们的需求。  
+。
+第五章 系统调试 
+5.1  RK3588S 开发板及 TC264 的调试 
+我们主要采用了 MobaXterm 来进行 RK3588S 开发板的调试。 
+MobaXterm 是一款集成多功能的远程计算工具，内置 SFTP、串口、SSH 多
+类通信功能，可使用 SSH、Serial 串口、SFTP、FTP 等协议在本地计算机与嵌入
+式开发板之间完成终端控制、文件互传。 
+MobaXterm 可以在 Windows 系统下一站式访问远端 Linux 开发板、单片机
+串口设备，高效完成远程终端调试。它支持 SSH1/SSH2、串口 COM、SFTP、
+Telnet、RDP 协议，能够便捷地对 RK3588S 这类 Linux 嵌入式主机、STM32 下
+位机进行统一远程管理与硬件日志抓取。此外，软件自带 X11 图形转发功能，
+可直接在 Windows 本地弹窗运行 RK3588S 上 OpenCV、共享内存图像帧处理程
+序，除外接显示屏显图外，提供了一套轻量化的图像在线调试方案。 
+运用 AURIX Development Studio 作为软件开发工具。ADS 是英飞凌公司于
+2019 年底推出的免费的集成开发环境，支持英飞凌 TriCore™内核 AURIX™ 系
+列 MCU；ADS 是一个完整的开发环境，包含了 Eclipse IDE、C 编译器、Multi-
+core 调试器、英飞凌底层驱动库（low-level driver,iLLD),同时对于编辑、编译及
+调试应用代码没有时间及代码大的限制。调试界面如图所示： 
+ 
+图 5.1 调试界面 
+
+第二十届全国大学生智能汽车竞赛技术报告 
+ 
+ 
+22 
+ 
+5.2 人机交互工具 
+在调试过程中需要不断地修改变量的值来达到整定参数的作用，对此我们选
+用了 oled 屏配合按键和拨码开关的调试方法。此外，比赛的时候，修改参数我
+们同样用这个模块进行修改。 
+其中液晶屏我们选用 OLED 液晶，该液晶具尺寸小，高分辨率等特点。界
+面如图 6.2 所示。按键采用五向按键其便于操作并且节省空间。设计五向按键以
+及 4 个拨码开关进行调参，显示，方案选择等部分。 
+5.3 wifi 及上位机调试 
+车在同样的赛道上走过的路都是不一样的，所以无论怎么考虑车的状态都
+是不够完全的，因此需要对运行中的车进行实时监控。为了解决这个问题，我
+们使用 wifi 模块配合上位机进行实时观测车模运行状态。如图 5.3 所示。 
+ 
+图 5.3 上位机实时监测
+
+ 
+ 
+ 
+23 
+ 
+第六章 模型车主要技术参数说明 
+模型车基本参数 
+长 280mm 
+宽 275mm 
+高 245mm 
+车重 1100g 
+功耗 
+空载 10W 
+带载 大于 12W 
+传感器 
+编码器 2 个 
+OV13855 摄像头 1 个 
+OLED 屏幕 1 个 
+除了车模原有的驱动电机、舵机之外伺服电机个
+数 0 
+赛道信息检测 
+视野范围 平视全局 
+像素空间精度 0.284mm/px 
+频率 30Hz 
+ 
+ 
+ 
+24 
+ 
+第七章：电路板详细设计原理图与核心算法子程序 
+7.1 核心算法 
+"""多任务主循环 — 抓帧 → 推理 → 决策 → 通讯""" 
+import time, threading, cv2, numpy as np 
+ 
+from multitask_config import (MT_MODEL_PATH, MT_CLASSES, 
+FORESIGHT_ROW_COMM, 
+                               TC264_SERIAL_PORT, TC264_BAUDRATE, 
+TC264_FRAME_HEAD, 
+                               SIGN_AREA_THRESH, OCR_TOGGLE_AREA_THRESH, 
+                               OCR_COOLDOWN_S, OCR_DELAY_FRAMES, 
+OCR_TIMEOUT_S, 
+                               OCR_AWAIT_SIGN_TIMEOUT_S, 
+SIGN_GOLD_BLOCK_AREA, 
+                               CAR_LEFT_OFFSET, CAR_RIGHT_OFFSET, 
+                               CAR_HOLD_STEER_FRAMES, 
+CAR_TAIL_PROTECT_FRAMES, 
+                               CAR_MIN_ROW, CAR_NEAR_ROW, 
+                               CAR_PASS_LINE, CAR_FORESIGHT_OFFSET, 
+                               STREAM_ENABLE, STREAM_PORT, 
+STREAM_JPEG_QUALITY, 
+                               GOLD_DECISION_FRAME, GOLD_ENABLE, 
+GOLD_LINE_RATIO, 
+                               GOLD_LINE_EXTEND_ROW, GOLD_LINE_RATIO_W, 
+                               GOLD_RANGE_BOTTOM, 
+                               STOP_MIN_ROW, FORESIGHT_ROW_START, 
+FORESIGHT_ROW_END, 
+                               SIGN_HOLD_TIMEOUT_S, W_LONG_TIME) 
+from multitask_grabber import Grabber 
+from multitask_pool import MultiTaskPool 
+from multitask_result import FrameResult 
+from stream_server import MJPEGStreamer 
+from new_decision import (DecisionEngine, repair_right_line, 
+                           generate_left_from_right, car_is_far_off, 
+constrain_w_mode_right) 
+from communication import Communicator 
+from ocr_module import OCRModule 
+电机控制：          
+void Motor_Init(void) 
+{ 
+    pwm_init(MOTOR_L1,PWMFREQUENCE,0); 
+ 
+ 
+ 
+25 
+ 
+    pwm_init(MOTOR_L2,PWMFREQUENCE,0); 
+    pwm_init(MOTOR_R1,PWMFREQUENCE,0); 
+    pwm_init(MOTOR_R2,PWMFREQUENCE,0); 
+    Speed_left_set = flash_union_buffer[0].float_type; 
+    Speed_right_set = flash_union_buffer[1].float_type; 
+    Speed_Left.Target = Speed_left_set; 
+    Speed_Right.Target = Speed_right_set; 
+    Speed_Left.KP = flash_union_buffer[2].float_type; 
+    Speed_Left.KI = flash_union_buffer[3].float_type; 
+    Speed_Right.KP = flash_union_buffer[4].float_type; 
+    Speed_Right.KI = flash_union_buffer[5].float_type; 
+    carstop = flash_union_buffer[12].float_type; 
+//    Speed_step = flash_union_buffer[9].float_type; 
+//    carstop = flash_union_buffer[11].float_type; 
+} 
+ 
+void Motor_Stop(void) 
+{ 
+    Motor_Left_Set(0); 
+    Motor_Right_Set(0); 
+} 
+ 
+ 
+//左电机转向 
+void Motor_Left_Set(int pwm) 
+{ 
+    //对PWM 进行限幅 
+    if(pwm >= PWMMAX_DUTY){pwm = PWMMAX_DUTY;} 
+    else if(pwm <= -PWMMAX_DUTY){pwm = -PWMMAX_DUTY;} 
+    //电机左转向控制 
+    if(pwm>0){ 
+        pwm_set_duty(MOTOR_L1,pwm); 
+        pwm_set_duty(MOTOR_L2,10000);} 
+    else{ 
+        pwm_set_duty(MOTOR_L1,-pwm); 
+        pwm_set_duty(MOTOR_L2,0);} 
+} 
+ 
+//右电机转向 
+void Motor_Right_Set(int pwm) 
+{ 
+    //对PWM 进行限幅 
+    if(pwm >= PWMMAX_DUTY){pwm = PWMMAX_DUTY;} 
+    else if(pwm <= -PWMMAX_DUTY){pwm = -PWMMAX_DUTY;} 
+    //电机左转向控制 
+    if(pwm>0){ 
+       pwm_set_duty(MOTOR_R1,pwm); 
+       pwm_set_duty(MOTOR_R2,0);} 
+ 
+    else{ 
+       pwm_set_duty(MOTOR_R1,-pwm); 
+       pwm_set_duty(MOTOR_R2,10000);} 
+} 
+ 
+ 
+ 
+ 
+ 
+26 
+ 
+void Motor_L_PI(PID_parameter* Speed_Left) 
+{ 
+    (*Speed_Left).error =(*Speed_Left).Target - 
+(*Speed_Left).Current; 
+    (*Speed_Left).P = (*Speed_Left).KP * ((*Speed_Left).error - 
+(*Speed_Left).last_error); 
+    (*Speed_Left).I = (*Speed_Left).KI * (*Speed_Left).error; 
+    (*Speed_Left).last_error = (*Speed_Left).error; 
+    (*Speed_Left).Out = (*Speed_Left).Out+ (*Speed_Left).P + 
+(*Speed_Left).I; 
+} 
+ 
+ 
+void Motor_R_PI(PID_parameter* Speed_Right) 
+{ 
+    (*Speed_Right).error =(*Speed_Right).Target - 
+(*Speed_Right).Current; 
+    (*Speed_Right).P = (*Speed_Right).KP * ((*Speed_Right).error - 
+(*Speed_Right).last_error); 
+    (*Speed_Right).I = (*Speed_Right).KI * ((*Speed_Right).error); 
+    (*Speed_Right).last_error = (*Speed_Right).error; 
+    (*Speed_Right).Out = (*Speed_Right).Out+ (*Speed_Right).P + 
+(*Speed_Right).I; 
+} 
+ 
+void Motor_dif_speed(void) 
+{ 
+    if(pwmtrue > 520.0) 
+    { 
+        Speed_Left.Target = (radio) * Speed_Left.Target; 
+        Speed_Right.Target = Speed_Right.Target *1; 
+    } 
+    else if(pwmtrue < 490.0) 
+    { 
+        Speed_Left.Target = Speed_Left.Target *1; 
+        Speed_Right.Target = radio1* Speed_Right.Target; 
+    } 
+    else if(pwmtrue >= 490.0 && pwmtrue <= 520.0) 
+    { 
+        Speed_Left.Target = Speed_Left.Target *1; 
+        Speed_Right.Target = Speed_Right.Target *1; 
+    } 
+} 
+舵机控制： 
+void Servo_Init(void) 
+{ 
+    pwm_init(Servo_Pwm,50,Servo_PWMMID); 
+    Servopd.KP_base = flash_union_buffer[6].float_type; 
+    Servopd.KP_linear = 0.01* flash_union_buffer[7].float_type; 
+    Servopd.KP_quadratic = 0.0001* flash_union_buffer[8].float_type; 
+    Servopd.KD_convert = flash_union_buffer[9].float_type; 
+    Servopd.Current = usbStr.receiveBuff[2]; 
+    Servopd.Target = mid_error; 
+ 
+ 
+ 
+27 
+ 
+    people_left = flash_union_buffer[10].float_type; 
+    people_right = flash_union_buffer[11].float_type; 
+//    pwmtrue = flash_union_buffer[13].float_type; 
+//    people_car = flash_union_buffer[12].float_type; 
+//    pwmtrue = flash_union_buffer[12].float_type; 
+//    pwmtrue = flash_union_buffer[10].float_type; 
+//    servop = flash_union_buffer[6].float_type; 
+//    Servopd.KD = flash_union_buffer[7].float_type; 
+//    difstep = flash_union_buffer[10].float_type; 
+//    Speed_step = flash_union_buffer[9].float_type; 
+//    Servopd.KP = servop; 
+//    pwmtrue  = flash_union_buffer[8].float_type; 
+//    Servopd.KPA = flash_union_buffer[6].float_type; 
+//    Servopd.KPB = flash_union_buffer[7].float_type; 
+//    Servopd.KD = flash_union_buffer[8].float_type; 
+} 
+ 
+void Servo_PD(PID_parameter1 *Pidparameter) 
+{ 
+//    (*Pidparameter).Target = mid_error; 
+//    (*Pidparameter).Current = usbStr.receiveBuff[2]; 
+    (*Pidparameter).last_error = (*Pidparameter).error; 
+    (*Pidparameter).error = (*Pidparameter).Target - 
+(*Pidparameter).Current; 
+    (*Pidparameter).KP = (*Pidparameter).KP_quadratic * 
+(*Pidparameter).error * (*Pidparameter).error 
++(*Pidparameter).KP_linear * fabs((*Pidparameter).error) + 
+(*Pidparameter).KP_base; 
+    (*Pidparameter).KD = (*Pidparameter).KP 
+*(*Pidparameter).KD_convert; 
+    (*Pidparameter).P = (*Pidparameter).KP * (*Pidparameter).error; 
+    (*Pidparameter).D = (*Pidparameter).KD * ( (*Pidparameter).error 
+- (*Pidparameter).last_error); 
+    (*Pidparameter).Out = (*Pidparameter).P+(*Pidparameter).D; 
+//    pwmtrue = pwmtrue - (*Pidparameter).Out ; 
+} 
+ 
+//舵机转向控制 
+void Servo_turn(void) 
+{ 
+    if(pwmtrue > Servo_PWMMAX){pwmtrue = Servo_PWMMAX;} 
+    if(pwmtrue < Servo_PWMMIN){pwmtrue = Servo_PWMMIN;} 
+    pwm_set_duty(Servo_Pwm,pwmtrue); 
+    if(pwmtrue > Servo_PWMMID)//左转 
+    { 
+     //   radio = 0.00000035 * pwmtrue* pwmtrue + -0.00475197 * 
+pwmtrue + 3.48753677; 
+     //   radio = 0.00000035 * pwmtrue* pwmtrue + -0.00475197 * 
+pwmtrue + 3.28753677; 
+//         radio = -0.000022 * pwmtrue *pwmtrue + 0.021862 * pwmtrue - 
+4.903625; 
+        radio = -0.000022 * pwmtrue *pwmtrue + 0.021862 * pwmtrue - 
+4.563625; 
+    } 
+    if(pwmtrue <= Servo_PWMMID) 
+ 
+ 
+ 
+28 
+ 
+    { 
+//        radio1 = -0.00002039 * pwmtrue* pwmtrue + 0.02349487 * 
+pwmtrue - 5.79200762; 
+//        radio1 = -0.00002039 * pwmtrue* pwmtrue + 0.02349487 * 
+pwmtrue - 5.99200762; 
+//        radio1 = -0.000011* pwmtrue * pwmtrue + 0.013901 *pwmtrue - 
+3.790566; 
+       // radio1 = -0.000011* pwmtrue * pwmtrue + 0.013901 *pwmtrue - 
+3.400566; 
+          radio1 = -0.000022 * pwmtrue * pwmtrue + 0.022842 * pwmtrue 
+- 5.061465; 
+    } 
+//    radio = -0.006598*pwmtrue + 6.132936; 
+//    radio1 = 1.0 / radio ; 
+//    radio = (-0.006598 - 0.00001*Speed_step)*pwmtrue + 6.132936; 
+//    radio1 = 1.0 / ((-0.006598 + 0.00001*Speed_step)*pwmtrue + 
+6.132936) ; 
+//    if(error >=  mid_error)//右转 
+//    { 
+//        Servopd.KP = servop; 
+//    } 
+//    else if(error < mid_error)//左转 
+//    { 
+//        Servopd.KP = servop + difstep; 
+////        Servopd.KP = servop; 
+//    } 
+ 
+} 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+  
+ 
+ 
+ 
+29 
+ 
+7.2 电路原理图 
+驱动： 
+ 
+ 
+调试： 
+
+ 
+ 
+ 
+30 
+ 
+ 
+主控： 
+ 
+
+ 
+ 
+ 
+31 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+ 
+ 
+ 
+32 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+ 
+ 
+ 
+33 
+ 
+ 
+结论 
+自报名参加智能汽车竞赛以来，我们小组成员从查找资料、设计结构、组
+装车模、编写程序一步一步的进行，最后终于完成了最初目标，定下了现在这
+个设计方案。 
+本技术报告重点阐述备赛过程中的核心思路，涵盖机械结构、电路设计及
+关键的控制算法创新。在机械结构方面，我们分析了舵机转向系统的改进办
+法，对前轮倾角进行一系列的改动。在电路方面，我们以模块形式分类，在最
+小系统、主板、电机驱动、电池使用等模块分别设计，经过不断实验，最后决
+定了最终的电路图。在程序方面，我们使用 C 语言编程，利用开发工具调试程
+序，经过小组成员不断讨论、改进，终于设计出一套比较通用稳定的程序。在
+这套算法中，我们结合路况调整车速，保证在最短时间内跑完全程。 
+备赛历程充满挑战，每一次校内比赛都记录着我们团队的成长与蜕变。在
+此，衷心感谢哈工大智能车创新俱乐部这个像家一样的地方，同时也感谢在场
+地和经费方面都得到了学校和学院的大力支持，更要特别感谢一直支持和关注
+智能车比赛的学校和学院领导以及各位指导老师、指导学长，同时也感谢比赛
+组委会能组织这样一项有意义的比赛。 
+
+ 
+ 
+ 
+40 
+参考文献 
+[1] 卓晴，黄开胜，邵贝贝．学做智能车 [M]．北京：北京航空航天大学出版
+社．2007. 
+[2] 王淑娟，蔡惟铮，齐明．模拟电子技术基础 [M]．北京：高等教育出版
+社．2009 
+[3] 张军．AVR 单片机应用系统开发典型实例 [M]．北京：中国电力出版社，
+2005. 
+[4] 张文春．汽车理论 [M]．北京．机械工业出版社．2005. 
+[5] 殷剑宏，吴开亚．图论及其算法 [M] ．中国科学技术大学出版社，2003. 
+[6] 夏克俭．数据结构及算法 [M] ．北京：国防工业出版社， 2001. 
+[7] 邵贝贝．单片机嵌入式应用的在线开发方法 [M]．北京．清华大学出版
+社．2004. 
+[8] 蔡述庭．“飞思卡尔”杯智能汽车竞赛设计与实践 [M]．北京：北京航空航
+天大学出版社. 2012. 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+41 
+附录 
+ 
+核心代码： 
+# multitask_main.py 
+"""多任务主循环 — 抓帧 → 推理 → 决策 → 通讯""" 
+import time, threading, cv2, numpy as np 
+ 
+from multitask_config import (MT_MODEL_PATH, MT_CLASSES, 
+FORESIGHT_ROW_COMM, 
+                               TC264_SERIAL_PORT, TC264_BAUDRATE, 
+TC264_FRAME_HEAD, 
+                               SIGN_AREA_THRESH, OCR_TOGGLE_AREA_THRESH, 
+                               OCR_COOLDOWN_S, OCR_DELAY_FRAMES, 
+OCR_TIMEOUT_S, 
+                               OCR_AWAIT_SIGN_TIMEOUT_S, 
+SIGN_GOLD_BLOCK_AREA, 
+                               CAR_LEFT_OFFSET, CAR_RIGHT_OFFSET, 
+                               CAR_HOLD_STEER_FRAMES, 
+CAR_TAIL_PROTECT_FRAMES, 
+                               CAR_MIN_ROW, CAR_NEAR_ROW, 
+                               CAR_PASS_LINE, CAR_FORESIGHT_OFFSET, 
+                               STREAM_ENABLE, STREAM_PORT, 
+STREAM_JPEG_QUALITY, 
+                               GOLD_DECISION_FRAME, GOLD_ENABLE, 
+GOLD_LINE_RATIO, 
+                               GOLD_LINE_EXTEND_ROW, GOLD_LINE_RATIO_W, 
+                               GOLD_RANGE_BOTTOM, 
+                               STOP_MIN_ROW, FORESIGHT_ROW_START, 
+FORESIGHT_ROW_END, 
+                               SIGN_HOLD_TIMEOUT_S, W_LONG_TIME) 
+from multitask_grabber import Grabber 
+from multitask_pool import MultiTaskPool 
+from multitask_result import FrameResult 
+from stream_server import MJPEGStreamer 
+from new_decision import (DecisionEngine, repair_right_line, 
+                           generate_left_from_right, car_is_far_off, 
+constrain_w_mode_right) 
+from communication import Communicator 
+ 
+ 
+ 
+42 
+from ocr_module import OCRModule 
+ 
+def _ts(): 
+    t = time.time() 
+    return time.strftime("%H:%M:%S", time.localtime(t)) + f".{int(t * 
+1000) % 1000:03d}" 
+ 
+def main(): 
+    print("=" * 55) 
+    print("  Multi-Task (Det + Seg) Pipeline") 
+    print("=" * 55) 
+ 
+    stop_event = threading.Event() 
+    pause_event = threading.Event() 
+    pause_event.set()  # 初始: 运行状态 
+ 
+    # ---- 1. 启动抓帧器 ---- 
+    grabber = Grabber() 
+    grabber.start() 
+ 
+    # ---- 2. 启动推理池 ---- 
+    pool = MultiTaskPool(MT_MODEL_PATH) 
+    print(f"  Pool: {pool._n_cores} cores") 
+ 
+    # ---- 2b. OCR 模块 (core2, 独立于多任务 cores 0+1) ---- 
+    ocr = OCRModule(use_llm=True) 
+    # NPU 预热 
+    _dummy = np.zeros((640, 640, 3), dtype=np.uint8) 
+    ocr.process(_dummy) 
+    print("  OCR: loaded + warmed up") 
+ 
+    # ---- 3. 决策引擎 ---- 
+    engine = DecisionEngine() 
+    det_version  = -1 
+    w_mode       = False 
+    cached_close   = {"mode": 0, "stopx": 1, "percar": 0} 
+    cached_special = 0 
+ 
+    # ---- 4. 通讯 ---- 
+ 
+ 
+ 
+43 
+    comm_data = { 
+        "lock": threading.Lock(), 
+        "departure": 128, "pwm": 128, "foresight": 128, 
+        "close_mode": 0, "special_mode": 0, "stopx": 1, "percar": 0, 
+        "comm_fps": 0.0, 
+    } 
+    comm = Communicator(comm_data, stop_event, pause_event) 
+    t_comm = threading.Thread(target=comm.run, daemon=True) 
+ 
+    # 通讯延迟 5s 启动 (NPU 预热) 
+    def _start_comm(): 
+        stop_event.wait(5) 
+        t_comm.start() 
+    threading.Thread(target=_start_comm, daemon=True).start() 
+ 
+    # ---- 6. Pipeline 直接启动 ---- 
+    last_fid         = -1 
+    last_det_v       = -1 
+    last_offset_mid  = None   # 闪断延续: 上一帧有车偏移但本帧闪断时复用 
+    t_start     = time.time() 
+    frame_count = 0 
+    t_fps       = time.time() 
+    fps_count   = 0 
+    pipeline_fps = [0.0] 
+    decision_ms  = [0.0] 
+    ocr_triggered = False 
+    ocr_last_trig  = 0.0      # 上次OCR 触发时刻 (冷却计时) 
+    ocr_pending    = [False]  # OCR 后台线程进行中 
+    ocr_result_cache = [None]  # OCR 结果缓存 
+    ocr_result_lock  = threading.Lock() 
+    ocr_toggle         = [False]  # True=下次sign 直接取反方向, 跳过
+OCR+API 
+    ocr_api_done       = [False]  # True=API 已执行过一次, 之后永不调API 
+    ocr_last_direction = [1]      # 最近一次OCR 的方向结果, 默认1(左道) 
+    ocr_sign_missed    = 0        # sign 消失连续帧数, 防闪断误重触发 
+    ocr_delay_count    = 0        # 第一次OCR 延时帧计数, 0=不在延时中 
+    ocr_submit_time    = 0.0      # OCR 提交时刻, 用于8s 超时守卫 
+    ocr_await_sign    = False     # 延时结束后等待sign 帧再提交 
+    ocr_await_start   = 0.0       # 等待sign 起始时刻(超时提交空图) 
+    gold_frame_count   = 0        # 金币决策帧间隔计数 
+ 
+ 
+ 
+44 
+    gold_side_cached   = None     # 间隔期间复用上次结果 
+    sign_preview_hold = False     # sign 预告stopx=2 锁存 
+    sign_hold_deadline = 0.0      # 锁存超时时刻(最后见sign+3s) 
+    sign_hold_dead     = False    # 一旦面积阈值满足(触发99), 永久关闭锁存 
+    gold_block         = False    # 金币禁用锁存: 锁定需sign 锁存+stopx=2+
+面积≥6000, 解锁需锁存退出(3s/99) 
+    # 渲染包: 决策完成后原子发布 (result, 补线中线, 偏移中线, close_mode, 
+special, w_mode) 
+    # 推流画面所有元素严格同帧 (决策视角), 消除中线/模式与画面的 ±1 帧错位 
+    render_pack = [None] 
+    render_cond = threading.Condition() 
+ 
+    # ---- 5. 网络推流 (MJPEG, 替代 VNC 看画面; 开关见 config 
+STREAM_ENABLE) ---- 
+    streamer = None 
+    _se = str(STREAM_ENABLE).strip().lower() 
+    if _se == "ask": 
+        show = input("  Enable network stream? [y/N]: ").strip().lower() 
+        show = (show == "y" or show == "yes") 
+    else: 
+        show = _se in ("on", "true", "1", "y", "yes") 
+    if show: 
+        streamer = MJPEGStreamer(port=STREAM_PORT, 
+quality=STREAM_JPEG_QUALITY, 
+                                 pause_event=pause_event, 
+stop_event=stop_event).start() 
+        print(f"  Stream: 
+ON  ->  http://{MJPEGStreamer.local_ip()}:{STREAM_PORT}") 
+ 
+        def _display_worker(): 
+            """事件驱动: 决策完成即绘制+推送, 画面所有元素严格同帧 (决策视
+角)""" 
+            last_pack = None 
+            while not stop_event.is_set(): 
+                with render_cond: 
+                    if render_pack[0] is last_pack: 
+                        render_cond.wait(0.5) 
+                    pack = render_pack[0] 
+                if pack is None or pack is last_pack: 
+                    continue 
+ 
+ 
+ 
+45 
+                last_pack = pack 
+                if not streamer.has_clients: 
+                    continue          # 没人看: 不绘制不编码, 零开销 
+                result, rep_mid, off_mid, foresight_v, close_mode, 
+special, stopx, wmode, percar, steer, missed, w_elapsed, person_hold, 
+tail_protect, w_slowdown, gold_car, gold_gold, b_line, d_line, 
+col_left, col_right, straight_line, gold_flag, gold_l_line, 
+gold_r_line, gold_mid_line, gold_memory_disp = pack 
+                if result.frame is None: 
+                    continue 
+                try: 
+                    disp = cv2.cvtColor(result.frame, cv2.COLOR_RGB2BGR) 
+                    h, w = disp.shape[:2] 
+                    if len(result.left) > 1: 
+                        cv2.polylines(disp, [result.left], False, (255, 
+0, 0), 2) 
+                    if len(result.right) > 1: 
+                        cv2.polylines(disp, [result.right], False, (0, 
+255, 0), 2) 
+                    # 中线: 偏移→黄, 否则补线后→红 (mode 与画面同帧) 
+                    mid_show = off_mid if (close_mode in (5,6,7) and 
+len(off_mid)>1) else rep_mid 
+                    mid_color = (255, 255, 0) if (close_mode in (5,6,7) 
+and len(off_mid)>1) else (0, 0, 255) 
+                    if len(mid_show) > 1: 
+                        cv2.polylines(disp, [mid_show], False, mid_color, 
+2) 
+                    # 金币延申线 (3px, 蓝绿色, 只在金币激活时显示) 
+                    if gold_l_line is not None and len(gold_l_line) > 1: 
+                        cv2.polylines(disp, [gold_l_line], False, (200, 
+255, 200), 3) 
+                    if gold_r_line is not None and len(gold_r_line) > 1: 
+                        cv2.polylines(disp, [gold_r_line], False, (200, 
+255, 200), 3) 
+                    if gold_mid_line is not None and len(gold_mid_line) > 
+1: 
+                        cv2.polylines(disp, [gold_mid_line], False, (0, 
+255, 200), 3) 
+                    # B/D 线 (远区橙色) / 碰撞箱线 (近区青蓝) / 直行线 (近区
+绿) 
+ 
+ 
+ 
+46 
+                    if b_line is not None and len(b_line) > 1: 
+                        cv2.polylines(disp, [b_line], False, (255, 150, 
+0), 3) 
+                    if d_line is not None and len(d_line) > 1: 
+                        cv2.polylines(disp, [d_line], False, (255, 150, 
+0), 3) 
+                    if col_left is not None and len(col_left) > 1: 
+                        cv2.polylines(disp, [col_left], False, (0, 200, 
+255), 3) 
+                    if col_right is not None and len(col_right) > 1: 
+                        cv2.polylines(disp, [col_right], False, (0, 200, 
+255), 3) 
+                    if straight_line is not None and len(straight_line) > 
+1: 
+                        cv2.polylines(disp, [straight_line], False, (0, 
+255, 100), 3) 
+                    # 可视化参考线: 230=CAR_PASS_LINE 附近, 270=人远近分界 
+                    cv2.line(disp, (0, 240), (w, 240), (200, 200, 200), 
+2) 
+                    cv2.line(disp, (0, 260), (w, 260), (255, 255, 255), 
+2) 
+                    cv2.line(disp, (0, 400), (w, 400), (200, 200, 200), 
+2) 
+                    for box, cls, score in zip(result.boxes, 
+result.classes, result.scores): 
+                        x1, y1, x2, y2 = map(int, box) 
+                        label = MT_CLASSES[int(cls)] if int(cls) < 
+len(MT_CLASSES) else "?" 
+                        cv2.rectangle(disp, (x1, y1), (x2, y2), (0, 255, 
+255), 2) 
+                        cv2.putText(disp, f"{label} {score:.2f}", (x1, y1 
+- 5), 
+                                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 
+255, 255), 1) 
+ 
+                    cv2.line(disp, (0, FORESIGHT_ROW_COMM), (w, 
+FORESIGHT_ROW_COMM), 
+                             (255, 100, 255), 2) 
+                    # 前视点: x 映射回像素, 用实心圆显示串口实际传输值 
+                    f_px = int(foresight_v * w / 255) 
+ 
+ 
+ 
+47 
+                    cv2.circle(disp, (f_px, FORESIGHT_ROW_COMM), 6, (0, 
+255, 255), -1) 
+ 
+                    npu_fps = 1000.0 / result.inf_ms if result.inf_ms > 0 
+else 0 
+                    # L1: 帧率 
+                    cv2.putText(disp, 
+f"Pipe:{pipeline_fps[0]:.0f}fps  NPU:{npu_fps:.0f}fps  inf={result.inf_m
+s:.0f}ms", 
+                                (10, 25), cv2.FONT_HERSHEY_SIMPLEX, 0.55, 
+(0, 255, 0), 2) 
+                    # L2: 耗时 + 检出 
+                    cv2.putText(disp, 
+f"det={result.det_ms:.1f}ms  seg={result.seg_ms:.1f}ms  " 
+                                 f"dec={decision_ms[0]:.1f}ms  obj={len(re
+sult.boxes)}  pts={len(result.left)}", 
+                                (10, 48), cv2.FONT_HERSHEY_SIMPLEX, 0.5, 
+(0, 255, 255), 1) 
+                    # L3: 模式 + 前视线值 
+                    mode_str = "W_MODE" if wmode else "NORMAL" 
+                    cv2.putText(disp, 
+f"mode={mode_str}  close={close_mode}  special={special}  stopx={stopx} 
+ fore={int(foresight_v)}  percar={percar}", 
+                                (10, 68), cv2.FONT_HERSHEY_SIMPLEX, 0.5, 
+(0, 255, 255), 1) 
+                    # L4: 调试变量 (计时器用亮色) 
+                    cv2.putText(disp, 
+f"steer={steer}  nope={person_hold}  missed={missed}  tail={tail_protect
+}  wslow={w_slowdown}  W={w_elapsed:.1f}s", 
+                                (10, 88), cv2.FONT_HERSHEY_SIMPLEX, 0.5, 
+(0, 220, 255), 1) 
+                    # L5: 金币决策 
+                    if gold_flag: 
+                        m = {-1: '-', 0: 'L', 1: 'M', 2: 
+'R'}.get(gold_memory_disp, '-') 
+                        cv2.putText(disp, f"gold: {gold_gold}  mem:{m}", 
+                                    (10, 108), cv2.FONT_HERSHEY_SIMPLEX, 
+0.5, (0, 255, 200), 1) 
+ 
+                    streamer.publish(disp) 
+ 
+ 
+ 
+48 
+                except Exception as e: 
+                    print(f"[Stream] draw error: {e}")   # 推流问题绝不拖垮
+主链路 
+        threading.Thread(target=_display_worker, daemon=True).start() 
+    else: 
+        print("  Stream: OFF") 
+ 
+    print("\n  Pipeline started. Press Ctrl-C to stop.\n") 
+ 
+    # 6d. 金币线向上延伸 (取顶部两个隔开采样点算斜率, 更稳) 
+    def _extend_line_up(pts, target_row, img_w): 
+        if pts is None or len(pts) < 2: 
+            return pts 
+        s = pts[np.argsort(pts[:,1])] 
+        if s[0, 1] <= target_row: 
+            return s 
+        p0 = s[0] 
+        p1 = s[min(3, len(s)-1)]  # 隔开几个采样点, 斜率更稳 
+        dy = p1[1] - p0[1] 
+        slope = (p1[0] - p0[0]) / dy if abs(dy) > 1e-6 else 0.0 
+        steps = np.arange(target_row, s[0, 1], 4) 
+        x_vals = np.clip(p0[0] + slope * (steps - p0[1]), 0, img_w - 
+1).astype(np.int32) 
+        return np.vstack([np.column_stack([x_vals, steps]), s]) 
+ 
+    # 前视线插值工具 (纯函数, 只定义一次) 
+    def _get_x(pts, y_tgt, img_w): 
+        if pts is None or len(pts) < 1: 
+            return 128 
+        s = pts[np.argsort(pts[:,1])] 
+        if y_tgt <= s[0,1]: return int(np.clip(s[0,0] * 255 / img_w, 0, 
+255)) 
+        if y_tgt >= s[-1,1]: return int(np.clip(s[-1,0] * 255 / img_w, 
+0, 255)) 
+        for i in range(len(s)-1): 
+            if s[i,1] <= y_tgt <= s[i+1,1] or s[i+1,1] <= y_tgt <= 
+s[i,1]: 
+                if s[i+1,1] == s[i,1]: return int(np.clip(s[i,0] * 255 / 
+img_w, 0, 255)) 
+                ratio = (y_tgt - s[i,1]) / (s[i+1,1] - s[i,1]) 
+ 
+ 
+ 
+49 
+                return int(np.clip((s[i,0] + ratio * (s[i+1,0] - s[i,0])) 
+* 255 / img_w, 0, 255)) 
+        return 128 
+ 
+    # stop/go 分割失效兜底工具 
+    def _line_covers(line, y): 
+        if line is None or len(line) < 2: 
+            return False 
+        return line[:, 1].min() <= y <= line[:, 1].max() 
+ 
+    def _build_stop_aux_mid(stop_box, img_w, img_h): 
+        """stop/go 框中心 → (320, 400) 直线, 延伸取 260~400 做辅助中线""" 
+        box_cx = (stop_box[0] + stop_box[2]) / 2 
+        box_cy = (stop_box[1] + stop_box[3]) / 2 
+        p0 = np.array([box_cx, box_cy], dtype=np.float32) 
+        p1 = np.array([320.0, float(FORESIGHT_ROW_END)], 
+dtype=np.float32) 
+        ys = np.arange(FORESIGHT_ROW_START, FORESIGHT_ROW_END + 1, 4, 
+dtype=np.float32) 
+        denom = p1[1] - p0[1] 
+        if abs(denom) < 1e-6: 
+            xs = np.full_like(ys, p0[0]) 
+        else: 
+            xs = p0[0] + (p1[0] - p0[0]) * (ys - p0[1]) / denom 
+        xs = np.clip(xs, 0, img_w - 1) 
+        return np.column_stack([xs.astype(np.int32), 
+ys.astype(np.int32)]) 
+ 
+    try: 
+        departure_x = pwm_x = foresight_x = 128 
+        while not stop_event.is_set(): 
+            # 6a. 取最新帧 
+            frame, fid = grabber.get_latest() 
+            if frame is None: 
+                stop_event.wait(0.001) 
+                continue 
+ 
+            if fid == last_fid: 
+                stop_event.wait(0.001) 
+                continue 
+ 
+ 
+ 
+50 
+            last_fid = fid 
+ 
+            # ---- 暂停检查: 仅保留 HTTP 服务, 其余全部静默 ---- 
+            if not pause_event.is_set(): 
+                with comm_data["lock"]: 
+                    comm_data["departure"] = 128 
+                    comm_data["pwm"] = 128 
+                    comm_data["foresight"] = 128 
+                    comm_data["close_mode"] = 0 
+                    comm_data["special_mode"] = 0 
+                    comm_data["stopx"] = 1 
+                    comm_data["percar"] = 0 
+                # 推流显示"已暂停" (约1 秒刷新一次, 省CPU) 
+                _now = time.time() 
+                if streamer and streamer.has_clients and (_now - 
+getattr(streamer, '_last_pause_disp', 0) > 1.0): 
+                    try: 
+                        disp = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR) 
+                        h = disp.shape[0] 
+                        cv2.putText(disp, "PAUSED", (10, h//2), 
+                                    cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 
+255), 4) 
+                        streamer.publish(disp) 
+                        streamer._last_pause_disp = _now 
+                    except Exception: 
+                        pass 
+                pause_event.wait(0.2) 
+                continue 
+ 
+            # 6b. 提交推理 
+            pool.put(frame, w_mode) 
+ 
+            # 6c. 取推理结果 
+            result = FrameResult.get_latest() 
+            if result is not None and result.seq > last_det_v: 
+                t_dec0 = time.perf_counter() 
+                last_det_v = result.seq 
+                h, w       = frame.shape[:2] 
+ 
+                # ---- 检测决策 ---- 
+ 
+ 
+ 
+51 
+                engine.process_global_flags(result.classes) 
+                w_mode = engine.w_mode 
+ 
+                # 补线 
+                left_repair_info = {} 
+                left_pts, right_pts = repair_right_line( 
+                    result.left, result.right, w_mode, left_repair_info) 
+                engine.update_from_seg_repair(left_repair_info) 
+ 
+                if w_mode: 
+                    right_pts = constrain_w_mode_right(right_pts) 
+                    left_pts = generate_left_from_right(right_pts, w) 
+ 
+                # 写回补线结果, 显示和串口均用补线后 
+                result.left = left_pts 
+                result.right = right_pts 
+ 
+                # 中线 
+                mid = None 
+                if left_pts.size > 0 and right_pts.size > 0: 
+                    mid = np.column_stack([(left_pts[:,0] + 
+right_pts[:,0])//2, 
+                                           left_pts[:,1]]) 
+ 
+                # sign 在帧(提前计算, 用于源头过滤的超时判断) 
+                sign_in_frame = False 
+                sign_max_area = 0 
+                if len(result.boxes) > 0: 
+                    for i, c in enumerate(result.classes): 
+                        if int(c) < len(MT_CLASSES) and 
+MT_CLASSES[int(c)] == "sign": 
+                            sign_in_frame = True 
+                            a = (result.boxes[i,2]-
+result.boxes[i,0])*(result.boxes[i,3]-result.boxes[i,1]) 
+                            if a > sign_max_area: sign_max_area = a 
+ 
+                # 决策用框: 远车抑制期(stopx=2/99 或 w_mode) 删除远车(<260), 
+W 模式还删太偏车 
+                boxes_dec  = result.boxes 
+                cls_dec    = result.classes 
+ 
+ 
+ 
+52 
+                scores_dec = result.scores 
+                exit_suppress = (sign_preview_hold and not sign_in_frame 
+and time.time() > sign_hold_deadline) \ 
+                                or (w_mode and time.time() - 
+engine._w_start_time > W_LONG_TIME) 
+                suppress_far = ((cached_close["stopx"] in (2, 99)) or 
+w_mode) and not exit_suppress 
+                if suppress_far and len(boxes_dec) > 0: 
+                    keep = [i for i in range(len(cls_dec)) 
+                            if not (MT_CLASSES[int(cls_dec[i])] == "car" 
+                                    and (boxes_dec[i][3] < CAR_MIN_ROW 
+                                         or (w_mode and 
+car_is_far_off(boxes_dec[i], mid, w))))] 
+                    boxes_dec  = boxes_dec[keep] 
+                    cls_dec    = cls_dec[keep] 
+                    scores_dec = scores_dec[keep] 
+ 
+                # 最近框 (离车最近 = y2 最大) — 用过滤后的决策框 
+                nearest_box = None 
+                nearest_cls = "" 
+                if len(boxes_dec) > 0: 
+                    idx = np.argmax(boxes_dec[:, 3]) 
+                    nearest_box = tuple(boxes_dec[idx].tolist()) 
+                    c = int(cls_dec[idx]) 
+                    nearest_cls = MT_CLASSES[c] if c < len(MT_CLASSES) 
+else "" 
+ 
+                # 中线: 已在 _postprocess 中上下补全到 [260, h-1] 
+                mid_extended = mid 
+                if mid_extended is not None: 
+                    result.mid_extended = mid_extended 
+ 
+                # 本帧中线 (car 偏移由 apply_detection_logic 返回 det_mid 
+覆盖) 
+                rep_m = mid_extended if mid_extended is not None else 
+np.zeros((0,2), dtype=np.int32) 
+                off_m = rep_m 
+                mid_for_person = mid_extended  # 保存原中线, 近区判断不用车
+偏移后的线 
+ 
+ 
+ 
+ 
+53 
+                # 应用检测逻辑 (状态机, stop/car 返回新中线) 
+                hold_steer_before  = engine.car_hold_steer 
+                det_mid = engine.apply_detection_logic( 
+                    boxes_dec, cls_dec, scores_dec, 
+                    left_pts if left_pts.size > 0 else None, 
+                    right_pts if right_pts.size > 0 else None, 
+                    mid_extended, (h, w), result.track_mask, mid) 
+                if det_mid is not None: 
+                    mid_extended = det_mid 
+                    result.mid = mid_extended 
+                    result.mid_extended = mid_extended 
+                    rep_m = mid_extended 
+                    off_m = mid_extended 
+ 
+                # ---- 单人追踪器: 取最近人物框 ---- 
+                nearest_person_box = None 
+                if len(result.boxes) > 0: 
+                    pidxs = [i for i, c in enumerate(result.classes) 
+                             if int(c) < len(MT_CLASSES) and 
+MT_CLASSES[int(c)] == "person"] 
+                    if pidxs: 
+                        best = pidxs[np.argmax(result.boxes[pidxs, 3])] 
+                        nearest_person_box = 
+tuple(result.boxes[best].tolist()) 
+ 
+                person_close, person_stopx, person_use_straight, 
+person_straight_pts, _ = \ 
+                    engine.person_tracker.update( 
+                        nearest_person_box, 
+                        left_pts if left_pts.size > 0 else None, 
+                        right_pts if right_pts.size > 0 else None, 
+                        mid_for_person, h, w) 
+ 
+                # 车后40 帧记忆抑制: 禁止向车同侧绕行 (需有过有效方向判断) 
+                if engine.car_hold_person > 0 and 
+engine.last_car_right_valid: 
+                    if engine.last_car_right and person_close == 3: 
+                        person_close = 1   # 车在右边 → 禁止右绕行 
+                    elif not engine.last_car_right and person_close == 2: 
+                        person_close = 1   # 车在左边 → 禁止左绕行 
+ 
+ 
+ 
+54 
+ 
+                # 人最近+车在远处: 远区方向反了→强制退出远区 
+                if (engine.effective_nearest_cls == "person" 
+                        and (engine.car_hold_steer > 0 or 
+engine.car_hold_person > 0) 
+                        and engine.last_car_right_valid): 
+                    pt_state = engine.person_tracker.state 
+                    if pt_state == 'FAR_LOCKED': 
+                        # 用tracker 内部的原始方向判断(未被car_hold_person
+抑制) 
+                        raw_close = engine.person_tracker.output_close 
+                        wrong = ((engine.last_car_right and raw_close == 
+3) or 
+                                 (not engine.last_car_right and raw_close 
+== 2)) 
+                        if wrong: 
+                            engine.person_tracker._reset_to_idle() 
+                            person_close = 1 
+                            person_stopx = 1 
+                            person_use_straight = False 
+ 
+                # 用引擎的有效最近目标覆盖 (gold skip 后 nearest 可能已变更) 
+                if engine.effective_nearest_box is not None: 
+                    nearest_box = engine.effective_nearest_box 
+                    nearest_cls = engine.effective_nearest_cls 
+ 
+                # ---- OCR 路牌识别 → W 模式 + 停车 ---- 
+                # 1) 检查后台OCR 是否完成 (含8s 超时守卫: 超时默认直行左道, 
+toggle 置位) 
+                with ocr_result_lock: 
+                    if ocr_pending[0]: 
+                        if time.time() - ocr_submit_time >= 
+OCR_TIMEOUT_S: 
+                            # 超时: 默认直行(左道), toggle 置位等待下个sign
+取反进W 模式 
+                            ocr_pending[0] = False 
+                            ocr_result_cache[0] = None  # 后台线程之后返回的
+结果直接丢弃 
+                            cached_close["stopx"] = 1 
+                            ocr_last_trig = time.time() 
+ 
+ 
+ 
+55 
+                            ocr_api_done[0] = True 
+                            ocr_last_direction[0] = 0   # 默认直行=左道 
+                            ocr_toggle[0] = True         # 下个sign 走
+toggle 取反→右道(W 模式) 
+                            print(f"[{_ts()}]  [OCR] TIMEOUT: 
+{OCR_TIMEOUT_S}s 无返回, 默认直行(左), toggle 置位待下圈取反") 
+                        elif ocr_result_cache[0] is not None: 
+                            ocr_pending[0] = False 
+                            cached_close["stopx"] = 1 
+                            ocr_last_trig = time.time()   # 冷却从退出99 时
+重新计时: 出99 后完整5s 免疫 
+                            ocr_res = ocr_result_cache[0] 
+                            ocr_result_cache[0] = None 
+                            if ocr_res['ok']: 
+                                ocr_api_done[0] = True 
+                                ocr_last_direction[0] = 
+ocr_res['direction'] 
+                                ocr_toggle[0] = True     # 下次sign 触发走捷
+径(取反) 
+                                print(f"[{_ts()}]  [OCR] RESULT: ok=True, 
+dir={ocr_res['direction']}, toggle set") 
+                                # direction 不下发special(下位机跟中线变道), 
+仅驱动W 模式 
+                                if ocr_res['direction'] == 1: 
+                                    engine.enter_w_mode() 
+                                    w_mode = True 
+                            else: 
+                                # ok=False(无框/无字/API 异常): 与超时同样处
+理, 默认直行(左), 下一圈toggle 取反走右 
+                                ocr_api_done[0] = True 
+                                ocr_last_direction[0] = 0 
+                                ocr_toggle[0] = True 
+                                print(f"[{_ts()}]  [OCR] RESULT: ok=False, 
+默认直行(左), toggle set") 
+ 
+                # 2) 触发OCR (toggle 立即, 首次等OCR_DELAY_FRAMES 帧再截帧) 
+                if (not ocr_triggered and not ocr_pending[0] and not 
+ocr_await_sign 
+                        and time.time() - ocr_last_trig >= OCR_COOLDOWN_S 
+                        and len(result.boxes) > 0): 
+ 
+ 
+ 
+56 
+                    sign_idx = [i for i, c in enumerate(result.classes) 
+                                if int(c) < len(MT_CLASSES) and 
+MT_CLASSES[int(c)] == "sign"] 
+                    if sign_idx: 
+                        areas = [(result.boxes[i,2]-
+result.boxes[i,0])*(result.boxes[i,3]-result.boxes[i,1]) 
+                                 for i in sign_idx] 
+                        area_thresh = OCR_TOGGLE_AREA_THRESH if 
+ocr_toggle[0] else SIGN_AREA_THRESH 
+                        if areas[np.argmax(areas)] >= area_thresh: 
+                            if ocr_toggle[0]: 
+                                # toggle: 直取反方向, 不走OCR, 不设stopx=99 
+                                print(f"[{_ts()}]  [OCR] TOGGLE: 
+area={areas[np.argmax(areas)]:.0f}>={area_thresh}, 
+last_dir={ocr_last_direction[0]}") 
+                                ocr_triggered = True 
+                                ocr_last_trig = time.time() 
+                                ocr_toggle[0] = False 
+                                opposite = 1 - ocr_last_direction[0] 
+                                if opposite == 1: 
+                                    engine.enter_w_mode() 
+                                    w_mode = True 
+                                else: 
+                                    engine.w_mode = False 
+                                    w_mode = False 
+                            elif not ocr_api_done[0]: 
+                                # 首次: 启动延时倒计时, stopx=99 停车 
+                                if ocr_delay_count == 0: 
+                                    ocr_delay_count = OCR_DELAY_FRAMES 
+                                    cached_close["stopx"] = 99 
+                                    sign_preview_hold = False   # 面积阈值满
+足, 结束sign 预告 
+                                    sign_hold_dead = True       # 永久关死, 
+无复活 
+                                    print(f"[{_ts()}]  [OCR] DELAY start: 
+{OCR_DELAY_FRAMES}f, area={areas[np.argmax(areas)]:.0f}") 
+                # 倒计时一旦启动无条件进行, 不因面积波动/空帧/sign 消失冻结 
+(移出上方if) 
+                if ocr_delay_count > 0: 
+                    ocr_delay_count -= 1 
+ 
+ 
+ 
+57 
+                    if ocr_delay_count % 5 == 0: 
+                        print(f"[{_ts()}]  [OCR]   countdown: 
+{ocr_delay_count}") 
+                    if ocr_delay_count == 0: 
+                        # 归零: 进入等待sign 态, 不立即提交, 等有sign 的帧 
+                        ocr_await_sign = True 
+                        ocr_await_start = time.time() 
+                        print(f"[{_ts()}]  [OCR] DELAY done, waiting for 
+sign frame...") 
+ 
+                # 等待sign 提交: 有sign 用当前帧; 超时提交空图(OCR 返回空→默
+认直行) 
+                if ocr_await_sign: 
+                    if sign_in_frame: 
+                        submit_frame = frame 
+                    elif time.time() - ocr_await_start >= 
+OCR_AWAIT_SIGN_TIMEOUT_S: 
+                        submit_frame = np.zeros((h, w, 3), 
+dtype=np.uint8) 
+                    else: 
+                        submit_frame = None 
+                    if submit_frame is not None: 
+                        ocr_await_sign = False 
+                        ocr_triggered = True 
+                        ocr_last_trig = time.time() 
+                        ocr_pending[0] = True 
+                        ocr_submit_time = time.time()  # 启动8s 超时守卫 
+                        snap = submit_frame.copy() 
+                        print(f"[{_ts()}]  [OCR] SUBMIT: {'sign' if 
+sign_in_frame else 'blank(timeout)'}") 
+                        def _ocr_thread(): 
+                            res = ocr.process(snap) 
+                            with ocr_result_lock: 
+                                ocr_result_cache[0] = res 
+                        threading.Thread(target=_ocr_thread, 
+daemon=True).start() 
+ 
+                # 3) sign 消失检测 (延时期间sign 消失→计数自动冻结; OCR 完成
+后消失→5 帧后解锁) 
+                if ocr_triggered and not sign_in_frame: 
+ 
+ 
+ 
+58 
+                    ocr_sign_missed += 1 
+                    if ocr_sign_missed >= 5: 
+                        ocr_triggered = False 
+                else: 
+                    ocr_sign_missed = 0 
+ 
+                # ---- 更新 close_mode (单人由 PersonZoneTracker 输出) ---
+- 
+                if nearest_box is not None: 
+                    cls_name = nearest_cls 
+                    if cls_name == "person": 
+                        if engine.person_tracker.state != 'IDLE': 
+                            cached_close["mode"] = person_close 
+                            if cached_close["stopx"] != 99: 
+                                cached_close["stopx"] = person_stopx 
+                        else: 
+                            cached_close["mode"] = 0 
+                        cached_close["percar"] = 0 
+                    elif cls_name == "gold": 
+                        cached_close["mode"] = 0 
+                        cached_close["percar"] = 0 
+                        if cached_close["stopx"] != 99: 
+                            cached_close["stopx"] = 1 
+                    else: 
+                        if cached_close["stopx"] != 99: 
+                            cached_close["stopx"] = 1 
+                        if cls_name == "car" and nearest_box[3] >= 
+CAR_MIN_ROW: 
+                            cached_close["percar"] = 0 
+                            cached_close["mode"] = 7 
+                        elif cls_name == "car" and CAR_PASS_LINE <= 
+nearest_box[3] < CAR_MIN_ROW: 
+                            cached_close["mode"] = 9 
+                            if cached_close["stopx"] != 99: 
+                                cached_close["stopx"] = 1 
+                            cached_close["percar"] = 0 
+                        else: 
+                            if engine.car_hold_steer == 0: 
+                                cached_close["mode"] = 0 
+                                cached_close["percar"] = 0 
+ 
+ 
+ 
+59 
+                else: 
+                    # 空帧: 防尾部倒计时优先, 兜底清零防旧值残留 
+                    if engine.car_tail_protect > 0: 
+                        cached_close["mode"] = 10 
+                        cached_close["percar"] = 0 
+                    elif engine.empty_count >= 3 and 
+engine.car_hold_steer == 0: 
+                        cached_close["mode"] = 0 
+                        cached_close["percar"] = 0 
+                    else: 
+                        cached_close["mode"] = 0 
+                        cached_close["percar"] = 0 
+                    if cached_close["stopx"] != 99: 
+                        cached_close["stopx"] = 1 
+ 
+                # ---- 更新 special_mode (OCR 结果, stop 覆盖, sign 检测) --
+-- 
+                # special 只有三态: 0=无, 4=stop, 5=sign 在帧; OCR 方向不下
+发 
+                if engine.stop_detected: 
+                    cached_special = 4 
+                elif sign_in_frame: 
+                    cached_special = 5 
+                else: 
+                    cached_special = 0 
+ 
+                # sign 预告 stopx=2: 首次见sign 锁存, 连续3s 无sign 关锁, 面
+积阈值满足(触发99)永久关死 
+                if not ocr_api_done[0] and not ocr_toggle[0]: 
+                    if sign_preview_hold: 
+                        if sign_in_frame: 
+                            sign_hold_deadline = time.time() + 
+SIGN_HOLD_TIMEOUT_S  # 看到sign 刷新 
+                        elif time.time() > sign_hold_deadline: 
+                            sign_preview_hold = False  # 连续3s 无sign → 
+关锁 
+                        if sign_preview_hold and cached_close["stopx"] == 
+1: 
+                            cached_close["stopx"] = 2 
+ 
+ 
+ 
+60 
+                    elif (sign_in_frame and not ocr_triggered and not 
+sign_hold_dead 
+                            and time.time() - ocr_last_trig >= 
+OCR_COOLDOWN_S 
+                            and cached_close["stopx"] == 1): 
+                        sign_preview_hold = True 
+                        sign_hold_deadline = time.time() + 
+SIGN_HOLD_TIMEOUT_S 
+                        cached_close["stopx"] = 2 
+ 
+                # sign 锁存/OCR 停车期间远车抑制: stopx=2/99 且远车(mode=9) 
+→ 不发远程预警(用本帧stopx, 无延迟) 
+                if cached_close["stopx"] in (2, 99) and 
+cached_close["mode"] == 9: 
+                    cached_close["mode"] = 0 
+ 
+                # ---- W 模式近车减速标记: 启动 (仅标记未活跃时, 需 w_mode + 
+近车) ---- 
+                if not engine.w_car_slowdown and w_mode: 
+                    for _c, _b in zip(cls_dec, boxes_dec): 
+                        if (int(_c) < len(MT_CLASSES) and 
+MT_CLASSES[int(_c)] == "car" 
+                                and _b[3] >= CAR_MIN_ROW): 
+                            engine.w_car_slowdown = True 
+                            break 
+ 
+                # ---- W 模式近车减速: 标记活跃期间全程 stopx=3 (OCR 99 / 人
+停 0 优先) ---- 
+                if engine.w_car_slowdown and cached_close["stopx"] not in 
+(99, 0): 
+                    cached_close["stopx"] = 3 
+ 
+                decision_ms[0] = (time.perf_counter() - t_dec0) * 1000 
+ 
+                # car_hold_person 每帧由 apply_detection_logic 刷新, 不再
+冻结 
+ 
+                # 偏线倒计时刚归零 → 启动防尾部倒计时 
+                if engine.car_hold_steer == 0 and hold_steer_before > 0: 
+                    engine.car_tail_protect = CAR_TAIL_PROTECT_FRAMES 
+ 
+ 
+ 
+61 
+ 
+                # 防尾部倒计时: 近人打断清零, 车在恢复满, 否则倒数 
+                tail_before = engine.car_tail_protect 
+                if engine.car_tail_protect > 0: 
+                    if nearest_cls == "person" and 
+engine.person_tracker.state != 'IDLE': 
+                        engine.car_tail_protect = 0 
+                    elif nearest_cls == "car": 
+                        engine.car_tail_protect = CAR_TAIL_PROTECT_FRAMES 
+                    else: 
+                        engine.car_tail_protect -= 1 
+                if tail_before > 0 and engine.car_tail_protect == 0: 
+                    engine.car_foresight_ok = False 
+                    engine.far_car_confirmed = False 
+                    engine.w_car_slowdown = False  # tail 掉完或被人打断 → 
+清除W 模式近车减速标记 
+ 
+                # 防尾部补刀: tail 刚启动或进行中, mode 被car_hold_steer 归零
+覆盖时补回10 
+                if engine.car_tail_protect > 0 and cached_close["mode"] 
+== 0: 
+                    cached_close["mode"] = 10 
+ 
+                # 弯道检测 
+                engine.update_bend_state(mid) 
+ 
+                # ---- 前视线计算 (一次, 渲染+通讯共用) ---- 
+                departure_x = _get_x(result.left, FORESIGHT_ROW_COMM, w) 
+                pwm_x        = _get_x(result.right, FORESIGHT_ROW_COMM, 
+w) 
+                foresight_x  = _get_x(result.mid_extended, 
+FORESIGHT_ROW_COMM, w) 
+ 
+                # ---- stop/go 分割失效兜底: 辅助中线 (仅 stop/go 存在、非 W 
+模式、且线不覆盖前视) ---- 
+                aux_active = False 
+                if len(result.boxes) > 0 and not w_mode: 
+                    obj_boxes = [result.boxes[i] for i, c in 
+enumerate(result.classes) 
+ 
+ 
+ 
+62 
+                                 if int(c) < len(MT_CLASSES) and 
+MT_CLASSES[int(c)] in ('stop', 'go') 
+                                 and result.boxes[i][3] >= STOP_MIN_ROW] 
+                    if obj_boxes and not (_line_covers(result.left, 
+FORESIGHT_ROW_COMM) 
+                                          and _line_covers(result.right, 
+FORESIGHT_ROW_COMM)): 
+                        foresight_x = 
+_get_x(_build_stop_aux_mid(obj_boxes[0], w, h), FORESIGHT_ROW_COMM, w) 
+                        aux_active = True 
+ 
+                # ---- 金币决策实时条件: 无人无车无锁定窗口 ---- 
+                has_car_in_view = False 
+                if len(cls_dec) > 0: 
+                    for c in cls_dec: 
+                        if MT_CLASSES[int(c)] == "car": 
+                            has_car_in_view = True; break 
+ 
+                # 金币禁用锁存: 锁定需sign 锁存期+stopx=2+面积≥6000; 解锁需
+sign 锁存退出(3s 超时或触发99) 
+                if sign_preview_hold: 
+                    if cached_close["stopx"] == 2 and sign_max_area >= 
+SIGN_GOLD_BLOCK_AREA: 
+                        gold_block = True 
+                else: 
+                    gold_block = False 
+ 
+                gold_active = ( 
+                    GOLD_ENABLE 
+                    and not has_car_in_view 
+                    and engine.person_tracker.state == 'IDLE' 
+                    and engine.car_hold_steer == 0 
+                    and engine.car_hold_person == 0 
+                    and engine.car_tail_protect == 0 
+                    and (cached_close["stopx"] == 1 
+                         or (cached_close["stopx"] == 2 and not 
+gold_block)) 
+                ) 
+ 
+ 
+ 
+ 
+63 
+                # 金币决策 (从中线向金币方向偏GOLD_LINE_RATIO×半道宽, W 模式
+用W 比例) 
+                gold_left_line = gold_right_line = gold_mid_line = None 
+                if gold_active and not aux_active: 
+                    gold_ratio = GOLD_LINE_RATIO_W if w_mode else 
+GOLD_LINE_RATIO 
+                    # 线向上延伸用于提前判断金币 
+                    gold_l = _extend_line_up(left_pts, 
+GOLD_LINE_EXTEND_ROW, w) if left_pts.size > 0 else None 
+                    gold_r = _extend_line_up(right_pts, 
+GOLD_LINE_EXTEND_ROW, w) if right_pts.size > 0 else None 
+                    gold_m = _extend_line_up(result.mid_extended, 
+GOLD_LINE_EXTEND_ROW, w) if result.mid_extended is not None and 
+len(result.mid_extended) >= 2 else None 
+                    gold_left_line = gold_l 
+                    gold_right_line = gold_r 
+                    gold_mid_line = gold_m 
+                    if gold_frame_count <= 0: 
+                        gold_idx = [i for i, c in 
+enumerate(result.classes) 
+                                    if int(c) < len(MT_CLASSES) and 
+MT_CLASSES[int(c)] == "gold"] 
+                        gold_boxes = result.boxes[gold_idx] if gold_idx 
+else None 
+                        gold_side_cached = engine.gold_decision( 
+                            gold_boxes, gold_l, gold_r, gold_m, w, 
+GOLD_LINE_EXTEND_ROW) 
+                        gold_frame_count = GOLD_DECISION_FRAME 
+                    gold_frame_count -= 1 
+                    if gold_side_cached == 'left': 
+                        gold_fx = _get_x(gold_m, FORESIGHT_ROW_COMM, w) 
+                        gold_lx = _get_x(gold_l, FORESIGHT_ROW_COMM, w) 
+                        half = gold_fx - gold_lx 
+                        foresight_x = max(0, int(gold_fx - gold_ratio * 
+max(half, 1))) 
+                    elif gold_side_cached == 'right': 
+                        gold_fx = _get_x(gold_m, FORESIGHT_ROW_COMM, w) 
+                        gold_rx = _get_x(gold_r, FORESIGHT_ROW_COMM, w) 
+                        half = gold_rx - gold_fx 
+ 
+ 
+ 
+64 
+                        foresight_x = min(255, int(gold_fx + gold_ratio * 
+max(half, 1))) 
+                    # 'mid' 或 None → 保持默认中线 
+                else: 
+                    engine.gold_memory = -1  # 金币关闭时清记忆 
+                # 全局车偏移: steer 期间person_hold>0 触发偏移; tail 期间
+person_hold=0 走纯线 
+                if (engine.last_car_right_valid and 
+engine.car_foresight_ok 
+                        and cached_close["mode"] not in (6, 7) 
+                        and (engine.car_hold_steer > 0 
+                             or (engine.car_hold_person > 0 and 
+cached_close["stopx"] not in (2, 99))) 
+                        and not aux_active): 
+                    if engine.last_car_right: 
+                        foresight_x = max(0, departure_x - 
+int(CAR_LEFT_OFFSET * 255 / w)) 
+                    else: 
+                        foresight_x = min(255, pwm_x + 
+int(CAR_RIGHT_OFFSET * 255 / w)) 
+                # mode=10 tail: steer 归零后走纯左/右线 (steer 期间由上面的
+全局车偏移处理) 
+                if cached_close["mode"] == 10 and engine.car_hold_steer 
+== 0 and engine.car_hold_person == 0 and not aux_active: 
+                    if engine.last_car_right_valid: 
+                        foresight_x = departure_x if 
+engine.last_car_right else pwm_x 
+                    else: 
+                        foresight_x = departure_x 
+                # 单人追踪器直行: 用直行线替代中线前视 (最高优) 
+                if person_use_straight and person_straight_pts is not 
+None and len(person_straight_pts) >= 2 and not aux_active: 
+                    foresight_x = _get_x(person_straight_pts, 
+FORESIGHT_ROW_COMM, w) 
+ 
+                # ---- 发布渲染包: 帧/框/中线/模式 严格同帧交给推流线程 ---- 
+                with render_cond: 
+                    w_elapsed = time.time() - engine._w_start_time if 
+w_mode else 0.0 
+                    render_pack[0] = (result, rep_m, off_m, foresight_x, 
+ 
+ 
+ 
+65 
+                                      cached_close['mode'], cached_special, 
+cached_close['stopx'], w_mode, 
+                                      cached_close['percar'], 
+                                      engine.car_hold_steer, 
+engine.person_tracker.missed_frames, 
+                                      w_elapsed, engine.car_hold_person, 
+                                      engine.car_tail_protect, 
+                                      engine.w_car_slowdown, 
+                                      engine.gold_debug_car, 
+engine.gold_debug_gold, 
+                                      engine.person_tracker.b_line, 
+                                      engine.person_tracker.d_line, 
+                                      engine.person_tracker.collision_left_
+line, 
+                                      engine.person_tracker.collision_right
+_line, 
+                                      engine.person_tracker.straight_line, 
+                                      gold_active, gold_left_line, 
+gold_right_line, gold_mid_line, 
+                                      engine.gold_memory) 
+                    render_cond.notify_all() 
+ 
+            # 6e. 更新通讯 (无新结果时沿用上一帧值, Python 闭包保持最后一次赋
+值) 
+            with comm_data["lock"]: 
+                comm_data["departure"] = departure_x 
+                comm_data["pwm"] = pwm_x 
+                comm_data["foresight"] = foresight_x 
+                comm_data["close_mode"] = cached_close["mode"] 
+                comm_data["special_mode"] = cached_special 
+                comm_data["stopx"] = cached_close["stopx"] 
+                comm_data["percar"] = cached_close["percar"] 
+ 
+            frame_count += 1 
+            fps_count += 1 
+            now = time.time() 
+            if now - t_fps >= 1.0: 
+                pipeline_fps[0] = fps_count / (now - t_fps) 
+                fps_count, t_fps = 0, now 
+ 
+ 
+ 
+ 
+66 
+    except KeyboardInterrupt: 
+        print("\n  Shutting down...") 
+    finally: 
+        stop_event.set() 
+        ocr.release() 
+        pool.release() 
+        grabber.stop() 
+        print("  Done.") 
+ 
+if __name__ == "__main__": 
+    main() 
+ 
+ 

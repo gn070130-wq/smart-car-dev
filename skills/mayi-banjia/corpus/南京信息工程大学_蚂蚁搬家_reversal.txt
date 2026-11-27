@@ -1,0 +1,576 @@
+    第二十一届全国大学生智能汽车竞赛
+
+技 术 报 告
+
+
+
+
+
+	学    校：    南京信息工程大学
+队伍名称：      Reversal
+参赛队员：秦凯博，石文哲，谭景鸿，梁文轩
+带队教师：  邱晓惠  孙玉宝               
+
+
+
+
+关于技术报告和研究论文使用授权的说明
+
+	 本人完全了解第二十一届全国大学生智能汽车竞赛关于保留、使用技术报告和研究论文的规定，即：参赛作品著作权归参赛者本人，比赛组委会可以在相关主页上收录并公开参赛作品的设计方案、技术报告以及参赛模型车的视频、图像资料，并将相关内容编纂收录在组委会出版论文集中。
+
+                           参赛队员签名：
+
+带队教师签名：	
+日   期：2026.8.15
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+引言
+全国大学生智能汽车竞赛是一项以“立足培养、重在参与、鼓励探索、追求卓越”为指导思想，面向全国大学生开展的具有探索性的工程实践活动。它以设计制作在特定赛道上能自主行驶且具有优越性能的智能模型汽车这类复杂工程问题为任务，鼓励大学生组成团队，综合运用多学科知识，提出、分析、设计、开发并研究智能汽车的机械结构、电子线路、运动控制和开发与调试工具等问题，激发大学生从事工程技术开发和科学研究探索的兴趣和潜能，倡导理论联系实际、求真务实的学风和团队协作的人文精神。
+在大赛中选手们追求卓越，挑战自我，超越自我，实现从无到有，从零到一的锐变。而蚂蚁搬家作为首届多车协同任务的组别，对我们有着极大的挑战，如何实现多车协同，在保持推动力的情况下，车模要尽量轻，在有多个障碍的时候如何规划推进路线等等，每一个部分都是我们需要克服的困难。
+在这份报告中，包含我们组对小车的整体制作思路，电路，算法，结构，车辆大体参数等车辆涵盖的内容，详尽地描述了我们的思路以及创新，同时这份报告凝聚了我们的努力以及智慧，是我们组共同努力的结果。
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+智能车系统总体设计概述
+1.1机械设计概述
+根据组委会要求，本车模采用定制碳纤维底板和迷你万向轮作为主体结构，用于承载 PCB、电机、推杆以及摄像头等部件。底板根据各模块的安装需求设计了对应孔位，使电机、电路板和推杆能够紧凑、稳定地固定在车体上。摄像头电路板布置在底板较低位置，以降低整车重心，提高车辆在运动和推送过程中的稳定性。
+
+1.2硬件电路设计概述
+硬件电路是保证车辆稳定行驶以及功能实现的基础，所以其稳定性至关重要，通过JLC EDA和AD设计所需的驱动模块，降压稳压模块等模块的原理图，并将所有功能集成在一块PCB板中（陀螺仪，电机驱动等），在一块板子上，各功能模块能够协调运行，由于组委会对语言的要求，最小系统板采用商家的RT1021系统板和固件，符合用python编程的要求。
+
+1.3软件设计概述
+软件系统由主车控制程序、从车控制程序和视觉端程序组成。主车控制程序运行在 RT1021 MicroPython 环境中，负责三轮底盘运动解算、编码器轮速闭环、LSM6DSV16X 陀螺仪航向控制、视觉串口解析以及任务状态机调度。视觉端通过目标检测模型和分类模型识别目标物，并向主控发送目标误差、分类方向和黄线状态。从车通过红外视觉识别主车上的红外灯组，同时接收主车无线广播的运动反馈，实现相对位置跟随和协同推送。
+智能车系统总体设计详述
+本章主要描述了智能车系统总体的设计方案，在后文中主要分为总体思路，机械设计，电路设计，软件控制这几个部分来进行描述。
+
+2.1 总体思路
+本次设计对象为蚂蚁搬家的工兵车，我们将双车分为主车和从车，两车设计上思路不同。我们的任务要求简单来说就是，在避开障碍物的情况下，两车同时将物品推至指定位置。我们在设计上经过多次尝试，室内多车通信的延迟过高，最后确定了主车上放置红外光电管，从车通过追踪主车的光电管来实现跟从。那么，推杆从最开始的与车身前进方向平行的平行推杆，不断地改进到现在的侧推杆，并且经过多次尝试，侧推杆的效率要比平推杆好。并且两车的角度不同，加上特定角度的推杆，实现了特定姿态完成任务。
+
+图1.1  主车车模(左)和从车车模(右)图
+根据题目要求以及团队经验，主控芯片我们选择了 NXP 的 RT1021，其基于 Arm Cortex-M7 架构，主频最高可达 500MHz，具备较强的实时控制能力和数字信号处理能力，能够满足智能车在传感器数据融合、电机控制以及路径决策等方面的运算需求。同时，RT1021 配备较大的片上 SRAM 资源，并支持外部 Flash 扩展，有利于程序存储和高速数据处理。姿态检测方面，系统采用集成在主板上的 LSM6DSV16X 六轴惯性传感器获取车身角速度与加速度信息，用于姿态解算和车身稳定控制。电源部分采用 3S 航模锂电池为整车系统供电，标称电压 11.1V，满电约 12.6V，在保证供电能力的同时兼顾整车重量和空间布局。
+
+图1.2 总体系统图
+为了实现车辆整体控制，我们采用三轮全向底盘运动学解算与多闭环控制结构。系统主要包含轮速闭环、陀螺仪角速度闭环、航向角控制、视觉位置闭环和任务状态机等部分。主车通过摄像头获得目标物位置、分类方向和黄线状态，结合 LSM6DSV16X 陀螺仪与编码器反馈完成搜索、对准、定向、推送和回库。从车通过红外视觉识别主车上的红外灯组，并接收主车无线发送的运动状态，实现跟随和协同推送。
+转向与航向控制由 LSM6DSV16X 陀螺仪、编码器轮速和视觉误差共同参与。主车根据视觉端反馈的目标位置生成前进、横移速度，根据分类结果确定推送方向，并在搜索、环绕定向、推送回转和回库转向等阶段通过航向角误差与陀螺仪角速度闭环生成旋转速度，最后由三轮底盘运动学分配到三个轮速目标。
+2.2 机械结构
+为了适配推杆，电机和电路板摄像头的安装，我们设计了特定的碳纤维底板。摄像头通过在中心孔位用铝合金连接件和碳素杆固定。电机通过支架和螺丝固定在底板背面，一体化的电机PCB通过孔位向上露出方便连接。主控PCB通过尼龙柱和特定孔位固定，并且完美绕开了中心摄像头位置。主车的右侧通过纳米胶固定了红外光电管，从车倒装摄像头以获得更好的角度。陀螺仪集成在了主控PCB上无需安装。推杆在车底板正面开了孔位，螺丝螺母固定。电池也固定在左侧来平衡重心。由于微缩的要求，车身重量尽量平衡并且要集中在中下侧，防止车速过快导致侧翻。
+编码器的安装位置如下，并且为了获得更大的扭矩，将原有的齿轮箱从1：20改成了1：30
+ 
+图2.1电机编码器安装示意图
+此外对于主板和驱动的安装我们用尼龙柱以及m2螺丝螺母将其固定在车身上如图所示位置，考虑到安装的便捷性，以及车身整体的对称和美观，在设计时参考车模可安装位置，为其量身定制了PCB，让走线也变得简洁明了，大大稳定了车身结构。
+
+图2.2 主驱一体板安装示意图
+2.3 硬件电路设计
+硬件是智能车系统的基础。其设计基于嘉立创EDA，内容包括原理图设计，PCB设计。以下文章将详细讲述各个模块的设计原理，目的，以及单片机资源分配和其中的注意事项。
+2.3.1 最小系统板模块
+本组智能车系统采用逐飞科技提供的 RT1021 恩智浦 NXP 智能车 MIMXRT1021 单片机最小系统核心板 作为主板控制系统。MIMXRT1021 基于 Arm Cortex-M7 内核，主频最高可达 500MHz，具备较强的实时控制能力和数字信号处理能力，适合完成智能车系统中的传感器数据采集、姿态解算、电机控制以及路径决策等任务。同时，该芯片配备较大的片上 SRAM 资源，并支持外部 Flash 存储扩展，能够满足控制程序、算法模块以及调试功能的运行需求。
+2.3.2 降压稳压模块
+由于整车使用 3S 航模锂电池供电，电池标称电压为 11.1V，满电约 12.6V，系统首先采用 SY8120 芯片完成约 12V 至 5V 的降压，为电机驱动、视觉端和外设提供稳定电源。第二级采用 RT9013-3.3 将 5V 转换为 3.3V，为主控、传感器、隔离芯片等低压器件供电。多次测试表明该方案发热较小、输出稳定，能够满足主车和从车控制系统的供电需求。
+
+图2.4 降压稳压模块电路图
+
+2.3.3 五向按键及其他辅助电路
+五向按键用于调试系统参数大小，或用于调节系统模式、运行速度、搭配不同硬件电路等，便利于使用者，且五向按键体积小，调试方便。增加多个 LED 方便查看车模处于不同状态，电压检测用于防止电池过放，三路 ZH 端子用于电机连接。无线串口模块用于主车与从车之间的运动状态同步，主车周期性广播车体速度、角速度、状态标志和部分轮速信息，从车接收后作为跟随控制前馈；普通串口和屏幕接口主要用于程序下载、参数调试和状态观察。
+
+
+
+图2.5 辅助电路图
+
+2.3.4集成陀螺仪
+为了集成降低重量和更精确的定位，将lsm6dsv16x芯片集成在主板上
+
+图2.6陀螺仪电路图
+2.3.5 电机驱动模块
+由于驱动部分与主控部分之间存在电平匹配和信号隔离需求，因此本系统采用 SN74LVC245ADB 作为总线收发与电平缓冲芯片，以提高信号传输的稳定性，并在一定程度上防止异常电流倒灌对主控板造成影响。SN74LVC245ADB 是一款 8 位总线收发器，具有三态输出功能，可通过方向控制端和输出使能端实现数据传输方向控制与总线使能管理。其输入端具有较好的电平兼容性，适合用于主控与外部驱动模块之间的数字信号连接，从而增强系统接口的可靠性。
+其主要特点如下：
+● 8 位总线收发器，适合多路数字信号缓冲与传输
+● 支持三态输出，便于总线隔离与使能控制
+● 具有方向控制功能，可根据系统需求设置信号传输方向
+● 支持较宽的工作电压范围，适合低压逻辑系统接口
+● 封装形式适合 PCB 集成，便于小型化设计 
+驱动芯片采用 DRV8876PWPR。该芯片是一款集成式 H 桥电机驱动器，适用于直流电机驱动控制，具有较高的集成度和较完善的保护功能。DRV8876PWPR 支持 PWM 调速和方向控制，可通过主控输出的控制信号实现电机的正反转、制动以及速度调节。同时，该芯片具备过流保护、欠压保护、过温保护等功能，有助于提升电机驱动系统在智能车运行过程中的可靠性和安全性。
+ 
+图2.7 电机驱动原理图及其PCB
+
+2.3.6 红外光电管电路板
+
+图2.8红外光电管电路图
+	自制的红外光电管，易于更换电阻改变灯板的亮度适应不同的环境，而且自制的PCB安装位置更灵活。
+2.3.7 DF转FPC电路板
+
+图2.9 DF转FPC电路图
+
+图2.10 DF转FPC电路图
+
+采用该电路板，可将DF座子转换为FPC与摄像头连接，其中一端用于openart电路板，另一端用于摄像头cmos端。这样子可以将摄像头电路板固定到重心较低的位置，降低整体重心。
+
+
+
+2.4 软件设计
+本系统软件的核心是基于状态机的自主推送控制。主车利用摄像头获取目标物位置、分类方向和黄线状态，利用 LSM6DSV16X 陀螺仪获得角速度与航向信息，利用编码器反馈三路轮速。控制端根据当前任务阶段切换视觉工作模式，并生成车体前进、横移和旋转速度，再通过三轮底盘运动学分配到三个电机。任务流程包括目标搜索、粗对准、精对准、目标分类、环绕定向、推送执行、后退复位和最终回库。
+
+2.4.1 方向控制闭环
+方向控制由航向角外环和陀螺仪角速度内环共同完成。系统通过 LSM6DSV16X 获取 Z 轴角速度并积分得到航向角，在需要定向、环绕或回库转向时，将目标航向与当前航向作差，再由转向控制器得到目标角速度。随后陀螺仪角速度环根据目标角速度与实际角速度的误差输出旋转控制量，并由三轮底盘运动学分配到三个轮速目标中。该结构能够在搜索、推送定向和回库转向过程中保持较稳定的车体姿态。
+
+2.4.2 速度控制闭环
+速度控制采用三路独立轮速闭环。控制程序根据目标车体速度计算前左、前右、后轮的目标轮速，再读取编码器反馈得到实际轮速。速度环中加入目标轮速前馈项，并叠加比例与积分修正，使电机 PWM 能较快跟随目标速度；同时对积分量、PWM 最大值和低速启动输出进行限制，避免状态切换时出现过冲或反向冲击。该闭环为主车和从车的前进、横移、旋转、推送和后退动作提供底层执行能力。
+
+2.4.3 目标识别、分类与黄线检测
+主车视觉端运行在 OpenART/OpenMV 类视觉环境中，加载 /sd/detect.tflite 完成目标检测，并加载 /sd/classify.tflite 完成目标分类。主控通过 UART 向视觉端发送 SEARCH、COARSE、FINE、CLASSIFY、LINE、IDLE 等模式指令。搜索和对准阶段，视觉端使用目标检测模型寻找目标框，选取画面下方且置信度较高的目标，通过逆透视变换和 EMA 滤波得到横向、纵向误差并发送给主控；分类阶段根据识别类别输出推送方向；黄线模式通过黄色阈值检测和连续帧确认判断目标是否被推出边界。
+2.4.4 主从协同与从车跟随
+从车采用红外视觉跟随和主车运动前馈相结合的方式实现协同。主车周期性通过无线串口广播自身运动状态，包括车体速度、角速度、状态标志和部分轮速信息。从车接收该运动反馈后，将其作为前馈量；同时从车视觉端识别主车上的红外灯组，计算横向误差、距离误差和角度误差。控制程序综合红外视觉误差与主车运动前馈，生成从车的前进、横移和旋转速度，使从车在普通跟随、环绕、推送和回库阶段保持与主车的相对姿态。
+第三章 开发工具安装及其调试过程
+3.1 软件开发工具
+3.1.1 开发工具的选择
+本系统的软件开发主要采用 MicroPython 作为程序开发语言，并结合 Thonny 和 Visual Studio Code 作为主要开发工具。MicroPython 是一种面向微控制器和嵌入式系统的轻量级 Python 运行环境，语法简洁、开发效率高，适合智能车系统中算法验证、传感器调试以及功能模块快速开发。相比传统 C/C++ 开发方式，MicroPython 能够减少底层配置工作，使开发者更加专注于控制逻辑、数据处理和系统功能实现。
+在开发环境方面，Thonny 具有界面简洁、上手容易、串口连接方便等特点，适合进行 MicroPython 程序的下载、运行和调试。通过 Thonny 可以直接连接开发板，查看串口输出，运行脚本文件，并对程序进行基础调试。Visual Studio Code 则作为主要代码编辑工具，具有良好的代码补全、文件管理和插件扩展能力，适合进行较大规模程序的编写、整理和维护。二者结合使用，既保证了调试过程的便捷性，也提高了代码编写和项目管理效率。
+3.1.2 开发工具的安装与配置
+首先安装 MicroPython 开发所需的软件环境。根据所使用的 RT1021 开发板资料，下载对应的 MicroPython 固件、示例程序以及相关驱动文件。若开发板尚未烧录 MicroPython 固件，需要根据官方或商家提供的固件烧录说明，将对应固件下载到开发板中。固件烧录完成后，开发板即可通过串口或 USB 与计算机建立通信。
+安装 Thonny 软件。进入 Thonny 官方网站下载适合 Windows 系统的安装包并完成安装。首次打开 Thonny 后，在菜单中进入解释器设置界面，将解释器类型选择为 MicroPython，并根据开发板实际连接方式选择对应的串口端口。配置完成后，点击连接即可进入 MicroPython 交互环境，在 Shell 窗口中可以输入简单指令测试开发板是否正常响应。
+安装 Visual Studio Code。下载并安装 VS Code 后，可根据需要安装 Python、MicroPython 或串口通信相关插件，用于提高代码编辑和工程管理效率。在 VS Code 中建立项目文件夹，将智能车系统的主程序、传感器模块、电机控制模块和参数配置文件等进行分类管理。代码编写完成后，可通过 Thonny 或相关插件将程序下载到开发板运行。
+在实际开发过程中，通常使用 VS Code 进行代码编写和文件管理，使用 Thonny 进行程序下载、串口调试和运行结果观察。当程序运行异常时，可通过 Thonny 的 Shell 窗口查看报错信息和变量输出，并结合断点思路、分模块测试和串口打印等方式定位问题。通过这种开发方式，可以较快完成各功能模块的验证，并逐步集成形成完整的智能车控制程序。
+3.2 硬件开发工具
+3.2.1 开发工具的选择
+应本届组委会要求，我们使用了更适合国产的电子设计软件嘉立创。立创 EDA 是一款专注于集成电路设计（ICD）和印刷电路板设计（PCB）的专业电子设计自动化（EDA）软件。它为广大工程师和设计团队打造了一套完备的工具体系，涵盖了从初始概念到最终制造的完整电子产品设计流程。以下是立创 EDA 的主要特点和功能：
+综合设计环境：立创 EDA 构建了一个高度整合的设计环境，让工程师能够在同一操作界面中开展电路设计、PCB 布局、电路仿真以及制造前的准备等工作。
+原理图设计：您能够借助立创 EDA 绘制电路原理图，便捷地添加各类元件、进行连线以及运用相关符号。而且，所绘制的原理图能够与 PCB 设计实现完美衔接，极大地简化了整个设计流程。
+PCB 布局设计：这款软件配备了强大的 PCB 布局工具，支持您在 PCB 上合理地安排和连接元件，同时充分考虑信号完整性、电磁干扰等关键因素。
+3.2.2 开发工具的安装与配置
+从立创eda官方网站或合法的软件分发渠道下载适用于操作系统的安装文件。根据提示选择希望安装的组件、语言选项等。选择是否安装示例项目、文档和其他附加内容。
+
+第四章 车辆基本参数和总结
+4.1模型车主要技术参数
+4.1.1 基本信息
+车模总重量  159.3+169.3＝328.6g
+车模长、宽、高 主车长146mm，宽146mm 高223mm
+				 从车长158mm  宽129mm 高222mm
+电池总电压 11.1V（3S，满电约 12.6V）
+电路功耗 整车功耗4W
+电容总量 200uf
+4.1.2 传感器种类
+Openart plus*2
+红外光电管*1
+N30电机集成编码器*6
+
+4.2总结
+在本次智能车制作与调试过程中，我们围绕“蚂蚁搬家”组别的任务要求，完成了自制车模结构、硬件电路、视觉识别、运动控制和主从车协同通信等模块的设计与实现。主车需要在场地中完成目标搜索、视觉对准、目标分类、定向推送和回库等任务，从车则通过红外视觉和主车运动反馈保持相对位置，并与主车协同完成搬运过程。相比单车任务，本组别对车辆结构轻量化、双车配合稳定性、推送过程中的姿态控制以及任务状态切换的可靠性都提出了更高要求。
+在实际调试过程中，我们也遇到了编码器精度不足、车体重心偏高、快速运动时姿态不稳定、双车之间容易发生干涉等问题。针对这些问题，我们不断调整机械结构、优化控制参数、改进视觉识别与无线通信逻辑，使车辆逐步具备较稳定的目标识别、路径判断、协同推送和回库能力。通过本次比赛，我们不仅提升了硬件设计、软件编写和系统调试能力，也更加深刻地体会到团队协作、持续迭代以及工程细节对整车稳定性的影响。
+第五章 电路板详细设计原理图与核心算法子程序
+5.1 核心算法子程序
+5.1.1 PID 控制
+PWM_MAX = 60000.0
+
+
+def gyro_ctrl(pid, err_gyro):
+    pid.err = err_gyro
+
+    kp = getattr(pid, "gyro_kp", 0.4)
+    ki = getattr(pid, "gyro_ki", 0.012)
+    output_limit = getattr(pid, "gyro_output_limit", 150.0)
+
+    pid.output += kp * (pid.err - pid.err_last) + ki * pid.err
+    pid.err_last = pid.err
+
+    if pid.output > output_limit:
+        pid.output = float(output_limit)
+    elif pid.output < -output_limit:
+        pid.output = -float(output_limit)
+    return pid.output
+
+
+def turn_ctrl(pid, err_yaw, motor_slow_flag=0):
+    pid.err = err_yaw
+    if pid.err > 180:
+        pid.err -= 360
+    elif pid.err < -180:
+        pid.err += 360
+
+    if motor_slow_flag:
+        pid.output = 2.0 * pid.err + 0.3 * (pid.err - pid.err_last)
+    else:
+        if -10 < pid.err < 10:
+            pid.output = 1.5 * pid.err + 0.3 * (pid.err - pid.err_last)
+        elif -20 < pid.err < 20:
+            pid.output = 2.0 * pid.err + 0.5 * (pid.err - pid.err_last)
+        else:
+            pid.output = 3.0 * pid.err + 0.8 * (pid.err - pid.err_last)
+
+    pid.err_last = pid.err
+    if pid.output > 15:
+        pid.output = 15.0
+    elif pid.output < -15:
+        pid.output = -15.0
+    return pid.output
+
+
+def speed_ctrl(pid, actual_speed, tar_spd):
+    """
+    轮速前馈 PI：普通积分使用 pid.ki，低速目标提高积分增益。
+    """
+
+    if tar_spd == 0:
+        pid.output = 0.0
+        pid.err = 0.0
+        pid.err_last = 0.0
+        pid.tar_spd_last = 0.0
+        pid.param_b = 0.0
+        return 0
+
+    if tar_spd * pid.tar_spd_last < 0:
+        pid.output = 0.0
+
+    error = tar_spd - actual_speed
+    integral_last = pid.output
+    ki = 20.0 if -7.0 <= tar_spd <= 7.0 else pid.ki
+    integral = integral_last + ki * error
+    if integral > 18000.0:
+        integral = 18000.0
+    elif integral < -18000.0:
+        integral = -18000.0
+
+    command = 1450.0 * tar_spd + pid.kp * error + integral
+    if command > PWM_MAX:
+        command = PWM_MAX
+        if error > 0:
+            integral = integral_last
+    elif command < -PWM_MAX:
+        command = -PWM_MAX
+        if error < 0:
+            integral = integral_last
+
+    if tar_spd > 0 and command < 0:
+        command = 0
+        integral = 0.0
+    elif tar_spd < 0 and command > 0:
+        command = 0
+        integral = 0.0
+
+    pid.err = error
+    pid.err_last = error
+    pid.tar_spd_last = tar_spd
+    pid.output = integral
+    pid.param_b = integral
+    return command
+def speed_reset(pid):
+    pid.output = 0.0
+    pid.err_last = 0.0
+    pid.err = 0.0
+
+
+def pos_ctrl(err_pos):
+    if -4 < err_pos < 4:
+        return 2.0 * err_pos
+    if err_pos > 0:
+        out = 1.5 * (err_pos - 4) + 8
+    else:
+        out = 1.5 * (err_pos + 4) - 8
+
+    if out > 15:
+        out = 15.0
+    elif out < -15:
+        out = -15.0
+    return out
+5.1.2 三轮底盘运动学解算子程序
+from math import sqrt
+
+BODY_X_SIGN = -1.0
+
+
+def calc_wheel_spd(move, vx, vy, vz):
+    # Keep the old C kinematics, but align caller-side +vx with the real car forward direction.
+    vx = BODY_X_SIGN * vx
+    move.speed_fr = vx * 0.866025 + vy * 0.5 + vz
+    move.speed_fl = -vx * 0.866025 + vy * 0.5 + vz
+    move.speed_b = -vy + vz
+
+
+def calc_wheel_spd_xy(move, vx, vy, vz):
+    vx = BODY_X_SIGN * vx
+    move.speed_fr = vx * sqrt(3) * 0.5 + vy * 0.5 - vz
+    move.speed_fl = -vx * sqrt(3) * 0.5 + vy * 0.5 - vz
+    move.speed_b = -vy - vz
+
+
+def get_car_spd(move, wheel_fr, wheel_fl, wheel_b):
+    move.speed_z = (wheel_fr + wheel_fl + wheel_b) * 0.33333
+    move.speed_y = move.speed_z - wheel_b
+    move.speed_x = BODY_X_SIGN * (wheel_fr - wheel_fl) * 0.57735
+
+
+def reset_move_base(move):
+    move.speed_fl = 0.0
+    move.speed_fr = 0.0
+    move.speed_b = 0.0
+5.1.3 视觉识别与串口通信子程序
+def poll_art_uart():
+    global cam_rx_buf, cam_error_x, cam_error_y, cam_target_vx, cam_target_vy
+    global cam_has_target, cam_last_rx_ms, cam_rx_started, cam_valid_target_since_ms
+    global push_dir_code, push_yaw_target, line_crossed
+
+    pending = cam_uart.any()
+    if pending:
+        if pending > 32:
+            pending = 32
+        data = cam_uart.read(pending)
+        if data:
+            cam_rx_buf += data
+            while len(cam_rx_buf) >= 3:
+                if cam_rx_buf[0] != Cam_Frame_Head:
+                    cam_rx_buf = cam_rx_buf[1:]
+                    continue
+                if not cam_rx_started:
+                    cam_rx_started = True
+                if cam_rx_buf[1] == Classify_Packet_Tag:
+                    new_dir = int(cam_rx_buf[2])
+                    if new_dir != push_dir_code:
+                        push_dir_code = new_dir
+                    cam_last_rx_ms = utime.ticks_ms()
+                elif cam_rx_buf[1] == Line_Packet_Tag:
+                    new_line_crossed = int(cam_rx_buf[2]) != 0
+                    if new_line_crossed != line_crossed:
+                        line_crossed = new_line_crossed
+                    cam_last_rx_ms = utime.ticks_ms()
+                elif cam_rx_buf[1] == No_Target_Marker and cam_rx_buf[2] == No_Target_Marker:
+                    cam_has_target = False
+                    cam_valid_target_since_ms = 0
+                    cam_last_rx_ms = utime.ticks_ms()
+                else:
+                    cam_has_target = True
+                    if cam_valid_target_since_ms == 0:
+                        cam_valid_target_since_ms = utime.ticks_ms()
+                    update_cam_target(
+                        (int(cam_rx_buf[1]) - Cam_Error_Offset) * Cam_Error_Scale,
+                        (int(cam_rx_buf[2]) - Cam_Error_Offset) * Cam_Error_Scale,
+                    )
+                cam_rx_buf = cam_rx_buf[3:]
+
+    if len(cam_rx_buf) > 20:
+        cam_rx_buf = bytearray()
+5.1.4 任务状态机和导航控制子程序
+NAV_STATE_SEARCH = 0
+NAV_STATE_SEARCH_TURN = 1
+NAV_STATE_COARSE = 2
+NAV_STATE_FINE = 3
+NAV_STATE_PUSH_CLASSIFY = 4
+NAV_STATE_PUSH_ORIENT = 5
+NAV_STATE_PUSH_PREPARE = 6
+NAV_STATE_PUSH = 7
+NAV_STATE_PUSH_BACK = 8
+NAV_STATE_PUSH_TURN = 9
+NAV_STATE_POST_TURN_FORWARD = 10
+NAV_STATE_RETURN_LEFT = 11
+NAV_STATE_RETURN_BACK = 12
+NAV_STATE_RETURN_TURN = 13
+NAV_STATE_RETURN_FINAL = 14
+NAV_STATE_RETURN_DONE = 15
+NAV_STATE_SEARCH_SPIN = 16
+5.2 电路板详细设计原理图
+5.2.1 主板原理图
+
+
+图5.1 主板原理图
+5.1.2 电源原理图
+
+图5.2 电源原理图
+5.1.3 驱动原理图
+
+图5.3 驱动原理图
+5.2.1 红外光电管原理图
+
+图5.4 红外光电管原理图
+5.3.1 DF转FPC原理图
+
+图5.5 DF转FPC原理图（1）
+
+
+
+5.3.2 DF转FPC原理图
+
+图5.5 DF转FPC原理图（2）
+
+
+参考文献
+
+附录A 源代码及其推理公式
+def send_art_mode_command(new_state):
+    if new_state in (NAV_STATE_SEARCH, NAV_STATE_SEARCH_TURN, NAV_STATE_SEARCH_SPIN, NAV_STATE_POST_TURN_FORWARD):
+        cam_uart.write(ART_MODE_SEARCH_CMD)
+    elif new_state in (NAV_STATE_RETURN_LEFT, NAV_STATE_RETURN_FINAL):
+        cam_uart.write(ART_MODE_LINE_CMD)
+    elif new_state == NAV_STATE_COARSE:
+        cam_uart.write(ART_MODE_COARSE_CMD)
+    elif new_state == NAV_STATE_FINE:
+        cam_uart.write(ART_MODE_FINE_CMD)
+    elif new_state == NAV_STATE_PUSH_CLASSIFY:
+        cam_uart.write(ART_MODE_CLASSIFY_CMD)
+    elif new_state == NAV_STATE_PUSH_ORIENT:
+        cam_uart.write(ART_MODE_IDLE_CMD)
+    elif new_state == NAV_STATE_PUSH_PREPARE:
+        cam_uart.write(ART_MODE_FINE_CMD)
+    elif new_state == NAV_STATE_PUSH:
+        cam_uart.write(ART_MODE_LINE_CMD)
+    elif new_state == NAV_STATE_PUSH_BACK:
+        if final_return_mode == 2:
+            cam_uart.write(ART_MODE_LINE_CMD)
+        else:
+            cam_uart.write(ART_MODE_IDLE_CMD)
+    elif new_state in (NAV_STATE_PUSH_TURN, NAV_STATE_RETURN_BACK, NAV_STATE_RETURN_TURN, NAV_STATE_RETURN_DONE):
+        cam_uart.write(ART_MODE_IDLE_CMD)
+def find_nearest_target(img):
+    img_w = img.width()
+    img_h = img.height()
+    best = None
+
+    for obj in tf.detect(net, img):
+        x1, y1, x2, y2, label, score = obj
+        if score <= DETECT_SCORE_TH:
+            continue
+
+        x1 = clamp(int(x1 * img_w), 0, img_w - 1)
+        y1 = clamp(int(y1 * img_h), 0, img_h - 1)
+        x2 = clamp(int(x2 * img_w), 0, img_w - 1)
+        y2 = clamp(int(y2 * img_h), 0, img_h - 1)
+
+        if x2 <= x1 or y2 <= y1:
+            continue
+
+        if (best is None) or (y2 > best[3]) or ((y2 == best[3]) and (score > best[5])):
+            best = (x1, y1, x2, y2, label, score)
+
+    return best
+def detect_yellow_line(img):
+    roi_h = img.height() - LINE_ROI_Y
+    if roi_h <= 0:
+        return False, None
+
+    side_w = (img.width() - LINE_CENTER_MASK_W) // 2
+    if side_w <= 0:
+        return False, None
+
+    best_blob = None
+    right_x = img.width() - side_w
+    for roi_x in (0, right_x):
+        for blob in img.find_blobs(
+            YELLOW_LINE_THRESHOLDS,
+            roi = (roi_x, LINE_ROI_Y, side_w, roi_h),
+            pixels_threshold = LINE_MIN_PIXELS,
+            area_threshold = LINE_MIN_AREA,
+            merge = True,
+        ):
+            w = blob.w()
+            h = blob.h()
+            aspect = float(w) / max(h, 1)
+            fill = float(blob.pixels()) / max(w * h, 1)
+            if (
+                w >= LINE_SIDE_MIN_WIDTH
+                and (blob.y() + h) >= LINE_MIN_BOTTOM
+                and aspect >= LINE_SIDE_MIN_ASPECT
+                and fill >= LINE_SIDE_MIN_FILL
+            ):
+                if (best_blob is None) or (blob.pixels() > best_blob.pixels()):
+                    best_blob = blob
+
+    if best_blob is not None:
+        return True, best_blob.rect()
+
+    return False, None
+
+
+
+
+
+
+
+
+    
+附录B 车模技术检查表
+车模技术检查表
+第二十一届全国大学生智能汽车竞赛
+车模技术检查表
+一、车模技术检查表
+
+ 
+二、车模照片
+1、车模外观照片
+  车模平放时，俯视照片，前视图，左或右（任选）视图照片.
+
+ 
+2、电路板PCB图
+  车模中所有电路板正反面照片。对于自制电路板，需要使用红色方框标出队伍独自LOGO所在处。
+
+
+
+
+
+
+          
+  
+3、电路板原理图
+  请在生成电路板图形需要足够的分辨率，能够分辨出电路图元器件、引线、标注文字等信息。如果电路图过大，请将电路图拆成若干小的电路图分别生成图片。
+
+
+
+
+
+
+
+
+
+===== TABLE 1 =====
+队伍名称 | Reversal | Reversal | Reversal | Reversal
+参赛学校 | 南京信息工程大学 | 南京信息工程大学 | 南京信息工程大学 | 南京信息工程大学
+赛题组组别 | 蚂蚁搬家 | 蚂蚁搬家 | 蚂蚁搬家 | 蚂蚁搬家
+检查项目 | 规格 （选手自行填写） | 符合 （） | 不符合（） | 备注
+1.车模类型是什么？ | 自制 |  |  | 如果是自制车模，请标明自制。
+车模整体尺寸： （包括传感器在内）长，宽，高(mm) | 主车长146mm，宽146mm 高223mm 从车长158mm  宽129mm 高222mm |  |  | 今年比赛车模尺寸没有限制
+传感器种类、规格(型号)数量。 是否使用自带MCU的成品传感器模块？型号是什么？ | N30电机带编码器 六个 Openart摄像头两个 |  |  | 
+控制转向舵机型号是否自行改装舵机？ 防伪易损标签是否完整？ | 无 |  |  | 
+1. 是否增加伺服电机？ 2. 如果有种类、个数和作用？ | 1.无 |  |  | 
+电路中微处理器型号和个数？ | RT1021 2个 |  |  | 
+是否具有其它可编程器件，个数与作用？ | Openart摄像头两个 |  |  | 
+是否有无线通讯装置？ 如果有种类和个数？ | 有，无线串口模块 2 个，用于主车向从车广播运动状态、从车接收运动反馈，通信波特率 460800。 |  |  | 
+电池的种类、规格和数量？ | 3S 航模锂电池 2 个 |  |  | 
+1. 是否使用GPS导航？ 2. 是否没有使用RTK？ | 1.否 2.否 |  |  | 
+后轮驱动电机是否是原车模电机？ 是否具有防伪易损标签？ | 否 否 |  |  | 
+车模轮胎是否原有的纹理可辨析？ 轮胎表面是否具有粘性物质？ 对于麦克纳姆轮是否更换过小轮胶皮？ | 是 否 否 |  |  | 
+车轮轴距、轮距是否改装？ 改装参数是什么？ | 否 无 |  |  | 
+车模驱动轮传动机构是否改装？ 改装方式是什么？ | 是 齿轮箱由1：20改为1：30 |  |  | 
+是否更换过原装车模中的机械元器件？更换后的规格 是什么？ | 否 无 |  |  | 。
+车模电路板个数及功能。 其中是否有购买成品电路板？ | 2块 RT1021核心板 |  |  | 
+自制电路板是否标记有学校名称、队伍名称、制作日期等信息？ 标示信息在PCB的哪一层？ | 是 顶层 |  |  | 请在表格中注明电路板队伍信息的内容。
+其它待说明内容 |  |  |  | 
+检查人员签名： | 检查意见： | 检查意见： | 检查意见： | 检查意见：

@@ -1,0 +1,506 @@
+
+第二十一届全国大学生智能汽车竞赛
+技 术 报 告
+组别：单车定向组
+学校：山东大学（威海）
+队伍名称：山魂二队
+队员：施涵誉 吴潇飞 万丰硕
+指导教师：王小利
+2026 年8月
+
+授权使用书
+全国大学生智能汽车竞赛组织委员会：
+本队（队伍名称：山魂二队，组别：单车定向组）提交的《第二十一届全国大学生智能汽车竞赛技术报告》系本队全体队员在指导教师指导下独立完成，报告中所涉及的技术方案、数据、图表及代码等内容真实有效，相关知识产权归本队所有。
+本队同意并授权全国大学生智能汽车竞赛组织委员会在本届竞赛评审、资料存档及后续相关经验交流活动中使用本报告及其附件内容。
+ 本报告由以下队员共同完成：
+施涵誉（签名：                       ）
+吴潇飞（签名：                       ）
+万丰硕（签名：                       ）
+指导教师：王小利（签名：                          ）
+日期：2026 年8月18日
+
+目录
+
+
+
+摘要
+本队以 N1 车模为平台，设计并实现了用于第二十一届全国大学生智能汽车竞赛单车定向组的自平衡智能单车。整车采用 TC377 与 CYT2BL3 双 MCU 架构：TC377 完成姿态解算、速度位置估计与运动控制决策，CYT2BL3 完成无刷电机驱动与转速反馈。软件采用前后台多任务架构与定时器中断调度；姿态由 IMU660RB 经陀螺 IIR 滤波、加速度一维卡尔曼滤波与四元数扩展卡尔曼滤波（EKF）融合获得；位置通过轮速与航向航位推算；控制采用“角度环＋角速度环”串级平衡 PID 与增量式速度 PID，并依据 B 样条路径与纯跟踪预瞄实现定向导航。经反复调试与参数整定，模型车稳定完成了单车定向赛项规定任务。
+关键词：
+自平衡单车；四元数EKF；串级PID；定向导航
+
+Abstract
+This report presents the design and implementation of a self-balancing intelligent bicycle for the Directional Riding group of the 21st National Undergraduate Intelligent Car Race, based on the N1 car model platform. The vehicle adopts a dual-MCU architecture consisting of a TC377 main controller and a CYT2BL3 driver chip: the TC377 performs attitude estimation, velocity and position estimation, and motion control decisions, while the CYT2BL3 drives the brushless motor and feeds back its speed. The software adopts a foreground/background multi-task architecture with timer interrupt scheduling. Attitude is obtained by fusing the IMU660RB gyroscope and accelerometer data through IIR filtering, one-dimensional Kalman filtering and a quaternion extended Kalman filter (EKF). The position is derived by dead reckoning from wheel speed and heading. The control strategy combines a cascade balance PID (angle loop plus angular velocity loop) with an incremental speed PID, and realizes directional navigation based on B-spline path planning and pure pursuit. After repeated debugging and parameter tuning, the model car stably completes the prescribed tasks of the directional riding event.
+Key words: 
+self-balancing bicycle; quaternion EKF; cascade PID; directional navigation
+
+术语表
+
+第一章 引言
+1.1 竞赛背景与任务要求
+第二十一届全国大学生智能汽车竞赛由中国自动化学会、清华大学主办，旨在培养大学生的工程实践能力与创新精神。本届竞赛共设14个组别（竞速赛11个、综合创意赛3个），本队参加单车定向组比赛[1]。
+根据竞赛规则，单车定向组属于室外赛道组别，要求模型车在室外开阔场地（操场、塑胶跑道、篮球场等）上，以电动单车自主完成直线竞速、八字慢速、颠簸路段（坡道、草地、锥桶）等定向任务，允许使用民用 GPS 辅助定位。模型车需在发车后的规定时间内完成比赛，对机械结构、电路设计、控制算法及调试水平均有较高要求。
+1.2 模型车系统概述
+本队基于 N1 车模平台，采用 TC377 主控芯片与 CYT2BL3 驱动芯片构成的双 MCU 架构，使用 BDS300 舵机完成转向控制，采用 IMU660RB 姿态传感器完成姿态感知、由无刷驱动板反馈车轮转速，实现了单车自平衡骑行与直线竞速、八字慢速、颠簸路段等定向科目的自主行驶。整车外形尺寸为 29.7cm×5cm×7cm。
+
+图 1.1 模型车系统总体框图
+1.3 报告组织说明
+本报告按照竞赛技术报告要求编写，各章节安排如下：
+第二章介绍模型车设计制作的总体思路与技术方案概要；
+第三章介绍机械部分安装改造、传感器设计安装及电路板固定连接；
+第四章介绍电路设计说明；
+第五章介绍微处理器控制软件的主要理论、算法及代码设计；
+第六章介绍开发工具、制作、安装与调试过程；
+第七章列出模型车主要技术参数；
+第八章为结论；参考文献与附录分别给出引用文献、原理图及核心源代码。
+
+
+第二章 模型车总体设计
+2.1 总体设计思路
+本队单车定向组模型车以 N1 车模为平台，遵循模块化、可靠性等设计原则的总体设计思路，将整车划分为机械结构、动力系统、传感系统、控制系统、供电系统五大子系统，各子系统独立设计、联调集成。
+整车采用“双 MCU”分层控制架构：上层由 TC377 主控完成传感器数据采集、赛道信息处理与运动控制决策；下层由 CYT2BL3 驱动芯片完成无刷电机驱动与状态监测，两层之间通过 UART3（波特率 460800bps）进行数据交互，降低主控负载、提高控制实时性。
+2.2 系统总体结构
+模型车系统总体框图如图 2.1 所示，由电源模块、传感模块（IMU660RB 姿态传感器、无刷驱动板转速反馈）、主控模块（TC377）、驱动模块（CYT2BL3）及执行机构（无刷电机、BDS300 舵机）组成。
+
+图 2.1 模型车系统总体结构框图
+2.3 关键技术方案选型
+表 2.1 关键技术方案选型
+主控方面，对比了 TC377 与 CYT2BL3 双 MCU 方案与单 MCU 方案：双 MCU 可将电机实时驱动从主控中解耦，保证姿态解算与导航算法的实时性；转向采用 BDS300 舵机，响应快、控制线性；速度反馈采用无刷驱动板串口回传，简化布线且精度满足闭环需求；姿态采用 IMU660RB，1kHz 采样满足 200Hz 四元数 EKF 融合需求。
+
+第三章 机械部分
+3.1 N1 车模平台介绍
+本队选用竞赛指定 N1 车模作为平台，整车外形尺寸（含传感器）为 L×W×H = 29.7cm×5cm×7cm，采用后轮驱动、舵机转向的机械结构。后轮驱动电机为原车模电机，轮胎为原车同款轮胎，未更换机械元器件。
+
+图 3.1 N1 车模实物照片
+3.2 机械改造
+根据单车定向组的赛道与任务要求，本队对车模进行了以下机械调整：
+本队利用 3D 打印技术制作了车模底部护板、舵机保护壳、传感器支架等保护结构，并通过对电池、主控板及传感器安装位置的合理布局，降低了整车重心，提高了高速行驶与过弯稳定性。
+车轮轴距、轮距未改装；驱动轮传动机构未改装；未更换原装机械元器件。
+改造后整车重心明显降低，直线行驶与过弯稳定性显著提升，保护结构有效降低了跌落与碰撞对硬件的损伤。
+3.3 传感器安装设计
+3.3.1 磁编码器安装
+磁编码器（自制板，TLE5012B）安装于车轮处，用于车轮角度测量（整车转速闭环由无刷驱动板串口反馈实现，见 5.2.1），安装时保证磁钢与芯片的同轴度与间隙满足数据手册要求，并通过 3D 打印支架固定，防止高速振动下移位。
+
+图 3.2 磁编码器安装示意图
+3.3.2 姿态传感器安装
+IMU660RB 姿态传感器固定于小车中央上方，使其坐标轴与车体坐标轴对齐一致，便于姿态解算与坐标系变换。
+
+图 3.3 姿态传感器安装位置示意图
+
+
+
+第四章 电路设计说明
+4.1 电路总体结构
+整车电路由 3 块自制电路板构成，其功能与分工如下：
+表 4.1 自制电路板功能划分
+4.2 主板电路设计
+主板为整车控制核心，主要包含以下功能模块：
+4.2.1 电源管理
+电池输入 11.1V（3S 锂电池）经 HY19P03 P-MOS 电源开关后分为多路；
+STC2450C3 降压电路输出 5V，为屏幕、遥控器等外设供电；
+RT9013-33 LDO 输出 3.3V，为 MCU 及逻辑电路供电；
+舵机电源（VCCSTEER）独立供电。
+4.2.2 功能接口
+屏幕接口（8×2 排针）：用于 OLED/液晶屏显示调试信息；
+姿态传感器接口：连接 IMU660RB；
+蓝牙串口模块接口（预留，比赛时未使用）；
+遥控器接口：用于发车/调试控制；
+蜂鸣器、按键（复位/功能键）及电压监测（BATADC）等。
+图 4.2 主板PCB图（详细原理图见附录 A）
+4.3 无刷单驱驱动板电路设计
+驱动板以 CYT2BL3 为驱动控制核心，接收主控下发的电机控制指令（PWM 信号），通过 FD6288Q 三相栅极驱动器驱动 6 颗 TPN2R703NL N-MOS 构成的三相桥电路，实现无刷电机驱动。
+电源：RY9121E 降压产生 5V/3.3V 供驱动逻辑与栅极驱动使用；
+PWM输入：PWM1AH/PWM1AL、PWM1BH/PWM1BL、PWM1CH/PWM1CL 六路互补 PWM；
+监测：BATADC 电压监测、LED/KEY 状态指示与调试接口（UART、SWD）；
+晶振：16MHz 无源晶振提供系统时钟。
+图 4.3 无刷单驱驱动板PCB图（详细原理图见附录 A）
+4.4 磁编码器板电路设计
+磁编码器板基于 TLE5012B 角度传感器芯片，通过 SPI 接口（SCK、CS、MOSI、MISO）输出 360°绝对角度数据。板上由 RT9013-33 将 5V 转换为 3.3V 供芯片使用，并预留 IFA/IFB 增量输出接口（未使用）；该板未接入整车转速闭环，转速由无刷驱动板经 UART3 回传（见 5.2.1）。
+                           
+图 4.4 磁编码器板PCB图（详细原理图见附录 A）
+
+
+
+第五章 微处理器控制软件设计
+5.1 软件总体框架
+控制软件采用前后台裸机架构，基于 TC377 三核处理器与定时器中断实现实时调度，整体分为驱动层、算法层与应用层：驱动层完成 IMU660RB 采集、无刷驱动板串口通信（UART3，460800bps）、舵机 PWM 及按键/蜂鸣器/屏幕/Flash 等外设的初始化与收发；算法层完成传感器滤波与姿态解算（IIR、一维卡尔曼、四元数 EKF）、速度与位置估计、平衡/速度/方向串级 PID 控制及 B 样条路径规划[4]与纯跟踪转向误差计算；应用层完成三核任务调度、科目状态机管理与菜单调试界面。任务调度上，CPU0 运行主循环与菜单，CPU2 按科目切换调度导航与状态机，PIT 中断按 1ms/5ms 周期执行姿态解算、平衡控制、速度环与位置递推，UART 中断完成驱动板通信，保证控制实时性。
+
+图 5.1 软件总体框架图
+5.2 传感器数据处理
+5.2.1 轮速数据采集
+整车速度反馈由无刷驱动板（CYT2BL3）通过 UART3 串口回传，通信波特率 460800bps，采用 7 字节自定义帧（帧头 0xA5、命令码、数据、校验和＝前 6 字节累加）。主控下发 0x01 命令设置左右轮占空比（范围 −10000～10000），下发 0x02 命令查询实时转速，驱动板以 0x02 应答帧回传左右轮转速（int16 大端）。接收中断中逐字节组帧校验，解析出的转速存入 motor_value 结构体。软件以 5ms 周期调用 Calculate_Encoder()：取负号得到后轮转速，经二阶 IIR 低通滤波（截止 25Hz）后按 V＝N/60×π×D×k（D＝0.07m 轮径，k 为校正系数）换算为实际车速（m/s），作为速度环反馈量；上电阶段每 2s 查询一次转速直至通信建立。
+关键代码（核心函数）：
+/* Encorder.c — Calculate_Encoder() 速度换算核心 */
+void Calculate_Encoder(void)
+{
+    Back_Wheel.new_encoder = -motor_value.receive_left_speed_data;      /* 驱动板转速 */
+    Back_Wheel.new_encoder = LowPassFilterIIR2nd_all(&filter,
+                              Back_Wheel.new_encoder, 200, 25);          /* IIR(25Hz) */
+    /* 转速(rpm) → 车速(m/s)：V = N/60 * π * D * k */
+    Back_Wheel.Velocity = (float)Back_Wheel.new_encoder / 60.0f *
+                          BACK_WhEEL_DIAMETER * PI * Back_Wheel.correct_speed_k;
+    Back_Wheel.Target_Velocity = BackSpeed_Pid.target[NOW];
+}
+/* small_driver_uart_control.c — 驱动板通信帧（UART3 @460800） */
+/* 7 字节帧：[0xA5][命令码][数据x4][校验和]，命令码 0x01 设占空比、0x02 查转速 */
+void small_driver_set_duty(int16 left_duty, int16 right_duty)
+{
+    motor_value.send_data_buffer[0] = 0xA5;
+    motor_value.send_data_buffer[1] = 0x01;                              /* 设占空比 */
+    motor_value.send_data_buffer[2] = (uint8)((left_duty & 0xFF00) >> 8);
+    motor_value.send_data_buffer[3] = (uint8)(left_duty & 0x00FF);
+    motor_value.send_data_buffer[4] = (uint8)((right_duty & 0xFF00) >> 8);
+    motor_value.send_data_buffer[5] = (uint8)(right_duty & 0x00FF);
+    motor_value.send_data_buffer[6] = 0;
+    for (int i = 0; i < 6; i++)                                          /* 校验和 */
+        motor_value.send_data_buffer[6] += motor_value.send_data_buffer[i];
+    uart_write_buffer(SMALL_DRIVER_UART, motor_value.send_data_buffer, 7);
+}
+5.2.2 姿态解算
+姿态传感器采用 IMU660RB（量程 ±2000°/s、±8g），以 1kHz 采样。解算流程为：首先由 Get_Gyro_Offest() 在静止状态下采集 4096 点完成陀螺零偏与重力模长标定；陀螺数据经二阶巴特沃斯 IIR 低通（截止 8Hz，按运行状态自适应调整）滤波，加速度数据经一维卡尔曼（R＝0.543）平滑；随后以 200Hz 周期调用 IMU_QuaternionEKF_Update()，采用含四元数与陀螺零偏共 6 维状态量的扩展卡尔曼滤波（EKF）[2]，以加速度计三轴为观测，并引入卡方检验与渐消因子（λ＝0.9996）[5]，输出车体 Roll/Pitch/Yaw 角度及角速度，同时解算世界系去重力加速度供位置估计使用。
+关键代码（核心函数）：
+/* Attitude.c — Attitude_Calculate() 滤波与 EKF 调用核心 */
+void Attitude_Calculate(void)
+{
+    static uint8 counts_imu = 0;
+    imu660rb_get_gyro();
+    imu660rb_get_acc();
+
+    /* 陀螺：减零偏 → IIR 低通 → 转 rad/s */
+    IMU_Data.Gyro_x = -get_iir_output(pFilter_Param_Gx,
+        imu660rb_gyro_transition((float)imu660rb_gyro_x) - IMU_Data.Gyro_Offestx) * 0.01745329f;
+    IMU_Data.Gyro_y = -get_iir_output(pFilter_Param_Gy,
+        imu660rb_gyro_transition((float)imu660rb_gyro_y) - IMU_Data.Gyro_Offesty) * 0.01745329f;
+    IMU_Data.Gyro_z =  get_iir_output(pFilter_Param_Gz,
+        imu660rb_gyro_transition((float)imu660rb_gyro_z) - IMU_Data.Gyro_Offestz) * 0.01745329f;
+
+    /* 加速度：一维卡尔曼平滑 */
+    IMU_Data.Accel_x = -Com_Kalman_Filter(&kf_acc[0], imu660rb_acc_transition((float)imu660rb_acc_x));
+    IMU_Data.Accel_y = -Com_Kalman_Filter(&kf_acc[1], imu660rb_acc_transition((float)imu660rb_acc_y));
+    IMU_Data.Accel_z =  Com_Kalman_Filter(&kf_acc[2], imu660rb_acc_transition((float)imu660rb_acc_z));
+
+    /* 200Hz 四元数 EKF 融合 */
+    if (++counts_imu % 5 == 0)
+    {
+        counts_imu = 0;
+        IMU_QuaternionEKF_Update(IMU_Data.Gyro_x, IMU_Data.Gyro_y, IMU_Data.Gyro_z,
+                                 IMU_Data.Accel_x, IMU_Data.Accel_y, IMU_Data.Accel_z);
+    }
+}
+/* QuaternionEKF.c — IMU_QuaternionEKF_Update() EKF 核心 */
+void IMU_QuaternionEKF_Update(float gx, float gy, float gz, float ax, float ay, float az)
+{
+    /* 状态转移 F：0.5*(Ω - 零偏)*dt（四元数运动学） */
+    QEKF_INS.Gyro[0] = gx - QEKF_INS.GyroBias[0];
+    QEKF_INS.Gyro[1] = gy - QEKF_INS.GyroBias[1];
+    QEKF_INS.Gyro[2] = gz - QEKF_INS.GyroBias[2];
+    memcpy(QEKF_INS.IMU_QuaternionEKF.F_data, IMU_QuaternionEKF_F,
+           sizeof(IMU_QuaternionEKF_F));
+
+    /* 加速度观测：归一化后作为量测 */
+    float inv = invSqrt(ax*ax + ay*ay + az*az);
+    QEKF_INS.IMU_QuaternionEKF.MeasuredVector[0] = ax * inv;
+    QEKF_INS.IMU_QuaternionEKF.MeasuredVector[1] = ay * inv;
+    QEKF_INS.IMU_QuaternionEKF.MeasuredVector[2] = az * inv;
+
+    /* 标准卡尔曼预测/更新 */
+    Kalman_Filter_Update(&QEKF_INS.IMU_QuaternionEKF);
+
+    /* 后验四元数 → Roll / Pitch / Yaw */
+    QEKF_INS.q[0] = QEKF_INS.IMU_QuaternionEKF.FilteredValue[0];
+    QEKF_INS.q[1] = QEKF_INS.IMU_QuaternionEKF.FilteredValue[1];
+    QEKF_INS.q[2] = QEKF_INS.IMU_QuaternionEKF.FilteredValue[2];
+    QEKF_INS.q[3] = QEKF_INS.IMU_QuaternionEKF.FilteredValue[3];
+    QEKF_INS.Roll  = 57.29578f * atan2f(2*(q[0]*q[2] - q[1]*q[3]),
+                            q[0]*q[0] - q[1]*q[1] - q[2]*q[2] + q[3]*q[3]);
+    QEKF_INS.Pitch = 57.29578f * atan2f(q[0]*q[1] + q[2]*q[3],
+                            0.5f - q[1]*q[1] - q[2]*q[2]);
+    QEKF_INS.Yaw   = -57.29578f * atan2f(q[1]*q[2] + q[0]*q[3],
+                            0.5f - q[2]*q[2] - q[3]*q[3]);
+    angle_handle_360(&QEKF_INS.Yaw);
+    QEKF_INS.Yaw -= QEKF_INS.Yaw_Bias;
+}
+5.3 电机控制
+后轮驱动采用原车模无刷电机，由 CYT2BL3 驱动板完成三相驱动。主控在 5ms 中断中执行 Back_Motor_Control()：速度环采用增量式 PID[3]（BackSpeed_Pid），以 Back_Wheel.Velocity 为反馈、按科目状态设定的目标速度为输入，计算电机占空比并做输出限幅（±5000）与积分限幅，经电机死区补偿后通过串口下发 small_driver_set_duty(Motor_Out, 0)。目标速度经 Dynamic_Speed_Target_Handler() 斜坡平滑，防止加减速冲击；坡道等特殊路段按车体 Pitch 分段降速。
+关键代码（核心函数）：
+/* Control.c — Back_Motor_Control() 速度环核心 */
+void Back_Motor_Control(void)
+{
+    Dynamic_Speed_Target_Handler();      /* 目标速度斜坡平滑 */
+
+    /* 速度闭环：增量式 PID → 串口下发占空比 */
+    if (Back_Wheel.speed_get_flag == true && Bike_State == Run)
+    {
+        Motor_Out = PID_Calculate(&BackSpeed_Pid,
+                                  BackSpeed_Pid.target[NOW], Back_Wheel.Velocity);
+        small_driver_set_duty(Motor_Out, 0);
+    }
+    else
+    {
+        small_driver_set_duty(0, 0);
+    }
+}
+/* PID.c — PID_Calculate() 增量式核心 */
+float PID_Calculate(PID_TypeDef *pid, float target, float feedback)
+{
+    pid->feedback[NOW] = feedback;
+    pid->target[NOW]   = target;
+    pid->err[NOW]      = target - feedback;
+
+    if (pid->pid_mode == DELTA_PID)             /* 增量式（本车速度环） */
+    {
+        pid->delta_u = pid->Kp*(pid->err[NOW] - pid->err[LAST])
+                     + pid->Ki*pid->err[NOW]
+                     + pid->Kd*(pid->err[NOW] - 2*pid->err[LAST] + pid->err[LLAST]);
+        pid->delta_out = pid->last_delta_out + pid->delta_u;   /* 输出累加 */
+        abs_limit(&pid->delta_out, pid->MaxOutput);
+        pid->last_delta_out = pid->delta_out;
+    }
+    /* 位置式（平衡环）略 */
+    pid->err[LLAST] = pid->err[LAST];
+    pid->err[LAST]  = pid->err[NOW];
+    return pid->pid_mode == POSITION_PID ? pid->pos_out : pid->delta_out;
+}
+5.4 舵机控制
+转向采用 BDS300 舵机，PWM 频率 300Hz，通过 GetServoDuty() 完成角度—占空比换算（中位 SERVO_MID）。舵机控制融合于 Balance_Control()（1ms 中断）中：高速模式采用“角度环＋角速度环”串级 PD（角度环 5ms、角速度环 1ms），目标角度＝平衡零位＋动态补偿＋方向环输出，舵机输出 duty＝SERVO_MID−角速度环输出；低速模式采用增量式角度环与 Z 轴角速度环串联。转向控制由 Direction_Control() 依据转向误差计算方向 PD 输出，叠加至平衡角目标，实现“转向—倾倒—平衡恢复”的单车转向机理，并设置舵机最大角度限幅，避免猛打方向导致失稳。
+关键代码（核心函数）：
+/* Control.c — Balance_Control() 平衡环核心 */
+void Balance_Control(void)
+{
+    if (car_mode_switch_num == 1 && Bike_State == Run)   /* 高速动态平衡 */
+    {
+        /* 角度环 PD → 角速度环 PD 串级 */
+        PID_Calculate(&Dynamic_Balance_AnglePid,
+                      Balance_init_zero + dynamic_zero + Direction_Pid.pos_out, QEKF_INS.Roll);
+        PID_Calculate(&Dynamic_Balance_angular_velocityPid,
+                      Dynamic_Balance_AnglePid.pos_out, QEKF_INS.Gyro[1] * 57.29578f);
+        servo_input_duty = SERVO_MID - (int16)Dynamic_Balance_angular_velocityPid.pos_out;
+    }
+    /* 倾倒保护：|Roll| ≥ 40° 停车 */
+    if (abs(QEKF_INS.Roll) >= 40.0f) { Bike_State = Stop; return; }
+    if (Bike_State != Stop) pwm_set_duty(SERVO_PIN, servo_input_duty);
+}
+/* Servo.c — 角度-占空比换算 */
+/* 角度 → 占空比：duty = PWM_DUTY_MAX*(校准 + angle/90)/(1000/freq)，300Hz */
+uint16 GetServoDuty(float angle)
+{
+    return (uint16)((float)(PWM_DUTY_MAX * (global_servo_calibration + angle / 90.0f)) /
+                    (1000.0f / (float)SERVO_FREQ));
+}
+float GetServoAngle(uint16 duty)   /* 占空比 → 角度（调试用） */
+{
+    return (float)(90.0f * ((uint16)duty * (1000.0f / (float)SERVO_FREQ) /
+                    (float)PWM_DUTY_MAX - global_servo_calibration));
+}
+/* Control.c — Direction_Control() 方向环核心 */
+void Direction_Control(float turn_error)
+{
+    if (Bike_State == Run)
+    {
+        /* 按科目状态设置方向 PD 参数（查表，此处略） */
+        PID_Calculate(&Direction_Pid, turn_error, 0);   /* 方向 PD */
+        /* 输出 pos_out 叠加至平衡角目标，实现“转向—倾倒—平衡恢复” */
+    }
+    else if (Bike_State == Null)
+    {
+        Direction_Pid.pos_out = 0;
+    }
+}
+5.5 控制算法设计
+本车主要控制算法如下：
+速度环：根据科目任务设定的目标速度与无刷驱动板回传的实测速度之差进行增量式 PID 调节，输出电机占空比；
+转向环：根据惯导定位信息与 B 样条路径解算转向误差，采用方向 PD 控制输出舵机 PWM，并叠加至平衡角目标；
+其他算法：目标速度斜坡平滑、坡道分段降速、倾倒保护（|Roll|≥30°～40°自动停车）等。
+控制算法框图如图 5.2 所示。
+
+图 5.2 控制算法框图
+算法参数经临界比例法与试凑法整定，最终参数如下：平衡角度环（高速，位置式 PD）Kp＝4.5、Kd＝12；平衡角速度环（高速，位置式 PD）Kp＝1.2、Kd＝1.5；低速平衡角度环（增量式）Kp＝400、Ki＝25；Z 轴角速度环（增量式）Kp＝10、Ki＝2.5；速度环（高速段）Kp＝1000、Ki＝350、Kd＝4000，速度环（低速段）Kp＝2500、Ki＝350、Kd＝3000，输出限幅 ±5000；方向环 Kp/Kd 按科目状态分档，经 VOFA＋上位机/菜单在线整定，未固定列写具体数值。
+5.6 任务状态机
+整车运行状态分为 Null（待机）、Run_Wait（起步准备）、Run（运行）、Stop（停车）与 Remote（遥控，预留）。发车后经 Run_Wait 计数进入 Run；运行中当 |Roll|≥30°～40°（防倾倒）或到达终点判定时进入 Stop，回正后自动复位至 Null。各科目内部另有任务状态机：科目 1 为折返任务（发车区→前进直道→U 形弯折返→返回直道→终点，按行驶距离切换）；科目 2 为光导/慢速环线（沿跑道形闭合路径行驶，按位置分 12 段切换）；科目 3 为综合赛道（双层状态机：外层 12 种赛道元素排布，内层 10 个进度状态，弯道以延时计数判完成）。状态切换条件与保护逻辑如图 5.3 所示。
+
+图 5.3 整车运行状态机
+
+第六章 开发工具、制作与调试
+6.1 开发工具
+表 6.1 开发工具清单
+6.2 制作与安装
+电路板由嘉立创 EDA 绘制并委托贴片焊接，传感器支架及部分结构件采用 3D 打印制作。整车组装按“驱动板→电机→主控→传感器→线束”顺序进行：先将无刷单驱驱动板就近固定于驱动电机附近以缩短功率走线，再安装主控板与 IMU660RB，最后布置并扎带固定线束，避免运动过程中线束松动或干涉传动机构。注意事项：组装完成后先检查电源正负极与各级电压，再上电调试；传感器安装保证同轴度与间隙满足数据手册要求。
+6.3 硬件调试
+电源调试：上电后检查 11.1V/5V/3.3V 各路电压正常、纹波满足要求；
+通信调试：通过 UART/SPI 读取传感器原始数据，验证通信时序正确；
+驱动调试：空载下验证三相桥输出与电机换相逻辑，逐步加载验证电流保护。
+6.4 软件调试与参数整定
+软件调试遵循“先开环后闭环、先平衡环后速度环再转向环”的顺序：先通过菜单/上位机确认传感器数据正确，再按临界比例法整定平衡环，随后由低速到高速分档整定速度环，最后按科目状态逐段整定转向环。参数可通过 VOFA＋ 上位机在线修改（P<key><数值>! 命令）并经菜单页写入 Flash，实现快速迭代。
+6.5 整车联调与问题解决
+在整车上电与各科目联调过程中，遇到并解决了若干问题，如表 6.2 所示。
+表 6.2 调试问题与解决记录
+
+第七章 模型车主要技术参数
+模型车主要技术参数如表 7.1 所示。
+表 7.1 模型车主要技术参数
+
+第八章 结论
+本队以 N1 车模为平台，完成了第二十一届全国大学生智能汽车竞赛单车定向组模型车的设计、制作与调试。整车采用 TC377＋CYT2BL3 双 MCU 架构，以 IMU660RB 姿态传感器与无刷驱动板转速反馈完成运动状态感知，以 BDS300 舵机完成转向控制，实现了自平衡骑行与各科目定向任务的自主行驶。
+通过本次竞赛，本队队员在机械设计、电路设计、嵌入式软件开发、算法调试等方面得到了充分锻炼。模型车在调试过程中仍存在高速行驶稳定性、控制算法鲁棒性等方面的问题，后续可从控制参数自适应优化、结构轻量化等方面进一步改进。
+软件方面，团队完成了四元数 EKF 姿态解算、串级平衡 PID、增量式速度环与 B 样条＋纯跟踪定向导航的实现与整定，借助 VOFA＋ 上位机与菜单系统大幅提升了调参效率；通过比赛积累了丰富的嵌入式开发与闭环调试经验。
+
+参考文献
+[1] 卓晴, 黄开胜, 邵贝贝. 学做智能车——挑战“飞思卡尔”杯[M]. 北京: 北京航空航天大学出版社, 2007.
+[2] 秦永元, 张洪钺, 汪叔华. 卡尔曼滤波与组合导航原理[M]. 2版. 西安: 西北工业大学出版社, 2012.
+[3] 刘金琨. 先进PID控制MATLAB仿真[M]. 4版. 北京: 电子工业出版社, 2016.
+[4] 施法中. 计算机辅助几何设计与非均匀有理B样条(CAGD & NURBS)[M]. 北京: 北京航空航天大学出版社, 1994.
+[5] MADGWICK S O H, HARRISON A J L, VAIDYANATHAN R. Estimation of IMU and MARG orientation using a gradient descent algorithm[C]//2011 IEEE International Conference on Rehabilitation Robotics (ICORR). Zurich: IEEE, 2011: 1-7.
+
+附录
+附录 A 电路板详细设计原理图
+主板、无刷单驱驱动板、磁编码器板完整原理图如下。
+
+
+
+图 A-1 主板原理图
+
+
+图 A-2 无刷单驱驱动板原理图
+图 A-3 磁编码器板原理图
+附录 B 核心算法源代码
+以下给出本车核心算法的源代码：姿态解算、转速换算与平衡/速度/方向控制代码见正文 5.2～5.4 节，此处补充定向导航与科目状态机的核心代码。
+/* Route_Process.c — find_lookahead_index() 纯跟踪预瞄 */
+void find_lookahead_index(void)
+{
+    /* 预瞄点：沿车航向前移 LOOKAHEAD_DISTANCE，前向窗口内找最近路径点 */
+    if (car_mode_switch_num == 1)
+    {
+        float pre_x = INS.Current_X + LOOKAHEAD_DISTANCE * sinf(QEKF_INS.Yaw * 0.01745329f);
+        float pre_y = INS.Current_Y + LOOKAHEAD_DISTANCE * cosf(QEKF_INS.Yaw * 0.01745329f);
+        uint16 end = INS.target_index + LOOKAHEAD_SEARCH_RANGE;
+        if (end >= GRAPH_NODE_TOTAL) end = GRAPH_NODE_TOTAL - 1;
+
+        float min_dist = 1e6f, closest = INS.target_index;
+        for (uint16 i = INS.target_index; i <= end; i += 2)
+        {
+            float dx = GlobalGraph.nodeBuff[i].X - pre_x;
+            float dy = GlobalGraph.nodeBuff[i].Y - pre_y;
+            float d  = dx*dx + dy*dy;
+            if (d < min_dist) { min_dist = d; closest = i; }
+        }
+        INS.target_index = closest;
+    }
+    /* 终点判定：路径末段且回到起点附近 → 停车 */
+    if (INS.target_index >= GRAPH_NODE_TOTAL - 10 && INS.Current_Y <= 0)
+        Bike_State = Stop;
+}
+/* Route_Process.c — angle_diff1() 角度差归一化 */
+float angle_diff1(float angle1, float angle2)   /* 角度差归一化 [-180,180) */
+{
+    float diff = angle1 - angle2;
+    while (diff > 180.0f)  diff -= 360.0f;
+    while (diff < -180.0f) diff += 360.0f;
+    return diff;
+}
+/* Route_Process.c — Calculate_Direction_Error() 转向误差合成 */
+void Calculate_Direction_Error(void)
+{
+    /* 1. 目标点方位角 与 路径切线角 */
+    INS.Target_angle = RAD_TO_ANGLE(atan2(
+        GlobalGraph.nodeBuff[INS.target_index].X - INS.Current_X,
+        GlobalGraph.nodeBuff[INS.target_index].Y - INS.Current_Y));
+    uint16 far_idx = INS.target_index + LOOKAHEAD_SEARCH_RANGE * 0.4;
+    float path_dx = GlobalGraph.nodeBuff[far_idx].X - GlobalGraph.nodeBuff[INS.target_index].X;
+    float path_dy = GlobalGraph.nodeBuff[far_idx].Y - GlobalGraph.nodeBuff[INS.target_index].Y;
+    INS.Object_angle = RAD_TO_ANGLE(atan2f(path_dx, path_dy));
+
+    /* 2. 横向误差（叉积带符号） */
+    float dx = INS.Current_X - GlobalGraph.nodeBuff[INS.target_index].X;
+    float dy = INS.Current_Y - GlobalGraph.nodeBuff[INS.target_index].Y;
+    float len = sqrtf(path_dx*path_dx + path_dy*path_dy);
+    INS.Target_distance = -(dx * (path_dy/len) - dy * (path_dx/len));
+
+    /* 3. 斯坦利反馈项 + 合成转向误差 */
+    INS.cal_angle_error_2 = angle_diff1(INS.Object_angle, QEKF_INS.Yaw);
+    float vel = fabsf(Back_Wheel.Velocity) < 0.2f ? 0.2f : fabsf(Back_Wheel.Velocity);
+    float distance_error = atan2f(turn_dynamic_gain * fabsf(INS.Target_distance), vel) * 57.29578f;
+    if (INS.Target_distance < 0) distance_error = -distance_error;
+    INS.turn_error = INS.cal_angle_error_2 + distance_error;
+}
+/* Subject1.c — Subject1_State_Change() 折返任务状态机 */
+void Subject1_State_Change(void)
+{
+    switch (Subject1_Data.state)
+    {
+    case START_ZONE:       /* 发车区 → 直道 */
+        if (INS.Current_Y >= Subject1_Data.start_zone_to_straight_change_diatance)
+            Subject1_Data.state = FOWARD_STRAIGHT;
+        break;
+    case FOWARD_STRAIGHT:  /* 直道 → U 弯道 */
+        if (Subject1_YArray[9-1] - INS.Current_Y <=
+            Subject1_Data.straight_to_wandao_change_diatance)
+            Subject1_Data.state = U_WANGDAO;
+        break;
+    case U_WANGDAO:        /* 掉头完成且回正 → 返回直道，截断后方路径 */
+        if (Subject1_Data.U_turn_state == 1 &&
+            fabs(QEKF_INS.Roll) <= Subject1_Data.wandao_to_straight_roll_target)
+        {
+            Subject1_Data.state = BACK_STRAIGHT;
+            for (uint16 i = INS.target_index; i <= GRAPH_NODE_TOTAL - 1; i++)
+                GlobalGraph.nodeBuff[i].X = INS.Current_X;
+        }
+        break;
+    }
+}
+
+===== TABLE 1 =====
+术语 | 说明
+N1 车模 | 竞赛指定车模平台，后轮驱动、舵机转向的自平衡单车
+BDS300 | 转向舵机，300Hz PWM 驱动，角度与占空比线性换算
+TLE5012B | 磁编码器芯片（SPI 接口，360°绝对角度，模板硬件方案）；本车转速闭环由无刷驱动板经 UART3 回传实现（见 5.2.1）
+IMU660RB | 六轴姿态传感器（陀螺仪＋加速度计），量程 ±2000°/s、±8g，1kHz 采样
+TC377 | 英飞凌 AURIX TriCore 三核主控芯片，主频 300MHz，负责姿态解算与控制决策
+CYT2BL3 | 无刷驱动板 MCU，完成三相驱动与转速回传，与主控经 UART 通信
+SPI / PWM / ADC / UART | SPI：外设/IMU 接口；PWM：舵机（300Hz）与电机控制；UART：与无刷驱动板通信（460800bps）；ADC：电压监测
+PID | 比例-积分-微分控制算法，用于平衡、速度、方向等闭环控制
+
+===== TABLE 2 =====
+子系统 | 方案 | 选型说明
+主控芯片 | TC377 | 三核 300MHz，外设资源丰富、算力充足，满足四元数 EKF 姿态解算、B 样条路径规划与多环控制的实时性要求
+驱动芯片 | CYT2BL3 | 与主控经 UART3（460800bps）通信，内部完成三相换相与转速回传，主控仅需下发占空比即可完成电机闭环，降低主控负载
+转向舵机 | BDS300 | 响应快、扭矩满足转向需求，300Hz PWM 驱动，角度—占空比线性换算便于控制
+驱动电机 | 原车模无刷电机 | 保留原车电机，未作改动
+轮速传感器 | 无刷驱动板（CYT2BL3）UART3 回传 | 驱动板内置转速反馈经 UART3（460800bps）回传，软件 IIR 滤波后换算为车速（见 5.2.1）
+姿态传感器 | IMU660RB | 六轴，量程 ±2000°/s、±8g，1kHz 采样，满足 200Hz 四元数 EKF 融合需求
+电池 | 3S 锂电池 1650mAh 11.1V 25C | 为整车提供 11.1V 主电源
+
+===== TABLE 3 =====
+电路板 | 主要功能 | 关键器件
+主板 | 主控核心、电源转换、传感器与功能接口 | TC377 核心板座、STC2450、RT9013-33、HY19P03
+无刷单驱驱动板 | 无刷电机三相驱动、电机电流/电压监测 | CYT2BL3、FD6288Q、TPN2R703NL×6、RY9121E
+磁编码器板 | 车轮角度测量（转速闭环由驱动板反馈，见 5.2.1） | TLE5012B、RT9013-33
+
+===== TABLE 4 =====
+类别 | 工具/软件 | 用途
+原理图/PCB 设计 | 嘉立创 EDA | 电路板原理图与 PCB 绘制
+软件开发 | AURIX Development Studio（ADS v1.10.2）＋ TASKING TriCore C 编译器 | TC377 与 CYT2BL3 程序编写与编译
+程序下载调试 | TriCore DAP miniWiggler 调试器（ADS 在线调试/烧录） | 在线调试与程序烧录
+调试上位机 | VOFA＋ 上位机（自研 JustFloat 数据封装，备用） | 数据监视与参数整定
+机械加工 | 3D 打印机 | 传感器支架等结构件制作
+
+===== TABLE 5 =====
+序号 | 问题现象 | 原因分析 | 解决方案
+1 | 上电后车体无法保持平衡，向一侧倾倒 | 平衡角度零位或 PID 极性不正确，陀螺零偏未标定 | 重新标定陀螺零偏，核对角度符号与舵机转向极性，调整平衡零位 Balance_init_zero
+2 | 高速直行时速度环振荡、电机出现“哒哒”异响 | 速度环 Kp/Kd 偏大，转速反馈滤波不足 | 降低速度环 Kp/Kd，增大转速 IIR 低通滤波强度，检查占空比输出限幅
+3 | 弯道掉头时转向不足或甩尾 | 方向环输出受限、预瞄距离不匹配、转向目标平滑时间过短 | 分段整定方向环 Kp/Kd，调整预瞄距离与搜索范围，增大转向目标平滑时间
+
+===== TABLE 6 =====
+项目 | 参数
+车模类型 | N1 车模
+整车尺寸（含传感器） | L×W×H = 29.7cm × 5cm × 7cm
+电池 | 3S 锂电池 1650mAh 11.1V 25C（1 块）
+微处理器 | TC377（主控）、CYT2BL3（驱动），共 2 个
+其他可编程器件 | 无
+传感器种类与个数 | IMU660RB 六轴姿态传感器×1；磁编码器（TLE5012B）×1；转速闭环由无刷驱动板（CYT2BL3）串口反馈
+成品传感器模块（自带 MCU） | 无
+伺服电机个数（除驱动电机、舵机外） | 无
+转向舵机 | BDS300（未改装，防伪易损标签完整）
+驱动电机 | 原车模电机（防伪易损标签完整）
+轮胎 | 原车同款轮胎，尺寸未增大
+赛道信息检测精度/频率 | 姿态解算 200Hz、速度环 200Hz、位置航位推算 200Hz（5ms 周期）
+无线通讯装置 | 无
+GPS 导航 / RTK | 无

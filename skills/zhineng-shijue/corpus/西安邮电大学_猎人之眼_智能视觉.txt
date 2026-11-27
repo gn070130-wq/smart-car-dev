@@ -1,0 +1,693 @@
+
+第二十一届全国大学生智能汽车
+竞赛技术报告
+
+（人工智能视觉组）
+
+
+
+
+
+
+参赛学校：西安邮电大学
+队伍名称：猎人之眼
+参赛队员：陈宇博、宫瑞瑶、郑仰月、吴明轩
+带队老师：亢红波、蔡秀梅
+
+
+
+
+
+关于技术报告以及研究论文使用授权的说明
+本人完全了解第二十一届全国大学生智能汽车竞赛组委会有关保留、使用技术报告以及研究论文的规定，即：参赛作品著作权归参赛者本人所有，全国大学生智能汽车竞赛组委会可以在相关主页上收录并公开参赛作品的设计方案、技术报告以及参赛模型车的视频、图像资料，并将相关内容编纂收录在组委会出版的论文集中。
+
+参赛队员签名：陈宇博	宫瑞瑶 郑仰月 吴明轩
+带队老师签名：亢红波 蔡秀梅
+日期：2026 年 8 月 18 日		         
+
+主要符号表
+附表  主要符号与缩略词说明
+
+第一章  引言
+1.1  竞赛背景与赛题概述
+全国大学生智能汽车竞赛是以智能汽车为研究对象的创意性科技竞赛，是面向全国大学生的一种具有探索性的工程实践活动。第二十一届竞赛人工智能视觉组的比赛形式在往届基础上发生了较大变化：参赛车模不再直接感知真实赛道，而是在约3.2m×2.4m的平面场地内自由运动，由比赛系统的全局摄像头通过车模顶部15cm高度处的AprilTag方位标识牌（TAG16H5系列）确定车模的位置与方向，再由上位机虚拟现实仿真系统将车模在虚拟游戏世界中的画面通过无线投屏显示在车载屏幕上。车模需要“看懂”屏幕中的虚拟游戏画面，完成推箱子（Sokoban）类游戏任务：将散布在地图中的箱子推至指定目的地，并可利用炸弹元素炸开围墙以缩短行进路线[1][2]。
+按照赛题细则，比赛按科目一至科目三顺序连续进行，难度梯度包含纯推箱子、按箱子上的图片分类推箱子等不同关卡；车模地面投影须在35cm×35cm范围内，主控限定使用NXP公司的MCU（推荐i.MX RT系列），图像处理平台限定使用基于NXP微控制器的OpenART、OpenART Plus等模块，车模须从组委会指定的成品车模（B、C、F、G、M、H、Y、Z型）中选择[1][3]。这一赛题形式将考察重点从传统的赛道循迹转向了“屏幕画面理解—全局地图构建—虚拟坐标定位—路径规划—精准运动控制”的完整链条，对车模的视觉感知能力、定位精度与运动控制精度提出了很高要求。
+1.2  设计目标与总体思路
+针对上述赛题特点，本队确定了如下的设计目标与技术路线：
+（1）底盘选型：推箱子任务要求车模能够在不转向的情况下横向对正箱子与目的地，因此选用逐飞科技M1麦克纳姆轮全向底盘（四轮麦克纳姆轮结构），配合四个RC380电机与自行安装的逐飞科技1024线带方向正交解码MINI增量式编码器，实现前后、左右、旋转三自由度解耦控制；
+（2）主控选型：选用逐飞科技i.MX RT1064[4]核心板（ARM Cortex-M7内核，600MHz主频），承担运动控制、姿态解算、里程计推算、推箱子路径规划与比赛状态机等全部实时计算任务；
+（3）视觉方案：采用双OPEN ART PLUS摄像头的分工协作方案——一块摄像头专用于观测车载屏幕，完成赛道（地图）元素识别并向主控回传车模在地图中的坐标，结合主控控制算法实现视觉辅助定位；另一块摄像头专用于前视识别，完成箱子图案与目的地数字的神经网络分类；
+（4）硬件自主设计：自行设计主控板（含多级电源、保护与时序控制电路）与四路DRV8701电机驱动板[5]，保证系统在3S锂电池供电下的可靠运行。
+1.3  报告内容安排
+本报告共分为七章。第一章为引言，概述赛题背景与总体思路；第二章介绍系统总体方案设计；第三章介绍机械结构设计与安装；第四章详细论述主控板与驱动板的硬件电路设计；第五章论述软件系统架构、通信协议、运动控制、姿态解算、视觉感知策略与推箱子规划算法；第六章介绍开发工具与调试过程；第七章给出车模主要技术参数；最后为结论、参考文献与附录（电路原理图与核心算法源程序）。本报告的结构与格式参照竞赛秘书处发布的技术报告内容与格式要求[10]编排。
+
+第二章  系统总体方案设计
+2.1  需求分析
+人工智能视觉组的比赛任务可分解为四个关键技术环节：其一，屏幕画面理解——车载屏幕以无线投屏方式显示虚拟游戏画面，车模须从画面中提取完整的14×10（16×12含外围墙）网格地图，识别墙体、箱子、目的地、炸弹与自身图标等元素；其二，自身定位——车模在场地中的真实运动与虚拟世界中的位置并不同步测量，须将屏幕中车模图标的坐标作为观测值，与车载里程计、惯性航向融合，实现高精度的地图坐标估计；其三，目标识别——科目二、科目三要求识别箱子表面的图案与目的地处的数字并建立对应关系；其四，运动执行——推箱子要求车模以厘米级精度停靠在箱子侧面并以恒定方向推动，任何航向漂移都会导致推箱失败。围绕这四个环节，本章给出系统的总体方案。
+2.2  系统组成
+整车系统由五部分组成：以RT1064核心板为核心的主控系统、以双OPEN ART PLUS为核心的视觉感知系统、以ICM42688[6]与四路正交编码器为核心的姿态与测速系统、以DRV8701四路全桥驱动为核心的动力执行系统，以及以3S锂电池与多级稳压为核心的电源系统。系统组成与信号流程如图2.1所示。
+
+图2.1  系统组成与信号流程图
+主控RT1064通过两路2Mbps高速串口（UART4/UART5）分别连接两块OPEN ART PLUS：UART5连接观测屏幕的“地图/位姿板”，请求完整地图与车模视觉坐标；UART4连接前视的“识别板”，请求箱子图案与目的地数字的分类结果。主控通过SPI4总线读取ICM42688六轴IMU进行姿态解算，通过四路QTIMER正交解码接口采集四个车轮的编码器脉冲实现测速与里程计推算。运动控制输出为四路17kHz PWM与方向信号，经SN74ALVC244缓冲后送至驱动板的四片DRV8701栅极驱动器，驱动四个RC380电机。按键、拨码开关、蜂鸣器与TFT180显示屏构成人机交互界面，无线串口模块用于调试数据的远程观测。
+整车外观如图2.2、图2.3所示。主控板与驱动板叠放于底盘中部，3S锂电池经固定架安置于屏幕支架后方，两块OPEN ART PLUS并装于车前上方的3D打印支架上，车载无线屏幕以一体化支架固定于车头，屏幕四周设有遮光帘以抑制环境光干扰。
+
+图2.2  车模外观
+
+图2.3  车模俯视图
+2.3  比赛工作流程
+车模的一次完整比赛流程如下：发车后主控驱动车模移出发车区，比赛系统随即在屏幕上加载虚拟地图；主控通过UART5向地图板发出地图请求（0x30），地图板对屏幕画面逐格分类后回传整张地图；主控据此规划观察路径，依次行驶至各观察点，通过UART4向识别板发出图案/数字识别请求（0x10/0x11），获得箱子图案编号与目的地数字；完成箱—目标匹配后，主控在16×12格地图上进行推箱子路径规划，依次执行推箱与炸墙动作；行进过程中，主控周期性地通过UART5请求车模视觉坐标（0x40），对编码器里程计进行闭环校正；全部任务完成后车模自动返回发车区。上述过程由主控内一个19状态的比赛状态机统一调度，详见第五章。整车比赛工作流程如图2.4所示。
+
+图2.4  比赛工作流程图
+
+第三章  机械结构设计与安装
+3.1  底盘选型与整车布局
+本队选用逐飞科技M1车模作为底盘。M1车模采用四轮麦克纳姆轮结构，四个车轮分别由RC380电机独立驱动，配合运动学逆解即可实现平面三自由度（前后、左右、原地旋转）的全向运动，非常契合推箱子任务中“横移对正—直线推箱—原地转向”的动作需求。为实现车轮测速与里程计推算，本队在四个车轮轴上自行安装了逐飞科技1024线带方向正交解码MINI增量式编码器（实物如图3.1所示），编码器A/B相输出直接接入主控板的正交解码接口。实测左右轮中心距D_x=180mm、前后轮中心距D_y=200mm，车轮直径60mm，上述尺寸作为运动学解算与里程计推算的基本参数写入控制程序。整车重心布置遵循“低、中、对称”原则：电池与驱动板等重部件贴近底盘平面，主控板居于车体中部，摄像头支架前伸，屏幕支架位于车头上方，使整车质心基本落于四轮几何中心附近，减小了加减速时的俯仰与横摆扰动。
+
+
+图3.1  逐飞科技1024线带方向正交解码MINI增量式编码器实物图
+3.2  双OPEN ART PLUS安装结构
+两块OPEN ART PLUS分别承担屏幕观测与前视识别任务，须以确定的空间位姿刚性固定。为此设计了3D打印的双摄支架：支架通过立柱抬高至屏幕上沿高度，使两块摄像头的视场分别覆盖屏幕画面与车前识别区域；支架与车体、摄像头与支架之间均采用螺栓紧固并辅以胶封，保证车辆加减速时摄像头位姿不发生变化——这对依赖固定标定参数的地图解算至关重要。支架的3D打印结构与装配实体分别如图3.2、图3.3所示。
+
+
+图3.2  ART PLUS固定架3D打印结构
+
+图3.3  双OPEN ART PLUS安装实体图
+
+3.3  屏幕与电池固定结构及遮光设计
+车载无线屏幕是车模感知虚拟世界的唯一窗口，其安装角度直接决定屏幕观测摄像头的成像质量。本队设计了屏幕与ART PLUS一体化支架：屏幕以固定倾角斜置于车头，观测摄像头光轴近似垂直于屏幕平面，减小透视畸变；支架下方同时集成3S锂电池固定仓，实现紧凑布局。支架的3D打印结构与实体装配如图3.4、图3.5所示。为抑制环境光在屏幕表面形成的反光与眩光，进一步设计了遮光帘结构：采用亚克力板与滑轨固定遮光帘，将屏幕四周包围，仅保留观测摄像头所需的通光窗口，如图3.6所示。实测遮光帘可显著提高屏幕画面LAB色域分类的稳定性，降低了地图识别因环境光变化产生的误判。
+
+图3.4  屏幕与ART PLUS一体化支架3D打印结构
+
+图3.5  屏幕与ART PLUS一体化支架实体图
+
+图3.6  屏幕遮光帘设计（亚克力板+滑轨）
+屏幕-电池固定支架的3D打印结构与实体如图3.7、图3.8所示。电池经支架约束后由扎带二次固定，保证激烈机动时不发生窜动；电源接插件（XT60）布置于车尾，便于快速更换电池。
+
+
+图3.7  屏幕-电池固定架3D打印结构
+
+图3.8  屏幕-电池固定支架实体图
+3.4  电路板固定与方位标识牌
+主控板与驱动板均通过铜柱架空固定于底盘上方，层间保留足够走线与散热空间；板间控制信号经XH2.54排线连接，动力线经KF301螺钉端子连接，均具有防呆与抗震能力。按照赛题要求，车模顶部须水平安装30cm×15cm的磁吸式方位标识牌（最高处15cm±0.5cm），两吸附磁铁中心间距20cm。本队自制了标识牌固定横杆与磁铁预装结构，标识牌经磁铁吸附后与车模无相对位移、不可转动，满足全局摄像头对车模位置与方向解算的要求[1]。
+
+第四章  硬件电路设计
+4.1  电源系统总体方案
+整车由3S锂聚合物电池（标称11.1V，满电12.6V）统一供电。用电负载分为三类：一是四路驱动电机，工作电流大、瞬态冲击强；二是RT1064核心板、OPEN ART PLUS摄像头、TFT屏幕等数字负载，对电压稳定性敏感；三是编码器、ICM42688等传感器，要求低噪声供电。为此采用“动力直通、数字稳压、传感隔离”的多级电源方案：电池电压经保护电路后直接作为12V动力母线送往驱动板；同时经DCDC降压至5V，再由LDO降至3.3V供给传感器与外设；摄像头供电经限流开关与磁珠滤波单独分配。电源分配与上电时序如图4.1所示。
+
+
+图4.1  电源分配与上电时序流程图
+4.2  主控板电路设计
+主控板采用逐飞科技RT1064核心板作为全车的控制核心。该核心板搭载NXP i.MX RT1064跨界处理器（ARM Cortex-M7内核，600MHz主频，片内4MB Flash，配合芯片内部1MB SRAM），其在整车系统中的关键作用体现在三个方面：其一，系统控制——运行比赛状态机与200Hz运动控制环，输出四路17kHzPWM与方向信号，经缓冲后驱动四路DRV8701全桥，控制四个RC380电机完成麦克纳姆轮全向运动；其二，数据采集——通过四路QTIMER正交解码通道硬件采集四个编码器的脉冲计数，经SPI4总线以24MHz时钟读取ICM42688六轴IMU，并经UART4/UART5两路2Mbps高速串口接收双OPEN ART PLUS回传的地图、位姿与目标分类结果；其三，数据处理——在片内实时完成Madgwick[7]姿态解算、编码器里程计推算、视觉/惯性多源定位融合以及推箱子路径搜索等全部运算，无需任何片外协处理器。
+主控板为100mm×64mm的四层板（顶层—内层1完整GND平面—内层2—底层），承载RT1064核心板及其全部外围电路。主控板顶层与底层PCB如图4.2、图4.3所示，下文按功能模块逐一说明，并给出对应的原理图截图；完整原理图见附录A。
+
+图4.2  主控板顶层PCB
+
+图4.3  主控板底层PCB
+4.2.1  输入保护与防反接电路
+电源引入电路如图4.4所示。电池输入经总电源开关U12后，首先由P沟道MOSFET IRFR5305（Q2）构成防反接开关：电池极性正确时体二极管先导通、栅源形成负偏使MOS管完全导通，导通压降仅数十毫伏，远小于串联二极管方案；电池反接时MOS管截止，后级电路得到保护，栅极经R30（100kΩ）下拉确定关断态。随后经F2自恢复保险丝（SMD1812封装，3A/24V）实现过流保护：过流或短路时保险丝呈高阻态切断回路，故障消失后自动恢复。母线上并联双向TVS二极管SMBJ15CA（钳位电压15V），吸收热插拔与电机回馈引起的浪涌尖峰，输入端并布置10µF与100nF滤波电容。该“P-MOS＋PTC＋TVS”链路实现了防反接、过流与过压的全方位防护。经保护后的+12V母线由电源引出电路分配（图4.5）：一路经开关U13与插座U4/U16送往驱动板作为动力电源，另设U14/U15两路5V调试取电口，便于外接调试设备。
+
+图4.4  电源引入保护电路原理图
+
+图4.5  电源引出电路原理图
+4.2.2  多级稳压电路（DCDC＋LDO）
+12V至5V的降压采用芯洲科技SCT2450同步整流DCDC变换器（U11），输入范围3.8~36V、最大输出电流5A，能够覆盖3S电池全电压范围并留足电流裕量，电路如图4.6所示。其外围按数据手册典型应用设计：输入端4只4.7µF陶瓷电容加100nF高频旁路，功率电感6.8µH，输出端2只47µF加1只330µF体电容以抑制电机启动造成的母线跌落；补偿网络34kΩ串联3.3nF，自举电容100nF，开关频率由RT/CLK引脚的200kΩ电阻设定，输出电压由52.5kΩ/10kΩ反馈分压网络确定为5V。
+
+图4.6  DCDC 12V→5V电路原理图
+5V至3.3V采用Richtek RT9013-33低压差线性稳压器（U8，LDO），电路如图4.7所示：输入电容1µF，输出端1µF陶瓷电容并联10µF体电容，为编码器、TFT显示屏、ICM42688等提供低纹波电源；LDO的使能脚EN由上电时序信号CR控制（见4.2.3节）。OPEN ART PLUS摄像头的5V供电经矽力杰SY6280限流配电开关单独分配为ART+5V，限流值由3.4kΩ设定电阻决定（约2A），并在两路摄像头插座前各串入BLM18SG121磁珠（120Ω@100MHz）抑制高频噪声沿电源线串扰。各电源轨均设有LED指示灯便于状态观察。
+
+
+图4.7  LDO 5V→3.3V电路原理图
+4.2.3  上电时序控制电路
+i.MX RT1064核心板具有特殊的上电特性：核心板上电自检完成前，其GPIO状态不确定，若外设（尤其是摄像头类负载）早于核心板就绪即上电，可能经IO反向灌流导致内核启动失败或外设误动作。为此核心板第9脚提供上电就绪信号CR：核心板启动完成后CR方输出有效电平。本设计将CR经R5（10kΩ）串联隔离后分为两路（图4.7、图4.8）：一路驱动3.3V LDO（RT9013）的使能脚EN，该脚另有R25（100kΩ）下拉，保证CR未有效前LDO可靠关断；另一路驱动摄像头配电开关SY6280的使能脚EN，控制ART+5V输出。由此形成“12V→5V→核心板启动→CR有效→3.3V与ART+5V开启”的严格上电顺序，彻底规避了RT1064上电时序敏感性问题，实测系统可百次上电可靠启动。
+
+图4.8  OPEN ART上电时序控制电路原理图
+4.2.4  人机交互电路
+人机交互电路如图4.9所示。按键模块包含4只轻触按键（SW1/SW2/SW7/SW8，TS-1101）与1只2位拨码开关（SW3），分别接至核心板B16/B17/B20/B21与B22/B23引脚，各串联100Ω电阻作限流缓冲，利用核心板内部上拉实现低电平有效检测；4只按键配合TFT菜单完成参数整定与发车控制，拨码开关用于比赛模式快速切换。蜂鸣器选用2.7kHz有源蜂鸣器（BUZZER2），由5V供电，B25引脚经R16（1kΩ）驱动三极管放大后推动，基极与发射极间并有R17（1kΩ）下拉电阻防止误触发，用于发车提示与状态报警。TFT180显示屏经8Pin排针（P2）与SPI3总线连接（图4.10）：B0(SCK)、B1(MOSI)、B2(RES)、B3(CS)、C18(DC)、C19(BL)，3.3V供电并有100nF去耦，SPI时钟40MHz，用于菜单显示与运行状态监视。
+
+
+图4.9  蜂鸣器、拨码与按键电路原理图
+
+图4.10  TFT显示屏接口电路原理图
+
+4.2.5  传感器接口电路
+（1）正交编码器接口：四个车轮均自行安装了逐飞科技1024线带方向正交解码MINI增量式编码器，其A/B相分别经插座U21~U24接入（图4.11），由3.3V供电并就近布置100nF去耦电容；左后轮接C0/C1（U21）、左前轮接C2/C24（U22）、右前轮接C3/C25（U23）、右后轮接B18/B19（U24），对应RT1064的QTIMER1/2/3正交解码通道，硬件四倍频计数，无需占用CPU资源。
+
+图4.11  四路正交编码器接口电路原理图
+（2）ICM42688陀螺仪接口：ICM42688模块经XH2.54-8P插座（CN3）挂载于SPI4总线（图4.12），引脚定义为C21(MISO)、C22(MOSI)、C23(SCK)、C20(CS)，另引出C26/C27备用，3.3V供电端布置100nF去耦，SPI时钟24MHz；模块固定于车体几何中心附近以减小杆臂效应（安装偏移已在软件中补偿）。板上另预留一路2.54mm间距6P SPI排针（B28~B31）作为扩展。
+
+图4.12  ICM42688陀螺仪接口电路原理图
+
+摄像头串口接口：与两块OPEN ART PLUS的通信接口采用XH2.54-4P插座（图4.13）。CN13对应UART4（MCU侧TX=C16、RX=C17），连接前视识别板；CN12对应UART5（MCU侧TX=C28、RX=C29），连接屏幕观测板；信号线各串100Ω电阻抑制振铃，供电为经磁珠（L2/L4）滤波的ART+5V。两路串口均运行于2Mbps波特率，配合帧头帧尾与CRC16校验保证视觉数据链路的可靠性。板上另有备用串口CN4（B26/B27）与无线串口模块插座H2（UART8：D16/D17，5V供电），后者用于调试阶段遥测数据回传。
+
+图4.13  双OPEN ART PLUS串口接口电路原理图
+4.2.6  电机控制信号缓冲电路
+主控板与驱动板分体设计，二者经排线互连。为增强PWM信号的带载能力与抗干扰能力，四路PWM（PWM1~PWM4，对应引脚D0/D14/D2/D12）与四路方向信号（G1~G4，对应D1/D15/D3/D13）先经SN74ALVC244八缓冲器（U27，3.3V供电、5V容限输入）整形后再经CN5/CN2插座送往驱动板（图4.14）。ALVC244的低输出阻抗有效抑制了长排线上的边沿退化，避免了电机换相噪声经控制线耦合回MCU。
+
+图4.14  PWM缓冲隔离电路原理图
+4.3  驱动板电路设计
+驱动板为65mm×55mm的双层板，基于德州仪器DRV8701栅极驱动器实现四路独立H桥有刷电机驱动，分别对应左前（LU）、右前（RU）、左后（LD）、右后（RD）四个车轮。单路驱动通道的原理图如图4.15所示（四路完全一致）。每路由一片DRV8701与四只东芝TPH1R403NL N沟道MOSFET（SOP-Advance封装，全板共16只）构成全桥。DRV8701内置电荷泵，可驱动高边N-MOS实现100%占空比输出，本设计在VCP与CPH/CPL引脚分别布置1µF储能电容与飞跨电容；IDRIVE引脚经33kΩ电阻设定栅极驱动电流，在开关损耗与EMI之间取得平衡。芯片采用PH/EN控制模式：EN接主控的17kHz PWM信号调节平均电压，PH接方向信号控制电流方向，与固件“1路PWM＋1路方向”的控制接口一一对应。四路的nSLEEP共接并由板上拨动开关统一控制，便于调试时单独切断动力输出；nFAULT、SO/SNSOUT等状态引脚在本设计中悬空（原理图标NC）。
+
+图4.15  单路DRV8701驱动通道原理图
+
+电源方面，3S电池经KF301-5.0接线端子（U7）进入驱动板形成VCC12V动力母线（图4.16），输入端布置330µF电解电容与100nF陶瓷电容吸收电机换相引起的母线波动；四路DRV8701的VM及MOS桥臂直接挂接VCC12V，电机端子采用KF301螺钉端子（LU/RU/LD/RD），控制输入经XH2.54-4P插座（CN1/CN2）与主控板对接。驱动板不做二次稳压，功率地与主控板单点连接，避免电机回路噪声污染信号地。驱动板顶层与底层PCB如图4.17、图4.18所示。
+
+图4.16  驱动板电源引入电路原理图
+
+图4.17  驱动板顶层PCB
+
+图4.18  驱动板底层PCB
+4.4  PCB设计要点
+主控板采用四层板设计，内层1为完整GND平面（图4.19），为高速SPI（24MHz）与2Mbps串口信号提供低阻抗回流路径；电源走线按电流大小加粗并覆铜，DCDC的SW节点面积尽量小以减少辐射；电机PWM信号经缓冲器后成对走线。驱动板功率回路遵循“短、粗、对称”原则，四路桥臂布局镜像对称，VM去耦电容紧贴芯片引脚，大电流路径全部加粗并铺铜露锡。两块板均预留测试点与丝印标注，便于焊接调试与故障排查。
+
+图4.19  主控板内层1（GND平面）
+
+第五章  软件系统设计与算法实现
+5.1  软件总体架构与任务调度
+主控软件基于逐飞SeekFree RT1064DVL6A开源库[8]开发，采用裸机前后台结构，主频配置为600MHz。后台主循环负责菜单交互与比赛总状态机调度；前台由两路周期中断构成确定性实时调度：PIT0周期5ms（200Hz），依次执行编码器采样与M法测速、车体系速度合成、里程计积分、路径跟踪/goto输出、麦克纳姆轮运动学逆解与四轮速度环PID；PIT1周期2ms（500Hz），执行IMU数据读取与Fusion AHRS姿态解算。串口接收采用“UART＋eDMA环形缓冲＋空闲线中断”的零拷贝方案，中断内仅完成DMA搬运事件登记，协议解析统一放在前台执行，保证了高波特率下控制环的实时性不受干扰。
+5.2  与双OPEN ART PLUS的串口通信协议
+主控与两块OPEN ART PLUS之间设计了统一的请求—响应式串口协议，两路均工作于2Mbps波特率。帧结构为：帧头0xA5 0x5A｜包类型PKT｜序号SEQ｜长度LEN｜负载PAYLOAD｜CRC16（CCITT，多项式0x1021，初值0xFFFF，覆盖PKT/SEQ/LEN/PAYLOAD，低字节在前）｜帧尾0xA6。请求与响应通过非零递增的SEQ匹配，接收侧逐字节重同步并校验帧尾与CRC，可抵抗任意字节级的错位与干扰。UART4（识别板，eDMA通道7、256B环形缓冲）承载图案/数字识别业务：请求0x10（箱型图案）/0x11（目标数字）/0x12/0x13（自动观察变体），响应0x20/0x21（分类编号0~9）、0x22（跳过）与0x2F（远端错误码：模型未就绪、置信度不足、无多数票等）；UART5（地图板，eDMA通道9、1024B环形缓冲）承载地图与位姿业务：请求0x30获取完整地图，响应0x31的负载为元素条目流，每条2字节（高4位类型：墙1/目标2/箱3/玩家4/炸弹5，低4位x坐标，第2字节y坐标），主控解析后自动补加外围一圈墙体构建16×12地图；请求0x40获取车模位姿，响应0x42为int16小端的x×100、y×100（单位0.01格）。该协议将命令字按功能分区（0x1x/0x2x归识别板，0x3x/0x4x归地图板），链路层完全一致，便于两块摄像头的软件复用与维护。
+
+5.3  运动控制：麦轮运动学与速度环
+底盘四个麦轮由四路17kHz PWM独立驱动（占空比上限6000），控制周期5ms。编码器采用QTIMER硬件正交解码（四倍频），每5ms读数清零作M法测速；比例系数按轮径60mm、编码器每电机转1024计数、传动比70/30标定为0.0789mm/count，速度以mm/s为单位进入闭环。
+麦克纳姆轮运动学逆解按车体速度(vx, vy, ω)合成四轮目标速度：记k=(D_x+D_y)/2=190mm，则v_LF=vx−vy−kω，v_RF=vx+vy+kω，v_LR=vx+vy−kω，v_RR=vx−vy+kω（车体前为+vx、左为+vy、逆时针为+ω，ω由deg/s换算为rad/s后参与运算）。针对麦轮横移时普遍存在的前向耦合偏移，软件按横移方向与行程档位（短≤4格/中≤6格/长段）叠加前馈补偿系数；针对快速转向时的轮速饱和问题，在逆解后叠加“陀螺轮速阻尼”——按实测角速度对各轮目标速度施加抑制（增益K=3.20，上限2060，死区0.8dps），原地转向或|ω|>40deg/s时自动让出，显著改善了转向过程中的轨迹保持能力。
+速度环采用增量式PID：Δu=Kp·(e0−e1)+Ki·e0+Kd·(e0−2e1+e2)，四轮同参Kp=3.9、Ki=0.35、Kd=0，输出限幅±6000，单周期积分增量限幅6000以防积分风暴。航向控制采用位置式PID（Kp=6.5、Ki=0.035、Kd=0，输出上限1400deg/s，误差死区0.45°），配合0.12°的转向完成死区，实现了原地转向亚度级的停车精度。
+5.4  ICM42688姿态解算与零漂抑制
+IMU选用TDK ICM42688六轴传感器（SPI4，24MHz，突发读取14字节），配置陀螺量程±2000dps、加速度量程±8g、输出数据率1000Hz并启用二阶低通滤波。姿态解算采用xio Fusion AHRS算法（无磁力计模式），以2ms周期更新四元数，增益0.5、加速度拒绝角10°、拒绝超时5s；上电时以加速度计解算初始姿态。由于偏航角缺乏绝对观测，零漂抑制成为关键：上电静态标定采集1000个样本（约2s）估计陀螺与加速度零偏；运行期进行静止检测（陀螺变化<0.35dps且绝对值<1.5dps、加速度变化<0.08g且模长在1g±0.12内、持续0.35s），判静止后以α=0.004的低通系数在线更新零偏；陀螺z轴设0.25dps死区，并引入运动漂移前馈（实测约0.1875°/150s，上限0.10dps，1s缓启）。此外软件预留外部航向注入接口，可将视觉解算的航向写入AHRS，进一步压制长时间漂移。经上述处理，连续运行数分钟的偏航漂移可控制在比赛容许范围内。
+5.5  双OPEN ART PLUS视觉感知策略
+视觉系统是整车感知能力的核心。本队没有采用“单摄像头分时复用”的常规做法，而是设计了双OPEN ART PLUS分工协作方案：一块摄像头专用于赛道（地图）元素识别并向主控回传目标（车模）坐标，结合主控控制算法进行视觉辅助定位；另一块摄像头专用于箱子图案与目的地数字的分类识别。两板并行工作、互不阻塞，主控经两路独立2Mbps串口按需索取结果。视觉感知与定位流程如图5.1所示。
+
+图5.1  双OPEN ART PLUS视觉感知与定位流程图
+5.5.1  屏幕观测板（FullMap）：地图识别与位姿解算
+该板以固定机位观测车载屏幕，采集VGA（640×480）RGB565图像、锁定60fps帧率，关闭自动增益与自动白平衡以保证颜色阈值稳定，并施加0.65强度的镜头畸变校正。地图识别的基本坐标系由屏幕四角点定义：四角点初值经OpenMV IDE[9]手动标定，每次识别时再沿画面四边按“蓝色场地/灰墙”颜色交界自动精修（跨5帧取候选四边形中位数），据此解析求解8参数单应性矩阵，实现像素平面到地图平面的双向映射（等价于AprilTag四角方案的标签平面坐标，但无需在屏幕上附加任何标记）。
+地图元素识别不依赖色块连通域搜索，而是采用逐格多点采样投票策略：将画面映射为14×10网格，每格按3×3采样点取5×5邻域的LAB均值，依据标定的LAB阈值（黄箱、紫目标、灰墙、炸弹、蓝色场地）逐点分类后多数投票——一般格最少2票、墙格最少4票方可确认，有效抑制了屏幕摩尔纹、反光与投屏抖动造成的误判；连续2帧地图内容一致才认为识别稳定，随即按0x31协议回传整张地图。
+车模位姿解算用于向主控回传车模在地图中的坐标：程序以两组LAB阈值分别锁定屏幕上代表车模的蓝/青与绿色标记块，find_blobs粗定位后在外接矩形内逐像素重算质心，并以双色块几何成对约束（间距7~24像素、面积比不超过3）剔除误检；取两色块连线中点为车心、连线方向为车头朝向。像素坐标经单应性逆变换映射为地图坐标（原点取地图左下角，1格=100单位，坐标范围x∈[0,1400]、y∈[0,1000]，y轴翻转），再经单帧跳变限幅与7帧稳定观测后按0x42协议回传，分辨率0.01格（合2mm）。
+5.5.2  前视识别板（Realize）：图案与数字分类
+该板随车移动，到观察位后对准箱子或目的地采集QVGA（320×240）图像。分类采用TensorFlow Lite轻量级神经网络：程序按主控请求动态加载图案模型（10类卡通图案，映射编号0~9）或数字模型（0~9），以滑窗方式执行tf.classify推理，top-1置信度高于0.9方可采信；为消除单帧误分类，进一步执行3帧多数投票（连续3帧中至少2帧一致），12次尝试仍无置信结果则向主控返回置信度不足错误码。在自动观察模式下，程序还会以find_blobs预检视野中的大块黄色/粉色区域（面积阈值20000像素），一旦确认无有效目标立即回传“跳过”应答，使主控免于空等超时。模型切换后执行垃圾回收释放显存，保证长时间运行的内存稳定。
+5.5.3  分工协作的优越性分析
+双摄像头方案带来三方面收益：其一，并行性——地图板在行进途中可持续输出位姿，识别板在观察位独立推理，两块MCU的算力与两路UART的带宽互不争用，主控无需等待“切换视角”的机械或软件开销；其二，专用性——两板的镜头焦距、安装角度、图像参数与算法流水线均可针对各自任务独立优化（地图板VGA+畸变校正+单应性解算，识别板QVGA+TFLite推理），不存在参数折中；其三，冗余性——任一板返回错误码时主控可降级运行（如位姿短时失效时纯里程计续跑、识别失败时重试或跳过），系统的任务鲁棒性显著提高。
+5.6  全局定位与视觉辅助定位融合
+地图坐标系定义为16×12格、每格200mm。车模自定位采用“编码器里程计为主、AHRS航向为向、视觉位姿为校”的融合方案：PIT0每5ms将四轮编码器位移合成车体系速度，经方向标定系数（前向0.985、后向0.980、横移0.823）修正后按当前yaw旋转至地图系积分，得到连续位姿估计；地图板回传的视觉坐标按误差窗口进行择信融合——偏差小于0.01格认为一致、保持原值；0.01~0.5格写入修正；大于1格判定为误观测直接拒绝，防止屏幕反光或图标遮挡造成的野值污染里程计。在路径拐点等误差敏感位置，主控还会主动降速至350mm/s以下并发起0x40位姿请求进行定点修正。该方案将视觉观测的绝对性与里程计的连续性互补结合，实测全程定位误差稳定在一个格边长的5%以内，满足推箱子的对正精度要求。
+5.7  推箱子路径规划与比赛状态机
+推箱子规划分为自由移动与推动求解两层。自由移动层采用带动作代价的BFS（直行代价8、转向6、推动2，同代价偏好直道），输出平滑的格点路径；推动求解层采用单箱推动型A*搜索，状态压缩为“箱格＋玩家相对方向”共768状态，多箱任务再外包分支限界——以已有可行解代价减1为上界、anytime节点预算控制搜索规模，配合推动距离、下界与可达对等多级缓存及返程锚点估价，另设箱—目标动态规划指派以确定最优匹配关系。该求解器在主控600MHz平台上对比赛规模地图（不超过6箱/目标/炸弹）可在秒级内给出近优解。
+比赛流程由19个状态的总状态机驱动：IDLE→离库→等待地图→（位姿修正）→观察选点→移动/转向对正→识别请求→恢复航向→匹配→推箱/炸弹→解锁→回库→DONE/ERROR。状态机支持最多9关配置，每关可独立设置识别模式（直接/匹配/自动）、视觉修正档位与阈值；关键动作均设有超时与重试（如观察结果超时200/300个tick、地图请求1000个tick超时重发2次、炸弹爆炸等待20个tick，1 tick=5ms），保证异常情况下流程不死锁。
+
+第六章  开发工具与调试过程
+6.1  开发环境
+表6.1  开发工具一览
+
+主控工程同时维护了Visual Studio Code与MDK两套工程文件，便于不同环境下协同开发；视觉端利用OpenMV IDE的帧缓冲与直方图工具完成LAB阈值标定与四角点标定，模型训练基于官方公布数据集离线完成并量化为TFLite部署。
+6.2  调试过程
+调试按“单机功能→分系统联调→全流程联跑”三个阶段推进。单机阶段：分别验证电源各级电压与上电时序、编码器测速标定、速度环PID整定（先空载后落地）、IMU零偏标定与静止漂移测试；分系统阶段：利用调试串口触发UART4/UART5各请求项，验证两路视觉链路的帧完整性与错误处理，通过无线串口遥测CSV数据整定横移补偿与里程计系数；联跑阶段：在自建模拟场地完整演练三个科目，重点打磨观察点选择、视觉修正窗口参数与推箱对正精度。调试中解决的关键问题包括：核心板未就绪时外设电源倒灌导致启动失败（以CR时序链解决）、屏幕反光导致地图误判（遮光帘＋逐格多点投票解决）、快速转向时轨迹偏移（陀螺轮速阻尼解决）等。
+
+第七章  车模主要技术参数
+表7.1  车模主要技术参数
+
+结论
+本报告完整阐述了本队参加第二十一届全国大学生智能汽车竞赛人工智能视觉组比赛的车模技术方案。车模以逐飞M1麦克纳姆轮底盘为运动平台，以i.MX RT1064为控制核心，自行设计了包含输入保护、多级稳压与上电时序控制的主控板和基于DRV8701的四路电机驱动板；软件上构建了200Hz运动控制环、500Hz姿态解算环与19状态比赛状态机，并以带CRC16校验的2Mbps双串口协议连接两块OPEN ART PLUS。视觉感知采用双摄像头分工协作策略：屏幕观测板完成14×10地图的逐格LAB分类识别与基于单应性解算的车模坐标回传，前视识别板完成TFLite神经网络图案/数字分类；定位采用编码器里程计、AHRS航向与视觉位姿的择信融合，全程定位误差控制在格边长的5%以内，实现了推箱子任务所需的厘米级对正精度。
+目前方案仍存在可改进之处：一是视觉位姿依赖屏幕成像质量，投屏延迟与卡顿会引入观测滞后，后续可研究观测延迟的时间戳补偿；二是偏航角缺乏绝对基准，长时间连续运行仍依赖静止零偏更新与外部航向注入，可考虑引入比赛允许的辅助测向手段；三是推箱子求解在复杂多箱地图上的耗时仍有优化空间。通过本赛事的完整研制过程，队伍在嵌入式软硬件设计、视觉算法与系统工程实践方面都得到了系统性的锻炼。
+心得体会：
+第21届全国大学生智能汽车竞赛，始于2025年秋，终于2026年夏。
+这一年，对我们来说是挑战，亦是机遇。在我们老师“追求卓越”的口号中，我们不断的成长，逐渐向一年前梦想中的自己靠近。实验室的余学长常说：“调车是一种享受啊”，这句话也一直鼓励着我们，在无数个夜深人静的夜晚，我们与自己的车模相伴，与志同道合的同学们一起，享受调车的过程。
+这一年，有苦有累，有欢笑有成长，有朋友相伴，有老师鼓励。赛道终有尽头，但这段并肩奔赴的时光，早已成为我们青春里最滚烫的回忆。感谢队友每一次的托举与陪伴，感谢老师们一路的指导与包容，感谢卓晴老师举办智能汽车竞赛，为我们搭建了这样一个追逐梦想、锤炼自我的舞台。也感谢那个从未轻言放弃的自己。
+智能汽车竞赛虽已落幕，但属于我们的"速度与热爱"，才刚刚启程。
+参考文献
+卓晴. 第21届智能车竞赛人工智能视觉组比赛细则[EB/OL]. (2025-11-11). https://blog.csdn.net/zhuoqingjoking97298/article/details/154697884.
+全国大学生智能汽车竞赛组委会. 第二十一届全国大学生智能汽车竞赛比赛规则[EB/OL]. 2026.
+卓晴. 第21届全国大学生智能汽车竞赛提问与回答：人工智能视觉组别[EB/OL]. (2026-07-14). https://blog.csdn.net/zhuoqingjoking97298/article/details/157686751.
+NXP Semiconductors. i.MX RT1064 Crossover Processors Data Sheet, Rev. 2[Z]. 2021.
+Texas Instruments. DRV8701 Brushed DC Motor Full-Bridge Gate Driver Datasheet (SLVSD64)[Z]. 2015.
+TDK InvenSense. ICM-42688-P High Performance 6-Axis MotionTracking IMU Datasheet (DS-000347)[Z]. 2020.
+Madgwick S O H. An efficient orientation filter for inertial and inertial/magnetic sensor arrays[R]. University of Bristol, 2010.
+逐飞科技. SeekFree RT1064DVL6A开源库[EB/OL]. https://gitee.com/seekfree.
+OpenMV LLC. OpenMV Cam MicroPython 库文档[EB/OL]. https://docs.openmv.io/.
+竞赛秘书处. 智能汽车竞赛技术报告内容与格式要求[EB/OL]. 微信公众号 TsinghuaJoking, 2026.
+
+附录A  电路原理图
+本附录给出主控板与驱动板的完整设计原理图（由嘉立创EDA导出）。主控板原理图如图A-1、图A-2所示，驱动板原理图如图A-3所示。
+
+图A-1  主控板原理图（一）
+
+图A-2  主控板原理图（二）
+
+图A-3  驱动板原理图
+
+附录B  核心算法源程序
+B.1  增量式速度环PID
+#include "Pid.h"
+ 
+#include <math.h>
+ 
+/* 四轮增量式速度 PID 默认值。Kp 调大响应更快但易振荡；Ki 调大可更快消除静差但易累积；
+ * Kd 调大可增强阻尼但会放大速度噪声。IntegralMax 限制单周期积分增量，OutMax 限制 PWM 输出；
+ * 两者调大可增强极限纠偏但冲击/饱和风险上升，调小更保守但大误差收敛变慢。 */
+PID_Speed Motor1_PID = {
+	.Kp = 3.9f,
+	.Ki = 0.35f,
+	.Kd = 0.00f,
+	.OutMax = PWM_MAX,
+	.IntegralMax = 6000.0f,
+};
+ 
+/* Motor2/3/4_PID 与 Motor1_PID 参数完全相同，此处从略 */
+void PID_Speed_Calc(PID_Speed* pid, float target, float actual){
+    float delta_p;
+    float delta_i;
+    float delta_d;
+    float delta_out;
+ 
+	pid->Err2 = pid->Err1;
+	pid->Err1 = pid->Err0;
+	pid->Err0 = target - actual;
+ 
+    delta_p = pid->Kp * (pid->Err0 - pid->Err1);
+    delta_i = pid->Ki * pid->Err0;
+    delta_d = pid->Kd * (pid->Err0 - 2 * pid->Err1 + pid->Err2);
+ 
+    if (delta_i > pid->IntegralMax){
+		delta_i = pid->IntegralMax;
+    }else if(delta_i < -pid->IntegralMax){
+		delta_i = -pid->IntegralMax;
+	}
+ 
+    delta_out = delta_p + delta_i + delta_d;
+	pid->Out += delta_out;
+ 
+	if(pid->Out > pid->OutMax){
+		pid->Out = pid->OutMax;
+	}else if(pid->Out < -pid->OutMax){
+		pid->Out = -pid->OutMax;
+	}
+ 
+}
+ 
+void PID_Speed_Reset(PID_Speed* pid){
+    pid->Err0 = 0.0f;
+    pid->Err1 = 0.0f;
+    pid->Err2 = 0.0f;
+    pid->Out  = 0.0f;
+    pid->Integral = 0.0f;
+}
+B.2  编码器接口定义
+#ifndef _ENC_H_
+#define _ENC_H_
+ 
+#include "zf_common_headfile.h"
+ 
+#define Encoder1		(QTIMER1_ENCODER2)				// 左前轮
+#define Encoder1_1		(QTIMER1_ENCODER2_CH1_C2) 
+#define Encoder1_2		(QTIMER1_ENCODER2_CH2_C24)
+ 
+#define Encoder2		(QTIMER2_ENCODER1)				// 右前轮
+#define Encoder2_1		(QTIMER2_ENCODER1_CH1_C3) 
+#define Encoder2_2		(QTIMER2_ENCODER1_CH2_C25)
+ 
+#define Encoder3		(QTIMER1_ENCODER1)				// 左后轮
+#define Encoder3_1		(QTIMER1_ENCODER1_CH1_C0)
+#define Encoder3_2		(QTIMER1_ENCODER1_CH2_C1)
+ 
+#define Encoder4		(QTIMER3_ENCODER2)				// 右后轮
+#define Encoder4_1		(QTIMER3_ENCODER2_CH1_B18)
+#define Encoder4_2		(QTIMER3_ENCODER2_CH2_B19)
+ 
+/* 编码器采样周期必须与 PIT0 的 5 ms 配置一致，不作为独立调参项。 */
+#define DT                  (0.005f)
+ 
+/* 计数到速度/距离的比例，单位 mm/count。调大时估计轮速和里程同步变大，调小时同步变小；
+ * 必须按轮径、编码器线数和减速比实测标定，不能用来掩盖控制误差。 */
+#define ENC_VEL_SCALE       (0.0789f)
+#define ENC_DIS_PER_COUNT   (0.0789f) // 60 mm 轮径：60 × PI ÷ (1024 × 70 / 30)
+ 
+typedef struct{
+    int32_t enc;        // 本周期原始脉冲数
+    float vel;          // 瞬时速度，mm/s
+    double dis;         // 累计距离，mm
+} Enc;
+ 
+extern Enc enc[4];
+ 
+void get_enc_vel(Enc *enc_item);
+void get_enc_dis(Enc *enc_item);
+void Enc_ResetMotionState(void);
+void enc_deal(void);
+ 
+#endif
+B.3  麦克纳姆轮运动学逆解与陀螺轮速阻尼（节选）
+ 
+void Mecanum_ClearLateralForwardCompSegmentLength(void)
+{
+    g_lateral_forward_comp_segment_length_cell = 0.0f;
+}
+ 
+void Mecanum_Cal(Param_t *param)
+{
+    float vx;
+    float vy;
+    float w;
+    float lateral_forward_comp_k;
+    float w_rad_s;
+    float v1_mm_s;
+    float v2_mm_s;
+    float v3_mm_s;
+    float v4_mm_s;
+    const float k_mm = (param->D_x + param->D_y) * 0.5f;  // mm
+ 
+    vx = param->vx;
+    vy = param->vy;
+    w = param->w;
+    lateral_forward_comp_k = Mecanum_SelectLateralForwardCompK(
+        g_lateral_forward_comp_segment_length_cell, vy);
+ 
+    if ((lateral_forward_comp_k != 0.0f) &&
+        (fabsf(vx) <= MECANUM_LATERAL_COMP_CMD_DEADBAND) &&
+        (fabsf(vy) > MECANUM_LATERAL_COMP_CMD_DEADBAND) &&
+        (fabsf(w) <= MECANUM_LATERAL_COMP_CMD_DEADBAND))
+    {
+        vx -= lateral_forward_comp_k * vy;
+    }
+ 
+    // 角速度从 deg/s 转为 rad/s。
+    w_rad_s = w * (PI / 180.0f);
+ 
+    // 轮周方向等效线速度，轮序为左前、右前、左后、右后。
+    v1_mm_s = vx - vy - k_mm * w_rad_s;
+    v2_mm_s = vx + vy + k_mm * w_rad_s;
+    v3_mm_s = vx + vy - k_mm * w_rad_s;
+    v4_mm_s = vx - vy + k_mm * w_rad_s;
+ 
+    // 编码器反馈已经按轮径和齿比换算为轮地 mm/s，目标速度保持同一单位。
+    param->wheel_vel[0] = v1_mm_s;
+    param->wheel_vel[1] = v2_mm_s;
+    param->wheel_vel[2] = v3_mm_s;
+    param->wheel_vel[3] = v4_mm_s;
+}
+ 
+void Mecanum_LimitWheelVel(Param_t *param, float max_abs_mmps)
+{
+    /* 上限调大可保留更高合成速度但更易超过电机能力；调小可防饱和，但会按比例压低全部轮速。 */
+    float max_abs = 0.0f;
+ 
+    if ((!param) || (max_abs_mmps <= 0.0f))
+    {
+        return;
+    }
+ 
+    for (int i = 0; i < 4; i++)
+    {
+        float abs_vel = fabsf(param->wheel_vel[i]);
+        if (abs_vel > max_abs)
+        {
+            max_abs = abs_vel;
+        }
+    }
+ 
+    if (max_abs > max_abs_mmps)
+    {
+        float scale = max_abs_mmps / max_abs;
+        for (int i = 0; i < 4; i++)
+        {
+            param->wheel_vel[i] *= scale;
+        }
+    }
+}
+B.4  视觉串口通信协议帧定义（节选）
+#ifndef _ART_PACKET_H_
+#define _ART_PACKET_H_
+ 
+#include "zf_common_headfile.h"
+#include <string.h>
+ 
+/* ART 串口波特率预设。ART_UART_BAUDRATE 是当前链路速率：调大可缩短地图/位姿传输时间，
+ * 但对时钟误差、布线和中断延迟更敏感；调小可提高链路裕量但响应变慢。
+ * SAFE 用于排查长线/噪声稳定性，STRESS 只用于双方硬件确认稳定后的吞吐测试。 */
+#define ART_UART_BAUDRATE              (2000000)
+#define ART_UART_BAUDRATE_SAFE         (1000000)
+#define ART_UART_BAUDRATE_STRESS       (4000000)
+ 
+/* 线协议格式：SOF0 SOF1 PKT SEQ LEN PAYLOAD... CRC16_L CRC16_H EOF。
+ * CRC16-CCITT 初值为 0xFFFF、多项式为 0x1021，覆盖 PKT/SEQ/LEN/PAYLOAD。
+ * 命令 ID 由 UART4 识别链路和 UART5 地图/位姿链路共同使用，不可单端修改。 */
+#define ART_PKT_SOF0                   (0xA5u)
+#define ART_PKT_SOF1                   (0x5Au)
+#define ART_PKT_EOF                    (0xA6u)
+#define ART_PKT_HEADER_LEN             (5u)
+#define ART_PKT_CRC_LEN                (2u)
+#define ART_PKT_WIRE_OVERHEAD          (8u)
+#define ART_PKT_MAX_PAYLOAD_LEN        (255u)
+#define ART_PKT_MAX_WIRE_LEN(max_len)  ((uint16)(ART_PKT_WIRE_OVERHEAD + (max_len)))
+ 
+/* UART4 图案/数字识别请求与响应。 */
+#define ART_PKT_REQ_REC_PATTERN        (0x10u)
+#define ART_PKT_REQ_REC_DIGIT          (0x11u)
+#define ART_PKT_REQ_REC_PATTERN_AUTO   (0x12u)
+#define ART_PKT_REQ_REC_DIGIT_AUTO     (0x13u)
+ 
+#define ART_PKT_RSP_REC_PATTERN        (0x20u)
+#define ART_PKT_RSP_REC_DIGIT          (0x21u)
+#define ART_PKT_RSP_REC_SKIP           (0x22u)
+#define ART_PKT_ERR_REC                (0x2Fu)
+ 
+/* UART5 完整地图请求与响应。 */
+#define ART_PKT_REQ_MAP_FULL           (0x30u)
+#define ART_PKT_RSP_MAP_FULL           (0x31u)
+#define ART_PKT_ERR_MAP                (0x3Fu)
+ 
+/* UART5 单次位姿请求、位姿事件和停止控制。 */
+#define ART_PKT_REQ_POSE_ONCE          (0x40u)
+#define ART_PKT_EVT_POSE               (0x41u)
+#define ART_PKT_RSP_POSE               (0x42u)
+#define ART_PKT_CTRL_POSE_STOP         (0x43u)
+#define ART_PKT_ERR_POSE               (0x4Fu)
+ 
+#define ART_PKT_ERR_UNSUPPORTED        (0xEFu)
+ 
+/* 远端错误原因；数值属于协议约束。 */
+#define ART_ERR_BAD_PAYLOAD            (0x01u)
+#define ART_ERR_UNSUPPORTED_PKT        (0x02u)
+#define ART_ERR_MODEL_NOT_READY        (0x03u)
+#define ART_ERR_NO_CONFIDENCE          (0x04u)
+#define ART_ERR_NO_MAJORITY            (0x05u)
+#define ART_ERR_NO_BASE                (0x06u)
+#define ART_ERR_NO_CAR                 (0x07u)
+#define ART_ERR_CAPACITY               (0x08u)
+#define ART_ERR_MAP_NOT_READY          (0x09u)
+ 
+/* 地图实体编码；必须与视觉端和 Sokoban 地图解析保持一致。 */
+#define ART_MAP_WALL                   (0x1u)
+#define ART_MAP_GOAL                   (0x2u)
+#define ART_MAP_BOX                    (0x3u)
+#define ART_MAP_PLAYER                 (0x4u)
+#define ART_MAP_BOMB                   (0x5u)
+ 
+typedef enum
+{
+    ART_PKT_RX_NONE = 0,
+    ART_PKT_RX_COMPLETE,
+    ART_PKT_RX_BAD_CRC,
+    ART_PKT_RX_BAD_EOF,
+    ART_PKT_RX_TOO_LONG
+} art_pkt_rx_result_t;
+ 
+typedef struct
+{
+    uint8 pkt;
+    uint8 seq;
+    uint8 len;
+} art_pkt_meta_t;
+ 
+typedef struct
+{
+    uint8 state;
+    uint8 pkt;
+    uint8 seq;
+    uint8 len;
+    uint8 idx;
+    uint8 crc_lo;
+} art_pkt_parser_t;
+ 
+static inline void ArtPkt_ResetParser(art_pkt_parser_t *p)
+{
+    if (!p) return;
+    memset(p, 0, sizeof(*p));
+}
+B.5  地图元素LAB分类与逐格投票识别（节选）
+def classify_lab_for_map(lab_avg):
+    if lab_avg is None:
+        return None
+ 
+    # 注意：把 wall 放最后，因为 wall_threshold 通常会比较宽，容易误吞其它颜色。
+    # bomb 放在 target 前面，是为了避免红色炸弹被较宽的 target_threshold 吃掉。
+    if lab_in_threshold(lab_avg, yellow_threshold):
+        return '$'
+ 
+    if lab_in_threshold(lab_avg, bomb_threshold):
+        return '*'
+ 
+    if lab_in_threshold(lab_avg, target_threshold):
+        return '.'
+ 
+    if (lab_in_threshold(lab_avg, map_car_threshold_1) or
+            ((map_car_threshold_2 is not None) and lab_in_threshold(lab_avg, map_car_threshold_2))):
+        return '@'
+ 
+    if lab_in_threshold(lab_avg, wall_threshold):
+        return '#'
+ 
+    return None
+ 
+ 
+def get_grid_sample_point(col, row, offset_u, offset_v):
+    u = (col + 0.5 + offset_u) / MAP_GRID_COLS
+    v = (row + 0.5 + offset_v) / MAP_GRID_ROWS
+    return quad_uv_to_image_point(u, v)
+ 
+ 
+def classify_grid_cell_by_samples(img, col, row):
+    if not GRID_CELL_MULTI_SAMPLE_ENABLE:
+        center_x, center_y = get_cell_center(col, row)
+        lab_avg = get_avg_lab(img, center_x, center_y, LAB_SAMPLE_RADIUS)
+        return classify_lab_for_map(lab_avg)
+ 
+    label_counts = {}
+    spread = GRID_CELL_SAMPLE_SPREAD
+    if GRID_CELL_SAMPLE_GRID <= 1:
+        offsets = (0,)
+    else:
+        offsets = []
+        step = (spread * 2) / (GRID_CELL_SAMPLE_GRID - 1)
+        start = -spread
+        for i in range(GRID_CELL_SAMPLE_GRID):
+            offsets.append(start + i * step)
+ 
+    for offset_u in offsets:
+        for offset_v in offsets:
+            sample_x, sample_y = get_grid_sample_point(col, row, offset_u, offset_v)
+            lab_avg = get_avg_lab(img, sample_x, sample_y, LAB_SAMPLE_RADIUS)
+            label = classify_lab_for_map(lab_avg)
+            if label is None:
+                continue
+ 
+            if label not in label_counts:
+                label_counts[label] = 0
+            label_counts[label] += 1
+ 
+    best_label = None
+    best_count = 0
+    for label, label_count in label_counts.items():
+        if label_count > best_count:
+            best_label = label
+            best_count = label_count
+ 
+    min_hits = GRID_CELL_SAMPLE_MIN_HITS
+    if best_label == '#':
+        min_hits = WALL_CELL_SAMPLE_MIN_HITS
+ 
+    if best_count < min_hits:
+        return None
+ 
+    return best_label
+B.6  视觉端CRC16校验与帧解析（节选）
+def crc16_ccitt(data):
+    crc = 0xFFFF
+    for b in data:
+        crc ^= b << 8
+        for _ in range(8):
+            if crc & 0x8000:
+                crc = ((crc << 1) ^ 0x1021) & 0xFFFF
+            else:
+                crc = (crc << 1) & 0xFFFF
+    return crc
+ 
+def make_frame(cmd, seq, payload=b""):
+    ln = len(payload)
+    body = bytearray([cmd, seq, ln & 0xFF])
+    body.extend(payload)
+    crc = crc16_ccitt(body)
+    out = bytearray([SYNC0, SYNC1])
+    out.extend(body)
+    out.append(crc & 0xFF)
+    out.append((crc >> 8) & 0xFF)
+    out.append(EOF)
+    return out
+ 
+def send_frame(cmd, seq, payload=b""):
+    uart.write(make_frame(cmd, seq, payload))
+ 
+def drop_rx(count):
+    global rx_buf
+    if count <= 0:
+        return
+    if count >= len(rx_buf):
+        rx_buf = bytearray()
+    else:
+        rx_buf = bytearray(rx_buf[count:])
+ 
+def poll_frames():
+    data = uart.read()
+    if data:
+        rx_buf.extend(data)
+ 
+    frames = []
+    while len(rx_buf) >= 8:
+        if rx_buf[0] != SYNC0 or rx_buf[1] != SYNC1:
+            drop_rx(1)
+            continue
+ 
+        ln = rx_buf[4]
+        total = 8 + ln
+        if ln > 16:
+            drop_rx(1)
+            continue
+        if len(rx_buf) < total:
+            break
+        if rx_buf[7 + ln] != EOF:
+            drop_rx(1)
+            continue
+ 
+        body = rx_buf[2:5 + ln]
+        recv_crc = rx_buf[5 + ln] | (rx_buf[6 + ln] << 8)
+        if recv_crc == crc16_ccitt(body):
+            frames.append((rx_buf[2], rx_buf[3], bytes(rx_buf[5:5 + ln])))
+        drop_rx(total)
+ 
+    return frames
+
+===== TABLE 1 =====
+符号/缩略词 | 含义
+vx、vy | 车体坐标系前向、左向线速度（mm/s）
+ω | 车体绕竖直轴角速度（deg/s）
+Kp、Ki、Kd | 比例、积分、微分系数
+DCDC | 开关型直流-直流变换器
+LDO | 低压差线性稳压器
+TVS | 瞬态电压抑制二极管
+PTC | 自恢复保险丝
+IMU | 惯性测量单元
+AHRS | 姿态航向参考系统
+UART / eDMA | 通用异步收发器 / 增强型直接存储器访问
+PWM | 脉宽调制
+CRC16 | 16 位循环冗余校验
+LAB | CIE Lab 颜色空间
+TFLite | TensorFlow Lite 轻量级推理框架
+BFS / A* | 广度优先搜索 / A 星启发式搜索算法
+
+===== TABLE 2 =====
+类别 | 工具
+主控固件开发 | Visual Studio Code/ Keil MDK
+视觉程序开发 | OpenMV IDE（MicroPython脚本，TFLite模型部署）、PyCharm（模型训练）
+电路设计 | 嘉立创EDA（原理图与PCB设计）
+结构设计 | SolidWorks（3D打印支架建模）
+调试辅助 | 无线串口遥测、TFT180菜单系统、OpenMV IDE帧缓冲监视
+
+===== TABLE 3 =====
+项目 | 参数
+车模底盘 | 逐飞科技 M1（四轮麦克纳姆轮）
+外形尺寸 | 长：28.35cm            宽：20.9cm  高：15±0.1cm
+整车重量 | 2.139kg
+主控制器 | 逐飞 i.MX RT1064 核心板（Cortex-M7，600MHz）
+图像处理平台 | OPEN ART PLUS ×2（基于NXP MCU）
+传感器 | ICM42688六轴IMU ×1；逐飞科技1024线带方向正交解码MINI增量式编码器 ×4（自行安装）；摄像头 ×2
+执行器 | RC380电机 ×4（原车驱动电机）；无其他伺服电机
+电源 | 3S锂聚合物电池（11.1V/12.6V）；DCDC 12V→5V（SCT2450，5A）；LDO 5V→3.3V（RT9013）
+电容总容量 | 主回路储能电容约800µF（330µF×2＋47µF×2＋10µF×3＋4.7µF×4，未计100nF去耦）
+赛道信息检测精度 | 视觉位姿分辨率0.01格（2mm）；里程计0.0789mm/count；航向死区0.12°
+检测/控制频率 | 摄像头60fps；速度环200Hz；姿态解算500Hz（IMU ODR 1kHz）
+通信 | UART4/UART5 2Mbps（CRC16校验）；无线串口调试

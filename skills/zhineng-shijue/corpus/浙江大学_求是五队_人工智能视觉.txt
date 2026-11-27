@@ -1,0 +1,818 @@
+第二十一届全国大学生智能汽车竞赛
+
+技 术 报 告
+
+面向推箱子任务的轻量化机器视觉感知与智能控制系统研发设计方案
+
+学    校：浙江大学
+队伍名称：求是五队
+参赛队员：沈裕泉
+魏薪欣 
+赵诣
+带队教师：韩涛 姚维
+
+关于技术报告和研究论文使用授权的说明
+本人完全了解全国大学生智能汽车竞赛关于保留、使用技术报告和研究论文的规定，即，参赛作品著作权归参赛者本人，比赛组委会可以在相关主页上收录并公开参赛作品的设计方案、技术报告以及参赛模型车的视频、图像资料，并将相关内容编纂收录在组委会出版论文集中。
+
+参赛队员签名：
+
+带队教师签名：
+
+日期：2026年8月18日
+
+
+
+
+
+
+第一章 引言
+第二十一届全国大学生智能汽车竞赛人工智能视觉组采用虚实结合竞赛模式，核心任务是车模借助车载摄像头识别屏幕推箱子游戏画面，完成连续三关自主推箱闯关。该组别将轻量化神经网络部署、全向移动平台控制、栅格环境任务规划集成于嵌入式系统，是一项感知-决策-执行一体化的智能控制系统工程实践项目。
+针对竞赛任务需求，本车参考逐飞科技开源软件代码及硬件原理图，基于博思威龙麦轮 M 车模搭建全向移动平台；主控采用 NXP RT1064 微控制器，配合 OpenART Plus 视觉模块实现屏幕图像采集与轻量化网络推理。整车机械结构通过 SOLIDWORKS 2022 完成三维建模，采用 3D 打印、激光切割工艺加工；硬件部分完成电机驱动板与 RT1064 主控板的原理图设计、PCB 布线及焊接调试；代码部分实现麦轮运动学解算、编码器-IMU 联合闭环运动控制、BFS 广度优先搜索推箱路径规划，开发主控与视觉模块间自定义 UART 通信协议，并依托 NXP eIQ 平台完成 MobileNet-v2 网络训练及 INT8 量化部署。经过分模块调试与整机联调，车模可实现含炸弹场景下的三关卡连续自主推箱运行。
+本报告章节安排如下：第二章阐述车模设计思路与系统总体技术方案；第三章介绍机械零部件的设计、加工及装配；第四章讲解自主设计 PCB 的原理图、布局布线与焊接调试；第五章说明 MCU 运动闭环控制、路径规划、视觉模型训练、串口通信协议等算法程序设计；第六章介绍开发工具与分阶段整车调试流程；第七章罗列车模关键技术参数；第八章为结论与展望，总结系统实现效果并给出后续优化思路；文末附有参考文献，以及电路板原理图、算法子程序附录。
+第二章 模型车设计思路及系统技术方案概述
+2.1设计思路
+车模与芯片选取：为满足任务全向灵活移动需求，我们选用博思威龙麦轮 M 车模；考虑多箱子及炸弹的路径规划的较高算力需求，主控搭载 NXP RT1064 处理器，其采用 ARM Cortex-M7 内核，内置大容量片上内存，可保障多任务并行稳定运行。视觉模块选用逐飞科技OpenART Plus，原生支持 TensorFlow Lite 轻量化神经网络部署，搭配 NXP eIQ 模型训练平台，数据集训练、图像分类模型部署流程简洁，识别准确度可达90%以上。
+整套系统划分为四大功能模块：机械结构模块、PCB 硬件电路模块、机器视觉识别模块、主控运动控制代码模块。我们采用模块化分工开发模式，三人分别负责机械结构搭建及主控程序编写、PCB 硬件设计、视觉模型训练；开发遵循 “先分调、后联调” 思路，单独完成麦轮运动控制、视觉图像识别、硬件电路功能调试后，再完成全车硬件、软件一体化联调，极大提高了开发效率。
+2.2技术方案概述
+系统以 OpenART Plus 模块完成屏幕场景视觉采集与图片分类，RT1064 主控接收视觉数据完成全局路径规划，并输出运动控制指令驱动麦轮车模；采用轮速 PID 闭环控制及编码器积分实现定向定距移动，结合 IMU 陀螺仪数据与视觉定位信息实时修正车体航向偏移。
+整车运行逻辑支持连续三关无间断闯关，分三种工况：无视觉辅助纯定位闯关、视觉识别无炸弹地图闯关、视觉识别含炸弹地图闯关。
+第三章 机械部分设计及安装
+3.1底盘支撑碳板
+
+图 3.1 底盘支撑碳板
+
+底盘通过螺丝固定两块碳纤维支撑板，其采用激光切割工艺加工，对底盘形成刚性支撑，避免 PCB 电路板、电池、显示屏等重物堆叠造成底盘形变凹陷，有效缓解因底盘变形带来的车轮受力不均、行驶打滑问题，提升车体运动稳定性。
+3.2 AprilTag码支架
+
+图 3.2  AprilTag码支架
+
+设计两套 AprilTag 码定位支架，全部基于实测尺寸完成精准建模，符合车模标准高度15cm的要求。支架顶端粘贴圆形永磁磁铁，依靠磁吸固定车模定位 AprilTag 码的自带铁片；其中一套支架增设侧向限位挡块，可贴合 OpenART Plus 视觉模块背部，抑制车体运动过程中摄像头抖动，保障视觉拍摄画面稳定，提升定位识别可靠性。
+3.3主板支撑板
+
+图 3.3 主板支撑板
+
+设计为单层平板，其内侧四角提供主控板固定孔位，外侧四角抬高板体，留出下方空间用于锂电池安装。
+3.4屏幕支架
+
+图 3.4 屏幕支架
+
+在屏幕支架背部粘贴磁吸贴片，依靠磁吸方式固定显示，拆装便捷；支架底座预留四角安装孔，可直接锁紧于底盘，保证屏幕竖直摆放，适配摄像头拍摄视角。
+3.5遮光板
+
+（a）遮光板正视图
+
+（b）遮光板上视图
+
+（c）遮光板侧视图
+图 3.5 遮光板
+
+遮光板结构为本车模机械设计核心创新亮点，用于消除赛场环境自然光强弱变化对视觉识别的干扰。结构后端尺寸匹配显示屏长宽厚度，前端圆形开孔适配 OpenART Plus搭载的 SCC8660 摄像头外径，整体长度依据摄像头与屏幕的实际物理距离精准设计；侧面预留镂空区域，无需拆卸遮光板即可完成设备充电、开关机操作。建模采用前后截面草图放样成型，一体成型无拼接缝隙，遮光效果优异，有效提升系统鲁棒性。
+3.6 1.8cm垫高支撑柱 
+
+图 3.6 1.8cm垫高支撑柱
+方管中空支撑柱标准高度 1.8cm，适配 M3 标准紧固螺丝，用于抬高3.3章所述的主板支撑板及3.4章所述的屏幕支架，留给锂电池安装空间并确保屏幕不会被主板所遮挡。
+3.7设计工具及制造方式
+全部机械零部件三维建模统一使用 SOLIDWORKS 2022 软件完成；底盘支撑碳板采用激光切割加工，其余支架、遮光件、支撑柱均通过 3D 打印成型。AprilTag 支架、屏幕支架为保证直立刚度与抗形变能力，选用 PC 聚碳酸酯耗材打印；其余常规结构件采用 PLA 聚乳酸耗材，降低制作成本。
+第四章 PCB设计说明
+4.1原理图设计
+本模型车PCB硬件部分主要包括双路电机驱动板（下文简称驱动板）和 RT1064 主板（下文简称主板）。整套硬件以逐飞科技开源工程为参考[1][2]，结合推箱子任务实际功能需求完成裁剪、重新规划与迭代设计。驱动板以DRV8701E双路驱动方案为参考，保留双路直流电机驱动、电源输入、 PWM 控制信号、使能及指示等必要电路[1]；主板则围绕 RT1064 核心板、四路电机控制、四路编码器、IMU 和 OpenART Plus 串口通信等功能设计[2]。参考方案中与本车无关或实际未使用的模块没有全部保留，部分接口和引脚也根据实际布线及程序需求重新分配。
+原理图完成后，主要通过嘉立创 EDA 软件的设计规则检查（DRC）、网络连接检查以及对照核心板引脚表等方式确认连接关系正确性。
+
+图 4.1 电机驱动板原理图
+
+图 4.2 RT1064主板原理图
+
+4.2驱动板PCB布线设计
+驱动板完成双路有刷直流电机的正反转调速控制，针对本车有限的装配空间进行布局优化，实现了小巧紧凑的硬件结构，板卡尺寸仅为 。核心部分为 DRV8701E 芯片搭配外置 MOS 管构成全桥驱动，接收主控下发的方向信号与 PWM 调速信号，同时设计电源输入端子、电机接线端子、使能控制开关以及工作状态指示灯。
+PCB布局上，对两路电机驱动电路做分区排布，电机接线端子、功率器件尽量靠近板边；电源、电机大电流通路采用加宽走线并配合大面积铺铜处理，降低大电流下的发热与压降；DRV8701E 芯片配套的电源电容、泵升电路外围器件就近摆放在芯片引脚周边，减小信号环路；控制类接口集中排布，便于和主板之间接线。整体布局以电气连接可靠、布线通顺、满足装车尺寸限制为设计原则。驱动板最终版PCB如下图4.3，4.4所示。
+
+图 4.3 驱动板PCB顶层布局
+
+图 4.4 驱动板PCB底层布局
+
+4.3主板PCB布线设计
+主板由锂电池通过 XT60 接口输入供电，采用 HY19P03 作为电子开关实现电源通断控制，以此规避传统机械开关工作时的打火损耗问题。板载 SCT2450、RT9013 等电源芯片，为系统提供稳定的 5V、3.3V 稳压输出；同时配置 5V 与 3.3V 电源状态指示灯，便于直观判断各路电源的工作状态。
+在 PCB 布局上遵循便于装车调试的设计原则：将电机控制、编码器、IMU、视觉通信等外接接口全部布置于板卡边缘，RT1064 核心板及各类贴片功能器件则集中排布在电路板中央。该布局方式能够减少外部转接线材，接线操作清晰便捷，同时也利于内部信号走线的规划。整板板卡尺寸定为，适配车模的物理装配空间。主板最终版PCB如下图4.5，4.6所示。
+ 
+图 4.5 主板PCB顶层布局
+ 
+图 4.6 主板PCB底层布局
+
+4.4硬件焊接与调试经验
+焊接操作须遵循 “从矮到高、从小到大、先贴片后插件” 的顺序，降低装配难度。贴片元件手工焊接时，可先在焊盘预涂锡膏，摆放元器件后使用热风枪一次性完成焊接，重点规避连焊、虚焊问题。选型阶段需要严格确认元器件额定电压、额定电流参数，例如电机驱动回路电流较大，对应的电感应当选用功率电感。
+硬件调试的分步分级调试：上电前，利用万用表完成通断测量，重点排查电路板存在的短路、虚焊等潜在隐患；确认硬件无异常后方可上电，随后按模块依次测试供电电压、工作电流，分单元逐项验证电路功能。例如对驱动板，可在不接入电机负载的前提下，验证控制信号对应的输出电压，确认正、反向输出均可正常响应，对主板，则重点检验电子开关通断功能有效性，以及 LDO 芯片能否稳定输出 5 V、3.3 V 电压；待单块 PCB 各项功能全部验证无误后，再开展联合整机调试。
+第五章 MCU控制算法说明及具体代码设计
+本项目所用 MCU 包括 RT1064 主控及 OpenART Plus 视觉模块。主控底层硬件驱动依托逐飞科技 RT1064 开源库[3]实现 GPIO 电平控制、PWM 占空比调节、UART 串口通信、IMU 数据读取；视觉模块底层驱动依托逐飞科技 OpenART Plus 开源库，完成 TF 卡数据读写、TensorFlow Lite 轻量化模型加载；依托 NXP eIQ 平台完成图像分类模型训练，相关开源资料统一列入参考文献。独立完成麦轮运动解算、PID 控制器、BFS 广度优先搜索路径规划、视觉目标识别、主控 - 视觉串口通信协议全套程序开发，各模块详细设计如下。
+5.1运动闭环控制
+整车运动基于麦轮运动学解算模型实现全向移动，麦轮依靠辊子的45°斜向排布，可在不改变车体朝向的前提下完成前后、左右平动以及原地旋转，非常适配推箱子任务中频繁侧向对位、小角度姿态调整的作业需求，轮速逆解算关系如下图5.1所示。
+
+图 5.1麦轮轮速逆解算示意图，vx、vy 为车体平动速度，w 为车体旋转角速度（逆时针为正）
+
+采用编码器进行轮速实时反馈，配合增量式 PID 控制器完成毫秒级闭环调速，控制周期设置为 1ms，在定时器中断内实时执行。
+然而，理想麦轮运动学模型未考虑车轮打滑现象，实际行驶中极易出现车体航向偏移、位移距离偏差两大问题。为此车载逐飞 IMU660RB 六轴惯性单元，安装时保证陀螺仪 Z 轴垂直于车体平面，通过积分陀螺仪数据获取车体偏航角 yaw，实时检测航向偏差并叠加补偿角速度，自动修正车头朝向；同时程序增加缓启动、末段蠕行减速逻辑，进一步抑制车轮打滑，优化行驶轨迹精度。
+5.2路径规划算法
+路径规划核心采用离线 BFS 广度优先搜索算法，车辆启动前完整遍历地图、预计算全部可行路线，完成全部路径规划后再执行运动控制，避免行驶途中地图逻辑冲突导致存在可行路径但未能实现。
+算法核心化简思路为将多箱子推箱任务拆解为多次单箱子寻路问题，降低搜索逻辑复杂度。
+设计算法时，我们先在 PC 端完成逻辑验证与可视化调试，再移植至 RT1064 嵌入式平台，原因有二：一是 PC 端支持 printf 直接打印地图状态、路径可视化，便于快速排查逻辑漏洞；二是 PCB 硬件设计时为精简外设，降低布线难度，未额外搭载车载显示屏、无线调试串口等。在嵌入式移植阶段仅删除 PC 端调试打印语句即可，无需大幅修改核心算法逻辑。BFS 算法工作流程图后文补充展示。
+5.3地图色彩阈值识别方案
+游戏地图内，空地、墙体、箱子、目标目的地、车体等不同元素色彩区分明显，具备依靠颜色实现分类的基础条件；同时，借助 3.5 节所述的遮光板，可基本消除赛场环境杂光的干扰，因此，我们基于LAB色彩阈值分割完成地图识别，具体方案如下。
+鉴于摄像头与屏幕的相对位置固定且地图大小固定为16*12的方格阵，我们从摄像头画面中截取预先标定好的地图区域MAP_REGION，将该区域均匀划分为16行*12列共192个大小相等的单元格，并剔除每个单元格四周的2-3像素，避免周围其他颜色格子混入边界像素。
+随后对每个单元格内部的像素做色彩统计，得到其在LAB色彩空间中的平均颜色()与颜色标准差(两个特征。其中平均值反映格子的主色调，标准差刻画色块的均匀程度，纯色块的标准差小，而有纹理或花色的色块标准差大；最后将这两个特征与我们预先建立的颜色参考库进行比较。
+参考库中共有6种颜色，每种颜色同样用一对"平均色+标准差"来描述，这两组数值是在同等光线条件下，对不同格子进行多次采样后计算得到的平均值，代表了该颜色在既定环境下的特征。比较时采用加权欧氏距离作为相似度度量，公式为“综合距离=平均色距离+0.5×标准差距离”，遍历全部6类参考色，取综合距离最小的一类作为该格子的类别，最终得到192个格子各自的类别结果。
+该算法在摄像头框取范围无偏差时，地图识别正确率接近 100%，为后续车体运动与任务决策提供了坚实基础。
+
+图 5.2 地图192个格子的定位框标注
+
+5.4视觉分类模型训练
+开展视觉模型训练的首要前提是构建规模充足的数据集。参考同为第二十一届全国大学生智能汽车竞赛人工智能视觉组参赛选手的开源上位机数据集采集方案[4]，我们搭建了适配本车的快速高效图像采集流程。该上位机软件[4]能够输出指定类别的数字、人物目标样本图像；将其与 OpenART Plus 视觉模块配合，可实现图像定时抓拍并自动保存至 TF 卡，显著提升数据集采集效率。采集完成后将数据集随机划分为训练集与测试集，导入 NXP eIQ 平台开展模型训练。
+参考开源教程文献[5]，我们掌握了 NXP eIQ 机器学习模型训练平台的基本使用方法，具体流程如下。
+打开 eIQ Portal，选择「CREATE PROJECT - Import dataset」导入划分完成的图像数据集。
+
+图 5.3 eIQ初始界面
+
+基础模型选用 mobilenet_v2 轻量化图像分类网络，兼顾识别精度与嵌入式推理速度。
+
+图 5.4 eIQ模型选择
+
+调整学习率、迭代次数等超参数完成训练，训练结束后执行 INT8 量化压缩模型，导出量化后的 tflite 模型文件，可直接部署至 OpenART Plus视觉模块调用。
+5.5 UART通信协议代码设计
+视觉模块与主控间通过串口实时交互，视觉端采用串口轮询机制接收主控命令，具体来说分为12*16地图信息、目的地数字类别、箱子人物类别、车体坐标与偏角四类信息，通过 switch-case 分支判断当前需执行任务，打包数据帧发送至主控；主控侧配置串口UART4接收中断，每接收 1 字节数据即进入中断服务程序实时解析，实现视觉感知与运动控制毫秒级同步。
+第六章 开发工具、车模调试过程
+6.1开发工具
+全套开发软件及设备如下：
+（1）主控嵌入式程序开发：Keil MDK5.34，用于代码编写、编译、程序烧录； 
+（2）硬件烧录工具：逐飞双模 DAP 调试器，TypeA转TypeC线，10Pin 标准接口（适配 RT1064 烧录引脚）； 
+（3）机械三维建模：SOLIDWORKS 2022； 
+（4）PCB 电路设计：嘉立创 EDA（专业版）； 
+（5）视觉模型训练：NXP eIQ Portal； 
+（6）视觉模块脚本开发：OpenMV IDE；
+6.2调试过程
+至2026年8月的全国总决赛，我们的整车调试周期约有 5 个月，分四阶段推进：
+（1）前期结构与基础驱动调试（2026年3月 2026年4月）：完成全部机械零件建模、3D 打印与整车装配；基于逐飞主板熟悉 RT1064 底层 GPIO、PWM 驱动，实现麦轮开环全向移动；掌握 OpenART MicroPython 基础图像识别脚本。
+（2）中期运动控制与单关任务调试（2026年5月 2026年6月）：完成轮速 PID 闭环调速，实现单关卡稳定推箱；基于 LAB 色彩阈值分割完成简易地图识别，打通视觉与主控串口通信；同步完成 PCB 电路绘制、硬件焊接、基础功能调试、PCB 版本迭代。
+（3）省赛前整机集成优化（2026年7月）：替换原逐飞通用驱动板为自主设计 PCB；完成 eIQ 轻量化模型训练、完整双向通信协议开发；新增 IMU 航向纠偏逻辑，整体程序适配连续三关自动闯关需求，完成整车稳定性、可靠性测试。
+（4）国赛前整机集成优化（2026年8月）：新增视觉辅助位置纠偏功能；适度提升车模运行速度；优化第一关寻路逻辑，采用找到可行路径即执行的策略，不再追求遍历找到最优路径；对第二、三关采用识别-规划分阶段处理的运行机制，完成对应算法的迭代修改。
+第七章 车模主要技术参数
+7.1总体重量，长宽高
+总重量：1.67kg
+长：28.2cm 
+宽：21cm
+高：15cm
+7.2电路功耗，电容总容量
+电路功耗：约35W
+电容总容量：约500
+7.3传感器种类以及个数
+（1）SCC8660摄像头模组 —— 1个
+（2）六轴IMU 逐飞科技IMU660RB —— 1个
+（3）1024线普地编码器 —— 4个
+7.4伺服电机个数
+模型车未用到伺服电机。
+7.5赛道信息检测精度、频率
+车模位置检测精度：约1 cm；检测输出频率：1 Hz。该频率取得了性能平衡，既可以规避过高的串口通信密度，又能够及时完成车模位置纠偏。
+第八章 结论与展望
+本报告完整阐述了面向第二十一届全国大学生智能汽车竞赛人工智能视觉组推箱子任务的麦轮智能车机械结构、硬件电路、机器视觉、运动控制全套设计方案，整套系统经赛场实地测试，具备较好运行稳定性与任务完成可靠性。项目开发覆盖机械建模、PCB 硬件、嵌入式算法、深度学习模型部署全流程，充分锻炼了我们的工程实操能力与团队协作能力。
+针对现有系统仍存在优化空间：当前视觉识别仅在必要场景（即直接推箱子无解）下尝试使用炸弹得到可行解，未更充分利用炸弹信息优化路径，后续可基于炸弹位置动态规划更优路线；同时可在保证运动精度基础上增加斜向运动逻辑，缩短运动距离，进一步提升通关效率。
+
+
+参考文献
+[1] 逐飞科技. DRV8701E有刷电机双驱原理图资源[EB/OL]. [2026-08-18].
+逐飞科技基于DRV8701E有刷电机驱动: 逐飞科技精心设计了基于DRV8701E的有刷电机驱动参考方案。该方案使用DRV8701E，支持100%占空比，方向切换使用高低电平控制，降低MCU PWM资源占用。 - Gitee.com
+[2] 逐飞科技. RT1064主板原理图资源[EB/OL]. [2026-08-18].
+逐飞科技RT1064开源库: 逐飞科技针对参加各类竞赛以及使用RT1064进行产品开发，制作的恩智浦RT1064高性能MCU开源库。 - Gitee.com
+[3] 逐飞科技. RT1064开源程序库[EB/OL]. [2026-08-18].
+https://gitee.com/seekfree/RT1064_Library/tree/master/SeekFree_RT1064_Opensource_Library/libraries
+[4] Hey9990. SmartCar-VR-DatasetGenerator数据集生成工具[EB/OL]. [2026-08-18].
+GitHub - Hey9990/SmartCar-VR-DatasetGenerator: 智能车人工智能视觉组训练数据集生成工具 - 基于逐飞 SmartCar VR 上位机改进 · GitHub
+[5] ChenAI_TGF. 机器视觉：智能车大赛视觉组技术文档——用eIQ工具高效训练分类模型[EB/OL]. CSDN博客, [2026-08-18].
+机器视觉：智能车大赛视觉组技术文档——用eIQ工具高效训练分类模型_eiq逐飞-CSDN博客
+附录：电路板原理图及算法子程序
+
+驱动板原理图
+
+主板原理图
+
+驱动板PCB正面
+
+驱动板PCB反面
+
+主板PCB正面
+
+主板PCB反面
+BFS路径规划代码摘要
+算法原理：本项目推箱子规划采用状态广度优先搜索 BFS，搜索状态同时记录玩家坐标与箱子坐标，以此描述箱子推动行为。
+//普通栅格BFS 单箱子推动 给定起点和终点
+uint8_t bfs_find_path(int8_t start_x, int8_t start_y,
+                      int8_t target_x, int8_t target_y,
+                      int8_t *actions, int *action_len)
+{
+    if (start_x == target_x && start_y == target_y)
+    {
+        *action_len = 0;
+        return 1;
+    }
+
+    memset(visited, 0, sizeof(visited));
+    memset(parent, -1, sizeof(parent));
+
+    int16_t q[ROWS * COLS];
+    int head = 0, tail = 0;
+
+    q[tail++] = encode_pos(start_x, start_y);
+    visited[start_x][start_y] = 1;
+
+    while (head < tail)
+    {
+        int16_t cur = q[head++];
+        int8_t r, c;
+        decode_pos(cur, &r, &c);
+
+        if (r == target_x && c == target_y)
+        {
+            //回溯生成路径动作序列
+            int path_len = 0;
+            int8_t path_dirs[ROWS * COLS];
+            int16_t pos = cur;
+            int8_t cr = r, cc = c;
+
+            while (pos != encode_pos(start_x, start_y))
+            {
+                int16_t parent_pos = parent[cr][cc];
+                int8_t pr, pc;
+                decode_pos(parent_pos, &pr, &pc);
+                int8_t dir = get_dir_from_delta(cr - pr, cc - pc);
+                if (dir != 0)
+                    path_dirs[path_len++] = dir;
+
+                pos = parent_pos;
+                decode_pos(pos, &cr, &cc);
+            }
+            for (int i = 0; i < path_len; i++)
+                actions[i] = path_dirs[path_len - 1 - i];
+            *action_len = path_len;
+            return 1;
+        }
+
+        //四个方向扩展搜索
+        int8_t dr_tbl[4] = {-1, 1, 0, 0};
+        int8_t dc_tbl[4] = {0, 0, -1, 1};
+        for (int d = 0; d < 4; d++)
+        {
+            int8_t nr = r + dr_tbl[d];
+            int8_t nc = c + dc_tbl[d];
+            if (nr < 0 || nr >= ROWS || nc < 0 || nc >= COLS) continue;
+            if (visited[nr][nc]) continue;
+            if (is_position_blocked(nr, nc)) continue;
+
+            visited[nr][nc] = 1;
+            parent[nr][nc] = cur;
+            q[tail++] = encode_pos(nr, nc);
+        }
+    }
+    return 0;
+}
+
+//推箱子状态BFS核心：联合搜索玩家位置、箱子位置，实现推箱子状态遍历
+static uint8_t bfs_plan_push(int8_t start_x, int8_t start_y,
+                             int8_t box_x_pos, int8_t box_y_pos,
+                             int8_t target_x_pos, int8_t target_y_pos,
+                             uint8_t any_target,
+                             int8_t *arrived_target_idx,
+                             int8_t *actions, int *action_len,
+                             int8_t *push_dirs, int *push_len,
+                             int8_t *end_px, int8_t *end_py)
+{
+    memset(visited_state, 0, sizeof(visited_state));
+    int head = 0, tail = 0;
+
+    //初始化搜索状态：记录玩家位置、箱子位置
+    queue[tail].player_pos = encode_pos(start_x, start_y);
+    queue[tail].prev_idx = -1;
+    box_pos_at_state[tail] = encode_pos(box_x_pos, box_y_pos);
+    action_at_state[tail] = 0;
+    is_push_at_state[tail] = 0;
+    tail++;
+    visited_state[start_x][start_y][box_x_pos][box_y_pos] = 1;
+
+    int8_t dr_tbl[4] = {-1, 1, 0, 0};
+    int8_t dc_tbl[4] = {0, 0, -1, 1};
+    int8_t dir_tbl[4] = {UP, DOWN, LEFT, RIGHT};
+
+    while (head < tail && tail < MAX_PUSH_STATES)
+    {
+        PushState_t *s = &queue[head];
+        int8_t px, py;
+        decode_pos(s->player_pos, &px, &py);
+        int16_t box_pos = box_pos_at_state[head];
+        int8_t bx, by;
+        decode_pos(box_pos, &bx, &by);
+
+        //判断箱子是否抵达目标
+        uint8_t arrived = 0;
+        if (any_target)
+        {
+            for (int t = 0; t < target_count; t++)
+            {
+                if(target_matched[t]) continue;
+                if (bx == target_x[t] && by == target_y[t])
+                {
+                    arrived = 1;
+                    if(arrived_target_idx) *arrived_target_idx = t;
+                    break;
+                }
+            }
+        }
+        else
+        {
+            arrived = (bx == target_x_pos && by == target_y_pos);
+        }
+
+        if (arrived)
+        {
+            //回溯动作序列，输出运动指令
+            int total_actions = 0;
+            int push_count = 0;
+            int8_t action_stack[ROWS * COLS * 2];
+            int8_t push_stack[ROWS * COLS];
+            int idx = head;
+
+            while (idx != -1)
+            {
+                uint8_t act = action_at_state[idx];
+                if (act != 0)
+                {
+                    action_stack[total_actions++] = act;
+                    if(is_push_at_state[idx])
+                        push_stack[push_count++] = act;
+                }
+                idx = queue[idx].prev_idx;
+            }
+            //反转得到正向动作序列
+            for (int i = 0; i < total_actions; i++)
+                actions[i] = action_stack[total_actions - 1 - i];
+            *action_len = total_actions;
+            for (int i = 0; i < push_count; i++)
+                push_dirs[i] = push_stack[push_count - 1 - i];
+            *push_len = push_count;
+
+            //计算运动结束后车体坐标
+            int8_t sim_px = start_x, sim_py = start_y;
+            for (int i = 0; i < total_actions; i++)
+            {
+                switch(actions[i])
+                {
+                    case UP:    sim_px--; break;
+                    case DOWN:  sim_px++; break;
+                    case LEFT:  sim_py--; break;
+                    case RIGHT: sim_py++; break;
+                }
+            }
+            *end_px = sim_px;
+            *end_py = sim_py;
+            return 1;
+        }
+
+        //向四个方向扩展状态，区分普通移动、推动箱子两种情况
+        for (uint8_t d = 0; d < 4; d++)
+        {
+            int8_t new_px = px + dr_tbl[d];
+            int8_t new_py = py + dc_tbl[d];
+            if (new_px < 0 || new_px >= ROWS || new_py < 0 || new_py >= COLS) continue;
+
+            int8_t new_bx = bx, new_by = by;
+            uint8_t is_push = 0;
+            //判断是否发生推箱子动作
+            if (new_px == bx && new_py == by)
+            {
+                int8_t push_bx = bx + dr_tbl[d];
+                int8_t push_by = by + dc_tbl[d];
+                if (push_bx < 0 || push_bx >= ROWS || push_by < 0 || push_by >= COLS) continue;
+                if (map_data[push_bx][push_by] == CELL_WALL) continue;
+
+                new_bx = push_bx;
+                new_by = push_by;
+                is_push = 1;
+            }
+            else
+            {
+                if(is_position_blocked(new_px, new_py)) continue;
+            }
+
+            if (visited_state[new_px][new_py][new_bx][new_by]) continue;
+            visited_state[new_px][new_py][new_bx][new_by] = 1;
+
+            //保存新的搜索状态
+            queue[tail].player_pos = encode_pos(new_px, new_py);
+            queue[tail].prev_idx = head;
+            box_pos_at_state[tail] = encode_pos(new_bx, new_by);
+            action_at_state[tail] = dir_tbl[d];
+            is_push_at_state[tail] = is_push;
+            tail++;
+        }
+        head++;
+    }
+    return 0;
+}
+
+OpenART Plus main.py主程序代码
+import sensor, image, time, math, os, tf
+from machine import UART
+from pyb import LED
+uart = UART(12, baudrate=115200)
+green_light = LED(2)
+blue_light = LED(3)
+CMD_MAP	 = 0x53
+CMD_DIGIT   = 0x74
+CMD_BOX	 = 0x62
+CMD_LOCATE  = 0x72
+MAP_BRIGHTNESS	 = 10
+MAP_AUTO_EXPOSURE  = False
+MAP_EXPOSURE_US	= 270
+MAP_AUTO_GAIN	  = False
+MAP_GAIN_DB		= 0
+MAP_AUTO_WHITEBAL  = False
+MAP_REGION =(198, 102, 219, 283)
+MAP_ROWS = 16
+MAP_COLS = 12
+MAP_CROP_BORDER = 2
+class_avg_colors = {
+    0: (45, 49, -83),
+    1: (58, 14, -30),
+    2: (85, -13, 63),
+    3: (60, 88, -56),
+    4: (82, -51, 29),
+    5: (54, 75, 8)
+}
+class_std_colors = {
+    0: (7, 13, 15),
+    1: (25, 18, 21),
+    2: (18, 22, 43),
+    3: (6, 14, 16),
+    4: (19, 21, 39),
+    5: (6, 12, 28)
+}
+DIGIT_ROI_X = 424
+DIGIT_ROI_Y = 108
+DIGIT_ROI_W = 216
+DIGIT_ROI_H = 290
+BLUE_SCAN = (64, 97, -64, -18, -30, 8)
+GREEN_SCAN = (54, 96, -92, -50, 15, 92)
+POS_HISTORY_LEN = 5
+SMOOTH_A_NUM = 3
+SMOOTH_A_DEN = 10
+_loaded_model_type = None
+_digit_net = None
+_digit_labels = None
+_box_net = None
+_box_labels = None
+_pic_index = 0
+cx_smooth, cy_smooth = 0, 0    # 位置平滑上次值
+def _init_camera():
+    sensor.reset()
+    sensor.set_pixformat(sensor.RGB565)
+    sensor.set_framesize(sensor.VGA)
+    sensor.set_brightness(MAP_BRIGHTNESS)
+    sensor.set_auto_exposure(MAP_AUTO_EXPOSURE, MAP_EXPOSURE_US)
+    sensor.set_auto_gain(MAP_AUTO_GAIN, MAP_GAIN_DB)
+    sensor.set_auto_whitebal(False, rgb_gain_db=(0.0, 0.0, 0.0))
+    sensor.skip_frames(time=2000)
+def _ensure_model(model_type):
+    global _loaded_model_type, _digit_net, _digit_labels, _box_net, _box_labels
+    if model_type == 'digit' and _digit_net is not None:
+        _loaded_model_type = model_type
+        return
+    if model_type == 'box' and _box_net is not None:
+        _loaded_model_type = model_type
+        return
+    if model_type == 'digit':
+        _digit_labels = [line.rstrip() for line in open("/sd/digits.txt")]
+        _digit_net = tf.load("firsteditiondigit.tflite")
+        print("Digit model loaded")
+    elif model_type == 'box':
+        _box_labels = [line.rstrip() for line in open("/sd/classes.txt")]
+        _box_net = tf.load("secondedition.tflite")
+        print("Box model loaded")
+    _loaded_model_type = model_type
+def split_image(image, rows, cols):
+    height = image.height()
+    width = image.width()
+    roi_list = []
+    for i in range(rows):
+        for j in range(cols):
+            y_start = int(i * height / rows)
+            y_end = int((i + 1) * height / rows)
+            x_start = int(j * width / cols)
+            x_end = int((j + 1) * width / cols)
+            if i == rows - 1:
+                y_end = height
+            if j == cols - 1:
+                x_end = width
+            roi_list.append((x_start, y_start, x_end - x_start, y_end - y_start))
+    return roi_list
+def classify_grid(image, roi):
+    x, y, w, h = roi
+    if MAP_CROP_BORDER > 0:
+        if h > 2 * MAP_CROP_BORDER and w > 2 * MAP_CROP_BORDER:
+            x = x + MAP_CROP_BORDER
+            y = y + MAP_CROP_BORDER
+            w = w - 2 * MAP_CROP_BORDER
+            h = h - 2 * MAP_CROP_BORDER
+    stats = image.get_statistics(roi=(x, y, w, h))
+    grid_l = stats.l_mean()
+    grid_a = stats.a_mean()
+    grid_b = stats.b_mean()
+    grid_l_std = stats.l_stdev()
+    grid_a_std = stats.a_stdev()
+    grid_b_std = stats.b_stdev()
+    min_dist = float('inf')
+    best_class = 0
+    for class_id in sorted(class_avg_colors.keys()):
+        ref_avg = class_avg_colors[class_id]
+        ref_std = class_std_colors[class_id]
+        avg_dist = math.sqrt((grid_l - ref_avg[0])**2 +
+                            (grid_a - ref_avg[1])**2 +
+                            (grid_b - ref_avg[2])**2)
+        std_dist = math.sqrt((grid_l_std - ref_std[0])**2 +
+                            (grid_a_std - ref_std[1])**2 +
+                            (grid_b_std - ref_std[2])**2)
+        total_dist = avg_dist + 0.5 * std_dist
+        if total_dist < min_dist:
+            min_dist = total_dist
+            best_class = class_id
+    return best_class
+def pack_result(result_array):
+    data = bytearray()
+    for col in range(MAP_COLS - 1, -1, -1):
+        for row in range(MAP_ROWS):
+            data.append(result_array[row][col] & 0xFF)
+    return data
+def recognize_map():
+    blue_light.on()
+    clock = time.clock()
+    clock.tick()
+    img = sensor.snapshot()
+    x, y, w, h = MAP_REGION
+    map_region = img.crop(roi=(x, y, w, h))
+    roi_list = split_image(map_region, MAP_ROWS, MAP_COLS)
+    result_array = [[0 for _ in range(MAP_COLS)] for _ in range(MAP_ROWS)]
+    for i, roi in enumerate(roi_list):
+        row = i // MAP_COLS
+        col = i % MAP_COLS
+        result_array[row][col] = classify_grid(map_region, roi)
+    packet = pack_result(result_array)
+    green_light.toggle()
+    blue_light.off()
+    print("Map recognized, %d bytes" % len(packet))
+    return packet
+def _run_classification(net, labels):
+    img = sensor.snapshot()
+    img.draw_rectangle(
+        (DIGIT_ROI_X, DIGIT_ROI_Y, DIGIT_ROI_W, DIGIT_ROI_H),
+        color=(255, 0, 0), thickness=2
+    )
+    img1 = img.copy(roi=(DIGIT_ROI_X, DIGIT_ROI_Y, DIGIT_ROI_W, DIGIT_ROI_H))
+    for obj in tf.classify(net, img1, min_scale=1.0, scale_mul=0.5,
+                           x_overlap=0.0, y_overlap=0.0):
+        sorted_list = sorted(zip(labels, obj.output()),
+                             key=lambda x: x[1], reverse=True)
+        top_label = sorted_list[0][0]
+        top_conf  = sorted_list[0][1]
+        return top_label, top_conf
+    return "?", 0.0
+def _classify_vote(net, labels, n_frames=3):
+    votes = []
+    for _ in range(n_frames):
+        label, conf = _run_classification(net, labels)
+        try:
+            idx = labels.index(label)
+        except ValueError:
+            idx = 0
+        votes.append((idx, conf))
+    freq = {}
+    conf_sum = {}
+    for idx, conf in votes:
+        freq[idx] = freq.get(idx, 0) + 1
+        conf_sum[idx] = conf_sum.get(idx, 0) + conf
+    max_freq = max(freq.values())
+    candidates = [idx for idx, f in freq.items() if f == max_freq]
+    if len(candidates) == 1:
+        return candidates[0]
+    return max(candidates, key=lambda idx: conf_sum[idx])
+def _save_debug_image():
+    global _pic_index
+    img = sensor.snapshot()
+    img.draw_rectangle(
+        (DIGIT_ROI_X, DIGIT_ROI_Y, DIGIT_ROI_W, DIGIT_ROI_H),
+        color=(255, 0, 0), thickness=2
+    )
+    roi_img = img.copy(roi=(DIGIT_ROI_X, DIGIT_ROI_Y, DIGIT_ROI_W, DIGIT_ROI_H))
+    save_file = "/sd/pic_%d.jpg" % _pic_index
+    roi_img.save(save_file)
+    print("Saved image:", save_file)
+    _pic_index += 1
+def _log_result(prefix, idx):
+    with open("/sd/result.txt", "a") as f:
+        f.write("{} {}\n".format(prefix, idx))
+def recognize_digit():
+    _ensure_model('digit')
+    time.sleep_ms(200)
+    blue_light.on()
+    idx = _classify_vote(_digit_net, _digit_labels)
+    print("Digit voted: idx=%d" % idx)
+    _log_result("digit", idx)
+    _save_debug_image()
+    blue_light.off()
+    return bytes([idx])
+def recognize_box():
+    _ensure_model('box')
+    time.sleep_ms(200)
+    blue_light.on()
+    idx = _classify_vote(_box_net, _box_labels)
+    print("Box voted: idx=%d" % idx)
+    _log_result("box", idx)
+    _save_debug_image()
+    blue_light.off()
+    return bytes([idx])
+def find_target_position(img):
+    blobs = img.find_blobs([BLUE_SCAN, GREEN_SCAN],
+                           pixels_threshold=80, area_threshold=80,
+                           merge=True)
+    if not blobs:
+        return None
+    blobs = sorted(blobs, key=lambda b: b.area(), reverse=True)
+    for b in blobs:
+        area = b.area()
+        w, h = b.w(), b.h()
+        avg_side = (w + h) / 2.0
+        aspect = w / h if h > 0 else 99
+        if not (120 < area < 900):
+            continue
+        if not (12 < avg_side < 30):
+            continue
+        if not (0.4 < aspect < 2.5):
+            continue
+        bx, by, bw, bh = b.rect()
+        margin = 5
+        roi = (max(0, bx - margin), max(0, by - margin),
+               min(img.width() - bx + margin, bw + 2 * margin),
+               min(img.height() - by + margin, bh + 2 * margin))
+        has_blue = img.find_blobs([BLUE_SCAN], roi=roi,
+                                   pixels_threshold=10, area_threshold=10)
+        has_green = img.find_blobs([GREEN_SCAN], roi=roi,
+                                    pixels_threshold=10, area_threshold=10)
+        if not has_blue or not has_green:
+            continue
+        best_blue = max(has_blue, key=lambda x: x.area())
+        best_green = max(has_green, key=lambda x: x.area())
+        dist = math.sqrt((best_blue.cx() - best_green.cx()) ** 2 +
+                         (best_blue.cy() - best_green.cy()) ** 2)
+        if dist > 30:
+            continue
+        img.draw_rectangle(b.rect(), color=(255,255,0))
+        img.draw_cross(b.cx(), b.cy(), color=(255,0,0), size=10)
+        img.draw_string(b.cx() + 10, b.cy() - 10,
+                        "({},{})".format(b.cx(), b.cy()), color=(255,255,255))
+        return (b.cx(), b.cy())
+    return None
+def locate_car():
+    blue_light.on()
+    clock = time.clock()
+    clock.tick()
+    # 连续拍多帧，取中值 + 低通
+    cx_buffer = []
+    cy_buffer = []
+    for _ in range(POS_HISTORY_LEN):
+        img = sensor.snapshot()
+        result = find_target_position(img)
+        if result is not None:
+            cx, cy = result
+            cx_buffer.append(cx)
+            cy_buffer.append(cy)
+    if cx_buffer:
+        sorted_cx = sorted(cx_buffer)
+        sorted_cy = sorted(cy_buffer)
+        cx_med = sorted_cx[len(sorted_cx) // 2]
+        cy_med = sorted_cy[len(sorted_cy) // 2]
+        # 低通滤波
+        global cx_smooth, cy_smooth
+        if cx_smooth == 0 and cy_smooth == 0:
+            cx_smooth, cy_smooth = cx_med, cy_med
+        else:
+            cx_smooth = (SMOOTH_A_NUM * cx_med +
+                         (SMOOTH_A_DEN - SMOOTH_A_NUM) * cx_smooth) // SMOOTH_A_DEN
+            cy_smooth = (SMOOTH_A_NUM * cy_med +
+                         (SMOOTH_A_DEN - SMOOTH_A_NUM) * cy_smooth) // SMOOTH_A_DEN
+        map_x, map_y, map_w, map_h = MAP_REGION
+        adj_x = (map_x + map_w) - cx_smooth  # 距右边界
+        adj_y = cy_smooth - map_y
+        real_x = int(round(adj_x * MAP_COLS * 20.0 / map_w))
+        real_y = int(round(adj_y * MAP_ROWS * 20.0 / map_h))
+        msg = "A0X{:d}Y{:d}".format(real_x, real_y)
+        print("Located: %s  (pixel=%d,%d)" % (msg, adj_x, adj_y))
+        green_light.toggle()
+        blue_light.off()
+        return bytes(msg, 'utf-8')
+    else:
+        msg = "A0X0Y0"
+        print("Located: Not Found (A0X0Y0)")
+        blue_light.off()
+        return bytes(msg, 'utf-8')
+print("Unified OpenART Ready.")
+_init_camera()
+print("Camera initialized (VGA, fixed exposure/gain/whitebal)")
+print("  'S' → Map Recognition")
+print("  't' → Digit Recognition")
+print("  'b' → Box/Image Recognition")
+print("  'r' → Car Localization")
+while True:
+    if uart.any():
+        cmd = uart.read(1)
+        if cmd:
+            cmd_byte = cmd[0]
+            if cmd_byte == CMD_MAP:
+                response = recognize_map()
+                uart.write(response)
+            elif cmd_byte == CMD_DIGIT:
+                response = recognize_digit()
+                uart.write(response)
+            elif cmd_byte == CMD_BOX:
+                response = recognize_box()
+                uart.write(response)
+            elif cmd_byte == CMD_LOCATE:
+                response = locate_car()
+                uart.write(response)
+            else:
+                uart.write(cmd)
+
+串口通信协议代码
+void LPUART4_IRQHandler(void) {
+    if(kLPUART_RxDataRegFullFlag & LPUART_GetStatusFlags(LPUART4)) {
+        if(NULL != flexio_camera_uart_handler) flexio_camera_uart_handler();
+        gnss_uart_callback();
+        
+        while (uart_query_byte(UART_4, &data)) {
+            // ============================================================
+            // 1. 地图接收（'S' 响应，192字节）
+            // ============================================================
+            if (!map_complete && map_recv_cnt < MAP_SIZE && data >= 0 && data <= 5) {
+                map_buffer[map_recv_cnt++] = data;
+                if (map_recv_cnt >= MAP_SIZE) {
+                    map_complete = 1;
+                }
+                continue;
+            }
+            
+            // ============================================================
+            // 2. 角度数据（A开头 a结尾，0-360）
+            // ============================================================
+            if (data == 'A') {
+                // 开始接收角度，清空缓存
+                memset(angle_buf, 0, sizeof(angle_buf));
+                angle_idx = 0;
+                continue;
+            }
+            
+            if (data == 'a') {
+                // 角度结束，解析
+                if (angle_idx > 0) {
+                    int val = 0;
+                    for (int i = 0; i < angle_idx; i++) {
+                        val = val * 10 + (angle_buf[i] - '0');
+                    }
+                    //current_angle = val;
+                }
+                continue;
+            }
+            
+            if (data >= '0' && data <= '9') {
+                if (angle_idx < 7) {
+                    angle_buf[angle_idx++] = data;
+                }
+                continue;
+            }
+            
+            // ============================================================
+            // 3. 识别结果（'t' / 'b' 响应，1字节）
+            // ============================================================
+            if (recog_phase == 1 && data >= 0 && data <= 9) {
+                bfs_set_target_id(recog_target_idx, data);
+                recog_target_idx++;
+                recog_ready = 1;
+                continue;
+            } else if (recog_phase == 2 && data >= 0 && data <= 9) {
+                bfs_set_box_id(recog_box_idx, data);
+                recog_box_idx++;
+                recog_ready = 1;
+                continue;
+            }
+        }
+    }
+    LPUART_ClearStatusFlags(LPUART4, kLPUART_RxOverrunFlag);
+}
+
+
+
+
+
+
+
+

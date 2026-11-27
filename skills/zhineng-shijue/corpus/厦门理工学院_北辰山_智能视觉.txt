@@ -1,0 +1,870 @@
+第二十一届全国大学生
+智能汽车竞赛
+技  术  报  告
+
+
+
+
+
+
+
+学        校：厦门理工学院
+队伍名称：北辰山
+参赛队员：陈杰铭、叶思航、龚林杰
+带队教师：周承仙
+关于技术报告和研究论文使用授权的说明
+本人完全了解全国大学生智能汽车竞赛关于保留、使用技术报告和研究论文的规定，即：参赛作品著作权归参赛者本人，比赛组委会可以在相关主页上收录并公开参赛作品的设计方案、技术报告以及参赛模型车的视频、图像资料，并将相关内容编辑收录在组委会出版论文集中。
+
+
+参赛队员签名：.__________________
+	                 __________________
+__________________
+带队教师签名：__________________
+日                期：        2026.8.16            
+
+目录
+第一章 引言	1
+第二章 系统总体方案	2
+2.1 系统组成	2
+2.2 主流程与状态机	3
+2.3 运行模式	3
+第三章 机械结构与传感器	4
+3.1 底盘机械结构	4
+3.2 传感器方案	4
+3.3 视觉模块、屏幕与电池安装	5
+3.4 主控板、驱动板与顶层结构	5
+3.5 安装与标定	7
+第四章 硬件电路设计及实现	8
+4.1 硬件总体设计方案	8
+4.2 核心控制模块	8
+4.3 电源管理模块设计	8
+4.5 电机驱动与执行机构	10
+4.6 主要接口配置	11
+第五章 算法设计	12
+5.1 软件架构与总体流程	12
+5.2 路径规划、巡图与炸弹清障	12
+5.3 语义绑定与推箱解算	13
+5.4 运动控制与位姿融合	14
+第六章 开发、制作与调试	17
+6.1 开发工具	17
+6.2 调试过程	17
+6.3 故障保护	17
+第七章 主要技术参数	18
+第八章 结论	19
+参考文献	xx
+附录A 核心程序	xxi
+附录B 硬件原理图与 PCB 图	xxxi
+B.1 主控底板原理图	xxxi
+B.2 双路电机驱动板原理图	xxxii
+B.3 PCB 实物图	xxxii
+
+
+
+第一章 引言
+本项目面向第二十一届全国大学生智能汽车竞赛智能视觉组推箱子赛题，完成了一辆能够自主建图、巡图识别、清障、推箱和返航的模型汽车。模型车以四轮麦克纳姆轮底盘为机械主体，制作过程中完成了车架与轮组装配、四路电机和增量编码器安装、RT1064 主控板及电机驱动与供电线路连接，并安装 ICM42688 惯性测量单元、两路 OpenART 视觉模块和 TFT 显示模块。ART1 用于地图与全局位姿获取，ART2 用于箱子和目标点语义识别，各模块共同构成车辆的环境感知与运动执行系统。
+整车控制软件围绕比赛任务建立分层结构。主控接收 ART1 地图后生成逻辑关卡，Strategy 与 Exploration 规划炸弹清障和巡图观测顺序，MacroPlanner 根据实时地图和已识别语义在线派发观测、推炸弹及推箱宏动作，Sokoban 求解器生成最终推箱路径，Tracker、位姿估计和四轮速度闭环负责将网格路径转换为实际运动。比赛状态机将出库、建图、巡图、语义绑定、推箱、返航和异常停车串联起来，并提供实车、Mock 和 Demo 三种运行模式用于现场执行与调试。
+相关智能汽车方案通常采用编码器里程计和 IMU 进行短时运动估计，再利用视觉定位抑制长期累计误差；复杂任务规划则常使用网格搜索、启发式搜索和状态剪枝降低求解规模。本项目在这些方法的基础上，根据推箱子赛题增加了炸弹清障、N-1 语义绑定、动态宏动作调度以及 IDA* 推箱搜索，并针对 RT1064 的片上存储限制使用固定容量数组和分区缓存，避免动态内存进入规划与控制热路径。
+设计制作和调试采用 Keil MDK/armclang 完成嵌入式构建，桌面仿真程序用于地图回归和规划算法检查。后续各章依次说明系统总体方案、机械与传感器安装、电路及通信、控制软件与算法、开发调试过程和主要技术参数，并在结论中总结实车调试问题、当前解决方法和进一步改进方向。
+
+第二章 系统总体方案
+2.1 系统组成
+系统分为 App、Algorithm、Subsystem、Device 和 Core 五层。App 层负责比赛状态机；Algorithm 层负责规划、求解和控制算法；Subsystem 层连接业务与设备；Device 层封装电机、编码器、IMU 和串口；Core 层提供中断、调度与参数配置。
+
+图 2.1 智能视觉组主控系统总体架构
+表 2.1 软件分层及职责
+
+2.2 主流程与状态机
+ART1 地图就绪后，GameManager 将视觉数据写入 logical_level。高级赛段先由 Strategy 计算炸弹任务，Exploration 生成巡图参考序列，再由 MacroPlanner 在线选择观测、推炸弹或完成式推箱动作。ART2 语义结果满足绑定条件后，Sokoban 求解最终路径，Tracker 和底盘完成执行与返航。
+
+.3 运行模式
+表 2.2 系统运行模式
+
+
+第三章 机械结构与传感器
+3.1 底盘机械结构
+车模采用四轮麦克纳姆轮全向底盘，轮半径为 3.15 cm，x 方向半轴距为 9.0 cm，y 方向半轴距为 10.0 cm。底盘通过碳纤维承载板和铜柱建立分层安装空间，主控、驱动、视觉模块与电池沿车体中心区域布置，以兼顾整车重心、维护空间和四轮受力对称性。
+表 3.1 底盘机械参数
+
+3.2 传感器方案
+四路增量编码器用于轮速反馈与里程计，ICM42688 用于姿态和角速度测量。ART1 通过 UART 返回地图和位姿，ART2 负责箱子与目标点的语义识别。PoseEstimator 按稳定帧、方差与时间新鲜度条件融合视觉位姿。
+表 3.2 传感器配置
+
+3.3 视觉模块、屏幕与电池安装
+为保证两路视觉模块的视场不受车体结构和线束遮挡，车体上部采用定制碳纤维板与铜柱形成分层支架。摄像头与 TFT 屏幕固定在上层安装板，镜头朝向、屏幕操作面和排线出口均预留调整空间。
+屏幕安装板使用绝缘螺柱抬高，3S 锂电池固定在中间夹层。该布置充分利用了垂向空间，并使电池质量靠近车体几何中心，可减小横移和旋转时的惯性偏置。摄像头、屏幕和电池的实际安装位置如图 3.1 和图 3.2 所示。
+
+3.4 主控板、驱动板与顶层结构
+主控底板固定在摄像头安装板背面，RT1064 核心板采用排针插接，电源、编码器和通信线束从板体四周引出。安装时使用螺钉和绝缘垫片隔离碳纤维板，既便于拆装维护，也可避免焊点或引脚与承载板直接接触。
+
+图 3.3 主控底板安装
+两块双路电机驱动板分别布置在车体前后两端，靠近对应电机安装，以缩短大电流走线并降低线束对视觉模块的遮挡。两处驱动板均通过螺柱固定，电机端子朝外，便于检查接线和快速更换。安装位置如图 3.4 和图 3.5 所示。
+
+顶层标识牌使用与标识区域相匹配的碳纤维承载板，并通过铜柱与底盘连接。整车采用一块主控底板和两块双路驱动板的主驱分离方案，形成底盘执行层、中部电气层和顶部视觉标识层，整车结构如图 3.6 所示。
+
+图 3.6 整车机械结构
+3.5 安装与标定
+核对四轮电机和编码器的软件符号与实际方向
+IMU 上电静态标定期间保持车辆静止，并核验 yaw 零点
+记录 ART1、ART2 相机高度、俯仰角、视场方向和相机坐标系
+到达观测点后先原地对准并确认停稳，再触发 ART2 抓拍
+第四章 硬件电路设计及实现
+针对本组别复杂目标识别、多路视觉输入及全向运动控制需求，本车以 M 车模为底盘，设计了一套由 RT1064 核心控制模块、多级独立电源管理模块、视觉与姿态传感器接口以及动力执行模块组成的硬件系统。动力部分使用两块双路驱动板，每块集成两片 DRV8701 栅极驱动芯片，以独立控制四台电机。
+4.1 硬件总体设计方案
+整车硬件采用“RT1064 核心板 + 自主设计底板”的模块化架构。系统设计遵循“核心算力独立、电源多级稳压、强弱电物理隔离”的三项原则。硬件系统的整体拓扑分为四大模块：电源管理模块、核心控制模块、视觉感知与信号采集模块以及动力执行模块。
+系统以自主设计的主控底板为基座，NXP i.MX RT1064 核心板通过排针插接于底板之上。整个系统由 3S（标称 11.1 V）锂电池提供主电源，经由 OC5820 降压、SY6280 时序控制以及 RT9013 LDO 稳压后，为各模块提供独立且纯净的电源。RT1064 作为中枢，通过两路 UART 与视觉模块交互，并输出 PWM 控制信号驱动双路 DRV8701 电机驱动方案，实现全向移动与精准推箱。
+4.2 核心控制模块
+主控采用 NXP i.MX RT1064 核心板。该芯片基于 Arm Cortex-M7 内核，主频可达 600 MHz，并带有硬件浮点运算单元，能够完成多路视觉结果接收、比赛状态机、在线规划、位姿融合和四轮实时控制。核心板通过排针插接自主设计底板，既降低了焊接风险，也便于前期调试、故障更换和后期维护。
+4.3 电源管理模块设计
+智能视觉组同时搭载视觉模块、姿态传感器和四台驱动电机，系统瞬时功耗较大，视觉识别又对供电纹波较为敏感。因此，整车围绕 3S 锂电池设计“DC-DC 主降压、负载开关时序控制、LDO 精细稳压”的三级供电架构，其原理如图 4.1 所示。
+
+图 4.1 电源管理模块原理图
+第一级采用 OC5820 同步降压芯片，将 3S 锂电池电压转换为 5 V 总线电压。输入、输出端配置储能与高频去耦电容，反馈网络设定输出电压，为视觉模块和后级稳压电路提供功率储备。
+第二级在 5 V 外设支路设置 SY6280 负载开关。OpenART 等模块上电时可能产生浪涌电流，SY6280 的限流和受控开启能力可实现外设上电时序，减少电流尖峰引起主控复位或总线电压跌落的风险。
+第三级使用 RT9013 低压差线性稳压器输出 3.3 V，为核心控制与低压信号电路提供低噪声电源。各级输入、输出端均就近布置去耦电容，动力供电与弱信号供电在布局布线中分区处理。
+经容量统计，主控母板所配置电容总容量为 512.1 μF，单块驱动板为 246.4 μF；整车使用两块驱动板，车模总体电容容量为 1004.9 μF。
+在基础静态工况下，RT1064 主控母板功耗为 1.02 W，两片 DRV8701E 驱动芯片功耗合计为 0.27 W，整机静态功耗合计为 1.29 W。整机电机空载功耗为 11.06 W，正常行驶功耗为 54.57 W，电机堵转极限工况功耗为 268.84 W。堵转功耗用于校核电源和驱动的瞬时承载能力，实际运行中应避免长时间堵转。
+4.4 传感器与信号采集模块
+视觉传感器接口：底板提供两路独立 OpenART 接口，分别连接 OpenART Mini 与 OpenART Plus。两个模块承担场地定位和目标语义识别任务，并通过独立 UART 与 RT1064 通信，以减少多路数据并发时的相互影响。
+姿态传感器接口：板载六轴陀螺仪和加速度计，通过 SPI 总线与主控通信。姿态数据用于偏航角与角速度估计，为原地对准、直线行驶和横向移动提供闭环反馈。
+编码器接口：四台电机均配置正交编码器，底板预留独立采集接口。主控根据四轮脉冲增量计算实际轮速，并通过正运动学得到车体速度和里程计位姿，为轮速闭环及视觉坐标融合提供高频运动信息。
+4.5 电机驱动与执行机构
+针对 M 车模四轮全向底盘，动力执行部分采用两块相同的双路驱动板。每块驱动板集成两片 DRV8701 栅极驱动器及对应功率 MOSFET H 桥，分别控制两台电机；两块板合计独立控制 LF、LB、RF、RB 四个车轮。RT1064 输出四路 PWM 与方向信号，底层控制器结合麦克纳姆轮逆运动学和四轮速度闭环，实现前进、横移、旋转及复合运动。驱动板原理图如图 4.2 所示。
+
+图 4.2 DRV8701 双路驱动板原理图
+4.6 主要接口配置
+表 4.1 主要接口配置
+
+第五章 算法设计
+5.1 软件架构与总体流程
+控制软件采用“比赛状态机—宏动作规划—底层任务—实时控制”四级结构。GameManager 根据地图、语义和当前比赛阶段决定业务流程，Strategy、Exploration、MacroPlanner 与 Sokoban 只处理规划问题；宏动作随后被拆分为加载路径、等待跟踪、原地对准和触发视觉等 RobotTask，最终由 Tracker、PoseEstimator 和 ChassisControl 执行。该结构把计算量较大的离散规划与固定周期的连续控制隔离，避免搜索过程直接占用中断控制时间。
+系统使用 1 ms GPT 作为软件调度时基，并由 PIT 中断运行不同周期的实时任务。IMU 姿态更新频率最高，轮速控制以 5 ms 快环运行；路径跟踪、速度规划和里程计使用 20 ms 慢环；视觉坐标矫正独立运行在 10 ms 周期。较慢的上位机通信和 TFT 刷新放入主循环任务表，从而保证电机控制和姿态估计的确定性。
+表 5.1 控制软件主要周期任务
+
+5.2 路径规划、巡图与炸弹清障
+规划层把 240 cm×320 cm 场地离散为 12×16 网格，每格边长 20 cm。SokobanLevel 保存静态墙体、箱子、目标点、炸弹和玩家位置，动态物体与墙体分开维护。PlanningCommon 以 A* 启发式搜索为基础[1]，并增加朝向状态和转向时间代价，使路线评价不仅考虑格数，还能减少频繁停车和方向切换。搜索缓存采用固定尺寸数组和 StaticArray，避免在 RT1064 上产生动态内存碎片。
+箱子和炸弹不能被当作普通障碍简单绕过，因此规划器先计算玩家可达区域，再判断推动方向后的支撑位置、物体目标格和后续可达性。Strategy 分两阶段选择炸弹任务：巡图前优先打通观测和移动所需通道，语义绑定后再结合箱子—目标配对重新评估剩余墙体。每次推炸弹后，GameManager 更新逻辑地图并等待爆炸窗口结束；在此期间暂时抑制视觉修正，防止爆炸闪光产生错误位姿。
+Exploration 根据每个箱子和目标点的相邻可站立格生成 ViewPose 候选，候选同时包含观测位置、朝向和可覆盖实体掩码。目标点观测可在一次抓拍中排列最多三个实体，规划器据此减少重复停车。离线参考阶段综合路径时间、转向代价、炸弹执行顺序和顺路观测机会，生成一条可执行的巡图参考序列。
+实际执行时环境状态会因推箱、炸弹爆炸和语义识别结果发生变化，因此 MacroPlanner 不机械照搬参考序列，而是每次根据 MacroPlanContext 在线选择下一动作。上下文由 GameManager 填入真实 logical_level、当前位置、当前 yaw、已观测掩码和炸弹任务，规划器只保存知识状态而不复制真实世界地图。当参考动作不可达时，系统会尝试重新寻路、插入清障动作或调用 Exploration 兜底，降低局部状态变化导致整条计划失效的风险。
+宏动作最终被拆为底层任务队列：观测动作包括加载观测路径、等待到位、原地调整 yaw 和等待 ART2 抓拍；炸弹或箱子动作包括路径展开、跟踪等待和地图更新。只有车辆位置、航向和静止状态同时满足条件时才触发识别，避免运动模糊和相机视角偏差污染语义结果。
+5.3 语义绑定与推箱解算
+ART2 返回的语义标签先写入统一实体池，其中箱子编号位于前半部分，目标点编号紧随其后，-1 表示尚未识别。一次观测只有在抓拍 ACK 和请求掩码内全部实体结果到齐后才结算，避免旧帧或部分回包提前改变配对状态。MacroPlanner 每次派发新动作前同步该语义池，并检查当前信息是否足以进入最终推箱阶段。
+语义绑定先匹配已识别且标签相同的箱子和目标点，再应用 N-1 补全规则：若仅剩一个未识别目标点，则将已识别但尚无同标签目标的箱子与其配对；仅剩一个未识别箱子时反向处理；最后只允许唯一剩余箱子与唯一剩余目标互补。该规则在减少观测次数的同时保持配对唯一性，若仍存在多解则继续巡图，不把不确定关系交给求解器。
+绑定完成后，GameManager 将 box→target 配对写入 logical_level，重新计算第二阶段炸弹任务并加载 Sokoban 求解器。求解状态包含玩家规范位置、各箱子位置和语义、炸弹状态及未完成目标集合；启发式代价根据箱子到兼容目标的距离建立下界。求解器采用 IDA* 逐步提高代价阈值[2]，并结合 Sokoban 领域死锁检测、模式代价、Zobrist 哈希和置换表剪去重复状态[3-4]。
+为降低逐步搜索深度，求解器还生成可行推箱宏动作和炸弹宏动作，再由 PlanningCommon 展开为玩家实际行走路径。候选解完成后必须重新模拟箱子、炸弹和玩家状态，验证路径连续性及目标语义一致性。若最终求解失败，prepare_phase2_solver 会根据当前地图重新绑定语义和规划炸弹任务；仍无法求解时返回感知阶段，而不是执行未经验证的路径。
+5.4 运动控制与位姿融合
+Tracker 接收规划层输出的逐格路径后，首先利用真实逻辑起点参与共线判断，只保留拐点和终点，再把网格坐标转换为物理坐标。该处理可减少 20 cm 网格路径中的冗余航点，同时避免原始路径没有显式包含起点时首段方向判断错误。推箱、推炸弹和普通观测共用同一跟踪框架，但可以携带强制停车、持续视觉辅助等不同属性。
+跟踪过程中 current_wp_idx 指向当前物理航点，segment_start 保存当前直线段起点。普通航点使用到达窗口和横向误差共同判断是否切段，最终目标则要求进入更严格半径并确认四轮已经停稳。任务切换或到达终点时置位 hard_lock，底盘目标立即归零并清除速度规划残留。
+PathLineFollower 将当前位置投影到 segment_start—target 直线，根据沿线距离选择动态前瞻点，并用法向误差生成横向拉回速度。该方法借鉴受约束纯追踪的速度调节思想[7]，前瞻距离随当前速度变化，方向指令再经过一阶滤波，减少切段时速度矢量突变；当横向误差增大时，系统主动降低沿线速度并提高纠偏比例，以避免高速状态下越修越偏。
+Trajectory 根据剩余距离、段长、最大速度、加速度和实际制动能力生成平滑速度。长段巡航速度与减速距离由可用段长和制动能力反推，短段提高起步加速度但不虚增刹车能力；停车段末端采用随剩余距离下降的速度曲线，使车辆在视觉冻结窗口前完成主要减速。
+路径跟踪器输出全局坐标系下的期望速度，底盘控制先依据当前 yaw 将其旋转到车体坐标系。项目约定车体 x 轴指向右侧、y 轴指向前方，随后依据全向轮移动机器人运动学模型[5-6]，通过麦克纳姆轮逆运动学分配为 LF、LB、RF、RB 四个轮速目标。x、y 方向分别设置运动学标定倍率，用于补偿轮径、安装角和底盘结构造成的方向比例差异。
+逆运动学在 20 ms 慢环产生新的轮速和目标加速度。若直接把该阶跃交给 5 ms 速度环，会周期性激励电机和底盘，因此系统把相邻慢环目标差分为四拍，在 4 个快环周期内线性铺开。这样既保持 200 Hz 轮速闭环的响应速度，又减小切段、转向和刹车时的目标跳变。
+四个车轮分别使用独立 PID 参数，不假设电机和机械阻力完全一致。控制输出由速度前馈、静摩擦补偿、加速/制动前馈和 PID 校正共同组成：kv 提供与目标轮速成比例的基础占空比，ks 用平滑符号函数克服低速静摩擦，ka 与 kb 分别补偿加速和制动阶段，PID 负责修正模型误差和负载变化。积分项采用抗饱和与门控策略[11]，只在目标加速度和速度误差较小时累积，大加减速阶段则逐步退避，防止起步阶段的历史积分在停车时释放为过冲；微分项不直接对速度误差差分，而是比较实测加速度与目标加速度，经低通滤波后只阻尼计划外加速度，避免抵消 ka、kb 前馈。目标、实测轮速和目标加速度均接近零时关闭输出，减少静止状态下由摩擦补偿引起的爬行。
+表 5.2 底盘连续控制链路
+
+YawProfiled 将航向误差归一化到最短旋转方向，并根据误差大小规划角速度和角加速度。远离目标角时使用受最大角速度约束的快速旋转，接近目标后进入线性区；IMU 实测角速度作为阻尼项抑制冲过和回摆。车辆平移时使用较保守的航向增益，观测点到位后再解除 hard_lock 原地对准，角度进入容差且车辆完全停稳后才允许拍照。
+位姿估计以编码器为高频短时基准。四轮实测速度通过正运动学得到车体 vx、vy 和角速度，结合 IMU yaw 旋转到全局坐标，并以 20 ms 周期积分位置。针对轮径和安装误差造成的系统性里程计偏差[8]，系统分别保存 x、y 方向的里程比例，视觉条件稳定时可依据一段直线运动中的视觉位移和编码器位移缓慢学习比例，以补偿长期轮径误差。
+ART1 位姿具有通信和图像处理延时，不能直接覆盖当前编码器位置；系统参考视觉里程计与多传感器融合方法[9-10]进行延时补偿和渐进修正。PoseEstimator 保存里程计历史，根据配置的视觉延时回到图像采集时刻，再将采集后累计的编码器位移补偿到当前时刻。修正量按当前路径段分解为纵向和横向：横向误差在全段限步矫正，纵向误差在中远段缓慢修正，进入刹车与终点冻结窗口后停止注入视觉位置，避免延时旧帧破坏停车判定。偏差过大时执行硬重置，异常帧则直接拒绝。
+上述视觉—里程计融合也是解决实车左右平移前后漂移的主要软件手段。编码器只能反映轮子转动，无法辨别底盘变形或载荷不对称造成的轮胎滑移；视觉坐标能够观测真实位移，因此控制系统用视觉限制累计误差，同时保留低延时编码器负责末端收尾。
+安全控制贯穿跟踪和状态机。四轮目标速度与实测速度均小于 1.5 cm/s 才判定车辆停稳；位置明显越出 240 cm×320 cm 场地时立即切换到 POINT_TRACKING 并锁定当前位置；规划失败、语义不足或视觉帧过期时不继续派发危险动作。推炸弹后还设置爆炸等待和视觉抑制窗口，FINISHED 与 ERROR_OCCURRED 状态均将底盘目标固定在当前位置。
+
+第六章 开发、制作与调试
+6.1 开发工具
+目标工程使用 Keil MDK 与 armclang 构建，工程文件为 project/mdk/rt1064.uvprojx。桌面 g++ 仅用于算法语法检查，simulation 目录提供地图、仿真入口和回归脚本。最终版本必须通过 Keil 编译并检查 map 文件中的 ITCM、DTCM 和 OCRAM 占用。
+6.2 调试过程
+单独核验电机方向、编码器正负和四轮速度闭环
+完成直线、横移和原地旋转标定，再联调路径跟踪
+用 Mock 模式验证地图、巡图、语义绑定与推箱状态转移
+接入 ART1 后验证超时重发和稳定帧筛选，接入 ART2 后验证 ACK 与请求掩码
+每次修改大型缓存后重新检查 Keil map 文件和静态内存
+6.3 故障保护
+表 6.1 故障场景与保护动作
+
+
+第七章 主要技术参数
+表 7.1 模型车主要技术参数
+在 3S 锂电池供电条件下，对基础静态、电机空载、正常行驶和电机堵转工况进行了功耗统计：
+表 7.2 实测功耗与电容参数
+
+
+第八章 结论
+本模型汽车已经完成从机械装配、传感器安装、电气连接到控制软件集成的整体制作。机械部分采用四轮麦克纳姆轮底盘，电气部分以 NXP i.MX RT1064 为主控并连接四路电机、编码器、ICM42688、双 OpenART 和 TFT；软件部分实现了视觉通信、位姿估计、巡图规划、炸弹清障、语义绑定、推箱求解、路径跟踪和异常停车。整车已经形成“出库建图—巡图识别—语义匹配—推箱执行—返航”的完整任务链路，并可通过 Mock 和 Demo 模式在脱离部分硬件输入时检查状态机和算法流程。
+实际调车过程中遇到的最突出问题是编码器点位不准确，车辆进行左右平移时会同时产生前后方向偏移。调试中先后检查并更换了相关编码器与硬件，也调整了编码器方向、轮速闭环、运动学参数和控制代码，但该现象仍未得到根本解决。结合不同方向和不同速度下的重复测试，问题可能并非单一编码器或软件计算错误，而是底盘结构发生变形，使四个麦克纳姆轮的接地状态、法向载荷或几何位置不再对称，进而产生方向不一致的打滑。该问题说明仅依赖编码器里程计难以区分真实位移与轮胎滑移，继续单纯调整 PID 参数无法从根本上消除系统性偏移。
+现阶段采用 ART1 视觉坐标周期性矫正编码器里程计，以限制左右平移误差的累计。后续应检查车架刚度、轮轴平行度、轮组安装角度和四轮载荷，恢复底盘机械对称性，再分别标定各方向的有效轮径和滑移系数。还可以增加负压装置，提高车辆附着并减小打滑，同时记录不同速度、方向和电量条件下的视觉—里程计误差，建立方向补偿模型。我们的判断是，应先消除机械结构造成的非对称误差，再用视觉闭环和软件补偿处理剩余扰动，而不能依靠不断增加控制增益掩盖机械问题。
+
+参考文献
+[1] HART P E, NILSSON N J, RAPHAEL B. A formal basis for the heuristic determination of minimum cost paths[J]. IEEE Transactions on Systems Science and Cybernetics, 1968, 4(2): 100-107. DOI: 10.1109/TSSC.1968.300136.
+[2] KORF R E. Depth-first iterative-deepening: an optimal admissible tree search[J]. Artificial Intelligence, 1985, 27(1): 97-109. DOI: 10.1016/0004-3702(85)90084-0.
+[3] JUNGHANNS A, SCHAEFFER J. Sokoban: enhancing general single-agent search methods using domain knowledge[J]. Artificial Intelligence, 2001, 129(1-2): 219-251. DOI: 10.1016/S0004-3702(01)00109-6.
+[4] PEREIRA A G, RITT M, BURIOL L S. Optimal Sokoban solving using pattern databases with specific domain knowledge[J]. Artificial Intelligence, 2015, 227: 52-70. DOI: 10.1016/j.artint.2015.05.011.
+[5] MUIR P F, NEUMAN C P. Kinematic modeling of wheeled mobile robots[J]. Journal of Robotic Systems, 1987, 4(2): 281-340. DOI: 10.1002/rob.4620040209.
+[6] TAHERI H, QIAO B, GHAEMINEZHAD N. Kinematic model of a four Mecanum wheeled mobile robot[J]. International Journal of Computer Applications, 2015, 113(3): 6-9. DOI: 10.5120/19804-1586.
+[7] MACENSKI S, SINGH S, MARTIN F, et al. Regulated pure pursuit for robot path tracking[J]. Autonomous Robots, 2023, 47(6): 685-694. DOI: 10.1007/s10514-023-10097-6.
+
+
+
+
+附录A 核心程序
+代码 A.1 软件周期任务调度（project/Core/CoreScheduler.cpp）
+void run() {
+    uint32_t current_time = get_sys_tick_ms();
+
+    for (uint8_t i = 0; i < TASK_COUNT; ++i) {
+        // 如果当前时间 - 上次执行时间 >= 设定的周期，则触发该任务
+        if (current_time - task_table[i].last_run_ms >= task_table[i].interval_ms) {
+            task_table[i].last_run_ms = current_time;   // 更新时间戳
+            task_table[i].task_func();                  // 执行任务
+        }
+    }
+}
+代码 A.2 在线宏动作选择（project/Algorithm/MacroPlanner.cpp）
+bool MacroPlanner::plan_next_action(const MacroPlanContext& ctx, MacroAction& out_action) {
+    sync_semantics(semantic_labels);
+    exploration_replan_needed = false;
+
+    if (pending_cursor < pending_actions.size()) {
+        MacroAction pending = pending_actions[pending_cursor];
+        MacroAction prepared;
+        if (prepare_reference_action(ctx, pending, prepared)) {
+            out_action = prepared;
+        } else {
+            exploration_replan_needed = pending.kind == MacroActionKind::OBSERVE;
+            return false;
+        }
+        ++pending_cursor;
+        if (pending_cursor >= pending_actions.size()) {
+            pending_actions.clear();
+            pending_cursor = 0;
+        }
+        return true;
+    }
+
+    SlotCandidate reference_slot;
+    if (!build_reference_slot(ctx, reference_slot)) {
+        // Exploration 已一次性给出参考序列，序列结束后不再动态补充观测
+        return false;
+    }
+
+    SlotCandidate best_optional;
+    best_optional.score = -kInfScore;
+
+    SlotCandidate completion_slot;
+    if (build_completion_push_slot(ctx, reference_slot.action, completion_slot)) {
+        best_optional = completion_slot;
+    }
+
+    SlotCandidate chosen = best_optional.valid ? best_optional : reference_slot;
+    out_action = chosen.action;
+    pending_actions = chosen.followups;
+    pending_cursor = 0;
+    if (chosen.consumes_reference && chosen.slot == SlotKind::REFERENCE) {
+        ++reference_cursor;
+    }
+
+    return true;
+}
+代码 A.3 N-1 语义推断（project/Algorithm/MacroPlanner.cpp）
+MacroPlanner::SemanticInferenceStatus MacroPlanner::infer_semantics(const SokobanLevel& level,
+                                                                    const int8_t* labels,
+                                                                    int8_t* out_labels) const {
+    if (!labels || !out_labels) return SemanticInferenceStatus::INVALID;
+    if (level.box_count != level.target_count) return SemanticInferenceStatus::INVALID;
+
+    const int entity_count = level.box_count + level.target_count;
+    for (int i = 0; i < entity_count; ++i) out_labels[i] = labels[i];
+
+    int box_counts[10] = {0};
+    int target_counts[10] = {0};
+    int hidden_box = -1;
+    int hidden_target = -1;
+    int hidden_box_count = 0;
+    int hidden_target_count = 0;
+
+    for (int b = 0; b < level.box_count; ++b) {
+        int8_t label = labels[b];
+        if (label == -1) {
+            hidden_box = b;
+            ++hidden_box_count;
+            continue;
+        }
+        if (!is_valid_semantic_id(label)) return SemanticInferenceStatus::INVALID;
+        ++box_counts[label];
+    }
+
+    for (int t = 0; t < level.target_count; ++t) {
+        int8_t label = labels[level.box_count + t];
+        if (label == -1) {
+            hidden_target = t;
+            ++hidden_target_count;
+            continue;
+        }
+        if (!is_valid_semantic_id(label)) return SemanticInferenceStatus::INVALID;
+        ++target_counts[label];
+    }
+
+    int req_boxes = level.box_count - 1;
+    int req_targets = level.target_count - 1;
+    if (req_boxes < 0) req_boxes = 0;
+    if (req_targets < 0) req_targets = 0;
+    if (level.box_count - hidden_box_count < req_boxes ||
+        level.target_count - hidden_target_count < req_targets) {
+        return SemanticInferenceStatus::INSUFFICIENT;
+    }
+
+    if (hidden_box_count > 1 || hidden_target_count > 1) return SemanticInferenceStatus::INSUFFICIENT;
+
+    int box_needs[10] = {0};
+    int target_needs[10] = {0};
+    int box_need_total = 0;
+    int target_need_total = 0;
+    int box_need_sem = -1;
+    int target_need_sem = -1;
+
+    for (int s = 0; s < 10; ++s) {
+        if (box_counts[s] > target_counts[s]) {
+            target_needs[s] = box_counts[s] - target_counts[s];
+            target_need_total += target_needs[s];
+            if (target_needs[s] == 1) target_need_sem = s;
+        } else if (target_counts[s] > box_counts[s]) {
+            box_needs[s] = target_counts[s] - box_counts[s];
+            box_need_total += box_needs[s];
+            if (box_needs[s] == 1) box_need_sem = s;
+        }
+    }
+
+    if (box_need_total > hidden_box_count || target_need_total > hidden_target_count) {
+        return SemanticInferenceStatus::INVALID;
+    }
+
+    if (hidden_box_count == 0 && hidden_target_count == 0) {
+        return (box_need_total == 0 && target_need_total == 0)
+            ? SemanticInferenceStatus::INFERRED
+            : SemanticInferenceStatus::INVALID;
+    }
+
+    if (hidden_box_count == 1 && hidden_target_count == 0) {
+        if (box_need_total != 1 || target_need_total != 0 || box_need_sem < 0) {
+            return SemanticInferenceStatus::INVALID;
+        }
+        out_labels[hidden_box] = static_cast<int8_t>(box_need_sem);
+        return SemanticInferenceStatus::INFERRED;
+    }
+
+    if (hidden_box_count == 0 && hidden_target_count == 1) {
+        if (target_need_total != 1 || box_need_total != 0 || target_need_sem < 0) {
+            return SemanticInferenceStatus::INVALID;
+        }
+        out_labels[level.box_count + hidden_target] = static_cast<int8_t>(target_need_sem);
+        return SemanticInferenceStatus::INFERRED;
+    }
+
+    if (box_need_total == 1 && target_need_total == 1 &&
+        box_need_sem >= 0 && target_need_sem >= 0) {
+        out_labels[hidden_box] = static_cast<int8_t>(box_need_sem);
+        out_labels[level.box_count + hidden_target] = static_cast<int8_t>(target_need_sem);
+        return SemanticInferenceStatus::INFERRED;
+    }
+
+    if (box_need_total == 0 && target_need_total == 0) {
+        int fallback_sem = first_unused_semantic_id(box_counts, target_counts);
+        out_labels[hidden_box] = static_cast<int8_t>(fallback_sem);
+        out_labels[level.box_count + hidden_target] = static_cast<int8_t>(fallback_sem);
+        return SemanticInferenceStatus::INFERRED;
+    }
+
+    return SemanticInferenceStatus::INVALID;
+}
+代码 A.4 语义校验与求解状态裁剪（project/Algorithm/Sokoban.cpp）
+bool Sokoban::bind_semantics() {
+    const int original_box_count = initial_state.num_boxes;
+    const int target_count = initial_targets.size();
+    int box_sem_count[10] = {};
+    int target_sem_count[10] = {};
+
+    for (int i = 0; i < original_box_count; ++i) {
+        int sem = initial_state.box_semantics[i];
+        if (sem > 9) return false;
+        box_sem_count[sem]++;
+    }
+    for (int t = 0; t < target_count; ++t) {
+        int sem = target_semantics[t];
+        if (sem > 9) return false;
+        target_sem_count[sem]++;
+    }
+    for (int sem = 0; sem < 10; ++sem) {
+        if (box_sem_count[sem] != target_sem_count[sem]) return false;
+    }
+
+    int active_count = 0;
+    uint16_t remaining_target_mask = initial_state.target_mask;
+
+    for (int i = 0; i < original_box_count; ++i) {
+        uint8_t semantic_id = initial_state.box_semantics[i];
+        point box_pos{initial_state.box_x[i], initial_state.box_y[i]};
+        int finished_target = -1;
+        for (int t = 0; t < target_count; ++t) {
+            if ((remaining_target_mask & (1U << t)) == 0) continue;
+            if (target_semantics[t] == semantic_id && box_pos == initial_targets[t]) {
+                finished_target = t;
+                break;
+            }
+        }
+
+        if (finished_target != -1) {
+            remaining_target_mask = static_cast<uint16_t>(remaining_target_mask & ~(1U << finished_target));
+            continue;
+        }
+
+        initial_state.box_x[active_count] = initial_state.box_x[i];
+        initial_state.box_y[active_count] = initial_state.box_y[i];
+        initial_state.box_semantics[active_count] = semantic_id;
+        ++active_count;
+    }
+
+    initial_state.num_boxes = active_count;
+    initial_state.target_mask = remaining_target_mask;
+
+    init_zobrist();
+    precompute_solid_masks();
+    precompute_target_distances();
+    precompute_walk_distances();
+    precompute_box_target_costs();
+    precompute_bomb_distances();
+    precompute_bomb_macro_costs();
+    precompute_deadlocks();
+
+    // 语义裁剪后，初始哈希必须按统一语义规则重新计算
+    initial_state.hash = compute_hash(initial_state);
+    return true;
+}
+代码 A.5 IDA* 阈值迭代驱动（project/Algorithm/Sokoban.cpp）
+bool Sokoban::run_ida_search(
+    bool strict_cost,
+    int max_threshold,
+    StaticArray<point, MAX_PATH_LENGTH>& out_path,
+    uint32_t node_budget) {
+    std::memset(TT, 0, sizeof(TT));
+    std::memset(macro_cost_cache, 0, sizeof(macro_cost_cache));
+    current_threshold_iteration = 0;
+    strict_cost_search = strict_cost;
+    force_box_target_cost_lb = strict_cost;
+    search_node_budget = node_budget;
+    search_node_count = 0;
+    search_aborted = false;
+
+    int threshold = get_heuristic(initial_state);
+    StaticArray<point, MAX_PATH_LENGTH> rev_path;             
+
+    // IDA* 迭代加深核心逻辑
+    int root_active_bombs = 0;
+    for (int b = 0; b < initial_state.num_bombs; ++b) {
+        if (!(initial_state.blown_mask & (1 << b)) && bomb_tasks[b].target_wall.x != -1) {
+            root_active_bombs++;
+        }
+    }
+    int root_active_entities = initial_state.num_boxes + root_active_bombs;
+    if (!strict_cost_search && root_active_entities <= 5) {
+        bool saved_force_lb = force_box_target_cost_lb;
+        force_box_target_cost_lb = true;
+        int strong_threshold = get_heuristic(initial_state);
+        force_box_target_cost_lb = saved_force_lb;
+        if (strong_threshold > threshold && strong_threshold < 9999) {
+            force_box_target_cost_lb = true;
+            threshold = strong_threshold;
+        }
+    }
+    int effective_max_threshold = max_threshold;
+    if (!strict_cost_search) {
+        int root_W_num = heuristic_weight_num(root_active_entities);
+        threshold = (threshold * root_W_num + SokobanConfig::HEURISTIC_WEIGHT_DEN - 1) /
+                    SokobanConfig::HEURISTIC_WEIGHT_DEN;
+        // max_threshold 是真实路径上限，加权 f 需要同步放大否则会把可行解误判无解
+        effective_max_threshold =
+            (max_threshold * root_W_num + SokobanConfig::HEURISTIC_WEIGHT_DEN - 1) /
+            SokobanConfig::HEURISTIC_WEIGHT_DEN;
+    }
+    if constexpr (SokobanConfig::INITIAL_THRESHOLD_BOOST > 0) {
+        if (!strict_cost_search) threshold += SokobanConfig::INITIAL_THRESHOLD_BOOST;
+    }
+    while (threshold <= effective_max_threshold) {
+        ++current_threshold_iteration;
+        SOKOBAN_PROFILE_INC(threshold_iterations);
+        if constexpr (SokobanConfig::ENABLE_PROFILE) {
+            profile.final_threshold = static_cast<uint16_t>(threshold);
+        }
+        int res = ida_star_search(initial_state, 0, 0, threshold, rev_path, -1);
+        
+        if (res == -1) {                                      
+            rev_path.push_back(initial_state.player);         
+            std::reverse(rev_path.begin(), rev_path.end());   
+            out_path = rev_path;
+            strict_cost_search = false;
+            force_box_target_cost_lb = false;
+            search_node_budget = 0;
+            return true;
+        }
+        if (search_aborted) break;
+        if (res >= 9999) break;                               
+        int next_threshold = res;
+        if constexpr (SokobanConfig::ENABLE_LATE_THRESHOLD_ACCEL) {
+            if (!strict_cost_search &&
+                current_threshold_iteration >= SokobanConfig::LATE_THRESHOLD_ACCEL_MIN_ITERATION &&
+                next_threshold < threshold + SokobanConfig::LATE_THRESHOLD_ACCEL_STEP) {
+                next_threshold = threshold + SokobanConfig::LATE_THRESHOLD_ACCEL_STEP;
+            }
+        }
+        threshold = next_threshold;
+    }
+
+    strict_cost_search = false;
+    force_box_target_cost_lb = false;
+    search_node_budget = 0;
+    return false;
+}
+代码 A.6 动态前瞻路径线跟踪（project/Algorithm/MotionControl.cpp）
+Speed2D PathLineFollower::follow(float px, float py, float sx, float sy,
+                                 float tx, float ty, float dt, float end_speed) {
+    float seg_dx = tx - sx;
+    float seg_dy = ty - sy;
+    float seg_len_sq = seg_dx * seg_dx + seg_dy * seg_dy;
+    float seg_len = sqrtf(seg_len_sq);
+
+    if (seg_len < 0.001f) {
+        Speed2D direct = planner.velocity_planning_1d(
+            tx - px, ty - py, dt, end_speed, seg_len);
+        float speed_limit = sqrtf(direct.vx * direct.vx + direct.vy * direct.vy);
+        return filter_direction(direct, speed_limit);
+    }
+
+    float inv_len = 1.0f / seg_len;
+    float along_x = seg_dx * inv_len;
+    float along_y = seg_dy * inv_len;
+    float perp_x = -along_y;
+    float perp_y = along_x;
+
+    float s_remain = (tx - px) * along_x + (ty - py) * along_y;
+    Speed2D along_vel = planner.velocity_planning_1d(
+        along_x * s_remain, along_y * s_remain, dt, end_speed, seg_len);
+    float scalar_speed = sqrtf(along_vel.vx * along_vel.vx + along_vel.vy * along_vel.vy);
+    if (scalar_speed <= 0.001f) {
+        return filter_direction({0.0f, 0.0f}, 0.0f);
+    }
+
+    bool long_segment = seg_len >= LinearTerminalConfig::LONG_SEGMENT_THRESHOLD_CM;
+    float lookahead_max = long_segment ? LONG_PATH_LOOKAHEAD_MAX_CM : PATH_LOOKAHEAD_MAX_CM;
+    float lateral_lookahead_k = long_segment ? LONG_PATH_LATERAL_LOOKAHEAD_K : PATH_LATERAL_LOOKAHEAD_K;
+    float lateral_slow_start = long_segment ? LONG_PATH_LATERAL_SLOW_START_CM : PATH_LATERAL_SLOW_START_CM;
+    float lateral_slow_full = long_segment ? LONG_PATH_LATERAL_SLOW_FULL_CM : PATH_LATERAL_SLOW_FULL_CM;
+    float lateral_min_scale = long_segment ? LONG_PATH_LATERAL_MIN_SPEED_SCALE : PATH_LATERAL_MIN_SPEED_SCALE;
+    float track_gain = long_segment ? LONG_PATH_TRACK_GAIN_S : PATH_TRACK_GAIN_S;
+    float track_max_ratio = long_segment ? LONG_PATH_TRACK_MAX_RATIO : PATH_TRACK_MAX_RATIO;
+
+    float rel_x = px - sx;
+    float rel_y = py - sy;
+    float along = rel_x * along_x + rel_y * along_y;
+    float lateral = rel_x * perp_x + rel_y * perp_y;
+    float abs_lateral = std::abs(lateral);
+    float remain = std::max(s_remain, 0.0f);
+
+    float lookahead = PATH_LOOKAHEAD_MIN_CM + scalar_speed * PATH_LOOKAHEAD_TIME_S -
+                      abs_lateral * lateral_lookahead_k;
+    lookahead = std::clamp(lookahead, PATH_LOOKAHEAD_MIN_CM, lookahead_max);
+    if (remain < PATH_CORNER_APPROACH_CM && lookahead > remain) {
+        lookahead = remain;
+    }
+
+    along = std::clamp(along, 0.0f, seg_len);
+    float aim_along = std::min(along + lookahead, seg_len);
+    float aim_x = sx + along_x * aim_along;
+    float aim_y = sy + along_y * aim_along;
+    float aim_dx = aim_x - px;
+    float aim_dy = aim_y - py;
+    float aim_norm = sqrtf(aim_dx * aim_dx + aim_dy * aim_dy);
+    if (aim_norm < 0.001f) {
+        aim_dx = tx - px;
+        aim_dy = ty - py;
+        aim_norm = sqrtf(aim_dx * aim_dx + aim_dy * aim_dy);
+        if (aim_norm < 0.001f) {
+            return filter_direction({0.0f, 0.0f}, 0.0f);
+        }
+    }
+
+    float speed_scale = 1.0f;
+    if (abs_lateral > lateral_slow_start) {
+        float slow_span = lateral_slow_full - lateral_slow_start;
+        speed_scale = 1.0f - (abs_lateral - lateral_slow_start) / slow_span *
+                               (1.0f - lateral_min_scale);
+        speed_scale = std::clamp(speed_scale, lateral_min_scale, 1.0f);
+    }
+
+    float desired_speed = scalar_speed * speed_scale;
+    Speed2D desired = {
+        aim_dx / aim_norm * desired_speed,
+        aim_dy / aim_norm * desired_speed
+    };
+
+    if (abs_lateral > PATH_TRACK_DEADBAND_CM) {
+        float lateral_pull = (abs_lateral - PATH_TRACK_DEADBAND_CM) * track_gain;
+        lateral_pull = std::min(lateral_pull, desired_speed * track_max_ratio);
+        if (lateral > 0.0f) {
+            lateral_pull = -lateral_pull;
+        }
+        desired.vx += lateral_pull * perp_x;
+        desired.vy += lateral_pull * perp_y;
+    }
+
+    return filter_direction(desired, scalar_speed);
+}
+代码 A.7 麦克纳姆轮正逆运动学（project/Algorithm/MotionControl.h）
+inline WheelSpeed4 inverse(float vx, float vy, float vw) noexcept {
+        float vx_compensated = vx * tune.dynamics.kinematic_gain_x;
+        float vy_compensated = vy * tune.dynamics.kinematic_gain_y; 
+        return {
+            vy_compensated + vx_compensated - vw * L,  // LF
+            vy_compensated - vx_compensated - vw * L,  // LB
+            vy_compensated - vx_compensated + vw * L,  // RF
+            vy_compensated + vx_compensated + vw * L   // RB
+        };
+    }
+
+inline Velocity2D forward(float v_lf, float v_lb, float v_rf, float v_rb) noexcept {
+        return {
+            ( v_lf - v_lb - v_rf + v_rb) / 4.0f,
+            ( v_lf + v_lb + v_rf + v_rb) / 4.0f,
+            (-v_lf - v_lb + v_rb + v_rf) / (4.0f * L)
+        };
+    }
+代码 A.8 轮速 PID、积分门控与微分滤波（project/Algorithm/MotionControl.h）
+inline float calculate(float target, float current, float target_acc, float dt) {
+        if (std::abs(target) < 0.1f && std::abs(current) < 0.5f) {
+            i_out = 0.0f;
+            d_filt = 0.0f;
+            has_last = false;
+            return 0.0f;
+        }
+
+        float err = target - current;
+
+        // 大加减速段主要靠前馈跟随，积分只在接近稳态时兜慢偏差
+        constexpr float INTEGRAL_ACCEL_BAND = 80.0f;
+        constexpr float INTEGRAL_ERR_BAND = 15.0f;
+        if (std::abs(target_acc) < INTEGRAL_ACCEL_BAND && std::abs(err) < INTEGRAL_ERR_BAND) {
+            i_out += params.ki * err * dt;
+        } else {
+            i_out *= 0.98f;
+        }
+
+        // 积分抗饱和
+        i_out = std::clamp(i_out, -10.0f, 10.0f);
+
+        float d_out = 0.0f;
+        if (has_last && dt > 0.001f) {
+            constexpr float D_FILTER_ALPHA = 0.35f;
+            constexpr float D_ACCEL_DEADBAND = 8.0f;
+            float measured_accel = (current - last_current) / dt;
+            float accel_err = measured_accel - target_acc;
+            if (std::abs(accel_err) < D_ACCEL_DEADBAND) {
+                accel_err = 0.0f;
+            }
+            d_filt += D_FILTER_ALPHA * (accel_err - d_filt);
+            d_out = -params.kd * d_filt;   // D 项只阻尼计划外加速度，避免抵消 ka/kb 前馈
+        } else {
+            d_filt = 0.0f;
+            has_last = true;
+        }
+        last_current = current;
+
+        return (params.kp * err) + i_out + d_out;
+    }
+代码 A.9 视觉延时补偿与轴向位姿修正（project/Subsystem/PoseEstimate.cpp）
+bool apply_vision_axis_correction(const Point2D& segment_start, const Point2D& segment_end,
+                                  uint32_t& last_consumed_seq,
+                                  bool allow_near_target_correction,
+                                  bool is_push_segment) {
+    (void)allow_near_target_correction;
+
+    auto& vision_data = App::g_state.vision;
+    uint32_t seq = vision_data.art1_pose_seq;
+    if (seq == 0 || seq == last_consumed_seq) {
+        return false;
+    }
+    last_consumed_seq = seq;
+
+    // ART1 位姿可能比底盘周期慢，过期数据不参与闭环修正
+    uint32_t pose_age_ms = Core::Scheduler::get_sys_tick_ms() - vision_data.art1_pose_tick_ms;
+    if (pose_age_ms > VISION_POSE_MAX_AGE_MS) {
+        return false;
+    }
+
+    Pose2D raw_vision_pose = vision_data.art1_pose_buffer[vision_data.art1_pose_publish_idx];
+    if (!std::isfinite(raw_vision_pose.x) || !std::isfinite(raw_vision_pose.y) || !std::isfinite(raw_vision_pose.yaw)) {
+        return false;
+    }
+    Pose2D vision_pose;
+    Pose2D raw_odom_at_capture;
+    if (!compensate_vision_latency(raw_vision_pose, vision_data.art1_pose_tick_ms,
+                                   vision_pose, raw_odom_at_capture)) {
+        return false;
+    }
+
+    auto& pose = App::g_state.physical.pose;
+    // 粗差跳变保护：与编码器纯积分偏离过大时直接硬贴合并重置历史
+    float encoder_err_x = vision_pose.x - s_encoder_pose.x;
+    float encoder_err_y = vision_pose.y - s_encoder_pose.y;
+    float encoder_err_sq = encoder_err_x * encoder_err_x + encoder_err_y * encoder_err_y;
+    if (encoder_err_sq >= VISION_ENCODER_RESET_THRESHOLD_CM * VISION_ENCODER_RESET_THRESHOLD_CM) {
+        float before_x = pose.x;
+        float before_y = pose.y;
+        pose.x = vision_pose.x;
+        pose.y = vision_pose.y;
+        reset_odom_history(pose, Core::Scheduler::get_sys_tick_ms());
+        reset_mileage_scale_learner(false);
+        s_vision_latency_debug.correction_x = pose.x - before_x;
+        s_vision_latency_debug.correction_y = pose.y - before_y;
+        return true;
+    }
+
+    // 段法向：全程纠（横向对延迟不敏感，防蹭箱/贴线该信视觉）
+    // 段方向：只在离目标足够远时缓慢纠（治打滑累积），进刹车/切向区冻结、交零延迟编码器
+    float seg_dx = segment_end.x - segment_start.x;
+    float seg_dy = segment_end.y - segment_start.y;
+    float seg_len_sq = seg_dx * seg_dx + seg_dy * seg_dy;
+    if (seg_len_sq < VISION_LATERAL_MIN_SEGMENT_LEN_SQ) {
+        invalidate_mileage_scale_anchor();
+        return false;   // 段太短/退化：方向不可靠，本帧不修
+    }
+
+    float before_x = pose.x;
+    float before_y = pose.y;
+    bool applied = apply_projected_lateral_correction(vision_pose, pose,
+                                                     seg_dx, seg_dy, seg_len_sq);
+    applied = apply_projected_longitudinal_correction(vision_pose,
+                                                      raw_vision_pose,
+                                                      raw_odom_at_capture,
+                                                      pose,
+                                                      seg_dx, seg_dy, seg_len_sq,
+                                                      segment_end, is_push_segment) || applied;
+
+    s_vision_latency_debug.correction_x = pose.x - before_x;
+    s_vision_latency_debug.correction_y = pose.y - before_y;
+    return applied;
+}
+
+附录B 硬件原理图与 PCB 图
+本附录给出主控底板和双路电机驱动板的完整原理图及 PCB 实物图，用于说明第四章所述电源、通信、传感器接口和功率驱动电路的具体实现。
+B.1 主控底板原理图
+
+图 B.1 主控底板完整原理图
+B.2 双路电机驱动板原理图
+
+图 B.2 双路电机驱动板完整原理图
+B.3 PCB 实物图
+主控底板采用核心板插接结构，并集中布置电源、视觉、编码器和调试接口；双路驱动板集成功率器件、电机端子及保护电路。两块 PCB 的实物分别如图 B.3 和图 B.4 所示。
+
+
+
+===== TABLE 1 =====
+层级 | 核心模块 | 主要职责
+App | GameManage、RobotState、RobotTask | 比赛流程和任务队列
+Algorithm | PlanningCommon、Strategy、Exploration、MacroPlanner、Sokoban | 寻路、巡图、语义调度和推箱
+Subsystem | Vision、ChassisControl、PoseEstimate | 通信、底盘与位姿融合
+Device | UartComm、Motor、Encoder、Icm42688 | 设备驱动与抽象
+Core | CoreScheduler、isr、配置文件 | 周期调度、中断和系统参数
+
+===== TABLE 2 =====
+模式 | 视觉输入 | 底盘动作 | 用途
+Prod | 真实 ART1/ART2 | 真实执行 | 正式比赛
+Mock | 注入地图和语义 | 真实执行 | 脱机联调
+Demo | 注入语义 | 动画推演 | 状态机演示
+
+===== TABLE 3 =====
+项目 | 设计值 | 提交前核验
+轮型 | 四轮麦克纳姆 | 轮辊方向及安装照片
+轮半径 | 3.15 cm | 实测有效半径
+半轴距 | X=9.0 cm，Y=10.0 cm | 装配后中心距
+整车尺寸 | 30 cm × 21 cm × 15 cm | 长×宽×高
+整车质量 | 2.25 kg | 含电池和视觉模块
+
+===== TABLE 4 =====
+传感器 | 数量 | 接口或周期 | 用途
+增量编码器 | 4 | 正交计数；5/20 ms | 轮速和里程计
+ICM42688 | 1 | 1 ms 采样 | 姿态与角速度
+OpenART（ART1） | 1 | UART4，115200 bps | 地图和位姿
+OpenART（ART2） | 1 | UART1，115200 bps | 语义识别
+TFT | 1 | 平台显示接口 | 状态与调参
+
+===== TABLE 5 =====
+ | 
+图 3.1 摄像头与屏幕安装 | 图 3.2 电池夹层安装
+
+===== TABLE 6 =====
+ | 
+图 3.4 驱动板安装位置（一） | 图 3.5 驱动板安装位置（二）
+
+===== TABLE 7 =====
+模块 | 接口或引脚 | 说明
+LF 电机 | C6 + PWM2_MODULE0_CHB_C7 | 方向 GPIO + PWM
+LB 电机 | C11 + PWM2_MODULE2_CHA_C10 | 方向 GPIO + PWM
+RF 电机 | C8 + PWM2_MODULE1_CHB_C9 | 软件方向反转
+RB 电机 | D3 + PWM2_MODULE3_CHA_D2 | 软件方向反转
+ART2 | UART1，B12/B13，115200 | 语义链路
+ART1 | UART4，C16/C17，115200 | 地图和位姿链路
+
+===== TABLE 8 =====
+任务 | 周期 | 输入 | 主要输出
+IMU 采样与姿态解算 | 1 ms | 陀螺仪、加速度计 | yaw 与角速度
+四轮速度闭环 | 5 ms | 目标与实测轮速 | 四路 PWM 占空比
+视觉位姿修正 | 10 ms | ART1 位姿、里程计历史 | 融合位姿
+路径与底盘慢环 | 20 ms | 航点、当前位姿 | 底盘速度与轮速目标
+上位机指令解析 | 10 ms | 遥测串口 | 调参和控制指令
+波形数据发送 | 20 ms | 全局运行状态 | 上位机波形
+TFT 刷新 | 100 ms | 调试与比赛状态 | 界面显示
+
+===== TABLE 9 =====
+控制层 | 主要输入 | 算法 | 主要输出
+路径层 | 网格路径、逻辑起点 | 共线压缩与航点管理 | 物理航点
+轨迹层 | 航点、当前位置 | 线跟踪、前瞻与速度规划 | 全局 vx、vy
+姿态层 | 目标 yaw、IMU 角速度 | 限速角速度规划与阻尼 | ω
+运动学层 | 车体 vx、vy、ω | 麦克纳姆逆运动学 | 四轮目标速度
+执行层 | 目标/实测轮速与加速度 | 前馈 + 独立 PID | 四路 PWM
+
+===== TABLE 10 =====
+故障场景 | 保护动作
+地图帧超时 | 每 1 s 重发 ART1 地图请求
+视觉位姿过期或不稳定 | 不应用修正并继续取样
+炸弹爆炸窗口 | 等待并暂时抑制视觉修正
+规划失败 | 记录 error_stage 并停车保持
+位姿越界 | 切换 POINT_TRACKING 并锁定当前位置
+语义不完整 | 继续巡图或重新感知
+
+===== TABLE 11 =====
+类别 | 参数 | 数值或状态
+主控 | MCU | NXP i.MX RT1064，Cortex-M7，600 MHz
+地图 | 尺寸 | 12×16 格，20 cm/格，240×320 cm
+规划 | 最大箱子/炸弹 | 10 / 3
+规划 | MAX_PATH_LENGTH | 340
+底盘 | 轮半径 | 3.15 cm
+底盘 | 半轴距 | X=9.0 cm，Y=10.0 cm
+编码器 | 线数/倍频/传动比 | 1024 / 4 / 70:30
+通信 | ART1/ART2 | 115200 bps
+控制 | 轮速/底盘/IMU周期 | 5 ms / 20 ms / 1 ms
+结构 | 长、宽、高和总质量 | 30 cm × 21 cm × 15 cm；2.25 kg
+电路 | 系统功耗和总电容 | 见表 7.2
+传感器 | 种类与数量 | 编码器×4、IMU×1、OpenART×2
+执行器 | 额外伺服电机数量 | 无
+视觉 | 检测精度和频率 | 60 fps
+
+===== TABLE 12 =====
+测试类别 | 测试项目 | 实测值
+基础静态功耗 | RT1064 主控母板 | 1.02 W
+基础静态功耗 | 两片 DRV8701E 驱动芯片 | 0.27 W
+基础静态功耗 | 整机静态合计 | 1.29 W
+运行功耗 | 电机空载整机 | 11.06 W
+运行功耗 | 正常行驶整机 | 54.57 W
+极限功耗 | 电机堵转 | 268.84 W
+电容容量 | 主控母板 | 512.1 μF
+电容容量 | 单块驱动板 | 246.4 μF
+电容容量 | 整车总计 | 1004.9 μF
+
+===== TABLE 13 =====
+ | 
+图 B.3 主控底板 PCB 实物 | 图 B.4 双路电机驱动板 PCB 实物

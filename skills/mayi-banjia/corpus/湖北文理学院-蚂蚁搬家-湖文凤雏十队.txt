@@ -1,0 +1,1505 @@
+第二十一届全国大学生
+智能汽车竞赛
+
+技 术 报 告
+
+
+学校：湖北文理学院
+队伍名称：湖文凤雏十队
+参赛队员：叶明
+ 陈其亮
+ 刘宗宪
+ 时运多
+带队教师：王培元 李杨
+
+关于技术报告和研究论文使用授权说明
+本人完全了解全国大学生智能汽车竞赛关保留、使用技术报告和研究论文的规定，即：参赛作品著作权归参赛者本人，比赛组委会可以在相关主页上收录并公开参赛作品的设计方案、技术报告以及参赛模型车的视频、图像资料，并将相关内容编纂收录在组委会出版论文集中。
+参赛队员签名：	  	
+
+
+
+带队教师签名： 
+
+
+日期：2026年8月18日
+
+
+
+	
+系统概述及创新点
+1.1引言
+全国大学生智能汽车竞赛是以智能汽车为研究对象的创意性科技竞赛，是面向大学生的一种具有探索性工程的实践活动，教育部倡导大学生参加全国大学生智能汽车竞赛，加强大学生的实践能力、创新能力、团队协作能力。它的指导思想是“立足培养，重在参与，鼓励探索，追求卓越”，其目的是促进高等学校素质教育，培养大学生的综合知识运用能力、基本工程实践能力和创新意识，激发大学生从事科学研究与探索的潜能，倡导理论联系实际、求真务实的学风和团队协作的人文精神，为优秀人才的培养挑选创造条件。
+该竞赛以设计制作能够在特定的赛道上自主行驶的智能模型汽车为任务，支持大学生团队协作，综合运用学科知识，设计开发智能汽车的机械结构，硬件系统，软件系统，激发倡导理论联系实际，求真务实的学风。该竞赛涵盖自动控制、模式识别、传感技术、电子、电气、计算机、机械与汽车等多学科专业的创意性比赛。全国大学生智能汽车竞赛规则透明，评价标准客观，坚持公开、公平、公正的原则，力求向健康、普康、持续的方向发展。
+本报告将详细讲解我们小组在比赛过程中的智能车系统设计方案。将从智能车的机械结构设计，硬件系统设计，软件系统设计，开发工具的制作、安装、调试以及模型车的主要技术参数几个部分展开，详细地阐述我们小组的设计思路，并对智能车的制作工程进行总结。
+
+1.2系统概述
+本系统是为第二十一届全国大学生智能汽车竞赛 “蚂蚁搬家” 组别设计的一套双车协同作业平台，由主车单元与副车单元构成，二者通过有线差分信号协同配合，共同完成物体识别、路径识别与双车跟随物体搬运任务。
+主车单元：采用自主设计的三轮来福轮小车作为载体，搭载逐飞科技 OpenART plus 及 OpenART mini 视觉模块，配备 VL53L1x 测距模块、LSM6DSV16XTR 陀螺仪芯片、灰度传感器与红外发射灯板。主车负责物体识别、搬运方向判断，依靠灰度传感器完成赛道黄线识别，借助测距模块感知周边环境与两车间距，依靠陀螺仪获取自身姿态航向信息，通过红外发射灯板向副车输出跟随信标，是整套系统的决策核心。
+
+副车单元：同样采用自主设计的三轮来福轮小车，搭载逐飞科技 openart plus 红外广角摄像头、VL53L1x 测距模块、LSM6DSV16XTR 陀螺仪芯片。副车利用测距模块获取物体与车辆距离，依靠陀螺仪采集自身姿态数据，接收主车传输的角度信号，通过红外广角摄像头识别主车的红外发射灯板，实现双车跟随，并且维持特定相对角度，配合完成物体搬运作业。
+系统工作流程为：主车依靠视觉模块识别待搬运物体，利用灰度传感器检测赛道黄线，结合自身 VL53L1x 测距模块、LSM6DSV16XTR 陀螺仪获取距离与姿态信息，解算行驶路径与搬运方向；通过车载红外发射灯板输出信标，并向副车下发角度参考信号；副车通过红外广角摄像头识别主车红外灯板，结合自身 VL53L1x 测距模块获取两车间距、LSM6DSV16XTR 陀螺仪与灰度传感器获取自身运动状态，完成双车跟随控制，维持两车适宜夹角，协同执行物体搬运任务；副车将自身速度、姿态、相对距离等状态信息回传至主车，主车融合双车测距、陀螺仪姿态数据进一步优化决策逻辑，提升整套系统协同作业稳定性。
+
+1.3硬件创新
+1.3.1 一体化集成 PCB 底板设计
+整车摒弃传统主控板与驱动板分离的硬件架构，采用单块 PCB 作为车模底板，将主控电路与DRV8701 驱动芯片高度集成于同一块电路板上，车模机械结构直接搭建在该 PCB 底板之上。该方案省去板间连接接插件与额外底板结构件，有效减少布线寄生干扰，最大程度降低整车自重，提升小车的机动响应性能。
+1.3.2 定制化动力与驱动系统
+采用 DRV8701 作为电机驱动芯片，集成功率管与驱动逻辑，简化外围功率电路；集成吸收电容与 Buck 降压电路一方面抑制电机换向带来的电压尖峰
+保护功率器件与主控芯片，另一方面为车载视觉、传感器模块提供低纹波供电，保障视觉、陀螺仪、测距等感知器件稳定工作。一体化 PCB 布局实现功率回路缩短，减小功率环路寄生电感，提升电机驱动的响应速度与控制平顺性。
+
+第二章  机械结构设计
+针对第二十一届全国大学生智能汽车竞赛 “蚂蚁搬家”组别赛事规则与任务需求，本队采用双车协同方案，主、副两车均采用“三轮全向来福轮车模”硬件架构。车模底盘为三角形布局，边长约 6.7 英寸（17 cm）；主车整车高度约 34 cm，副车整车高度约 24 cm；两车前端均设置推板机构，推板尺寸为长 10 cm、宽 2 cm。
+功能分工方面，主车承担全局物体识别、搬运方向判定与赛道黄线识别等核心决策任务；副车以主车为跟随目标，通过与主车维持固定相对角度，协同完成物体搬运、障碍识别与避让等作业。本章将分别对主车与副车的整体机械结构方案及各模块化设计细节进行详细阐述。
+
+2.1车模结构设计
+为适配 “蚂蚁搬家” 组别复杂的赛场环境，满足降低整车重心、感知精准识别、运动平稳可靠、抵御搬运物体干扰等核心设计需求，本队先后完成三版车模结构方案的设计与实车测试迭代。综合考量赛事尺寸约束、运动稳定性、机动灵活性等关键指标，最终确定以 PCB 板直接作为车模底板，选用三轮来福轮结构作为整车机械架构。本节将从结构方案选型、防护结构设计、轻量化减重设计三个方面，详细阐述车模的设计思路与方案取舍依据。
+2.1.1结构方案选型
+车模结构是小车的核心载体，其构型、尺寸及结构参数直接决定整车的运动稳定性与机动性能，是车模设计的关键环节。根据 “蚂蚁搬家” 组别官方赛事规则，单车整体外轮廓尺寸需控制在 30 cm×30 cm 以内。结合任务实际需求，本队将底盘尺寸确定为 6.7 英寸（等边三角形边长 17 cm）。
+在蚂蚁搬家双车协同任务中，小车需要完成物体搬运、赛道黄线识别、障碍物避让以及坡道通行等多项作业，对整车运动速度、行驶稳定性以及环境感知能力均提出较高要求。当前竞赛主流全向车模主要分为麦克纳姆轮方案与三轮来福轮方案两类。麦克纳姆轮依靠斜向辊轮结构实现全向运动，转向灵活且无转向死角，被多数参赛队伍采用；但该方案存在明显短板，45° 斜向轮组布局会带来较大动力损耗，限制车体加速度与极速上限，同时轮组结构也会增加整车重量。而三轮来福轮车模同样具备全向运动能力，动力传递效率高，加速性能突出，高速行驶稳定性优异，还能够有效控制整车自重，更契合本项目的设计目标。
+经过多轮实车对比测试验证：优化路径规划与控制算法后，三轮来福轮车模的整体任务效率优于麦克纳姆轮车模，且在高速行进、机动灵活性以及重量方面更具优势，原生动力效率高于麦克纳姆轮车模。因此本队最终选用三轮来福轮车模作为小车车模结构方案。
+
+（a）主车俯视图
+
+
+（b）主车前视图
+
+    
+（c）主车左视图
+图2.1 小车整体实物图
+
+2.2搬运推板以及车模来福轮保护罩设计
+依据蚂蚁搬家组别赛事要求，搬运车模的推杆长度不得超过 10 cm，因此本队将推板长度设定为 10 cm，在规则允许范围内最大化保障物体搬运的有效接触行程。为提升搬运作业的可靠性，推板采用向内收拢的倾斜角度设计，缩小主、副车推板之间的张开夹角，约束待搬运物体的活动空间，有效避免搬运过程中物体滑脱逃逸。
+
+图2.1 推板3D建模图
+在实车测试阶段，出现过主、副车车轮相互干涉，以及待搬运物体与车模内侧车轮剐蹭卡滞的问题。为缓解上述现象，本队设计两款车轮保护罩：一款为基础防护罩，用于规避双车交会时车轮互相干涉；另一款在基础保护罩基础上增设圆形挡板，阻挡搬运物体卷入车轮，避免物体与内侧车轮发生干涉。
+保护罩集成快拆结构，有效提升整车容错能力。结构设计上完成多维度参数权衡，兼顾结构强度、轻量化指标与拆装便捷性，可满足日常调试以及赛场故障检修时快速拆装的使用需求。
+     
+图2.2 内测保护罩3D建模图
+
+                                     
+图2.3 常规保护罩3D建模图
+
+2.3电机与编码器安装结构件
+综合整车轻量化约束与行驶速度指标，本车选用 N20 减速电机，并搭配逐飞科技 1024 线高精度编码器，实现速度信号精准采集与运动闭环控制。本系统直接采用 PCB 作为车模底板，因此电机、编码器与 PCB 底板之间的转接连接件由团队自主设计，并通过 3D 打印完成加工制作。
+考虑到部分安装点位需要搭载 TOF 测距模块，团队设计两款差异化转接连接件，分别适配不同硬件装配需求。同时将车轮保护罩的快拆结构集成至连接件本体，实现保护罩的快速拆装，兼顾传感器搭载、硬件装配以及现场调试维护的多重使用需求。
+
+图2.3 连接件3D建模图
+
+图2.3 连接件（带TOF）3D建模图
+
+
+第三章 硬件电路设计
+3.1主控板的硬件设计
+3.1.1 电源管理模块
+本智能车系统由一块3S锂电池进行供电。智能车系统各硬件组成部分分别需要12V、5V、3.3V以及电池的电压供电。
+RT1021核心板、Open Art模块、编码器、无线串口5V的电压供电。
+整车采用 3S 锂电池提供 12V 电源，为 N20 减速电机等功率器件直接供电。系统采用两级降压架构完成多路电压转换：通过 SCT2450CQSTER 开关降压芯片将电池 12V 主电压降压至 5V，为摄像头、TOF 测距模块、编码器等外设提供工作电源；再经由 RT9013 LDO 线性稳压芯片将 5V 进一步转换为 3.3V，为主控、陀螺仪等对电源纹波敏感的芯片供电。开关电源与线性稳压组合的供电方案，兼顾大功率输出能力与低纹波供电需求，保障功率器件与感知类器件同时稳定工作。
+3.1.2 传感器模块
+传感器是小车最重要的模块之一。本系统主要使用OpenART主传感器，编码器测速模块、陀螺仪模块等作为辅传感器。
+3.1.2.1 OpenART模块
+OpenART是实现智能视觉组别AI任务的核心，其与主控之间通过UART接口进行通讯，该硬件电路共引出两个OpenART模块，接口原理图如图4.1所示。
+
+
+图3.1 OpenArt接口原理图
+
+
+3.1.2.2 编码器测速模块
+本小车使用逐飞1024线、正交解码A/B的光电编码器进行小车的测速。处理器通过读取编码器脉冲数来实现小车速度的检测，通过读取编码器旋转方向脚的高低电平来检测电机的正反转。其接口原理图如图4.2所示。
+
+图3.2 编码器接口原理图
+
+3.1.2.3 陀螺仪模块
+陀螺仪模块可获取车模的角速度和加速度，可辅助进行运动控制。其接口原理图如图4.3所示。
+
+图3.3陀螺仪接口原理图
+
+3.2驱动板的硬件设计
+DRV8701全桥驱动电路
+驱动的硬件设计对于车模运行的运行有着关键作用，它能够使车模有一个
+好的制动和加速功能。驱动的设计我们采用了DRV8701全桥驱动芯片和74HC08逻辑芯片以及TPH1R403NLMOS管构成驱动板的驱动电路。
+其中TPH1R403NL为N沟道增强型场效应管，当栅极和源极有正电压时，漏极和源极就会导通。详细的原理图如图3.4所示：
+
+图3.4 驱动原理图
+
+3.3红外发射灯板
+红外发射灯板由 5V 电源供电，选用 850 nm 波长红外灯珠作为信标光源。850nm 为近红外波段，与 OpenArt 视觉模块的红外感光光谱相匹配，能够在赛场环境下输出特征明显的红外信标，便于副车视觉模块稳定识别主车灯板信标信号，降低环境杂光带来的识别干扰。原理图如4.3所示
+
+图3.5红外发射灯板原理图
+3.4车模主板设计
+为实现车模轻量化设计目标，本团队将驱动电路与主控电路集成于同一块 PCB 底板之上，摒弃传统主控、驱动分板的分体式硬件架构。该一体化设计省去板间接插件与多余结构底板，减少布线带来的寄生干扰，在缩减整车零部件数量的同时降低整体重量，进一步提升小车的机动响应性能。以下是PCB图
+
+图3.6 主驱一体PCB底层
+
+
+图3.7主驱一体PCB顶层
+
+第四章 微处理器控制软件主要理论、算法说明及代码设计介绍
+4.1 系统软件总体架构
+本系统采用双车协同控制方案，由主车与副车两辆三全向轮智能车组成。主车承担目标搜索、目标识别、物块推送、路径阶段切换和决策调度等任务；副车根据主车下发的速度与状态命令完成相对跟随、同步对齐和“太极互换”等配合动作，并将自身测距信息回传主车。两车均采用逐飞 SmartCar 核心板，主控芯片为 NXP i.MX RT1021，运行 MicroPython 固件。
+主车配置高、低两个 OpenMV 摄像头。高位摄像头负责远场 YOLO 目标检测、黄线识别、回家标志检测和推送阶段的分时避障；低位摄像头负责近场目标锁定和类别确认。主车还配置 IMU660RX、三路编码器、两路 VL53L1X ToF 和左右两路灰度传感器。副车配置一个红外跟踪 OpenMV、IMU、三路编码器和两路 ToF，两车通过无线串口交换运动指令、同步应答及距离数据。
+软件采用模块化和分层化结构，自上而下划分为决策层、控制层和执行层。决策层以有限状态机为核心，融合视觉、姿态、测距、灰度和里程计信息；控制层包含视觉位置环、航向角度环和车轮速度环；执行层完成三全向轮逆运动学、电机 PWM 输出和编码器反馈。主循环使用两个硬件定时器形成 5 ms 外环和 1 ms 内环，定时器回调只置位标志，复杂处理在主循环中完成，从而降低中断占用。
+
+图4.1 双车协同智能车系统软件与硬件信息流
+表4.1 系统软件分层结构
+
+
+4.2 全向轮运动学模型
+两车底盘均采用三个全向轮，轮心沿车体中心按 120°均匀布置。设车体坐标系下的期望速度为 (vx, vy, ω)，其中 vx、vy 分别表示车体横向和纵向速度，ω 表示绕车体中心的旋转角速度，L 为轮心到车体中心的距离。代码在 OmniWheelChassis 类中取 L=0.1，并按下列逆运动学关系计算三个车轮的目标速度：
+
+
+
+
+
+
+逆运动学将车体的平移和旋转指令分解到三个轮子，每个轮速目标再进入独立速度闭环。由于摄像头坐标系与车体坐标系存在安装偏角，视觉位置环输出不能直接作为底盘速度。程序使用二维旋转矩阵完成坐标变换：主车高位摄像头偏角为 −30°，低位摄像头偏角为 0°，副车摄像头偏角为 −57°；副车还将主车速度前馈旋转 90°，补偿两车的机械安装关系。
+
+
+4.3 编码器测速与里程计
+三个全向轮分别配置正交编码器，代码使用 capture_div=4 进行四倍频计数。编码器线数为 1021，减速比为 3.7，轮半径为 0.025 m。每个 1 ms 速度控制周期读取脉冲增量，根据控制周期换算轮缘速度，并使用系数 α=0.4 的一阶低通滤波抑制量化噪声和机械振动：
+
+
+主车在 OmniOdometer 类中对三路脉冲进行反解。纵向脉冲增量为 (dp1−dp2)/√3，横向脉冲增量为 (2dp3−dp1−dp2)/3，再乘以每个脉冲对应的实际距离，累积得到 dist_x 和 dist_y。该里程计主要用于短距离状态判定，包括搜索距离上限 220 cm、避障后前进约 15 cm、回家阶段后退 20 cm 和横移 20 cm。由于当前里程计未融合 yaw，长期累计误差会受轮胎打滑和安装误差影响，因此只用于短程相对位移，而不作为全局定位。
+4.4 PID 控制算法
+系统采用由外到内的串级控制结构：视觉位置环生成平移速度，航向角度环生成旋转速度，三路车轮速度环生成电机 PWM。外环以 5 ms 周期运行，内环以 1 ms 周期运行。分层设计使目标位置误差、车体航向误差和电机速度误差分别闭合，便于独立整定和故障定位。
+
+
+
+
+
+
+
+
+
+
+	
+
+
+图4.2 视觉、航向与车轮速度串级控制结构
+4.4.1 视觉位置环
+主车以目标像素坐标相对图像中心的偏差作为 X、Y 两轴误差，采用位置式 PID：
+
+
+高位摄像头中心设为 (54,105)，X/Y 参数分别为 (1.315,0.0707,0.014) 和 (1.395,0.0705,0.014)，输出限幅 150；低位摄像头中心设为 (80,85)，参数分别为 (1.285,0.0457,0.001) 和 (1.295,0.0465,0.001)，输出限幅 20。高位视角用于快速接近，低位视角用于推送前精确对齐，因此两套参数和限幅分别设置。
+4.4.2 航向角度环
+航向环使用 IMU660RX 输出的 yaw 作为反馈。主车角度 PID 参数为 (−40,0,−0.002)，输出限幅 1000；副车参数为 (−25,−1.5,−0.008)，输出限幅 300。角度误差跨越 ±180°时进行环绕处理，使控制器始终沿较短方向转动。主车误差小于 0.2°时将误差和积分清零，减小静止抖动。快速转向状态会暂时关闭角度 PID，直接根据角度误差生成角速度，转向完成后再清零积分并恢复闭环。
+4.4.3 车轮速度增量式 PID
+
+
+增量输出叠加到历史 PWM，并限制在 ±5000。主车三个车轮的参数分别为 (31,520,0)、(20,500,0)、(30,520,0)，副车分别为 (33,536,0)、(34,552,0)、(34,500,0)。电机存在静摩擦死区，程序按目标速度方向叠加固定补偿：主车 DEAD_ZONE=700，副车 DEAD_ZONE=600；目标轮速接近零时强制 PWM=0，避免零速爬行。
+4.4.4 副车视觉增量 PID 与前馈控制
+副车采用主车速度前馈与自身视觉补偿相结合的跟随策略。收到主车速度后，副车先进行 90°坐标旋转，再将前馈量乘 FF_GAIN=0.90，与红外中点误差产生的视觉增量 PID 输出相加；角速度前馈乘 FF_GAIN_W=1.05，并叠加红外双点倾角误差产生的补偿。在太极互换命令下，主车发送的平移前馈为零，副车主要依靠纯视觉闭环维持相对位置。
+Visual_Inc_PIDController 在标准增量式 PID 基础上加入了工程化保护：误差在 0.5 像素内设零；按误差大小分段降低积分增益；微分增量进行一阶滤波；输出方向与误差方向相反时衰减历史输出并扩大纠正步长；安全速度上限随误差动态变化。视觉丢失超过 100 个外环周期后清空视觉控制器，超过 400 个周期时切断平移和旋转输出。
+表4.2 主要控制参数
+
+
+4.5 视觉感知算法
+4.5.1 主车高位摄像头
+高位摄像头使用 QQVGA 160×120、RGB565 图像，关闭自动白平衡、自动增益和自动曝光，固定 gain_db=10、exposure_us=2800。摄像头加载 yolo3_iou_smartcar_final_with_post_processing.tflite，可识别 6 类目标：沙包高、沙包低、玩球、熊高、熊低和红砖。前 5 类为可推送目标，红砖 ID=5 始终作为危险障碍物处理。
+模式 0 执行 YOLO 目标跟踪，置信度阈值为 0.75，并对部分小目标设置面积 500 的过滤条件。上一目标框在 X 方向扩展 40 像素、Y 方向扩展 30 像素形成跟踪窗口，减少目标跳变。若红砖中心进入 X=10~125、Y=35~50 的危险区，立即发送避障方向。新目标丢失后最多保持 1 s，其中前 500 ms 继续发送旧坐标，以降低短时遮挡影响。
+模式 1 使用 LAB 阈值 (43,98,−68,−18,24,93) 识别黄线，在左右 ROI 中分别提取最大有效色块，用两中心连线计算黄线角度，并在三个 HOME_ROI 中累计像素；总像素超过 430 时发送回家标志。模式 2 在黄线检测与 YOLO 避障之间按帧分时执行，既保留压线/回家信息，又降低同时运行两类重算法的计算负担。
+4.5.2 主车低位摄像头
+低位摄像头只在模式 0 工作，专门负责近场锁定。其 YOLO 置信度阈值为 0.70，只接受目标中心 y≥75 且包围框面积≥800 的目标，并跳过红砖。上一目标框向四周扩展 20 像素限制下一帧候选；多个候选满足条件时选择 x 坐标最小者。目标短时丢失后保留 1 s，但仅在前 50 ms 继续发送旧坐标，避免近场错误保持时间过长。
+4.5.3 灰度传感器压线检测
+主车左右灰度传感器连接至 B20、C20，采用数字输入，检测到引导线时输出低电平。外环按 `line_detected = (left == 0) or (right == 0)` 判断压线。该事件贯穿搜索、推送和回家流程：搜索阶段用于结束长距离搜索；推送阶段每次压线增加物块计数；回家阶段用于触发后退、沿线和横移状态。灰度方案响应直接，不占用摄像头算力，是对视觉黄线检测的独立补充。
+4.5.4 副车红外双点跟踪
+副车摄像头关闭自动增益、白平衡和曝光，固定 exposure_us=800，并对图像进行一次腐蚀。阈值分割后，宽高比 0.5~1.5 的色块视为单个红外点，按面积选择最大的两个；宽高比 1.5~3.0 的粘连色块按包围框的 1/4 和 3/4 位置拆分为两个近似点。两个点的中点作为跟踪坐标，连线角度作为车体相对倾角。
+
+
+倾角限制在 ±60°，相邻帧跳变超过 60°时沿用上一次平滑结果。坐标和角度均使用 EMA 滤波 y=0.9x+0.1y_prev，最终打包为 [0xAA,0x01,cx,cy,θ+128,0x55] 发送给副车主控。
+4.6 主车状态机
+主车使用 robot_step 表示任务阶段，将搜索、跟踪、同步、转向、推送、调头和回家组织为有限状态机。状态转移由目标是否发现、像素误差、同步应答、压线事件、里程计距离、目标类别和避障信息共同触发。
+
+图4.3 主车任务状态流程
+表4.3 主车任务状态机
+
+推送状态中的避障采用多源仲裁。主车检查自身两路 ToF、副车回传的两路 ToF 以及高位摄像头的视觉危险区。触发后将前进速度降低到约 35，并按障碍方向产生横向速度 45；沿纵向继续约 15 cm 且危险解除后恢复正常推送。当前代码的 ToF 阈值均为 10，旁边保留 220/200 的旧注释值，实际使用前应
+结合传感器单位、车速和制动距离重新标定。
+4.7 双车无线通信协议
+主车向副车发送 10 字节运动帧，帧头为 0xAA、0x55，帧尾为 0xFF。vx、vy、w 以有符号 16 位补码传输：
+[0xAA, 0x55, cmd, vx_H, vx_L, vy_H, vy_L, w_H, w_L, 0xFF]
+副车向主车发送 8 字节反馈帧，主要用于同步完成应答和双路 ToF 回传；无效距离编码为 0xFFFF：
+[0xAA, 0x55, cmd, dist1_H, dist1_L, dist2_H, dist2_L, 0xFF]
+表4.4 双车无线通信命令
+
+接收端使用滑动缓冲区解析串口流，帧头或帧尾不匹配时丢弃一个字节重新同步，缓冲区超过 60 字节时只保留末尾。副车在 40 个外环周期没有收到新命令后逐步衰减前馈速度，视觉丢失超过约 2 s 后停车。当前主车无线波特率配置为 115200，而副车为 460800；同一无线链路的两端必须在实车下载前统一。现有协议没有 CRC 和序号，后续可增加 CRC-8、滚动序号和通信看门狗。
+4.8 代码结构设计
+主副车控制代码均采用面向对象封装。控制器、传感器、运动学和通信模块之间通过明确数据接口连接，主循环只负责按调度周期调用和状态更新。主车代码包含里程计和双摄像头协议解析，副车代码增加视觉增量 PID 与前馈融合；三份 OpenMV 程序分别实现远场多模式视觉、近场目标锁定和红外双点跟踪。
+表4.5 软件类与模块结构
+
+为适应 MicroPython 内存和实时性限制，代码对串口缓冲区设置上限，周期调用 gc.collect()，ToF 使用非阻塞式轮询，LCD 和通信按外环分频执行。主循环最外层捕获异常并立即将三路电机 PWM 清零，防止未处理异常导致执行机构保持失控输出。	
+第五章 开发工具、制作、安装、调试过程说明
+5.1 开发工具
+表5.1 开发工具与用途
+
+视觉模型文件通过 SD 卡部署到 OpenMV，代码调用 tf.load 加载。调试时先在 OpenMV IDE 中观察目标框、危险区、ROI 和中点位置，再通过 UART 检查主控接收到的坐标和命令。主控侧通过 LCD 与串口输出观察外环状态、航向误差、轮速和测距数据，形成从视觉到执行的完整调试链路。
+5.2 制作与安装
+机械部分首先搭建三全向轮底盘，安装三个带编码器的驱动电机和全向轮，
+保证三轮与地面可靠接触、滚子转动顺畅、轮心相对车体中心对称。副车相对主车存在 90°机械安装关系，因此两车固定结构既要保证刚度，又要留出摄像头视野和横向运动空间。
+主车安装高、低两个 OpenMV，高位用于远场目标和避障，低位用于近场锁定；安装 IMU660RX、两路 VL53L1X 和左右灰度传感器。副车安装红外跟踪 OpenMV、IMU 和两路 ToF。各模块通过既有扩展接口接入核心板，电机电源与逻辑电源应分区走线并可靠共地，I²C、UART 和摄像头电源线避免与电机大电流线长距离并行。
+表5.2 硬件安装与参数对应
+
+5.3 调试过程
+调试按“底层模块—单环控制—视觉链路—双车通信—状态机—整机流程”的顺序进行，避免同时修改多个环节导致问题无法定位。每完成一个阶段均保存参数版本和串口记录，再进入下一阶段。
+5.3.1 底层模块调试
+逐个测试三路电机正反转和编码器计数方向，确认相同正速度目标对应正确车体运动；读取 IMU 静止值并验证 yaw 归零；用不同距离的平面目标测试两路 ToF；跨越引导线观察左右灰度电平；分别发送和接收摄像头帧及无线帧。任一传感器故障都应在进入闭环前解决。
+5.3.2 PID 参数整定
+车轮速度环采用先 P 后 I 的方法。先在低速下逐步增大比例系数，使轮速能够快速跟随但不产生持续振荡；再引入积分消除稳态误差，并分别校正三个电机的差异。速度环稳定后再整定航向环，使 ±90°和 180°转向无明显超调；最后整定视觉位置环，先限制最大速度，分别调节 X、Y 方向，再恢复坐标耦合。
+主车高、低摄像头应分别整定，因为远场目标像素变化小、需要较大输出，而近场像素变化敏感、需要较小限幅。副车先关闭主车速度前馈，只调视觉增量 PID；视觉闭环稳定后逐步增加 FF_GAIN，再调 FF_GAIN_W 和倾角补偿，避免把机械安装误差错误地交给积分项补偿。
+5.3.3 视觉算法调试
+固定摄像头曝光、增益和白平衡后，在实际光照下逐类检查 YOLO 置信度、包围框面积和误检情况。高位摄像头重点调节 0.75 置信度、500 面积过滤、
+跟踪窗口扩展量和红砖危险区；低位摄像头重点调节 y≥75、面积≥800 和近场保持时间。黄线阈值与 ROI 应在不同角度、不同亮度下测试，保证左右 ROI 可同时形成稳定中心。
+副车红外跟踪应分别测试两个独立光点、光点粘连、单点丢失和环境反光。通过观察 raw_cx/raw_cy、平滑坐标和倾角，检查 0.9 EMA 是否在抖动和响应速度之间取得平衡。若红外点高速运动产生拖影，优先调整曝光和安装，而不是单纯增大滤波。
+5.3.4 双车通信与协同调试
+首先统一无线串口波特率，使用固定正负速度验证 16 位补码编码和 90°坐标旋转。然后分别测试停车、推送、同步、角度、ToF 上报和太极互换命令。同步状态下移动副车，使红外横向误差进入 ±3 像素，检查 0x07 应答能否使主车从状态 15 转到状态 16。
+协同运动从低速直行开始，再测试横移、转向和推送。主车速度前馈与副车视觉补偿应同向作用；若副车反向运动，优先检查坐标旋转、摄像头偏角和误差符号。通信中断时检查前馈是否按 0.9/0.8 衰减，视觉长期丢失后是否进入停车保护。
+5.3.5 状态机与整机联调
+整机联调按状态逐段进行。先人工触发目标发现，验证高低摄像头切换和状态 1；再验证同步、目标类别转向和二次对齐；推送阶段分别放置红砖、普通障碍物并触发主副车 ToF，检查降速、横移和 15 cm 恢复；最后验证三次压线计数、回家转向、找线、后退 20 cm、沿线和横移 20 cm。
+调试过程中应重点核查当前代码中的几个一致性问题：主副车无线波特率不一致；ToF 阈值为 10 且仍保留 220/200 注释；主车避障分支含恒为假的 `0 < 0 < dist2 < threshold`；LCD 状态字典包含 101 而实际横移状态为 102；运行状态显示块可能受 `if not car_running` 缩进影响。上述问题修正后再进行整场速度提升和重复性试验。
+表5.3 调试阶段与通过条件
+
+
+
+第六章 总结
+随着全国大学生智能汽车竞赛参赛队伍的规模逐年增多，参赛队伍也在各方面技术都逐渐成熟起来，促使全国大学生智能汽车竞赛的生命力、观赏性、趣味性、创新性得到很大的提升。
+智能车的软件部分与硬件部分相辅相成，在这份技术报告中，主要体现了智能车系统设计的基本思路，机械结构，电路系统以及最重要的控制算法理论思想。在机械结构方面，我们反复改进，以追求更平稳、精简、可靠、稳定，通过小车的布局，尽量保证小车左右平衡，以及寻找一个合适的重心，保证小车既能稳定快速前进，又能在车模旋转时保持稳定，横向进行时平稳前进。在程序方面，利用比赛推荐的开发工具调试程序，经过不断的改进，终于设计出一套比较通用稳定的程序，结合路况调整车速，做到直道加速、弯道减速，保证在最短时间内跑完全程。
+全国大学生智能汽车竞赛作为一个备战时间很长且极具耐力的比赛，我们从开始准备到现在结束有将近一年的时间，在这一年时间里，我们从零开始，慢慢积累，逐渐提升自己的能力，通过参加比赛切实开拓了视野，使我们的动手能力、运用知识的能力、分析解决问题的能力也有了很大的提高，实实在在的培养了我们的综合素质能力。经历种种挫折，到最后完成比赛，真正体会到了智能车精神，同时也很庆幸遇到一群志同道合的朋友。
+同时在一年的备战日子里，特别感谢在场地和经费方面都得到了学校和学院的大力支持，更要特别感谢一直支持和关注智能车比赛的学校和学院领导以及各位指导老师、指导学长，同时也感谢比赛组委会能组织这样一项有意义的比赛。
+
+附录A：程序源代码
+# -*- coding: utf-8 -*-
+from machine import *
+from smartcar import ticker, encoder
+from seekfree import MOTOR_CONTROLLER, IMU660RX, WIRELESS_UART, KEY_HANDLER
+from display import *
+import gc, time
+import math
+from array import array
+import vl53l1x  
+
+# ================= 命令定义 =================
+CMD_STOP = 0x00
+CMD_PUSH = 0x03
+CMD_ANGLE = 0x08 
+CMD_TAICHI = 0x0B  # 🌟 新增：专属太极互换指令
+
+# ================= 1. 基础控制算法类 =================
+class Inc_PIDController:
+    def __init__(self, kp, ki, kd, limit=5000): 
+        self.kp = kp; self.ki = ki; self.kd = kd
+        self.last_error = 0; self.prev_error = 0; self.out = 0
+        self.limit = limit 
+
+    def update(self, target, current, dt):
+        error = target - current
+        delta_p = self.kp * (error - self.last_error)
+        delta_i = self.ki * error * dt
+        delta_d = self.kd * (error - 2 * self.last_error + self.prev_error) / dt
+        self.out += (delta_p + delta_i + delta_d)
+        self.out = max(min(self.out, self.limit), -self.limit)
+        self.prev_error = self.last_error
+        self.last_error = error
+        return self.out
+
+class Angle_PIDController:
+    def __init__(self, kp, ki, kd, limit=5000, is_angle=True):
+        self.kp = kp; self.ki = ki; self.kd = kd
+        self.integral = 0; self.last_error = 0
+        self.limit = limit; self.is_angle = is_angle 
+
+    def update(self, target, current, dt):
+        error = target - current
+        if self.is_angle:
+            if error > 180: error -= 360
+            elif error < -180: error += 360
+            
+        if abs(error) < 0.2:
+            error = 0; self.integral = 0  
+            
+        self.integral += error * dt
+        self.integral = max(min(self.integral, 12000), -12000)
+        derivative = (error - self.last_error) / dt
+        output = self.kp * error + self.ki * self.integral + self.kd * derivative
+        self.last_error = error
+        return max(min(output, self.limit), -self.limit)
+
+class Pos_PIDController:
+    def __init__(self, kp, ki, kd, limit=5000):
+        self.kp = kp; self.ki = ki; self.kd = kd
+        self.integral = 0; self.last_error = 0
+        self.limit = limit
+
+    def update(self, target, current, dt):
+        error = target - current
+        self.integral = max(min(self.integral + error * dt, 12000), -12000)
+        derivative = (error - self.last_error) / dt
+        output = self.kp * error + self.ki * self.integral + self.kd * derivative
+        self.last_error = error
+        return max(min(output, self.limit), -self.limit)
+
+class Attitude:
+    def __init__(self):
+        self.imu = IMU660RX(imu_type=IMU660RX.TYPE_RC, quar_rate=IMU660RX.RATE_120HZ)
+        time.sleep_ms(200)
+        for _ in range(5):
+            self.imu.get_euler()
+            time.sleep_ms(20)
+            
+        self.imu_euler_data = self.imu.get_euler()
+        self._yaw = 0.0
+        self.yaw_offset = 0.0
+        self.reset_yaw()
+
+    @property
+    def yaw(self):
+        return self._yaw
+
+    @yaw.setter
+    def yaw(self, value):
+        try:
+            self.imu_euler_data = self.imu.get_euler()
+            self.yaw_offset = self.imu_euler_data[2] - value
+        except:
+            pass
+        self._yaw = value
+
+    def reset_yaw(self):
+        self.imu_euler_data = self.imu.get_euler()
+        self.yaw = 0.0
+
+    def high_freq_update(self, dt):
+        try:
+            self.imu_euler_data = self.imu.get_euler()
+            raw_yaw = self.imu_euler_data[2]
+            self._yaw = raw_yaw - self.yaw_offset
+            if self._yaw > 180.0:
+                self._yaw -= 360.0
+            elif self._yaw < -180.0:
+                self._yaw += 360.0
+        except Exception:
+            pass 
+        return self._yaw
+
+class Encoder_Speed:
+    def __init__(self, ppr, ratio, wheel_radius, alpha=0.4):
+        self.ppr = ppr * 4
+        self.ratio = ratio
+        self.radius = wheel_radius
+        self.alpha = alpha
+        self.v_filt = [0.0, 0.0, 0.0]
+        self.delta_pulses = [0, 0, 0] 
+        self.encs = [
+            encoder("C2", "C3", False, capture_div=4),
+            encoder("D13", "D14",  False, capture_div=4),
+            encoder("D15", "D16", False, capture_div=4)
+        ]
+        self.m1 = MOTOR_CONTROLLER(MOTOR_CONTROLLER.PWM_D6_DIR_D7, 13000, duty=0, invert=True)
+        self.m2 = MOTOR_CONTROLLER(MOTOR_CONTROLLER.PWM_D4_DIR_D5, 13000, duty=0, invert=True)
+        self.m3 = MOTOR_CONTROLLER(MOTOR_CONTROLLER.PWM_C28_DIR_C29, 13000, duty=0, invert=True)
+
+    def set_motors_duty(self, d1, d2, d3):
+        self.m1.duty(int(d1))
+        self.m2.duty(int(d2))
+        self.m3.duty(int(d3))
+
+    def get_realtime_speeds(self, dt):
+        for i in range(3):
+            delta = self.encs[i].get()
+            self.delta_pulses[i] = delta
+            velocity_raw = (delta * 2 * math.pi * self.radius * 100) / (self.ppr * self.ratio * dt)
+            self.v_filt[i] = (self.alpha * velocity_raw) + (1.0 - self.alpha) * self.v_filt[i]
+        return self.v_filt[0], self.v_filt[1], self.v_filt[2]
+
+class OmniOdometer:
+    def __init__(self, speed_obj):
+        self.speed_ctrl = speed_obj
+        self.dist_x = 0.0
+        self.dist_y = 0.0
+        self.SQRT3 = math.sqrt(3)
+        self.cm_per_pulse = (2 * math.pi * speed_obj.radius * 100) / (speed_obj.ppr * speed_obj.ratio)
+        
+    def update(self):
+        dp1, dp2, dp3 = self.speed_ctrl.delta_pulses
+        dy_pulses = (dp1 - dp2) / self.SQRT3
+        dx_pulses = (2 * dp3 - dp1 - dp2) / 3.0
+        self.dist_y += dy_pulses * self.cm_per_pulse
+        self.dist_x += dx_pulses * self.cm_per_pulse
+        return self.dist_x, self.dist_y
+        
+    def reset(self):
+        self.dist_x = 0.0
+        self.dist_y = 0.0
+
+class OmniWheelChassis:
+    def __init__(self, L=0.1):
+        self.L = L
+        self.SQRT3_OVER_2 = math.sqrt(3) / 2
+
+    def inverse_kinematics(self, vx, vy, omega):
+        va = -0.5 * vx + self.SQRT3_OVER_2 * vy + self.L * omega
+        vb = -0.5 * vx - self.SQRT3_OVER_2 * vy + self.L * omega
+        vc = vx + self.L * omega
+        return va, vb, vc
+
+class UnifiedCamera:
+    def __init__(self, uart_id=7, baudrate=115200):
+        self.uart = UART(uart_id, baudrate=baudrate, timeout=10)
+        self.tx, self.ty, self.is_found = 0, 0, False
+        self.line_angle, self.line_found = 0, False
+        self.line_y = 0  
+        self.home_found = False 
+        self.obj_id = 0 
+        self.buf = bytearray()
+        
+        self.avoid_flag = False        
+        self.avoid_dir = 0
+        self.last_avoid_time = 0
+
+    def set_mode(self, mode):
+        self.uart.write(bytearray([0xBB, int(mode), 0x55]))
+
+    def update(self, tof_is_clear=True):
+        self.is_found = False
+        self.line_found = False
+        self.home_found = False
+        
+        if self.avoid_flag and time.ticks_diff(time.ticks_ms(), self.last_avoid_time) > 300:
+            if tof_is_clear:
+                self.avoid_flag = False
+                self.avoid_dir = 0
+            else:
+                self.last_avoid_time = time.ticks_ms()
+            
+        if self.uart.any():
+            data = self.uart.read()
+            if data: self.buf.extend(data)
+            
+        if len(self.buf) > 60: self.buf = self.buf[-60:]
+            
+        while len(self.buf) >= 5:
+            if self.buf[0] == 0xAA:
+                cmd = self.buf[1]
+                if cmd == 0x01:
+                    if len(self.buf) >= 6:
+                        if self.buf[5] == 0x55:
+                            self.tx = self.buf[2]
+                            self.ty = self.buf[3]
+                            self.obj_id = self.buf[4] 
+                            self.is_found = True
+                            self.buf = self.buf[6:]
+                        else:
+                            self.buf.pop(0)
+                    else:
+                        break 
+                elif self.buf[4] == 0x55:
+                    if cmd == 0x07:
+                        self.line_angle = self.buf[2]
+                        if self.line_angle > 127: self.line_angle -= 256
+                        self.line_y = self.buf[3] 
+                        self.line_found = True
+                    elif cmd == 0x08:
+                        self.home_found = True 
+                    elif cmd == 0x09:  
+                        self.avoid_dir = self.buf[2]
+                        self.avoid_flag = True
+                        self.last_avoid_time = time.ticks_ms()
+                        
+                    self.buf = self.buf[5:]
+                else: self.buf.pop(0) 
+            else: self.buf.pop(0)
+
+class WirelessComm:
+    def __init__(self, baudrate=115200):
+        self.wireless = WIRELESS_UART(baudrate)
+        self.dynamic_buf = [] 
+        self.slave_dist1 = -1
+        self.slave_dist2 = -1
+        self.rx_buf = array('B', [0] * 32)
+
+    def send_sync_data(self, cmd, vx_val, vy_val, w_val):
+        vx_int = int(vx_val) & 0xFFFF
+        vy_int = int(vy_val) & 0xFFFF
+        w_int  = int(w_val) & 0xFFFF
+        
+        buf = bytearray([
+            0xAA, 0x55,
+            int(cmd) & 0xFF,
+            (vx_int >> 8) & 0xFF, vx_int & 0xFF,
+            (vy_int >> 8) & 0xFF, vy_int & 0xFF,
+            (w_int >> 8) & 0xFF,  w_int & 0xFF,
+            0xFF
+        ])
+        self.wireless.send_bytearray(buf, len(buf))
+
+    def receive_cmd(self):
+        try:
+            data_len = self.wireless.receive_bytearray(self.rx_buf, 32)
+            if data_len > 0:
+                for i in range(data_len): self.dynamic_buf.append(self.rx_buf[i])
+        except Exception:
+            pass
+            
+        if len(self.dynamic_buf) > 60: self.dynamic_buf = self.dynamic_buf[-60:]
+        last_valid_cmd = None
+        while len(self.dynamic_buf) >= 8:
+            if self.dynamic_buf[0] == 0xAA and self.dynamic_buf[1] == 0x55:
+                if self.dynamic_buf[7] == 0xFF:
+                    cmd = self.dynamic_buf[2]
+                    last_valid_cmd = cmd
+                    
+                    if cmd == 0x0A:
+                        d1_val = (self.dynamic_buf[3] << 8) | self.dynamic_buf[4]
+                        d2_val = (self.dynamic_buf[5] << 8) | self.dynamic_buf[6]
+                        self.slave_dist1 = d1_val if d1_val != 0xFFFF else -1
+                        self.slave_dist2 = d2_val if d2_val != 0xFFFF else -1
+                        
+                    self.dynamic_buf = self.dynamic_buf[8:]
+                else: 
+                    self.dynamic_buf.pop(0) 
+            else: 
+                self.dynamic_buf.pop(0) 
+        return last_valid_cmd
+
+# ========== 🌟 指令通信库 🌟 ==========
+CMD_STOP = 0x00
+CMD_PUSH = 0x03
+CMD_ASK_SYNC = 0x06
+CMD_SYNC_OK = 0x07    
+CMD_ANGLE = 0x08
+
+# ================= 3. 系统初始化 =================
+time.sleep_ms(100)
+cs = Pin('B29', Pin.OUT, value=True); cs.high(); cs.low()
+rst = Pin('B31', Pin.OUT, value=True)
+dc = Pin('B5', Pin.OUT, value=True)
+blk = Pin('C21', Pin.OUT, value=True)
+
+try:
+    target_lcd_type = LCD_Drv.LCD114_TYPE
+except AttributeError:
+    target_lcd_type = 1
+
+drv = LCD_Drv(SPI_INDEX=2, BAUDRATE=60000000, DC_PIN=dc, RST_PIN=rst, LCD_TYPE=target_lcd_type)
+lcd = LCD(drv)
+lcd.color(0xFFFF, 0x0000)
+lcd.mode(2)
+lcd.clear(0x0000)
+lcd.str16(0, 0, "System Init...")
+
+chassis = OmniWheelChassis()
+attitude = Attitude()
+speed = Encoder_Speed(1021, 3.7, 0.025, alpha=0.4)
+odometer = OmniOdometer(speed) 
+
+camera_high = UnifiedCamera(uart_id=7)  
+camera_low  = UnifiedCamera(uart_id=5)  
+
+key = KEY_HANDLER(5)
+comm = WirelessComm(baudrate=115200)
+
+gray_sensor_left = Pin('B20', Pin.IN)
+gray_sensor_right = Pin('C20', Pin.IN)
+
+# ================= 3.5 初始化双路 ToF 传感器 =================
+tof1_ready = False
+tof2_ready = False
+dist1 = -1
+dist2 = -1
+
+try:
+    tof1_xshut = Pin('D2', Pin.OUT)
+    tof1_xshut.value(0); time.sleep_ms(20); tof1_xshut.value(1); time.sleep_ms(20)
+except Exception:
+    pass
+
+try:
+    i2c1 = SoftI2C(scl=Pin('D0'), sda=Pin('D1'), freq=100000)
+    tof1 = vl53l1x.VL53L1X(i2c1)
+    tof1.set_custom_roi(16, 4)  
+    tof1_ready = True
+except Exception:
+    pass
+
+try:
+    i2c2 = I2C(1, freq=400000)
+    tof2 = vl53l1x.VL53L1X(i2c2)
+    tof2.set_custom_roi(16, 4)  
+    tof2_ready = True
+except Exception:
+    pass
+
+has_data_ready = False
+if tof1_ready:
+    for attr in dir(tof1):
+        if 'ready' in attr.lower() or 'status' in attr.lower():
+            has_data_ready = True; break
+elif tof2_ready:
+    for attr in dir(tof2):
+        if 'ready' in attr.lower() or 'status' in attr.lower():
+            has_data_ready = True; break
+
+# ================= 4. PID 参数及全局配置 =================
+CENTER_X_HIGH, CENTER_Y_HIGH = 54, 105
+CAMERA_OFFSET_ANGLE_HIGH = -30.0 
+
+CENTER_X_LOW, CENTER_Y_LOW = 80, 85
+CAMERA_OFFSET_ANGLE_LOW = 0.0 
+
+track_pid_x_high = Pos_PIDController(1.315, 0.0707, 0.014, limit=150)
+track_pid_y_high = Pos_PIDController(1.395, 0.0705, 0.014, limit=150)
+
+track_pid_x_low = Pos_PIDController(1.285, 0.0457, 0.001, limit=20)
+track_pid_y_low = Pos_PIDController(1.295, 0.0465, 0.001, limit=20)
+
+angle_pid = Angle_PIDController(-40, 0, -0.002, limit=1000, is_angle=True)
+
+pid1 = Inc_PIDController(31, 520, 0, limit=5000)
+pid2 = Inc_PIDController(20, 500, 0, limit=5000)
+pid3 = Inc_PIDController(30, 520, 0, limit=5000)
+
+ACCEL_STEP = 3
+ACCEL_STEP1 = 0.5
+ACCEL_STEP2 = 0.3
+ACCEL_STEP3 = 1
+def ramp(curr, target, step):
+    if curr < target: return min(curr + step, target)
+    elif curr > target: return max(curr - step, target)
+    return target
+
+target_yaw = 0.0
+vx = vy = omega_out = 0.0
+real_vx = real_vy = 0.0  
+last_vx = last_vy = 0.0
+target1 = target2 = target3 = 0.0
+
+lost_count = 0
+LOST_TIMEOUT = 150 
+speed_flag = False              
+outer_flag = False              
+preview_camera_mode = False     
+
+yaw = 0.0
+car_running = False             
+enable_angle_pid = True         
+
+robot_step = 0       
+confirm_count = 0              
+delay_counter = 0   
+target_dist = 0.0       
+is_first_search = True         
+
+pushed_blocks_count = 0        
+SEARCH_MAX_DISTANCE = 220.0    
+
+turn_vx_180 = 40.0      
+turn_omega_180 = 230.0
+turn_omega_1801 = 200
+turn_omega_1802 = 440
+
+avoid_stage = 0            
+avoid_start_x = 0.0
+avoid_start_y = 0.0
+
+lcd_counter = 0            
+comm_divider = 0           
+
+active_cam = 'HIGH'        
+low_lost_cnt = 0           
+track_is_found = False     
+track_tx = 0               
+track_ty = 0               
+
+current_target_id = 0      
+current_search_angle = 0.0  
+push_global_yaw = 0.0       
+
+COMM_INTERVAL = 5          
+TOF_PARALLEL_THRES = 10#220 
+TOF_DOWN_THRES = 10#200      
+master_avoid_dir = 0       
+
+low_cam_freeze_timer = 0  
+
+# ================= 5. 双定时器 =================
+def speed_pit_handler(t):
+    global speed_flag
+    speed_flag = True
+
+def outer_pit_handler(t):
+    global outer_flag
+    outer_flag = True
+
+pit1 = ticker(1)
+pit1.capture_list(*speed.encs)
+pit1.callback(speed_pit_handler)
+pit1.start(1)
+
+pit2 = ticker(2)
+pit2.capture_list(key) 
+pit2.callback(outer_pit_handler)
+pit2.start(5)
+
+# ================= 6. 主循环 =================
+lcd.clear(0x0000)
+
+last_outer_time = time.ticks_us()
+last_inner_time = time.ticks_us()
+last_tof_time = time.ticks_ms()
+
+while True:
+    try:
+        # ----------------- 外环决策 (5ms) -----------------
+        if outer_flag:
+            outer_flag = False
+            
+            now_outer = time.ticks_us()
+            actual_dt_outer = time.ticks_diff(now_outer, last_outer_time) / 1000000.0
+            last_outer_time = now_outer
+            if actual_dt_outer <= 0: actual_dt_outer = 0.005  
+            
+            recv_cmd = comm.receive_cmd()
+
+            key_data = key.get()
+            if key_data[2] > 0:
+                if not car_running:
+                    pushed_blocks_count = 0
+                key.clear(3)
+
+            if key_data[3] > 0:  
+                if not car_running:
+                    car_running = True
+                    preview_camera_mode = False 
+                    robot_step = -1         
+                    is_first_search = True 
+                    camera_high.set_mode(0)   
+                    camera_low.set_mode(0)
+                    
+                    attitude.reset_yaw()    
+                    target_yaw = 0.0
+                    current_search_angle = 0.0
+                    push_global_yaw = 0.0
+                    
+                    track_pid_x_high.integral = track_pid_y_high.integral = 0
+                    track_pid_x_low.integral = track_pid_y_low.integral = 0
+                    
+                    confirm_count = 0
+                    delay_counter = 0
+                    target_dist = 0.0       
+                    pushed_blocks_count = 0 
+                    odometer.reset()        
+                    enable_angle_pid = True
+                    avoid_stage = 0
+                    
+                    active_cam = 'HIGH'   
+                    low_lost_cnt = 0
+                    current_target_id = 0 
+                else:
+                    car_running = False
+                    robot_step = 0
+                key.clear(4)
+
+            if key_data[1] > 0:
+                if not car_running: 
+                    preview_camera_mode = not preview_camera_mode
+                    if preview_camera_mode:
+                        camera_high.set_mode(1) 
+                        camera_low.set_mode(1)
+                    else:
+                        camera_high.set_mode(0) 
+                        camera_low.set_mode(0)
+                key.clear(2) 
+                
+            yaw = attitude.high_freq_update(actual_dt_outer)      
+
+            master_tof_danger = (0 < dist1 < TOF_DOWN_THRES) or (0 < dist2 < TOF_PARALLEL_THRES)
+            slave_tof_danger = (0 < comm.slave_dist1 < TOF_DOWN_THRES) or (0 < comm.slave_dist2 < TOF_PARALLEL_THRES)
+            
+            tof_is_clear = not (master_tof_danger or slave_tof_danger)
+
+            camera_high.update(tof_is_clear)
+            camera_low.update(True)
+
+            line_detected = (gray_sensor_left.value() == 0 or gray_sensor_right.value() == 0)
+
+            if camera_high.avoid_flag:
+                low_cam_freeze_timer = time.ticks_ms()
+                active_cam = 'HIGH'
+                camera_low.is_found = False
+                track_pid_x_high.integral = track_pid_y_high.integral = 0  
+                
+            elif time.ticks_diff(time.ticks_ms(), low_cam_freeze_timer) < 1000:
+                camera_low.is_found = False
+                if active_cam == 'LOW':
+                    active_cam = 'HIGH'
+                    track_pid_x_high.integral = track_pid_y_high.integral = 0
+                    
+            elif camera_low.is_found:
+                if active_cam != 'LOW':
+                    active_cam = 'LOW'
+                    track_pid_x_low.integral = track_pid_y_low.integral = 0 
+                low_lost_cnt = 0
+            else:
+                if active_cam == 'LOW':
+                    low_lost_cnt += 1
+                    if low_lost_cnt >= 200: 
+                        active_cam = 'HIGH'
+                        track_pid_x_high.integral = track_pid_y_high.integral = 0 
+
+            if active_cam == 'LOW':
+                track_is_found = camera_low.is_found
+                track_tx = camera_low.tx
+                track_ty = camera_low.ty
+            else:
+                track_is_found = camera_high.is_found
+                track_tx = camera_high.tx
+                track_ty = camera_high.ty
+
+            if car_running:
+                if robot_step == -1:
+                    vx = ramp(vx, 0.0, ACCEL_STEP)
+                    vy = ramp(vy, 60.0, ACCEL_STEP)
+                    if odometer.dist_y >= 10.0:
+                        odometer.reset() 
+                        robot_step = 0   
+
+                elif robot_step == 0:
+                    if odometer.dist_y > SEARCH_MAX_DISTANCE or (odometer.dist_y > 60.0 and line_detected):
+                        robot_step = 70
+                        delay_counter = 150  
+                        enable_angle_pid = True
+                    else:
+                        if camera_high.avoid_flag:
+                            vx = ramp(vx, 50.0, ACCEL_STEP)
+                            vy = ramp(vy, 0.0, ACCEL_STEP) 
+                        else:
+                            if is_first_search:
+                                vx = ramp(vx, 90.0, ACCEL_STEP)
+                                vy = ramp(vy, 55.0, ACCEL_STEP)
+                            else:
+                                vx = ramp(vx, 0.0, ACCEL_STEP)
+                                vy = ramp(vy, 150.0, ACCEL_STEP)
+                            
+                        if track_is_found and not camera_high.avoid_flag:
+                            robot_step = 1
+                            lost_count = 0  
+                            track_pid_x_high.integral = track_pid_y_high.integral = 0
+                            track_pid_x_low.integral = track_pid_y_low.integral = 0
+                            confirm_count = 0
+
+                elif robot_step == 1:
+                    if camera_high.avoid_flag:
+                        robot_step = 0
+                        lost_count = 0 
+                        vx, vy = last_vx, last_vy 
+                    else:
+                        if track_is_found:
+                            if active_cam == 'LOW':
+                                err_x = track_tx - CENTER_X_LOW
+                                err_y = CENTER_Y_LOW - track_ty
+                                vx = track_pid_x_low.update(0, -err_x, actual_dt_outer)
+                                vy = track_pid_y_low.update(0, -err_y, actual_dt_outer)
+                            else:
+                                err_x = track_tx - CENTER_X_HIGH
+                                err_y = CENTER_Y_HIGH - track_ty
+                                vx = track_pid_x_high.update(0, -err_x, actual_dt_outer)
+                                vy = track_pid_y_high.update(0, -err_y, actual_dt_outer)
+                                
+                            last_vx, last_vy = vx, vy
+                            lost_count = 0
+                            
+                            if active_cam == 'LOW' and abs(err_x) <= 10 and abs(err_y) <= 8:
+                                confirm_count += 1
+                            
+                            if confirm_count >= 2:
+                                confirm_count = 0
+                                current_target_id = camera_low.obj_id
+                                
+                                robot_step = 15  
+                                camera_high.set_mode(2)
+                                camera_low.set_mode(2)
+                                camera_high.avoid_flag = False 
+                                camera_low.avoid_flag = False
+                                avoid_stage = 0            
+                        else:
+                            lost_count += 1
+                            if lost_count < 200:
+                                vx, vy = last_vx, last_vy
+                            else:
+                                robot_step = 0 
+                            
+                elif robot_step == 15:
+                    vx, vy = 0.0, 0.0
+                    enable_angle_pid = True
+                    if recv_cmd == CMD_SYNC_OK:
+                        if current_target_id in [0, 1]:  
+                            push_global_yaw = -90.0
+                        elif current_target_id in [3, 4]:  
+                            push_global_yaw = 90.0
+                        else: 
+                            push_global_yaw = 0
+                            
+                        target_yaw = push_global_yaw
+                        if target_yaw > 180.0: target_yaw -= 360.0
+                        elif target_yaw < -180.0: target_yaw += 360.0
+                        
+                        robot_step = 16
+                
+                elif robot_step == 16:
+                    enable_angle_pid = False
+                    
+                    angle_error = target_yaw - yaw
+                    if angle_error > 180.0: angle_error -= 360.0
+                    elif angle_error < -180.0: angle_error += 360.0
+                    
+                    if abs(angle_error) > 1.0:
+                        current_turn_w = turn_omega_180 if abs(angle_error) > 40.0 else (abs(angle_error) * 3.5 + 40.0)
+                        omega_dir = -current_turn_w if angle_error > 0 else current_turn_w
+                        
+                        pivot_vx = turn_vx_180 
+                        vx_dir = -pivot_vx if angle_error > 0 else pivot_vx
+                        vx, vy, omega_out = vx_dir, 0.0, omega_dir 
+                    else:
+                        vx, vy, omega_out = 0.0, 0.0, 0.0
+                        speed.set_motors_duty(0, 0, 0)
+                        
+                        enable_angle_pid = True
+                        angle_pid.integral = pid1.out = pid2.out = pid3.out = 0
+                        
+                        camera_low.set_mode(0)
+                        confirm_count = 0
+                        lost_count = 0
+                        robot_step = 17
+                        avoid_stage = 0
+                        camera_high.avoid_flag = False
+                        camera_low.avoid_flag = False
+
+                elif robot_step == 17:
+                    enable_angle_pid = True 
+                    
+                    if active_cam == 'LOW' and track_is_found:
+                        err_x = track_tx - CENTER_X_LOW
+                        err_y = CENTER_Y_LOW - track_ty
+                        
+                        vx = track_pid_x_low.update(0, -err_x, actual_dt_outer)
+                        vy = track_pid_y_low.update(0, -err_y, actual_dt_outer)
+                        
+                        lost_count = 0
+                        
+                        if abs(err_x) <= 20 and abs(err_y) <= 23:
+                            confirm_count += 1
+                        else:
+                            confirm_count = 0
+                            
+                        if confirm_count >= 1:
+                            camera_low.set_mode(2) 
+                            robot_step = 2
+                    else:
+                        lost_count += 1
+                        vx = ramp(vx, 0.0, ACCEL_STEP)
+                        vy = ramp(vy, 25.0, ACCEL_STEP) 
+                        
+                        if lost_count > 40:
+                            camera_low.set_mode(2)
+                            robot_step = 2 
+                            
+                elif robot_step == 2:
+                    if line_detected:
+                        pushed_blocks_count += 1
+                        # ---------- 修改开始：推送数量达到3时，根据ID选择回家路径 ----------
+                        if pushed_blocks_count >= 3:
+                            # 已推完第三个，开始回家
+                            if current_target_id in [0, 1]:
+                                # 直接到 step 91：后退 20cm
+                                target_yaw = yaw          # 保持当前方向
+                                enable_angle_pid = True
+                                odometer.reset()
+                                robot_step = 91
+                            elif current_target_id in [3, 4]:
+                                # 直接到 step 9：前进找线
+                                target_yaw = yaw
+                                enable_angle_pid = True
+                                odometer.reset()
+                                robot_step = 4
+                            else:  # current_target_id == 2
+                                # 走标准回家路径（step 70 → 8 → 9 → 91 → 10 → 102 → 12）
+                                delay_counter = 50
+                                robot_step = 4
+                                enable_angle_pid = True
+
+                            # 清理 PID 积分
+                            track_pid_x_high.integral = 0
+                            track_pid_y_high.integral = 0
+                            track_pid_x_low.integral  = 0
+                            track_pid_y_low.integral  = 0
+                            pid1.out = pid2.out = pid3.out = 0
+                        else:
+                            # 未达到三个，继续正常推送
+                            delay_counter = 60
+                            robot_step = 4
+                            camera_high.set_mode(1)
+                            camera_low.set_mode(1)
+                            enable_angle_pid = True
+                            avoid_stage = 0
+                            camera_high.avoid_flag = False
+                        # ---------- 修改结束 ----------
+                    else:
+                        tof_trigger_dir = 0
+                        if 0 < dist2 < TOF_PARALLEL_THRES: tof_trigger_dir = -1  
+                        elif 0 < dist1 < TOF_DOWN_THRES: tof_trigger_dir = -1   
+                        elif 0 < comm.slave_dist1 < TOF_DOWN_THRES: tof_trigger_dir = 1
+                        elif 0 < comm.slave_dist2 < TOF_PARALLEL_THRES: tof_trigger_dir = 1
+                            
+                        if tof_trigger_dir != 0:
+                            avoid_stage = 2; master_avoid_dir = tof_trigger_dir; avoid_start_y = odometer.dist_y 
+                            
+                        if avoid_stage == 0:
+                            target_vx = 0.0
+                            push_max_speed = 120.0 if current_target_id == 2 else 190.0
+                            target_vy = ramp(vy, push_max_speed, ACCEL_STEP)
+                            
+                            if camera_high.avoid_flag:
+                                avoid_stage = 1; master_avoid_dir = 1 if camera_high.avoid_dir == 1 else -1
+                                avoid_start_y = odometer.dist_y
+
+                        elif avoid_stage in [1, 2]:
+                            target_vy = ramp(vy, 35.0, ACCEL_STEP3) 
+                            
+                            need_offset = False
+                            if camera_high.avoid_flag:
+                                need_offset = True 
+                                
+                            if master_avoid_dir == -1: 
+                                if 0 < dist1 < TOF_DOWN_THRES or 0 < 0 < dist2 < TOF_PARALLEL_THRES:
+                                    need_offset = True 
+                            elif master_avoid_dir == 1: 
+                                if comm.slave_dist1 < TOF_DOWN_THRES or 0 < comm.slave_dist2 < TOF_PARALLEL_THRES:
+                                    need_offset = True
+                            
+                            if need_offset:
+                                target_vx = ramp(vx, 45.0 * master_avoid_dir, ACCEL_STEP1)
+                            else:
+                                target_vx = ramp(vx, 0.0, ACCEL_STEP1) 
+
+                            moved_y = abs(odometer.dist_y - avoid_start_y)
+                            if moved_y >= 15.0 and tof_trigger_dir == 0 and not camera_high.avoid_flag:  
+                                avoid_stage = 0; camera_high.avoid_flag = False; target_vx = 0.0  
+
+                        vx = ramp(vx, target_vx, ACCEL_STEP)
+                        vy = ramp(vy, target_vy, ACCEL_STEP)
+                        enable_angle_pid = True
+
+                elif robot_step == 3:
+                    robot_step = 4
+
+                elif robot_step == 4:
+                    vx = ramp(vx, 0.0, ACCEL_STEP)
+                    vy = ramp(vy, 0.0, ACCEL_STEP)
+                    
+                    delay_counter -= 1  
+                    if delay_counter <= 0:
+                        target_yaw = push_global_yaw + 180.0
+                        if target_yaw > 180.0: target_yaw -= 360.0
+                        elif target_yaw < -180.0: target_yaw += 360.0
+                        
+                        enable_angle_pid = False 
+                        pid1.out = pid2.out = pid3.out = 0
+                        delay_counter = 0
+                        robot_step = 5
+
+                elif robot_step == 5:
+                    enable_angle_pid = False
+                    angle_error = target_yaw - yaw
+                    if angle_error > 180.0: angle_error -= 360.0
+                    elif angle_error < -180.0: angle_error += 360.0
+
+                    if abs(angle_error) > 2.0:
+                        vx = ramp(vx, -0.0, ACCEL_STEP)
+                        vy = ramp(vy, 50.0, ACCEL_STEP)
+                        current_turn_w = turn_omega_1802 if abs(angle_error) > 10.0 else (abs(angle_error) * 3.0 + 40.0)
+                        omega_out = current_turn_w
+                    else:
+                        # ======== 旋转完成 ========
+                        if current_target_id in [3, 4] and pushed_blocks_count >= 3:
+                            # 直接进入前进找线（不停止电机）
+                            vx = 0.0
+                            vy = 160.0                     # 前进速度（可调）
+                            omega_out = 0.0
+                            enable_angle_pid = True
+                            # 清除积分，避免突变
+                            angle_pid.integral = pid1.out = pid2.out = pid3.out = 0
+                            # 摄像头设为搜索模式（保持搜索阶段）
+                            camera_high.set_mode(0)
+                            camera_low.set_mode(0)
+                            # 重置里程计（可选，step 9 内也会重置）
+                            odometer.reset()
+                            robot_step = 9
+                        else:
+                            # 原有逻辑：停车→等待黄线→回 step 0
+                            vx, vy, omega_out = 0.0, 0.0, 0.0
+                            speed.set_motors_duty(0, 0, 0)
+                            enable_angle_pid = True
+                            angle_pid.integral = pid1.out = pid2.out = pid3.out = 0
+                            camera_high.set_mode(1)
+                            camera_low.set_mode(1)
+                            delay_counter = 50
+                            robot_step = 6               
+
+                elif robot_step == 6:
+                    vx, vy, omega_out = 0.0, 0.0, 0.0        
+                    speed.set_motors_duty(0, 0, 0)      
+                    
+                    delay_counter -= 1
+                    if (delay_counter <= 0 and line_detected) or (delay_counter < -100):
+                        current_search_angle = target_yaw
+                        
+                        angle_pid.integral = 0
+                        camera_high.set_mode(0)  
+                        camera_low.set_mode(0)           
+                        is_first_search = False        
+                        odometer.reset() 
+                        
+                        delay_counter = 50  
+                        robot_step = 61      
+
+                elif robot_step == 61:
+                    vx, vy, omega_out = 0.0, 0.0, 0.0
+                    speed.set_motors_duty(0, 0, 0)
+                    delay_counter -= 1
+                    if delay_counter <= 0:
+                        robot_step = 0  
+                
+                # 回家步骤
+                elif robot_step == 70:
+                    vx = ramp(vx, 0.0, ACCEL_STEP)
+                    vy = ramp(vy, 0.0, ACCEL_STEP)
+                    omega_out = ramp(omega_out, 0.0, ACCEL_STEP)
+                    delay_counter -= 1
+                    if delay_counter <= 0:
+                        speed.set_motors_duty(0, 0, 0)
+                        pid1.out = pid2.out = pid3.out = 0
+                        
+                        target_yaw = -90.0
+                        enable_angle_pid = False
+                        robot_step = 8
+
+                elif robot_step == 8:
+                    angle_error = target_yaw - yaw
+                    if angle_error > 180.0: angle_error -= 360.0
+                    elif angle_error < -180.0: angle_error += 360.0
+                    
+                    if abs(angle_error) > 2.0:
+                        vx = ramp(vx, 0.0, ACCEL_STEP)
+                        vy = ramp(vy, 0.0, ACCEL_STEP)
+                        current_turn_w = turn_omega_1801 if abs(angle_error) > 40.0 else (abs(angle_error) * 3.0 + 40.0)
+                        omega_out = -current_turn_w if angle_error > 0 else current_turn_w
+                    else:
+                        vx, vy, omega_out = 0.0, 0.0, 0.0
+                        speed.set_motors_duty(0, 0, 0)
+                        
+                        enable_angle_pid = True
+                        angle_pid.integral = pid1.out = pid2.out = pid3.out = 0
+                        
+                        camera_high.set_mode(2) 
+                        camera_low.set_mode(1) 
+                        delay_counter = 100 
+                        robot_step = 9
+
+                elif robot_step == 9:
+                    camera_high.set_mode(2) 
+                    camera_low.set_mode(1) 
+                    vx = ramp(vx, 0.0, ACCEL_STEP)
+                    vy = ramp(vy, 160.0, ACCEL_STEP) 
+                    if line_detected:
+                        pid1.out = pid2.out = pid3.out = 0
+                        track_pid_y_high.integral = 0 
+                        odometer.reset()       
+                        robot_step = 91        
+
+                elif robot_step == 91:
+                    vx = ramp(vx, 0.0, ACCEL_STEP)
+                    vy = ramp(vy, -100.0, ACCEL_STEP)
+                    if odometer.dist_y <= -20.0:
+                        odometer.reset()
+                        pid1.out = pid2.out = pid3.out = 0
+                        robot_step = 10        
+
+                elif robot_step == 10:
+                    vx = ramp(vx, -350.0, ACCEL_STEP)  
+                    vy = ramp(vy, -5.0, ACCEL_STEP)  
+
+                    if line_detected:
+                        pid1.out = pid2.out = pid3.out = 0
+                        odometer.reset()        
+                        robot_step = 102        
+
+                elif robot_step == 102:
+                    vx = ramp(vx, -350.0, ACCEL_STEP)  
+                    vy = ramp(vy, 0.0, ACCEL_STEP)    
+                    
+                    if abs(odometer.dist_x) >= 20.0:  
+                        pid1.out = pid2.out = pid3.out = 0
+                        robot_step = 12               
+
+                elif robot_step == 12:
+                    vx = ramp(vx, 0.0, ACCEL_STEP)
+                    vy = ramp(vy, 0.0, ACCEL_STEP)
+                    omega_out = ramp(omega_out, 0.0, ACCEL_STEP)
+                    if abs(vx) < 0.1 and abs(vy) < 0.1 and abs(omega_out) < 0.1:
+                        car_running = False
+
+            else:
+                vx, vy, omega_out = 0.0, 0.0, 0.0
+                pid1.out = pid2.out = pid3.out = 0 
+
+            if car_running:
+                if enable_angle_pid:
+                    omega_out = angle_pid.update(target_yaw, yaw, actual_dt_outer)
+
+            if robot_step in [5, 8, 16]:
+                active_offset = 0.0  
+            elif robot_step == 1 and active_cam == 'LOW':
+                active_offset = CAMERA_OFFSET_ANGLE_LOW
+            else:
+                active_offset = CAMERA_OFFSET_ANGLE_HIGH 
+
+            cam_rad = math.radians(active_offset)
+            real_vx = vx * math.cos(cam_rad) - vy * math.sin(cam_rad)
+            real_vy = vx * math.sin(cam_rad) + vy * math.cos(cam_rad)
+
+            if car_running:
+                target1, target2, target3 = chassis.inverse_kinematics(real_vx, real_vy, omega_out)
+            else:
+                target1 = target2 = target3 = 0
+                
+            lcd_counter += 1
+            if lcd_counter >= 20:
+                lcd_counter = 0
+                
+                if not car_running:
+                    run_color = 0x07E0 if car_running else 0xF800
+                    lcd.str24(0, 0, "M:RUN" if car_running else "M:STOP", run_color)
+                    
+                    step_dict = {
+                        -1: "-1: INIT", 0: "0: SRCH", 1: "1: TRACK", 15: "15: SYNC", 16: "16: TURN",
+                        17: "17: ALIGN", 2: "2: PUSH", 3: "3: VIS", 4: "4: TRN-170", 5: "5: ROT", 
+                        6: "6: HOLD", 61: "61: WAIT", 70: "70: PRE-T", 8: "8: E-TRN", 9: "9: WALL", 
+                        91: "91: BACK", 10: "10: FLW", 101: "101: ALGN", 11: "11: PARK", 12: "12: DONE"
+                    }
+                    display_str = step_dict.get(robot_step, "ERR: {}".format(robot_step))
+                    lcd.str16(0, 30, display_str, 0x07FF)
+                    lcd.str16(0, 50, "Y:{:>4.0f} T:{:>4.0f}".format(yaw, target_yaw), 0xFFFF)
+                    lcd.str16(0, 70, "Push: {}".format(pushed_blocks_count), 0x07E0)
+
+                    if not car_running and preview_camera_mode:
+                        lcd.str16(0, 90, "L:%d R:%d        " % (gray_sensor_left.value(), gray_sensor_right.value()), 0x07E0)
+                    elif robot_step == -1:
+                        lcd.str16(0, 90, "I-Dis:{:>4.1f}".format(odometer.dist_y), 0x07E0) 
+                    elif robot_step == 0:
+                        lcd.str16(0, 90, "Dist:{:>4.1f}".format(odometer.dist_y), 0x07E0) 
+                    elif robot_step == 1 or robot_step == 17:
+                        active_cx = CENTER_X_LOW if active_cam == 'LOW' else CENTER_X_HIGH
+                        active_cy = CENTER_Y_LOW if active_cam == 'LOW' else CENTER_Y_HIGH
+                        cam_label = "L" if active_cam == 'LOW' else "H"
+                        lcd.str16(0, 90, "X:{:>3d}Y:{:>3d} {}".format(track_tx - active_cx, active_cy - track_ty, cam_label), 0xFFFF)
+                    elif robot_step == 2:
+                        obs_str = f"AVD({avoid_stage})" if avoid_stage > 0 else "CLR"
+                        lcd.str16(0, 90, "{},T:{:.0f}".format(obs_str, target_yaw), 0xFFFF if avoid_stage > 0 else 0x07E0)
+                    elif robot_step == 3:
+                        lcd.str16(0, 90, "T-Dis:{:>4.1f}".format(target_dist - odometer.dist_y), 0xFFFF)
+                    elif robot_step in [5, 16, 8]:
+                        lcd.str16(0, 90, "Err:{:>5.1f}   ".format(target_yaw - yaw), 0xF800)
+                    elif robot_step in [10, 101, 11]:
+                        lcd.str16(0, 90, "Dist:{:>4.1f}".format(odometer.dist_y), 0x07E0)
+                    elif robot_step in [4, 6, 15, 70]: 
+                        lcd.str16(0, 90, "Hold:{:>3d}  ".format(delay_counter), 0xFFFF)
+                    else:
+                        lcd.str16(0, 90, "                ", 0x0000)
+                    
+                    lcd.str16(0, 115, "Vy: {:>5.1f}".format(real_vy), 0x07FF)
+                    lcd.str16(0, 135, "ID: {} | Ang:{:>4.0f}".format(current_target_id, current_search_angle), 0x07E0)
+                    lcd.str16(0, 155, "Dist:{:>4.1f}".format(odometer.dist_y), 0x07E0)
+                    lcd.str16(0, 175, "M L:{:>4d} R:{:>4d}".format(dist1, dist2), 0xFFFF)
+                    lcd.str16(0, 195, "S L:{:>4d} R:{:>4d}".format(comm.slave_dist1, comm.slave_dist2), 0xFFFF)
+
+            comm_divider += 1
+            if comm_divider >= COMM_INTERVAL:
+                comm_divider = 0
+                if car_running:
+                    if enable_angle_pid:
+                        send_cmd = CMD_ANGLE
+                        send_w = int(target_yaw * 10)
+                    else:
+                        send_cmd = CMD_PUSH
+                        send_w = int(omega_out)
+                        
+                    if robot_step == 15:
+                        comm.send_sync_data(CMD_ASK_SYNC, vx, vy, send_w)
+                    elif robot_step == 12:
+                        comm.send_sync_data(CMD_STOP, vx, vy, send_w)
+                    elif robot_step == 5:
+                        # 🌟 在识别到黄线后转 180 度的地方（step 5），专属发送太极互换指令和角速度
+                        comm.send_sync_data(CMD_TAICHI, 0, 0, int(omega_out))
+                    else:
+                        comm.send_sync_data(send_cmd, vx, vy, send_w)
+                else:
+                    comm.send_sync_data(CMD_STOP, 0, 0, 0)
+
+            if lcd_counter % 10 == 0: gc.collect()
+
+        # ----------------- 环境感知 (30ms 非阻塞读取) -----------------
+        current_time = time.ticks_ms()
+        if time.ticks_diff(current_time, last_tof_time) >= 30:
+            last_tof_time = current_time
+            if tof1_ready:
+                try:
+                    if not has_data_ready or (has_data_ready and hasattr(tof1, 'data_ready') and tof1.data_ready()):
+                        dist1 = tof1.read()
+                except Exception:
+                    pass 
+            if tof2_ready:
+                try:
+                    if not has_data_ready or (has_data_ready and hasattr(tof2, 'data_ready') and tof2.data_ready()):
+                        dist2 = tof2.read()
+                except Exception:
+                    pass 
+
+        # ----------------- 内环电机闭环 (1ms) -----------------
+        if speed_flag:
+            speed_flag = False
+            now_inner = time.ticks_us()
+            actual_dt_inner = time.ticks_diff(now_inner, last_inner_time) / 1000000.0
+            last_inner_time = now_inner
+            if actual_dt_inner <= 0: actual_dt_inner = 0.001  
+
+            v1, v2, v3 = speed.get_realtime_speeds(actual_dt_inner)
+            odometer.update() 
+
+            raw_pwm1 = pid1.update(target1, v1, actual_dt_inner)
+            raw_pwm2 = pid2.update(target2, v2, actual_dt_inner)
+            raw_pwm3 = pid3.update(target3, v3, actual_dt_inner)
+            
+            DEAD_ZONE = 700
+            def apply_deadzone(pwm, target_v):
+                if abs(target_v) < 0.1: 
+                    return 0
+                if target_v > 0: return pwm + DEAD_ZONE
+                else: return pwm - DEAD_ZONE
+                
+            pwm1 = apply_deadzone(raw_pwm1, target1)
+            pwm2 = apply_deadzone(raw_pwm2, target2)
+            pwm3 = apply_deadzone(raw_pwm3, target3)
+
+            speed.set_motors_duty(pwm1, pwm2, pwm3)
+
+    except Exception as e:
+        print("Error:", e)
+        speed.set_motors_duty(0, 0, 0)
+        time.sleep_ms(500)
+        
+
+
+
+
+
+
+===== TABLE 1 =====
+层级 | 输入 | 主要处理 | 输出
+感知层 | 高/低 OpenMV、红外 OpenMV、IMU、ToF、灰度、编码器 | 协议解析、滤波、目标筛选和事件生成 | 目标坐标、类别、yaw、距离、压线和轮速
+决策层 | 感知结果、任务状态、通信状态 | 主车有限状态机、目标类别分支、避障仲裁和双车同步 | 目标车体速度、目标航向、无线命令
+控制层 | 像素误差、航向误差、轮速误差 | 位置 PID、角度 PID、增量式 PID、斜坡限制和坐标旋转 | vx、vy、ω、三个轮速目标和 PWM
+执行层 | 三路 PWM 和方向信号 | 电机驱动与三全向轮运动 | 车体平移、横移和旋转
+
+===== TABLE 2 =====
+ |  | 公式1
+
+===== TABLE 3 =====
+ |  | 公式2
+
+===== TABLE 4 =====
+ |  | 公式3
+
+===== TABLE 5 =====
+ |  | 公式4
+
+===== TABLE 6 =====
+ |  | 公式5
+
+===== TABLE 7 =====
+ |  | 公式6
+
+===== TABLE 8 =====
+ |  | 公式7
+
+===== TABLE 9 =====
+控制环 | 主车参数/配置 | 副车参数/配置 | 周期
+高位视觉 X/Y | (1.315,0.0707,0.014)/(1.395,0.0705,0.014)，限幅 150 | 不适用 | 5 ms
+低位视觉 X/Y | (1.285,0.0457,0.001)/(1.295,0.0465,0.001)，限幅 20 | 不适用 | 5 ms
+副车视觉 X/Y | 不适用 | 初值 (2.5,1.9,0.04)，按角度/普通模式改变 Kp、Ki | 5 ms
+航向环 | (−40,0,−0.002)，限幅 1000 | (−25,−1.5,−0.008)，限幅 300 | 5 ms
+三轮速度环 | 31/520、20/500、30/520 | 33/536、34/552、34/500 | 1 ms
+
+===== TABLE 10 =====
+ |  | 公式8
+
+===== TABLE 11 =====
+状态 | 含义 | 主要动作和转移条件
+−1/0 | 初始化/搜索 | 前进 10 cm 后进入搜索；首次斜向、后续直行；发现目标转 1；超过 220 cm 或一定距离后压线转 70
+1 | 视觉跟踪 | 高位远场、低位近场；低位误差达到阈值并连续确认后记录目标 ID，转 15
+15 | 双车同步 | 主车停车并发送 0x06；副车红外对中后应答 0x07
+16 | 目标类别转向 | 沙包类设 −90°、熊类设 +90°、球类设 0°；快速转向完成后转 17
+17 | 二次对齐 | 低位视觉细调；误差合格或超时后进入推送
+2 | 推送/避障 | 目标类别决定推送速度；视觉或 ToF 触发降速横移；压线后推送计数加 1
+4/5/6/61 | 调头/等待 | 停止、转向 180°、发送太极互换命令，检测引导线或超时后重新搜索
+70/8/9 | 回家转向/找线 | 停止后转向 −90°，前进寻找灰度引导线
+91/10/102 | 后退/沿线/横移 | 后退 20 cm，压线定位，再横移 20 cm
+12 | 完成 | 速度斜坡归零、电机停止、无线发送停车命令
+
+===== TABLE 12 =====
+命令字 | 方向 | 含义 | 说明
+0x00 | 主→副 | 停车 | 速度和角速度归零
+0x03 | 主→副 | 推送/角速度模式 | vx、vy、ω 前馈
+0x06 | 主→副 | 同步请求 | 副车进入红外对中
+0x07 | 副→主 | 同步完成 | 横向误差 |tx−84|≤3 时应答
+0x08 | 主→副 | 角度模式 | w 字段为目标 yaw×10
+0x0A | 副→主 | ToF 上报 | dist1、dist2
+0x0B | 主→副 | 太极互换 | 平移前馈为零，保留旋转前馈
+
+===== TABLE 13 =====
+类/模块 | 主要职责 | 关键变量或接口
+Inc_PIDController | 三轮速度增量式 PID | last_error、prev_error、out
+Pos_PIDController | 主车高/低视觉位置环 | integral、last_error、limit
+Visual_Inc_PIDController | 副车视觉增量 PID 和安全限制 | 变积分、微分滤波、max_step
+Angle_PIDController | 主副车 yaw 航向控制 | ±180°环绕、integral
+Attitude | IMU 初始化、yaw 偏置和高频更新 | yaw_offset、_yaw
+Encoder_Speed | 三路编码器测速、低通和 PWM | delta_pulses、v_filt
+OmniOdometer | 主车横纵向短程里程计 | dist_x、dist_y
+OmniWheelChassis | 三全向轮逆运动学 | L、√3/2
+UnifiedCamera | 主车摄像头模式控制与帧解析 | target、line、home、avoid
+OpenMVTracker | 副车红外坐标和倾角解析 | tx、ty、tilt、is_found
+WirelessComm | 运动帧、同步帧和 ToF 帧收发 | dynamic_buf、last_cmd、distance
+
+===== TABLE 14 =====
+开发环节 | 工具或平台 | 用途
+主控制器 | 逐飞 SmartCar 核心板，NXP i.MX RT1021，MicroPython 固件 | 运行主副车控制程序，驱动定时器、编码器、电机、IMU、无线串口和 LCD
+视觉处理 | OpenMV Cam 与 OpenMV IDE | 摄像头程序编写、图像阈值观察、模型部署、串口输出和帧率调试
+目标检测 | TensorFlow Lite 模型 | 识别沙包、玩球、熊和红砖等 6 类目标
+主控调试 | 逐飞上位机/REPL、串口调试助手 | 程序下载、打印状态、检查通信帧和记录控制参数
+运行监控 | 板载 LCD | 显示状态号、yaw、目标误差、推送计数、里程计和主副车 ToF
+
+===== TABLE 15 =====
+安装对象 | 安装与核对要求 | 软件关联参数
+三全向轮 | 三轮间隔 120°、半径一致、编码器符号与电机正方向匹配 | L=0.1、轮半径 0.025 m、PPR=1021、减速比 3.7
+主车高位摄像头 | 视野覆盖远场目标和推送走廊，固定后测量光轴偏角 | UART7、偏角 −30°、中心 (54,105)
+主车低位摄像头 | 视野覆盖车前近场，不被推送结构遮挡 | UART5、偏角 0°、中心 (80,85)
+副车摄像头 | 能稳定看到双红外点，避免车体部件遮挡 | UART7、偏角 −57°、中心 (84,60)
+IMU | 刚性固定，开机初始化期间保持静止 | 120 Hz、yaw_offset
+ToF | 逐路遮挡确认方向和通道，避免互相串扰 | ROI 16×4、I²C/SoftI2C
+灰度传感器 | 左右对称，调整离地高度使引导线稳定输出低电平 | B20、C20
+无线串口 | 两端波特率、频道和帧格式一致 | 必须统一 115200 或 460800
+
+===== TABLE 16 =====
+调试阶段 | 观察量 | 主要通过条件
+电机与编码器 | 目标轮速、实测轮速、PWM、符号 | 三轮方向正确，阶跃无持续振荡，零速不爬行
+视觉链路 | 目标 ID、x/y、倾角、模式和超时 | 帧头尾正确，坐标方向一致，丢失后按时清除
+航向与里程计 | yaw、目标角、dist_x、dist_y | 跨 ±180°连续，20 cm 短距判断可重复
+无线通信 | cmd、vx、vy、w、ToF 回传 | 两端波特率一致，正负数还原和应答正确
+推送避障 | avoid_stage、四路 ToF、视觉避障方向 | 触发后降速横移，危险解除后恢复
+整机流程 | robot_step 序列、推送计数、灰度和异常 | 所有状态按条件转移，异常时电机归零

@@ -1,0 +1,450 @@
+第二十一届全国大学生
+智能汽车竞赛
+
+技 术 报 告
+
+
+学    校：哈尔滨理工大学
+队伍名称：Echo
+参赛队员：刘轩宇 姚雯缤 孙长浩
+
+带队教师：李双全
+关于技术报告和研究论文使用授权的说明
+本人完全了解第二十一届全国大学生智能汽车竞赛关保留、使用技术报告和研究论文的规定，即:参赛作品著作权归参赛者本人，比赛组委会可以在相关主页上收录并公开参赛作品的设计方案、技术报告以及参赛模型车的视频、图像资料，并将相关内容编纂收录在组委会出版论文集中。
+
+
+
+参赛队员签名:  刘轩宇
+              姚雯缤
+              孙长浩                                            
+带队教师签名:      李双全 
+   日        期：2026 . 8 . 17
+
+ 引言
+1.1概述
+随着信息技术的发展，汽车的电子化模块越来越多，智能汽车领域受到了大量的关注。受教育部高等教育司委托(教高司函[2005]201号文)，由教育部高等学校自动化专业教学指导分委员会主办全国大学生智能汽车竞赛。是为了加强大学生实践、创新能力和团队精神的培养，该竞赛是以智能汽车为研究对象的创意性科技竞赛，涵盖了控制、模式识别、传感技术、电子、电气、计算机、机械等多个学科交叉的科技创意性比赛，是面向全国大学生的一种具有探索性工程实践活动。
+全国大学生智能汽车竞赛以智能汽车为研究对象，依托汽车电子背景，设置不同组别，让参赛学生利用电子、图像识别、传感技术、机械结构等知识完成对应的组别，设置竞速赛、创意赛等竞赛形式，竞赛出最优秀的队伍。该竞赛综合锻炼了我们的电子信息技术、团队配合能力以及工程实践能力，贯彻落实“政府倡导、专家主办、学生主体、社会参与”的 16字方针，充分调动各方面积极性，通过规则透明的竞争机制，赛出风格、赛出水平。
+
+1.2系统设计概述
+根据竞赛规则相关规定，本组别智能车系统采用博思N1车模，我们选择以TC377单片机作为核心控制器，在ADS开发环境中进行软件开发。通过磁编检测车速，并通过单片机进行计算获得速度和路程；驱动电机通过PID控制和PWM信号驱动电路调整电机的功率；通过磁编和陀螺仪来完成惯性导航。
+综上所述，本智能车系统包含了以下几个模块：TC377主控模块，磁编模块，无刷电机驱动模块。
+
+第二章 车模设计与制作 
+2.1技术方案概要说明 
+通过分析第二十一届智能车单车定向组的规则，我们认为车模的设计需兼顾机械、硬件与软件的协同优化。
+机械结构上，车模宽度应尽量减小，我们选用N1车模，配合无刷电机来获得更大扭矩。通过缩短车身、降低重心并将重心靠近转向中心，减小转弯半径，同时采用碳纤维杆来保护车模。。
+硬件设计主要包括主控板，无刷驱动板，磁编。主控板尺寸尽量减小，驱动板采用CYT2BL3设计，磁编采用英飞凌TLE5012BE1000。
+2.2车模机械部分安装及设计
+2.2.1 电池安装
+
+安装于车体下方，降低车模重心。
+
+
+2.2.2 PCB 模块安装
+
+2.2.3陀螺仪模块安装
+
+
+安装于车模中心。
+
+
+2.2.4磁编模块安装
+
+
+与电机磁铁距离合适，获取电机转速数据。
+
+第三章 硬件电路设计说明
+3.1 硬件电路设计简述
+ 我们所选择的核心板是TC377。主板与和驱动板的连接通过排线，通过主板与驱动板之间的串口通信实现控制，以磁编码器和IMU963RA六轴姿态传感器，通过程序控制实现了车子的稳定行驶。
+3.2最小核心系统板
+
+图 3-1 最小核心系统板
+单片机最小核心系统板使用的是逐飞科技出品的TC377核心板，主板主要是将本系统所需的所有 IO 口引出。如图所示。
+
+3.3主要电源模块
+
+图 3-2  5V电源模块
+5V电源：采用STC2450模块系列芯片具有输入电压范围大，过热、过流以及电压反接保护，使用的稳压芯片为STC2450电路设计简单并可输出稳定的5V电压，显著的提高了电源的利用效率，如图4-4所示，我们设计的电压转换是从12V到5V，主要给TC377单片机、屏幕模块等模块进行稳定供电。
+3.4电机驱动模块
+
+图3-3电机驱动模块
+电机驱动电路的作用主要是控制电机的旋转角度和运转速度，从而达到对PWM波占空比的控制，以此来实现对电机的变速控制。在无刷电机驱动芯片上，我们选择采用CYT2BL3芯片，同时在TC377单片机与CYT2BL3用串口通信。逐飞参考设计采用外置三相栅极驱动芯片 + N 沟道 MOS 三相全桥每一路电机：输出 6 路栅极信号，驱动上 / 下桥 MOS电流采样：下桥单电阻采样方案，成本低、布线简单；VADC 在 PWM 谷底 / 中点同步采样相电流，供 FOC 算法使用硬件保护：驱动芯片自带硬件限流、栅极欠压保护；FAULT 引脚接入 MCU 外部中断，故障立即封锁 PWM 输出。
+3.5主要模块接口
+
+
+
+
+图 3-4 主要模块接口
+
+
+
+
+第四章 软件系统设计
+本系统以英飞凌 AURIX TC377 三核单片机为核心，采用“三核分工 + 中断驱动级联控制 + 事件同步导航”的软件框架：
+CPU0（cpu0_main.c）：运行主菜单与显示，并通过定时器中断完成全部实时控制任务——1 ms 中断完成 IMU 传感数据读取、滤波与姿态解算更新，再按软件分频执行角速度环（1 ms）、角度环（5 ms）、转向环（20 ms/10 ms）、速度环（10 ms/1 ms）及倾倒检测与紧急停车；
+CPU1（cpu1_main.c）：运行惯性导航（INS）与路径跟踪（Stanley），导航节拍由 CPU0 中断以标志位（nav_trigger）触发，事件驱动式单次路径规划计算；
+CPU2（cpu2_main.c）：运行 VOFA+ 上位机调试通道，实时上传各控制环中间量与参数用于在线调参。三个 CPU 核心通过 cpu_wait_event_ready() 同步启动，各自全局变量经 #pragma section all “cpuX_dsram” 分配到独立 RAM 区；CPU1 写入的导航目标（expected_yaw、expected_speed_raw）在 CPU0 中断读取前经 __dsync() 内存屏障保证跨核可见。整个控制链为“导航层 → 转向外环 → 平衡内环 → 执行机构”的分层解耦结构。
+4.1平衡算法
+单车模型本身不具备静态稳定性，其“平衡”的本质是依靠前轮转向对车身侧倾进行闭环纠偏：车体向一侧倾倒时，控制器令前轮向倾倒方向转向，使支撑点向重心方向移动，从而产生扶正力矩。根据竞赛科目对速度与转向机动性的不同要求，工程中实现了两套平衡方案——科目一/科目三的四环级联 PID 与科目二的“Roll 状态观测器 + 状态反馈”低速平衡，二者共用同一姿态解算与传感器链路。
+4.1.1姿态解算（Mahony 互补滤波）
+姿态角是平衡与导航的共同基础。陀螺仪短期精度高但存在积分漂移，加速度计无长期漂移但受运动加速度干扰大，因此采用 Mahony 互补滤波（imu.c 的 imu_get_angle()，随 1 ms 中断每 5 ms 执行一次）：
+（1）传感器预处理：陀螺仪原始输出先扣除开机标定的静态零偏（imu_offset_init 对 1000 次采样取平均）；Z 轴零偏再叠加温度线性拟合的温补值（开机自学习 12 个温点、最小二乘拟合，独立 Flash 页保存）；三轴陀螺数据再经过率随科目选择的一阶低通（截止频率 gyro_lpf_fc）。
+（2）重力方向比对：加速度计矢量归一化后，由当前四元数推算“期望重力方向”，两者叉积得到姿态误差（ex，ey，ez）。
+（3）置信度门控：当加速度模长偏离 1g 超过阈值（剧烈加减速、颠簸）时降低或清零置信度，此时只信任陀螺仪积分，避免把运动加速度误当姿态扰动（acc_confidence 按偏差分级取 1.0、0.5、0.1、0）。
+（4）PI 修正：将姿态误差按 kp（1.5）比例项与 ki（0.0005）积分项（积分限幅 ±3）叠加到陀螺角速度，得到修正角速度。
+（5）四元数更新：采用 RK2 中点法（二阶，O(dt³)）对修正角速度做四元数积分并归一化，实现比一阶欧拉更稳的姿态更新；随后由四元数换算 pitch、roll、yaw，其中 yaw 归一到 [0°，360°)。
+4.1.2科目一/科目三：四环级联 PID
+科目一（直道折返竞速）与科目三（越野障碍竞速）采用同一套“角速度→角度→转向→速度”四环级联（user/isr.c），各环按不同周期软件分频执行，由内向外逐层计算：
+（1）角速度环（gyro，1 ms）：目标为角度环输出 pid_angle.out（期望侧倾角速度），反馈为 IMU 实测 gyro_y，采用位置式 PID，输出直接叠加舵机中位驱动舵机；输出端再作一阶低通平滑（截止频率 gyro_out_lpf_fc），进一步抑制舵机高频抖动。
+（2）角度环（angle，5 ms）：目标 = 机械平衡零点 balance_zero + 转向环输出（目标侧倾角），反馈为 IMU 实测 roll，采用位置式 PID（实际以比例与微分项为主），输出即角速度环目标——这一环负责抵抗慢速倾倒扰动，是“宏观扶正”的核心。
+（3）转向环（turn，20 ms）：完成航向对路径的跟踪。输入为导航层的期望航向 expected_yaw，输出为目标侧倾角进入角度环目标。仅在 turn_ring_enable 打开时参与；关闭（旁路）时角度环只守机械零点，可用于 A/B 对照试验。
+（4）速度环（speed，10 ms）：见 4.4 节。
+级联输出的舵机命令为：
+舵机角 = −(角速度环输出) + 舵机中位 + 转向稳态前馈
+整个级联在功能上等价于“期望航向 θ →（转向环）→ 目标侧倾角 φ_ref →（角度环）→ 期望侧倾角速度 ω_ref →（角速度环）→ 舵机转角”，实现侧向平衡（角度 + 角速度内环）与纵向转向（转向外环）的解耦协同。核心实现如下（user/isr.c，略去坡道旁路、Kp 自适应等分支）：
+// Gyro 环  1ms：目标=角度环输出，反馈=实测侧倾角速度
+parameter_data.pid_gyro[s].target = parameter_data.pid_angle[s].out;
+parameter_data.pid_gyro[s].actual = imu_data.gyro_y;
+pid_update(&parameter_data.pid_gyro[s]);
+servo_set_angle(-parameter_data.pid_gyro[s].out
+                + parameter_data.servo_mid + car_data.ff_steer);
+
+// Angle 环  5ms：目标=机械零点 + 转向环输出的目标侧倾角
+parameter_data.pid_angle[s].target =
+    parameter_data.balance_zero[s] + effective_turn_out;
+parameter_data.pid_angle[s].actual = imu_data.roll;
+pid_update(&parameter_data.pid_angle[s]);
+
+// Turn 环  20ms：跟踪期望航向（360°环绕误差）
+parameter_data.pid_turn[s].target =
+    yaw_wrap(car_data.expected_yaw - car_data.turn_angle);
+parameter_data.pid_turn[s].actual = imu_data.yaw;
+turn_pid_update_with_kd_integral(&parameter_data.pid_turn[s],
+    turn_kd_effective, turn_integral_enable);
+代码 4-1  四环级联核心实现（user/isr.c）
+4.1.3角度环 Kp 速度自适应
+自行车转向的动力学强依赖车速：低速时小舵角即可产生可观侧倾，高速时则需更大的姿态响应。若角度环 Kp 固定，会在起速阶段放大 Turn 侧倾指令、在高速段响应不足。为此，角度环引入速度查表自适应（balance.c 的 angle_kp_scale()）：
+（1）建立 7 个速度节点（1.5、2.0、2.5、3.0、4.0、4.5、5.0 m/s）上的 Kp 比例系数表 angle_kp_ratio[subject][i]；
+（2）实时 Kp = 基准 new_kp × 线性分段插值系数（2 m/s 处系数为 1.0）；
+（3）采用原始滤波速度查表，使起步阶段快速脱离低速大 Kp 区间，避免车已提速却仍保持低速大 Kp 而放大 Turn 侧倾指令。
+4.1.4稳态转向前馈
+级联外环只给出目标侧倾角，若要达成稳定转弯还需要知道“目标侧倾角 + 当前车速 → 舵机打多少”。依据自行车稳态转弯模型，前轮所需转向角由向心力平衡导出（balance.c 的 steering_feedforward()）：
+φ_steer = atan( L·g·tan(φ_roll) / (v²·cos α) )
+式中：L 为轴距（0.20 m），g 为重力加速度，α 为前叉倾角（25°，cos α ≈ 0.906），v 为滤波车速。该前馈使转向环输出能“一次性”映射到与车速匹配的舵机角度，显著减小弯道中内环的调节负担。为防抖动还加入：目标侧倾角死区（小于 1° 时输出 0，消除直线行驶舵机噪音）、车速一阶低通、极低速保护（低于 0.8 m/s 不生效）以及 15° 上限钳位。核心算式如下（balance.c）：
+float numerator   = FF_WHEELBASE * FF_GRAVITY * tanf(target_roll_deg * (PI / 180.0f));
+float denominator = filtered_speed * filtered_speed * FF_COS_RAKE;
+float steer       = atanf(numerator / denominator) * (180.0f / PI);
+if(steer >  FF_MAX_STEER) steer =  FF_MAX_STEER;    // ±15° 钳位
+if(steer < -FF_MAX_STEER) steer = -FF_MAX_STEER;
+代码 4-2  稳态转向前馈核心算式（balance.c）
+4.1.5科目二：Roll 状态观测器 + 状态反馈低速平衡
+科目二是“比慢”（半径 2 m 圆内低速绕圈，平行线法则限制摆幅 50 cm），对平衡响应提出不同要求：低速下惯性力矩小、侧倾扰动慢，传统三环级联会因传感器噪声而抖动。因此科目二独立实现了一套基于状态观测器的平衡内环（code/pid/subject2_balance.c），并以“舵机内环”形式与 Yaw 转向外环（见 4.3.3）协同：
+（1）Roll 观测器（1 ms 递推 + 5 ms 姿态修正）：以陀螺角速度对 Roll 做高频预测（短时可信），每 5 ms 用姿态解算的 Roll 测量作低频修正（消除长期漂移），并只在“静稳区”（Roll 误差与角速度均小于阈值）缓慢学习陀螺零偏 gyro_bias，避免把真实转向误判为漂移；
+（2）Roll 状态预测：用经观测器平滑的角速度把 Roll 外推 roll_predict_ms（预测增量上限 ±0.5°），使比例项提前“看到”即将发生的倾倒，配合减小后的 gyro_kd 形成纯超前补偿，避免两路角速度反馈叠加导致阻尼过强；
+（3）P + D 状态反馈：roll_p = kp·(φ_target − φ_predicted)，d = −kd·gyro，二者先按总输出同步限幅、再分别做独立的一阶低通后合成舵机命令（允许只压缩 D 支路的陀螺高频噪声而不拖延 Roll P 的扶正响应）；
+（4）静稳区微动保持：当 Roll 误差、角速度与舵机变化量均低于阈值时保持上一周期舵机命令，杜绝低速下的微抖与“滋滋”声；真实倾倒超过任一阈值立即放开。观测器的自学习递推如下（subject2_balance.c，1 ms 预测、5 ms 修正的互补结构）：
+float gyro_unbiased = gyro_rad_s - data->gyro_bias;
+data->rate_est += param->observer_rate_alpha * (gyro_unbiased - data->rate_est);
+data->roll_est += data->rate_est * SUBJECT2_RAD_TO_DEG * SUBJECT2_BALANCE_DT;
+
+if(attitude_updated)          // 每 5ms 用 Roll 实测修正漂移
+{
+    data->observer_residual = roll_measured_deg - data->roll_est;
+    data->roll_est += param->observer_angle_alpha * data->observer_residual;
+    if(/* 静稳区 */)         // 慢学习陀螺零偏
+        data->gyro_bias -= param->observer_bias_gain
+                         * data->observer_residual * SUBJECT2_DEG_TO_RAD;
+}
+代码 4-3  科目二 Roll 观测器互补递推（subject2_balance.c）
+4.1.6倾倒保护与停车逻辑
+1 ms 中断内实时检查 |roll| > 30°，一旦超限立即调用 stop_car()：运行标志清零、各科目 PID（angle/gyro/turn/speed 及低速专用 angle/turn）全部复位、电机占空比归零、舵机回中位、姿态记忆保留以便再次发车。此外停车期间不断把转向环目标与状态对齐到当前实测值，避免再次发车时积分与滤波状态残留引起突跳。
+4.2导航算法
+4.2.1系统定位方案
+竞赛规则禁止额外测速轮，本车仅使用无刷电机内置磁编码器（FOC 驱动经 UART3 遥测回报速度/位置帧）与 IMU963RA 六轴姿态传感器，构建简易捷联惯性导航（INS）系统：
+（1）里程与速度：磁编码器直接安装于后轮轴上，位置帧差 Δcount 换算车轮位移 d = Δcount × WHEEL / 32768（轮周长 WHEEL ≈ 0.22 m），速度 v = d/dt；磁编码器转向与前进相反，符号取反（DRIVE_ENCODER_SIGN = −1）。
+（2）航位推算：以 IMU 输出的 yaw 为航向，将每帧位移投影到平面（encoder.c），对应实现为：
+*total_distant += d_distance;
+point->x += d_distance * sinf(ANGLE_TO_RAD(imu_data.yaw));
+point->y += d_distance * cosf(ANGLE_TO_RAD(imu_data.yaw));
+代码 4-4  航位推算坐标投影（encoder.c）
+由于不存在 GPS/绝对参照，定位误差随里程累积，故采用“先人工打点建路径、再跟踪路径”的策略，把里程误差对单圈轨迹的影响限制在可接受范围。
+（3）测速帧健壮性：对遥测作 50 ms 超时判活（encoder_telemetry_is_alive）、单帧超速跳变拒绝（科目一/三限 8 m/s、科目二限 2 m/s，连续 3 帧异常视为反馈失效并安全停车）、断链超时只重建位置基准而不折算虚假高速；速度经 dt 自适应一阶低通（截止频率默认 8 Hz，采样率从 10 ms 升至 1 ms 保持同一截止频率）平滑。
+4.2.2路径采集与运行路径生成
+（1）打点：将车沿赛道以约 0.3 m 间距推一遍，按里程自动或手动记录航位推算坐标点（ins_get_point_per_subject）；按科目分别保存（ins_group_point[subject]），并给关键点打语义标签：Zin/Zout（S 弯）、Pin/Pout（坡道）、Uin/Uout（U 弯）。
+（2）运行路径生成：发车前执行 ins_prepare_runtime_path()，对含平滑标签的区段用夹持三次样条（clamped cubic spline）重生成运行路径（ins.c）：端点切线方向夹持取区段外侧邻点方向，保证与直线段在接缝处一阶连续（C1）；内部天然 C2（曲率）连续，弦长参数化、Thomas 算法求解三对角方程组（O(n)），再按约 0.10 m 间距沿弧长均匀重采样；标签严格校验（配对、顺序、禁止嵌套/多 U 弯），不合法则拒绝发车，避免中途路径断裂。
+（3）打点与运行路径存于独立 Flash 页，开机 ins_flash_load_all() 载入。
+4.2.3Stanley 路径跟踪控制器
+运行时（CPU1）每导航周期调用 stanley_control()（code/match/stanley.c），其核心思想源自 Stanford 在 DARPA Grand Challenge 中的经典方法，可概括为五步：
+（1）最近段定位：在当前段前向窗口内寻找距离车体最近的折线段并计算投影参数 t（find_closest_segment）。为防止 S/U 弯与八字交叉处误切到“几何更近的返程支路”，实施单向推进 + 切段迟滞：未到段末端 80% 且新段距离优势不足 2 cm 时不换段；跨相邻段时若方向差超过 70° 视为可疑跳段直接拒绝。科目二 10 ms 低速周期只允许在当前段与下一段内搜索，禁止一次跨过多段。
+（2）横向误差 CTE：用向量叉积计算车体到最近段的横向带符号距离（stanley_compute_cte），正值表示在路径右侧，负值表示在路径左侧。
+（3）弦向前视：从投影点沿路径前移 lookahead 距离得到前视点，取“投影点 → 前视点”的弦向方位角为路径方向（find_lookahead）。与取“前视点所在段切线”相比，弦向方位角随前视点在折线上平滑滑动而连续变化，从根本上消除了跨段时的期望航向阶跃。
+（4）Stanley 纠偏公式：
+θ_des = ψ_path − atan( k_cte·e_cte / (v + k_soft) )
+其中 ψ_path 为弦向前视方向（前馈），atan 项为横向误差引起的纠偏角（反馈），与车速成反比——高速柔和、低速灵敏；k_soft 防止静止时分母为零。三个科目的 Stanley 参数独立配置（如科目一 k_cte=3.0、前视 1.5 m，科目二 k_cte=0.8、前视 0.3 m，科目三 k_cte=2.5、前视 0.6 m），可经菜单实时修改并 Flash 持久化。核心算式如下（stanley.c）：
+float vs = fabsf(speed) + active_cfg.k_soft;                    // 防静止除以 0
+float correction_deg = atan2f(active_cfg.k_cte * cte *
+                            STANLEY_CTE_DIRECTION, vs) * 57.29578f;
+float desired_yaw = path_tangent - correction_deg;             // 期望航向
+desired_yaw = stanley_normalize_angle(desired_yaw);            // 归一到[0,360)
+代码 4-5  Stanley 纠偏核心算式（stanley.c）
+（5）终点判定：必须已推进到最后一段且投影进入其末端 20%、且到终点欧氏距离小于 0.3 m 才判到达，避免八字/回环路径中途路过终点误停。
+同时计算速度预判曲率 κ = 前视速度窗口内累计转角 / 行驶距离（独立于转向前视窗口，S 弯不会左右抵消被误判为直线），供 4.2.4 节速度规划使用；另计算有符号曲率供科目二目标航向速率使用。
+4.2.4速度规划（多级限速与状态机）
+CPU1 导航循环将期望速度综合为“曲率降速 + 偏航兜底降速 + 区段速度上限 + 坡道速度状态机 + 全局预减速”的多级包络（xunji.c）：
+（1）曲率降速（科目一/三）：speed_factor = 1 − κ·curve_slow_gain，下限受 curve_slow_floor 保护；偏航误差超过 yaw_safe_threshold（30°）时再叠加线性降速兜底，防止失控。
+（2）科目二降速：按偏航误差线性降速（下限 70% 基准速度）。
+（3）区段速度包络（科目三 U/S 锥桶）：对每一对 Uin/Uout、Zin/Zout 及其准备区、退出区，以 S 曲线线性混合出该区段允许的绝对速度上限（PRE→RUN→OUT），多对区段取最保守值；相邻同速区段之间采用“同速无缝保持”，避免先恢复再压低的浪涌式速度。
+（4）坡道速度状态机（科目一/三共用 Pin/Pout）：NORMAL → PREPARE（Pin 前线性减速）→ ACTIVE（按平顶几何划分上坡/平顶/下坡分段，坡顶降速在平顶末端以 S 曲线渐变，crest_brake_lead 控制提前量）→ EXIT（落地速度过渡 + 稳定保持后平滑恢复普通速度），全程“只降速、不抬速”，并可在多级坡道间自动衔接下一对标签。
+（5）全局预减速：全路径反解——以未来必经的 Pin/Uin/Zin 为“必须收住速度”的节点，按 v² = v0² + 2ad 反推出当前允许速度上限，保证到达语义入口时速度必然达到目标，而不依赖局部减速度是否足够。
+（6）坡道 Pitch 推力前馈：科一/三上坡阶段按“相对入坡基准的 Pitch 增量”给速度环叠加正向电机推力（一阶低通 + 缓升快撤），补偿爬坡阻力而不改变速度目标本身。
+（7）起步保护：前 0.3 m（STARTUP_DISTANCE）科目一/三固定发车航向与全速，待平衡建立后再进入路径跟踪。
+（8）目标平滑：期望速度经 speed_factor 低通（α=0.08）与 limit_step（加速/减速每导航周期 0.2 m/s）限速输出；科目二再对期望航向做环绕低通 + 变化率限幅，避免 Stanley 目标直接跳变。
+4.2.5科目差异化的前视策略
+（1）科目一 U 弯动态前视（sub1_u_apply_profile）：在 Uin 前约 1 m 线性切入较长的入弯前视，Uin→弯心维持长前视但前视点禁止越过弯心，弯心→Uout 前视连续缩短且仍不许越过 Uout（杜绝弯心后直接“看见”返程直线而回正），出 Uout 后约 0.8 m 线性恢复；出弯段转向 Kd 按路径距离平滑升高/撤除，防止 S 形振荡。
+（2）科目三 S 弯半波识别（sub3_s_profile）：在 Zin~Zout 内识别左右半波与换向过渡区，运行时把转向前视与速度前视的目标点限制在半波边界内——yaw 上限阻止“跨换向点导致左右弯平均”，速度上限允许更早看到下一半波提前降速。
+（3）科目三 U/S 双前视：U 区段与 S 区段各自独立配置转向前视/速度前视；同时以前视上限（cap point）防止长前视跨过语义边界。
+4.2.6多核同步与导航节拍
+CPU0 的 10 ms 中断经分频为科目一/三置位 nav_trigger（20 ms，与转向环对齐），科目二则在每次 10 ms 置位；CPU1 导航主循环等待该标志、执行一次 Stanley 与速度规划后经内存屏障写回 expected_yaw/expected_speed_raw，再自旋等待下一节拍。该事件驱动方式保证导航计算与 10 ms/20 ms 转向环对齐，且不与 1 ms 平衡中断争抢实时性。
+4.3控制算法
+数字 PID 是整车控制的通用单元（code/pid/pid.c）。本工程依据“被控量特性”选择了多种数字 PID 形态，均可经机载菜单实时修改并 Flash 持久化（参数存档带魔术字/版本/长度/XOR 五重校验，分页保存避免相互覆盖）。
+4.3.1数字 PID 通用形式
+位置式 PID（用于角速度环、角度环、转向环）：
+u(k) = kp·e(k) + ki·Σe + kd·(e(k) − e(k−1))
+增量式 PID（用于速度环）：
+Δu(k) = kp·(e(k) − e(k−1)) + ki·e(k) + kd·(e(k) − 2e(k−1) + e(k−2))
+工程实现中针对不同环节做了如下改进：
+（1）积分限幅与抗积分饱和：积分项独立限幅；速度环在“输出到达上/下界且误差仍推向同一边界”时冻结积分、误差反向时恢复，避免启动托底或长时间积饱造成猛冲（条件积分）。
+（2）微分先行（D on measurement）：转向环与速度环的 D 项改为对实际值变化求差（−kd·(actual − actual_prev)）而非对误差求差，避免目标阶跃产生虚假微分冲击；角速度环输出端另加一阶低通抑制噪声放大（见 4.1.2）。
+（3）首周期 D 抑制：起步/停车/换档清空状态后首个周期 D 项强制为零，杜绝虚假尖峰。
+（4）输出限幅与变化率限幅：所有环输出限制在 out_min/out_max，速度环再叠加每周期 delta_out_min/max 变化率限制，避免电机占空比突变。
+（5）停车清零：run_flag = 0 时误差与输出立即清零，防止积分与滤波状态残留；到终点/急停统一走 stop_car()，四环全部 pid_init 复位。
+4.3.2航向角环绕与误差连续性保护
+转向环处理的是 [0°，360°) 的航向角，直接相减会在 359°→1° 处产生 358° 假误差。实现上引入：yaw_error(target, actual)——最短路径误差，归一到 (−180°，180°]；yaw_wrap(angle)——角度归一化到 [0°，360°)。其实现只有几行（pid.c）：
+float yaw_error(float target, float actual)
+{
+    float err = target - actual;
+    if(err > 180.0f)        err -= 360.0f;   // 359°→1° 只差 2°
+    else if(err < -180.0f)  err += 360.0f;
+    return err;
+}
+代码 4-6  航向环绕误差函数（pid.c）
+转向环在进入 PID 前还对目标做输入平滑（环绕低通 + 每周期步长限制），并对误差序列做连续性保护（误差增量限幅 ±90°，防止 180° 极性跳变时 P/D 项振荡）；同时支持坡道阶段转向积分清零与转向输出包络缩放（sub3_ramp_turn_scale），实现坡道内不下发或按比例下发 Turn 指令的平滑接管/恢复（见 4.2.4）。
+4.3.3科目二 Yaw 转向调度（P_SHARE 角速度链）
+科目二低速转向在 10 ms 转向外环中实现（subject2_turn_update），并与 4.1.5 节的 Roll 内环构成“Yaw 外环 → 目标 Roll → Roll 内环”结构，主要特点：
+（1）输入限步 + 加速度限制：目标 yaw 先经环绕低通与步长限制，再对“每周期步长的变化率”加二阶限幅（subject2_turn_input_accel），保证右转切左转时目标步长连续过渡。
+（2）速度相关 P 缩放：低速下相同 Roll 会产生更强的航向变化，故按实测/目标速度在 turn_scale_start_speed ~ turn_scale_full_speed 之间线性压缩 Yaw 误差 P 的倍率（speed_scale），防止低速横摆。
+（3）P/I 输出限速（outlimit）：P/I 支路产生的目标 Roll 每 10 ms 最多变化 outlimit 度，建立、回收、反向统一限速，避免目标 Roll 台阶。
+（4）D 支路：使用 1 ms 专用低通的 Z 角速度作航向阻尼（D on measurement），默认仅阻尼实际转动；可开启“目标 Yaw 速率参考”，比较“平滑目标应转多少”与“实际已转多少”。
+（5）P/I 与 D 独立低通：两支路分别低通后再合成（线性系统叠加），与旧实现行为严格兼容，同时允许只调整 Yaw P 响应而不放开 D 支路的高频噪声。
+（6）持续转向 Roll 前馈（roll_ff）：Stanley 弯道中目标 yaw 每周期同向持续进入，该前馈把连续转角需求映射为连续的目标 Roll 工作点；同向短时减小时保持若干周期（抑制 Stanley 一两帧波动），反向时先回收零再建立另一侧。
+（7）P_SHARE 角速度串级（subject2_yaw_rate_mode = 1）：把同一份 Yaw 误差在“直接 Roll 支路”与“目标 Yaw 角速度链”之间平滑分配——大弯时角速度链占比提高（目标 Roll = kp_rate×(目标速率 − 实际速率)），带换向保护（制动到接近零速、Roll 回到安全区后才允许反向建立）。
+4.3.4参数整定方法
+由于整车为机电强耦合系统且机械结构会随调试迭代，无法获得精确运动学模型，故全部采用工程整定法：基于阶跃响应/扰动的经验规则按 P→I→D 顺序并结合各环周期分级整定；所有参数通过机载 5 键菜单实时修改（调参步长统一 0.01），配合 VOFA+ 上位机观测各环中间量（滤波后误差、P/I/D 分量、前馈量、目标/实际对比）完成闭环验证，最终经 Flash 持久化。
+4.4电机速度控制
+4.4.1速度反馈与滤波
+驱动采用无刷电机 FOC 方案（驱动 IC：CYT2BL3 三相全桥 + 单电阻采样，MCU 与驱动经 UART3 串口通信，波特率 460800）。驱动周期回报“速度（rpm）、位置（磁编原始码）、时间戳”帧（1 ms 位置帧），从而无需外置测速轮即可闭环：
+（1）车速取磁编位置差：v = Δcount·WHEEL / (32768·dt)（符号对齐前进方向，WHEEL ≈ 0.22 m）。
+（2）速度经 dt 自适应一阶低通（截止 8 Hz）——“滤波速度”用于控制误差与前馈，原始 FOC 速度保留用于菜单/VOFA 显示对照。
+（3）位置帧健壮性处理见 4.2.1（超时判活、单帧跳变拒绝、连续异常安全停车）。
+4.4.2科目一/科目三速度环
+10 ms 中断中仅当收到新 FOC 帧时才执行一次速度环（避免对同一帧重复积分），采用增量式 PI + 实测速度 D（speed_pid_update_incremental_measurement_d）：
+Δu = kp·(e(k) − e(k−1)) + ki·e(k) − kd·(v(k) − v(k−1))
+核心实现如下（pid.c，含条件积分与 D on measurement）：
+p->error2 = p->error1;  p->error1 = p->error0;
+p->error0 = p->target - p->actual;
+
+p->p_out = p->kp * (p->error0 - p->error1);            // 增量P
+if((p->out >= p->out_max && p->error0 > 0.0f) ||      // 抗积分饱和：
+   (p->out <= p->out_min && p->error0 < 0.0f))        // 输出到界且误差同向时冻结
+    p->i_out = 0.0f;
+else
+    p->i_out = p->ki * p->error0;
+p->d_out = -p->kd * (p->actual - p->actual1);         // D on measurement
+代码 4-7  增量速度环（抗积分饱和 + D on measurement，pid.c）
+D on measurement 只对真实车速变化作阻尼，不对目标速度阶跃产生 D 冲击；条件积分抗饱和、delta 限幅与 out 限幅共同保证输出平滑。速度目标叠加倾斜耦合升速：目标 = 基准速度 + speed_angle_kp·|roll − balance_zero|（上限 0.18 m/s）——车体侧倾越大越需提升速度以维持向心力与平衡；坡道上坡阶段叠加 Pitch 推力前馈（见 4.2.4），总输出仍受 out_max 保护。
+4.4.3科目二低速速度环
+科目二需要在约 0.2~0.5 m/s 的低速下平顺加减速，直接套用高速环会对单帧量化测速过度反应。实现采用与 FOC 帧同步的 1 ms 消费、两套可切换结构：
+（1）非对称死区增量 PI（subject2_speed_update_hold_pi）：误差先经过非对称死区——欠速死区小（更早补力）、超速死区大（保留较宽稳定区防反复撤力）；P 用误差增量、I 用本帧误差增量（按真实 dt 归一到 10 ms 标称周期）；死区内令本帧增量为零而保持已有输出（不把加速阶段大推力锁存为维持推力）；上升/撤力分别按 delta_out_max/min 步长执行。
+（2）基础推力 + 快速修正（subject2_speed_update_base_trim）：推力 = 自适应基础推力 base_out（发车按 base_init 初始化，仅由慢积分以秒单位适应地面/电压/转向阻力，绝不用最终输出回写）＋ 快速修正 trim_out = kp·e（只处理短时扰动）＋ 持续欠速储备 reserve_out（连续欠速 20 ms 后慢积累、超速/平稳后按固定速率释放），合成后仍按 delta 限速追随，可独立 A/B 对照验证。
+（3）额外低速补偿：low_boost（持续 20 ms 满足“速度 <0.18 m/s 且欠速 ≥0.025 m/s”才缓升，恢复后快速撤除）与“Turn 目标 Roll 直接 PWM 前馈”（转向负载越大、按目标侧倾角线性补 PWM），二者只补确认的持续欠速，不修改基础推力状态。
+4.4.4遥控与启停
+LoRa 3A22 遥控经串口 1 每 5 ms 轮询（cc61_pit_ch0_isr），500 ms 未收到数据判定遥控失联并清除摇杆偏置；遥控仅负责转向与启停：科目二手动模式把摇杆换算为航向注入量并按慢速倍率衰减积分，导航模式下作为 Stanley 目标的小幅 Trim 偏置，不覆盖路径目标；停车/切模式时航向目标重置，避免残留积分。急停由 1 ms 中断的倾倒检测与终点判定共同触发。
+4.5本章小结
+本系统以“三核分工 + 中断级联 + 事件同步导航”为软件骨架，将复杂问题解耦为：Mahony 姿态解算 + 磁编码器航位推算提供状态估计；科目一/三的四环级联 PID、科目二的观测器状态反馈保证动态/低速平衡；Stanley 弦向前视与多级限速状态机实现路径跟踪与安全速度规划；多种数字 PID 形态与工程化整定手段保障了三个科目差异化的控制需求，最终通过机载菜单 + VOFA 调试 + Flash 持久化的闭环完成了实车调优。
+第五章 调试过程
+在车模赛道行驶的实时分析场景中，硬件系统是数据采集与传输的基础支撑。其中，无线串口通信模块作为核心硬件组件，承担着小车与上位机之间数据交互的关键作用。以下将围绕硬件部分的核心构成、工作原理、优势特点及潜在优化方向展开详细说明。
+5.1硬件方面
+我们使用的逐飞的无线串口通信模块进行数据接发，控制小车行驶的状态，之后进行数据分析。
+
+图 5-1 无线串口图片
+5.2软件部分
+使用VOFA+上位机可以查看数据的具体大小，变化趋势等，辅助进行车模的控制。
+
+图 5-2 VOFA+上机位数据图片
+
+第六章 开发环境简介
+程序的开发是在 ADS（ARM Developer Suite）下进行的，包括源程序的编写、编译和链接，并最终生成可执行文件。ADS 是一款专业的集成开发环境（IDE），专为 ARM 架构微处理器及微控制器设计。该开发环境提供了一套完整的工具链和功能，以支持嵌入式系统的高效开发与调试。其核心特点包括性能优异的 ARM C/C++ 编译器，该编译器具备强大的代码优化能力，能够生成运行效率高、占用资源少的目标代码。ADS 中的 ARM 汇编器为开发者提供了灵活的汇编语言编程支持，方便进行底层硬件操作和关键代码的优化。ADS 还包含功能完善的链接器，可处理复杂的链接任务，将多个编译后的目标文件整合为最终的可执行文件，同时支持库文件的创建与管理，有助于提高项目的模块化程度和代码复用率。开发环境配备了高效的代码编辑器，支持 C、C++、汇编等多种编程语言的语法高亮、自动缩进和代码提示功能，有效提升开发效率。项目管理工具能够帮助用户有序组织各类项目文件，便捷地进行项目配置与管理。此外，ADS 提供的命令行工具支持脚本化操作，便于实现自动化构建和测试流程，满足大规模项目开发的需求。
+
+
+参考文献
+[1] 卓晴，黄开胜，邵贝贝。学做智能车 [M]。北京：北京航空航天大学出版
+社。2007。
+[2] 谭浩强著。C 程序设计[M]。北京:清华大学出版社，2003。
+[3] 赵亮，杨帆。智能车竞赛中的路径规划与控制技术 [J]. 控制与决策，2017,32 (5):767-773. 
+[4] 韩冰，孙浩。智能车竞赛中的软件架构设计与优化 [J]. 软件学报，2018,29 (1):199-212. 
+[5] 王盼宝主编。智能车制作[M]。北京:清华大学出版社，2017。
+[6] 李华，张伟。智能车竞赛中的测试与调优策略 [J]. 计算机工程，2019,45 (1):18
+
+
+
+
+
+附  录
+
+
+部分代码
+// ============================================ 主循环 ============================================
+    while(car_data.ins_flag)
+    {
+        car_data.cpu1_count++;
+        float speed_target_raw = car_data.expected_speed_raw;
+        uint8 speed_target_valid = 0;
+
+        // 更新当前位置 (全局变量，供外部监控)
+        current_x = ins_data.ins_point.x;
+        current_y = ins_data.ins_point.y;
+
+        // ---- 1. 当前位置 ----
+        // INS 编码器 Y 轴可能与 IMU yaw 0° 方向相反。
+        // 如果车推前向时 ins_point.y 为负，改 INS_Y_FLIP 为 -1.0f
+        #define INS_Y_FLIP  1.0f
+        float px = ins_data.ins_point.x;
+        float py = ins_data.ins_point.y * INS_Y_FLIP;
+
+        // ---- 2. INS Stanley导航控制 ----
+        float raw_yaw;
+
+        {
+            stanley_result_t stan;
+            stanley_control(px, py, car_data.physicial_speed_filtered,
+                            group, car_data.stanley_segment,
+                            control_subject,
+                            &stanley_cfg[control_subject], &stan);
+
+            car_data.stanley_segment   = stan.segment;
+            car_data.stanley_cte       = stan.cte;
+            car_data.stanley_curvature = stan.curvature;
+            car_data.stanley_signed_curvature = stan.signed_curvature;
+            car_data.stanley_path_tangent = stan.path_tangent;
+            car_data.distance          = stan.path_distance;
+            car_data.current_point     = stan.segment;
+            // 科一测试模式同步科三，不再交接科一专用U型弯Kd权重。
+            car_data.sub1_u_turn_kd_scale = 0.0f;
+            if(stan.segment != STANLEY_INVALID_SEG && group->point_num > 0) {
+                ins_y = group->y[stan.segment]; ins_x = group->x[stan.segment];
+            }
+            raw_yaw = stan.desired_yaw;
+            if(stan.segment == STANLEY_INVALID_SEG) raw_yaw = imu_data.yaw;
+            car_data.stanley_raw_yaw = raw_yaw;
+
+            float speed_target = stan.speed_factor;
+            // ===== 科1/3: 曲率主降速 + yaw兜底 =====
+            if(control_subject == subject1 || control_subject == subject3)
+            {
+                // 曲率降速: 前方累计弯曲量 × gain, 限制不低于 floor
+                float curve_slow = 1.0f - car_data.stanley_curvature * stanley_cfg[control_subject].curve_slow_gain;
+                if(curve_slow < stanley_cfg[control_subject].curve_slow_floor) curve_slow = stanley_cfg[control_subject].curve_slow_floor;
+                if(curve_slow > 1.0f) curve_slow = 1.0f;
+                speed_target = curve_slow;
+
+                // yaw安全兜底: 偏航误差超阈值时额外降速, 防止失控
+                float yaw_err_safe = stanley_angle_diff(car_data.expected_yaw, imu_data.yaw);
+                if(yaw_err_safe < 0.0f) yaw_err_safe = -yaw_err_safe;
+                if(yaw_err_safe > stanley_cfg[control_subject].yaw_safe_threshold)
+                {
+                    float yaw_safe = 1.0f - (yaw_err_safe - stanley_cfg[control_subject].yaw_safe_threshold) * stanley_cfg[control_subject].yaw_safe_gain;
+                    if(yaw_safe < stanley_cfg[control_subject].curve_slow_floor) yaw_safe = stanley_cfg[control_subject].curve_slow_floor;
+                    if(yaw_safe < speed_target) speed_target = yaw_safe;
+                }
+            }
+            else
+            {
+                // 科2原逻辑: yaw_err 降速
+                float yaw_err = stanley_angle_diff(car_data.expected_yaw, imu_data.yaw);
+                if(yaw_err < 0) yaw_err = -yaw_err; if(yaw_err > 180) yaw_err = 360 - yaw_err;
+                float yaw_slow = 1.0f - (yaw_err * stanley_cfg[control_subject].yaw_safe_gain);
+                if(yaw_slow < stanley_cfg[control_subject].curve_slow_floor) yaw_slow = stanley_cfg[control_subject].curve_slow_floor;
+                if(yaw_slow < speed_target) speed_target = yaw_slow;
+            }
+            /* 科目二从首个导航周期起使用Stanley速度规划，发车区直线自然建立速度。 */
+            if(subject != subject2 && car_data.physicial_distance < STARTUP_DISTANCE) speed_target = 1.0f;
+            float base_speed = parameter_data.expected_speed[(uint8)control_subject];
+
+            // 科三先合成U/S区段基准速度，随后保留Stanley曲率/yaw降速的乘法作用。
+            // 因此区段速度只负责“最多跑多快”，弯心仍可按实时曲率继续低于该速度。
+            float section_speed_cap = sub3_section_profile_speed_cap(control_subject, group,
+                                                                       stan.segment, px, py,
+                                                                       base_speed);
+            car_data.speed_factor_filtered = SPEED_ALPHA * speed_target
+                + (1.0f - SPEED_ALPHA) * car_data.speed_factor_filtered;
+            speed_target_raw = section_speed_cap * car_data.speed_factor_filtered;
+
+            // 坡道速度是上限而不是覆盖值，保留曲率/yaw要求的更低速度。
+            float ramp_speed_cap = ramp_profile_speed_cap(control_subject, group, stan.segment, px, py,
+                                                          base_speed);
+            // 保存坡道状态机刚刚计算出的上限，供VOFA按Pin/中点/Pout对齐诊断。
+            ramp_runtime.speed_cap = ramp_speed_cap;
+            if(speed_target_raw > ramp_speed_cap) speed_target_raw = ramp_speed_cap;
+            speed_target_valid = 1;
+            if(stan.reached_end) car_data.run_flag = 0;
+        }
+
+        if(speed_target_valid)
+        {
+            speed_target_raw = subject_speed_limit(control_subject, speed_target_raw);
+            car_data.expected_speed_raw = limit_step(speed_target_raw,
+                                                     car_data.expected_speed_raw,
+                                                     SPEED_ACCEL_STEP,
+                                                     SPEED_DECEL_STEP);
+        }
+
+        // 科目二从第一个导航周期开始连续输出Stanley目标，不能因速度托底冻结航向。
+        // 科目一、三在平衡建立阶段固定发车Yaw，防止首段路径误差过早进入Turn环而压车。
+        if(subject != subject2 && car_data.physicial_distance < STARTUP_DISTANCE)
+        {
+            raw_yaw = startup_yaw;
+        }
+
+        // ---- 3. 角度归一化 ----
+        raw_yaw = stanley_normalize_angle(raw_yaw);
+
+        // 科目二只对Stanley导航输出做连续化处理，遥控转向和科目一、三保持原逻辑。
+        // raw_yaw始终留在stanley_raw_yaw中，便于实车对照路径层是否已出现跳变。
+        if(control_subject == subject2)
+        {
+            car_data.expected_yaw = subject2_shape_expected_yaw(raw_yaw,
+                                                                 &stanley_cfg[control_subject]);
+        }
+        else
+        {
+            car_data.expected_yaw          = raw_yaw;
+            car_data.expected_yaw_filtered = raw_yaw;
+            car_data.expected_yaw_prev_out = raw_yaw;
+        }
+
+        // ---- 6. 结束 ----
+        if(car_data.run_flag == 0) { car_data.expected_speed_raw = 0; break; }
+
+        // 内存屏障: 确保car_data写入对CPU0 ISR可见
+        __dsync();
+
+        // 等待CPU0 10ms ISR置位, 替代阻塞延时
+        while(!car_data.nav_trigger && car_data.ins_flag) { /* spin */ }
+        car_data.nav_trigger = 0;
+    }
+
+    // 停车、到终点或Key5退出后不保留U型弯阶段，下一次发车重新按runtime路径生成。
+    stanley_sub1_u_reset();
+    sub3_section_profile_prepare(control_subject, NULL);
+    sub3_s_profile_reset();
+}

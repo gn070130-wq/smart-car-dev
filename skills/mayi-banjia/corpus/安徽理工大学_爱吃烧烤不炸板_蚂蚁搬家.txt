@@ -1,0 +1,818 @@
+ 
+ I 
+第二十一届全国大学生 
+ 
+智能汽车竞赛 
+ 
+技  术  报  告 
+ 
+ 
+ 
+学    校：安徽理工大学 
+队伍名称：爱吃烧烤不炸板 
+参赛队员：张子童 
+刘学堂 
+吴杰 
+周如亮 
+带队教师： 徐公林 陈李 
+  
+ II 
+ 
+关于技术报告和研究论文使用授权的说明 
+ 
+本人完全了解全国大学生智能汽车竞赛关保留、使用技术报告和研究论文
+的规定，即：参赛作品著作权归参赛者本人，比赛组委会可以在相关主页上收
+录并公开参赛作品的设计方案、技术报告以及参赛模型车的视频、图像资料，
+并将相关内容编纂收录在组委会出版论文集中。 
+ 
+ 
+参赛队员签名：  张子童  
+             刘学堂 
+吴杰 
+周如亮  
+ 
+ 
+带队教师签名：徐公林  陈李  
+ 
+日        期：2026.8.16 
+ 
+ 
+ 
+ 
+ III 
+摘要 ............................................................................................................................. Ⅳ 
+引言 ............................................................................................................................... 1 
+第一章 系统总体设计 ................................................................................................. 2 
+第二章 机械结构调整及优化 ..................................................................................... 3 
+2.1 降低整体重心 ................................................................................................ 3 
+第三章 硬件电路方案设计 ......................................................................................... 4 
+3.1 单片机系统设计 ............................................................................................ 4 
+3.2 电源模块设计 ................................................................................................ 5 
+3.3 电机驱动电路 ................................................................................................ 7 
+第四章 软件算法系统设计 ......................................................................................... 8 
+4.1 二次曲面标定与等效距离换算 .................................................................... 8 
+4.2 麦轮底盘三级级联 PID ................................................................................. 9 
+4.3  IMU 六轴互补滤波姿态解算算法 ............................................................ 9 
+第五章 开发工具、平台调试说明 ........................................................................... 10 
+5.1 开发工具 ...................................................................................................... 10 
+5.2 调试工具 ...................................................................................................... 10 
+5.3 赛场调试 ...................................................................................................... 10 
+附件 ............................................................................................................................. Ⅰ 
+1. 车模技术检查表 ............................................................................................ Ⅰ 
+2. 车模照片及电路板图 .................................................................................... Ⅴ 
+3. 源代码 ............................................................................................................ Ⅹ 
+ 
+ IV 
+摘要 
+本文详细介绍了安徽理工大学“爱吃烧烤不炸板”在第二十一届全国大学生
+智能汽车竞赛 "蚂蚁搬家" 双车协同搬运任务的系统方案。系统由主车与从车
+两辆麦克纳姆轮四轮全向小车组成，采用两块 NXP i.MX RT1021 作为底盘主控
+制器、两块 OpenArt（i.MX RT1064）作为视觉处理器，共四块控制板协同工作。 
+主车负责全局任务决策：通过 OpenArt 搭载的 YOLO 目标检测模型识别场地内
+的待搬运物体（球 / 沙包 / 熊），利用黄色边界线检测与逆透视变换测距实
+现目标定位与边界识别；基于 IMU 六轴 Mahony 姿态融合与四路编码器里程计
+完成麦轮底盘的世界坐标定位与黄线位置校准，并通过 22 状态的有限状态机
+完成完整任务链。从车依据主车下发指令协同运动，并利用侧视 OpenArt 的红
+外四灯板检测与二次曲面标定实现与主车的相对位置闭环（并排推物）。 系统
+采用航向外环 + 麦轮逆解 + 四轮增量式速度内环的级联控制结构，所有运动
+输出统一经过安全仲裁器（急停、拨码退出、通信超时停车、PWM 限幅、斜坡
+限制）后才写入电机，实现了双车在受限场地内的稳定、安全、协同搬运。经
+四设备冷启动、三链路通信联调及双车完整任务实车验证，本方案可行且稳定。  
+ 
+关键词：麦克纳姆轮；双车协同；YOLO 目标检测；Mahony 姿态解算；有限
+状态机；增量式 PID。 
+ 
+ 
+ 1 
+引言 
+全国大学生智能汽车竞赛是以 “立足培养、重在参与、鼓励探索、追求卓
+越” 为指导思想，面向全国大学生的探索性工程实践活动。竞赛要求参赛队伍
+在组委会提供的统一车模平台上，自行设计道路 / 目标识别传感器、运动控制
+电路与软件算法，制作一辆（或协同多辆）能够自主完成规定任务的模型车。
+“蚂蚁搬家” 任务要求双车协同，将场地内的多件物体搬运出场地边界并安全
+返回车库，对目标识别、多机协同、定位与运动控制提出了较高要求。 
+第二十一届全国大学生智能汽车竞赛技术报告 
+ 2 
+第一章 系统总体设计 
+本系统采用 “主车指挥 + 从车协同” 的双车架构，四块独立控制板构成完整
+的通信与数据流体系，各模块职责与数据流向如下： 主车 OpenArt（主视觉）
+负责环境感知，将物体坐标、黄线状态、线角、角落等信息通过$V 协议发送给
+主车 RT1021；主车 RT1021 作为全局决策核心，运行任务状态机、世界坐标定
+位与主车底盘控制算法，解析数据后通过协议向从车 RT1021 下发运行指令与
+状态；从车 RT1021 接收主车指令，结合从车侧视 OpenArt 上传的$L 灯板检测
+数据，实现跟随运动与并排推物协同。 其中主车 RT1021 承担全局任务状态机、
+世界坐标定位、主车底盘闭环、视觉数据解析与从车指令下发的核心职责；从
+车 RT1021 负责解析主车指令与侧视视觉数据，实现跟随、并排推物与自身安
+全管控，不独立决策任务路线；主车 OpenArt 完成 YOLO 物体识别、黄线 / 角
+点检测、逆透视测距功能；从车侧视 OpenArt 完成红外四灯板检测与透视标定
+功能。 比赛场地为 240 cm × 320 cm 的矩形区域，四周设黄色边界线，包含
+车库与多件待搬运物体。整车通过麦克纳姆轮实现前进、横移与原地转向的全
+向运动，适配狭窄场地内的灵活作业需求。  
+第二十一届全国大学生智能汽车竞赛技术报告 
+ 3 
+第二章 机械结构调整及优化 
+2.1 降低整体重心 
+ 机械结构优化围绕提升系统稳定性展开，核心方向包括降低整车重心，将电
+池与主控板尽量靠近支撑中心布置，减少外力干扰下的倾倒力矩，提升动态行
+驶与推物过程的稳定性；调整摄像头支架的安装高度与俯仰角，保证逆透视测
+距的标定精度与检测范围；固定红外灯板的安装位置与侧视摄像头的安装角度，
+保障相对位置检测的一致性；优化整车布局使重量均匀分布，提升四轮抓地一
+致性与里程计精度。 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+  
+第二十一届全国大学生智能汽车竞赛技术报告 
+ 4 
+第三章 硬件电路方案设计 
+硬件作为整个系统的基础，电路的稳定性和整个系统的鲁棒性息息相关。我
+们在整个系统设计过程中严格按照规范进行。本着高效，稳定的原则，尽量优
+化出适合系统的，稳定的电路。 
+3.1 单片机系统设计 
+作为整个系统的核心控制部分，单片机采用 32 位单片机 MIMXRT1021。 
+核心板部分如下。 
+ 
+ 
+ 
+
+第二十一届全国大学生智能汽车竞赛技术报告 
+ 5 
+3.2 电源模块设计 
+电源模块作为整个系统的供电部分，纹波大小和噪声干扰是评判硬件电路设
+计水平的一部分因素。 
+(1) 本系统使用 3S 航模锂电池供电，引入主板，为了防止反接和静电，采用
+了 Pmos 和 开 关 结 合 控 制 整 个 电 路 供 电 的 关 断 。
+ 
+ 
+(2) 5V 稳压芯片采用 SCT2450CSTER，作为一款 DC—DC 降压芯片，虽然外部
+电路较多，但是其 4.5V-50V 的宽电压输入范围，以及最大 5A 的电流输出，用
+于单片机、无线串口、传感器系统供电完全没有问题，并且其集成 MOSFET 的设
+计在纹波和噪声上也有优势。
+
+第二十一届全国大学生智能汽车竞赛技术报告 
+ 6 
+ 
+ 
+ 
+(3) 3.3V 稳压芯片 
+电池过 5V 稳压电路为单片机和无线串口供电，5V 电路再过 3.3V 降压电
+路为剩下的屏幕、陀螺仪、编码器、蜂鸣器和 CCD 供电。3V3 降压芯片使
+用一颗 RT9013-33 线性稳压芯片。 
+ 
+
+第二十一届全国大学生智能汽车竞赛技术报告 
+ 7 
+3.3 电机驱动电路 
+(1) 系统采用两片 TB6612FNG 集成双路 H 桥驱动芯片实现麦克纳姆轮四
+轮独立驱动，单芯片内部集成两路 DMOS 结构全桥驱动电路，每路对应一个车
+轮驱动电机，集成驱动芯片外围电路简洁、通道一致性好，内置过流保护、过
+热保护与欠压锁定，有效提升驱动系统的可靠性与稳定性。主车与从车各配置
+一套完全相同的双芯片驱动电路，保证双车驱动特性一致。 
+ 
+ 
+ 
+(2) 电机动力电源 VCCBAT 先经过 PPTCSMD2A30V-1206 型贴片自恢复保
+险丝，再接入芯片的功率电源引脚，实现整机过流保护：当电机堵转、短路导
+致电流超过额定值时，保险丝内阻迅速升高以限制回路电流，故障排除后可自
+动恢复导通，无需更换器件。 电源输入端并联 SMAJ13A 型瞬态抑制二极管
+（TVS）至功率地，用于抑制电源插拔、电机换向、急停过程中产生的浪涌电压
+与尖峰脉冲，将电压钳位在安全范围内，保护驱动芯片与电机免受过压损坏。 芯
+片逻辑电源引脚 VCC 接入系统 3.3V 电源，并就近并联 100nF 陶瓷去耦电容  
+至地，滤除逻辑电源的高频噪声，保证控制信号的稳定性。 
+  
+
+第二十一届全国大学生智能汽车竞赛技术报告 
+ 8 
+第四章 软件算法系统设计 
+4.1 二次曲面标定与等效距离换算 
+受镜头透视效应、侧视安装倾角与光学畸变的共同影响，红外灯板在图像中
+的像素坐标与两车实际物理距离之间存在显著的非线性耦合关系，仅依靠线性
+单应矩阵进行坐标映射，难以满足近距离并排推物场景下的高精度跟随需求。
+为此系统采用二元二次曲面标定法构建像素空间到物理空间的非线性映射模型，
+通过引入畸变补偿项提升相对位置解算精度，为双车协同闭环提供可靠的视觉
+反馈。该模型以红外灯板中心的图像横、纵坐标作为输入变量，在一阶线性单
+应映射的基础上，引入二次项与交叉耦合项对透视畸变进行补偿，构建包含常
+数项、一次项、交叉耦合项、二次项的二元二次多项式映射模型。模型分别针
+对前向相对距离与侧向相对距离拟合两组独立的曲面参数，完整覆盖有效检测
+范围内的非线性畸变特性，相比纯线性映射可有效抵消边缘区域的透视失真，
+提升全区间的检测一致性。标定工作在标准场地下完成：将主车侧的红外灯板
+固定在标定工装之上，在从车侧视摄像头的视野范围内依次布置 19 个标准标
+定位置，全面覆盖前后方向、侧向方向的全部有效工作区间；逐点记录灯板中
+心的像素坐标，同时高精度测量两车对应的实际物理距离，形成标定样本数据
+集。 最终通过最小二乘拟合算法求解曲面模型的全部系数，分别得到前向距离、
+侧向距离对应的两组标定曲面参数，并将参数固化于视觉程序中，实现检测过
+程中的实时坐标解算。经标定精度验证，系统划定灯板像素坐标的有效工作区
+间，该区间完整覆盖双车协同作业的常规相对位置范围。仅当灯板中心像素落
+在有效区间内时，系统才输出高精度的曲面解算结果；当灯板位置超出有效区
+间时，为避免外推计算带来的精度恶化，系统采用保守容错策略：若判定两车
+侧向距离过近，则输出极限侧向等效值，触发底盘控制端的远离防撞逻辑；若
+判定两车侧向距离过远，则输出极限侧向等效值，触发底盘控制端的靠近找回
+逻辑。 通过边界区间的趋势化保守输出，保证检测失效边缘仍能输出符合安全
+逻辑的控制指令，避免双车发生碰撞或跟丢目标。 
+第二十一届全国大学生智能汽车竞赛技术报告 
+ 9 
+4.2 麦轮底盘三级级联 PID 
+麦克纳姆轮四轮全向底盘存在多轮运动耦合、摩擦非线性、姿态扰动强等特
+性，单一闭环结构难以同时兼顾全向运动的控制精度、动态响应与运行稳定性，
+无法满足双车协同搬运对走位精度、行驶平顺性的严苛要求。为此系统采用三
+级级联 PID 控制架构，以分层解耦的设计思路，将车体姿态控制、运动学分配
+与轮速跟踪拆解为独立闭环，逐级收敛控制误差，是整个系统运动执行的核心
+基石，直接决定导航、避障、协同推物等所有上层功能的落地效果。 
+4.3 IMU 六轴互补滤波姿态解算算法 
+车体航向与姿态是全向运动控制、全局坐标定位、双车航向协同的核心基准，
+姿态解算的精度与稳定性直接决定了导航与控制的性能上限。惯性测量单元中，
+陀螺仪与加速度计各自存在固有性能局限：陀螺仪短期动态响应快、角度分辨
+率高，但通过积分计算角度时会随时间累积零偏误差，静止与低速场景下航向
+易持续漂移；加速度计可通过重力向量解算静态姿态，但车辆加减速、转向产
+生的线加速度会与重力加速度叠加，导致动态场景下姿态解算严重失真。单一
+传感器无法同时满足静态精度与动态响应的双重要求，为此系统采用基于 
+Mahony 架构的六轴互补滤波算法，以四元数为姿态载体融合两类传感器的优势，
+实现全工况下稳定、精准的车体姿态解算。 
+ 
+ 
+ 
+ 
+ 
+第二十一届全国大学生智能汽车竞赛技术报告 
+ 10 
+第五章 开发工具、平台调试说明 
+5.1 开发工具 
+底盘主控 RT1021 的开发采用 MicroPython 固件，使用 Thonny 软件通过 
+Type-C 虚拟串口进行烧录与调试。Thonny 为轻量级 Python IDE，适配嵌入式 
+MicroPython 开发场景，支持代码编辑、单步执行、断点调试与串口日志查看，
+界面简洁，跨平台兼容，适合硬件控制类程序开发调试。 视觉模块 OpenArt 的
+开发使用 OpenMV IDE，为  OpenMV 系列硬件的官方配套开发工具，深度适配 
+OpenArt 硬件，支持 USB 一键烧录程序、自动适配驱动，内置 MicroPython 语
+法补全；核心功能为实时图像预览，可直接查看摄像头画面与算法运行效果，
+支持断点调试与串口日志输出，是视觉算法调试的核心工具。 工程管理采用 VS 
+Code 配合 Git 版本控制，电脑端运行 unittest 单元测试覆盖协议、导航、状态
+机、安全等模块，共 66 项测试用例；配套部署脚本自动生成四设备部署包与
+校验清单，保障部署一致性。 
+5.2 调试工具 
+逐飞科技提供的逐飞助手为我们进行图像调试和控制调试提供了巨大便利。逐
+飞助手是逐飞科技推出的免费嵌入式开发上位机软件，主打智能车竞赛等嵌入
+式场景的调试需求，功能聚焦且实用。核心模块包括：串口助手（支持 TCP/UDP 
+协议，可 HEX 显示、保存数据）、虚拟示波器（8 通道波形同步观测，便于
+分析硬件时序）、摄像头图像显示（实时呈现图像，查看像素值、保存视频）。
+此外，支持深浅主题切换，内置调参工具与虚拟手柄，可辅助参数调整和远程
+控制，且持续更新迭代以完善功能，是嵌入式开发尤其是智能车调试的常用工
+具。 
+5.3 赛场调试 
+ 第一步为部署校验，确认四设备程序版本与文件完整性；第二步为架空冷启
+第二十一届全国大学生智能汽车竞赛技术报告 
+ 11 
+动，验证上电初始化流程与外设自检；第三步验证急停锁存功能，确认急停触
+发后立即停车；第四步进行 IMU 静态与方向检查，确认姿态解算正确；第五步
+架空测试四轮电机与编码器，验证速度闭环与方向正确性；第六步落地进行 1 
+米低速测试，验证里程计精度；第七步进行三链路通信联调，验证数据收发与
+解析正常；最后进行双车完整任务回归测试，验证全流程协同功能。 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+第二十一届全国大学生智能汽车竞赛技术报告 
+ I 
+附件 
+1. 车模技术检查表 
+队伍名称 爱吃烧烤不炸板 
+参赛学校 安徽理工大学 
+赛题组组别 蚂蚁搬家 
+检查项目 
+规格 
+（选手自行填写） 
+符合 
+（） 
+不符合
+（） 
+备注 
+1.车模类型是什么？ 自制   
+如果是自制车
+模，请标明自
+制。 
+车模整体尺寸： 
+1.（包括传感器在内）长，
+宽，高(mm) 
+2. 摄像头组标明镜头距
+离地面高度。 
+长 200mm 
+宽 100mm 
+高 230mm 
+镜头高 230mm 
+ 
+  在填写是，请
+将所在组别规
+则对于车模尺
+寸限制同时进
+行填写。 
+1. 传感器种类、规格(型
+号)数量。 
+2. 是否使用自带MCU的成
+品传感器模块？型号
+是什么？ 
+Imu963RA 2 个 
+编码器 8 个 
+逐飞无线串口 2 个 
+Openart Plus 2 个 
+   
+1. 控制转向舵机型号是
+否自行改装舵机？ 
+无    
+第二十一届全国大学生智能汽车竞赛技术报告 
+ II 
+2. 防伪易损标签是否完
+整？ 
+1. 是否增加伺服电机？ 
+2. 如果有那么种类、个数
+和作用？ 
+无    
+1. 电路中微处理器型号
+和个数？ 
+RT1021 1 个    
+1. 是否具有其它可编程
+器件，个数与作用？ 
+    
+1. 是 否 有 无 线 通 讯 装
+置？ 
+2. 如果有，那么种类和个
+数？ 
+有 
+逐飞无线串口 2 个 
+   
+1. 电池的种类、规格和数
+量？  
+2S 380ma 2 个    
+1. 是否使用GPS 导航？ 
+ 
+2. 是否没有使用RTK？ 
+无    
+1. 后轮驱动电机是否是
+原车模电机？ 
+2. 是否具有防伪易损标
+签？ 
+无    
+第二十一届全国大学生智能汽车竞赛技术报告 
+ III 
+1. 车模轮胎是否原有的
+纹理可辨析？ 
+2. 轮胎表面是否具有粘
+性物质？ 
+3. 对于麦克纳姆轮是否
+更换过小轮胶皮？ 
+自制    
+1. 车模底盘是否是原车
+模底盘？ 
+2. 是否有大面积切割？ 
+自制    
+1. 车轮轴距、轮距是否改
+装？ 
+2. 改装参数是什么？ 
+自制    
+1. 车模驱动轮传动机构
+是否改装？ 
+2. 改装方式是什么？ 
+自制    
+1. 车 模 差 速 器 是 否 改
+装？ 
+2. 改装方式是什么？ 
+自制    
+1. 是否更换过原装车模
+中的机械元器件？更
+换后的规格 是什么？ 
+自制   。 
+1. 车模电路板个数及功
+能。 
+2 个 
+主板 和 红外灯板 
+   
+第二十一届全国大学生智能汽车竞赛技术报告 
+ IV 
+2. 其中是否有购买成品、
+哪一些？ 
+编码器板 8 个 
+否 
+1. 自制电路板是否标记
+有学校名称、队伍名
+称、制作日期等信息？ 
+2. 标示信息在PCB的哪一
+层？ 
+是 
+安徽理工大学 
+爱吃烧烤不炸板 
+2026.7 
+顶层 阻焊层 
+  请在表格中注
+明电路板队伍
+信息的内容。 
+其它待说明内容 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+    
+检查人员签名： 
+ 
+ 
+ 
+ 
+检查意见： 
+2. 车模照片及电路板图 
+（1）车模照片 
+第二十一届全国大学生智能汽车竞赛技术报告 
+ V 
+车模平放时，俯视照片，前视图，左或右(任选)视图照片. 
+图 1-1：车模正视图图 
+
+第二十一届全国大学生智能汽车竞赛技术报告 
+ VI 
+ 
+图 1-2：车模侧视图图 
+
+第二十一届全国大学生智能汽车竞赛技术报告 
+ VII 
+ 
+图 1-3：车模俯视图 
+（2）电路板 PCB 图 
+
+第二十一届全国大学生智能汽车竞赛技术报告 
+ VIII 
+主板 PCB图（正面）： 
+ 
+主板 PCB图（反面）： 
+ 
+驱动板 PCB图（正面）：主驱一体 
+驱动板 PCB图（反面）：主驱一体 
+（3）电路图原理图 
+
+第二十一届全国大学生智能汽车竞赛技术报告 
+ IX 
+ 
+驱动板原理图：主驱一体 
+ 
+3. 源代码 
+from machine import Pin, UART 
+
+第二十一届全国大学生智能汽车竞赛技术报告 
+ X 
+from smartcar import ticker 
+from smartcar import encoder 
+from display import LCD_Drv, LCD 
+from seekfree import WIRELESS_UART, IMU963RX 
+import gc 
+import time 
+from imu_handler import IMUHandler 
+from motor_controller import MOTOR_CONTROLLER 
+import math 
+from algorithm import SafePID, RateLimiter 
+from control import MecanumChassis 
+led = Pin('C4', Pin.OUT, value=True) 
+switch2 = Pin('D9', Pin.IN, pull=Pin.PULL_UP_47K) 
+state2 = switch2.value() 
+btn_start = Pin('C9', Pin.IN, pull=Pin.PULL_UP_47K) 
+btn_start_raw = btn_start.value() 
+btn_start_stable = btn_start_raw 
+第二十一届全国大学生智能汽车竞赛技术报告 
+ XI 
+btn_start_raw_change_ms = time.ticks_ms() 
+START_BUTTON_PRESS_DEBOUNCE_MS = 50 
+START_BUTTON_RELEASE_DEBOUNCE_MS = 80 
+btn_lcd = Pin('C8', Pin.IN, pull=Pin.PULL_UP_47K) 
+btn_lcd_prev = btn_lcd.value() 
+LCD_BUTTON_DEBOUNCE_MS = 200 
+lcd_refresh_enabled = True 
+lcd_button_last_ms = 0 
+beep = Pin('D24', Pin.OUT, value=False) 
+beep_flag = 0 
+last_auto_state = -1 
+cs = Pin('B29', Pin.OUT, value=True) 
+cs.high() 
+cs.low() 
+rst = Pin('B31', Pin.OUT, value=True) 
+dc = Pin('B5', Pin.OUT, value=True) 
+blk = Pin('C21', Pin.OUT, value=True) 
+第二十一届全国大学生智能汽车竞赛技术报告 
+ XII 
+drv = LCD_Drv(SPI_INDEX=2, BAUDRATE=60000000, DC_PIN=dc, RST_PIN=rst, 
+LCD_TYPE=LCD_Drv.LCD200_TYPE) 
+lcd = LCD(drv) 
+lcd.color(65535, 0) 
+lcd.mode(2) 
+lcd.clear(0) 
+def lcd_line24(y, text, color): 
+    """IPS200 横向 240 像素，24 号 ASCII 字符每行最多安全显示
+19 个字符。""" 
+    if not lcd_refresh_enabled: 
+        return 
+    if len(text) > 19: 
+        text = text[:19] 
+    text = text + ' ' * (19 - len(text)) 
+    lcd.str24(0, y, text, color) 
+def service_lcd_refresh_button(now_ms): 
+    """C8 falling edge toggles LCD refresh; call from the main loop 
+第二十一届全国大学生智能汽车竞赛技术报告 
+ XIII 
+only.""" 
+    global btn_lcd_prev, lcd_refresh_enabled, lcd_button_last_ms 
+    btn_lcd_cur = btn_lcd.value() 
+    if btn_lcd_prev == 1 and btn_lcd_cur == 0: 
+        if time.ticks_diff(now_ms, lcd_button_last_ms) >= 
+LCD_BUTTON_DEBOUNCE_MS: 
+            lcd_refresh_enabled = not 
+lcd_refresh_enabled 
+            lcd_button_last_ms = now_ms 
+    btn_lcd_prev = btn_lcd_cur 
+wireless = WIRELESS_UART(115200) 
+wireless.info() 
+imu = IMU963RX() 
+imu_data = imu.get() 
+imu_ahrs = IMUHandler(sample_freq=100.0) 
+uart6 = UART(5) 
+uart6.init(115200) 
+第二十一届全国大学生智能汽车竞赛技术报告 
+ XIV 
+def scope_send(ch1, ch2, ch3, ch4, ch5, ch6, ch7, ch8): 
+    wireless.send_oscilloscope(ch1, ch2, ch3, ch4, ch5, ch6, ch7, ch8) 
+# 1m 里程计测试期间关闭主从发送，避免 25ms 字符串格式化和无线发送干
+扰实时性。 
+COMM_ENABLE = True 
+USE_ZF_ASSISTANT = False 
+NO_DATA_FLAGS = (False, False, False, False, False, False, False, False) 
+COMM_ROLE_MASTER = 1 
+COMM_ROLE_SLAVE = 2 
+COMM_ROLE = COMM_ROLE_MASTER 
+COMM_PERIOD_MS = 25 
+# 状态 4/5 发送给从车的 vx 最多提前 5cm/s，约补偿主车 60cm/s²斜坡的
+83ms 延迟。 
+# 只改变通信副本，主车本地仍严格使用 smooth_vx。 
+COMM_PUSH_VX_LEAD_ENABLE = True 
+COMM_PUSH_VX_LEAD_MAX = 5.0 
+GC_PERIOD_MS = 500 
+comm_tx_seq = 0 
+第二十一届全国大学生智能汽车竞赛技术报告 
+ XV 
+last_comm_tx_ms = 0 
+last_gc_ms = 0 
+comm_start_motion_pending = False 
+comm_tx_frame = '$M,BOOT#' 
+comm_exec_vx = 0.0 
+comm_exec_vy = 0.0 
+def comm_send_master(): 
+    """ 主 车  25ms 发一帧：
+$M,seq,run,state,yaw10,vx10,vy10,event#""" 
+    global comm_tx_seq, comm_tx_frame 
+    comm_tx_seq = (comm_tx_seq + 1) % 10000 
+    yaw10 = int(target_yaw * 10) 
+    vx10 = int(comm_exec_vx * 10) 
+    vy10 = int(comm_exec_vy * 10) 
+    comm_tx_frame = '$M,%d,%d,%d,%d,%d,%d,%d#' % 
+(comm_tx_seq, 1 if running else 0, auto_state, yaw10, vx10, vy10, vision_event) 
+    wireless.send_str(comm_tx_frame) 
+第二十一届全国大学生智能汽车竞赛技术报告 
+ XVI 
+def comm_send_master_immediate(): 
+    """启停边沿立即发帧，并重置周期发送计时，减少从车等待。""" 
+    global last_comm_tx_ms 
+    if COMM_ENABLE and COMM_ROLE == COMM_ROLE_MASTER: 
+       comm_send_master() 
+        last_comm_tx_ms = time.ticks_ms() 
+# 底盘硬件与 slave_main.py / 6v 标定 demo 统一：FL、FR、BL、
+BR。 
+encoder_1 = encoder('C2', 'C3', False, capture_div=1) 
+encoder_2 = encoder('D14', 'D13', True, capture_div=1) 
+encoder_3 = encoder('C0', 'C1', False, capture_div=1) 
+encoder_4 = encoder('D15', 'D16', False, capture_div=1) 
+motor_1 = MOTOR_CONTROLLER(pwm_pin='C30', dir_pin1='C28', 
+dir_pin2='C29', freq=20000, duty=0, invert=True) 
+motor_2 = MOTOR_CONTROLLER(pwm_pin='D7', dir_pin1='B12', 
+dir_pin2='B14', freq=20000, duty=0, invert=True) 
+motor_3 = MOTOR_CONTROLLER(pwm_pin='C31', dir_pin1='B15', 
+dir_pin2='B17', freq=20000, duty=0, invert=True) 
+第二十一届全国大学生智能汽车竞赛技术报告 
+ XVII 
+motor_4 = MOTOR_CONTROLLER(pwm_pin='D4', dir_pin1='D6', dir_pin2='D5', 
+freq=20000, duty=0, invert=True) 
+ 
+chassis = MecanumChassis() 
+CONTROL_DT = 0.01 
+WHEEL_DIAMETER_CM = 6.0 
+WHEEL_CIRCUM_CM = WHEEL_DIAMETER_CM * math.pi 
+ENCODER_CPR_PER_WHEEL_REV = 10865.0 
+ENCODER_TICK_TO_CM_S = WHEEL_CIRCUM_CM / 
+ENCODER_CPR_PER_WHEEL_REV / CONTROL_DT 
+VX_PHYS_GAIN = 1.23 
+VY_PHYS_GAIN = 1.54 
+MAX_CHASSIS_VX_FOR_IK = 100.0 
+MAX_CHASSIS_VY_FOR_IK = 54.0 
+# 场地 X 方向近、远边界间距，现场修正为 240cm。 
+FIELD_LENGTH_CM = 240.0 
+FIELD_WIDTH_CM = 320.0 
+第二十一届全国大学生智能汽车竞赛技术报告 
+ XVIII 
+GARAGE_CENTER_Y_CM = 30.0 
+# 无视觉里程计测试：先只验证最基础的直行 1m，四个轮子应同向转动。 
+# 单轴验证通过后再恢复二维目标，避免横移符号掩盖编码器/里程计问题。 
+ODOM_ENABLE = True 
+ODOM_1M_TEST_ENABLE = False 
+ODOM_TEST_MINIMAL_RUNTIME = False 
+ODOM_TEST_TARGET_X_CM = 100.0 
+ODOM_TEST_TARGET_Y_CM = 0.0 
+ODOM_TEST_FORWARD_SPEED_CM_S = 20.0 
+ODOM_TEST_ERROR_BEEP_MS = 400 
+START_POSE_X_CM = -30.0 
+START_POSE_Y_CM = 30.0 
+# 第一轮严格使用 6v 标定 demo / slave_main 的原始里程比例，不
+做物理修正。 
+ODOM_KX = 0.813 
+ODOM_KY = 0.649 
+ODOM_SPEED_DEADBAND_CM_S = 0.2 
+ODOM_BODY_VY_TO_RIGHT_SIGN = -1.0 
+第二十一届全国大学生智能汽车竞赛技术报告 
+ XIX 
+ODOM_YAW_SIGN = 1.0 
+EDGE_NONE = 0 
+EDGE_NEAR = 1 
+EDGE_FAR = 2 
+EDGE_LEFT = 3 
+EDGE_RIGHT = 4 
+EDGE_YAW_NEAR_DEG = 180.0 
+EDGE_YAW_FAR_DEG = 0.0 
+# 世界 yaw 正方向朝 Y 负方向：+90° 指向左边 Y=0，-90° 
+指向右边。 
+EDGE_YAW_LEFT_DEG = 90.0 
+EDGE_YAW_RIGHT_DEG = -90.0 
+EDGE_YAW_MATCH_MAX_DEG = 35.0 
+# 近、左、右边黄线按离边 20cm 校准；该值与确认黄线后的 11cm 倒退距
+离独立。 
+LINE_STOP_INSET_CM = 20.0LINE_POSE_MAX_CORRECTION_CM = 45.0 
+pose_x_cm = START_POSE_X_CM 
+pose_y_cm = START_POSE_Y_CM 
+第二十一届全国大学生智能汽车竞赛技术报告 
+ XX 
+pose_path_cm = 0.0 
+world_yaw_deg = 0.0 
+yaw_world_offset_deg = 0.0 
+pose_initialized = False 
+pose_confidence = 0 
+push_expected_edge = EDGE_NONE 
+last_calibrated_edge = EDGE_NONE 
+last_pose_correction_cm = 0.0 
+line_pose_calib_ok = False 
+WHEEL_START_PWM = 7000.0 
+WHEEL_RUN_PWM = 4500.0 
+WHEEL_KFF = 250.0 
+WHEEL_KP = 600.0 
+WHEEL_KI = 500.0 
+WHEEL_KD = 0.0 
+WHEEL_PID_MAX_FEEDBACK = 30000.0 
+WHEEL_PID_MAX_INCREMENT = 10000.0 
+第二十一届全国大学生智能汽车竞赛技术报告 
+ XXI 
+WHEEL_PWM_LIMIT = 60000.0 
+WHEEL_START_SPEED_THRESHOLD_CM_S = 2.0 
+# 纯横移低速段使用较强摩擦补偿，克服麦轮滚子和车体侧向阻力 
+VY_WHEEL_KP = 500.0 
+VY_WHEEL_KI = 1000.0 
+VY_START_PWM = 22000.0 
+VY_RUN_PWM = 14000.0 
+VY_START_SPEED_THRESHOLD_CM_S = 5.0 
+VY_COMP_MIN_COMMAND_CM_S = 5.0 
+# 横移达到 25cm/s 后降低反馈和摩擦补偿，减少轮速振荡与瞬时超速 
+VY_HIGH_SPEED_THRESHOLD_CM_S = 25.0 
+VY_HIGH_WHEEL_KP = 350.0 
+VY_HIGH_WHEEL_KI = 700.0 
+VY_HIGH_START_PWM = 18000.0 
+VY_HIGH_RUN_PWM = 11000.0 
+VY_HIGH_START_SPEED_THRESHOLD_CM_S = 5.0 
+VY_HIGH_PID_MAX_INCREMENT = 6000.0 
+第二十一届全国大学生智能汽车竞赛技术报告 
+ XXII 
+# 不再对麦轮逆解目标做 63cm/s 统一缩放，只保留实际轮速故障保护 
+# F14 至 F17 共用该门槛，连续 50ms 超限才进入故障状态 
+MAX_SAFE_WHEEL_SPEED_CM_S = 120.0 
+WHEEL_OVERSPEED_FAULT_TICKS = 5 
+YAW_KP = 2.5 
+YAW_KI = 0.0 
+YAW_KD = 0.0 
+YAW_MAX_INTEGRAL = 10.0 
+YAW_MAX_WZ = 50.0 
+YAW_RATE_KD = 0.0 
+YAW_RATE_DAMP_MAX_WZ = 12.0 
+# 普通平移时单独提高锁头比例，并把反馈和角速度阻尼合计限制在 12cm/s 
+YAW_MOVE_KP = 1.5 
+YAW_MOVE_MAX_WZ = 12.0 
+YAW_MOVE_RATE_KD = 0.0 
+YAW_MOVE_RATE_DAMP_MAX_WZ = 4.0 
+# 仅在原地正式转向的末段启用，不影响直行航向保持和黄线小角度校准 
+第二十一届全国大学生智能汽车竞赛技术报告 
+ XXIII 
+YAW_END_COMP_ERROR_DEG = 10.0 
+YAW_END_START_PWM = 24000.0 
+YAW_END_START_SPEED_THRESHOLD_CM_S = 2.0 
+YAW_END_PID_MAX_FEEDBACK = 4000.0 
+YAW_END_PID_MAX_INCREMENT = 3000.0 
+# 四轮 PID 参数模式，只有模式切换时才更新属性，减少 10ms 中断内重复
+操作 
+WHEEL_PID_MODE_BASE = 0 
+WHEEL_PID_MODE_VY_LOW = 1 
+WHEEL_PID_MODE_VY_HIGH = 2 
+WHEEL_PID_MODE_YAW_END = 3 
+wheel_pid_mode = -1 
+# 刷锅需要持续旋转，原地掉头/回库转向需要更硬的角度闭环。 
+YAW_ORBIT_KP = 2.5 
+YAW_TURN_KP = 2.5 
+YAW_LINE_KP = 3.5 
+ORBIT_RADIUS_GAIN = 1.0 
+ORBIT_WZ_FF_GAIN = 0.25 
+第二十一届全国大学生智能汽车竞赛技术报告 
+ XXIV 
+ORBIT_PRE_HOLD_DEG = 10.0 
+ORBIT_POST_HOLD_MS = 150 
+FIRST_OBJECT_ORBIT_ENABLE = True 
+# 初赛允许顺/逆时针刷锅，第一件物品始终选择到绝对世界 yaw=180°的最短
+路径。 
+FIRST_OBJECT_PUSH_WORLD_YAW_DEG = 180.0 
+MISSION_OBJECT_COUNT = 3 
+chassis.set_wheel_pid_params( 
+    kp=WHEEL_KP, 
+    ki=WHEEL_KI, 
+    kd=WHEEL_KD, 
+    kff=WHEEL_KFF, 
+    run_deadzone=WHEEL_RUN_PWM, 
+    start_pwm=WHEEL_START_PWM, 
+    start_speed_threshold=WHEEL_START_SPEED_THRESHOLD_CM_S, 
+    max_integral=WHEEL_PID_MAX_FEEDBACK, 
+    max_out=WHEEL_PWM_LIMIT, 
+    max_increment=WHEEL_PID_MAX_INCREMENT, 
+第二十一届全国大学生智能汽车竞赛技术报告 
+ XXV 
+) 
+chassis.pid_heading = SafePID( 
+    kp=YAW_KP, 
+    ki=YAW_KI, 
+    kd=YAW_KD, 
+    kff=0.0, 
+    deadzone=0.0, 
+    max_integral=YAW_MAX_INTEGRAL, 
+    max_out=YAW_MAX_WZ, 
+) 
+target_yaw = 0.0 
+running = False 
+base_vx = 0.0 
+base_vy = 0.0 
+orbit_yaw_rate = 0.0 
+orbit_radius = 20.0 
+orbit_angle_speed = 45.0 
+第二十一届全国大学生智能汽车竞赛技术报告 
+ XXVI 
+orbit_stop_angle = 180.0 
+orbit_stop_enable = True 
+orbit_holding = False 
+orbit_post_hold_start_ms = 0 
+orbit_progress_deg = 0.0 
+ORBIT_SWEEP_DEG = 180.0 
+orbit_sweep_target_deg = ORBIT_SWEEP_DEG 
+orbit_turn_direction = 1.0 
+actual_speeds = [0.0, 0.0, 0.0, 0.0] 
+motor_pwms = [0, 0, 0, 0] 
+debug_yaw_error = 0.0 
+wz_ff = 0.0 
+vx_limiter = RateLimiter(max_rate_up=60.0, max_rate_down=60.0) 
+vy_limiter = RateLimiter(max_rate_up=60.0, max_rate_down=60.0)ticker_flag = 
+False 
+ticker_count = 0 
+control_tick_total = 0 
+第二十一届全国大学生智能汽车竞赛技术报告 
+ XXVII 
+control_tick_last_us = 0 
+control_tick_dt_us = 0 
+control_tick_dt_us_max = 0 
+control_tick_overrun_count = 0 
+wheel_speed_abs_max = [0.0, 0.0, 0.0, 0.0] 
+wheel_distance_cm = [0.0, 0.0, 0.0, 0.0] 
+wheel_overspeed_counts = [0, 0, 0, 0] 
+last_control_yaw = 0.0 
+yaw_rate_deg_s = 0.0 
+yaw_rate_initialized = False 
+def limit_value(v, max_abs): 
+    if v > max_abs: 
+        return max_abs 
+    if v < -max_abs: 
+        return -max_abs 
+    return v 

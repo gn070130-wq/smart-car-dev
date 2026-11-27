@@ -1,0 +1,691 @@
+第二十一届全国大学生
+智能汽车竞赛
+
+技 术 报 告
+ 
+学    校：安徽信息工程学院      
+队伍名称：凌秋菊一队            
+参赛队员：张俊 代慧欣 邓光辉    
+武文祥 葛玉沛         
+带队教师：许涛 刘传柱           
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+关于技术报告和研究论文使用授权的说明
+
+本人完全了解全国大学生智能汽车竞赛关保留、使用技术报告和研究论文的规定，即：参赛作品著作权归参赛者本人，比赛组委会可以在相关主页上收录并公开参赛作品的设计方案、技术报告以及参赛模型车的视频、图像资料，并将相关内容编纂收录在组委会出版论文集中。
+
+参赛队员签名：张俊，代慧欣，邓光辉，武文祥，葛玉沛
+
+带队教师签名：许涛，刘传柱
+
+日期：2026.08.15     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+摘 要
+本技术报告详细阐述了第二十一届全国大学生智能车竞赛“飞跃雷区”组别中，安徽信息工程学院凌秋菊一队的系统设计方案。针对赛事规则设计的“飞跃雷区”空地协同系统由一台四旋翼无人机（空中感知单元）与一辆麦克纳姆轮地面小车（地面执行单元）组成，二者通过系留绳连接、通过有线串口交换视觉与控制信息，实现对雷区标识的自主识别与顶灭任务。
+系统以英飞凌 CYT4BB7（双核 Cortex-M7）微控制器为两套单元的主控核心。无人机飞控采用“双核异构”架构：CM7_1 核负责 MT9V03X 摄像头的图像采集与箭头/信标目标识别，CM7_0 核负责传感器解算、串级 PID 控制与电机混控，双核通过片上共享 SRAM（0x28001000）配合 D-Cache 同步机制交换视觉数据。空中单元融合 ICM42688 六轴 IMU、DL1B 激光测距（TOF）与 UPFLOW302 光流三种传感器，构建了以 Mahony 互补滤波为核心的姿态解算、以“TOF + IMU 互补滤波”为核心的高度估计，以及以“视觉位置环—光流速度环—姿态角环—角速度环”四级串级 PID 为核心的轨迹跟踪控制器。地面小车采用麦克纳姆轮全向底盘，四轮独立有刷电机驱动并配四路正交编码器，通过有线串口接收无人机下发的箭头/信标像素坐标，经“像素偏差—车体坐标变换—麦轮运动学逆解—轮速闭环”实现全向趋近与贴灯灭灯控制。
+实验结果表明，该方案在复杂雷区场景下具备稳定的目标识别能力与较高的顶灭成功率。
+
+关键词：CYT4BB7；四旋翼；麦克纳姆轮；Mahony 滤波；串级 PID；光流；空地协同；飞跃雷区
+
+Abstract
+
+This technical report elaborates in detail on the system design scheme of Team Lingqiuju-I of Anhui Institute of Information Technology in the "Flying Over the Minefield" category of the 21st National University Students' Intelligent Vehicle Competition. The air–ground cooperative system, designed in accordance with the competition rules, consists of a quadrotor UAV (aerial sensing unit) and a Mecanum-wheel ground vehicle (ground actuation unit). The two units are connected by a tether and exchange visual and control information over a wired serial link, jointly accomplishing the autonomous recognition and extinguishing of minefield beacons.
+
+The system adopts the Infineon CYT4BB7 (dual-core Cortex-M7) microcontroller as the main control unit of both subsystems. The UAV flight controller employs a dual-core heterogeneous architecture: the CM7_1 core is dedicated to image acquisition with the MT9V03X camera and to arrow/beacon target recognition, while the CM7_0 core handles sensor fusion, cascaded PID control, and motor mixing; the two cores exchange vision data through on-chip shared SRAM (0x28001000) together with a D-Cache synchronization mechanism. The aerial unit fuses three sensors — the ICM42688 6-axis IMU, the DL1B time-of-flight (TOF) rangefinder, and the UPFLOW302 optical-flow sensor — to build an attitude solution based on the Mahony complementary filter, an altitude estimator based on TOF+IMU complementary fusion, and a trajectory-tracking controller based on a four-stage cascaded PID consisting of a vision-position loop, an optical-flow velocity loop, an attitude-angle loop, and an angular-rate loop. The ground vehicle adopts a Mecanum-wheel omnidirectional chassis driven by four independent brushed DC motors with four quadrature encoders. It receives the arrow/beacon pixel coordinates sent by the UAV over the wired serial link and, through "pixel error → body-coordinate transformation → Mecanum inverse kinematics → wheel-speed closed loop", realizes omnidirectional approaching and contact-and-extinguish control of the beacon.
+
+Experimental results show that the proposed scheme achieves stable target recognition and a high beacon-extinguishing success rate in complex minefield scenarios.
+
+Keywords: CYT4BB7; quadrotor; Mecanum wheel; Mahony filter; cascaded PID; optical flow; air–ground cooperation; Flying Over the Minefield
+
+
+
+第一章 系统概述及创新
+1.1 系统概述
+“飞跃雷区”赛项要求参赛系统在包含雷区标识的复杂赛道环境中，自主完成对目标信标的识别、趋近与“顶灭”任务。本团队采用“空地协同”的总体方案：以一台系留式四旋翼无人机作为空中感知与指挥单元，俯视拍摄场地、识别地面目标；以一辆麦克纳姆轮全向小车作为地面执行单元，接收无人机的视觉指令并完成对雷区信标的顶灭。二者通过系留绳保持空间跟随关系，并通过有线串口构成低延迟、高可靠的数据链路。
+系统硬件以英飞凌 CYT4BB7 双核微控制器为核心，无人机飞控与地面车控各采用一片。CYT4BB7 内置两颗 Cortex-M7 内核，主频 250 MHz，具备丰富的外设资源，满足“图像处理 + 实时控制”并行计算的需求。软件上，两套单元均采用“分层模块化 + 前后台 + 定时中断”的架构：后台主循环负责非实时任务（菜单、通信解析、状态机），PIT 定时器中断负责实时控制环的调度。
+系统总体工作流程为：无人机上电后完成 IMU 标定与姿态预热，解锁后进入软启动爬升并锁定在 1.35 m 定高飞行；CM7_1 核持续采集图像，识别小车顶部的箭头标记与雷区信标，将“箭头坐标、箭头方向角、信标坐标、连通域面积、视觉状态”打包为 16 字节定长帧，经共享 SRAM 交给 CM7_0 核，再由 CM7_0 核通过 UART1 有线下发至小车。小车接收后，将像素偏差经车体坐标变换转化为横向/纵向偏差，通过麦轮运动学逆解解算出四轮速度指令，驱动底盘全向趋近信标，最终在“合并—冲刺—顶灭”状态机的控制下完成灭灯任务。
+1.2 算法创新
+1.2.1 视觉引导的实时路径规划
+系统并未采用传统意义上的全局地图路径规划，而是利用无人机“上帝视角”的绝对优势，构建了一套视觉引导的实时路径规划策略。
+无人机侧，CM7_1 核以图像中心为起点，按半径逐层向外扫描，通过广度优先搜索（BFS）连通域提取与主成分分析（PCA）识别箭头与信标，并维护 NOV（无目标）、LOCK（锁定）、LOST（丢失）、MERGE（粘连合并）四种视觉状态。当信标短暂丢失时，CM7_0 核运行“信标自旋搜索”状态机：延时确认丢失后，以 30° 为步进、0.15° 为转向上限，分 12 步完成 360° 扫描，每步停留 200 ms 观察画面，并根据箭头在画面中的左右位置智能选择初始旋转方向，从而在不依赖地图的前提下自主找回目标。当长时间无信标时，触发自动降落流程，避免无人机在空中无限巡航。
+小车侧，将“无人机俯视 + 麦轮全向底盘”的特性结合，把路径规划简化为“最短欧氏距离趋近”：任一方向上只要检测到信标，即可沿该方向直线冲刺，无需绕行。小车在远中距保持恒定冲刺速度，仅在“即将接触”的窄窗口内做一次二次曲线收速，兼顾了快速性与防过冲。
+1.2.2 复合高精度轨迹跟踪控制
+针对空中与地面两套动力学特性迥异的被控对象，本系统分别设计了复合控制器。
+无人机采用“四级串级 PID”姿态控制器：最内环为角速度环（1 ms），向外依次为姿态角环（10 ms）、光流水平速度环（5 ms）、视觉像素位置环（10 ms）。视觉位置环将像素误差转换为期望水平速度，光流速度环将速度误差转换为期望姿态角，姿态角环与角速度环则完成姿态的快速稳定，四级环环相扣，使无人机既能稳定悬停，又能快速追踪移动目标。高度通道采用“高度位置环 + 垂直速度环”两级串级结构，并引入气流扰动判定、积分抗饱和、反弹动量制动、超调制动与油门斜率限制等工程化措施，显著提升了定高精度。
+地面小车采用“位置开环指令 + 航向闭环 + 四轮速度闭环”的复合控制：位置层根据像素偏差与冲刺速度直接生成 vx/vy 指令，航向层通过偏航 PID 锁定上电时刻的航向零点，速度层对四轮分别做增量式编码器反馈的位置式 PID 闭环。针对麦轮横移时滚子受力分解导致的横向推力不足，引入横向补偿增益（1.8 倍），保证全向运动的对称性。
+1.2.3 多传感器融合状态估计
+本系统深度融合了惯性、测距与视觉三类传感器，构建了鲁棒的状态估计体系。
+在高度估计上，采用“TOF + IMU 互补滤波”：以 DL1B 激光测距经倾角补偿后的高度为观测值，以世界系垂直加速度积分为预测值，二者按 0.72/0.28 的权重互补融合，既保留了 IMU 的高动态响应，又消除了纯积分的长期漂移。在垂直速度估计上，同样采用“IMU 加速度积分预测 + TOF 高度差分”的互补融合，并针对不同距离动态调整滤波系数。
+在水平速度估计上，UPFLOW302 光流输出的原始光流需扣除机体旋转引起的“假光流”，本系统利用 1 ms 累加的陀螺积分对横滚、俯仰旋转进行补偿，并针对光流模块后置于重心 12 cm 的安装方式，引入杠杆臂耦合项修正，避免追车时产生虚假横向速度。在航向估计上，AHRS 采用 Mahony 互补滤波，利用加速度计长期修正陀螺仪的积分漂移，并针对无磁力计的情况设计了偏航零点复位机制。
+地面小车则融合四路编码器增量，通过“对角线编码器累计 + 另两路静止判定”实现打滑自旋检测，一旦检测到单轮空转自旋，即触发 200 ms 强制直行补偿，保证底盘在打滑场景下仍能脱困。
+
+第二章 机械结构设计
+根据第二十一届全国大学生智能汽车竞赛“飞跃雷区”赛题要求，参赛队伍需自主设计车模机械结构、硬件电路及控制算法，使模型车能够在复杂赛道环境中自主识别雷区标识并完成越障任务。最终本队采用“五寸竞速X型无人机+全向麦克纳姆轮车模”的空地协同硬件方案。其中空中单元为五寸竞速X型无人机，负责全局视觉定位，航线引导与任务指挥；地面单元为全向麦克纳姆轮车模，承担无人机供电、定点顶灭灯、协同跟随等地面任务。本系统以英飞凌Traveo II系列微控制器为核心，采用“双核异构、感驱分离”的硬件架构，结合视觉感知与红外辅助补光技术，构建了一套完整的智能车控制系统。
+2.1 无人机结构设计
+为适配飞跃雷区复杂赛场环境，满足高速飞行，精准悬停，抗干扰作业的核心需求，本队先后完成两版无人机结构方案设计与实测迭代。结合赛事尺寸约束、飞行稳定性、机动灵活性等核心指标，最终确定采用五寸竞速X型无人机作为空中作业载体。本节将从机架选型、防护结构设计、传感器减震设计三个维度，详细说明设计思路与方案选型依据。
+
+图2.1无人机俯视图
+
+
+图2.2无人机前视图
+    
+图2.3无人机侧视图
+
+2.1.1 无人机机架选择
+机架是无人机的核心承载结构、其构型、尺寸与结构参数直接决定无人机的飞行稳定性、机动性能与负载能力，是无人机机械设计的核心环节。根据本次赛事官方规则，无人机整体尺寸需严格控制在50cm×50cm范围内，因此整机尺寸上限约束为六寸机架，为本队机架选型划定了明确范围。
+综合对比机架的机动性与负载特性，本队最终选用五寸正X型四旋翼机架。X 型布局相比「+」型布局具有更高的机动性与更均匀的力矩分配，能提供各向同性的控制响应，这对于需要频繁急停、悬停进行视觉识别的任务场景至关重要。同时，该构型重心居中，能有效降低高速机动下的姿态耦合干扰，最大化飞行稳定性。最后机架采用轻量化材质，兼顾结构强度与整机重量，以降低对悬停油门的需求、延长续航。
+2.1.2 无人机保护罩以及脚架设计
+为保障飞行安全，无人机四周加装桨叶保护罩，防止飞行中桨叶与障碍物碰撞造成坠机。机身下方设计脚架，一方面为起落提供支撑与缓冲，另一方面为安装于机尾下部的光流模块与 TOF 传感器提供离地间隙，保证测距与光流视场不受遮挡。系留绳的挂接点设置于机身重心附近，减小牵引力对姿态的干扰力矩。
+
+图2.4无人机保护罩及脚架图
+2.1.3 传感器减震
+IMU（ICM42688）对振动极其敏感，本系统将 IMU 固定于主控 PCB 上，并通过减震棉/减震柱与机架软连接，降低电机高频振动向传感器的传递。光流模块与 TOF 传感器同样采用柔性安装，避免机身振动导致的光流图像模糊与测距抖动。软件层面辅以巴特沃斯低通滤波（陀螺仪截止频率约 50 Hz、加速度计约 15 Hz）进一步抑制高频噪声，软硬件协同保证姿态解算精度。
+
+图2.5飞机相关减震装置图
+
+2.2 地面车模结构设计
+   
+图2.6车模前视图
+
+图2.7车模俯视图
+
+图2.8车模侧视图
+2.2.1 麦克纳姆轮底盘结构
+地面执行单元采用四轮麦克纳姆轮全向底盘，四个麦轮按「左前、右前、左后、右后」对称布置，与软件中四路电机、四路编码器的编号顺序严格一致。麦克纳姆轮滚子与轮轴呈 45° 夹角，配合四轮差速可实现纵向平移、横向平移、原地旋转与斜向运动的解耦控制，这是本系统实现「最短直线距离趋近信标」的机械基础。代码中车体几何参数为左右半轮距 WHEELBASE_X = 0.18 m、前后半轮距 WHEELBASE_Y = 0.20 m，旋转耦合系数 K = 0.19。
+2.2.2 动力与驱动布局
+四路有刷直流电机独立驱动四个麦轮，每个电机配套一路正交编码器，编码器与电机同轴安装，为速度闭环提供直接的转速反馈。车顶中央布置箭头标记板，供无人机从正上方识别小车位置与航向；箭头指向即为车头方向，是无人机与小车之间坐标变换的几何基准。
+2.2.3 传感器与配重
+小车搭载 ICM42688 六轴 IMU，用于航向锁定；IMU 固定于底盘中央、远离电机与齿轮箱的位置以减小振动干扰。电池与主控板布置于底盘中部偏低位置，降低整车重心，提高高速冲刺与急停时的稳定性。车头方向加装防撞缓冲结构，吸收顶灭信标时的接触冲击。
+2.2.4 车模灯板设计
+根据飞跃雷区组赛事规则，地面车模禁止搭载环境感知传感器，车体无法自主识别信标灯位置、判断自身与信标的相对姿态，完全依赖无人机全局视觉实现协同定位。为解决空地协同定位、信标对准的核心难题，本队对车载标识结构进行专项设计。
+本车模顶部搭载定制化箭头标识灯条，特殊的几何对称结构具备极强的视觉识别特征，可有效区分车体前后朝向与中心轴线。无人机通过机载视觉算法实时识别车载灯条轮廓与位置，快速解算地面车模的实时坐标、行进姿态及与信标灯的相对方位，为无人机指挥车模精准对位、完成踩灯任务提供核心视觉依据，保障空地协同定位的精准度与实时性。
+2.2.5 车模底盘结构设计
+考虑到传统的M1车模易被信标卡住的问题，我们通过在原有的M1车模上进行改装，增大底板长度与减小前后左右轮距离使其能够顺利的踩过信标。
+
+图2.9车模底盘图
+
+
+第三章 硬件电路设计
+3.1 无人机部分硬件
+3.1.1 飞控电路
+飞控电路以英飞凌 CYT4BB7 双核微控制器为核心，板载系统电源、ICM42688 IMU（SPI 接口，10 MHz）、DL1B TOF 测距模块、UPFLOW302 光流模块、MT9V03X 摄像头接口、四路无刷电调 PWM 接口、IPS200 屏幕接口、蜂鸣器与按键等。核心引脚分配为：四路电机 PWM 采用 TCPWM_CH19~CH22（P08_0~P08_3），IMU 采用 SPI2（SCK=P15_2，MOSI=P15_1，MISO=P15_0，CS=P15_3），UART1（P04_1/P04_0）用于向小车下发视觉数据。系统时钟配置为 250 MHz。
+双核分工方面，CM7_0 核承担传感器解算、控制算法与通信，CM7_1 核承担图像采集与识别。双核通过片上共享 SRAM 地址 0x28001000（视觉数据结构体，16 字节）与 0x28001010（菜单/图像显示控制结构体）交换数据，并利用 ARM CMSIS 提供的 D-Cache 刷新/失效接口保证数据一致性，避免双核读写冲突。
+
+图3.1飞控主板设计图
+3.1.2 无刷电调
+无人机采用四合一无刷电调驱动四台无刷电机。飞控通过四路 PWM（频率 300 Hz，占空比范围映射为油门量）向电调下发转速指令，电调内部完成换相与电流控制。软件中 PWM 数值与油门对应关系为：最小启动油门 3000、怠速油门 3500、最大油门 6000（对应 PWM 计数值）。为抑制上电瞬间误转，初始化阶段四路 PWM 占空比置零。
+
+图3.2四合一无刷驱动板
+3.2 车模部分硬件
+3.2.1 车模主板
+车模主板以英飞凌 CYT4BB7 双核微控制器为核心（本单元主要使用 CM7_0 核，CM7_1 核保留为空工程）。板载四路有刷电机驱动接口、四路正交编码器接口、ICM42688 IMU、IPS200 彩屏（并行 8 位接口）、蜂鸣器、按键与拨码开关，以及用于接收无人机数据的 UART2（P10_1/P10_0）。核心引脚分配为：四路电机方向引脚 P05_3/P05_1/P09_1/P10_3，四路 PWM 引脚 TCPWM_CH11(P05_2)/CH09(P05_0)/CH24(P09_0)/CH30(P10_2)，四路编码器分别使用 TC_CH20/CH07/CH58/CH27 的正交解码通道。
+
+图3.3车控主板设计图
+
+3.2.2 车模灯板
+车模顶部布置箭头标记灯板，作为无人机俯视识别小车位置与航向的视觉靶标。灯板中心指向车头方向，与软件中「箭头方向角 + 180° 即车头方向」的坐标约定一致。红外信标（雷区标识）由场地提供，小车本身不主动发光，而是依赖无人机图像识别信标位置。
+
+图3.4车模灯板设计图
+3.2.3 有刷驱动板
+四路有刷电机采用 H 桥驱动，通过方向引脚 + PWM 引脚控制电机正反转与转速。电机 PWM 频率为 17 kHz（高于人耳可闻频率，可降低电机啸叫），PWM 计数值量程 ±10000，并预留四路死区补偿参数以匹配不同电机的启动特性。驱动板集成于主控板或独立成板，通过排线与主控连接。
+
+图3.5有刷驱动版设计图
+
+
+第四章 无人机软件设计
+4.1 传感器
+4.1.1 算法总体架构
+无人机的传感器与姿态解算链路如图所示。
+
+图4.1无人机传感器与姿态解算信号框图
+整个链路分为三层：底层为原始数据采集（ICM42688 陀螺仪/加速度计、DL1B TOF、UPFLOW302 光流），中层为数据预处理（零偏标定、巴特沃斯低通滤波、量纲统一、死区抑制），顶层为状态解算（Mahony 姿态解算、四元数转欧拉角、世界系加速度解算、高度/垂直速度互补融合、光流速度估计）。
+4.1.2 核心步骤详解
+（1）传感器零偏标定。上电静止状态下，丢弃前 500 次不稳定采样后，采集 500 组静止数据（仅当三轴陀螺值均小于 5 °/s 时计入），求取陀螺仪三轴零偏与加速度计水平轴零偏。同时计算静止时加速度矢量的平均模长，动态校准当地真实重力加速度，解决了固定使用 9.8 m/s² 导致的高度漂移问题。
+（2）数字低通滤波。采用二阶巴特沃斯低通滤波器（Direct Form II 结构），陀螺仪截止频率约 50 Hz、加速度计约 15 Hz（采样率 1 kHz），完全剔除滑动平均以避免引入相位滞后。滤波后对小信号做死区处理（如陀螺值小于 0.003 rad/s 时置零），消除静态噪声抖动。
+（3）Mahony 互补滤波姿态解算。以四元数表示姿态，利用加速度计归一化后的测量值与估计重力方向做叉积得到误差，经比例（kp=1.5）与积分（ki=0.003）反馈修正陀螺仪，再以一阶龙格-库塔积分更新四元数。当自旋率超过 20 °/s 时暂停积分项累加，防止高速旋转下积分饱和。预热阶段将 kp 临时提升至 100 以加速收敛，完成后复位偏航零点。
+（4）世界系加速度解算。将滤波后的机体加速度经完整旋转矩阵（Z-Y-X 顺序）变换到世界系，并对 Z 轴补偿当地重力，得到扣除重力后的垂直加速度，供高度控制与垂直速度估计使用。
+4.2 视觉
+4.2.1 摄像头安装校正与视觉处理
+无人机搭载 MT9V03X 摄像头（图像分辨率 188×120），垂直向下俯视拍摄。视觉处理由 CM7_1 核独立完成，避免占用 CM7_0 核的控制周期。处理流程为：等待采集完成标志 → 运行 “vision_process_frame()”识别箭头与信标 → 将结果写入共享 SRAM 并刷新 D-Cache。CM7_0 核通过共享结构体的 “update_flag”帧序号判断是否有新帧，避免重复计算。
+4.2.2 相机安装模型——ZYZ+同轴平移
+相机安装于无人机重心正下方、垂直俯视，采用“ZYZ + 同轴平移”简化模型描述相机与机体的几何关系。由于摄像头垂直朝下，其光轴与机体 Z 轴平行，仅存在沿 Z 轴的平移（光心到地面高度），俯视图像可直接建立“像素坐标—地面位置”的映射，无需复杂的透视校正。
+4.2.3 旋转矩阵
+为将机体坐标系加速度转换到世界坐标系，系统在初始化阶段确定旋转矩阵（方向余弦矩阵）。旋转顺序采用 Z-Y-X（偏航—俯仰—横滚），旋转矩阵元素由欧拉角的三角函数实时计算（R00=cp·cy、R01=sr·sp·cy−cr·sy、R02=cr·sp·cy+sr·sy 等），用于世界系加速度解算与倾斜补偿。由于姿态欧拉角由 AHRS 实时更新，旋转矩阵随之逐帧刷新。
+4.2.4 光心位置
+图像光心（主点）取为图像几何中心（94, 60），作为像素误差的参考零点。视觉追踪中，箭头像素坐标减去光心坐标即得到箭头相对视场中心的像素误差，进而由视觉位置环转换为期望水平速度。箭头检测以光心为起点，按半径逐层向外搜索，优先锁定画面中央的目标。
+4.2.5 每帧计算
+每一帧图像的处理分为“找箭头—找信标—状态更新”三步。找箭头阶段采用 5×5 跳邻域 BFS 提取连通域，以跨越箭头灯珠之间的间隙；对连通域做 PCA 主成分分析，计算质心、协方差矩阵特征值，以细长度（λ₁/λ₂）与质心偏移判定是否为箭头，并以 PCA 主方向结合“质心相对外接矩形中心偏置”消除 180° 方向歧义。找信标阶段采用严格 8 邻域 BFS，配以径向自适应阈值补偿镜头边缘暗角，以细长度、填充率、质心偏移三重判据识别圆形信标，并排除箭头本体。最后根据箭头与信标的检测结果更新视觉状态机。
+4.2.6 箭头形标记提取算法
+箭头标记的提取核心是 PCA 主成分分析。对连通域内所有像素计算二阶矩，构造协方差矩阵并求其特征值 λ₁≥λ₂，细长度 e = λ₁/λ₂ 反映了目标的「狭长程度」，箭头由于其 V 形/条形结构具有明显大于 1 的细长度；主方向角 θ = ½·atan2(2vxy, vxx−vyy) 给出箭头朝向。针对 PCA 主方向固有的 180°二义性，利用「外接矩形中心相对质心的偏置方向」判定箭头的真实尖端方向。此外，针对无人机姿态倾斜导致的透视畸变，增加了箭头方向角稳定性滤波：仅当连续多帧都确认接近 180° 的翻转时才接受新的方向，单帧疑似翻转直接沿用参考角，避免小车将“前进”误判为“后退”。
+4.3 运动控制
+4.3.1 平衡控制器
+无人机的水平位置控制采用四级串级结构，自外向内依次为：
+1. 视觉位置环（10 ms）：以图像光心为参考，将箭头像素误差经 PID（X 轴 P=−0.70/I=−0.012/D=−0.45，Y 轴 P=−0.80/I=−0.015/D=−0.52）转换为期望水平速度，并叠加目标速度前馈（利用相邻帧箭头像素位移估计目标移动速度）与大误差追赶增益，输出限幅 ±130 cm/s。
+2. 光流速度环（5 ms）：将期望速度与光流实测速度的误差经 PID（X 轴 P=0.085/I=0.005/D=0.004，Y 轴 P=−0.100/I=−0.006/D=−0.005）转换为期望姿态角，输出限幅 ±12°。
+3. 姿态角环（10 ms）：将期望姿态角与实际欧拉角的误差经 PID 转换为期望角速度。
+4. 角速度环（5 ms/1 ms）：将期望角速度与陀螺实测角速度的误差经 PID（横滚 P=2.6/I=0.031/D=0.65，俯仰 P=−2.6/I=−0.031/D=−0.65）转换为 PWM 差速量。
+四级环通过期望速度—期望姿态角—期望角速度—PWM 层层递进，兼顾了位置跟踪精度与姿态稳定裕度。
+4.3.2 加速度前馈
+为提升对移动目标的跟踪响应，系统在视觉位置环中引入目标速度前馈：记录上一帧箭头像素位置与时间戳，计算箭头在图像中的移动速度（像素/秒），经低通滤波与增益换算为期望水平速度前馈分量，叠加到位置环输出上，实现「预测 + 修正」的复合控制。此外，高度通道利用世界系垂直加速度作为 IMU 预测项，与 TOF 差分速度互补融合，本质上也构成加速度前馈。为抑制目标静止时的抖动，前馈仅在帧间隔合理（3~120ms）时计算。
+4.3.3 转向控制器
+偏航转向采用「偏航角环 + 偏航角速度环」两级串级结构。角速度环（5 ms）以陀螺 Z 轴角速度为反馈、期望角速度为输入，经 PID（P=4.5）输出偏航 PWM；角环（10 ms）以欧拉偏航角为反馈，经 PID（P=4.5）输出期望角速度。角环在误差超过 20° 时清零积分防止 windup，并处理 ±360° 的跳变修正。在信标搜索阶段，转向控制器直接接收搜索状态机给出的步进目标偏航角，实现自主 360° 扫描。
+4.3.4 高度控制器
+高度控制采用「高度位置环 + 垂直速度环」两级串级。位置环（10 ms）以 TOF+IMU 融合高度为反馈，将高度误差经比例增益（P=4.0，死区内增益 5.5）转换为期望垂直速度，并叠加位置阻尼；速度环（5 ms）以互补融合的垂直速度为反馈，经 PID（P=115/I=0.88）输出油门偏置量。控制器针对四旋翼在低空的气流扰动问题设计了专门的扰动判定（误差与速度反向或低速大误差）、积分抗饱和、反弹动量制动、超调制动与油门斜率限制（正常上升 14、扰动上升 38、下降 24），显著提升了定高与垂直运动的平稳性。
+4.3.5 混控器
+混控器将基础油门与三轴差速量合成四路电机 PWM。X 型布局的混控关系为：
+- M0 = base + roll − pitch + yaw
+- M1 = base − roll − pitch − yaw
+- M2 = base + roll + pitch − yaw
+- M3 = base − roll + pitch + yaw
+混控后执行“工业级归一化”：任一电机超过最大油门时整体同幅下调，飞行/降落态下最小油门抬升至怠速值，避免电机停转失控；同时叠加倾斜补偿（基础油门除以 cos(roll)·cos(pitch)），保证大倾角时仍维持足够的垂直升力。最终四路 PWM 经 300 Hz 信号下发电调。
+
+
+第五章 车模软件设计
+5.1 问题结构
+5.1.1 任务
+地面小车的任务为：接收无人机下发的箭头/信标像素坐标，在保持自身航向锁定的前提下，通过麦克纳姆轮全向底盘自主趋近雷区信标，并在贴近后顶灭信标（灭灯），随后等待无人机给出下一目标。
+5.1.2 车辆模型与约束
+小车为四轮麦克纳姆轮全向底盘，车体坐标系约定 +X 为右、+Y 为前（箭头尖端方向即车头），航向 yaw 上电锁定为零点。四轮速度由麦轮运动学逆解给出：
+- ω_LF = vx + vy − vz·K
+- ω_RF = −vx + vy + vz·K
+- ω_LR = −vx + vy − vz·K
+- ω_RR = vx + vy + vz·K
+其中 K = 0.19 为旋转耦合系数。约束包括：单轮速度上限 2000、平移合力幅值上限 450、PWM 单拍变化限幅 180 等，以保证运动平稳并抑制齿轮冲击。
+5.1.3 问题难题
+1. 坐标对齐问题：无人机俯视图像中的箭头方向角存在 180° 二义性，一旦误判会导致小车“前进/后退”反向。
+2. 目标粘连问题：小车贴近信标时，箭头连通域与信标连通域在图像中粘连，无人机难以独立检出信标，易误判目标丢失。
+3. 过冲与往返问题：高速冲刺到信标前若未及时减速，会冲过信标；过冲后无人机重新给出更远的目标位置，小车又冲回来，形成反复“垫脚”。
+4. 打滑自旋问题：麦轮在某些工况下可能出现单轮空转自旋，导致车体原地打转。
+5. 链路失效问题：有线通信一旦中断，小车会沿用历史指令盲冲。
+5.1.4 解决问题
+针对上述难题，系统设计了相应机制：
+1. 坐标对齐：在车体坐标变换中使用“箭头方向角 + 180°”作为车头方向，并在飞控侧与车控侧同时对接近 180° 的角度突跳做稳定性滤波。
+2. 目标粘连：飞控侧通过箭头连通域面积突增检测粘连，进入 MERGE 状态并冻结此前学习到的信标相对箭头偏移进行外推；车控侧在 MERGE 状态下锁存冲刺方向、放宽丢帧容忍，维持 0.75 s 固定方向冲刺。
+3. 过冲往返：车控侧在末段收速窗口内按距离二次曲线降速，并引入“灭灯终止态”——一旦确认接触即停车且不再因距离变化自行退出，从根上消除反复抽动。
+4. 打滑自旋：通过对角线编码器累计与另两路静止判定检测自旋，连续多帧确认后触发 200 ms 强制直行补偿。
+5. 链路失效：设置 200 ms 链路超时看门狗，超时未收到任何帧即强制停车。
+5.2 设计决策
+（1）有线通信协议设计。无人机与小车之间采用 16 字节定长帧：帧头 0x5A 0xA5，负载为箭头 X/Y、方向角、信标 X/Y、面积（各 2 字节）、状态+滚动帧序号（1 字节）与校验和（1 字节）。状态字节低 2 位表示视觉状态（0=锁定、1=丢失、2=无效、3=粘连），高 4 位为 4 bit 滚动帧序号，供小车侧检测丢帧。小车侧采用状态机逐字节解析，校验和验证通过才采信，并对越界坐标/角度做合法性过滤，防止噪声帧进入控制环。
+（2）合并锁存与解锁。为避免无人机 LOCK/MERGE 在临界处抖动导致冲刺计数被反复清零，车控在进入接触/粘连阶段后锁存冲刺方向；但锁存并非单向死锁，当连续多帧检测到新鲜距离明显变远时自动解锁，防止“临界误触发一次合并”演变成永久僵死。
+（3）灭灯终止态与看门狗。灭灯后进入 STATE_EXTINGUISH 终止态，唯一退出路径是无人机真正报出目标丢失；同时设 2 s 看门狗，若无人机因异常持续输出“看似合法”的 LOCK/MERGE，车控会强制复位回待机重新确认，避免永久卡死。
+（4）麦轮横向补偿。针对麦轮横移时滚子受力分解导致横向推力弱于纵向的问题，仅对横向速度指令放大 1.8 倍，纵向不变，并在合力幅值限幅下保证不超限。
+（5）偏差平滑滤波。对用于生成 vx/vy 的偏差做一阶低通平滑，平滑系数随距离连续过渡（越近越钝），并将单帧大跳变视为真实跳变直接跟随，在“抗噪声”与“响应快”之间取得平衡。状态判定仍使用未平滑的原始距离，保证状态切换的果断性。
+
+
+第六章 开发环境与调试
+6.1 开发工具
+本系统软件基于 IAR Embedded Workbench for ARM 9.40.1 集成开发环境编写与编译，编程语言为 C 语言。IAR 提供针对 ARM Cortex-M 内核的完整工具链，包括 C/C++ 编译器、汇编器、链接器与 C-SPY 调试器。
+由于主控 CYT4BB7 为双核（CM7_0 + CM7_1）微控制器，工程按内核拆分为两个 IAR 工程：CM7_0 核工程（cyt4bb7_cm_7_0.ewp，运行飞控控制算法与车控算法）与 CM7_1 核工程（cyt4bb7_cm_7_1.ewp，运行图像采集与目标识别），二者由统一的 IAR 工作空间（cyt4bb7.eww）组织管理。链接脚本采用 linker_directives_tviibh.icf，将两个内核的代码分别定位到各自的内存区域，避免地址冲突。编译分别输出 .out 调试文件与 .hex 烧录文件。
+程序烧录与调试采用 SWD（Serial Wire Debug）接口，通过 J-Link 或 DAP-Link 调试器连接主控板调试接口，实现程序下载、在线调试与 Flash 固化。版本管理使用 Git，硬件设计文件与软件代码分别建库，便于回溯与协作。
+6.2 调试过程
+6.2.1  调试目标与总体流程
+系统调试遵循“传感器标定 → 单环开环 → 逐环闭环 → 整机联调”的总体流程。
+（1）传感器标定。上电后首先验证 IMU 零偏标定与 AHRS 预热是否正常，通过上位机观察欧拉角是否在静止状态下收敛至零附近，确认陀螺零偏与当地重力校准的准确性。
+（2）参数在线整定。飞控代码提供三种串口应用模式（编译时切换）：比赛模式（UART1 向小车发数据）、VOFA 调参模式（通过 VOFA+ 上位机在线修改 PID 参数）、光流调试模式（通过逐飞助手的无线串口输出光流/控制遥测波形）。调参模式下 KEY1 兼作解锁/上锁按键，便于安全调试。车控侧通过 IPS200 彩屏菜单（KEY1/2/3 切换、KEY4 发车）实时调整冲刺速度等参数。
+（3）Flash 参数持久化。整定后的 PID 参数与冲刺速度写入片内 Flash，上电时读取并覆盖代码默认值，避免每次重新调参。
+（4）上位机波形分析。通过逐飞助手观察期望速度、实测速度、误差、姿态角、光流原始值/补偿值等遥测波形，分析差比和（视觉误差）是否超调、光流旋转补偿是否到位、串级各环是否存在振荡，据此迭代参数。
+（5）实车联调。在完整雷区赛道上进行空地联合调试，重点验证：视觉识别的稳定性、粘连/MERGE 状态切换的正确性、顶灭动作的准确性与自动降落/信标搜索等异常流程的可靠性。
+6.2.2  在线调试
+在软件开发过程中，高强度的代码编写难免产生逻辑错误，需要借助编译器的单步调试功能定位问题。利用 IAR 内置的 C-SPY 调试器，通过 SWD 接口连接目标板，可实现断点设置、单步执行、变量实时观察、寄存器与内存查看、Call Stack 回溯等功能。针对双核系统的特殊性，CM7_0 与 CM7_1 两个内核可分别加载各自的 .out 文件进行联合调试，重点验证双核共享 SRAM（0x28001000 / 0x28001010）的数据一致性与 D-Cache 同步逻辑是否正确，这是保证视觉数据可靠传递的关键。
+6.2.3  上位机
+在调试过程中，上位机是必不可少的工具。本系统采用两种上位机辅助调参：
+（1）VOFA+ 上位机：飞控代码预留 VOFA 调参模式，通过串口与 VOFA+ 通信，可在线实时修改 PID 参数并观察响应波形，极大方便了控制参数的整定。
+（2）逐飞助手（SEEKFREE Assistant）：飞控代码预留光流调试模式，通过无线串口将光流原始值、旋转补偿值、期望/实测水平速度、速度误差、姿态角等 24 路遥测数据实时上传，以波形方式显示，用于分析差比和算法是否超调、光流旋转补偿是否到位、串级各环是否存在振荡。
+此外，车控侧通过 IPS200 彩屏菜单实现冲刺速度等关键参数的现场整定，参数写入片内 Flash 后上电自动加载，无需反复烧录
+
+第七章 总结
+本系统针对“飞跃雷区”赛项，设计并实现了一套基于“四旋翼无人机空中感知 + 麦克纳姆轮小车地面执行”的空地协同方案。硬件上以英飞凌 CYT4BB7 双核微控制器为核心，融合 ICM42688 惯性测量、DL1B 激光测距与 UPFLOW302 光流三种传感器，并依托 MT9V03X 摄像头构建视觉感知链路。软件上，飞控侧实现了 Mahony 姿态解算、TOF+IMU 互补融合的高度估计、四级串级 PID 轨迹跟踪、视觉引导的信标追踪/搜索/自动降落状态机；车控侧实现了麦轮运动学逆解、航向锁定、四轮速度闭环以及抗粘连、抗过冲、抗打滑的完整灭灯流程。
+通过本赛题的备赛过程，团队在双核嵌入式开发、多传感器融合、串级 PID 控制器设计、视觉目标识别与空地协同系统联调等方面积累了系统的工程实践经验。后续可在视觉定位精度、目标预测跟踪与更高速度下的顶灭控制上进一步优化。
+
+
+
+
+
+
+
+
+
+
+
+
+无人机技术检查表
+
+车模技术检查表
+附录A 部分程序源代码
+7.1 无人机控制算法
+7.1.1位置式PID 计算
+float PID_Positional(PID_struct *pid, float real, float target) {
+    pid->error = target - real;
+    pid->integral += pid->error;
+    if (pid->integral > pid->max_integral) pid->integral = pid->max_integral;
+    else if (pid->integral < -pid->max_integral) pid->integral = -pid->max_integral;
+    pid->out = (pid->p * pid->error) + (pid->i * pid->integral) + (pid->d * (pid->error - pid->last_error));
+    pid->last_error = pid->error;
+    if (pid->out > pid->max_output) pid->out = pid->max_output;
+    else if (pid->out < -pid->max_output) pid->out = -pid->max_output;
+    return pid->out;
+}
+7.2无人机视觉算法
+7.2.1箭头灯板目标检测算法
+static void extract_component_and_pca(uint8_t img_visited[120][188], int start_r, int start_c, ArrowTarget *arrow) {
+    int head = 0;
+    int tail = 0;
+    int min_r = start_r;
+    int max_r = start_r;
+    int min_c = start_c;
+    int max_c = start_c;
+    uint32_t area = 0;
+    uint32_t sum_x = 0;
+    uint32_t sum_y = 0;
+    uint32_t sum_x2 = 0;
+    uint32_t sum_y2 = 0;
+    uint32_t sum_xy = 0;
+    pixel_queue[tail].r = start_r;
+    pixel_queue[tail].c = start_c;
+    tail++;
+    img_visited[start_r][start_c] = 1;
+    while (head < tail) {
+        SearchPoint curr = pixel_queue[head++];
+        int cr = curr.r;
+        int cc = curr.c;
+        area++;
+        if (cr < min_r) min_r = cr;
+        if (cr > max_r) max_r = cr;
+        if (cc < min_c) min_c = cc;
+        if (cc > max_c) max_c = cc;
+        sum_x += cc;
+        sum_y += cr;
+        sum_x2 += cc * cc;
+        sum_y2 += cr * cr;
+        sum_xy += cc * cr;
+        for (int dr = -2; dr <= 2; dr++) {
+            for (int dc = -2; dc <= 2; dc++) {
+                if (dr == 0 && dc == 0) continue;
+                int nr = cr + dr;
+                int nc = cc + dc;
+                if (nr >= 0 && nr < 120 && nc >= 0 && nc < 188) {
+                    if (mt9v03x_image[nr][nc] >= WHITE_MAX_POINT && img_visited[nr][nc] == 0) {
+                        pixel_queue[tail].r = nr;
+                        pixel_queue[tail].c = nc;
+                        tail++;
+                        img_visited[nr][nc] = 1;
+                    }
+                }
+            }
+        }
+    }
+    if (area < 20) {
+        arrow->found = 0;
+        return;
+    }
+    float ex = (float)sum_x / area;
+    float ey = (float)sum_y / area;
+    float box_cx = (min_c + max_c) / 2.0f;
+    float box_cy = (min_r + max_r) / 2.0f;
+    float center_dist = sqrtf((ex - box_cx) * (ex - box_cx) + (ey - box_cy) * (ey - box_cy));
+    float vxx = ((float)sum_x2 / area) - (ex * ex);
+    float vyy = ((float)sum_y2 / area) - (ey * ey);
+    float vxy = ((float)sum_xy / area) - (ex * ey);
+    float trace = vxx + vyy;
+    float diff = vxx - vyy;
+    float discriminant = sqrtf(diff * diff + 4.0f * vxy * vxy);
+    float lamda1 = (trace + discriminant) / 2.0f;
+    float lamda2 = (trace - discriminant) / 2.0f;
+    float eccentricity = lamda1 / (lamda2 + 1e-5f);
+    if (eccentricity > debug_best_ecc) {
+        debug_best_ecc = eccentricity;
+        debug_best_solidity = center_dist;
+        debug_best_area = area;
+    }
+    if (center_dist > 0.8f && eccentricity > 1.3f) {
+        float theta_car = 0.5f * atan2f(2.0f * vxy, vxx - vyy);
+        float bias_x = box_cx - ex;
+        float bias_y = box_cy - ey;
+        if ((bias_x * cosf(theta_car) + bias_y * sinf(theta_car)) < 0) {
+            theta_car += M_PI;
+        }
+        float angle_deg = theta_car * (180.0f / M_PI);
+        while (angle_deg < 0) angle_deg += 360.0f;
+        while (angle_deg >= 360.0f) angle_deg -= 360.0f;
+        arrow->center_x = ex;
+        arrow->center_y = ey;
+        arrow->angle_deg = angle_deg;
+        arrow->area = (uint16_t)area;
+        arrow->found = 1;
+        for (int i = 0; i < tail; i++) {
+            int pr = pixel_queue[i].r;
+            int pc = pixel_queue[i].c;
+            for (int mr = pr - 2; mr <= pr + 2; mr++) {
+                for (int mc = pc - 2; mc <= pc + 2; mc++) {
+                    if (mr >= 0 && mr < 120 && mc >= 0 && mc < 188)
+                        s_arrow_mask[mr][mc] = 1;
+                }
+            }
+        }
+        return;
+    }
+    arrow->found = 0;
+}
+7.2.2圆信标检测与径向自适应阈值
+static uint8_t circle_threshold_at(int r, int c) {
+    float nx = fabsf(((float)c - 93.5f) / 93.5f);
+    float ny = fabsf(((float)r - 59.5f) / 59.5f);
+    float edge = (nx > ny) ? nx : ny;
+    float threshold;
+    if (edge > 1.0f) edge = 1.0f;
+    threshold = (float)CIRCLE_THRESH_CENTER -
+                ((float)CIRCLE_THRESH_CENTER - (float)CIRCLE_THRESH_EDGE) * edge * edge;
+    return (uint8_t)(threshold + 0.5f);
+}
+static void extract_circle_and_verify(uint8_t img_visited[120][188], int start_r, int start_c, CircleTarget *circle) {
+    int head = 0;
+    int tail = 0;
+    int min_r = start_r;
+    int max_r = start_r;
+    int min_c = start_c;
+    int max_c = start_c;
+    uint32_t area = 0;
+    uint32_t sum_x = 0;
+    uint32_t sum_y = 0;
+    uint32_t sum_x2 = 0;
+    uint32_t sum_y2 = 0;
+    uint32_t sum_xy = 0;
+    pixel_queue[tail].r = start_r;
+    pixel_queue[tail].c = start_c;
+    tail++;
+    img_visited[start_r][start_c] = 1;
+    while (head < tail) {
+        SearchPoint curr = pixel_queue[head++];
+        int cr = curr.r;
+        int cc = curr.c;
+        area++;
+        if (cr < min_r) min_r = cr;
+        if (cr > max_r) max_r = cr;
+        if (cc < min_c) min_c = cc;
+        if (cc > max_c) max_c = cc;
+        sum_x += cc;
+        sum_y += cr;
+        sum_x2 += cc * cc;
+        sum_y2 += cr * cr;
+        sum_xy += cc * cr;
+        for (int dr = -1; dr <= 1; dr++) {
+            for (int dc = -1; dc <= 1; dc++) {
+                if (dr == 0 && dc == 0) continue;
+                int nr = cr + dr;
+                int nc = cc + dc;
+                if (nr >= 0 && nr < 120 && nc >= 0 && nc < 188) {
+                    if (mt9v03x_image[nr][nc] >= circle_threshold_at(nr, nc) &&
+                        img_visited[nr][nc] == 0) {
+                        pixel_queue[tail].r = nr;
+                        pixel_queue[tail].c = nc;
+                        tail++;
+                        img_visited[nr][nc] = 1;
+                    }
+                }
+            }
+        }
+    }
+    if (area < CIRCLE_MIN_AREA) {
+        debug_best_ecc = 0.0f;
+        debug_best_solidity = 999.0f;
+        debug_best_area = area;
+        circle->found = 0;
+        return;
+    }
+    float ex = (float)sum_x / area;
+    float ey = (float)sum_y / area;
+    float box_cx = (min_c + max_c) / 2.0f;
+    float box_cy = (min_r + max_r) / 2.0f;
+    float center_dist = sqrtf((ex - box_cx) * (ex - box_cx) + (ey - box_cy) * (ey - box_cy));
+    float vxx = ((float)sum_x2 / area) - (ex * ex);
+    float vyy = ((float)sum_y2 / area) - (ey * ey);
+    float vxy = ((float)sum_xy / area) - (ex * ey);
+    float trace = vxx + vyy;
+    float diff = vxx - vyy;
+    float discriminant = sqrtf(diff * diff + 4.0f * vxy * vxy);
+    float lamda1 = (trace + discriminant) / 2.0f;
+    float lamda2 = (trace - discriminant) / 2.0f;
+    float eccentricity = lamda1 / (lamda2 + 1e-5f);
+    float box_w = (float)(max_c - min_c + 1);
+    float box_h = (float)(max_r - min_r + 1);
+    float fill_ratio = (float)area / (box_w * box_h);
+    float nx = fabsf((ex - 93.5f) / 93.5f);
+    float ny = fabsf((ey - 59.5f) / 59.5f);
+    float edge = (nx > ny) ? nx : ny;
+    uint8_t touches_border = (min_r == 0 || max_r == 119 ||
+                            min_c == 0 || max_c == 187) ? 1 : 0;
+    debug_best_ecc = eccentricity;
+    debug_best_solidity = center_dist;
+    debug_best_area = area;
+    float ecc_threshold;
+    if (area <= 8) ecc_threshold = 8.0f;
+    else if (area <= 20) ecc_threshold = 4.5f;
+    else ecc_threshold = 3.0f;
+    if (edge > 0.75f) ecc_threshold += 2.0f;
+    if (touches_border) ecc_threshold += 2.0f;
+    if (center_dist < (touches_border ? 4.0f : (edge > 0.75f ? 2.5f : 1.6f)) &&
+        eccentricity < ecc_threshold &&
+        fill_ratio > (touches_border ? 0.12f : 0.18f)) {
+        circle->center_x = ex;
+        circle->center_y = ey;
+        circle->area = (uint16_t)area;
+        circle->found = 1;
+        return;
+    }
+    circle->found = 0;
+}
+7.3麦克纳姆轮车控算法
+7.3.1车模硬件架构与软件总体设计
+while (true) {
+    if (wired_comm_process() == true) {
+        wired_get_latest(&data);
+        VisionTrack_OnFrame(&data);
+    }
+    key_scan();
+    Menu_Update();
+    system_delay_ms(5);
+}
+7.3.2麦轮运动学逆解与四轮速度闭环控制
+void McNamur_wheel_kinematic_solution_control(ControlState_t *state) {
+    if (state == NULL) return;
+    state->wheel_speed[0] = state->vx_cmd + state->vy_cmd - state->vz_cmd * K_CHASSIS;
+    state->wheel_speed[1] = -state->vx_cmd + state->vy_cmd + state->vz_cmd * K_CHASSIS;
+    state->wheel_speed[2] = -state->vx_cmd + state->vy_cmd - state->vz_cmd * K_CHASSIS;
+    state->wheel_speed[3] = state->vx_cmd + state->vy_cmd + state->vz_cmd * K_CHASSIS;
+    Normalize_Wheel_Speeds(state->wheel_speed, MAX_WHEEL_SPEED);
+}
+void Speed_Control(ControlState_t *state) {
+    PID_struct *speed_pids[4] = {&speed_pid_A, &speed_pid_B, &speed_pid_C, &speed_pid_D};
+    static int32_t s_prev_pwm[4] = {0, 0, 0, 0};
+    if (state == NULL) return;
+    if (!Menu_IsRunEnabled()) {
+        for (int i = 0; i < 4; i++) {
+            state->pwm[i] = 0;
+            s_prev_pwm[i] = 0;
+            speed_pids[i]->integral = 0.0f;
+            speed_pids[i]->last_error = 0.0f;
+        }
+        Motor_control(0, 0, 0, 0);
+        return;
+    }
+    if (state->current_state == STATE_EXTINGUISH) {
+        for (int i = 0; i < 4; i++) {
+            state->wheel_speed[i] = 0.0f;
+            state->pwm[i] = 0;
+            s_prev_pwm[i] = 0;
+            speed_pids[i]->integral = 0.0f;
+            speed_pids[i]->last_error = 0.0f;
+        }
+        Motor_control(0, 0, 0, 0);
+        return;
+    }
+    for (int i = 0; i < 4; i++) {
+        int32_t raw_pwm;
+        int32_t delta_pwm;
+        if (fabsf(state->wheel_speed[i]) < WHEEL_TARGET_DEADBAND) {
+            state->pwm[i] = 0;
+            s_prev_pwm[i] = 0;
+            speed_pids[i]->integral = 0.0f;
+            speed_pids[i]->last_error = 0.0f;
+            continue;
+        }
+        raw_pwm = (int32_t)PID_Positional(speed_pids[i],
+                                        (float)Encoder_delta[i],
+                                        state->wheel_speed[i]);
+        delta_pwm = raw_pwm - s_prev_pwm[i];
+        if (delta_pwm > PWM_SLEW_PER_TICK) delta_pwm = PWM_SLEW_PER_TICK;
+        else if (delta_pwm < -PWM_SLEW_PER_TICK) delta_pwm = -PWM_SLEW_PER_TICK;
+        state->pwm[i] = s_prev_pwm[i] + delta_pwm;
+        s_prev_pwm[i] = state->pwm[i];
+    }
+    Motor_control(-state->pwm[0], -state->pwm[1], state->pwm[2], state->pwm[3]);
+}
+7.3.3主程序调度与5ms控制中断服务
+void pit0_ch0_isr() {
+    pit_isr_flag_clear(PIT_CH0);
+    Get_Angles_ICM();
+    Encoder_read();
+    VisionTrack_Tick();
+    Heading_control(&ctrl_state);
+    Position_control_car(&ctrl_state);
+    Slip_Detection_And_Override(&ctrl_state);
+    McNamur_wheel_kinematic_solution_control(&ctrl_state);
+    Speed_Control(&ctrl_state);
+}
+while (true) {
+    if (wired_comm_process() == true) {
+        wired_get_latest(&data);
+        VisionTrack_OnFrame(&data);
+    }
+    key_scan();
+    Menu_Update();
+    system_delay_ms(5);
+}
+附录B 电路板PCB图+电路板原理图 
+8.1电路板PCB图
+
+图A-1 无人机主板（正）
+
+图A-2 无人机主板（反）
+
+图A-3 无人机无刷驱动板（正）
+
+
+图A-4 无人机无刷驱动板（反）
+
+
+图A-5 车模主板（正）
+
+
+图A-6 车模主板（反）
+
+图A-7 车模有刷驱动板（正）
+
+
+图A-8 车模有刷驱动板（反）
+
+
+图A-9 车模灯板（正）
+
+
+图A-10 车模灯板（反）
+8.2电路板原理图
+
+
+图B-1 无人机主板原理图
+
+
+
+
+图B-2 无人机无刷驱动板原理图
+
+图B-3 车模主板原理图
+
+图B-4 车模有刷驱动板原理图
+
+图B-5 车模灯板
+
+
+
+
+
+===== TABLE 1 =====
+队伍名称 | 凌秋菊一队 | 凌秋菊一队 | 凌秋菊一队 | 凌秋菊一队
+参赛学校 | 安徽信息工程学院 | 安徽信息工程学院 | 安徽信息工程学院 | 安徽信息工程学院
+赛题组组别 | 飞跃雷区 | 飞跃雷区 | 飞跃雷区 | 飞跃雷区
+检查项目 | 规格 （选手自行填写） | 符合 （(） | 不符合（(） | 备注
+1.车模类型是什么？ | 自制 |  |  | 如果是自制车模，请标明自制。
+车模整体尺寸： 1.（包括传感器在内）长，宽，高(mm) 2. 摄像头组标明镜头距离地面高度。 | 1.340*340*145 2.飞机摄像头距离地面1.35m |  |  | 在填写是，请将所在组别规则对于车模尺寸限制同时进行填写。
+传感器种类、规格(型号)数量。  是否使用自带MCU的成品传感器模块？型号是什么？ | 1.飞机端：总转风红外170°摄像头×1，ips200屏幕×1，icm42688六轴陀螺仪×1，DL1B V1.0定高模块×1，UP-LC302光流模块×1 2.否 |  |  | 
+控制转向舵机型号是否自行改装舵机？  防伪易损标签是否完整？ | 否  否 |  |  | 
+1. 是否增加伺服电机？ 2. 如果有那么种类、个数和作用？ | 1.否 2.无 |  |  | 
+电路中微处理器型号和个数？ | CYT4BB7×1 |  |  | 
+是否具有其它可编程器件，个数与作用？ | 1.否 |  |  | 
+是否有无线通讯装置？  如果有，那么种类和个数？ | 否  否 |  |  | 
+电池的种类、规格和数量？ | 飞机端1号电池：4S 5500mAH 80C 飞机端2号电池：4S 3500mAH 120C |  |  | 
+是否使用GPS导航？ 2. 是否没有使用RTK？ | 1.否 2.否 |  |  | 
+后轮驱动电机是否是原车模电机？  是否具有防伪易损标签？ | 是  否 |  |  | 
+车模轮胎是否原有的纹理可辨析？  轮胎表面是否具有粘性物质？  对于麦克纳姆轮是否更换过小轮胶皮？ | 自制飞机模型  否  否 |  |  | 
+车模底盘是否是原车模底盘？  是否有大面积切割？ | 自制飞机模型 |  |  | 
+车轮轴距、轮距是否改装？  改装参数是什么？ | 自制飞机模型 |  |  | 
+车模驱动轮传动机构是否改装？  改装方式是什么？ | 否  无 |  |  | 
+车模差速器是否改装？  改装方式是什么？ | 否  无 |  |  | 
+是否更换过原装车模中的机械元器件？更换后的规格 是什么？ | 自制飞机模型 |  |  | 
+车模电路板个数及功能。  其中是否有购买成品、哪一些？ | 1.2个 2.否 |  |  | 
+自制电路板是否标记有学校名称、队伍名称、制作日期等信息？  标示信息在PCB的哪一层？ | 是  顶层和底层 |  |  | 请在表格中注明电路板队伍信息的内容。
+其它待说明内容 |  |  |  | 
+检查人员签名： | 检查意见： | 检查意见： | 检查意见： | 检查意见：
+
+===== TABLE 2 =====
+队伍名称 | 凌秋菊一队 | 凌秋菊一队 | 凌秋菊一队 | 凌秋菊一队
+参赛学校 | 安徽信息工程学院 | 安徽信息工程学院 | 安徽信息工程学院 | 安徽信息工程学院
+赛题组组别 | 飞跃雷区 | 飞跃雷区 | 飞跃雷区 | 飞跃雷区
+检查项目 | 规格 （选手自行填写） | 符合 （(） | 不符合（(） | 备注
+1.车模类型是什么？ | 自制 |  |  | 如果是自制车模，请标明自制。
+车模整体尺寸： 1.（包括传感器在内）长，宽，高(mm) 2. 摄像头组标明镜头距离地面高度。 | 1.300*300*275 2.无摄像头 |  |  | 在填写是，请将所在组别规则对于车模尺寸限制同时进行填写。
+传感器种类、规格(型号)数量。  是否使用自带MCU的成品传感器模块？型号是什么？ | 1.小车端：ips200屏幕×1，正交编码器×4，icm42688六轴陀螺仪×1，红外自制灯条×3 2.否 |  |  | 
+控制转向舵机型号是否自行改装舵机？  防伪易损标签是否完整？ | 否  否 |  |  | 
+1. 是否增加伺服电机？ 2. 如果有那么种类、个数和作用？ | 1.否 2.无 |  |  | 
+电路中微处理器型号和个数？ | CYT4BB7×1 |  |  | 
+是否具有其它可编程器件，个数与作用？ | 1.否 |  |  | 
+是否有无线通讯装置？  如果有，那么种类和个数？ | 否  否 |  |  | 
+电池的种类、规格和数量？ | 小车端：4S 2200mAH 45C |  |  | 
+是否使用GPS导航？ 2. 是否没有使用RTK？ | 1.否 2.否 |  |  | 
+后轮驱动电机是否是原车模电机？  是否具有防伪易损标签？ | 是  否 |  |  | 
+车模轮胎是否原有的纹理可辨析？  轮胎表面是否具有粘性物质？  对于麦克纳姆轮是否更换过小轮胶皮？ | 自制车模  否  否 |  |  | 
+车模底盘是否是原车模底盘？  是否有大面积切割？ | 自制车模 |  |  | 
+车轮轴距、轮距是否改装？  改装参数是什么？ | 自制车模 |  |  | 
+车模驱动轮传动机构是否改装？  改装方式是什么？ | 否  无 |  |  | 
+车模差速器是否改装？  改装方式是什么？ | 否  无 |  |  | 
+是否更换过原装车模中的机械元器件？更换后的规格 是什么？ | 自制车模 |  |  | 
+车模电路板个数及功能。  其中是否有购买成品、哪一些？ | 1.6个 2.否 |  |  | 
+自制电路板是否标记有学校名称、队伍名称、制作日期等信息？  标示信息在PCB的哪一层？ | 是  顶层和底层 |  |  | 请在表格中注明电路板队伍信息的内容。
+其它待说明内容 |  |  |  | 
+检查人员签名： | 检查意见： | 检查意见： | 检查意见： | 检查意见：

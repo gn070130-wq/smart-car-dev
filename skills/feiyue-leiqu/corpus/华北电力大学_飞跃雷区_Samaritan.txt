@@ -1,0 +1,695 @@
+第二十一届全国大学生智能汽车竞赛
+空地协同视觉引导压灯系统
+技 术 报 告
+学 校 名 称：华北电力大学
+参 赛 组 别：飞跃雷区
+队 伍 名 称：Samaritan
+参 赛 队 员：刘航宇　　曾毅
+指 导 教 师：胡永辉　　赵东
+二〇二六年八月十五日
+
+报告使用授权说明
+本人完全了解全国大学生智能汽车竞赛关保留、使用技术报告和研究论文的规定，即:参赛作品著作权归参赛者本人，比赛组委会可以在相关主页上收录并公开参赛作品的设计方案、技术报告以及参赛模型车的视频、图像资料，并将相关内容编纂收录在组委会出版论文集中。
+参赛队员签名：＿＿＿＿＿＿＿　＿＿
+指导教师签名：＿＿＿＿＿＿　＿＿＿＿＿＿
+日　　　　期：＿＿＿2026＿年＿8＿月＿17＿日
+
+目　　录
+注：本目录由域代码生成。编辑正文后请在目录上点击右键并选择“更新域”，以刷新页码。
+
+主要符号表
+
+第一章  引言
+1.1 任务背景
+全国大学生智能汽车竞赛是以智能车辆为载体的科技创新性竞赛，参赛队伍需要在竞赛规则限定的时间内，围绕赛道环境感知、车辆运动控制与任务决策完成一套完整的车模系统[1]。本参赛队（华北电力大学 Samaritan 队）参加飞跃雷区组别，任务形态为空地协同：无人机在空中持续跟踪安装有 V 形指示灯（下称 V 灯）的小车，识别场地内按固定频率闪烁的信标灯，并将两者在图像中的相对几何关系下发给小车，引导小车自主运动并以车身压亮信标灯（下称压灯）。
+该任务的核心难点在于：其一，感知与执行分布在两个运动平台上，视觉解算、链路传输与底盘执行之间存在固有时延与数据抖动；其二，无人机悬停跟踪与小车高速压灯分属两个动力学差异极大的被控对象，需要在同一套信息流内协同；其三，50 Hz 视觉帧率与像素级量化噪声叠加，近距离时方向噪声被显著放大，直接用于控制会造成压灯轨迹摆动。
+1.2 系统设计目标
+针对上述难点，本队确定如下设计目标：（1）无人机在 800 Hz 控制频率下实现稳定的姿态与高度控制，为下视视觉提供平稳的成像平台；（2）以像素坐标系的 VB 向量作为全系统统一中间表示，避免跨平台世界坐标标定；（3）主、副双摄像头协同，在主摄像头近距离丢失信标时由副摄像头恢复引导信息，提高任务连续性；（4）小车端以方向调理、视觉超前外推与平滑速度规划为核心，实现顺滑连续的压灯轨迹；（5）全链路失效保护，任何一环异常都能安全制动。
+1.3 报告结构安排
+第二章给出系统总体方案与信息流设计；第三章介绍机械结构、传感器选型安装与电路设计；第四章详细阐述双核软件架构与各控制、估计算法；第五章说明开发工具与分级调试过程，并给出典型问题的定位与解决；第六章汇总系统技术参数。报告正文之后附参考文献、附录 A（系统照片）与附录 B（程序源代码摘录）。
+
+第二章  系统总体方案设计
+2.1 总体架构
+系统由三个 CYT4BB7（TRAVEO II，双核 Cortex-M7，主频 250 MHz）核心板节点构成：无人机飞行主控板、副摄像头板与智能小车控制板。总体架构与信息流如图 2.1 所示。
+
+图2.1  系统总体架构与信息流
+表2.1  三节点功能划分
+无人机主控板两核通过共享内存中的无锁双缓冲（seqlock）结构交换数据：CM7_1 将视觉结果（V/B 坐标、置信度、帧号）发布到固定地址，CM7_0 读取并回传高度、速度与航向反馈，配合数据缓存（DCache）维护与内存屏障保证一致性。该结构避免了跨核队列与锁开销，单次交换耗时为微秒级。
+2.2 工作流程
+系统完整任务流程如图 2.2 所示。上电后无人机完成传感器自检与陀螺零偏标定，起飞并定高至 1000 mm；主摄像头锁定 V 灯后进入空中跟踪模式，在图像参考点附近维持车体居中。信标灯由主摄像头通过闪烁相位自相关完成 B1/B2/B3 编号识别；当主摄像头丢失信标超过 120 ms 时，副摄像头按请求解算 V→B 相对向量并映射回主摄像素系，融合生成虚拟信标 B1。最终 B 与 V 坐标随视觉帧以 A4 帧下发，小车据此完成接近、压灯、滑行与制动。
+
+图2.2  系统任务工作流程
+2.3 通信链路与协议设计
+全系统共使用五条链路，帧格式统一采用帧头+载荷+异或校验+帧尾的结构，接收端按状态机逐字节解析并对校验、长度与范围做多重验证。各链路汇总见表 2.2。
+表2.2  系统通信链路一览
+坐标语义上，A4 帧内横坐标经过 x′=187−x 的镜像变换，使 B−V 向量的正方向直接对应小车机体系的右/前方向，接收端无需再查表转换。像素坐标限定在 188×120 图像范围内，越界即视为无效，两侧实现均做相同校验，保证协议语义唯一[5]。
+2.4 方案论证
+像素向量方案与世界坐标方案的对比：若在无人机端换算世界坐标，需要精确的相机外参、高度与姿态联合解算，误差链条长且标定工作量大；直接传输 V、B 像素坐标，小车端只需 B−V 即可获得方向与相对距离信息，带宽开销仅 8 字节。本队选择像素向量方案，并在小车端引入偏航角补偿旋转，消除无人机航向误差带来的坐标系偏差。
+单摄与双摄方案的对比：主摄像头在接近信标过程中会因视场角与遮挡丢失信标，此时单摄方案只能制动停车；增加副摄像头板后，只要副摄能同时看到 V 灯与信标，即可恢复虚拟信标，任务连续性显著提高。副摄链路采用请求-应答而非连续上报，一是避免常态占用 UART6 带宽，二是天然形成主摄优先、副摄兜底的仲裁结构。
+
+第三章  机械结构、传感器与电路设计
+3.1 机械结构设计
+小车采用麦克纳姆轮四轮底盘，四个驱动轮由独立直流电机直驱，轮距与轴距按竞赛限重与压灯稳定性折中设计，重心尽量下置以降低压灯加减速时的姿态扰动。控制板、电池与驱动板分层布置于底盘上层，IMU 位于底盘几何中心附近并远离电机以减小振动与磁场干扰。整车三视图如图 3.1 所示。
+
+图3.1  智能小车机械结构：（a）侧视图；（b）正视图；（c）俯视图
+无人机采用四旋翼 X 型布局。机载设备安装原则为：主摄像头下视安装，光轴垂直于地面时图像横轴与机体横轴对齐；TOF 测距与光流模块同向朝下，位于机身中心以减少姿态旋转引起的测距误差；IMU 紧贴重心。机载设备布局如图 3.2 所示。
+
+图3.2  无人机机载设备安装：（a）俯视图；（b）侧视图
+3.2 传感器选型与安装
+传感器配置以满足任务感知与控制需求为准，全系统传感器清单见表 3.1。
+表3.1  系统传感器配置一览
+3.3 电路设计
+三块 CYT4BB7 竞赛指定核心板分别承担无人机、副摄与小车控制。小车端功率驱动采用四片 DRV8701E H 桥驱动器，PWM 载波 17 kHz；电机供电与逻辑供电分离，功率地与信号地单点汇接。无人机端电调采用四合一串口电调，由 UART4 以 ASCII 明文协议驱动。板间数据链路均为 UART 串口：飞控主板与副摄板、飞控与电调为板间有线连接，无人机与小车间的 A4/C5 帧经串口链路传输，A3 遥控帧为固件层预留的串口指令输入。主要电路组成见表 3.2。
+表3.2  主要电路组成
+
+第四章  软件设计与控制算法
+4.1 双核软件架构与跨核通信
+三个工程均为裸机前后台结构：时间关键任务由定时器中断置标志，主循环消费标志执行，另设循环超载检测。无人机主控板上，CM7_0 以 800 Hz PIT 中断执行姿态与高度控制，CM7_1 主循环逐帧执行视觉识别与三条 UART 链路服务。两核间以 64 字节定长包通过共享内存无锁交换：写方以递增序号+两副本写入，读方校验序号一致性，读侧执行缓存失效（DCache invalidate）、写侧执行缓存清理（clean）并插入 DMB 屏障。该设计在读多写少场景下无需关中断，最坏情况读方重试一次。
+4.2 姿态解算
+姿态解算采用 Mahony 互补滤波，以四元数描述姿态，陀螺仪积分为主、加速度计重力观测为辅[2]。加速度计测量向量与姿态预测的重力向量做叉积得到姿态误差 e：
+误差经比例-积分后修正陀螺角速度，抑制陀螺零偏漂移；修正后的角速度按四元数微分方程推进并归一化：
+滤波参数取 Kp=0.75、Ki=0.004，积分步长对应 800 Hz 控制周期。陀螺与加速度数据先经 Butterworth 低通滤波去除电机振动高频分量。此外实现静止零偏再标定：当陀螺三轴幅度与加速度方差持续低于阈值达 0.6 s 时，重新采集零偏，覆盖长时间温度漂移。核心实现见附录 B.3。
+4.3 多传感器状态估计
+状态估计采用三通道解耦的常加速度 EKF：高度通道以 DL1B TOF 距离（经姿态旋转投影到世界竖直轴）为观测、以世界系竖直加速度为预测；水平 X/Y 通道以光流积分（除以高度并补偿旋转分量）为观测、以机体加速度旋转到世界系后为预测。每通道状态量为位置、速度与加速度计偏置，协方差更新采用数值更稳定的 Joseph 形式，新息采用 5σ 门限剔除野值[3]。以卡尔曼增益为例：
+光流观测的速度换算依赖当前高度：
+其中 h 为 TOF 融合高度，f 为镜头焦距（像素单位），Δu 为光流积分像移。高度通道仅在 50～1500 mm 高度窗口内启用水平估计，光流完整但无效帧立即撤销两轴健康标志，防止地面效应与镜面反射污染速度估计。
+4.4 无人机飞行控制
+飞行控制为 800 Hz 级联结构：外环角度 P 控制器给出角速度目标，内环角速度 PID 输出各轴力矩分量，经 X 型混控叠加到总距并限幅后，以 ASCII 明文协议发送至电调[4]。控制回路总体结构如图 4.1 所示，各级参数见表 4.1。
+
+图4.1  无人机控制回路总体框图
+表4.1  无人机级联 PID 参数
+混控对四个电机的姿态分量做展宽限幅（最大展宽 6000）后再叠加总距，最终占空比限制在 [2000, 8000] 区间，保证任何姿态需求下电机都不进入停转区。姿态角或角速度出现非有限值时立即锁定停桨，解锁需完整重新上电流程。
+4.5 视觉识别算法
+视觉输入为 188×120 灰度图像，50 FPS。V 灯检测采用多级判决链（图 4.2）：候选区域先经严格几何形态判决（STRICT_V），失败后依次尝试短时记忆恢复（RECOVERY）与亮度兜底（BRIGHT_FALLBACK），全部失败则进入 PURE_HOLD 保持上一拍输出且不作为控制观测，避免闪烁边沿污染控制环。V 灯与信标均输出千分制置信度，控制侧仅采用置信度不低于 360 的观测[5]。
+
+图4.2  视觉识别多级判决流程
+信标灯以约 10 Hz 频率闪烁，算法对候选做闪烁自相关分析与稳定编号，区分 B1/B2/B3 并输出各自置信度；编号在遮挡恢复后保持连续，供任务层判断压灯目标。
+4.6 主副摄像头协同与虚拟信标融合
+副摄像头平时不主动上报。当主摄 V 灯可用而信标丢失时，飞控经 UART6 发送 B1 请求；副摄在自己视野内同时找到 V 灯与信标后，将 V→B 相对向量按两相机安装角度旋转 90° 映射回主摄像素系（mapped_dx=−raw_dy、mapped_dy=raw_dx），随 B2 帧返回。飞控侧融合逻辑为：主摄信标连续丢失超过 120 ms，且副摄链路在线、返回帧连续两次向量变化不超过 32 像素，则生成虚拟信标 B1 = V + mapped。主摄信标恢复后立即回到主摄优先。该链路以标志位自描述有效性，任何一环不满足即整体降级为无信标，不产生错误观测。
+4.7 空中跟踪控制
+无人机对 V 灯的跟踪由三态模块完成：HOLD（悬停保持）、CHASE（跟踪）、BRAKE（制动）。进入 CHASE 需同时满足光流健康满 300 ms、高度在 700～1300 mm 窗口、姿态角小于 3°、目标超出死区连续 3 帧；跟踪中姿态角超过 8° 持续 40 ms 或视觉丢失 5 帧即制动。目标速度由滤波后像素误差经死区与比例增益生成，并以 800/1400 mm/s² 加速度整形：
+像素误差经一阶低通（新值权重 0.35）后，8 像素死区外按 12 mm/s/px 生成目标速度，限幅 400 mm/s。跟踪期间若高度或姿态超出包线，仅允许既有整形通道对目标速度做衰减，不再叠加新的横向需求，保证姿态包线不越界。关键参数见表 4.2。
+表4.2  空中跟踪模块关键参数
+4.8 小车导航与运动控制
+小车端导航为五状态有限状态机（图 4.3）：WAIT 等待有效 A4 帧；APPROACH 按调理后的方向与规划速度接近；PRESS 在 8 像素近场以 0.45 m/s 直线压灯；COAST 在视觉标志闪断但链路仍新鲜时按最后方向惯性滑行；BRAKE 以 1.8 m/s² 制动。MISSION_STOP、调度超载或链路超时在任意状态强制进入 BRAKE 并锁停。
+
+图4.3  小车导航状态机
+方向调理解决近距离像素噪声放大问题：VB 方向先经距离加权的低通，权重随距离从 5 像素处为 0（完全冻结）线性升至 15 像素处为满权重；每帧方位角变化量另受 4° 硬限幅。权重函数为：
+视觉滞后补偿利用相邻帧 VB 向量变化率将当前向量前推 60 ms（上限 6 像素），抑制曝光-传输-执行链路固有时延引起的滞后；历史帧保存未外推的向量，避免超前量逐帧叠加。速度规划采用 smoothstep 形状因子，在最小速度 0.40 m/s 与最大速度 0.90 m/s 之间随距离（近场过渡区 8～60 像素）平滑过渡，进入与饱和两端斜率为零：
+50 Hz 视觉帧间 V/B 标志抖动是常态，只要 A4 链路仍新鲜（120 ms 内），小车带着最后方向滑行等待恢复，超过 300 ms 宽限才制动，消除走走停停现象。底盘执行链如图 4.4 所示：导航目标速度经 1.6/1.8 m/s² 加速度限幅与偏航补偿后，由麦克纳姆轮逆解分配到四轮：
+
+图4.4  小车底盘控制链
+每轮速度由 PID（700/170/8）闭环跟踪，并联摩擦前馈 300+1200|v| 补偿静摩擦与粘滞项，改善低速起步与换向响应；航向由 ICM45686 陀螺积分构成的 PID 航向保持环（Kp=3.5、Ki=0.18、Kd=0.38，输出限 ±2.4 rad/s）闭环锁定。关键参数见表 4.3。
+表4.3  小车导航与底盘关键参数
+4.9 安全机制与失效保护
+全系统失效保护按就近原则分级：无人机侧，姿态量非有限值立即停桨锁存，光流失效或高度越界撤销水平估计并退出跟踪，视觉丢失按帧数计数制动；链路侧，C5 应答 200 ms 超时判定小车离线，A4 停发后小车 120 ms 判定链路失效；小车侧，模式仲裁优先级为 MISSION_STOP 锁存 > 调度超载 > A4 自动 > 手动遥控 > 航向保持，SAFE_STOP 输出硬零，IMU 未就绪或锁定状态下一切输出被禁能。遥控通道任何时刻可以接管并触发任务终止。
+
+第五章  开发工具与调试过程
+5.1 开发环境与工程管理
+三个工程统一使用 IAR Embedded Workbench（9.2）开发，基于逐飞（SeekFree）CYT4BB7 库函数 V3.9.3，无操作系统。每个仓库提供 build_all_cores.bat 一键双核构建脚本，交付标准为 CM7_0、CM7_1 两目标均 0 错误 0 警告。三个仓库以 Git 独立管理，协议改动同步修改收发两端实现与文档，并以标签记录实机验证状态，构建通过与实机验收严格区分。
+5.2 分级调试与验收流程
+调试按风险从低到高分级推进，前一级未通过不进入下一级，流程见表 5.1。
+表5.1  系统分级调试与验收流程
+5.3 典型问题与解决过程
+问题一：无人机引导下车走走停停。现象为小车在接近过程中周期性急停再起步。定位过程：抓取 A4 帧发现 V/B 标志位在 50 Hz 帧间频繁闪断，而小车原逻辑将标志无效立即映射为硬制动（1.8 m/s²），视觉单帧丢失即触发。解决：引入 COAST 状态与 300 ms V 丢失滑行宽限，链路新鲜时按最后方向惯性滑行等恢复，超时才制动；该宽限大于单帧闪断的典型时长、又远小于正常链路的失效判定窗口，既吸收抖动也不掩盖真实失联，实测轨迹连续性显著改善。
+问题二：近距离压灯方向摆动。现象为距离小于约 15 像素时小车方向反复小幅摆动。分析：VB 向量的像素量化噪声固定约 1 像素，方位角噪声随距离减小被放大，与距离成反比。解决：方向冻结区（5 像素内完全冻结直线压灯）+ 距离加权低通（5～15 像素线性恢复信任）+ 每帧方位角 4° 硬限幅，三级措施叠加后近场轨迹为受控直线。
+问题三：副摄数据显示但小车不动。现象为无人机屏幕出现主副摄融合的紫色连线（说明虚拟信标已生成，调试界面见图 A-1），小车仍无运动。定位：虚拟信标 B1 = V + 映射向量必须落在 188×120 图像坐标范围内，否则 A4 组帧侧按协议清掉信标有效标志；而屏幕连线使用裁剪到边界后的端点绘制，视觉上始终存在。该问题确认为协议边界与显示端语义不一致的结构性约束，改进方向（允许越界信标或直接传递相对向量）已列入后续工作。
+
+第六章  系统技术参数
+6.1 整机技术参数
+整机参数汇总见表 6.1，电气参数为额定工况下的典型值。
+表6.1  系统整机技术参数
+6.2 传感器种类与数量统计
+全系统传感器种类与数量统计见表 6.2。
+表6.2  传感器种类与数量统计
+6.3 检测精度与控制频率
+赛道检测方面：图像分辨率 188×120、帧率 50 FPS，目标中心以整数像素输出，量化精度 ±1 像素；信标闪烁识别基于 10 Hz 自相关，编号在遮挡恢复后保持。控制方面：无人机姿态环 800 Hz，高度观测约 100 Hz，光流速度经 EKF 与 800 Hz 预测融合；小车导航与底盘环 200 Hz（5 ms 周期，含超载检测）；A4 帧随视觉帧 50 Hz 下发，C5 应答与在线判定窗口 200 ms。坐标传递全程为像素域，端到端附加时延主要为视觉曝光与传输（数十毫秒级），由小车端 60 ms 超前外推部分补偿。
+
+结论
+本报告给出了一套基于三块 CYT4BB7 双核核心板的空地协同压灯系统。系统以像素域 VB 向量为统一中间表示，无人机端实现 800 Hz 级联姿态控制、Mahony 姿态解算与三通道 EKF 状态估计，视觉端以多级判决链保证 50 Hz 观测的鲁棒性，并以主副摄融合扩展信标可见范围；小车端以五状态导航状态机为核心，配合方向调理、视觉超前外推与 smoothstep 速度规划实现顺滑压灯，底盘以轮速 PID+摩擦前馈与航向保持环保证跟踪精度。全链路按就近原则分级失效保护，并通过桌面联调、台架、系留与实机分级验收控制风险。
+后续工作包括：其一，改进信标越界时的协议语义（允许图像外信标或直接传递相对向量），消除虚拟信标受限导致引导中断的结构性约束；其二，按分级验收流程逐步开放更高追车速度档，统一无人机跟踪限速与小车速度档的匹配；其三，完成 Stage B/C 实机验收并补充实测整机参数。
+
+参考文献
+[1] 卓晴, 黄开胜, 邵贝贝. 学做智能车——挑战“飞思卡尔”杯[M]. 北京: 北京航空航天大学出版社, 2007.
+[2] Mahony R, Hamel T, Pflimlin J M. Nonlinear complementary filters on the special orthogonal group[J]. IEEE Transactions on Automatic Control, 2008, 53(5): 1203-1218.
+[3] 秦永元, 张洪钺, 汪淑华. 卡尔曼滤波与组合导航原理[M]. 西安: 西北工业大学出版社, 2012.
+[4] 胡寿松. 自动控制原理（第七版）[M]. 北京: 科学出版社, 2019.
+[5] Corke P. Robotics, Vision and Control: Fundamental Algorithms in MATLAB (2nd ed.)[M]. Cham: Springer, 2017.
+
+附录A  系统照片
+本附录收录联调现场的无人机机载调试界面照片（图 A-1）。界面实时显示 V 灯识别状态、目标坐标与置信度（Q 值）、信标 B1/B2/B3 编号状态、车地链路状态（K）与下发向量（U:B）等关键状态量，是联调过程中观察视觉链路工作情况、定位问题的主要窗口。
+
+图A-1  无人机机载视觉调试界面
+
+附录B  程序源代码（核心算法摘录）
+B.1 程序源代码组织
+三个工程的源代码按模块分层组织：飞控工程分为控制、估计、视觉与链路四层；小车工程分为硬件抽象、底盘控制与导航决策三层；副摄工程为单一应答服务。完整源代码见团队代码仓库，本附录摘录核心算法子程序（均为当前交付版本原文）。主要源文件清单见表 B.1。
+表B.1  主要源代码文件清单
+B.2 电机混控与限幅（飞控）
+摘自 flight_control_rebirth/code/control.c 第 243-298 行：
+static void control_mix_attitude(float collective,
+                                 float out_roll,
+                                 float out_pitch,
+                                 float out_yaw,
+                                 float *motor1,
+                                 float *motor2,
+                                 float *motor3,
+                                 float *motor4)
+{
+    collective = control_finite_or(collective, 2000.0f);
+    out_roll = control_finite_or(out_roll, 0.0f);
+    out_pitch = control_finite_or(out_pitch, 0.0f);
+    out_yaw = control_finite_or(out_yaw, 0.0f);
+    float attitude1 = out_pitch + out_roll + out_yaw;
+    float attitude2 = -out_pitch + out_roll - out_yaw;
+    float attitude3 = out_pitch - out_roll - out_yaw;
+    float attitude4 = -out_pitch - out_roll + out_yaw;
+    float attitude_min = attitude1;
+    float attitude_max = attitude1;
+    float attitude_span;
+    float scale;
+ 
+    if(attitude2 < attitude_min) attitude_min = attitude2;
+    if(attitude3 < attitude_min) attitude_min = attitude3;
+    if(attitude4 < attitude_min) attitude_min = attitude4;
+    if(attitude2 > attitude_max) attitude_max = attitude2;
+    if(attitude3 > attitude_max) attitude_max = attitude3;
+    if(attitude4 > attitude_max) attitude_max = attitude4;
+ 
+    attitude_span = attitude_max - attitude_min;
+    if(attitude_span > 6000.0f)
+    {
+        scale = 6000.0f / attitude_span;
+        attitude1 *= scale;
+        attitude2 *= scale;
+        attitude3 *= scale;
+        attitude4 *= scale;
+ 
+        attitude_min = attitude1;
+        attitude_max = attitude1;
+        if(attitude2 < attitude_min) attitude_min = attitude2;
+        if(attitude3 < attitude_min) attitude_min = attitude3;
+        if(attitude4 < attitude_min) attitude_min = attitude4;
+        if(attitude2 > attitude_max) attitude_max = attitude2;
+        if(attitude3 > attitude_max) attitude_max = attitude3;
+        if(attitude4 > attitude_max) attitude_max = attitude4;
+    }
+ 
+    collective = control_clamp(collective,
+                                2000.0f - attitude_min,
+                                8000.0f - attitude_max);
+    *motor1 = control_clamp(collective + attitude1, 2000.0f, 8000.0f);
+    *motor2 = control_clamp(collective + attitude2, 2000.0f, 8000.0f);
+    *motor3 = control_clamp(collective + attitude3, 2000.0f, 8000.0f);
+    *motor4 = control_clamp(collective + attitude4, 2000.0f, 8000.0f);
+}
+B.3 姿态解算核心（飞控）
+摘自 flight_control_rebirth/code/imu.c 第 346-401 行：
+  vx = 2*(q1q3 - q0q2);
+  vy = 2*(q0q1 + q2q3);
+  vz = q0q0 - q1q1 - q2q2 + q3q3;
+  
+  /* 加速度：由南向北方向的加速度在加速度计X分量 */
+    north.x = 1 - 2*(q3*q3 + q2*q2);
+    /* 加速度：由南向北方向的加速度在加速度计Y分量 */
+    north.y = 2* (-q0*q3 + q1*q2);
+    /* 加速度：由南向北方向的加速度在加速度计Z分量 */
+    north.z = 2* (+q0*q2  - q1*q3);
+    /* 加速度：由东向西方向的加速度在加速度计X分量 */
+    west.x = 2* (+q0*q3 + q1*q2);
+    /* 加速度：由东向西方向的加速度在加速度计Y分量 */
+    west.y = 1 - 2*(q3*q3 + q1*q1);
+    /* 加速度：由东向西方向的加速度在加速度计Z分量 */
+    west.z = 2* (-q0*q1 + q2*q3);
+//  wx = 2*bx*(0.5 - q2q2 - q3q3) + 2*bz*(q1q3 - q0q2);
+//  wy = 2*bx*(q1q2 - q0q3) + 2*bz*(q0q1 + q2q3);
+//  wz = 2*bx*(q0q2 + q1q3) + 2*bz*(0.5 - q1q1 - q2q2);  
+  
+  // error is sum of cross product between reference direction of fields and direction measured by sensors
+  ex = (ay*vz - az*vy);// + (my*wz - mz*wy);
+  ey = (az*vx - ax*vz);// + (mz*wx - mx*wz);
+  ez = (ax*vy - ay*vx);// + (mx*wy - my*wx);
+  /*
+  axyz是机体坐标参照系上，加速度计测出来的重力向量，也就是实际测出来的重力向量。
+axyz是测量得到的重力向量，vxyz是陀螺积分后的姿态来推算出的重力向量，它们都是机体坐标参照系上的重力向量。
+那它们之间的误差向量，就是陀螺积分后的姿态和加计测出来的姿态之间的误差。
+向量间的误差，可以用向量叉积（也叫向量外积、叉乘）来表示，exyz就是两个重力向量的叉积。
+这个叉积向量仍旧是位于机体坐标系上的，而陀螺积分误差也是在机体坐标系，而且叉积的大小与陀螺积分误差成正比，正好拿来纠正陀螺。（你可以自己拿东西想象一下）由于陀螺是对机体直接积分，所以对陀螺的纠正量会直接体现在对机体坐标系的纠正。
+  */
+if(ex != 0.0f && ey != 0.0f && ez != 0.0f){
+  exInt = exInt + ex * Ki * halfT;
+  eyInt = eyInt + ey * Ki * halfT;    
+  ezInt = ezInt + ez * Ki * halfT;
+ 
+  // 用叉积误差来做PI修正陀螺零偏
+  gx = gx + Kp*ex + exInt;
+  gy = gy + Kp*ey + eyInt;
+  gz = gz + Kp*ez + ezInt;
+ 
+  }
+ 
+  // 四元数微分方程
+  tempq0 = q0 + (-q1*gx - q2*gy - q3*gz)*halfT;
+  tempq1 = q1 + (q0*gx + q2*gz - q3*gy)*halfT;
+  tempq2 = q2 + (q0*gy - q1*gz + q3*gx)*halfT;
+  tempq3 = q3 + (q0*gz + q1*gy - q2*gx)*halfT;  
+  
+  // 四元数规范化
+  norm = invSqrt1(tempq0*tempq0 + tempq1*tempq1 + tempq2*tempq2 + tempq3*tempq3);
+  q0 = tempq0 * norm;
+  q1 = tempq1 * norm;
+  q2 = tempq2 * norm;
+  q3 = tempq3 * norm;
+}
+B.4 位置式 PID 与空中跟踪速度整形（飞控）
+摘自 flight_control_rebirth/code/control.c 第 1095-1126 行：
+float PID_Calculate(PID_t *pid, float target, float measure) {
+    if(!isfinite(target) || !isfinite(measure))
+    {
+        control_reset_pid(pid);
+        return 0.0f;
+    }
+ 
+    // 1. 计算误差
+    pid->error = target - measure;
+    
+    // 2. 计算积分项 (带限幅)
+    pid->integral += pid->error;
+    if (pid->integral > pid->max_integral) pid->integral = pid->max_integral;
+    else if (pid->integral < -pid->max_integral) pid->integral = -pid->max_integral;
+    
+    // 3. 计算微分项
+    float derivative = pid->error - pid->last_error;
+    
+    // 4. 计算总输出
+    float output = (pid->kp * pid->error) + 
+                   (pid->ki * pid->integral) + 
+                   (pid->kd * derivative);
+                   
+    // 5. 更新上一次误差
+    pid->last_error = pid->error;
+    
+    // 6. 输出限幅
+    if (output > pid->max_output) output = pid->max_output;
+    else if (output < -pid->max_output) output = -pid->max_output;
+    
+    return output;
+}
+摘自 flight_control_rebirth/code/chase.c 第 243-284 行：
+static void chase_shape_target(void)
+{
+    float delta_x = s_chase.raw_target_x_mm_s - s_chase.shaped_target_x_mm_s;
+    float delta_y = s_chase.raw_target_y_mm_s - s_chase.shaped_target_y_mm_s;
+    float delta_magnitude = chase_vector_magnitude(delta_x, delta_y);
+    float current_magnitude;
+    float target_magnitude;
+    float direction_dot;
+    float max_delta;
+    float scale;
+ 
+    if(delta_magnitude <= 0.0f)
+    {
+        return;
+    }
+ 
+    current_magnitude = chase_vector_magnitude(s_chase.shaped_target_x_mm_s,
+                                               s_chase.shaped_target_y_mm_s);
+    target_magnitude = chase_vector_magnitude(s_chase.raw_target_x_mm_s,
+                                              s_chase.raw_target_y_mm_s);
+    direction_dot = (s_chase.shaped_target_x_mm_s * s_chase.raw_target_x_mm_s)
+                  + (s_chase.shaped_target_y_mm_s * s_chase.raw_target_y_mm_s);
+    max_delta = ((s_chase.mode == CHASE_MODE_BRAKE)
+                 || (target_magnitude < current_magnitude)
+                 || ((current_magnitude > 0.0f)
+                     && (target_magnitude > 0.0f)
+                     && (direction_dot < 0.0f)))
+                ? (CHASE_BRAKE_MM_S2 / CHASE_CONTROL_HZ)
+                : (CHASE_ACCEL_MM_S2 / CHASE_CONTROL_HZ);
+    if(delta_magnitude > max_delta)
+    {
+        scale = max_delta / delta_magnitude;
+        delta_x *= scale;
+        delta_y *= scale;
+    }
+ 
+    s_chase.shaped_target_x_mm_s += delta_x;
+    s_chase.shaped_target_y_mm_s += delta_y;
+    chase_limit_vector(&s_chase.shaped_target_x_mm_s,
+                       &s_chase.shaped_target_y_mm_s,
+                       CHASE_SPEED_MAX_MM_S);
+}
+B.5 A4 下行帧组帧（飞控）
+摘自 flight_control_rebirth/code/car_link.c 第 179-235 行：
+void car_link_send(const vision_result_t *main_result,
+                   const beacon_fallback_result_t *beacon,
+                   const flight_car_feedback_t *feedback,
+                   uint8 mission_stop)
+{
+    uint8 frame[CAR_LINK_FRAME_SIZE] = {0};
+    uint8 flags = 0U;
+    uint8 i;
+    int16 vx = 0;
+    int16 vy = 0;
+    int16 bx = 0;
+    int16 by = 0;
+    uint16 v_conf = 0U;
+    uint16 b_conf = 0U;
+    uint8 has_v = car_link_real_v(main_result);
+    uint8 has_b = (beacon != 0) && beacon->valid;
+ 
+    if(has_v)
+    {
+        vx = car_link_control_x(main_result->vlamp.center_x);
+        vy = car_link_control_y(main_result->vlamp.center_y);
+        v_conf = main_result->vlamp.confidence_permille;
+        if((vx < 0) || (vx >= 188) || (vy < 0) || (vy >= 120)) has_v = 0U;
+    }
+    if(has_b)
+    {
+        bx = car_link_control_x(beacon->center_x);
+        by = car_link_control_y(beacon->center_y);
+        b_conf = beacon->confidence_permille;
+        if((bx < 0) || (bx >= 188) || (by < 0) || (by >= 120)) has_b = 0U;
+    }
+ 
+    if(has_v) flags |= CAR_FLAG_HAS_V;
+    if(has_b) flags |= CAR_FLAG_HAS_B;
+    if((feedback != 0) && feedback->follow_ok) flags |= CAR_FLAG_FOLLOW_OK;
+    if(feedback != 0) flags |= CAR_FLAG_HAS_YAW;
+#if (CAR_LINK_REQUIRE_FOLLOW_OK_FOR_MOVE != 0U)
+    if(has_v && has_b && (feedback != 0) && feedback->follow_ok &&
+       feedback->flow_ready) flags |= CAR_FLAG_MOVE;
+#else
+    if(has_v && has_b) flags |= CAR_FLAG_MOVE;
+#endif
+    if(mission_stop) flags |= CAR_FLAG_STOP;
+ 
+    frame[0] = CAR_LINK_HEAD;
+    car_link_put_i16(frame, 1U, has_v ? vx : 0);
+    car_link_put_i16(frame, 3U, has_v ? vy : 0);
+    car_link_put_i16(frame, 5U, has_b ? bx : 0);
+    car_link_put_i16(frame, 7U, has_b ? by : 0);
+    car_link_put_u16(frame, 9U, has_v ? v_conf : 0U);
+    car_link_put_u16(frame, 11U, has_b ? b_conf : 0U);
+    frame[13] = flags;
+    car_link_put_i16(frame, 14U, (feedback != 0) ? feedback->yaw_error_cdeg : 0);
+    for(i = 0U; i < 16U; ++i) frame[16] ^= frame[i];
+    frame[17] = CAR_LINK_TAIL;
+    uart_write_buffer(UART_5, frame, CAR_LINK_FRAME_SIZE);
+}
+B.6 主副摄信标融合（飞控）
+摘自 flight_control_rebirth/code/beacon_fallback.c 第 73-126 行：
+static void beacon_fallback_publish_helper(const vision_result_t *main_result,
+                                           const camera_helper_snapshot_t *helper)
+{
+    memset(&s_result, 0, sizeof(s_result));
+    s_result.source = BEACON_SOURCE_HELPER;
+    s_result.valid = 1U;
+    s_result.rank = 1U;
+    s_result.center_x = main_result->vlamp.center_x + s_helper_mapped_dx;
+    s_result.center_y = main_result->vlamp.center_y + s_helper_mapped_dy;
+    s_result.confidence_permille = helper->beacon_confidence_permille;
+}
+ 
+static uint8 beacon_fallback_confirm_helper(
+    const camera_helper_snapshot_t *helper)
+{
+    float dx;
+    float dy;
+    float delta_x;
+    float delta_y;
+ 
+    if(beacon_fallback_helper_move_valid(helper) == 0U)
+    {
+        beacon_fallback_clear_helper_confirmation();
+        return 0U;
+    }
+    if(s_helper_response_count == helper->valid_response_count)
+    {
+        return (s_helper_confirm_hits >= BEACON_FALLBACK_HELPER_CONFIRM_HITS) ? 1U : 0U;
+    }
+    s_helper_response_count = helper->valid_response_count;
+    dx = (float)helper->mapped_dx;
+    dy = (float)helper->mapped_dy;
+    if(s_helper_confirm_hits == 0U)
+    {
+        s_helper_confirm_hits = 1U;
+    }
+    else
+    {
+        delta_x = dx - s_helper_mapped_dx;
+        delta_y = dy - s_helper_mapped_dy;
+        if((delta_x * delta_x + delta_y * delta_y)
+           > (BEACON_FALLBACK_VECTOR_DELTA_PX * BEACON_FALLBACK_VECTOR_DELTA_PX))
+        {
+            s_helper_confirm_hits = 1U;
+        }
+        else if(s_helper_confirm_hits < 255U)
+        {
+            s_helper_confirm_hits++;
+        }
+    }
+    s_helper_mapped_dx = dx;
+    s_helper_mapped_dy = dy;
+    return (s_helper_confirm_hits >= BEACON_FALLBACK_HELPER_CONFIRM_HITS) ? 1U : 0U;
+}
+B.7 小车导航方向调理与超前外推（小车）
+摘自 car_control_rebirth/code/control/car_navigation.c 第 145-230 行：
+static uint8 car_nav_update_direction(const proto_drone_data_t *drone, float *distance_px)
+{
+    float right_px;
+    float forward_px;
+    float norm;
+    float frame_dt_s;
+ 
+    if(!car_nav_move_valid(drone)) return 0U;
+    car_nav_compensate_yaw(drone, &right_px, &forward_px);
+ 
+    /*
+     * 视觉滞后补偿：相机曝光到执行的等效延迟约几十毫秒，
+     * 用相邻两帧 V->B 变化率把当前向量前推 LEAD_S，上限 LEAD_MAX_PX。
+     * 帧间隔超界或没有历史帧时不外推。
+     */
+    frame_dt_s = (float)g_nav.frame_gap_ms * 0.001f;
+    if(g_nav.prev_vb_valid && (frame_dt_s >= 0.010f) && (frame_dt_s <= 0.200f))
+    {
+        float lead_right = car_nav_clamp_abs(
+            ((right_px - g_nav.prev_right_px) / frame_dt_s) * HW_DRONE_LEAD_S,
+            HW_DRONE_LEAD_MAX_PX);
+        float lead_forward = car_nav_clamp_abs(
+            ((forward_px - g_nav.prev_forward_px) / frame_dt_s) * HW_DRONE_LEAD_S,
+            HW_DRONE_LEAD_MAX_PX);
+        /* 历史帧必须保存未外推的补偿向量，避免超前量逐帧叠加。 */
+        car_nav_store_prev_vb(right_px, forward_px);
+        right_px += lead_right;
+        forward_px += lead_forward;
+    }
+    else
+    {
+        car_nav_store_prev_vb(right_px, forward_px);
+    }
+    g_nav.frame_gap_ms = 0U;
+ 
+    norm = sqrtf((right_px * right_px) + (forward_px * forward_px));
+    if(norm < 0.5f) return 0U;
+    g_nav.last_distance_px = norm;
+ 
+    right_px /= norm;
+    forward_px /= norm;
+    if(g_nav.dir_valid == 0U)
+    {
+        g_nav.dir_right = right_px;
+        g_nav.dir_forward = forward_px;
+        g_nav.dir_valid = 1U;
+    }
+    else if(norm >= HW_DRONE_DIR_FREEZE_PX)
+    {
+        /*
+         * 近距方向调理：距离越近越不信任新方向（像素噪声引起的方位角摆动
+         * 随距离减小被放大），FREEZE 内完全冻结方向直线压灯；
+         * 每帧方位角变化量再受 STEP_MAX 硬限幅。
+         */
+        const float trust = car_nav_clamp(
+            (norm - HW_DRONE_DIR_FREEZE_PX) /
+            (HW_DRONE_DIR_TRUST_FULL_PX - HW_DRONE_DIR_FREEZE_PX), 0.0f, 1.0f);
+        const float alpha = HW_DRONE_TRACK_FILTER_ALPHA * trust;
+        const float step_max = HW_DRONE_DIR_STEP_MAX_DEG * (CAR_NAV_PI / 180.0f);
+        float cand_right = g_nav.dir_right + alpha * (right_px - g_nav.dir_right);
+        float cand_forward = g_nav.dir_forward + alpha * (forward_px - g_nav.dir_forward);
+        float cand_norm = sqrtf((cand_right * cand_right) +
+                                (cand_forward * cand_forward));
+        if(cand_norm > 0.0001f)
+        {
+            const float az_cur = atan2f(g_nav.dir_right, g_nav.dir_forward);
+            float az_delta;
+ 
+            cand_right /= cand_norm;
+            cand_forward /= cand_norm;
+            az_delta = car_nav_wrap_pi(atan2f(cand_right, cand_forward) - az_cur);
+            if(fabsf(az_delta) > step_max)
+            {
+                const float az_target = az_cur +
+                    ((az_delta > 0.0f) ? step_max : -step_max);
+                cand_forward = cosf(az_target);
+                cand_right = sinf(az_target);
+            }
+            g_nav.dir_right = cand_right;
+            g_nav.dir_forward = cand_forward;
+        }
+    }
+    /* norm < FREEZE_PX：方向冻结，仅刷新距离。 */
+    if(distance_px != 0) *distance_px = norm;
+    return 1U;
+}
+
+===== TABLE 1 =====
+符号 | 含义 | 单位/取值
+V | 车载 V 形指示灯（车灯）在图像中的中心坐标 | 像素
+B / B1 | 信标灯中心坐标 / 经主副视觉融合后的虚拟信标坐标 | 像素
+VB 向量 | 信标与车灯的图像相对向量（B−V），决定小车运动方向与距离 | 像素
+A4 / C5 | 无人机→小车下行帧 / 小车→无人机应答帧 | 18 B / 9 B
+B1/B2 帧 | 飞控→副摄请求帧 / 副摄→飞控应答帧（UART6） | 5 B / 27 B
+q | 姿态四元数分量 q0、q1、q2、q3 | 无量纲
+Kp、Ki、Kd | PID 控制器比例、积分、微分增益 | —
+P、K | EKF 协方差矩阵与卡尔曼增益 | —
+v | 速度矢量（x/y 为水平两轴） | mm/s 或 m/s
+ω | 角速度（偏航角速度） | rad/s
+d | 图像距离（VB 向量模长） | 像素
+α | 方向滤波权重 | 无量纲
+h | 离地高度（TOF 融合值） | mm
+
+===== TABLE 2 =====
+节点 | 核心 | 主要职责
+无人机主控板 | CM7_0 + CM7_1 | CM7_0：800 Hz 姿态/高度/跟踪控制，电调协议输出；CM7_1：50 Hz 视觉识别、A4/C5 链路、副摄融合
+副摄像头板 | CM7_1 | 独立 MT9V03X 视觉，解算 V→B 相对向量，请求-应答方式向主控板提供恢复数据
+小车控制板 | CM7_0 | 200 Hz 导航状态机、麦轮逆解、轮速闭环、航向保持、A4 解析与 C5 应答
+
+===== TABLE 3 =====
+链路 | 物理层 | 帧格式 | 长度/速率 | 用途
+无人机→小车 | UART5 115200 | A4：0xA4 头，V/B 坐标 i16 大端，置信度 u16，标志位，偏航误差，XOR，0x55 尾 | 18 B，随视觉帧 50 Hz | 下发行驶指令
+小车→无人机 | 同上（反向） | C5：0xC5 头，指令速度 i16×2，状态字节，序号，XOR，0x5A 尾 | 9 B | 应答与在线判定（200 ms 超时）
+飞控→副摄板 | UART6 230400 | B1 请求帧（5 B）/ B2 应答帧（27 B，含映射后向量） | 请求驱动，350 ms 超时 | 副摄数据恢复
+飞控→电调 | UART4 460800 | ASCII 明文 SET-DUTY,m1,m2,m3,m4 | 每控制周期 | 电机占空比下发
+遥控指令→小车 | 串口（预留） | A3 遥控帧 | 18 B | 手动接管与紧急停车（优先级最高）
+
+===== TABLE 4 =====
+节点 | 传感器 | 数量 | 接口/速率 | 用途
+无人机 | MT9V03X 灰度相机（188×120） | 1 | 50 FPS，曝光 64 | V 灯与信标灯识别
+无人机 | ICM45686 六轴 IMU | 1 | SPI，800 Hz 采样 | 姿态解算与角速度反馈
+无人机 | RM3100 磁力计 | 1 | SPI | 航向辅助（可选融合）
+无人机 | DL1B 激光 TOF | 1 | 约 100 Hz | 高度测量（EKF 融合）
+无人机 | UPFLOW302 光流 | 1 | UART | 水平速度观测（EKF 融合）
+副摄板 | MT9V03X 灰度相机 | 1 | 50 FPS | 备用视角 V→B 向量解算
+小车 | ICM45686 六轴 IMU | 1 | SPI，200 Hz | 航向保持与加速度反馈
+小车 | 增量式编码器（2048 线/转） | 4 | 正交解码 | 轮速测量
+
+===== TABLE 5 =====
+子系统 | 器件 | 数量 | 说明
+核心控制 | CYT4BB7 核心板 | 3 | 竞赛指定主板，双核 Cortex-M7
+小车功率驱动 | DRV8701E | 4 | 四轮独立驱动，17 kHz PWM
+无人机动力 | 四合一电调+无刷电机 | 1 套 | UART4 460800 明文协议
+电源 | 锂电池组 | 2 组 | 小车 2S 7.4 V 2000 mAh；无人机 4S 14.8 V 1500 mAh，车/机独立供电
+
+===== TABLE 6 =====
+ |  | （公式4-1）
+
+===== TABLE 7 =====
+ |  | （公式4-2）
+
+===== TABLE 8 =====
+ |  | （公式4-3）
+
+===== TABLE 9 =====
+ |  | （公式4-4）
+
+===== TABLE 10 =====
+回路 | Kp | Ki | Kd | 积分限幅 | 输出限幅
+角度环 Roll | 2.3 | 0 | 0 | — | 300
+角度环 Pitch | −1.8 | 0 | 0 | — | 300
+角度环 Yaw | −2.0 | 0 | 0 | — | 300
+角速度环 Roll/Pitch | −22.0 | −0.05 | −5.5 | 600 | 2200
+Yaw 角速度环 | 80.0 | 0 | 0 | 300 | 5000
+高度外环 | 5.0 | 0 | 0 | 1000 | 400
+高度速度内环 | 25.6 | 0.08 | 1.25 | 1000 | 666.6
+
+===== TABLE 11 =====
+ |  | （公式4-5）
+
+===== TABLE 12 =====
+参数 | 数值 | 说明
+像素滤波新值权重 | 0.35 | 一阶低通
+死区 | 8 px | 死区外才生成速度
+位置增益 | 12 mm/s/px | 像素误差到目标速度
+速度限幅 | 400 mm/s | 跟踪最大速度
+加速度/制动 | 800 / 1400 mm/s² | 目标速度整形
+入场高度窗口 | 700～1300 mm | 融合高度有效性
+入场/中止姿态门 | 3° / 8°（40 ms） | 姿态包线保护
+入场帧数 / 丢失帧数 | 3 帧 / 5 帧 | 状态切换滤波
+
+===== TABLE 13 =====
+ |  | （公式4-6）
+
+===== TABLE 14 =====
+ |  | （公式4-7）
+
+===== TABLE 15 =====
+ |  | （公式4-8）
+
+===== TABLE 16 =====
+参数 | 数值 | 说明
+跟踪速度档 | 0.90 / 0.40 m/s | 最大/最小速度（近场过渡 8～60 px）
+近场压灯速度 | 0.45 m/s | ≤8 px 直线压灯
+加速度 / 制动 | 1.6 / 1.8 m/s² | 目标速度限幅
+方向冻结/全信任距离 | 5 / 15 px | 距离加权低通
+方位角步长限幅 | 4°/帧 | 抑制方向摆动
+视觉超前 | 60 ms，上限 6 px | 帧间变化率外推
+V 丢失滑行宽限 | 300 ms | 链路新鲜时滑行等恢复
+压灯超时/丢失 | 1000 / 250 ms | PRESS 状态退出条件
+轮距常数 K | 0.205 m | 麦轮逆解
+轮速 PID | 700 / 170 / 8 | 四轮独立
+摩擦前馈 | 300 + 1200|v| | 静摩擦+粘滞补偿
+航向保持 PID | 3.5 / 0.18 / 0.38 | 限 ±2.4 rad/s
+编码器分辨率 | 2048 线/转，轮径 48 mm | 约 0.147 mm/计数
+
+===== TABLE 17 =====
+级别 | 环境 | 主要验证内容 | 通过判据
+一级 | 桌面联调 | A4/C5/B1-B2 协议一致性、坐标符号、校验与超时 | 两端帧级抓包一致，注入错误帧被正确丢弃
+二级 | 拆桨台架 | 无人机控制环输出、电机混控与限幅 | 姿态扰动下占空比响应正确，无停转区间
+三级 | 系留低高度 | 起飞定高、姿态稳定、视觉链路连通 | 定高波动与姿态角在包线内，A4/C5 在线
+四级 | 实机 Stage A | 跟踪与引导基础链路，低速压灯 | 按验收清单逐项确认并记录
+五级 | 实机 Stage B/C | 速度档提升与全任务流程 | 上一级未通过不升级
+
+===== TABLE 18 =====
+项目 | 参数 | 备注
+小车总重量 | 2150 g | 含电池
+小车外形尺寸（长×宽×高） | 305×298×165 mm | 麦克纳姆轮底盘
+无人机总重量 | 1250 g | 含电池与机载设备
+无人机外形尺寸（轴距） | 350 mm | X 型对角轴距
+电路总功耗 | 小车额定约 25 W（峰值 60 W）；无人机悬停约 180 W | 额定工况典型值
+电路总电容 | 小车驱动级约 1880 μF；无人机电调输入约 2200 μF | 功率级
+额外舵机数量 | 0 | 无额外舵机
+电池规格 | 小车 2S 7.4 V 2000 mAh；无人机 4S 14.8 V 1500 mAh | 车/机独立供电
+
+===== TABLE 19 =====
+传感器 | 数量 | 安装位置
+MT9V03X 灰度相机 | 2 | 无人机主摄 + 副摄板
+ICM45686 六轴 IMU | 2 | 无人机 + 小车
+DL1B 激光 TOF | 2 | 无人机（前后下视）
+UPFLOW302 光流 | 2 | 无人机（前后下视）
+增量式编码器 | 4 | 小车四轮
+
+===== TABLE 20 =====
+工程 | 文件 | 职责
+飞控 | code/control.c | 级联 PID、混控、电调输出、EKF 调度
+飞控 | code/imu.c | Mahony 姿态解算与零偏标定
+飞控 | code/ekf2_altitude.c / ekf2_x.c / ekf2_y.c | 三通道 EKF
+飞控 | code/chase.c | 空中跟踪三态模块
+飞控 | code/car_link.c | A4 组帧与 C5 应答解析
+飞控 | code/beacon_fallback.c | 主副摄信标融合
+飞控 | code/vision/vision.c | 多级判决与仲裁输出
+飞控 | code/vision_link.c | 跨核 seqlock 发布
+飞控 | user/main_cm7_1.c | 视觉核主循环
+小车 | code/control/car_navigation.c | 五状态导航状态机
+小车 | code/control/chassis_control.c | 轮速 PID、前馈、航向保持
+小车 | code/hardware/hw_config.h | 全部分级参数宏定义
+副摄 | code/camera_helper_link.c | B1/B2 应答服务

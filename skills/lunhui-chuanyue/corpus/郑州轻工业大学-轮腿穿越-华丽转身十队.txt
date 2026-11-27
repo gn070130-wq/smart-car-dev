@@ -1,0 +1,811 @@
+
+第二十一届全国大学生智能汽车竞赛
+
+技 术 报 告
+
+
+
+
+	   学       校：郑州轻工业大学 
+队伍名称：华丽转身十队    
+参赛队员：杨傲统、王子恒、张一繁、黄朝晖
+
+
+带队教师：江泳、梁万用
+
+关于技术报告和研究论文使用授权的说明
+
+	 本人完全了解第二十一届全国大学生智能汽车竞赛关保留、使用技术报告和研究论文的规定，即：参赛作品著作权归参赛者本人，比赛组委会可以在相关主页上收录并公开参赛作品的设计方案、技术报告以及参赛模型车的视频、图像资料，并将相关内容编纂收录在组委会出版论文集中。
+
+参赛队员签名：
+带队教师签名：  
+日        期：2026-08-17
+
+
+
+
+第一章 引言	1
+1.1 设计背景	1
+1.2 章节安排	1
+第二章 系统设计	3
+2.1 系统设计概述	3
+2.2 器件选型	3
+2.3 硬件设计整体方案	3
+2.4 软件设计整体方案	3
+2.5 系统结构框图	4
+第三章 机械结构设计	5
+3.1 车模整体结构设计	5
+3.2 舵机、电机及传动结构	5
+3.3 传感器安装布局	5
+3.4 电路板安装与走线	6
+3.5 整车安装效果	7
+第四章 电路设计	9
+4.1 电源系统设计	9
+4.2 舵机电源板设计	9
+4.3 无刷驱动板设计	10
+4.4 主控板设计	11
+4.5 CYT4BB7核心板设计	13
+4.6 磁编码器PCB设计	14
+第五章 算法设计	15
+5.1 整体软件架构	15
+5.2 坐标打点与惯导定位	15
+5.3 摄像头识别	15
+5.3.1 图像采集与预处理	15
+5.3.2 赛道边线提取与中线拟合	16
+5.3.3 预瞄偏差解算	16
+5.3.4 特殊赛道元素识别	16
+5.3.5 进入赛道对准	17
+5.3.6 视觉与惯导的融合	17
+5.4 轮腿平衡与越障控制	17
+5.5 人机交互	17
+第六章 开发调试	19
+6.1开发调试工具	19
+6.1.1 PCB开发工具	19
+6.1.2 3D建模软件	19
+6.1.3软件开发与调试工具	19
+6.2 IMU关键问题调试与解决	20
+6.3室外调试的不确定性	20
+6.3.1 室外光照变化下二值化阈值漂移	20
+6.3.2 三级台阶起跳时机判定不准	20
+6.3.3 交错单边桥错位处循线易偏	20
+6.3.4 入道位置偏差导致的巡线错误	21
+第七章 技术参数汇总	23
+7.1 车模整体参数	23
+7.2 电路与供电参数	23
+7.3 传感器与执行机构参数	23
+7.4驱动电机、舵机数量	23
+7.5赛道信息检测精度、频率	23
+第八章 总结	25
+参考文献	i
+附录A  电路板详细设计原理图	iii
+附录B  核心算法子程序代码	vii
+附录C 车模技术检查表	xiv
+
+第一章 引言
+1.1 设计背景
+第二十一届全国大学生智能汽车竞赛于2026年暑期举行，本次竞赛以"立足培养、重在参与、鼓励探索、追求卓越"为指导思想。本届赛事室外组别的赛题难度较往届明显提升，对车模的自主定位能力、复杂路况通过能力以及多模块协同工作能力均提出了更高要求。
+本届竞赛轮腿穿越组的赛道从室内搬移至室外操场，涵盖定点排雷、交错单边桥、颠簸路段、草地路段与三级台阶越障等多项复杂任务。在定位方案上，赛组明确规定室外组别不允许使用RTK高精度定位设备，只能采用GPS、惯导与视觉等手段进行自主导航。若仅依赖单一传感器，无论是纯惯导方案还是纯摄像头识别方案，都难以在室外多变光照、复杂地面条件下稳定完成全部任务，其技术难度与可靠性压力均较大。此外，室外环境下各类任务元素的组合变化对车模的实时决策提出了严峻考验，也极为考验队员之间的分工配合与现场应变能力。
+针对上述赛题特点，本队综合评估了定位精度、功耗、成本与调试效率等因素，最终确定采用"离线打点＋整体惯导＋部分元素摄像头识别"的融合导航方案，并选用V车模（四舵机两无刷电机结构）作为车模平台，完成轮腿平衡与越障等任务。
+1.2 章节安排
+本文主要针对轮腿穿越组，从系统整体方案、机械结构、控制电路、控制软件、开发调试与核心技术参数等方面对智能车设计进行详细介绍。第二章给出系统整体设计思路与器件选型；第三章介绍机械结构与传感器安装布局；第四章介绍主板、无刷驱动等控制电路设计；第五章介绍控制软件架构与核心算法；第六章介绍开发调试过程；第七章汇总核心技术参数；第八章对全队工作与调试历程进行总结。
+
+第二章 系统设计
+2.1 系统设计概述
+本系统基于V车模搭建轮腿穿越平台。V车模采用"四舵机＋两无刷电机"结构：四个舵机分别控制车模四条腿的关节角度，配合陀螺仪实现车模的平衡维持与姿态控制；两个无刷电机作为驱动动力源。在整体控制策略上，通过调节车模前后倾斜程度来控制驱动电机的加速与减速，越向前倾则驱动电机加速越明显。
+针对本届赛题任务（定点排雷、交错单边桥、颠簸草地通过、三级台阶越障），系统采用离线打点加整体惯导的导航方式，对单边桥、三级台阶等结构特征明显的元素辅以摄像头识别，实现车模在室外复杂场景下的自主行驶。
+2.2 器件选型
+主控芯片选用英飞凌CYT4BB7，其采用ARM Cortex-M7内核，主频高、外设资源丰富，能够满足惯导解算、电机控制与摄像头数据处理的实时性要求。陀螺仪选用逐飞科技出品的IMU963RA，可输出三轴加速度、三轴角速度与三轴磁力数据，温漂低、零飘小，满足轮腿平衡对姿态解算精度的要求。
+无刷电机选用BDS3620无刷电机，作为车模两路驱动动力源；舵机选用BDS300舵机，用于控制四腿关节角度。电池选用12V、2200mAh锂电池，为整车提供动力。由于本组未采用GPS模块，导航依赖离线打点与惯导融合方案。
+2.3 硬件设计整体方案
+整车硬件采用"主控板＋无刷驱动板＋舵机电源板"三块板卡的架构。主控以CYT4BB7为核心，负责传感器数据采集、惯导解算、摄像头识别与整机决策；无刷驱动板以CYT2B为主控芯片，独立实现双路六相无刷电机的驱动控制；舵机电源板将12V电池电压降压至7.4V，为四路舵机提供稳定供电。三块板卡职责清晰、布局分散，便于散热与维护。
+2.4 软件设计整体方案
+为方便调试，系统设计了简易人机交互界面，包含四个单按按键、一个五相开关与两个三针拨码开关，用于参数调整、模式切换与菜单操作。软件整体采用"离线打点＋惯导＋摄像头"融合导航架构，通过CH32V203遥控配合磁编码器完成赛道坐标打点，运行时以惯导为主，对单边桥、三级台阶等元素辅以摄像头识别辅助决策。
+
+
+2.5 系统结构框图
+
+
+图2.1 系统结构框图
+
+
+
+第三章 机械结构设计
+3.1 车模整体结构设计
+本车采用两块碳板夹持四个舵机的结构方案。两块碳板上下夹紧，将四个舵机固定于其间，形成车模的核心承载骨架。四个舵机分别连接四条大腿连杆，大腿连杆再连接四条小腿连杆，小腿连杆末端连接无刷电机，构成完整的轮腿传动链。由于是室外高速组别，小车极易损坏，所以在小车前后有用3D打印外壳保护。
+3.2 舵机、电机及传动结构
+四舵机作为轮腿关节的执行机构，通过碳板骨架固定后，舵机输出轴驱动大腿连杆，大腿带动小腿，最终由小腿驱动无刷电机轮组。该结构使车模具备较大的腿部活动范围，最大程度地给予舵机灵活度，便于车模在行驶过程中快速调整姿态与倾斜角度，从而配合陀螺仪实现轮腿平衡，并通过倾斜控制驱动电机加减速。
+该夹持式结构还具备良好的可维护性：各连杆与舵机均可独立拆装，便于快速更换受损部件，显著降低了室外调试过程中的维修成本与时间成本。
+3.3 传感器安装布局
+陀螺仪（IMU963RA）采用直接焊接于主板的方式固定，安装位置偏向前中，使其贴近车模几何中心与重心，从而有效减小振动与结构形变对姿态解算的影响，降低零飘与累积误差。CYT4BB7核心板以插接方式固定在主板上，便于拔插调试与更换。
+摄像头选用总钻风120°广角MT9V032摄像头，安装于车模中部适当高度，由法兰盘固定于主板之上，距离主板约20cm。负责对单边桥、三级台阶等结构元素进行识别。
+
+ 图3.1 陀螺仪安装位置
+
+
+3.4 电路板安装与走线
+小车后方放置无刷驱动板，负责驱动两路无刷电机；碳板上方安装舵机电源板；舵机电源板上方通过铜柱固定主板，铜柱下端插接于碳板之上，构成稳定的三层堆叠结构。这种分层布局一方面有利于电源与信号分离、减少干扰，另一方面也便于拆卸维护。磁编PCB直接通过铜柱装于电机内侧
+电池通过魔术贴固定于下层碳板下方，这种安装方式避免了硬质压板对电池的应力压迫，拆装快速便捷，同时降低车模重心，有利于行驶稳定性。各模块之间的连接线采用合理走线约束，避免在运动过程中发生松动与干涉。
+
+
+
+
+
+
+
+
+3.5 整车安装效果
+
+图3.2 小车整体结构图
+
+第四章 电路设计
+4.1 电源系统设计
+整车采用12V、2200mAh锂电池供电，电源系统按功能划分为三路独立供电链路，分别对应舵机电源板、无刷驱动板与主板，从源端隔离不同负载间的相互干扰。
+第一路舵机电源：12V经四块MP2225降压芯片降至7.4V，为四个舵机供电。MP2225单芯片最大输出电流可达5A，四块并联满足四舵机瞬时启动时的大电流需求，有效避免启动瞬间电压跌落。
+第二路无刷驱动：12V直接供给以CYT2B为主控芯片的双路六相无刷驱动电路。驱动预驱芯片选用FD6288Q，功率开关管选用WSD4070 NMOS，转子位置检测采用TLE5012B E1000磁编码器（5V供电），构成完整的无刷电机FOC/六步换相驱动方案。
+第三路主板：12V经TPS5430降压至5V，为串口、CYT4BB7核心板与遥控串口供电；5V再经RT9013-33降压至3.3V，为屏幕、总钻风MT9V032摄像头、IMU963RA陀螺仪以及按键（四个单按按键、两个三针拨码开关、一个五相开关）供电。
+4.2 舵机电源板设计
+舵机电源板实现12V转7.4V的四路独立降压输出。由于四个舵机在启动与换向瞬间电流冲击较大，采用四块MP2225独立降压的方案，每路均可稳定提供较高峰值电流，保证舵机响应速度与位置精度。该板单独设计，有效隔离舵机大电流对主控与传感器供电的干扰。
+
+图4.1 舵机电源板原理框图
+
+
+4.3 无刷驱动板设计
+无刷驱动板以CYT2BL3为控制核心，集成双路六相无刷电机驱动电路。每路采用FD6288Q三相预驱芯片驱动WSD4070 NMOS功率管，配合TLE5012B磁编码器进行转子位置反馈，实现无刷电机的精确换相与闭环控制。驱动板与主控板通过接口连接，接收速度与方向指令。
+
+图4.2无刷驱动板左电桥框图
+
+
+
+
+
+
+
+
+4.4 主控板设计
+主控板以CYT4BB7为核心，集成IMU963RA陀螺仪（直接焊接）、CYT4BB7核心板插座、摄像头接口、按键接口、屏幕接口与串口通信接口。主板负责汇总传感器数据并输出决策指令。CYT4BB7核心板插接于主板，便于独立调试与更换。四个单按按键、两个三针拨码开关、一个五相开关用于调试
+
+
+
+图4.3 主板MCU框图
+
+4.5 CYT4BB7核心板设计
+由于CYT4BB7核心板为本队自行焊接制作，其PCB设计直接决定主控的电源质量与信号完整性，故单独说明其设计要点。核心板以CYT4BB7CEX芯片为核心，采用四层PCB，将芯片全部I/O引脚按功能分组引出。
+电源部分是核心板设计的重点。核心板需要VCC5V、VCC3V3与VCC1V15等多路电源轨：5V输入经RY1302稳压电路得到3.3V数字电源与1.15V内核电源，各电源轨均配置2.2μH功率电感（L1、L2）与47μF、22μF等多级滤波电容，并在芯片内核附近布置22pF高频去耦电容，以保证电源纹波满足芯片要求。核心板设计了复位电路与RTC电路，采用32.768kHz、16MHz晶振为实时时钟提供基准。
+核心板通过排针排母与主板相连，将P0~P23全部I/O端口、SWDIO/SWCLK调试口、复位信号与电源引脚引出，既保证信号完整性，又便于核心板的独立调试与快速插拔更换。
+
+图4.4 核心板降压芯片框图
+
+
+
+
+
+
+
+4.6 磁编码器PCB设计
+无刷驱动板上的转子位置检测采用TLE5012BE1000磁编码器，其PCB设计单独说明。磁编码器板以TLE5012BE1000为核心，采用5V供电，板上集成RT9013-33稳压芯片将5V转换为3.3V供编码器芯片使用，输入输出端分别配置10μF与100nF滤波电容，保证供电稳定。
+编码器通过6pin连接器（ZX-ZH1.5-6PWTV）与驱动板通信，信号线包括片选ECD1_CS、时钟ECD1_SCLK、数据输出ECD1_MISO与数据输入ECD1_MOSI，构成标准的SPI四线接口。为抑制干扰、保护芯片，各信号线串联100Ω限流电阻，并在电源端并联肖特基二极管B5819W实现反接保护。磁编码器以SPI方式实时输出转子角度，配合CYT2B完成无刷电机的闭环换相控制。
+`
+图4.5磁编码器PCB图
+
+
+
+
+
+
+第五章 算法设计
+5.1 整体软件架构
+软件整体采用"离线打点＋惯导＋摄像头识别"的融合导航架构，运行于CYT4BB7主控。系统按任务划分为坐标定位、姿态平衡、驱动控制、摄像头识别与任务决策五大模块，各模块通过统一的调度机制协同工作。
+5.2 坐标打点与惯导定位
+由于赛组禁止使用RTK设备，且本组未采用GPS模块，系统采用离线打点方案：赛前通过CH32V203遥控配合磁编码器完成赛道关键位置坐标的逐点标记，将赛道信息固化保存。运行时以整体惯导为核心，通过IMU963RA积分推算车模实时位置与航向，并结合打点数据进行路径跟踪。
+5.3 摄像头识别
+摄像头识别在本系统中作为惯导定位的辅助手段，主要用于对单边桥、三级台阶、坡道等结构特征明显的赛道元素进行识别，为越障决策提供触发信号与对准引导。视觉处理整体流程为"图像采集 → 预处理 → 边线提取 → 中线拟合 → 预瞄偏差解算 → 元素识别"，最终输出两类信息：一类是用于航向对准的角度偏差量，另一类是用于触发越障动作的标志位。
+5.3.1 图像采集与预处理
+系统采用逐飞总钻风 MT9V032 摄像头，该传感器为全局快门灰度传感器，输出分辨率为 188×120，安装于车模中部、距主板约 20 cm 处。全局快门在车模高速运动时不易产生果冻效应，有利于边线提取的稳定性。
+针对室外光照多变的问题，系统设置了晴天、阴天两套曝光参数，并结合按键实时微调曝光时间与二值化阈值补偿量，使图像在强光与阴天环境下均能保持较稳定的对比度。图像二值化采用固定阈值加补偿量的方式：当像素灰度大于阈值时判为白色（前景），否则判为黑色（背景）。之所以放弃大津法等自适应阈值算法，是因为室外光照剧烈变化下自适应阈值易发生漂移，而本赛道路面为纯白色、与背景灰度差异大、容错率高，固定阈值配合手动调节曝光反而更加稳定可靠。
+二值化后对图像进行形态学滤波，采用八邻域膨胀与腐蚀相结合的方法：当某黑色像素邻域内白色像素较多时，将其填补为白色以消除前景空洞；当某白色像素邻域内白色像素较少时，将其置为黑色以滤除孤立噪点，这一步骤能有效的消除操场路面上的各种小瑕疵。此外在图像四周绘制黑色边框，避免边界处的误判干扰后续扫线。
+5.3.2 赛道边线提取与中线拟合
+边线提取采用八邻域边缘生长法。首先通过列扫描统计各列白色像素长度，找到"最长白列"以确定赛道的大致横向位置；随后从该位置分别向左右两侧搜索黑白交界点作为左右边线的起点；最后沿起点逐点向外生长，左线按顺时针方向、右线按逆时针方向遍历八个邻域，寻找"黑到白"的灰度跳变作为边缘点。生长过程中引入方向惯性，优先延续上一生长方向，并设置死循环检测与左右相遇检测，保证在弯道、断线等复杂情况下仍能稳定跟踪边线。
+提取到左右边线后，对边线进行宽度、居中与连续性校验，剔除误扫与噪点。中线拟合时，若某一行左右边线均有效则取两点中点；若仅有一侧边线有效，则借助预先标定的"赛道标准宽度映射表"推算另一侧边线，从而补齐中线。该映射表给出了图像各行对应的赛道标准宽度，并按台阶场景单独建立了一份补偿表，以适应不同元素下赛道在图像中的宽度变化。
+5.3.3 预瞄偏差解算
+在拟合得到的中线上，系统采用预瞄法计算航向偏差。首先找到距车模参考点最近的中线点，再沿中线向前选取预瞄点（预瞄距离取剩余中线长度的 80%，并限制在一定范围内）；对预瞄点及其邻域做均值滤波以平滑局部抖动；最后计算车模参考点与预瞄点的相对向量，经反正切得到角度偏差量。该偏差量经过死区抑制与一阶低通滤波后作为最终输出，用于航向对准。当出现短暂丢线时，系统保持上一帧的偏差量，仅在连续丢帧超时后才回正，从而避免图像瞬时异常引起的舵机抖动。
+5.3.4 特殊赛道元素识别
+(1) 单边桥。 交错单边桥由两条错位排列的窄桥构成。系统通过空间跳变检测判断错位处：比较预瞄点与更前方区域的中线平均横坐标，当二者横向偏差超过设定阈值时，判定车模已到达桥的错位处。此时立即锁定当前航向，此后不再跟随视觉中线，而是沿锁定航向直线通过，并仅检测是否已离开赛道。该方案牺牲了错位处的循线能力，但换取了单边段的高通过速度并且还有较高的通过率。
+(2) 三级台阶。 三级台阶从下至上依次呈现白色、深蓝色、白色，深蓝色在灰度图像中近似为黑色。系统在图像中部设定感兴趣区域，即起跳前合适的距离，统计区域内白色像素数目，构造"白—黑—白"三段式状态机：每检测到一次颜色切换即触发一次跳跃标志，三级台阶共触发三次跳跃，分别完成逐级攀登。每次触发后由跳跃控制模块执行对应的起跳、收脚与缓冲动作（详见 5.4 节）。
+(3) 坡道。 坡道位于三级台阶之后，为一段约 22.5° 的斜面。当车模接近坡道时，视觉通过边线提取与中线拟合输出角度偏差，引导车模对准坡道入口；当扫线因坡道边缘消失而丢失时，判定车模已进入下坡阶段，随即切换为由惯导锁定航向完成后续下坡。
+5.3.5 进入赛道对准
+由于惯导打点存在一定误差，车模在到达单边桥、坡道等元素时，往往并非恰好位于赛道正中，甚至可能以较大的偏角斜向接近赛道。若此时直接启动边线循迹，一方面可能因起点不在视野内而丢线，另一方面不同的进入角度会导致左右边线起点位置不一致，产生巡线错误。
+为此，系统在单边桥、坡道正式循迹前，先执行一次白色色块几何中心对准：在图像前方设定感兴趣区域，统计区域内白色像素的坐标加权平均，得到白色色块的几何中心（质心），再以该质心相对图像中心的横向偏移计算角度偏差，引导车模先驶入赛道。为应对车模以大角度斜向进入赛道的情况，系统对质心坐标进行了非线性修正，放大偏角的响应，从而实现"大角度快速入道"。进入赛道、白色色块稳定出现在视野中央后，系统随即切换到八邻域边线循迹，由中线提取与预瞄解算接管航向。
+这一"先对准入道、再正式巡线"的两段式策略，有效消除了惯导打点误差对入道位置的影响，同时避免了因进入角度不同而造成的巡线起点错乱问题。
+5.3.6 视觉与惯导的融合
+视觉识别结果通过任务状态机与惯导进行融合。系统的整体导航由惯导打点确定车模当前所处赛道元素，当车模到达某一元素对应的打点位置时，切换至对应的视觉任务状态；视觉在该状态下输出角度偏差或触发标志，实现"惯导负责全局定位、视觉负责局部对准与触发"的分工。同时，惯导在视觉检测到关键事件的瞬间（如单边桥错位、坡道起点）记录当前航向作为锁定基准，此后由惯导沿锁定航向行驶，避免车模在越障瞬间被视觉信息的不稳定带偏。通过这种"视觉触发、惯导锁定"的协同机制，系统在保证越障精度的同时兼顾了整体行驶的稳定性。
+5.4 轮腿平衡与越障控制
+【此部分请补充：四舵机角度控制与陀螺仪姿态环的控制算法，倾角—加速度控制策略，以及定点排雷、单边桥、三级台阶各任务的决策逻辑】
+5.5 人机交互
+人机交互由四个单按按键、一个五相开关与两个三针拨码开关实现，可完成菜单切换、参数修改、模式选择与调试指令下发等功能，极大地方便了室外调车。
+
+第六章 开发调试
+6.1开发调试工具
+智能车的结构、电路的制作，软件的调试都离不开优质的APP
+6.1.1 PCB开发工具
+PCB的设计我们采用了嘉立创EDA专业版软件。它功能更加强大，标准版的遗留问题都会解决掉，采用全新的 PCB 绘制。PCB 基于 WebGL 引擎，各种约束也会加强，提供更加强大的规则管理等。更强大的器件选型功能，不需要频繁在立创商城和立创EDA编辑器之间来回切换。提供了器件概念，即器件 = 符号 + 封装 + 3D模型 + 属性，只允许放置器件在原理图/PCB画布中。并且加强库的复用。同时嘉立创 EDA 专业版为 PCB 设计软件，能够绘制原理图、管理元件库、执行 ERC 电气检查，完成多层 PCB 布线、差分等长布线、铺铜 DRC 校验，支持 3D 预览并可导入外部 3D 模型做结构核对，可输出 Gerber 生产文件实现一键打板，十分便利。
+6.1.2 3D建模软件
+为了打印小车前后的保护壳，我们引入了3D建模软件SolidWorks。SolidWorks 是参数化 3D 建模软件，可完成零件草图特征建模、装配体零件约束与干涉检查、生成工程图与 BOM 表，还支持钣金焊件、运动仿真、渲染以及 STEP 格式导出，是非常理想的3D建模软件。
+6.1.3软件开发与调试工具
+1）IAR Embedded Workbench
+本队整车代码基于 IAR Embedded Workbench 集成开发环境编写与调试。IAR 是面向嵌入式系统的专业开发工具，支持 C 语言编译与在线仿真调试，其编译器针对 ARM Cortex-M 内核进行了针对性优化，生成的代码执行效率高，能够满足本系统对惯导解算、电机控制与图像处理等环节的实时性要求。借助 IAR 的断点设置、变量监视与寄存器查看等在线调试功能，结合核心板引出的 SWD 调试接口，本队能够便捷地定位软件逻辑错误、观察运行状态，显著提高了代码调试效率。
+（2）MATLAB
+在视觉算法开发过程中，本队使用 MATLAB 进行图像处理算法的离线仿真与调试。MATLAB 提供了丰富的图像处理函数，便于对二值化、边缘提取、边线跟踪等算法进行快速验证与参数整定。例如在交错单边桥的算法方案设计中，本队先在 MATLAB 上对"边线大角度突变检测与补线"算法进行了仿真验证，评估其效果后再移植到车模上进行实车调试。这种"先仿真、后实车"的开发流程，有效降低了反复烧录与试跑带来的时间成本，也帮助本队提前暴露并规避了部分算法缺陷。
+6.2 IMU关键问题调试与解决
+作为室外组别，车模在调试过程中曾多次因越障冲击损坏无刷电机与驱动板，消耗了大量备件与经费。针对舵机瞬时大电流导致的供电跌落问题，通过单独舵机电源板多路降压方案予以解决；针对陀螺仪零飘问题，通过将IMU直接焊接于主板并靠近重心、配合手动校准加以抑制。
+6.3室外调试的不确定性
+6.3.1 室外光照变化下二值化阈值漂移
+调试初期采用大津法等自适应阈值算法，但在室外强光、逆光与阴天交替的环境下，自适应阈值易随背景亮度整体漂移，导致前景与背景被错误分割、边线频繁丢失。定位问题后，本队改用固定阈值加补偿量的方案，并针对晴天、阴天分别设置两套曝光参数，同时开放按键实时微调曝光时间与阈值补偿量。由于赛道路面为纯白色、与背景灰度差异大，该方案在保证分割稳定性的同时具备较高容错率，显著降低了光照变化对二值化结果的影响。
+6.3.2 三级台阶起跳时机判定不准
+在确定三级台阶的起跳时机时，本队最初尝试利用逆透视变换将图像像素坐标映射为实际距离，以实现对起跳时刻的精确控制。但在实际测试中发现，轮腿车模在跳跃过程中车身高度与俯仰角剧烈变化，摄像头位姿随之不稳定，导致距离映射误差过大、起跳时机频繁失准。经分析确认误差源于车模动态位姿而非算法本身，本队最终弃用逆透视方案，改用基于固定感兴趣区域灰度统计的"白—黑—白"三段式状态机：每检测到一次颜色切换即触发一次跳跃，三级台阶共触发三次。
+该方法原理较为简单，属于"笨方法"，需要以大量调试数据为基础，综合权衡摄像头视野范围、车模行驶速度以及感兴趣区域距车模的实际距离三个因素，反复整定区域的位置与面积。但其优点在于简单好用、代码量少，且在实际调试中起跳时机表现稳定。
+6.3.3 交错单边桥错位处循线易偏
+在交错单边桥的调试中，本队最初采用"检测边线是否出现大角度突变、再进行补线"的方案。该方案在 MATLAB 仿真中效果良好，但在实车测试中表现不佳：由于轮腿车模通过单边桥时车身高度与摄像头角度均发生大幅变化，导致补线效果不稳定，车模通过时摇晃明显、速度较慢。针对这一问题，本队改为"空间跳变检测"方案：当检测到预瞄点与前方区域的中线横坐标偏差超过阈值时，判定已到达错位处，立即锁定当前航向直线通过，此后仅检测是否离开赛道、不再跟随中线。该方案规避了补线在轮腿动态位姿下的不稳定性，大幅提升了通过速度与通过率。
+6.3.4 入道位置偏差导致的巡线错误
+由于惯导打点存在一定误差，车模到达单边桥、坡道等元素时往往未对准赛道，且每次进入角度不一致，直接启动边线循迹时易出现起点丢失或巡线错乱。定位该问题后，本队在正式循迹前增加了白色色块几何中心对准环节：先以质心法引导车模驶入赛道，待赛道稳定出现在视野中央后再切换至边线循迹。这一"先对准入道、再正式巡线"的策略，有效消除了惯导误差与进入角度差异对巡线起点的影响。
+
+
+
+
+第七章 技术参数汇总
+7.1 车模整体参数
+车模总重量：约1315g
+车模长度：190mm
+车模宽度：220mm
+车模高度：90mm
+车模高度（轮腿伸至最长）：235mm
+7.2 电路与供电参数
+电路整体功耗：约100w
+电源电容总容量：约1800μF
+电池规格：12V 2200mAh锂电池
+7.3 传感器与执行机构参数
+传感器种类与数量：陀螺仪IMU963RA×1，摄像头MT9V032×1，磁编码器TLE5012B×2（位于无刷电机驱动板）
+传感器安装位置：陀螺仪焊接于主板偏前中；摄像头安装于车模前部；磁编码器集成于无刷驱动板
+7.4驱动电机、舵机数量
+BDS3620无刷电机x2，BDS300 舵机x4
+7.5赛道信息检测精度、频率
+IMU检测精度：0.01°
+IMU检测频率：200Hz
+
+第八章 总结
+本届竞赛中，本队由四名成员组成，其中杨傲统作为队长，王子恒、张一繁、黄朝晖作为队员，除了黄朝晖去年参加过智能车竞赛外，杨、王、张三人均是首次参与智能车竞赛。这对我们这种缺乏经验的选手来说，想要赛出合格的成绩，无疑是极具挑战性的。好在我们分工明确、各司其职。杨傲统负责整车行驶代码编写，王子恒负责摄像头图像识别代码编写，张一繁负责硬件PCB设计、小车维修与3D建模零部件制作，黄朝晖作为学长，富有经验之人，提供了理论与技术指导。杨、王二人同时负责室外调车，杨、张二人共同搭建了小车整体结构，江泳与梁万用两位带队老师为团队提供了理论指导、经费支持与精神关怀。
+作为室外组别，车模在长期调试过程中曾多次因越障冲击，抑或是天气过热、温度过高损坏了许多电机与无刷驱动板，消耗了较多经费，其中相当一部分由队员自掏腰包负担。炎炎烈日下的室外调车异常辛苦，从清晨到傍晚，队员们在操场上反复试验、不断调整，倾注了大量心血。也正是这段艰苦的调试经历，让全队在问题定位、应急处理与团队协作方面得到了充分锻炼。
+最终，本车成功完成了定点排雷、交错单边桥、颠簸草地通过与三级台阶越障等各项任务。本车的设计与调试过程充分体现了团队合作的重要性，也验证了"离线打点＋惯导＋摄像头"融合方案在室外轮腿场景下的可行性与可靠性。得益于这一切，我们在华北赛区省赛中取得了华北第二的优秀成绩。同时希望我们在国赛中也能继续保持良好水平，一往无前。
+最后，感谢学校对于测试场地的提供，感谢江泳与梁万用老师对于我们的悉心指导，也感谢赛事主办方以及卓晴老师的赛事指导。我们四人小队会证明我们就是最好的四个人，把智能车带给我们的团队合作、积极进取的精神牢记在心中，踔厉奋发，勇攀轮腿国赛的高峰。
+
+
+
+
+
+参考文献
+[1] 逐飞科技. CYT4BB7开源库与例程[EB/OL]. https://gitee.com/seekfree.
+[2] 英飞凌. TRAVEO T2G CYT4BB系列数据手册[Z]. 2025.
+[3] 逐飞科技. IMU963RA九轴传感器模块用户手册[Z]. 2025.
+[4] 卓晴. 第二十一届全国大学生智能汽车竞赛比赛规则[EB/OL]. CSDN博客, 2025.
+
+附录A  电路板详细设计原理图
+
+
+图A-1 主控板电源部分原理图
+
+
+
+图A-2 主控板外设、按键及MCU部分原理图
+
+
+
+图A-3无刷驱动板电源、MCU部分原理图
+
+
+
+图A-4无刷驱动板电桥部分原理图
+
+
+
+图A-5舵机电源板原理图
+
+
+
+
+图A-6核心板MCU部分原理图
+
+
+图A-6核心板电源部分原理图
+
+
+
+
+
+
+
+
+附录B  核心算法子程序代码
+B.1 惯导解算：磁编码器里程计定位（odometer.c）
+/* 里程计定位：利用左右轮磁编码器角度增量积分获得车模位姿
+ * 入口：left_raw/right_raw 为左右轮编码器原始角度(0~32767)，
+ *       imu_yaw_deg 为IMU航向角(车体航向由惯导提供) */
+void rdometer_update_with_deltas(uint16 left_raw, uint16 right_raw,
+                                 float imu_yaw_deg, float imu_gyro_z)
+{
+    static uint16 prev_left_raw  = 0;
+    static uint16 prev_right_raw = 0;
+    static uint8  first_call = 1;
+    const float dt = 0.005f;                     /* 调用周期5ms */
+
+    if(first_call) {                             /* 首帧仅记录初值 */
+        prev_left_raw  = left_raw;
+        prev_right_raw = right_raw;
+        first_call = 0;
+        return;
+    }
+
+    /* 左右轮编码器增量，处理0~32767回绕(半圈=16383) */
+    int32 left_delta_raw  = (int32)left_raw  - (int32)prev_left_raw;
+    int32 right_delta_raw = (int32)right_raw - (int32)prev_right_raw;
+    if(left_delta_raw > 16383)        left_delta_raw -= 32767;
+    else if(left_delta_raw < -16383)  left_delta_raw += 32767;
+    if(right_delta_raw > 16383)       right_delta_raw -= 32767;
+    else if(right_delta_raw < -16383) right_delta_raw += 32767;
+    prev_left_raw  = left_raw;
+    prev_right_raw = right_raw;
+
+    /* 编码器原始值 -> 角度增量 -> 轮子行进距离(右轮镜像取反) */
+    float left_delta_deg  = (float)left_delta_raw  / 32767.0f * 360.0f;
+    float right_delta_deg = (float)right_delta_raw / 32767.0f * 360.0f;
+    float cm_per_deg = WHEEL_CIRCUMFERENCE_CM / 360.0f;
+    float left_distance_cm  =  left_delta_deg * cm_per_deg;
+    float right_distance_cm = -right_delta_deg * cm_per_deg;
+    float center_distance_cm = (left_distance_cm + right_distance_cm) / 2.0f;
+    float instant_speed_cmps = center_distance_cm / dt;
+
+    /* 航向由IMU提供，将车体位移分解到世界坐标系 */
+    rdometer.current_yaw_deg = imu_yaw_deg;
+    rdometer.current_yaw_rad = imu_yaw_deg * DEG_TO_RAD;
+    if(fusion_mode == FUSION_MODE_ENCODER && !FUSION_MODE_stop) {
+        rdometer.net_distance_cm += center_distance_cm;
+        float delta_x = center_distance_cm * sinf(rdometer.current_yaw_rad);
+        float delta_y = center_distance_cm * cosf(rdometer.current_yaw_rad);
+        rdometer.displacement_x_cm += delta_x;
+        rdometer.displacement_y_cm += delta_y;
+    }
+    rdometer.current_speed_cmps = instant_speed_cmps;
+}
+B.2 惯导解算：IMU四元数互补滤波姿态解算（imu.c）
+/* 四元数互补滤波：陀螺仪积分提供短时姿态，
+ * 加速度计提供重力基准修正陀螺仪长时漂移 */
+void quaternion_module_calculate(cascade_value_struct *cascade_value)
+{
+    float x, y, z;                               /* 角速度(rad/s) */
+
+    /* 陀螺仪原始值 -> rad/s */
+    x = (float)(GYRO_DATA_X / 10 * 10) / GYRO_TRANSITION_FACTOR * 0.017453249f;
+    y = (float)(GYRO_DATA_Y / 10 * 10) / GYRO_TRANSITION_FACTOR * 0.017453249f;
+    z = (float)(GYRO_DATA_Z / 10 * 10) / GYRO_TRANSITION_FACTOR * 0.017453249f;
+
+    /* 加速度计 -> g，静止检测：模长接近1g视为静止 */
+    float ax_g = (float)ACC_DATA_X / ACC_TRANSITION_FACTOR;
+    float ay_g = (float)ACC_DATA_Y / ACC_TRANSITION_FACTOR;
+    float az_g = (float)ACC_DATA_Z / ACC_TRANSITION_FACTOR;
+    bool static_state = is_static_state(ax_g, ay_g, az_g);
+
+    /* 静止时加大滤波系数以平滑，运动时减小以提高动态响应 */
+    float acc_alpha = static_state ? 0.8f : 0.5f;
+    acc_lowpass_filter(&ax_g, &ay_g, &az_g,
+        &cascade_value->quaternion.pro.acc_filtered[0],
+        &cascade_value->quaternion.pro.acc_filtered[1],
+        &cascade_value->quaternion.pro.acc_filtered[2], acc_alpha);
+
+    float ax = cascade_value->quaternion.pro.acc_filtered[0];
+    float ay = cascade_value->quaternion.pro.acc_filtered[1];
+    float az = cascade_value->quaternion.pro.acc_filtered[2];
+    acc_normalize(&ax, &ay, &az);                /* 加速度归一化 */
+
+    /* 当前四元数 -> 机体系重力投影，与加速度计叉积求误差 */
+    float q0 = cascade_value->quaternion.pro.qua[0];
+    float q1 = cascade_value->quaternion.pro.qua[1];
+    float q2 = cascade_value->quaternion.pro.qua[2];
+    float q3 = cascade_value->quaternion.pro.qua[3];
+    float gx = 2*(q1*q3 - q0*q2);
+    float gy = 2*(q0*q1 + q2*q3);
+    float gz = q0*q0 - q1*q1 - q2*q2 + q3*q3;
+    float ex = ay*gz - az*gy;                    /* 姿态误差 */
+    float ey = az*gx - ax*gz;
+    float ez = ax*gy - ay*gx;
+
+    /* PI修正：静止时加强修正抑制漂移，运动时减弱保证动态性 */
+    float kp_imu = static_state ? cascade_value->posture_value.correct_kp
+                                : cascade_value->posture_value.correct_kp * 0.8f;
+    float ki_imu = cascade_value->posture_value.correct_ki;
+    float integral_gain = static_state ? 1.0f : 0.1f;
+
+    cascade_value->quaternion.parameter.acc_err[0] +=
+        (ex * cascade_value->posture_value.call_cycle) * integral_gain;
+    cascade_value->quaternion.parameter.acc_err[1] +=
+        (ey * cascade_value->posture_value.call_cycle) * integral_gain;
+    cascade_value->quaternion.parameter.acc_err[2] +=
+        (ez * cascade_value->posture_value.call_cycle) * integral_gain;
+
+    /* 陀螺仪角速度 + 修正量，输出三轴角速度 */
+    x += kp_imu * ex + ki_imu * cascade_value->quaternion.parameter.acc_err[0];
+    y += kp_imu * ey + ki_imu * cascade_value->quaternion.parameter.acc_err[1];
+    z += kp_imu * ez + ki_imu * cascade_value->quaternion.parameter.acc_err[2];
+    imu.deg_s.x = x * 57.2957795f;
+    imu.deg_s.y = y * 57.2957795f;
+    imu.deg_s.z = z * 57.2957795f;
+
+    /* 四元数微分方程更新(一阶龙格库塔) */
+    cascade_value->quaternion.pro.qua[0] +=
+        (-q1*x - q2*y - q3*z) * cascade_value->posture_value.call_cycle / 2.0f;
+    cascade_value->quaternion.pro.qua[1] +=
+        ( q0*x + q2*z - q3*y) * cascade_value->posture_value.call_cycle / 2.0f;
+    cascade_value->quaternion.pro.qua[2] +=
+        ( q0*y - q1*z + q3*x) * cascade_value->posture_value.call_cycle / 2.0f;
+    cascade_value->quaternion.pro.qua[3] +=
+        ( q0*z + q1*y - q2*x) * cascade_value->posture_value.call_cycle / 2.0f;
+
+    /* 四元数归一化，抑制数值漂移 */
+    float len = sqrt(q0*q0 + q1*q1 + q2*q2 + q3*q3);
+    if (len > 0.001f) {
+        cascade_value->quaternion.pro.qua[0] /= len;
+        cascade_value->quaternion.pro.qua[1] /= len;
+        cascade_value->quaternion.pro.qua[2] /= len;
+        cascade_value->quaternion.pro.qua[3] /= len;
+    }
+    /* 四元数 -> 旋转矩阵 -> 欧拉角 */
+    cascade_value->quaternion.data.rot_mat[0][0] = q0*q0 + q1*q1 - q2*q2 - q3*q3;
+    cascade_value->quaternion.data.rot_mat[1][1] = q0*q0 - q1*q1 + q2*q2 - q3*q3;
+    cascade_value->quaternion.data.rot_mat[2][2] = q0*q0 - q1*q1 - q2*q2 + q3*q3;
+    cascade_value->quaternion.data.rot_mat[0][1] = 2*(q1*q2 + q0*q3);
+    cascade_value->quaternion.data.rot_mat[0][2] = 2*(q1*q3 - q0*q2);
+    cascade_value->quaternion.data.rot_mat[1][0] = 2*(q1*q2 - q0*q3);
+    cascade_value->quaternion.data.rot_mat[1][2] = 2*(q2*q3 + q0*q1);
+    cascade_value->quaternion.data.rot_mat[2][0] = 2*(q1*q3 + q0*q2);
+    cascade_value->quaternion.data.rot_mat[2][1] = 2*(q2*q3 - q0*q1);
+
+    /* 由旋转矩阵解算 俯仰/横滚/航向 角 */
+    cascade_value->posture_value.pit =
+        arctan2(cascade_value->quaternion.data.rot_mat[2][2],
+                cascade_value->quaternion.data.rot_mat[1][2]);   /* 俯仰 */
+    cascade_value->posture_value.rol =
+        -arcsin(cascade_value->quaternion.data.rot_mat[0][2]);   /* 横滚 */
+    cascade_value->posture_value.yaw =
+        arctan2(cascade_value->quaternion.data.rot_mat[0][0],
+                cascade_value->quaternion.data.rot_mat[0][1]);   /* 航向 */
+    imu.roll  = cascade_value->posture_value.rol;
+    imu.pitch = cascade_value->posture_value.pit;
+    imu.yaw   = cascade_value->posture_value.yaw;
+}
+B.3 轮腿平衡：四舵机姿态控制（5leg_servo.c）
+/* 四舵机姿态控制：对左右腿的X(前后倾斜)、Y(腿高)目标做PD闭环，
+ * 关键：单步输出做速率限制(MAX_DELTA)，实现平滑的机械缓冲 */
+void posture_control(float X_left, float X_right, float Y_left, float Y_right)
+{
+    if(Y_left  < 10)  Y_left  = 10;              /* 腿高限幅，防止机械干涉 */
+    if(Y_right < 10)  Y_right = 10;
+    if(Y_left  > 130) Y_left  = 130;
+    if(Y_right > 130) Y_right = 130;
+
+    servo_x.kp = 0.01;  servo_x.ki = 0.00;  servo_x.kd = 0.00;
+    servo_y.kp = 0.01;  servo_y.ki = 0.0;   servo_y.kd = 0.00;
+    static float DT = 1.0f;                  /* 微分时间 */
+
+    /* 位置误差 */
+    float err_X_L = X_left  - X_L;
+    float err_X_R = X_right - X_R;
+    float err_Y_L = Y_left  - Y_L;
+    float err_Y_R = Y_right - Y_R;
+
+    /* 微分项(误差变化率) */
+    float dX_L = (err_X_L - last_err_X_L) / DT;
+    float dX_R = (err_X_R - last_err_X_R) / DT;
+    float dY_L = (err_Y_L - last_err_Y_L) / DT;
+    float dY_R = (err_Y_R - last_err_Y_R) / DT;
+
+    /* PD 输出 */
+    float X_L_add = servo_x.kp * err_X_L + servo_x.kd * dX_L;
+    float X_R_add = servo_x.kp * err_X_R + servo_x.kd * dX_R;
+    float Y_L_add = servo_y.kp * err_Y_L + servo_y.kd * dY_L;
+    float Y_R_add = servo_y.kp * err_Y_R + servo_y.kd * dY_R;
+
+    /* 速率限制：每周期移动不超过0.8，实现平滑缓冲 */
+    const float MAX_DELTA_X = 0.8;
+    const float MAX_DELTA_Y = 0.8;
+    X_L_add = constrain(X_L_add, -MAX_DELTA_X, MAX_DELTA_X);
+    X_R_add = constrain(X_R_add, -MAX_DELTA_X, MAX_DELTA_X);
+    Y_L_add = constrain(Y_L_add, -MAX_DELTA_Y, MAX_DELTA_Y);
+    Y_R_add = constrain(Y_R_add, -MAX_DELTA_Y, MAX_DELTA_Y);
+
+    /* 位置更新 */
+    X_L += X_L_add;  X_R += X_R_add;
+    Y_L += Y_L_add;  Y_R += Y_R_add;
+
+    /* 保存历史误差 */
+    last_err_X_L = err_X_L;  last_err_X_R = err_X_R;
+    last_err_Y_L = err_Y_L;  last_err_Y_R = err_Y_R;
+
+    /* 叠加机械安装偏移量，得到四舵机目标角并输出PWM */
+    XLeft  = X_L + 18.5;
+    XRight = X_R + 18.5;
+    YLeft  = Y_L + 25;
+    YRight = Y_R + 25;
+    /* 后续映射为四路舵机角度并驱动舵机 */
+}
+B.4 轮腿平衡：颠簸路段控制（subject.c / PID.c）
+/* 颠簸路段任务决策：以较高速度通过颠簸路段，
+ * 陀螺仪横滚反馈调平腿部并配合跳跃动作 */
+void km_dianbo(void)
+{
+    dianbo_vel = 600;                            /* 颠簸路段高速通过 */
+    if(run_flag == 1) vel_target = dianbo_vel;
+    else              vel_target = 0;
+
+    if(jump_flag == 0)                           /* 未跳跃时整定平衡参数 */
+    {
+        Roll_acc_pidl.kp  = 18;  Roll_acc_pidr.kp  = 18;  /* 角速度环 */
+        Roll_acc_pidl.ki   = 0;   Roll_acc_pidr.ki   = 0;
+        Roll_acc_pidl.kd   = 2;   Roll_acc_pidr.kd   = 2;
+        Roll_angle_pidl.kp = 40;  Roll_angle_pidr.kp = 40; /* 角度环 */
+        Roll_angle_pidl.kd = 2;   Roll_angle_pidr.kd = 2;
+        Roll_vel_pidl.kp   = 0.13; Roll_vel_pidr.kp = 0.13; /* 速度环 */
+        Roll_vel_pidl.ki   = 0.00; Roll_vel_pidr.ki = 0.00;
+        Roll_vel_pidl.kd   = 0.0;  Roll_vel_pidr.kd = 0.0;
+        Roll_vel_pid_y.kp  = 0.0;
+    }
+    /* 颠簸中降低转向增益，避免车轮抖动 */
+    turn_angle_pidl.kp = 10;  turn_acc_pidl.kp = 10.3;
+    turn_angle_pidr.kp = 10;  turn_acc_pidr.kp = 10.3;
+
+    zero = -2;                                   /* 车体倾角机械零位补偿 */
+}
+
+/* 颠簸中横滚反馈调平：目标横滚0°，增量式PID调节左右腿高 */
+void dianbo_calc(void)
+{
+    roll_height_pid.kp = 2.0f;                   /* 轻度调平，允许颠簸 */
+    roll_height_pid.ki = 0.0f;
+    roll_height_pid.kd = 0.0f;
+    roll_height_pid.imax = 5.0f;
+
+    target_roll = 0;
+    height_adjust = inc_pid_calc(&roll_height_pid, target_roll, imu.roll);
+
+    float Y_left  = 15.0 - height_adjust;        /* 基础腿高15，左右反向 */
+    float Y_right = 15.0 + height_adjust;
+    Y_left  = CLAMP(Y_left,  10.0f, 35.0f);      /* 腿高限幅 */
+    Y_right = CLAMP(Y_right, 10.0f, 35.0f);
+
+    posture_control(Roll_vel_pidl.out, Roll_vel_pidr.out,
+                    Y_left + Roll_vel_pid_y.out, Y_right + Roll_vel_pid_y.out);
+}
+B.5 轮腿平衡：交错单边桥控制（subject.c / PID.c）
+/* 交错单边桥任务决策：摄像头检测到桥错位后锁定航向
+ * (yaw_locked)，以较低速度沿锁定航向直线通过 */
+void km_danbian(void)
+{
+    danbian_vel = 150;
+    Flag = 1;
+    if (aim_jump_detected)  yaw_locked = 1;      /* 检测到错位 -> 锁定航向 */
+
+    if(run_flag == 1)
+    {
+        if(yaw_locked == 1)  vel_target = 175;   /* 锁定后低速平稳通过 */
+        else                 vel_target = 400;   /* 未锁定时全速接近 */
+    }
+    else
+    {
+        vel_target = 0;
+    }
+
+    /* 平衡环参数整定(单边桥需较强的横滚调平) */
+    Roll_acc_pidl.kp = 20;  Roll_acc_pidr.kp = 20;
+    Roll_acc_pidl.kd = 2;   Roll_acc_pidr.kd = 2;
+    Roll_angle_pidl.kp = 40; Roll_angle_pidr.kp = 40;
+    Roll_angle_pidl.kd = 0.5; Roll_angle_pidr.kd = 0.5;
+    Roll_vel_pidl.kp = 0.11; Roll_vel_pidr.kp = 0.11;
+
+    /* 转向环：锁定后增强，对抗桥面侧滑 */
+    if (yaw_locked == 1) {
+        turn_angle_pidl.kp = 12;  turn_acc_pidl.kp = 12;
+        turn_angle_pidr.kp = 12;  turn_acc_pidr.kp = 12;
+    } else {
+        turn_angle_pidl.kp = 7;   turn_acc_pidl.kp = 5;
+        turn_angle_pidr.kp = 7;   turn_acc_pidr.kp = 5;
+    }
+    zero = 4.8;                                  /* 零位补偿 */
+}
+
+/* 单边桥横滚调平：目标横滚0.25°维持车身水平，腿高约23 */
+void danbian_calc(void)
+{
+    roll_height_pid.kp = 4.0f;                   /* 较强调平力度 */
+    roll_height_pid.ki = 0.005f;
+    roll_height_pid.kd = 0.0f;
+    roll_height_pid.imax = 5.0f;
+
+    target_roll = 0.25f;
+    height_adjust = inc_pid_calc(&roll_height_pid, target_roll, imu.roll);
+
+    float Y_left  = 23.0 - height_adjust;
+    float Y_right = 23.0 + height_adjust;
+    Y_left  = CLAMP(Y_left,  0.0f, 90.0f);
+    Y_right = CLAMP(Y_right, 0.0f, 90.0f);
+
+    posture_control(Roll_vel_pidl.out, Roll_vel_pidr.out, Y_left, Y_right);
+}
+B.6 摄像头识别：二值化、形态学滤波与中线拟合（8.c）
+/* 1. 固定阈值二值化：灰度>阈值判为白色(赛道)，否则为黑色(背景)。
+ *    室外光照多变，采用固定阈值+曝光手动微调，较自适应阈值更稳定 */
+void turn_to_bin(void)
+{
+    image_threshold = image_number;              /* 阈值可在调试中按键调整 */
+    for(uint8 i = 0; i < image_h; i++) {
+        for(uint8 j = 0; j < image_w; j++) {
+            if(mt9v03x_image[i][j] > image_threshold + reference)
+                bin_image[i][j] = white_pixel;
+            else
+                bin_image[i][j] = black_pixel;
+        }
+    }
+}
+
+/* 2. 八邻域形态学滤波：膨胀补空洞、腐蚀去噪点 */
+#define threshold_max 255*5   /* 邻域白像素多 -> 判为空洞 */
+#define threshold_min 255*2   /* 邻域白像素少 -> 判为噪点 */
+void image_filter(uint8(*bin_image)[image_w])
+{
+    uint32 num;
+    for (uint16 i = short_idx - 2; i < long_idx + 2; i++) {
+        for (uint16 j = 1; j < image_w - 1; j++) {
+            num = bin_image[i-1][j-1] + bin_image[i-1][j] + bin_image[i-1][j+1]
+                + bin_image[i][j-1]                      + bin_image[i][j+1]
+                + bin_image[i+1][j-1] + bin_image[i+1][j] + bin_image[i+1][j+1];
+            if (num >= threshold_max && bin_image[i][j] == 0)
+                bin_image[i][j] = 255;           /* 填补前景空洞 */
+            if (num <= threshold_min && bin_image[i][j] == 255)
+                bin_image[i][j] = 0;             /* 滤除孤立噪点 */
+        }
+    }
+}
+
+/* 3. 中线拟合：左右边线有效取中点，单边失效按标准宽度表补线 */
+void calculate_middle_line(void)
+{
+    mid_count = 0;
+    for (uint16_t y = long_idx; y >= short_idx; y--) {
+        uint16_t cur_l_x = left_edge[y];
+        uint16_t cur_r_x = right_edge[y];
+        uint8_t left_valid  = (cur_l_x > 3);
+        uint8_t right_valid = (cur_r_x < 185);
+        if (!left_valid && !right_valid) continue;
+
+        uint16_t mid_x = 0;
+        uint16_t standard_width = get_track_width(y);  /* 标准宽度映射表 */
+
+        if (left_valid && right_valid) {
+            mid_x = (cur_l_x + cur_r_x) / 2;           /* 双边取中点 */
+        } else if (left_valid) {
+            mid_x = cur_l_x + standard_width / 2;      /* 补右线 */
+        } else if (right_valid) {
+            if (cur_r_x > standard_width / 2)
+                mid_x = cur_r_x - standard_width / 2;  /* 补左线 */
+        } else continue;
+
+        if (mid_x < 5) mid_x = 5;                      /* 限幅 */
+        if (mid_x > image_w - 5) mid_x = image_w - 5;
+        points_mid[mid_count][0] = mid_x;
+        points_mid[mid_count][1] = y;
+        mid_count++;
+    }
+}
+
+
+
+
+
+
+附录C 车模技术检查表
+
+一、车模技术检查表
+
+
+
+
+
+
+二、车模照片
+1、车模外观照片
+
+
+
+
+   左\右视图：
+
+
+
+
+
+
+
+
+  俯视图：
+
+  
+
+
+
+
+
+前视图：
+
+
+
+
+
+
+
+后视图：
+
+
+
+
+
+
+
+
+2、电路板PCB图
+ 主板正面：
+
+
+主板背面：
+
+
+舵机电源正面：
+
+舵机电源背面：
+
+
+无刷驱动正面：
+
+
+无刷驱动背面：
+
+
+核心板正面：
+
+
+核心板背面：
+
+
+磁编正面：
+
+
+磁编背面：
+
+
+===== TABLE 1 =====
+队伍名称 | 华丽转身十队 | 华丽转身十队 | 华丽转身十队 | 华丽转身十队
+参赛学校 | 郑州轻工业大学 | 郑州轻工业大学 | 郑州轻工业大学 | 郑州轻工业大学
+赛题组组别 | 轮腿穿越 | 轮腿穿越 | 轮腿穿越 | 轮腿穿越
+检查项目 | 规格 （选手自行填写） | 符合 （） | 不符合（） | 备注
+1.车模类型是什么？ | V车模 |  |  | 自制车模，请在备注标明自制方案
+车模整体尺寸： 1.（包括传感器在内）长，宽，高(mm) 2. 摄像头组标明镜头距离地面高度。 | 车模长度：190mm 车模宽度：220mm 车模高度：90mm 车轮直径：9cm |  |  | 轮腿穿越组自制车轮直径≤12cm，请填写实测尺寸
+传感器种类、规格(型号)数量。 是否使用自带MCU的成品传感器模块？型号是什么？ | 九轴传感器IMU963RA×1（不带MCU）、摄像头MT9V032×1、磁编码器TLE5012B×2 |  |  | 磁编码器位于无刷驱动板，用于转子位置检测
+控制转向舵机型号是否自行改装舵机？ 防伪易损标签是否完整？ | BDS300舵机×4，未自行改装，防伪完整 |  |  | 
+1. 是否增加伺服电机？ 2. 如果有那么种类、个数和作用？ | 1.否 2.无 |  |  | 原车结构无额外伺服电机
+电路中微处理器型号和个数？ | CYT4BB7×1（主控）、CYT2B×1（无刷驱动）、CH32V203×1（打点遥控） |  |  | 
+是否具有其它可编程器件，个数与作用？ | 无 |  |  | 
+是否有无线通讯装置？ 如果有，那么种类和个数？ | 无 |  |  | 图传接收端置于环路以外
+电池的种类、规格和数量？ | 锂电池 12V 2200mAh ×1 |  |  | 
+1. 是否使用GPS导航？ 2. 是否没有使用RTK？ | 未使用GPS导航 无RTK |  |  | 采用离线打点＋惯导＋摄像头识别方案
+后轮驱动电机是否是原车模电机？ 是否具有防伪易损标签？ | 1．原车模电机  2.无刷电机BDS3620×2，具有防伪易损标签 |  |  | 自制车模，电机型号符合规则限定
+车模轮胎是否原有的纹理可辨析？ 轮胎表面是否具有粘性物质？ | 1.自制车轮，直径9cm，表面纹理可辨析  2.否 |  |  | 
+车模底盘是否是原车模底盘？ 是否有大面积切割？ | 1.是，碳板骨架底盘 2.无 |  |  | 自制车模
+车模差速器是否改装？ 改装方式是什么？ | 无差速器 |  |  | 
+车模电路板个数及功能。 其中是否有购买成品、哪一些？ | 3块：主板（核心板供电与信号）、无刷驱动板、舵机电源板 |  |  | 均为本队自制PCB
+自制电路板是否标记有学校名称、队伍名称、制作日期等信息？ | 有学校名称、队伍名称、制作日期等信息 |  |  | 请在表格中注明电路板队伍信息内容
+其它待说明内容 |  |  |  | 
+检查人员签名： | 检查意见： | 检查意见： | 检查意见： | 检查意见：

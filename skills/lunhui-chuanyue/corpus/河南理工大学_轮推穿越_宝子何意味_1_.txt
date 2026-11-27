@@ -1,0 +1,431 @@
+第二十一届全国大学生
+智能汽车竞赛
+技  术  报  告
+
+
+
+
+
+
+学    校：河南理工大学
+队伍名称：宝子何意味
+参赛队员：王毅潮  张皓翔  杨天长  王浩源
+
+
+带队教师：张丽  李斌
+
+关于技术报告和研究论文使用的授权说明
+本人完全了解全国大学生智能汽车竞赛关于保留、使用技术报告和研究论文的规定，即：参赛作品著作权归参赛者本人，比赛组委会可以在相关主页上收录并公开参赛作品的设计方案、技术报告以及参赛模型车的视频、图像资料，并将相关内容编纂收录在组委会出版论文集中。
+
+
+
+
+
+参赛队员签名：
+带队教师签名：
+日                  期：2026年8月17日
+
+摘要
+本文介绍了河南理工大学“宝子何意味”队在第二十一届全国大学生智能汽车竞赛轮腿穿越组中的模设计与调试过程。车模以 CYT4BB7 为主控，采用双 BDS3620W 无刷电机驱动和四 BDS300 舵机构成轮腿执行机构，配合自制 CYT2BL3 无刷驱动板、自制磁编码器、IMU963RA、MT9V034 总钻风摄像头、DL1B TOF 测距模块和双频GPS，构成面向室外导航、定点旋转和复杂越障的感知与控制平台。
+针对轮腿穿越组行进绕桩、定点排雷和颠簸路段三类任务，系统没有采用单一传感器或单一算法闭环，而是将 IMU 航向、轮速里程、视觉场景检测和 TOF 距离触发组合使用：普通行进阶段保持速度-角度-角速度串级闭环，特殊元素阶段通过路径动作点、单边桥视觉闭环和多源跳跃触发切换舵机动作。这样的设计牺牲了一部分算法形式上的统一性，但提升了比赛现场对光照、距离误差、路面冲击和传感器短时异常的适应能力。
+关键词：CYT4BB7；姿态控制；视觉检测；导航；智能车竞赛
+
+
+
+
+
+
+引言
+全国大学生智能汽车竞赛要求参赛队伍在有限尺寸、有限能源和复杂赛道环境中完成从机械、电路到算法的系统集成。轮腿穿越组相较于传统循迹类智能车，更强调室外定位、轮腿姿态调整和特殊路面通过能力；车辆既要具备轮式底盘的效率，又要利用腿部自由度跨越台阶、单边桥、草地和颠簸路面，因此系统稳定性比单项速度更重要。
+本队在设计时把目标概括为“可靠完成任务、现场可调、动作可复现”。可靠完成任务要求底盘闭环在跳跃和颠簸冲击中不发散；现场可调要求关键参数可以通过菜单、上位机或无线调参快速修改；动作可复现要求路径点、动作标签和传感器触发条件能够被记录和回放。因此，系统没有追求单一复杂模型覆盖全部场景，而是采用状态机加分层闭环的工程方案。
+本报告后续章节安排如下：第二章介绍比赛任务和系统总体方案；第三章介绍车模机械结构和传感器安装；第四章介绍主控、驱动、舵机和 PCB 工程；第五章分析软件任务调度、视觉检测、平衡控制、路径回放和跳跃控制；第六章说明开发环境、调试流程和比赛成绩；第七章总结设计得失和改进方向。
+
+
+
+
+
+
+
+
+方案设计
+2.1 比赛任务与需求分析
+轮腿穿越组包含行进绕桩、定点排雷和颠簸路段三类任务。行进绕桩强调室外定位与返回穿越锥桶间隙能力；定点排雷要求车辆进入白色边界框后完成至少两周旋转，考察定点定位、边界约束和原地姿态稳定；颠簸路段包含交错单边桥、颠簸路段、草地、三级台阶和坡道等元素，要求车辆在不绕行、不误触发的前提下完成越障。
+这些任务共同要求车辆具备四类能力：一是室外路线可复现，二是动态平衡不能因路面冲击和腿部动作破坏，三是特殊元素识别和动作切换要足够稳定，四是调试时必须能快速定位问题。基于上述判断，本队采用“导航/里程/视觉/距离多源感知 + 状态机任务分解 + 串级闭环执行”的总体思路。
+2.2 系统总体方案
+整车以 CYT4BB7 为主控制器，自制无刷驱动板以 CYT2BL3 为核心处理两侧 BDS3620W 无刷电机驱动和速度反馈，四个 BDS300 舵机用于调整轮腿姿态。感知层由 MT9V03X 摄像头、IMU963RA、DL1B TOF、自制磁编码器和双频 GPS 构成；决策层根据科目模式、路径动作点和场景检测结果给出目标速度、航向和轮腿动作；执行层将控制量分配到左右电机和四个舵机。
+
+
+图2.1  轮腿穿越车模系统总体方案框图
+2.3 方案取舍与创新思路
+对于轮腿穿越组，最诱人的方案是用统一的模型化控制器处理全部动作，但比赛现场存在台阶角度、草地阻力、光照和 GPS 漂移等不可完全建模因素。本队保留 LQR/VMC 模块作为后续扩展，但在正式比赛方案中以串级 PID 和动作状态机为主，把不可控因素拆分成可调参数和保护逻辑。
+系统的核心思想是让不同传感器负责自己最可靠的区间：GPS 负责长距离路径与绕桩方向，磁编码器负责短距离里程和速度，摄像头负责单边桥等可视边界，TOF 负责近距离台阶触发，IMU 负责全程姿态反馈。多源策略会增加软件状态切换复杂度，但可以避免单一传感器失效时整车失控，是本队面向比赛可靠性的主要取舍。
+
+表2.1  系统模块组成与功能
+
+车模结构
+3.1 车模整体结构
+车模采用双轮差速驱动和四舵机轮腿结构，两个大直径轮胎承担主要移动任务，左右轮腿机构通过舵机改变支撑姿态。与普通两轮平衡车相比，轮腿结构的优势在于可通过腿部动作改变接地点和车体高度，弥补单纯轮式底盘面对台阶、单边桥和草地时通过性不足的问题。
+
+图3.1  车模整体结构
+3.2 电池和电路板安装
+整车长 21.7 cm、宽 17 cm、高 35 cm、重量 1177 g。由于摄像头安装位置较高，车模天然存在上部质量和支架摆动问题，因此电池、主控板和驱动板布置时优先考虑重心和线束可靠性。3S 锂离子电池组为无刷电机和舵机提供较高瞬时功率，安装时尽量贴近底盘中心，减少急加减速时的俯仰扰动。
+主控板、显示屏和接口集中布置在车体中部，便于观察状态和接线维护；驱动相关线束沿车体两侧固定，避免轮腿动作时被连杆或轮胎卷入。这样的布局缩短了调试时的故障定位路径，也便于赛前快速更换传感器和检查接插件。
+3.3 摄像头、IMU、TOF 与编码器安装
+MT9V03X 摄像头固定在竖直碳杆顶部，用于获得更远的前视距离。高位视觉可以提前发现单边桥和台阶边缘，但也会放大车体俯仰和横滚振动，因此软件中设置了连续帧确认、短时丢帧保持和低通处理，机械上则通过支架约束减少碳杆摆动。
+IMU963RA 安装在主板附近，作为姿态闭环的核心反馈；DL1B TOF 面向前方近距离区域，用于台阶或障碍物触发；自制磁编码器安装于左右轮侧，为速度闭环、里程计和动作点触发提供反馈。传感器布置遵循“姿态居中、视觉高位、距离前置、编码器贴近被测轮”的原则。
+3.4 轮腿动作机构
+四个 BDS300 舵机分别对应左后、左前、右前、右后腿部关节。程序中为每个舵机设置独立中值，并在普通行驶、单边桥、颠簸和跳跃阶段叠加不同动作量。普通行驶阶段采用小步长限幅和滤波避免腿部高频抖动；单边桥和颠簸阶段根据支撑侧和横滚误差调整腿部抬升；跳跃阶段由状态机分阶段完成收腿、预备和释放。
+
+表3.1  舵机安装位置与 PWM 通道
+
+硬件电路的设计
+4.1 主控板
+主控板以 CYT4BB7 为核心，承担传感器采集、控制算法运算、任务状态机调度和人机交互。本队围绕轮腿车模接口重新组织了主控、舵机和驱动连接。
+主板接口面向比赛调试需求设计：摄像头、IMU、TOF、GPS、无刷驱动、IPS200 显示屏、按键和无线调参模块均通过独立接口接入。这种模块化连接方式便于故障隔离，也能在赛前根据实际线路震动情况重新固定线束。
+图4.1  主板原理图
+
+4.2 电源与执行器供电
+整车采用 1000 mAh 3S 45C 锂离子电池组。轮腿车模的电源设计难点不是静态功耗，而是无刷电机加速、舵机快速摆动和跳跃落地时的瞬时电流冲击。因此电源布局需要让电机、舵机和主控的供电路径尽量清晰，并在接插件、地线回流和线束固定上留有安全余量。
+在调试中，电源可靠性主要通过上电初始化是否稳定、舵机动作是否导致主控复位、长时间运行温升和电池电压跌落来判断。
+
+图4.2  供电原理图
+
+4.3 无刷驱动板与速度反馈
+左右 BDS3620W 无刷电机由自制无刷驱动板控制，驱动板核心芯片为 CYT2BL3。主控与驱动板使用 UART4 通信，波特率为 460800，通信帧长度为 7 字节，帧头为 0xA5。功能码 0x01 用于设置左右电机占空比，功能码 0x02 用于读取左右轮速。
+驱动板反馈的速度值在主控侧经过左右方向约定转换后进入速度环、差速环和里程触发模块。由于轮腿车模在跳跃和落地阶段会出现速度瞬变，软件中对速度环和差速环加入了跳跃 busy 保护，避免积分项在车轮离地或快速冲击时继续累加。
+
+
+
+
+图4.3  无刷驱动板原理图
+
+4.4 传感器选择
+表4.1  传感器配置与作用
+传感器配置的基本原则是冗余而不过度：视觉适合识别几何边界，但对光照和振动敏感；TOF 对近距离变化稳定，但只能看到局部距离；GPS 可覆盖室外长距离路径，但精度受场地遮挡和起点漂移影响；编码器短距离可靠，但对打滑敏感。多源组合使系统可以按任务阶段选择最可信信息。
+
+软件设计
+5.1 软件总体架构
+主程序上电后完成时钟、调试串口、IPS200、按键、摄像头、场景检测、DL1B、IMU、Flash、无刷驱动串口、舵机、GPS、菜单和无线调参等模块初始化。
+任务调度分为主循环、5 ms 中断和 1 ms 中断三层。主循环处理图像场景检测、GNSS 轮询、上位机通信和菜单任务；5 ms 中断读取轮速并更新里程触发；1 ms 中断完成姿态解算、跳跃计时、单边桥控制节拍、平衡 PID、舵机输出和跳跃状态机。这样的分层使高实时性闭环不被图像、GPS 或菜单任务阻塞。
+
+
+图5.1  软件任务调度与闭环关系
+
+5.2 图像采集与特殊元素识别
+MT9V03X 摄像头配置为 188 x 120 图像，默认帧率 50 FPS。图像处理模块维护二值化阈值、支持自动阈值开关，并针对单边桥等特殊元素提取最宽白色通道、桥面中心、边界侵入侧和有效支撑行数。视觉结果不直接覆盖底盘控制，而是先经过稳定帧判断，再向状态机提供可信的场景信息。
+单边桥检测的关键不只是“看到白线”，而是判断车辆应向哪一侧补偿。程序在桥面 ROI 内寻找有效白色区域并计算中心偏差；当短时丢帧时，不立即清零控制量，而是保持一段时间，避免车身刚上桥时因画面抖动造成控制突变。
+5.3 姿态解算与平衡控制
+姿态控制是轮腿车模的底层安全边界。系统在 1 ms 中断中读取 IMU 姿态，得到 roll、pitch、yaw 和角速度信息；底盘控制采用速度环、角度环和角速度环串级结构，并叠加 yaw 航向修正和左右差速 PI。默认目标角 expect_angle 为 7.0°，用于补偿实际机械零点和行驶姿态。
+
+
+图5.2  速度-角度-角速度串级控制框图
+
+u(k)=Kp·e(k)+Ki·Σe(k)+Kd·[e(k)-e(k-1)]        (1)
+式中 e(k) 为当前偏差，u(k) 为控制输出。实际程序并未机械地在所有环节使用完整 PID，而是根据被控对象特点选择 PI、PD 或比例控制：速度环需要积分消除稳态误差，角速度环更关注快速阻尼，差速环则需要在跳跃期间及时清零和限幅。
+5.4 速度、转向与舵机控制
+无刷驱动输出采用左右占空比控制，范围经过 pwm_limiter 限幅后通过 UART4 发送。转向由 yaw 误差和视觉/路径误差共同作用，最终转化为左右差速和腿部舵机附加量。与传统舵机转向车不同，轮腿车的转向会改变轮腿支撑姿态，因此舵机输出加入低通和步长限制，避免动作过快破坏平衡闭环。
+舵机控制函数 speed_duoji() 接收速度环输出、roll 误差和附加动作量，分别计算前后腿和左右腿的 PWM。桥段和颠簸段通过 bridge_leg_raise_pwm、dianbo_leg_raise_pwm 等参数改变支撑高度，普通行驶阶段则将腿部动作限制在较小范围内。
+5.5 路径记录、GPS 导航与动作点
+行进绕桩和颠簸路段不适合完全依赖视觉循迹，因此工程中包含 function2、function3、gps_function2、gps_function3、gps_nav_function 等路径模块。系统可以记录 GPS 或里程路径点，并把台阶、颠簸、单边桥、草地、弯道、自旋、拐点等动作标签绑定到路径点上。
+这种设计把“在哪里做动作”和“动作如何执行”分离：路径模块决定触发时机，控制模块负责具体速度、舵机和跳跃过程。比赛调试时，只要重新记录路径或调整动作点容差，不必重写底层平衡控制逻辑。
+5.6 多源跳跃触发与保护
+跳跃模块支持相机、DL1B TOF 和编码器里程三种触发源。DL1B 默认触发距离为 300 mm，并设置回差、确认次数和冷却时间；相机触发用于视觉边缘明显的场景；编码器触发用于路径已知但视觉/距离信息不稳定的场景。
+跳跃时车辆会经历轮胎离地、落地冲击和舵机快速动作，若速度环或差速环继续积分，落地后容易出现过冲。因此程序在 jump_is_busy() 为真时对速度和差速积分进行保护，跳跃结束后再恢复正常闭环。这个保护逻辑是比赛可靠性优先于控制连续性的典型取舍。
+5.7 参数整定策略
+
+表5.1  关键控制参数与整定原则
+
+系统的开发环境与车模调试
+6.1 开发环境
+本项目使用 IAR Embedded Workbench 工程组织代码。主控应用主要运行在 CM7_0，CM7_1 工程保留部分中断和协处理能力。IAR 的编译、下载和断点调试用于确认模块初始化、外设中断和关键全局变量变化。
+除 IDE 调试外，车上 IPS200 显示屏、按键菜单、上位机链路和无线速度调参共同承担现场调试功能。比赛现场无法长时间连接调试器，因此菜单化参数和无线调参比单纯断点更适合快速定位速度、角度、阈值和触发距离问题。
+6.2 调试流程
+表6.1  系统调试流程
+6.3 关键问题与解决方法
+表6.2  关键调试问题与解决方法
+
+总结与心得
+7.1 控制方面
+本队最终采用串级 PID、状态机和多源触发相结合的控制方案，而不是完全依赖单一模型化控制器。实践表明，对于轮腿穿越组，传感器短时异常和机械冲击比理想模型误差更常见。把控制目标拆分为速度、角度、角速度、差速、视觉桥段和跳跃动作，可以让每个问题在现场被单独观察和整定。
+该方案的不足是参数数量较多，动作点和模式切换需要充分测试；但它的优势是可解释、可调、可保护。比赛中出现光照变化或台阶距离偏差时，我们可以切换触发源或调整阈值，而不必重写整体控制结构。
+7.2 结构方面
+车模结构的核心矛盾是高位摄像头与低重心之间的矛盾。摄像头越高，前视距离和桥段识别越有利，但振动越明显；电池和驱动板越靠下，平衡越稳定，但线束和维修空间更紧张。本队选择将电池和主要电路集中在底盘中部，把摄像头安装在碳杆顶部，并用软件滤波弥补高位视觉抖动。
+7.3 不足与改进方向
+当前系统仍有进一步优化空间：首先，摄像头支架可继续轻量化并增加横向约束，提高图像稳定性；其次，GPS 室外定位可进一步融合在线漂移校正和轮速里程，减小起点误差影响；再次，LQR/VMC 模块尚未完全替代 PID，可在稳定赛段继续尝试模型化控制；最后，PCB 可继续优化电源分区、接口防呆和传感器抗干扰设计。
+7.4 心得
+本次备赛最大的收获是认识到智能车系统不是某一个算法的胜利，而是机械、电路、程序和调试方法共同约束下的工程平衡。很多问题表面上是算法参数不合适，实际根源可能是摄像头支架振动、线束松动、舵机零位偏差或触发条件没有保护。
+团队在不断失败和复测中逐步形成了模块化思维：先保证底层供电和传感器可靠，再建立可观测的调试界面，最后用状态机把复杂任务拆开。这一过程不仅提升了嵌入式开发和运动控制能力，也让我们更深刻地理解了工程实践中可靠性、速度和可维护性之间的取舍。
+
+参考文献
+[1]卓晴. 第21届智能车竞赛轮腿穿越组比赛科目细则. CSDN博客, 2025-11-11发布, 2026-04-06修改.
+[2]王盼宝主编.智能车制作[M].北京:清华大学出版社,2017.
+[3] 成都逐飞科技. CYT4BB Opensource Library 及相关外设驱动文档.
+[4]邵贝贝．单片机嵌入式应用的在线开发方法 [M]．北京．清华大学出版社．2004.
+[5] 胡寿松. 自动控制原理. 北京: 科学出版社.
+[6] 卓晴, 黄开胜, 邵贝贝. 学做智能车. 北京: 北京航空航天大学出版社, 2007.
+[7]蔡述庭．"飞思卡尔"杯智能汽车竞赛设计与实践 [M]．北京：北京航空航天大学出版社. 2012.
+附录A 车模外观照片
+图A-1  车模正面
+图A-2  车模侧面
+
+图A-3 车模顶面
+
+
+
+附录B 程序源代码
+void gps_function3_init(gps_device_enum gps_device)
+{
+    (void)gps_device;
+    GPS_Init();
+
+    memset(&g_gps_function3, 0, sizeof(g_gps_function3));
+    memset(g_gps_function3_action_samples, 0, sizeof(g_gps_function3_action_samples));
+    memset(&s_gps_function3_bridge_runtime, 0, sizeof(s_gps_function3_bridge_runtime));
+    memset(&s_gps_function3_step_runtime, 0, sizeof(s_gps_function3_step_runtime));
+    s_gps_function3_autoload_failed = 0u;
+    gps_function3_reset_runtime();
+    gps_function3_sync_state();
+}
+
+void gps_function3_poll_gnss(void)
+{
+    GPS_Poll_GNSS();
+}
+
+void gps_function3_start_record(void)
+{
+    gps_function3_restore_bridge_runtime();
+    gps_function3_set_step_mode(0u);
+    GPS_Stop_Run();
+    GPS_Clear_All_Points_RAM();
+    memset(g_gps_function3_action_samples, 0, sizeof(g_gps_function3_action_samples));
+    s_gps_function3_autoload_failed = 0u;
+    gps_function3_reset_runtime();
+
+    g_gps_function3.mode = GPS_FUNCTION3_MODE_RECORD;
+    gps_function3_sync_state();
+}
+
+uint8 gps_function3_mark_current_point(void)
+{
+    uint16 count = 0u;
+
+    if(g_gps_function3.mode != GPS_FUNCTION3_MODE_RECORD)
+    {
+        return 0u;
+    }
+
+    if(GPS_Get_Point_Count() >= gps_function3_flash_capacity_points())
+    {
+        return 0u;
+    }
+
+    if(!Run_GPS_Save())
+    {
+        return 0u;
+    }
+
+    count = GPS_Get_Point_Count();
+    if((count > 0u) && (count <= GPS_NAV_MAX_POINTS))
+    {
+        g_gps_function3_action_samples[count - 1u] = GPS_FUNCTION3_POINT_ACTION_NONE;
+    }
+
+    return gps_function3_persist_current_points();
+}
+
+uint8 gps_function3_delete_last_point(void)
+{
+    uint16 count = 0u;
+
+    if(g_gps_function3.mode == GPS_FUNCTION3_MODE_PLAYBACK)
+    {
+        return 0u;
+    }
+
+    if(!GPS_Delete_Last_Point_RAM())
+    {
+        return 0u;
+    }
+
+    count = GPS_Get_Point_Count();
+    if(count < GPS_NAV_MAX_POINTS)
+    {
+        g_gps_function3_action_samples[count] = GPS_FUNCTION3_POINT_ACTION_NONE;
+    }
+
+    return gps_function3_persist_current_points();
+}
+
+
+int main(void)//
+{
+    clock_init(SYSTEM_CLOCK_250M);
+    // Debug UART remains enabled here; SBUS uses UART2.
+    debug_init();
+    ips200_init(IPS200_TYPE_SPI);
+    gpio_init(KEY_A, GPI, GPIO_HIGH, GPI_PULL_UP);
+    gpio_init(KEY_B, GPI, GPIO_HIGH, GPI_PULL_UP);
+    gpio_init(KEY_C, GPI, GPIO_HIGH, GPI_PULL_UP);
+    gpio_init(KEY_D, GPI, GPIO_HIGH, GPI_PULL_UP);
+    gpio_init(KEY_E, GPI, GPIO_HIGH, GPI_PULL_UP);
+    gpio_init(KEY_F, GPI, GPIO_HIGH, GPI_PULL_UP);
+    mt9v03x_init();
+    mt9v03x_scene_detect_init();
+    jump_scene_trigger_reset();
+    jump_dl1b_trigger_reset();
+    (void)dl1b_init();
+
+    imu963ra_init();
+    imu963_init();
+    flash_init();
+    small_driver_uart_init();
+    uart_receiver_init();
+    servo_init();
+    function1_init();
+    function2_init();
+    gps_function2_init(TAU1201);
+    gps_function3_init(TAU1201);
+    gps_nav_function_init(TAU1201);
+    function3_init();
+   
+    //pc_link_init();
+    menu_init();
+    wireless_speed_tune_init();
+
+    pit_ms_init(PIT_CH0, 5);                                                  
+    pit_ms_init(PIT_CH1, 1);
+
+
+    while(true)
+    {   
+        // enable_control_flag=1;
+        // run_flag=1;0
+        // small_driver_set_duty_phy(1500,1500);
+        // ips200_show_int(0,0,small_driver_get_left_speed_phy(),5);
+        // ips200_show_int(0,16,small_driver_get_right_speed_phy(),5);
+        
+        if((JUMP_TRIGGER_SOURCE_DL1B == jump_trigger_source_cfg)
+           && (0u == function3_step_mode_active()))
+        {
+            jump_dl1b_trigger_reset();
+        }
+
+        if(bridge_roll_enable
+           || function3_bridge_mode_active()
+           || menu_cam_danbian_enabled())
+        {
+            (void)mt9v03x_single_bridge_detect_process();
+        }
+        else if(0u == menu_cam_danbian_enabled())
+        {
+            if(JUMP_TRIGGER_SOURCE_DL1B == jump_trigger_source_cfg)
+            {
+                if(function3_step_mode_active())
+                {
+                    jump_dl1b_trigger_process();
+                }
+            }
+            else if(JUMP_TRIGGER_SOURCE_ENCODER == jump_trigger_source_cfg)
+            {
+                jump_encoder_trigger_process();
+            }
+            else if((JUMP_TRIGGER_SOURCE_CAMERA == jump_trigger_source_cfg)
+                 && menu_taijie_detect_enabled()
+                 && (0u == function3_dianbo_mode_active())
+                 && (0u == gps_function3_dianbo_mode_active())
+                 && mt9v03x_scene_detect_process())
+            {
+                jump_scene_trigger_process();
+            }
+        }
+        GPS_Poll_GNSS();
+        pc_link_task();
+        wireless_speed_tune_task();
+        menu_task();
+       
+    }
+}
+
+void pit0_ch0_isr(void)
+{
+    pit_isr_flag_clear(PIT_CH0);
+
+    motor_value.receive_left_speed_data_use = (float)small_driver_get_left_speed_phy();
+    motor_value.receive_right_speed_data_use = (float)small_driver_get_right_speed_phy();
+    jump_encoder_tick_5ms(motor_value.receive_left_speed_data_use,
+                          motor_value.receive_right_speed_data_use);
+    function3_bridge_encoder_tick_5ms(motor_value.receive_left_speed_data_use,
+                                      motor_value.receive_right_speed_data_use);
+    pc_link_tick_5ms();
+    menu_runtime_5ms();
+}
+
+void pit0_ch1_isr(void)
+{
+    static uint16 gyro_raw_print_count = 0u;
+
+    pit_isr_flag_clear(PIT_CH1);
+    menu_tick_1ms();
+    jump_trigger_tick_1ms();
+    ICM_getEulerianAngles();
+
+    cam_danbian_control_tick_1ms();
+    menu_cam_danbian_runtime_1ms();
+
+    balance_pid_control();
+    turnangle = yaw_turn_out;
+    speed_duoji(speed_pid_out, expect_angle - icm_data.roll, 0.0f, 0.0f);
+    jump();
+}
+
+
+
+===== TABLE 1 =====
+模块 | 器件/方案 | 作用
+主控 | CYT4BB7 | 任务调度、姿态控制、视觉/GPS/TOF 融合
+驱动 | CYT2BL3 自制无刷驱动板 | 左右 BDS3620W 电机占空比控制与速度反馈
+轮腿 | BDS300 舵机 x4 | 腿部姿态、单边桥支撑、跳跃动作
+视觉 | MT9V03X 总钻风摄像头 | 赛道/单边桥/台阶视觉特征检测
+距离 | DL1B TOF | 近距离障碍和台阶触发
+定位 | 双频 GPS + IMU 航向 | 室外路径记录、回放与绕桩导航
+
+===== TABLE 2 =====
+舵机 | 安装位置 | PWM 通道 | 程序中值
+S1 | 左后 | TCPWM_CH29_P19_4 | 4500
+S2 | 左前 | TCPWM_CH60_P11_1 | 4820
+S3 | 右前 | TCPWM_CH52_P14_4 | 4270
+S4 | 右后 | TCPWM_CH28_P19_3 | 4500
+
+===== TABLE 3 =====
+传感器 | 配置 | 用途
+MT9V03X 摄像头 | 188 x 120，默认 50 FPS | 单边桥、台阶和赛道视觉特征识别
+IMU963RA | 三轴姿态/角速度 | roll、pitch、yaw 与角速度反馈
+DL1B TOF | 近距离测距 | 台阶/障碍物触发与距离判定
+自制磁编码器 | 左右轮各一 | 速度闭环、里程计、动作点触发
+双频 GPS | 室外定位 | 路径记录、回放与绕桩导航
+
+===== TABLE 4 =====
+环节 | 主要参数 | 调试原则
+速度环 | Kp=0.12，Ki=0.001 | 先低速稳定，再逐步提高目标速度，避免积分过大
+角度/角速度环 | 角度 Kp=0.18，角速度 Kp=-980 | 先确认 IMU 方向，再调临界响应
+航向修正 | yaw_turn_kp=8.0 | 用死区和输出斜率限制减少小角度抖动
+差速 PI | Kp=14.0，Ki=0.05 | 桥段和跳跃阶段配合保护逻辑
+视觉阈值 | 默认二值阈值 169 | 根据光照调整，优先保证桥段边界稳定
+
+===== TABLE 5 =====
+阶段 | 主要工作 | 判定标准
+底层硬件检查 | 确认 3S 电池、电机驱动、舵机、摄像头、IMU、TOF、GPS、编码器连接 | 模块初始化成功，线束无松动，供电无明显压降
+姿态标定 | 静止采集 IMU 零偏，确认 roll/pitch/yaw 方向 | 前后倾、左右倾符号与控制设定一致
+驱动方向 | 检查左右轮速度符号、占空比方向和差速方向 | 正占空比前进，左右反馈方向统一
+平衡闭环 | 逐步打开角速度环、角度环、速度环并调节限幅 | 低速平衡不发散，推动车身可恢复
+视觉与触发 | 调整摄像头支架、阈值、TOF 距离和跳跃触发源 | 单边桥、台阶和障碍触发稳定
+路径与场景 | 录制/回放路径，配置动作点和目标速度 | 按路径完成绕桩、排雷和颠簸元素
+
+===== TABLE 6 =====
+问题 | 原因分析 | 处理方法
+高位摄像头抖动 | 碳杆顶部振动放大，图像中心短时跳变 | 加固支架，视觉控制增加低通、连续帧确认和短时丢帧保持
+跳跃触发偏早或偏晚 | 视觉边缘受光照和台阶角度影响 | 引入 DL1B、编码器、相机三触发源，增加回差和冷却时间
+过桥时车身横滚 | 左右轮压上单边桥高度不同，支撑力突变 | 启用横滚 PID 与腿部抬升补偿，并降低桥段速度
+速度环与跳跃冲突 | 舵机动作导致速度瞬变，积分项继续累加 | 跳跃 busy 期间清除速度和差速积分，落地后再恢复闭环
+GPS 路径漂移 | 室外定位受遮挡和起点偏差影响 | 记录路径原点，使用 IMU 航向和里程动作点辅助

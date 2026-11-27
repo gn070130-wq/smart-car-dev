@@ -1,0 +1,817 @@
+
+第二十一届全国大学生
+智能汽车竞赛
+
+技 术 报 告
+
+
+
+
+
+	
+学    校：山东工商学院
+队伍名称：飞驰蚁生
+参赛队员：褚芮妤
+          冯铄清
+          任子昂
+          张闫康	
+带队教师： 杨莉
+           杨小聪
+关于技术报告和研究论文使用授权的说明
+
+本人完全了解第二十一届全国大学生智能汽车竞赛关于技术报告和研究论文保存、使用的有关规定。参赛作品著作权归参赛者本人；竞赛组委会和恩智浦半导体公司有权在相关网站收录并公开参赛作品的设计方案、技术报告，以及参赛车模的视频和图像资料，并可将相关内容编入组委会出版的论文集。
+
+参赛队员签名：褚芮妤 冯铄清 任子昂 张闫康
+                     参赛老师签名：杨莉 杨小聪                
+                  日        期：2026.8.14    
+
+
+
+摘  要
+本文介绍山东工商学院“飞驰蚁生”队面向第二十一届全国大学生智能汽车竞赛蚂蚁搬家赛题设计的双车协作系统。两辆车均采用四轮麦克纳姆轮全向移动底盘，并以恩智浦（NXP）RT1021 BTB为核心控制器。主车搭载OpenArt plus视觉模组，通过YOLOv3模型完成网球、小熊和沙包的检测与分类，采用距离查表与线性插值方法估算目标距离，并利用目标锁定与优先级切换机制提高多目标场景下的跟踪稳定性。主车依据副车红外标志修正相对位姿，并通过无线串口向副车发送四路电机PWM指令，实现双车协同运动。运动控制采用角度外环与速度内环组成的级联PID结构；姿态解算采用互补滤波，并引入在线零偏校正以减小陀螺仪温漂。测试结果表明，系统能够完成三类物体的识别、分类与协同搬运，单次搬运平均耗时约12 s，验证了所设计双车协作方案的可行性。
+关键词：智能汽车；蚂蚁搬家；麦克纳姆轮；双车协作；YOLO目标检测；视觉伺服；RT1021；PID控制
+
+目录
+第一章  绪  论	6
+1.1  智能车研究背景	6
+1.2  方案总体介绍	6
+1.3  本文结构	7
+第二章 机械结构设计与调整	8
+2.1  整车布局	8
+2.2  电池选型与安装	10
+2.3  麦克纳姆轮布置与安装	10
+2.4  摄像头架设	11
+2.5  传感器安装布局	12
+第三章  硬件电路设计	13
+3.1  单片机系统设计	13
+3.2  电源模块设计	14
+3.3  电机驱动电路	15
+3.4  传感器的选择与接口	15
+第四章  软件控制设计	17
+4.1  图像处理算法	17
+4.2  运动控制算法	21
+4.3  IMU姿态解算	24
+4.4  任务状态机设计	25
+4.5  双车协作机制	28
+4.6  里程计导航	29
+第五章  系统调试	31
+5.1  开发调试工具	31
+5.2  人机交互工具	31
+5.3  上位机调试	31
+5.4  分阶段调试策略	31
+5.5  主要困难与解决方案	32
+第六章  模型车主要技术参数说明	33
+6.1  整车与供电参数	33
+6.2  传感器配置	33
+6.3  电机与驱动参数	34
+6.4  赛道信息检测参数	34
+结  论	35
+致  谢	35
+参考文献	36
+附录A  核心算法源程序	37
+A.1  视觉系统核心程序（OpenArt plus）	37
+A.2  运动控制核心程序（RT1021）	39
+附录B  电路原理图及PCB设计	45
+B.1  电源管理电路	45
+B.2  电机驱动电路	47
+B.3  主控及外设接口电路	47
+B.4  PCB布局与实物	48
+
+第一章  绪  论
+1.1  智能车研究背景
+全国大学生智能汽车竞赛是一项面向高校学生的科技创新竞赛，强调多学科知识综合运用、工程实践与自主创新。竞赛内容涉及自动控制、模式识别、传感检测、嵌入式系统、机械设计和电气工程等领域，为智能移动系统的方案设计、制作与调试提供了综合实践平台。[1]
+智能车系统通常由环境感知、状态估计、运动控制、执行机构和人机交互等模块组成。系统通过视觉、编码器和惯性传感器获取环境与车体状态信息，经嵌入式控制器实时处理后，生成车轮速度与转向控制量，从而完成自主行驶、目标识别和任务决策。
+第二十一届竞赛设置蚂蚁搬家赛题，要求两辆智能车协同完成物体识别、推送、分类搬运与返回等任务。该赛题对多车协同、实时通信、目标定位和运动控制提出了较高要求。麦克纳姆轮底盘具备全向移动能力，可在保持车体朝向的同时进行横向位置调整，有利于双车对齐和推物路径规划。
+1.2  方案总体介绍
+蚂蚁搬家任务的基本流程为：双车由发车区出发并进入物品区域；视觉系统识别并锁定网球、小熊或沙包；双车协同完成接近、对齐和推送；根据目标类别将物体搬运至规定区域；重复执行直至完成全部任务，最后返回发车区。系统设计以缩短总任务时间、提高识别可靠性和保证双车相对位置稳定为主要目标。
+针对任务流程，系统将关键技术问题及对应方案归纳如下。
+表1.1  核心技术问题及解决方案
+系统采用自制PCB作为麦克纳姆轮底盘和电气安装平台，以RT1021 BTB为核心控制器，并在MicroPython环境中完成软件开发。OpenArt plus负责图像采集与YOLOv3模型推理；编码器提供轮速反馈，IMU提供姿态信息，ToF传感器完成近距离测距。主控根据视觉与传感器数据执行状态机和麦克纳姆轮运动学解算，通过级联PID实现航向与轮速闭环控制，并通过无线串口同步双车运动指令。调试过程中结合LCD、按键、串口上位机等工具，对感知、通信、控制和任务流程进行分阶段验证。
+1.3  本文结构
+报告正文共六章。第一章说明赛题背景、任务需求和总体方案；第二章介绍整车布局、麦克纳姆轮、电池及传感器安装；第三章说明主控、电源、电机驱动和传感器接口设计；第四章阐述视觉检测、运动控制、姿态解算、任务状态机、双车协作与里程计导航方法；第五章总结开发工具、调试流程和主要问题；第六章汇总模型车关键技术参数。结论之后列出参考文献，附录A给出核心算法源程序，附录B给出详细电路原理图与PCB实物图。
+
+
+机械结构设计与调整
+机械结构直接影响车体的运动稳定性、加减速响应、轮间一致性和双车协作精度。若底盘刚度、重心位置或车轮安装误差控制不当，高速运动时容易出现偏航、振动和轮间打滑。因此，车模搭建过程中重点优化底盘尺寸、重心分布、车轮布置和传感器安装位置，以保证全向运动的一致性与可靠性。
+2.1  整车布局
+系统采用自制PCB兼作麦克纳姆轮底盘和电气安装平台，在满足结构强度的前提下减小车体尺寸并降低重心。车轮选用硅胶麦克纳姆轮，以提高耐磨性和地面附着力；四个车轮分别由370直流减速电机独立驱动。整车外形及主要部件布局如图2.1至图2.3所示。
+
+
+
+图2.1  智能车外形图
+
+图2.2  智能车外形图
+
+图2.3  智能车外形图
+2.2  电池选型与安装
+系统采用3S锂电池供电，标称电压为11.1 V，容量为1500~2200 mAh。该电池能够满足四个370减速电机以及主控、视觉和传感器模块的供电需求。电池布置在底盘中心附近，并采用可靠固定方式，以减小偏载和运动过程中的位置变化。电池安装方式如图2.4所示。
+
+
+图2.4  电池安装示意图
+2.3  麦克纳姆轮布置与安装
+麦克纳姆轮是底盘实现全向运动的关键部件。系统采用四轮X型布置，M1、M2、M3、M4分别对应左后、右后、右前和左前轮，滚子轴线按正负45°排列。通过独立控制四轮转速和方向，车体可实现纵向移动、横向移动、原地旋转及任意方向合成运动。该运动方式可在不改变车体朝向的情况下修正横向偏差，从而简化双车对齐与推物控制。
+2.4  摄像头架设
+OpenArt plus视觉模组安装在车体前部上方，镜头距地约270 mm，俯角约25°。该位置兼顾前方视野、目标成像尺寸和车体重心分布，并尽量减少底盘结构对视场的遮挡。摄像头安装方式如图2.5所示。
+
+图2.6  摄像头安装示意图
+
+图2.5  摄像头安装示意图
+2.5  传感器安装布局
+传感器安装以视场无遮挡、测量轴与车体坐标系一致、线束固定可靠和便于维护为原则。各传感器的安装位置与功能见表2.1。
+表2.1  传感器安装位置与功能
+
+
+第三章  硬件电路设计
+硬件系统为感知、决策和运动控制提供基础。设计过程中以供电稳定、接口清晰、抗干扰和便于调试为原则，在满足功能需求的前提下简化电路结构，并通过合理布局和滤波措施降低电机驱动对主控与传感器的干扰。
+3.1  单片机系统设计
+系统采用NXP RT1021 BTB核心板作为主控制器。RT1021基于Arm Cortex-M7内核，主频最高500 MHz，集成浮点运算单元，并提供丰富的定时器、串口、SPI和编码器接口，可满足四路电机控制、传感器采集、姿态解算和状态机调度等实时任务。核心板外设接口框图如图3.1所示，主控及外设接口原理图见附录B图B-4。[3]
+
+
+图3.1  RT1021核心板外设接口框图
+RT1021核心板及外设接口电路详见附录B图B-4。
+
+3.2  电源模块设计
+系统由3S锂电池统一供电，正常工作电压约为11.1~12.6 V。电机驱动直接使用电池端电压；DC-DC电路将电池电压转换为5 V，为主控核心板、视觉模组等设备供电；LDO进一步提供3.3 V电源，为IMU、无线通信和编码器接口等低压器件供电。设计中综合考虑输出电流、转换效率、纹波、散热与电机噪声耦合，并在各电源支路配置去耦和滤波电容。
+系统包含以下三类供电电压：
+（1）电池电压：3S锂电池正常工作电压为11.1~12.6 V，主要用于四路电机驱动。
+（2）5 V电源：由DC-DC降压电路产生，为RT1021核心板、OpenArt plus等模块供电。
+（3）3.3 V电源：由LDO稳压电路产生，为IMU、无线串口和编码器接口等低压器件供电。
+
+
+图3.2  电源系统框图
+电源系统结构如图3.2所示，电源管理电路详见附录B图B-1和图B-2。
+
+
+3.3  电机驱动电路
+四个车轮均由370直流减速电机独立驱动，驱动接口采用PWM与方向信号控制。PWM频率设置为13 kHz，控制量范围为-10000~10000。四路电机的安装位置、引脚分配和极性设置见表3.1。
+表3.1  电机驱动引脚配置
+M1和M4设置反向极性，以统一四轮在同一正向指令下的实际转向。四路电机驱动原理图见附录B图B-3。
+
+
+3.4  传感器的选择与接口
+3.4.1  OpenArt plus视觉模组
+OpenArt plus作为图像采集与边缘推理单元，图像分辨率设置为320×240，像素格式为RGB565，处理帧率约30 fps。模组运行TFLite格式的YOLOv3目标检测模型，并通过串口向主控发送目标类别、位置和距离等信息。为减小光照变化对检测结果的影响，调试阶段对曝光、增益、白平衡及置信度阈值进行统一标定。[4]
+3.4.2  ToF激光测距模块
+系统采用DL1X系列ToF激光测距模块，测量范围约50~2000 mm，典型精度约1 cm，最高采样频率100 Hz。该传感器通过测量光信号飞行时间估算距离，主要用于目标近距离定位，以及推物和公转动作的触发与距离闭环。
+3.4.3  IMU六轴姿态传感器
+系统采用IMU660RX六轴惯性传感器，通过SPI接口与主控通信，可输出三轴加速度和三轴角速度。Roll和Pitch由加速度计与陀螺仪融合得到，Yaw由陀螺仪积分获得。为减小温度变化引起的零偏漂移，软件加入静止检测与在线零偏更新机制。
+3.4.4  编码器
+四个驱动电机均配备AB相增量式编码器。编码器每转输出346个脉冲，正交信号接入主控硬件编码器接口，用于计算各轮转速和累计位移，为速度闭环与里程计提供反馈。
+3.4.5  无线串口模块
+双车通信采用2.4 GHz无线串口模块，通信波特率为115200 bit/s。主车周期发送四路电机PWM与航向等运动信息，副车校验数据后执行对应控制指令。数据帧附带校验和，以降低传输错误对协同运动的影响。
+
+
+第四章  软件控制设计
+软件系统由视觉感知、数据通信、姿态解算、运动控制和任务状态机组成。OpenArt plus完成目标检测与黄线识别，RT1021负责多传感器数据处理、麦克纳姆轮运动学解算和双车指令调度。角度外环与轮速内环共同保证寻物、对齐、公转和推物过程中的运动稳定性。
+4.1  图像处理算法
+4.1.1  OpenArt plus视觉系统初始化
+视觉系统启动后依次完成传感器初始化、串口配置、图像参数设置、模型加载和预热推理。图像格式设置为RGB565，分辨率设置为QVGA（320×240）；固定增益和白平衡参数，以减小连续帧亮度与色彩变化。初始化代码如下。
+为提高运行稳定性，程序在模型加载后使用sensor.alloc_extra_fb()复用模型输入缓冲区，减少逐帧申请和释放大块内存造成的抖动；当内存不足时自动回退至兼容路径。视觉端使用UART(12)，主控端对应UART(5)，波特率均为115200 bit/s。
+# ==================== 硬件初始化 ====================
+sensor.reset()
+sensor.set_pixformat(sensor.RGB565)
+sensor.set_framesize(sensor.QVGA)      # 320x240
+sensor.skip_frames(time=2000)
+sensor.set_auto_gain(False)             # 锁定增益
+sensor.set_auto_whitebal(False)         # 锁定白平衡
+
+uart = UART(12, baudrate=115200, bits=8, parity=None, stop=1)
+
+# ==================== 模型加载 ====================
+net = tf.load('/sd/yolo3_iou_smartcar_final_with_post_processing.tflite')
+warmup = sensor.snapshot()
+warmup = warmup.copy(x_scale=float(net.input_width()) / 320,
+                     y_scale=float(net.input_height()) / 240)
+tf.detect(net, warmup)
+4.1.2  YOLO目标检测
+视觉端将320×240图像缩放至模型输入尺寸后执行TFLite推理，并按置信度阈值CONF_MIN=0.19过滤检测结果。系统识别网球、小熊和沙包三类目标，对应类别码分别为4、3和2；优先级依次为网球、小熊、沙包。每个有效检测框均计算中心位置、像素宽度和目标距离，供目标锁定与运动控制使用。核心检测流程如下。
+# ==================== YOLO 类别配置（并行元组，减少内存分配） ====================
+YOLO_NAMES = ('bear', 'sandbag', 'tennis')
+YOLO_CODES = (3, 2, 4)            # bear=3, sandbag=2, tennis=4
+YOLO_REAL_WIDTHS = (12.0, 8.0, 6.7)
+YOLO_PRIORITIES = (2, 3, 1)      # 数值越小优先级越高: tennis>bear>sandbag
+def detect_yolo(img):
+    if net is None: return []
+    inp = img.copy(x_scale=float(MODEL_W)/CAM_W, y_scale=float(MODEL_H)/CAM_H)
+    objs = tf.detect(net, inp)
+    valid = []
+    for o in objs:
+        x1,y1,x2,y2 = float(o[0]),float(o[1]),float(o[2]),float(o[3])
+        c_id, score = int(o[4]), float(o[5])
+        if score < CONF_MIN: continue     # 置信度过滤
+        # ...边界框后处理...
+        dist = lookup_distance(pw, YOLO_REAL_WIDTHS[cid], bottom_y)  # 查表法距离
+        results.append((YOLO_CODES[cid], YOLO_NAMES[cid], bx, by, pw,
+                        cx_box, cy_box, cid, YOLO_PRIORITIES[cid], bottom_y))
+4.1.3  距离查表法估算
+系统采用距离查表与线性插值方法估算目标距离。标定时记录宽度为8 cm的沙包在不同距离处的像素宽度，建立五组标定点[(58,20)、(44,30)、(34,40)、(27,60)、(20,70)]。运行时先按目标实际宽度对像素宽度归一化，再在相邻标定点之间进行线性插值；超出标定范围时返回无效值或采用受限外推。该方法将镜头畸变和安装误差包含在实测标定关系中。在20~70 cm范围内，实测误差约为±2 cm。
+# 距离查表（沙包8cm实测，线性插值）
+PW_DIST_TABLE = ((58, 20), (44, 30), (34, 40), (27, 60), (20, 70))
+
+def lookup_distance(pixel_width, real_width_cm):
+    pw_norm = pixel_width * (8.0 / real_width_cm)
+    for i in range(len(table)-1):
+        pw_hi, dist_hi = table[i]; pw_lo, dist_lo = table[i+1]
+        if pw_lo <= pw_norm <= pw_hi:
+            t = (pw_norm - pw_lo) / (pw_hi - pw_lo)
+            return round(dist_lo + t*(dist_hi - dist_lo), 1)
+    return 999
+4.1.4  物体锁定追踪机制
+为避免多目标场景中的频繁切换，系统设计了三层目标管理机制：首先，目标连续出现3帧后才建立锁定，以抑制单帧误检；其次，锁定后仅在80像素邻域内匹配同类别目标，以保持空间连续性；最后，当更高优先级目标出现并满足确认条件时，允许释放当前目标并重新锁定。核心逻辑如下。
+# 物体锁定追踪机制
+locked_obj = None; LOCK_WARMUP_FRAMES = 3
+lock_candidate = None; lock_warmup_count = 0
+
+# 主循环中的锁定逻辑
+if locked_obj is None:
+    target = min(all_objs, key=lambda o:(o['priority'],-o['cx_box']))
+    if lock_candidate['class_id'] == target['class_id']:
+        lock_warmup_count += 1
+    if lock_warmup_count >= LOCK_WARMUP_FRAMES:
+        locked_obj = lock_candidate   # 正式锁定
+4.1.5  视觉数据通信协议
+视觉端与主控之间采用115200 bit/s UART通信，使用6字节定长帧发送目标类别、坐标和距离信息。第0字节为目标类别码，其余字节根据工作模式表示有符号坐标、距离或停车标志。主控依据类别码解析字段，并对接收长度和数值范围进行检查。发送函数如下。
+def send_uart(code, x, y, dist):
+    data = bytearray(6)
+    data[0] = code              # 目标类别码
+    data[1] = (x >> 8) & 0xFF   # X坐标高字节
+    data[2] = x & 0xFF          # X坐标低字节
+    data[3] = (y >> 8) & 0xFF   # Y坐标高字节
+    data[4] = y & 0xFF          # Y坐标低字节
+    data[5] = int(dist)         # 距离(cm)
+    uart.write(data)
+4.2  运动控制算法
+4.2.1  麦克纳姆轮运动学解算
+设车体坐标系下的期望纵向速度、横向速度和旋转速度分别为Vx、Vy和ω。对于四轮X型麦克纳姆轮底盘（M1左后、M2右后、M3右前、M4左前），通过逆运动学关系将车体速度分解为四个车轮的目标控制量。程序实现如下。[10]
+def mecanum_drive_raw(vx, vy, w_rot, left_coeff=1.0, right_coeff=1.0):
+    """麦克纳姆轮运动学解算
+    vx:纵向速度(前+), vy:横向速度(左+), w_rot:角速度(CCW+)
+    轮子布局: M1左后, M2右后, M3右前, M4左前
+    """
+    m1 = (vx + vy + w_rot) * left_coeff   # 左后
+    m2 = (vx - vy - w_rot) * right_coeff  # 右后
+    m3 = (vx + vy - w_rot) * right_coeff  # 右前
+    m4 = (vx - vy + w_rot) * left_coeff   # 左前
+    def clamp(x): return max(min(x,DUTY_LIMIT),-DUTY_LIMIT)
+    motor_pwm[0]=clamp(m1); motor_pwm[1]=clamp(m2)
+    motor_pwm[2]=clamp(m3); motor_pwm[3]=clamp(m4)
+其中，left_coeff=1.03用于补偿左右轮系的机械差异，right_coeff=1.00；DUTY_LIMIT=10000用于限制PWM控制量，避免指令超出驱动范围。
+4.2.2  PID控制算法理论
+PID控制器由比例、积分和微分环节组成，具有结构清晰、参数易整定和工程实现简单等特点。比例项提高响应速度，积分项消除稳态误差，微分项抑制误差变化过快引起的超调。系统根据被控对象特性分别采用位置式角度PID和增量式速度PI。[8]
+位置式PID直接计算当前时刻的控制输出，适合航向角闭环；增量式PID计算相邻采样时刻的输出增量，适合多路轮速调节。两类控制器均设置输出限幅、死区或积分约束，以提高离散控制系统的稳定性。
+4.2.3  外环——位置式角度PID
+航向角外环采用位置式PID，整定参数为KP=10.0、KI=0.1、KD=0.09。主要处理措施如下：
+（1）误差归一化：将角度误差映射到[-180°，180°]，避免跨越正负180°时发生跳变。
+（2）死区衰减：在±1°死区内对输出乘以0.8，而非直接置零，以克服静摩擦并减小抖动。
+（3）积分限幅：将误差积分限制在±80以内，降低积分饱和导致的超调。
+（4）微分反馈：使用陀螺仪角速度last_gz构造阻尼项，减小误差差分对高频噪声的放大。
+# ===== 外环：位置式角度PID =====
+ANGLE_KP=10.0; ANGLE_KI=0.1; ANGLE_KD=0.09
+ANGLE_ERR_SUM_LIMIT=80.0; ANGLE_OUT_LIMIT=120.0
+
+def angle_pid_position():
+    global angle_err, angle_err_sum, angle_err_last, angle_out
+    raw_err = target_yaw - yaw
+    angle_err = _normalize_angle_deg(raw_err)  # 归一化到[-180,180]
+    if abs(angle_err) <= ANGLE_DEADBAND:
+        angle_out *= 0.8           # 死区衰减
+        return angle_out
+    angle_err_sum += angle_err
+    angle_err_sum = max(min(angle_err_sum,ANGLE_ERR_SUM_LIMIT),-ANGLE_ERR_SUM_LIMIT)
+    angle_out = (ANGLE_KP*angle_err + ANGLE_KI*angle_err_sum - ANGLE_KD*last_gz)
+    angle_out = max(min(angle_out,ANGLE_OUT_LIMIT),-ANGLE_OUT_LIMIT)
+    return angle_out
+4.2.4  内环——增量式速度PI
+四个驱动轮分别采用增量式PI进行速度闭环，参数为KP=10.0、KI=0.5。控制器根据当前误差及误差增量计算输出增量，再累加到上一时刻控制量，并对增量和总输出分别限幅。四路控制器独立运行，可补偿电机与负载差异。
+# ===== 内环：增量式速度PID =====
+SPEED_KP=10.0; SPEED_KI=0.5; SPEED_KD=0.0
+SPEED_DELTA_LIMIT=2000
+
+def speed_pid_incremental():
+    global speed_err, speed_err_last, motor_out
+    for i in range(4):                              # 4个轮子
+        speed_err[i] = target_speed[i] - enc_speed[i]
+        delta_err = speed_err[i] - speed_err_last[i]
+        delta_out = SPEED_KP*delta_err + SPEED_KI*speed_err[i]
+        delta_out = max(min(delta_out,SPEED_DELTA_LIMIT),-SPEED_DELTA_LIMIT)
+        motor_out[i] += delta_out                   # 增量累加
+        motor_out[i] = max(min(motor_out[i],SPEED_OUT_LIMIT),-SPEED_OUT_LIMIT)
+        speed_err_last[i] = speed_err[i]
+4.2.5  级联PID结构
+系统采用角度外环与速度内环组成的级联控制结构。角度PID输出期望旋转速度，与任务状态产生的旋转指令叠加后，经麦克纳姆轮逆运动学转换为四轮目标速度；速度PI再根据编码器反馈调节各轮PWM。公转状态下关闭航向保持外环，旋转分量由公转控制器直接给定，以避免两个角度控制目标相互冲突。
+4.3  IMU姿态解算
+4.3.1  互补滤波算法
+Roll和Pitch采用互补滤波融合加速度计与陀螺仪数据。滤波系数ALPHA=0.98，即短时动态主要使用陀螺仪积分，低频趋势由加速度计校正。由于加速度计无法观测航向角，Yaw由陀螺仪角速度积分得到，并在积分前采用一阶低通滤波抑制高频噪声。[6]
+# ===== 互补滤波姿态解算 =====
+ALPHA = 0.98   # 互补滤波系数
+
+def attitude_solve():
+    global roll, pitch, yaw, last_gz
+    ax, ay, az, gx, gy, gz = imu_read_averaged(IMU_SAMPLE_COUNT)
+    roll_acc = math.atan2(ay, sqrt(ax*ax+az*az)) * 57.29578
+    pitch_acc = math.atan2(-ax, sqrt(ay*ay+az*az)) * 57.29578
+    roll  = ALPHA*(roll+gx*dt) + (1-ALPHA)*roll_acc
+    pitch = ALPHA*(pitch+gy*dt) + (1-ALPHA)*pitch_acc
+    gz_filtered = gz*0.80 + last_gz*0.20   # 低通滤波
+    last_gz = gz_filtered
+    yaw += gz_filtered * dt
+    yaw = _normalize_angle_deg(yaw)
+4.3.2  在线零偏自动校正
+陀螺仪零偏会随温度和运行时间变化，一次性静态标定难以覆盖全过程。在线校正算法同时检查三轴角速度和加速度模长：三轴角速度均小于0.3°/s，且加速度模长位于0.95g~1.05g时，判定车辆处于候选静止状态；条件连续满足25帧（约250 ms）后，以beta=0.08的一阶低通方式更新零偏估计。测试中，Yaw漂移由约±5°/min降低至约±0.5°/min。
+# ===== 在线零偏自动校正 =====
+GYRO_STATIC_THRESHOLD = 0.3    # 静止阈值(°/s)
+STATIC_COUNT_THRESHOLD = 25    # 连续250ms静止后校正
+
+def imu_check_static(ax,ay,az,gx,gy,gz):
+    gyro_static = (abs(gx)<GYRO_STATIC_THRESHOLD and ...)
+    acc_norm = sqrt(ax*ax+ay*ay+az*az)
+    acc_static = (0.95 <= acc_norm <= 1.05)
+    if gyro_static and acc_static: imu_static_count += 1
+    else: imu_static_count = 0
+    return imu_static_count >= STATIC_COUNT_THRESHOLD
+
+def imu_online_bias_update(gz_res):
+    beta = 0.08  # 一阶低通系数
+    online_gz_offset = (1-beta)*online_gz_offset + beta*gz_res
+4.4  任务状态机设计
+主车任务流程由7个状态组成的有限状态机管理，包括初始化、导航至A点、视觉寻物、推物、撤退旋转、公转和返回发车区。各状态仅负责明确的局部任务，并通过传感器条件、超时保护和任务计数完成切换。状态定义如下。
+# ===== 状态机定义 =====
+STATE_INIT = 0                  # 初始化
+STATE_NAVIGATE_TO_A = 1         # 导航至A点
+STATE_VISION_TRACKING = 2       # 视觉寻物(三阶段)
+STATE_PUSH_OBJECT = 3           # 推物至黄线
+STATE_RETREAT_ROTATE = 4        # 撤退旋转
+STATE_ORBIT = 5                 # 绕物体公转
+STATE_RETURN_ORIGIN = 6         # 返回发车点
+
+# 主循环状态调度
+if step == STATE_INIT: ...
+elif step == STATE_NAVIGATE_TO_A: state_1_navigate_to_a()
+elif step == STATE_VISION_TRACKING: state_2_vision_tracking()
+elif step == STATE_PUSH_OBJECT: state_3_push_object()
+elif step == STATE_RETREAT_ROTATE: state_4_retreat_rotate()
+elif step == STATE_ORBIT: state_5_orbit()
+elif step == STATE_RETURN_ORIGIN: state_6_return_origin()
+4.4.1  三阶段视觉寻物策略
+视觉寻物状态分为粗接近、姿态对齐和低速靠近三个阶段。该分解使各阶段只处理一个主要控制目标，并在速度与定位精度之间取得平衡。
+# ===== 状态2：三阶段视觉寻物 =====
+vision_phase = 0  # 0=粗接近, 1=对齐, 2=靠近
+
+def state_2_vision_tracking():
+    if vision_phase == 0:          # 粗接近
+        if target_distance <= COARSE_DIST:
+            mecanum_stop_full(); vision_phase = 1
+        else: mecanum_drive_raw(1200, 0, 0)
+    elif vision_phase == 1:        # 对齐
+        if abs(angle_diff) > ANGLE_TOLERANCE:
+            w = -rot_spd if angle_diff>0 else rot_spd
+            mecanum_drive(0, w, 0)
+        else:
+            locked_approach_yaw = yaw
+            reset_angle_pid(locked_approach_yaw); vision_phase = 2
+    elif vision_phase == 2:        # 靠近
+        if tof_filtered<=TOF_TARGET or target_distance<=VIS_DIST:
+            step = STATE_ORBIT
+粗接近阶段以较高速度缩短与目标的距离；对齐阶段通过原地旋转减小横向角度误差；靠近阶段锁定航向并降低速度，直至ToF或视觉距离达到触发阈值。若目标连续丢失超过500 ms，车辆进入左右平移搜索模式，并在重新发现目标后返回当前阶段入口。
+4.4.2  公转运动控制
+公转状态用于根据目标类别调整推物方向。ToF测距偏差经比例环节修正径向速度，使车体与目标保持约100 mm间距；控制器根据当前航向与目标航向差选择较短的顺时针或逆时针路径。累计转角达到阈值，或当前Yaw进入目标角度±12°窗口时结束公转，以兼顾快速性和退出可靠性。
+# ===== 状态5：绕物体公转 =====
+ORBIT_VX = -60; ORBIT_VY = 70; ORBIT_W = 25; ORBIT_TARGET_DIST = 100
+
+def mecanum_orbit(vx, vy, w_rot):
+    # TOF径向距离修正：P控制维持轨道半径
+    if tof_filtered > 0:
+        dist_err = tof_filtered - ORBIT_TARGET_DIST
+        vx += dist_err * ORBIT_DIST_KP
+    mecanum_drive(vx, vy, w_rot)
+
+# 公转方向根据最短路径自动选择(CW/CCW)
+target_delta = _normalize_angle_deg(orbit_target_yaw - yaw)
+if target_delta >= 0: ORBIT_VY, ORBIT_W, ORBIT_VX = 70, 25, -60   # CCW(逆时针)
+else:                ORBIT_VY, ORBIT_W, ORBIT_VX = -70, -25, -60   # CW(顺时针)
+4.4.3  物体分类与搬运策略
+系统根据视觉类别码设置公转目标航向：沙包（code=2）对应-90°，网球（code=4）对应0°，小熊（code=3）对应+90°。主车完成公转后沿当前朝向推物，使不同类别物体进入对应区域。
+连续搬运流程由object_count管理。第一次推物完成后后退6.2 s并继续寻物；第二次推物完成后后退5.6 s，再旋转180°进入下一轮寻物；第三次推物完成后向左平移7 s返回发车区。推物超时时间根据物体类别设置：沙包7.6 s、小熊7.8 s，网球依据横向位置在5.3~7.9 s范围内调整，并由黄线停车信号提供优先终止条件。
+4.5  双车协作机制
+4.5.1  协作架构概述
+系统采用“红外视觉校正+运动指令同步”的主从协作架构。副车设置红外LED标志，主车视觉系统根据标志位置估计双车相对偏差，并在必要时修正运动指令；主车同时以10 Hz频率发送四路电机PWM，副车校验后驱动对应电机。视觉校正用于抑制单纯复制PWM造成的累计相对位移。
+4.5.2  无线通信协议
+无线数据以换行符结束的CSV字符串发送，字段格式为[m1,m2,m3,m4,y,chk]。其中m1至m4为四路PWM，y为航向信息，chk为低8位校验和。发送周期为100 ms，在实时性、串口负载和抗干扰能力之间取得平衡。
+# ===== 无线通信：主车→副车 PWM同步 =====
+SEND_MOTION_MS = 100  # 10Hz发送频率
+
+def send_motion_data():
+    m1,m2,m3,m4 = int(motor_pwm[0]),int(motor_pwm[1]),
+                  int(motor_pwm[2]),int(motor_pwm[3])
+    y = int(yaw)
+    chk = int(m1+m2+m3+m4+y) & 0xFF  # 校验和
+    msg = '{},{},{},{},{},{}\n'.format(m1,m2,m3,m4,y,chk)
+    wireless.send_str(msg)
+4.5.3  协作时序
+一次搬运的典型时序为：主车开始视觉寻物；约2~5 s完成接近与对齐；约5~8 s完成公转和方向调整；随后双车同步推物；检测到黄线停车信号或达到超时条件后停止；主车撤退并进入下一轮任务。具体时长会随目标初始位置和类别变化。
+4.6  里程计导航
+里程计模块读取四路编码器增量，通过麦克纳姆轮正运动学得到车体坐标系速度，再依据当前航向转换到世界坐标系并积分获得位置。模块支持航点记录、到达判定和点到点导航，为发车区、物品区及返回路径提供位置参考。
+class OdometryModule:
+    """里程计航点导航模块"""
+    def __init__(self):
+        self.now_x, self.now_y = 0.0, 0.0
+        self.now_angle = 0.0
+        self.recorded_points = []
+
+    def cal_distance_encoder(self):
+        vx_car = (s1+s2+s3+s4)/4.0
+        vy_car = (s1-s2-s4+s3)/4.0
+        vx_world = vx_car*cos(theta) - vy_car*sin(theta)
+        vy_world = vx_car*sin(theta) + vy_car*cos(theta)
+        self.now_x += vx_world*T*x_offset
+        self.now_y -= vy_world*T*y_offset
+
+    def navigate_to_point(self, aim_x, aim_y, speed=100):
+        if self.judge_arrive_point(aim_x, aim_y):
+            mecanum_stop(); return True
+        vx, vy = self.go_aim(aim_x, aim_y, speed)
+        mecanum_drive(vx, vy, 0); return False
+
+
+第五章  系统调试
+5.1  开发调试工具
+软件开发基于逐飞科技RT1021 MicroPython库，使用Thonny或VS Code进行代码编辑、下载和调试。主要开发与调试工具见表5.1。
+表5.1  开发与调试工具
+5.2  人机交互工具
+现场调试采用LCD、按键、拨码开关和LED构成人机交互界面。C19行程开关用于任务触发，D9按键用于模式切换，C4 LED用于指示运行状态。LCD实时显示状态码、目标坐标、Yaw角和ToF距离等信息，便于快速定位传感器、通信和状态切换问题。
+5.3  上位机调试
+为复现并分析车辆运行过程，系统通过串口或无线链路向上位机发送关键状态量。上位机显示摄像头画面、传感器数据、PID输出和状态机变量，使参数整定能够依据曲线和事件时序进行，而不依赖现场目测判断。
+5.4  分阶段调试策略
+系统采用由底层到整车的分模块递进调试方法，具体分为以下四个阶段。
+第一阶段（第1~2周）完成底层驱动验证，包括单电机正反转、编码器方向、麦克纳姆轮基本动作和IMU静态数据检查。
+第二阶段（第3~4周）完成控制参数整定。先整定角度环比例项，再加入微分阻尼和小积分项；随后整定四路速度PI，最后进行级联测试并记录超调量与稳定时间。
+第三阶段（第5~6周）完成视觉系统集成，包括YOLO检测准确率与帧率测试、6字节UART数据联调，以及距离查表标定和误差统计。
+第四阶段（第7~8周）完成状态机与双车联调。各状态独立验证后，再检查切换条件、超时保护和完整任务流程，最终进行连续多轮搬运测试。
+5.5  主要困难与解决方案
+表5.2  主要问题及解决方案
+
+
+第六章  模型车主要技术参数说明
+6.1  整车与供电参数
+表6.1  整车与供电参数
+6.2  传感器配置
+表6.2  传感器配置
+6.3  电机与驱动参数
+表6.3  电机与驱动参数
+6.4  赛道信息检测参数
+表6.4  赛道信息检测参数
+说明：整车重量、外形尺寸、电池容量、电容总容量和系统功耗应以最终比赛装配状态的实测结果为准，提交前需完成复测并更新表中数据。
+
+结  论
+本文完成了面向蚂蚁搬家赛题的双车协作系统设计与实现。系统以麦克纳姆轮全向底盘为运动平台，围绕目标识别、近距离定位、航向与轮速闭环、任务状态机和双车同步等环节形成了完整的软硬件方案。
+机械方面，通过PCB底盘、四轮X型布置和集中式部件安装控制车体尺寸与重心；硬件方面，完成了主控、电源、电机驱动、视觉、ToF、IMU、编码器和无线通信接口设计；软件方面，构建了YOLO目标检测、距离查表、级联PID、互补滤波、状态机和里程计等模块，并通过分阶段调试完成系统集成。
+系统的主要改进包括：基于静止判定的IMU在线零偏校正；目标预热确认、邻域匹配与优先级切换相结合的多目标管理；基于实测标定点的距离查表与线性插值；粗接近、姿态对齐和低速靠近组成的三阶段寻物流程；红外视觉校正与无线PWM同步结合的双车协作机制。测试结果显示，视觉测距在20~70 cm范围内误差约为±2 cm，Yaw漂移由约±5°/min降低至约±0.5°/min，系统能够连续完成三类物体的识别与搬运。
+后续工作将重点提高不同光照与遮挡条件下的识别鲁棒性，完善无线链路异常处理与副车独立速度闭环，并通过更多重复试验统计识别准确率、搬运耗时和失败模式，从而进一步提升整车稳定性与可复现性。
+致  谢
+感谢山东工商学院提供实验条件与场地，感谢指导教师杨莉、杨小聪在方案设计、系统调试和报告撰写过程中给予指导，感谢实验室同学提供的帮助。
+参考文献
+[1] 全国大学生智能汽车竞赛组委会. 第二十一届全国大学生智能汽车竞赛规则与技术规范[Z]. 2026.
+[2] 逐飞科技. RT1021开发库技术手册与MicroPython API文档[EB/OL]. 2024.
+[3] NXP Semiconductors. i.MX RT1021 Reference Manual[R]. 2020.
+[4] Redmon J, Farhadi A. YOLOv3: An Incremental Improvement[EB/OL]. arXiv:1804.02767, 2018.
+[5] Villard E, et al. Mecanum Wheel Control[C]//ICRA Workshop. 2021.
+[6] 秦永元. 惯性导航[M]. 北京: 科学出版社, 2014.
+[7] 卓晴, 黄开胜, 邵贝贝. 学做智能车[M]. 北京: 北京航空航天大学出版社, 2007.
+[8] 刘金琨. 先进PID控制MATLAB仿真: 第3版[M]. 北京: 电子工业出版社, 2018.
+[9] 蔡述庭. “恩智浦”杯智能汽车竞赛设计与实践[M]. 北京: 北京航空航天大学出版社, 2012.
+[10] 喻凡, 林逸. 麦克纳姆轮全向移动机器人运动分析与控制[J]. 机器人, 2019.
+
+附录A  核心算法源程序
+本附录列出视觉检测、运动控制、姿态解算、状态机和双车通信等核心程序。代码摘自实际运行工程，并保留原有变量命名与注释；完整工程源文件与本报告一并提交。
+A.1  视觉系统核心程序（OpenArt plus）
+A.1.1  硬件初始化与模型加载
+# ==================== 硬件初始化 ====================
+sensor.reset()
+sensor.set_pixformat(sensor.RGB565)
+sensor.set_framesize(sensor.QVGA)      # 320x240
+sensor.skip_frames(time=2000)
+sensor.set_auto_gain(False)             # 锁定增益
+sensor.set_auto_whitebal(False)         # 锁定白平衡
+
+uart = UART(12, baudrate=115200, bits=8, parity=None, stop=1)
+
+# ==================== 模型加载 ====================
+net = tf.load('/sd/yolo3_iou_smartcar_final_with_post_processing.tflite')
+warmup = sensor.snapshot()
+warmup = warmup.copy(x_scale=float(net.input_width()) / 320,
+                     y_scale=float(net.input_height()) / 240)
+tf.detect(net, warmup)
+A.1.2  YOLO目标检测函数
+def detect_yolo(img):
+    if net is None: return []
+    inp = img.copy(x_scale=float(MODEL_W)/CAM_W, y_scale=float(MODEL_H)/CAM_H)
+    objs = tf.detect(net, inp)
+    valid = []
+    for o in objs:
+        x1,y1,x2,y2 = float(o[0]),float(o[1]),float(o[2]),float(o[3])
+        c_id, score = int(o[4]), float(o[5])
+        if score < CONF_MIN: continue     # 置信度过滤
+        # ...边界框后处理...
+        dist = lookup_distance(pw, info['real_width'])  # 查表法距离
+        results.append({'code':info['code'],'name':info['name'],
+                       'x':bx,'y':by,'dist':dist,'priority':info['priority']})
+A.1.3  距离查表与插值函数
+# 距离查表（沙包8cm实测，线性插值）
+PW_DIST_TABLE = ((58, 20), (44, 30), (34, 40), (27, 60), (20, 70))
+
+def lookup_distance(pixel_width, real_width_cm):
+    pw_norm = pixel_width * (8.0 / real_width_cm)
+    for i in range(len(table)-1):
+        pw_hi, dist_hi = table[i]; pw_lo, dist_lo = table[i+1]
+        if pw_lo <= pw_norm <= pw_hi:
+            t = (pw_norm - pw_lo) / (pw_hi - pw_lo)
+            return round(dist_lo + t*(dist_hi - dist_lo), 1)
+    return 999
+A.1.4  目标锁定与跟踪机制
+# 物体锁定追踪机制
+locked_obj = None; LOCK_WARMUP_FRAMES = 3
+lock_candidate = None; lock_warmup_count = 0
+
+# 主循环中的锁定逻辑
+if locked_obj is None:
+    target = min(all_objs, key=lambda o:(o['priority'],-o['cx_box']))
+    if lock_candidate['class_id'] == target['class_id']:
+        lock_warmup_count += 1
+    if lock_warmup_count >= LOCK_WARMUP_FRAMES:
+        locked_obj = lock_candidate   # 正式锁定
+A.1.5  串口数据发送函数
+def send_uart(code, x, y, dist):
+    data = bytearray(6)
+    data[0] = code              # 目标类别码
+    data[1] = (x >> 8) & 0xFF   # X坐标高字节
+    data[2] = x & 0xFF          # X坐标低字节
+    data[3] = (y >> 8) & 0xFF   # Y坐标高字节
+    data[4] = y & 0xFF          # Y坐标低字节
+    data[5] = int(dist)         # 距离(cm)
+    uart.write(data)
+A.2  运动控制核心程序（RT1021）
+A.2.1  麦克纳姆轮运动学解算
+def mecanum_drive_raw(vx, vy, w_rot, left_coeff=1.0, right_coeff=1.0):
+    """麦克纳姆轮运动学解算
+    vx:纵向速度(前+), vy:横向速度(左+), w_rot:角速度(CCW+)
+    轮子布局: M1左后, M2右后, M3右前, M4左前
+    """
+    m1 = (vx + vy + w_rot) * left_coeff   # 左后
+    m2 = (vx - vy - w_rot) * right_coeff  # 右后
+    m3 = (vx + vy - w_rot) * right_coeff  # 右前
+    m4 = (vx - vy + w_rot) * left_coeff   # 左前
+    def clamp(x): return max(min(x,DUTY_LIMIT),-DUTY_LIMIT)
+    motor_pwm[0]=clamp(m1); motor_pwm[1]=clamp(m2)
+    motor_pwm[2]=clamp(m3); motor_pwm[3]=clamp(m4)
+A.2.2  位置式角度PID（外环）
+# ===== 外环：位置式角度PID =====
+ANGLE_KP=10.0; ANGLE_KI=0.1; ANGLE_KD=0.09
+ANGLE_ERR_SUM_LIMIT=80.0; ANGLE_OUT_LIMIT=120.0
+
+def angle_pid_position():
+    global angle_err, angle_err_sum, angle_err_last, angle_out
+    raw_err = target_yaw - yaw
+    angle_err = _normalize_angle_deg(raw_err)  # 归一化到[-180,180]
+    if abs(angle_err) <= ANGLE_DEADBAND:
+        angle_out *= 0.8           # 死区衰减
+        return angle_out
+    angle_err_sum += angle_err
+    angle_err_sum = max(min(angle_err_sum,ANGLE_ERR_SUM_LIMIT),-ANGLE_ERR_SUM_LIMIT)
+    angle_out = (ANGLE_KP*angle_err + ANGLE_KI*angle_err_sum - ANGLE_KD*last_gz)
+    angle_out = max(min(angle_out,ANGLE_OUT_LIMIT),-ANGLE_OUT_LIMIT)
+    return angle_out
+A.2.3  增量式速度PI（内环）
+# ===== 内环：增量式速度PID =====
+SPEED_KP=10.0; SPEED_KI=0.5; SPEED_KD=0.0
+SPEED_DELTA_LIMIT=2000
+
+def speed_pid_incremental():
+    global speed_err, speed_err_last, motor_out
+    for i in range(4):                              # 4个轮子
+        speed_err[i] = target_speed[i] - enc_speed[i]
+        delta_err = speed_err[i] - speed_err_last[i]
+        delta_out = SPEED_KP*delta_err + SPEED_KI*speed_err[i]
+        delta_out = max(min(delta_out,SPEED_DELTA_LIMIT),-SPEED_DELTA_LIMIT)
+        motor_out[i] += delta_out                   # 增量累加
+        motor_out[i] = max(min(motor_out[i],SPEED_OUT_LIMIT),-SPEED_OUT_LIMIT)
+        speed_err_last[i] = speed_err[i]
+A.2.4  IMU互补滤波姿态解算
+# ===== 互补滤波姿态解算 =====
+ALPHA = 0.98   # 互补滤波系数
+
+def attitude_solve():
+    global roll, pitch, yaw, last_gz
+    ax, ay, az, gx, gy, gz = imu_read_averaged(IMU_SAMPLE_COUNT)
+    roll_acc = math.atan2(ay, sqrt(ax*ax+az*az)) * 57.29578
+    pitch_acc = math.atan2(-ax, sqrt(ay*ay+az*az)) * 57.29578
+    roll  = ALPHA*(roll+gx*dt) + (1-ALPHA)*roll_acc
+    pitch = ALPHA*(pitch+gy*dt) + (1-ALPHA)*pitch_acc
+    gz_filtered = gz*0.80 + last_gz*0.20   # 低通滤波
+    last_gz = gz_filtered
+    yaw += gz_filtered * dt
+    yaw = _normalize_angle_deg(yaw)
+A.2.5  IMU在线零偏校正
+# ===== 在线零偏自动校正 =====
+GYRO_STATIC_THRESHOLD = 0.3    # 静止阈值(°/s)
+STATIC_COUNT_THRESHOLD = 25    # 连续250ms静止后校正
+
+def imu_check_static(ax,ay,az,gx,gy,gz):
+    gyro_static = (abs(gx)<GYRO_STATIC_THRESHOLD and ...)
+    acc_norm = sqrt(ax*ax+ay*ay+az*az)
+    acc_static = (0.95 <= acc_norm <= 1.05)
+    if gyro_static and acc_static: imu_static_count += 1
+    else: imu_static_count = 0
+    return imu_static_count >= STATIC_COUNT_THRESHOLD
+
+def imu_online_bias_update(gz_res):
+    beta = 0.08  # 一阶低通系数
+    online_gz_offset = (1-beta)*online_gz_offset + beta*gz_res
+A.2.6  OpenArt plus视觉数据解析
+def parse_openmv():
+    """解析OpenMV视觉数据（6字节帧）"""
+    if uart_openmv.any() >= 6:
+        data = uart_openmv.read(6); code = data[0]
+        elif code == 1:            # 黄线模式(code 1)
+            xh, xl = data[1], data[2]; yh, yl = data[3], data[4]; dist = data[5]
+            x = (xh<<8)|xl; y = (yh<<8)|yl
+            if x > 32767: x -= 65536
+            if y > 32767: y -= 65536
+            openmv_target_code = code; openmv_x_pixel = x
+            openmv_y_pixel = y; target_distance = dist; object_valid = True
+        if code == 5:            # 黄线到位停车信号
+            vision_stop_signal = 1; return
+        elif 2 <= code <= 4:       # 物体模式(沙包/小熊/网球)
+            x = (data[1]<<8)|data[2]; dist = (data[3]<<8)|data[4]
+            if x > 32767: x -= 65536
+            openmv_target_code = code
+            openmv_x_pixel = x - TARGET_X
+            target_distance = dist; object_valid = True
+A.2.7  状态机定义与调度
+# ===== 状态机定义 =====
+STATE_INIT = 0                  # 初始化
+STATE_NAVIGATE_TO_A = 1         # 导航至A点
+STATE_VISION_TRACKING = 2       # 视觉寻物(三阶段)
+STATE_PUSH_OBJECT = 3           # 推物至黄线
+STATE_RETREAT_ROTATE = 4        # 撤退旋转
+STATE_ORBIT = 5                 # 绕物体公转
+STATE_RETURN_ORIGIN = 6         # 返回发车点
+
+# 主循环状态调度
+if step == STATE_INIT: ...
+elif step == STATE_NAVIGATE_TO_A: state_1_navigate_to_a()
+elif step == STATE_VISION_TRACKING: state_2_vision_tracking()
+elif step == STATE_PUSH_OBJECT: state_3_push_object()
+elif step == STATE_RETREAT_ROTATE: state_4_retreat_rotate()
+elif step == STATE_ORBIT: state_5_orbit()
+elif step == STATE_RETURN_ORIGIN: state_6_return_origin()
+A.2.8  三阶段视觉寻物
+# ===== 状态2：三阶段视觉寻物 =====
+vision_phase = 0  # 0=粗接近, 1=对齐, 2=靠近
+
+def state_2_vision_tracking():
+    if vision_phase == 0:          # 粗接近
+        if target_distance <= COARSE_DIST:
+            mecanum_stop_full(); vision_phase = 1
+        else: mecanum_drive_raw(1200, 0, 0)
+    elif vision_phase == 1:        # 对齐
+        if abs(angle_diff) > ANGLE_TOLERANCE:
+            w = -rot_spd if angle_diff>0 else rot_spd
+            mecanum_drive(0, w, 0)
+        else:
+            locked_approach_yaw = yaw
+            reset_angle_pid(locked_approach_yaw); vision_phase = 2
+    elif vision_phase == 2:        # 靠近
+        if tof_filtered<=TOF_TARGET or target_distance<=VIS_DIST:
+            step = STATE_ORBIT
+A.2.9  公转运动控制
+# ===== 状态5：绕物体公转 =====
+ORBIT_VX = -60; ORBIT_VY = 70; ORBIT_W = 25; ORBIT_TARGET_DIST = 100
+
+def mecanum_orbit(vx, vy, w_rot):
+    # TOF径向距离修正：P控制维持轨道半径
+    if tof_filtered > 0:
+        dist_err = tof_filtered - ORBIT_TARGET_DIST
+        vx += dist_err * ORBIT_DIST_KP
+    mecanum_drive(vx, vy, w_rot)
+
+# 公转方向根据最短路径自动选择(CW/CCW)
+target_delta = _normalize_angle_deg(orbit_target_yaw - yaw)
+if target_delta >= 0: ORBIT_VY, ORBIT_W, ORBIT_VX = 70, 25, -60   # CCW(逆时针)
+else:                ORBIT_VY, ORBIT_W, ORBIT_VX = -70, -25, -60   # CW(顺时针)
+A.2.10  无线通信PWM发送
+# ===== 无线通信：主车→副车 PWM同步 =====
+SEND_MOTION_MS = 100  # 10Hz发送频率
+
+def send_motion_data():
+    m1,m2,m3,m4 = int(motor_pwm[0]),int(motor_pwm[1]),
+                  int(motor_pwm[2]),int(motor_pwm[3])
+    y = int(yaw)
+    chk = int(m1+m2+m3+m4+y) & 0xFF  # 校验和
+    msg = '{},{},{},{},{},{}\n'.format(m1,m2,m3,m4,y,chk)
+    wireless.send_str(msg)
+A.2.11  里程计航点导航模块
+class OdometryModule:
+    """里程计航点导航模块"""
+    def __init__(self):
+        self.now_x, self.now_y = 0.0, 0.0
+        self.now_angle = 0.0
+        self.recorded_points = []
+
+    def cal_distance_encoder(self):
+        vx_car = (s1+s2+s3+s4)/4.0
+        vy_car = (s1-s2-s4+s3)/4.0
+        vx_world = vx_car*cos(theta) - vy_car*sin(theta)
+        vy_world = vx_car*sin(theta) + vy_car*cos(theta)
+        self.now_x += vx_world*T*x_offset
+        self.now_y -= vy_world*T*y_offset
+
+    def navigate_to_point(self, aim_x, aim_y, speed=100):
+        if self.judge_arrive_point(aim_x, aim_y):
+            mecanum_stop(); return True
+        vx, vy = self.go_aim(aim_x, aim_y, speed)
+        mecanum_drive(vx, vy, 0); return False
+附录B  电路原理图及PCB设计
+B.1  电源管理电路
+
+图B-1  电源系统总体框图
+电池输入经DC-DC转换为5 V，再由LDO产生3.3 V。各级电源均设置输入、输出滤波与状态指示，原理图如下。
+图B-2  电源管理电路原理图
+B.2  电机驱动电路
+
+图B-3  四路电机驱动电路原理图
+
+B.3  主控及外设接口电路
+
+图B-4  主控及外设接口电路原理图
+B.4  PCB布局与实物
+
+图B-5  PCB实物图
+
+===== TABLE 1 =====
+技术问题 | 解决方案
+高精度物体识别与定位 | OpenArt plus、YOLOv3 TFLite模型与距离查表
+高效可靠的双车协作 | 红外视觉校正与无线串口PWM同步
+麦克纳姆轮全向运动控制 | 逆运动学解算与级联PID闭环
+姿态感知与漂移抑制 | IMU660RX、互补滤波与在线零偏校正
+
+===== TABLE 2 =====
+传感器 | 安装位置 | 功能说明
+OpenArt plus摄像头 | 车体前部，距地约270 mm、俯角约25° | YOLO目标检测与黄线识别
+DL1X ToF模组 | 车头正中下方 | 近距离测距（50~2000 mm）
+IMU660RX | 车体中心附近 | 六轴姿态感知与航向估计
+红外LED灯板（副车） | 副车标志杆 | 850 nm红外标志，供主车视觉跟踪
+4路编码器 | 四个电机输出轴 | 轮速反馈（346脉冲/转）
+
+===== TABLE 3 =====
+电机编号 | 安装位置 | 驱动引脚 | 极性设置
+M1 | 左后轮(M1) | PWM_D4_DIR_D5 | invert=True
+M2 | 右后轮(M2) | PWM_D6_DIR_D7 | invert=False
+M3 | 右前轮(M3) | PWM_C28_DIR_C29 | invert=False
+M4 | 左前轮(M4) | PWM_C30_DIR_C31 | invert=True
+
+===== TABLE 4 =====
+工具或环境 | 用途
+Thonny IDE | MicroPython代码编写、上传、REPL交互调试
+OpenMV IDE | 视觉算法开发、图像实时预览、模型部署
+串口助手（SSCOM） | UART数据监控、OpenMV通信调试
+IPS200 LCD屏 | 实时显示状态、坐标、Yaw角、ToF距离和目标信息
+
+===== TABLE 5 =====
+问题 | 原因分析 | 解决方案
+Yaw角漂移 | 陀螺仪零偏随温度变化 | 采用在线零偏校正（beta=0.08）
+YOLO误检或漏检 | 光照变化或目标遮挡 | 采用预热确认、目标锁定并优化置信度阈值
+公转过冲或欠冲 | 惯性导致超调 | 采用累计转角与Yaw窗口双条件退出
+无线通信丢包 | 发送过快或现场干扰 | 发送周期调整为100 ms，并增加校验和
+推物停止位置不稳定 | 黄线识别延迟或惯性影响 | 停车信号优先响应，并设置分类超时保护
+
+===== TABLE 6 =====
+参数项目 | 参数值 | 备注
+车模总体重量 | 约2500 g | 含电池，以最终装配实测为准
+车体尺寸(长×宽×高) | 约200×158×270 mm | 以最终装配外廓实测为准
+电池规格 | 3S锂电池，11.1 V，1500~2200 mAh | 按实际装配电池型号确认
+电容总容量 | 约2000~5000 μF | 按最终PCB物料清单统计
+电路系统功耗 | 提交前按比赛工况实测 | 记录平均功耗与峰值功耗
+
+===== TABLE 7 =====
+传感器类型 | 数量 | 型号/规格 | 检测精度/频率
+摄像头 | 1 | OpenArt plus | 320×240，约30 fps
+ToF激光测距 | 1 | DL1X | 典型精度约±1 cm，最高100 Hz
+IMU六轴 | 1 | IMU660RX | 姿态解算频率100 Hz
+编码器 | 4 | AB相增量式 | 346脉冲/转
+红外LED标志 | 4 | 850 nm | 用于双车相对位置视觉跟踪
+
+===== TABLE 8 =====
+参数项目 | 参数值
+电机类型 | 370直流减速电机 × 4
+驱动方式 | MOTOR_CONTROLLER，PWM+DIR
+PWM频率 | 13 kHz
+PWM分辨率 | -10000~10000（最小步进0.01%）
+额外伺服电机个数 | 0（除四个驱动电机外）
+
+===== TABLE 9 =====
+检测项目 | 精度 | 频率/延迟
+目标物体识别 | 类别准确率>90% | 约30 fps（YOLO推理）
+物体距离估算 | 20~70 cm范围内约±2 cm | 查表插值与5帧滑动平均
+物体横向位置 | 对应视角误差约±3° | 约30 fps
+黄线检测 | 到位停车信号 | 颜色阈值与几何条件联合判断
+航向角(Yaw) | 约±1° | 100 Hz（10 ms周期）

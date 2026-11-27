@@ -1,0 +1,740 @@
+
+第二十一届全国大学生智能汽车竞赛技术报告
+
+
+
+
+2026年8月
+关于技术报告和研究论文使用授权的说明
+
+本人完全了解全国大学生智能汽车竞关保留、使用技术报告和研究论文的规定，即，参赛作品著作权归参赛者本人，比赛组委会可以在相关主页上收录并公开参赛作品的设计方案、技术报告以及参赛模型车的视频、图像资料，并将相关内容编纂收录在组委会出版论文集中。
+
+参赛队员签名：
+带队教师签名：
+
+日期：2026.8.19
+	
+摘  要
+针对全国大学生智能汽车竞赛蚂蚁搬家赛道中多类物品识别、双车协同接近、稳定夹持搬运及自主返航等任务，本文设计了一套由主车和从车组成的三轮全向移动系统。两车均采用三只50 mm全向轮和N20直流减速电机，车轮围绕底盘中心按120°均布，形成可前后、横移和原地旋转的全向运动平台。主车承担目标识别、任务决策、航向保持和协同指令下发，从车通过视觉提取主车双红外特征，结合无线动作指令完成相对位姿纠偏。双车前端采用直线合规推杆形成搬运接触面，推杆外侧弧形结构仅用于防止物品卡在车轮与推杆之间。系统以PWM输入、动作补偿、IMU航向反馈和从车视觉纠偏构成运动控制链路；主车前向视觉负责网球、泰迪熊和沙包识别，底部视觉通过黄色边界检测完成返航到界判断。实车联调表明，各模块能够按照固定任务顺序协同运行，并在视觉短时丢失、无线超时和黄色边界未及时触发时通过降级或兜底逻辑保持行为可控。
+关键词：蚂蚁搬家；主从协同；三轮全向底盘；视觉定位；IMU航向；黄色边界检测
+
+第一章  引言
+1.1  智能汽车制作概述
+本队围绕第二十一届全国大学生智能汽车竞赛蚂蚁搬家组任务，完成了主车、从车两套智能汽车的机械结构、电路系统、嵌入式控制与视觉感知设计。两车均采用三轮全向底盘，主车负责目标识别、任务决策、航向保持和动作下发，从车依据无线指令及主车红外特征完成编队跟随和相对位姿纠偏。
+制作过程按照机械平台、电源与驱动、单车运动、视觉检测、无线通信和双车联调的顺序展开。针对网球、泰迪熊和沙包的形态差异，系统分别设置目标视觉参数和推送时序；针对双车无刚性连接的特点，采用动作前馈、IMU航向约束和从车视觉反馈共同维持协同关系。最终形成从目标搜索、对准接近、协同推送到黄色边界返航的完整任务链。
+1.2  相关工作综述
+竞赛技术报告要求和蚂蚁搬家组任务细则27[1][2][3]规定了报告结构、车辆自主运行方式、搬运对象及赛道边界等基本条件，是本系统机械尺寸、任务状态和安全逻辑设计的直接依据。相关参赛队技术报告[4]表明，模块化机械结构、分层感知和双车协同控制能够降低多物品搬运任务的系统耦合度。
+在实现平台方面，i.MX RT1020系列处理器资料[5]为PWM、串口、SPI和GPIO等外设配置提供了依据；OpenART开发资料[6]支持轻量化目标检测、颜色阈值分割和边缘端串口通信；N20减速电机规格资料[7]用于确定驱动电压、减速比和输出能力。综合上述资料，本系统采用RT1021主控、OpenART视觉、三轮全向底盘以及主从无线协同方案，并通过实车标定确定动作补偿和视觉控制参数。
+
+
+
+
+
+表1.1  相关资料及其与本系统设计的关联
+
+1.3  报告内容安排
+图1.1  技术报告内容框架
+
+本报告共九章。第二章说明系统总体方案与任务状态机；第三章介绍机械结构、整车尺寸及推杆设计；第四章说明主控、电机驱动、电源和红外发光板；第五章阐述主车运动控制与任务决策；第六章介绍目标识别、从车红外跟踪及黄色边界检测；第七章说明主从协同控制；第八章总结调试方法和实车验证结果；第九章给出结论。附录列出关键技术参数和程序源代码节选。
+
+第二章  系统总体方案
+2.1  主从车功能分配
+
+表2.1  主车与从车功能分配
+
+2.2  系统硬件与信息流
+图2.1  主车感知与执行信息流
+
+图2.2  从车指令与纠偏信息流
+
+主车前向视觉通过串口输出目标类别与图像位置，底部黄色检测模块以GPIO电平输出边界状态，IMU提供航向角。主控制器融合上述信息后生成三轮驱动量，同时通过无线链路广播动作类别和阶段信息。从车以无线命令作为前馈，以视觉相对位姿作为反馈，形成“指令同步+局部纠偏”的协同控制结构。
+2.3  任务状态机
+正式程序采用固定任务顺序：网球→泰迪熊→沙包→黄色边界返航。每个搬运任务内部进一步划分为目标搜索、对准接近、双车就位、协同推送、动作完成和状态切换。固定顺序减少了任务间的歧义，使视觉模型只需提供当前目标的相对位置，而不必建立全局坐标地图。
+
+图2.3  主车顶层状态机
+
+系统不进行全局坐标解算。目标跟踪以图像坐标误差为主，返航阶段以既定动作序列和IMU航向约束为基础，并以底部黄色边界作为到界判据。
+
+第三章  机械结构设计
+3.1  三轮全向底盘
+主车和从车均采用三轮全向底盘。三个轮组相对于底盘中心呈中心对称布置，相邻车轮与底盘中心连线的夹角均为120°；轮心到底盘中心的距离为85.0 mm。底盘主体采用3 mm碳纤维板，通过开槽与局部镂空减轻质量，同时保留电机、控制板和相机支架的安装区域。
+全向轮直径为50 mm，驱动电机采用DC 6.0 V、减速比150∶1的N20直流减速电机。三轮布置使车辆能够在不改变车头朝向的情况下完成横向修正，并能够原地旋转，为双车对位和搬运过程中的小幅姿态调整提供机械基础。
+
+
+图3.1 主车底盘三维设计图
+
+
+
+图3.2  从车底盘三维设计图
+
+图3.3  主从车底盘相对布置示意
+3.2  外形尺寸与质量
+表3.1  主从车结构参数
+
+主车质量略大，主要来自前向视觉、底部黄色检测、IMU和主控制板等模块；从车结构相对简化，但需要布置用于跟踪主车红外特征的相机。两车平均质量为(370+330)/2=350 g。控制参数分别针对两车整车质量和重心差异进行动作补偿，不直接套用完全相同的PWM。
+3.3  推杆与防卡轮结构
+双车前部设置直线推杆，工作时两车从目标两侧形成稳定接触。推杆的直线部分承担实际推送作用；靠近轮侧的弧形构件用于限制物品进入车轮与推杆之间的间隙，防止发生卡滞。该弧形构件不作为推杆，也不参与推杆长度和前伸量的计算。
+
+表3.2  推杆及推板关键尺寸
+
+主从车推杆长度相近，可使两车在固定编队下近似同时接触目标。离地高度根据网球、沙包和泰迪熊的接触特性折中确定；推板宽度用于形成稳定接触面；前伸量使推送构件先于轮组接触目标，并为弧形防卡滞装置留出过渡空间。
+3.4  传感器与附件安装
+主车前向相机安装在车头上方，视轴面向目标区域；底部黄色检测相机朝向地面并设置固定感兴趣区域。用于从车跟踪的红外发光板固定在主车可见位置，使两特征点在常用编队距离内保持可分离。从车相机的位置和俯仰角围绕红外特征覆盖范围进行调整。相机与支架采用螺钉或轻量化打印件固定，线束沿底盘内侧布置，避免进入全向轮滚子区域。
+
+
+图3.4  相机安装法兰结构示意
+3.5  凸起通过性
+车辆通过赛道凸起时采用直行越障策略。实车测试表明，现有50 mm全向轮、底盘离地结构及整车质量分配能够使车辆正常越过凸起，未出现持续托底或结构卡滞。车辆在保持当前航向的条件下即可稳定通过该类路面特征，无需额外切换运动路径。
+
+第四章  硬件电路系统
+4.1  控制核心与接口组织
+主控系统以RT1021核心板为运算中心，通过扩展底板连接视觉串口、IMU、无线模块、按键、蜂鸣器、电机驱动和调试接口。接口按功能分区，电源、驱动和弱信号尽量分开布置；各模块共地，以减少串口和GPIO电平判断的不确定性。主车与从车的软件职责不同，但底层运动接口保持一致，便于复用三轮解算和安全控制代码。
+
+
+图4.1  RT1021核心板引脚分配
+
+
+
+
+
+
+
+
+图4.2  主控底板外设与通信接口
+
+
+图4.3  主控底板PCB布局
+4.2  电机驱动与运动执行
+电机驱动板预留四路H桥驱动和四组电机/编码器接口，实际三轮小车使用其中三路，剩余一路作为硬件冗余。控制器输出各路PWM和方向信号，经驱动级向N20电机供电。霍尔反馈接口用于电机状态检测与功能扩展，当前运动执行以PWM输入和动作补偿为主。
+
+
+图4.4  电源稳压、四路电机驱动及接口原理图（实际使用三路）
+
+表4.1  实际采用的N20电机主要参数
+
+4.3  电源系统
+两车使用TATTU 3S1P LiHV锂电池，标称电压11.4 V、容量300 mAh、标称能量3.42 Wh、放电倍率95C，采用XT30接口。电池最大质量23 g，最大外形尺寸19×18×50 mm。电池母线经稳压和受控开关形成5 V及3.3 V等逻辑电源，电机驱动与视觉模块根据各自额定输入取电。
+
+表4.2  动力电池参数
+
+电源设计重点不是按四路电机估算实际负载，而是按三台电机、视觉模块、主控和无线模块的组合工况预留瞬态余量。电机启动或推送受阻时可能产生电流阶跃，因此在电源入口、驱动附近和数字电源端分别设置滤波与去耦，并通过受控5 V输出减少外设异常上电对主控复位的影响。
+4.4  红外发光板
+主车安装红外发光板作为从车视觉跟踪特征。发光板采用两组红外发光器件，每组串接100 Ω限流电阻，并通过AO3400 MOSFET进行使能控制。双特征点的中心、间距和连线角度可同时用于估计主车相对位置和朝向，相比单点光源能够区分平移偏差与角度偏差。
+
+
+图4.5  双红外特征发光板原理图
+
+
+图4.6  红外发光板PCB布局
+4.5  通信与安全接口
+视觉模块与主控之间使用串口或GPIO传递感知结果，主从车之间使用无线链路同步动作。通信处理遵循“新数据覆盖旧数据、停止命令优先、超时进入安全状态”的原则。视觉串口接收与运动控制解耦，避免图像推理周期波动直接阻塞底盘控制；从车定时检查无线心跳，超时后停止动作输出。
+
+第五章  主车运动控制与任务决策
+5.1  三轮全向运动学
+设车体坐标系中的期望速度为，第i个轮组相对底盘中心的方位角为，轮半径为r，轮心到车体中心距离为L。按照各轮滚动正方向定义，轮速可写为：
+
+		（公式1）
+
+实际程序不直接追求高精度物理轮速，而是将期望平移与旋转量映射为三路PWM，再依据电机方向、安装误差和整车载荷做符号校正、限幅及动作补偿。该方法计算量小，便于在主从两车上保持一致的运动接口。
+5.2  PWM基础驱动与动作补偿
+运动控制采用以PWM输入为基础的开环驱动。对于前进、后退、横移、原地旋转及主车转弯等典型动作，程序保存经过实车调试的基础PWM组合。考虑三台电机效率、轮组摩擦、质量和重心不同，在基础值上叠加分轮补偿，并统一进行死区补偿与最大值限制。
+
+		（公式2）
+
+其中为动作前馈PWM，为第i轮的动作补偿，为IMU航向修正量，表示输出限幅。主车和从车分别保存补偿参数，以适应370 g与330 g整车质量以及器件装配差异。
+5.3  IMU航向控制
+在直线接近和协同推送阶段，主车记录动作开始时的目标航向，并由IMU持续获得当前航向。将角度误差规范到（−180°，180°]后，经PID或PD形式生成旋转修正量，再按三轮运动学叠加到各路PWM。
+		（公式3）
+		（公式4）
+
+推送阶段主要抑制持续偏航，因此比例项和微分项承担主要作用，积分项保持较小或按状态启用，以避免物品受阻时积分累积造成突然旋转。动作切换时同步更新参考航向并清理历史误差，减少不同状态之间的控制残留。
+5.4  目标搜索与接近
+主车从视觉帧中读取当前任务目标的类别、矩形框中心和尺度信息。图像水平中心误差决定横向或转向修正，目标框尺度用于判断远近。当目标尚未出现时，主车按状态机执行有限范围搜索；目标稳定出现后进入对准接近；当目标位置满足接触条件时，向从车发送就位和协同推送命令。
+为减少单帧误检造成的动作突变，程序对类别有效性、目标框位置范围和连续帧状态进行检查。视觉输出只承担相对目标引导，不构建全局地图，也不将图像坐标强行换算为绝对场地坐标。
+5.5  搬运与返航时序
+表5.1  关键动作的时间兜底设置
+
+黄色边界检测是优先完成判据，时间参数是异常情况下的兜底上限，并非每次动作固定持续到上限。动作开始时记录计时，若黄色信号先到则立即进入下一状态；若传感器未及时触发，则在到达对应时长后停止当前动作并执行预定切换，防止车辆持续推送或越界。
+
+第六章  视觉感知系统
+6.1  主车目标识别
+主车前向视觉采用OpenART Plus开发板，在QVGA图像上运行轻量化目标检测模型，识别当前搬运任务中的网球、泰迪熊和沙包。模型输出类别、置信度和目标框，主控仅使用与当前状态匹配的有效目标。为兼顾推理速度与定位稳定性，训练和部署过程中保持相同的图像尺寸、颜色处理和类别编号。
+
+表6.1  主车目标视觉处理流程
+
+6.2  从车双红外特征跟踪
+从车相机面向主车红外发光板，提取两个高亮特征点。对候选区域进行面积、亮度和几何关系筛选后，计算双点中心(cx,cy)、点间距离dist以及连线角度angle。中心位置反映主从横向与纵向偏差，点间距离反映相对距离变化，连线角度反映相对朝向。
+
+		（公式5）
+
+系统在典型编队区域采集7个标定位置，记录特征量与期望修正方向的对应关系。运行时先依据标定结果对原始特征做尺度和偏置修正，再计算视觉P/PD控制量。标定目的不是恢复绝对三维坐标，而是使图像误差与底盘修正方向保持一致。
+6.3  底部黄色边界检测
+底部视觉采用OpenART mini开发板和下视相机，在QQVGA图像的固定感兴趣区域内进行黄色LAB阈值分割。经过连通域筛选后，若黄色区域满足面积和位置要求，则通过GPIO D0向主控输出有效电平。使用独立模块可以使黄色检测与前向目标推理并行，避免返航判据受目标检测帧率波动影响。
+
+图6.1  黄色边界检测流程
+
+黄色阈值在正式场地光照下进行校准，同时通过固定曝光、限定ROI和面积阈值降低地面反光干扰。主控对GPIO状态进行连续采样或短时确认，避免单次噪声直接切换任务状态。
+6.4  视觉异常处理
+主车目标短时丢失时保持有限搜索或降低动作幅度，不无限延续上一帧大幅修正；从车红外特征短时丢失时逐渐衰减视觉修正，暂时依靠最新无线动作前馈；若视觉长时间无法恢复或无线心跳超时，则停止输出。各视觉模块均通过有效标志和时间戳区分新旧数据。
+
+第七章  主从协同控制
+7.1  固定编队与协同原则
+双车搬运采用固定主从关系：主车负责确定目标与运动方向，从车位于另一侧配合形成近似V形夹持。双车不是通过刚性连接保持队形，而是依靠动作广播、机械接触和从车视觉纠偏共同维持相对位置。此结构允许两车对不同形状目标做小幅自适应，同时避免两个控制器同时争夺全局决策权。
+7.2  指令前馈与视觉反馈融合
+从车每个控制周期读取主车动作指令，查表得到对应三轮基础PWM，并根据两车机械差异叠加动作补偿。随后根据红外特征的中心、距离和角度误差生成视觉修正，最终输出为：
+
+		（公式6）
+
+式中为主车动作对应的从车前馈，为相对位姿特征误差。平移动作重点修正中心与距离误差；旋转动作除从车自转外，还需根据主车转动趋势产生适当环绕分量，使从车围绕编队中心运动，避免仅原地旋转造成两车分离。
+7.3  通信节拍与超时保护
+表7.1  从车实时控制与保护参数
+
+停止命令具有最高优先级。一旦主车完成任务、检测到边界、人工触发停止或通信超时，从车立即撤销动作前馈和视觉修正。视觉丢失本身不立刻造成急停：在无线链路正常时，从车可短时间按照最新动作低幅运行，以提高遮挡情况下的连续性；超过允许范围后再停车。
+7.4  协同推送过程
+图7.1  双车协同搬运控制流程
+
+目标接触前，主车依据目标框调整方向，从车依据红外特征保持编队；接触后，视觉目标框可能因遮挡变得不稳定，因此控制重点转为主车IMU航向和从车相对视觉。直线推杆承担主要推力，弧形防卡滞装置限制目标靠近轮组。黄色边界触发或兜底计时到达后，主车广播停止/切换命令，两车同步结束当前动作。
+
+第八章  调试、测试与结果分析
+8.1  分模块调试方法
+表8.1  分模块调试项目
+
+8.2  联调顺序
+系统联调由低风险到高耦合逐步进行：首先标定单车三轮基本动作和IMU方向；随后独立验证主车目标识别、从车红外跟踪和黄色GPIO；再建立空载主从编队；最后加入不同目标物并运行完整任务状态机。每次只调整一个主要参数组，区分机械偏差、视觉偏差和动作补偿，避免多参数同时变化导致无法定位问题。
+图8.1  系统联调顺序
+8.3  系统验证结果
+表8.2  已确认的系统结论
+8.4  误差来源与对策
+三轮全向底盘的主要误差来自滚子接触不一致、地面摩擦变化、电机个体差异和电池电压变化。系统通过分动作标定和IMU航向修正抑制累积偏差；横向队形误差由从车视觉反馈承担主要修正。
+视觉误差主要来自曝光变化、物品遮挡、红外特征粘连以及目标框抖动。对应措施包括固定相机安装、限制ROI、连续帧确认、几何筛选、修正限幅和丢失衰减。协同搬运中的机械误差则通过直线推杆接触面、弧形防卡滞装置和双车独立动作补偿共同降低。
+
+第九章  结论
+本文完成了蚂蚁搬家赛道主从双车系统的总体设计。机械方面，两车采用120°均布的三轮全向底盘、150∶1 N20减速电机和直线合规推杆，并以独立弧形构件防止物品卡轮；电路方面，构建了RT1021控制、三路实际电机驱动、多级供电、视觉与无线接口以及双红外特征板；软件方面，以固定任务状态机组织网球、泰迪熊、沙包搬运和黄色边界返航，以PWM前馈、动作补偿、主车IMU航向修正和从车视觉纠偏完成协同控制。
+实车测试表明，所设计底盘能够稳定通过赛道凸起；主从车在无线动作同步、IMU航向约束和视觉相对位姿纠偏的共同作用下，可完成既定搬运与返航流程。通信超时、视觉短时丢失及黄色边界未及时触发时，系统能够通过降级控制、超时停车和动作兜底限制异常状态的持续时间。
+当前系统面向规定赛道和固定任务流程设计，PWM驱动幅值会受到电池电压、地面摩擦和载荷变化影响；从车红外视觉在极端强光或长时间遮挡条件下可能出现特征质量下降。后续可通过电机状态监测、分工况补偿参数和视觉置信度估计进一步提高系统的环境适应性。
+参考文献
+第二十一届全国大学生智能汽车竞赛技术报告要求细则[EB/OL]. CSDN，2026-08-17访问。
+第二十一届全国大学生智能汽车竞赛蚂蚁搬家组细则及MicroPython开发板相关说明[EB/OL]. CSDN，2026-08-17访问。
+第21届智能车竞赛蚂蚁搬家组搬运任务说明[EB/OL]. CSDN，2026-08-17访问。
+湖南科技大学阶梯计划队. 蚂蚁搬家技术报告[EB/OL]. CSDN，2026-08-17访问。
+NXP Semiconductors. i.MX RT1020 Crossover Processor Reference Manual[Z].
+OpenART. OpenART Plus与OpenART mini开发资料[Z].
+CGM12-N20VA-08200E直流减速电机规格参数表[Z].
+附录A  关键技术参数汇总
+表A-1  主从车关键技术参数
+
+
+附录B  程序源代码
+以下代码均节选自本队实际工程，保留与三轮驱动、主从通信、视觉纠偏、目标识别及黄色边界检测直接相关的核心逻辑；导入配置、调试输出和重复辅助函数为控制篇幅作适当省略，完整源代码由参赛队留存。
+B.1  三轮动作映射与电机输出（follower_motor.py）
+0013  def normalize_targets(targets):
+0014      return tuple(max(-100, min(100, int(value))) for value in targets)
+0015  
+0016  
+0017  def motion_targets(action, speed):
+0018      action = str(action).upper()
+0019      speed = max(0, min(100, int(speed)))
+0020      half = speed // 2
+0021  
+0022      if action == "FORWARD":
+0023          return 0, speed, speed
+0024      if action == "BACKWARD":
+0025          return 0, -speed, -speed
+0026      if action == "MOVE_RIGHT":
+0027          return -speed, -half, half
+0028      if action == "MOVE_LEFT":
+0029          return speed, half, -half
+0030      return 0, 0, 0
+0031  
+0032  
+0033  def pwm_targets(targets):
+0034      return tuple(abs(int(value)) for value in normalize_targets(targets))
+0035  
+0036  
+0037  def startup_targets(targets):
+      # ... 省略与本节无关的辅助代码 ...
+0185      def run_targets(
+0186          self,
+0187          targets,
+0188          use_boost=True,
+0189          use_transition_pulse=False,
+0190      ):
+0191          targets = normalize_targets(targets)
+0192          if targets == (0, 0, 0):
+0193              self.stop()
+0194              return targets
+0195  
+0196          now_ms = self.clock.ticks_ms()
+0197          changed = targets != self.target_speeds
+0198          self.target_speeds = targets
+0199  
+0200          if use_transition_pulse:
+0201              self.boost_speeds = transition_targets(targets)
+0202              self.boost_start_ms = now_ms
+0203              self.boost_duration_ms = TRANSITION_PULSE_MS
+0204              self.boost_active = self.boost_speeds != targets
+0205          elif changed and use_boost:
+0206              self.boost_speeds = startup_targets(targets)
+0207              self.boost_start_ms = now_ms
+0208              self.boost_duration_ms = STARTUP_BOOST_MS
+0209              self.boost_active = self.boost_speeds != targets
+0210  
+0211          self.set_wheel_speeds(*self._output_targets(now_ms))
+0212          self.last_refresh_ms = now_ms
+0213          return targets
+0214  
+0215      def run_follower_action(
+0216          self,
+0217          action,
+0218          speed,
+0219          orbit_enabled=False,
+0220          wheel_radius=10.0,
+0221          car_gap=40.0,
+0222      ):
+0223          action = str(action).upper()
+0224  
+0225          if action in ("TURN_CW", "TURN_CCW"):
+0226              if not orbit_enabled:
+0227                  self.stop()
+0228                  return None
+0229              targets = orbit_targets(action, speed, wheel_radius, car_gap)
+0230          else:
+0231              targets = motion_targets(action, speed)
+0232  
+0233          motion_codes = {
+0234              "FORWARD": self.FORWARD,
+0235              "BACKWARD": self.BACKWARD,
+0236              "MOVE_RIGHT": self.MOVE_RIGHT,
+B.2  主从无线协议与超时保护（wireless.py）
+0038  def _checksum(payload):
+0039      value = 0
+0040      for character in payload:
+0041          value ^= ord(character)
+0042      return value
+0043  
+0044  
+0045  def _finish_frame(payload):
+0046      frame = "${}*{:02X}".format(payload, _checksum(payload))
+0047      if len(frame) + 2 > MAX_WIRE_BYTES:
+0048          raise ValueError("wireless frame longer than 30 bytes")
+0049      return frame
+0050  
+0051  
+0052  def encode_command(seq, action, speed=0, angle=0):
+0053      action = str(action).upper()
+0054      speed = int(speed)
+0055      angle = int(angle)
+0056  
+0057      if action not in VALID_ACTIONS:
+0058          raise ValueError("unknown wireless action")
+0059      if speed < 0 or speed > 100:
+0060          raise ValueError("speed must be 0..100")
+0061      if action.startswith("TURN_"):
+0062          if angle not in (0, 90, 180):
+0063              raise ValueError("turn angle must be 0, 90 or 180")
+0064      elif angle != 0:
+0065          raise ValueError("angle is only valid for turn commands")
+0066  
+0067      payload = "C,{},{},{},{}".format(
+0068          int(seq), ACTION_TO_WIRE[action], speed, angle
+0069      )
+0070      return _finish_frame(payload)
+0071  
+0072  
+0073  def encode_ack(seq):
+0074      return _finish_frame("A,{}".format(int(seq)))
+0075  
+0076  
+0077  def decode_frame(line):
+0078      line = str(line).strip()
+0079      if not line.startswith("$"):
+0080          return None
+0081  
+0082      star = line.rfind("*")
+0083      if star <= 1 or star + 3 != len(line):
+0084          return None
+0085  
+0086      payload = line[1:star]
+0087      try:
+0088          received_checksum = int(line[star + 1 :], 16)
+0089      except ValueError:
+0090          return None
+0091  
+0092      if received_checksum != _checksum(payload):
+0093          return None
+0094  
+0095      fields = payload.split(",")
+0096      if len(fields) == 2 and fields[0] == "A":
+0097          try:
+0098              return {"type": "ACK", "seq": int(fields[1])}
+0099          except ValueError:
+0100              return None
+0101  
+0102      if len(fields) != 5 or fields[0] != "C":
+0103          return None
+0104  
+0105      try:
+0106          seq = int(fields[1])
+0107          speed = int(fields[3])
+0108          angle = int(fields[4])
+0109      except ValueError:
+0110          return None
+0111  
+0112      action = WIRE_TO_ACTION.get(fields[2])
+0113      if action not in VALID_ACTIONS or speed < 0 or speed > 100:
+0114          return None
+      # ... 省略与本节无关的辅助代码 ...
+0290  class FollowerWireless:
+0291      def __init__(self, uart=None, clock=time, timeout_ms=350):
+0292          self.uart = WirelessUart() if uart is None else uart
+0293          self.clock = clock
+0294          self.timeout_ms = int(timeout_ms)
+0295          self.last_rx_ms = self.clock.ticks_ms()
+0296          self.last_seq = -1
+0297          self.connected = False
+0298          self.timeout_latched = False
+0299  
+0300      def poll(self):
+0301          newest = None
+0302          for line in self.uart.poll_lines():
+0303              packet = decode_frame(line)
+0304              if packet is None or packet["type"] != "CMD":
+0305                  continue
+0306  
+0307              seq = packet["seq"]
+0308              if seq != self.last_seq and not _sequence_is_newer(
+0309                  seq, self.last_seq
+0310              ):
+0311                  continue
+0312  
+0313              was_connected = self.connected
+0314              self.last_rx_ms = self.clock.ticks_ms()
+0315              self.connected = True
+0316              self.timeout_latched = False
+0317              is_new_sequence = seq != self.last_seq
+0318              if is_new_sequence:
+0319                  self.last_seq = seq
+0320              if is_new_sequence or not was_connected:
+0321                  try:
+0322                      self.uart.write_line(encode_ack(seq))
+0323                  except Exception:
+0324                      pass
+0325                  newest = packet
+0326          return newest
+0327  
+0328      def timeout_event(self):
+0329          if not self.connected or self.timeout_latched:
+0330              return False
+0331          elapsed = self.clock.ticks_diff(
+0332              self.clock.ticks_ms(), self.last_rx_ms
+0333          )
+0334          if elapsed > self.timeout_ms:
+0335              self.connected = False
+0336              self.timeout_latched = True
+0337              return True
+0338          return False
+B.3  从车红外视觉PID融合（ir_wireless_fusion.py）
+0316      def update(self, command, pose, motion_target_func):
+0317          action = str(command.get("action", "STOP")).upper()
+0318          speed = max(0, min(100, int(command.get("speed", 0))))
+0319          command_key = (action, speed)
+0320          if command_key != self.command_key:
+0321              self.reset()
+0322              self.command_key = command_key
+0323              self.command_start_ms = self.clock.ticks_ms()
+0324  
+0325          now_ms = self.clock.ticks_ms()
+0326          if pose is not None:
+0327              self.has_valid_pose = True
+0328              self.last_valid_pose_ms = now_ms
+0329  
+0330          ir_grace_active = False
+0331          if pose is None and self.has_valid_pose:
+0332              lost_ms = self.clock.ticks_diff(
+0333                  now_ms, self.last_valid_pose_ms
+0334              )
+0335              ir_grace_active = 0 <= lost_ms <= IR_LOSS_GRACE_MS
+0336  
+0337          effective_speed = self._effective_speed(
+0338              action,
+0339              speed,
+0340              pose is not None,
+0341              ir_grace_active=ir_grace_active,
+0342          )
+0343          base_targets = tuple(
+0344              clamp(int(value), -100, 100)
+0345              for value in motion_target_func(action, effective_speed)
+0346          )
+0347  
+0348          if pose is None or action not in TRANSLATION_ACTIONS:
+0349              self.reset()
+0350              result = _empty_result(base_targets)
+0351              if action in TRANSLATION_ACTIONS and ir_grace_active:
+0352                  result["control_mode"] = "IR_GRACE"
+0353              elif action in TRANSLATION_ACTIONS:
+0354                  result["control_mode"] = "RADIO_SAFE"
+0355              else:
+0356                  result["control_mode"] = "RADIO"
+0357              result["feedforward_speed"] = effective_speed
+0358              return result
+0359  
+0360          x_error = TARGET_CX - int(pose["cx"])
+0361          y_error = int(pose["cy"]) - TARGET_CY
+0362          forward_low, forward_high = self._forward_limits(
+0363              action,
+0364              effective_speed,
+0365              base_targets,
+0366              catch_enabled=effective_speed >= speed,
+0367          )
+0368          x_terms = self.x_pid.update(
+0369              x_error, forward_low, forward_high
+0370          )
+0371          y_terms = self.y_pid.update(
+0372              y_error,
+0373              -MAX_PID_SIDE_CORRECTION,
+0374              MAX_PID_SIDE_CORRECTION,
+0375          )
+0376          forward_correction = x_terms["output"]
+0377          side_correction = y_terms["output"]
+0378  
+0379          side_half = abs(side_correction) // 2
+0380          if side_correction < 0:
+0381              side_half = -side_half
+0382  
+0383          correction_targets = (
+0384              side_correction,
+0385              forward_correction + side_half,
+0386              forward_correction - side_half,
+0387          )
+0388          targets = tuple(
+0389              clamp(base_targets[index] + correction_targets[index], -100, 100)
+0390              for index in range(3)
+0391          )
+0392          return {
+0393              "targets": targets,
+0394              "forward_correction": forward_correction,
+0395              "side_correction": side_correction,
+0396              "x_error": x_terms["error"],
+0397              "y_error": y_terms["error"],
+0398              "x_p": x_terms["p"],
+0399              "x_i": x_terms["i"],
+0400              "x_d": x_terms["d"],
+0401              "y_p": y_terms["p"],
+0402              "y_i": y_terms["i"],
+0403              "y_d": y_terms["d"],
+0404              "ir_used": True,
+0405              "control_mode": "PID",
+0406              "feedforward_speed": effective_speed,
+0407          }
+0408  
+0409  
+B.4  物品目标检测与串口输出（OpenART main.py）
+0207      # ============ 物品检测（返程模式跳过，省 100-150ms/帧） ============
+0208      detected_objs = []
+0209      if not tag_enabled:
+0210          try:
+0211              img_small = img.copy(0.75, 1)
+0212              for obj in tf.detect(net, img_small):
+0213                  x1, y1, x2, y2, label, scores = obj
+0214                  if scores < DETECT_THRESHOLD:
+0215                      continue
+0216                  px1 = int(x1 * img.width())
+0217                  py1 = int(y1 * img.height())
+0218                  pw  = int((x2 - x1) * img.width())
+0219                  ph  = int((y2 - y1) * img.height())
+0220                  cx  = px1 + pw // 2
+0221                  cy  = py1 + ph // 2
+0222                  cls = min(int(label), MAX_CLS_ID)
+0223                  detected_objs.append((cls, cx, cy, pw, ph, int(scores * 100)))
+0224                  img.draw_rectangle((px1, py1, pw, ph), color=COLORS[cls], thickness=2)
+0225                  img.draw_string(px1, py1 - 12,
+0226                                 "%s %d%%" % (LABELS[cls], int(scores * 100)),
+0227                                 color=COLORS[cls])
+0228          except Exception as e:
+      # ... 省略与本节无关的辅助代码 ...
+0249                          "TAG:%d" % tag_id, color=(0, 255, 255))
+0250  
+0251      # ============ 串口发送 + 终端日志 ============
+0252      if detected_objs:
+0253          for cls, cx, cy, pw, ph, conf in detected_objs:
+0254              uart.write("OBJ,%d,%d,%d,%d,%d,%d\r\n" % (cls, cx, cy, pw, ph, conf))
+0255              dbg("OBJ [%s] cls=%d cx=%d cy=%d w=%d h=%d conf=%d%%" % (
+0256                  LABELS[cls], cls, cx, cy, pw, ph, conf))
+0257      else:
+0258          uart.write("OBJ,-1,0,0,0,0,0\r\n")
+0259          dbg("OBJ [none]")
+0260  
+0261      # 黄线检测已停用；但电控 ips.py 靠 LINE 行作为一帧结束锚，
+0262      # 缺 LINE 电控 700ms 内会丢弃累积的 OBJ。发一条 9 字段零占位维持帧同步。
+0263      uart.write("LINE,0,0,0,0,0,0,0,0\r\n")
+B.5  黄色边界检测与GPIO输出（mini_line.py）
+0029  def dbg(*a):
+0030      if DEBUG:
+0031          print(*a)
+0032  
+0033  # ========== GPIO 输出 ==========
+0034  # B16 输出到主车电控的 D0
+0035  # 注意：OpenART mini v1.18 的 machine.Pin 只支持 Pin.OUT，不支持 Pin.OUT_PP
+0036  line_pin = machine.Pin("B16", machine.Pin.OUT)
+0037  line_pin.value(0)           # 上电初始拉低
+      # ... 省略与本节无关的辅助代码 ...
+0076  while True:
+0077      clock.tick()
+0078      frame_idx += 1
+0079      img = sensor.snapshot()
+0080  
+0081      # 只在中央 ROI 找黄色 blob（find_blobs 已经用 MIN_PIXELS 过滤过小块）
+0082      blobs = img.find_blobs(
+0083          YELLOW_LAB,
+0084          roi=DETECT_ROI,
+0085          pixels_threshold=MIN_PIXELS,
+0086          area_threshold=MIN_PIXELS,
+0087          merge=True
+0088      )
+0089  
+0090      # 只要 ROI 里出现有效黄色 blob 就判定看到黄线
+0091      found      = len(blobs) > 0
+0092      max_pixels = 0
+0093      best_blob  = None
+0094      if found:
+0095          best_blob  = max(blobs, key=lambda b: b.pixels())
+0096          max_pixels = best_blob.pixels()
+0097  
+0098      # 边沿触发才刷 GPIO + 打印（省算力+防日志洪水）
+0099      new_state = 1 if found else 0
+0100      if new_state != last_state:
+0101          line_pin.value(new_state)
+0102          last_state = new_state
+0103          dbg("[F%04d] LINE %s -> GPIO %s  px=%d" % (
+0104              frame_idx,
+0105              "DETECTED" if found else "LOST",
+
+
+
+===== TABLE 1 =====
+学校名称： | 四川大学
+队伍名称： | 今晚吃什么队
+参赛队员： | 王新朝、谢明展、许思梦、林鑫妤
+指导教师： | 马俊鹏、涂海燕
+
+===== TABLE 2 =====
+文献或资料 | 主要内容 | 对本系统设计的作用
+竞赛技术报告要求及任务细则[1][2][3] | 报告组成、搬运任务、场地与控制要求 | 确定系统边界、报告框架及任务状态
+同类蚂蚁搬家技术报告[4] | 机械结构、视觉感知和协同搬运方法 | 为模块划分和双车协同提供参考
+i.MX RT1020处理器资料[5] | PWM、串口、SPI、GPIO等外设资源 | 支撑主控接口和实时任务设计
+OpenART开发资料[6] | 目标检测、颜色分割与串口通信 | 支撑物品识别、红外跟踪和黄线检测
+N20电机规格资料[7] | 额定电压、减速比、转速与转矩 | 支撑驱动选型和PWM参数设定
+
+===== TABLE 3 =====
+总体方案 | → | 机械结构 | → | 硬件电路 | → | 控制与视觉 | → | 协同与测试 | → | 结论及附录
+
+===== TABLE 4 =====
+子系统 | 主车职责 | 从车职责
+视觉 | 识别网球、泰迪熊和沙包；检测黄色边界 | 检测主车双红外特征并估计相对位姿
+决策 | 维护任务状态机并确定动作方向 | 执行主车动作并叠加相对位姿修正
+姿态 | IMU航向保持，限制推送过程偏航 | 视觉角度误差与动作补偿共同抑制编队偏差
+通信 | 周期广播动作状态与停止命令 | 接收命令、回传/维持心跳并执行超时保护
+机构 | 与从车形成双侧接触，共同推动物品 | 保持与主车的相对位置并承担另一侧推力
+
+===== TABLE 5 =====
+OpenART前向视觉 | → | RT1021主控 | → | 三轮驱动
+
+===== TABLE 6 =====
+无线动作指令 | → | 从车控制器 | → | 视觉相对位姿 | → | 三轮驱动
+
+===== TABLE 7 =====
+初始化 | → | 网球搬运 | → | 泰迪熊搬运 | → | 沙包搬运 | → | 黄色边界返航 | → | 停车
+
+===== TABLE 8 =====
+项目 | 主车 | 从车 | 说明
+质量 | 370 g | 330 g | 双车平均质量350 g
+长×宽×高 | 230×192×250 mm | 205×200×270 mm | 按整车最大包络尺寸记录
+轮心至底盘中心 | 85.0 mm | 85.0 mm | 三轮采用相同安装半径
+相邻轮组安装角 | 120° | 120° | 中心对称布置
+
+===== TABLE 9 =====
+车辆 | 推杆长度 | 离地高度 | 推板宽度 | 前伸量
+主车 | 100 mm | 45 mm | 32 mm | 65 mm
+从车 | 99 mm | 42 mm | 33 mm | 60 mm
+
+===== TABLE 10 =====
+参数 | 采用值 | 说明
+电机型号 | CGM12-N20VA-08200E | N20直流减速电机
+使用电压 | DC 6.0 V | 电机规格电压
+减速比 | 150∶1 | 两车统一
+空载转速 | 约105 r/min | 规格表给定值
+空载电流 | ≤60 mA | 规格表给定值
+额定转速 | 约60 r/min | 额定工况
+额定转矩 | 1.0 kg·cm | 额定工况
+额定电流 | ≤170 mA | 额定工况
+瞬时允许转矩 | 2.2 kg·cm | 避免长时间按堵转工况使用
+
+===== TABLE 11 =====
+项目 | 参数
+型号 | TATTU-300mAh-95C-11.4V-3S1P-XT30
+标称电压 / 容量 | 11.4 V / 300 mAh
+标称能量 | 3.42 Wh
+放电倍率 | 95C
+最大质量 | 23 g
+最大尺寸（厚×宽×长） | 19×18×50 mm
+
+===== TABLE 12 =====
+阶段 | 主要完成判据 | 兜底时长
+网球协同推送 | 黄色边界/对应状态条件触发 | 8 s
+返航搜线 | 底部视觉检测到黄色边界 | 8 s
+泰迪熊协同推送 | 黄色边界/对应状态条件触发 | 10 s
+沙包协同推送 | 黄色边界/对应状态条件触发 | 10 s
+
+===== TABLE 13 =====
+处理环节 | 主要操作 | 输出
+图像采集 | 固定分辨率与曝光范围，获取前向画面 | 原始帧
+模型推理 | 轻量化目标检测网络前向计算 | 类别、置信度、目标框
+结果筛选 | 按任务类别、置信度与位置范围过滤 | 当前有效目标
+串口发送 | 按既定数据帧发送中心与尺度信息 | 主控视觉输入
+
+===== TABLE 14 =====
+下视采集 | → | ROI裁剪 | → | LAB阈值 | → | 连通域筛选 | → | GPIO D0输出
+
+===== TABLE 15 =====
+项目 | 设置 | 作用
+从车控制周期 | 20 ms | 周期执行动作前馈、视觉修正与限幅
+无线心跳周期 | 100 ms | 确认主车动作状态持续有效
+无线超时阈值 | 350 ms | 超时后清零输出并进入安全状态
+视觉短时丢失 | 修正量衰减 | 防止旧视觉误差持续放大
+
+===== TABLE 16 =====
+主车锁定目标 | → | 双车相对就位 | → | 同步接近 | → | 双侧接触 | → | 航向/视觉纠偏 | → | 到界或超时停止
+
+===== TABLE 17 =====
+模块 | 调试方法 | 确认内容
+机械与驱动 | 架空检查轮向，再落地测试基本动作 | 三轮方向、死区、推杆紧固和轮组干涉
+主车视觉 | 分目标采集不同距离和光照图像 | 类别、目标框稳定性和串口输出
+红外跟踪 | 在典型编队位置完成7点标定 | 双点顺序、距离、角度及修正方向
+黄色检测 | 跨越黄线并改变环境亮度 | ROI、阈值、GPIO极性和连续触发
+IMU航向 | 直行、横移和推送时记录偏航 | 零偏、角度环方向和修正限幅
+无线通信 | 主动断开或延迟主车心跳 | 350 ms超时停车和恢复逻辑
+
+===== TABLE 18 =====
+单车运动 | → | 视觉单测 | → | 通信单测 | → | 空载编队 | → | 单物品搬运 | → | 完整任务
+
+===== TABLE 19 =====
+验证项目 | 实车表现 | 技术结论
+整车尺寸与质量 | 完成主车370 g、从车330 g及外形尺寸实测 | 结构参数满足当前装配与搬运需求
+推杆结构 | 直线推杆稳定接触目标，弧形构件防止物品卡在车轮与推杆之间 | 推送与防卡轮功能相互独立
+凸起通过 | 车辆可保持当前航向正常碾压通过 | 底盘具有满足赛道需求的通过性
+运动控制 | PWM、动作补偿、IMU航向及从车视觉纠偏协同工作 | 能够完成基本动作与编队修正
+返航到界 | 底部视觉识别黄色边界并输出触发信号 | 边界信号可用于返航终止与状态切换
+时间保护 | 各阶段按8 s或10 s设置动作上限 | 异常情况下能够限制动作持续时间
+
+===== TABLE 20 =====
+类别 | 参数 | 主车/系统 | 从车
+整车 | 质量 | 370 g | 330 g
+整车 | 长×宽×高 | 230×192×250 mm | 205×200×270 mm
+底盘 | 轮组形式 | 3×50 mm全向轮 | 3×50 mm全向轮
+底盘 | 安装几何 | 轮心半径85.0 mm，相邻夹角120° | 同主车
+电机 | 型号/电压/减速比 | N20 / DC 6.0 V / 150∶1 | 同主车
+推杆 | 长度/离地高度 | 100 mm / 45 mm | 99 mm / 42 mm
+推板 | 宽度/前伸量 | 32 mm / 65 mm | 33 mm / 60 mm
+电池 | 标称参数 | 11.4 V、300 mAh、3.42 Wh、95C | 同主车
+控制 | 主要反馈与补偿 | PWM+动作补偿+IMU航向 | PWM+动作补偿+视觉纠偏
+返航 | 边界判据 | 底部黄色视觉，GPIO D0 | 跟随主车动作

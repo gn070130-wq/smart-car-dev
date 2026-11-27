@@ -1,0 +1,1188 @@
+第21届全国大学生
+智能汽车竞赛
+技 术 报 告
+基于双车协同与多传感融合的全向推物智能车
+
+关于技术报告和研究论文使用授权的说明
+本人完全了解全国大学生智能汽车竞赛关于保留、使用技术报告和研究论文的规定，即：参赛作品著作权归参赛者本人，比赛组委会可以在相关主页上收录并公开参赛作品的设计方案、技术报告以及参赛模型车的视频、图像资料，并将相关内容编纂收录在组委会出版论文集中。
+
+日　　期：日期：2026年8月18日
+目录
+第一章 引言	1
+1.1 竞赛任务与设计目标	1
+1.2 方案特点	1
+1.3 报告结构	1
+第二章 系统总体方案	2
+2.1 系统组成	2
+2.2 功能分层	2
+2.3 关键时序	3
+第三章 机械结构与传感器安装	4
+3.1 主从车三轮全向底盘	4
+3.2 传感器布置原则	5
+3.3 电路板与线束固定	6
+第四章 硬件系统与信息采集	7
+4.1 主从车主控与驱动系统	7
+4.2 主从车感知与协同信息	7
+第五章 控制软件与核心算法	8
+5.1 坐标系与速度变换	8
+5.2 三轮全向运动学	8
+5.3 航向外环与轮速内环	9
+5.4 主车视觉感知与信息融合	9
+5.5 从车视觉跟随与协同控制	10
+5.6 主车状态机与双车任务协同	10
+5.7 主从车安全与降级设计	11
+第六章 制作、调试与验证过程	12
+6.1 开发工具	12
+6.2 分阶段调试流程	12
+6.3 现有验证边界	13
+第七章 主要技术参数	14
+7.1 主车已确认技术参数	14
+7.2 从车已确认技术参数	15
+第八章 结论与改进方向	16
+参考文献	16
+附录A 核心算法子程序	xvii
+A.1 航向误差归一化片段	xvii
+A.2 三轮全向运动学解算片段	xvii
+A.3 增量式速度 PID 片段	xvii
+A.4 从车双红外相对位姿修正片段	xviii
+A.5 主车 TOF／灰度状态确认片段	xviii
+A.6 主车指令超时保护片段	xix
+A.7 主从协同状态切换片段	xix
+A.8 视觉目标滤波与有效性判定片段	xix
+A.9 无线数据帧校验与丢包处理片段	xx
+A.10 速度指令斜坡与限幅片段	xx
+A.11 推送阶段完成判定片段	xxi
+A.12 主车传感器采样与时间戳管理片段	xxi
+A.13 黄线检测与事件确认片段	xxii
+A.14 TOF 距离滤波与到达判定片段	xxiv
+A.15 视觉目标筛选与跟踪片段	xxv
+A.16 从车双红外相对位姿估计片段	xxvi
+A.17 轮速反馈与三轮输出限幅片段	xxvii
+A.18 主车任务状态机调度片段	xxviii
+A.19 从车跟随降级与急停片段	xxix
+A.20 主从通信封装与重发片段	xxxi
+A.21 调试日志与参数保护片段	xxxii
+A.22 整车任务周期调度与故障恢复片段	xxxiii
+附录B 电路板原理图与 PCB 版图	xxxv
+B.1 主控板原理图	xxxv
+B.2 主控板 PCB 版图	xxxvi
+B.3 双驱电机板原理图	xxxvii
+B.4 双驱电机板 PCB 版图	xxxviii
+B.5 红外发射板原理图	xxxix
+B.6 红外发射板 PCB 版图	xl
+
+
+
+
+主要符号表
+
+第一章 引言
+1.1 竞赛任务与设计目标
+全国大学生智能汽车竞赛要求参赛队在限定车模、能源与场地规则下完成自主感知、决策和运动控制，并通过技术报告准确呈现设计方案、制作过程、核心算法与技术指标。[1]
+本队采用主车 newcar 与从车协同工作的双车方案，两车均使用三轮全向底盘。主车负责场地感知、目标搜索、任务决策和运动指令生成；从车接收主车运动信息，并利用双红外视觉、惯性测量和轮速反馈修正相对位置与姿态。两车共同完成目标接近、协同推送、场内换点和返航任务。
+1.2 方案特点
+采用三轮福来轮底盘，实现不改变车头朝向的横移、纵移与旋转组合运动。
+采用角度外环与三轮速度内环的串级控制结构，分别处理航向稳定和执行器一致性。
+视觉端输出物品类别与位置，底盘灰度传感器负责识别赛道黄线；主控端对感知结果进行筛选、时效判断和任务阶段匹配。
+使用VL53L1X对近距离到达进行二次确认，并保留视觉判据作为传感器异常时的降级路径。
+从车采用主车速度前馈与双红外相对位姿修正相结合的跟随控制，并设置通信超时、视觉丢失和惯性传感异常保护。
+正式任务由状态机分解为初始化、搜索、接近、预对准、推送、返航和结束等阶段。
+1.3 报告结构
+第二章说明主从车总体方案，第三、四章分别介绍两车机械结构、传感器和硬件系统，第五章重点论述全向运动学、串级控制、主车任务规划与从车跟随控制，第六章记录制作调试过程，第七章分别汇总主车和从车技术参数，第八章给出结论与改进方向。附录包括主从车核心算法以及电路板原理图和PCB版图。
+第二章 系统总体方案
+2.1 系统组成
+系统由主车任务链和从车跟随链组成。主车利用视觉、底盘灰度和TOF完成物品识别、黄线识别及到达确认，并通过状态机生成运动目标；从车接收主车的航向与平移信息，以其为前馈量，再根据双红外灯的中点、间距和连线角度修正相对位置与姿态。两车均通过航向外环和三轮轮速内环执行运动指令，从而形成感知、决策、协同和反馈闭环。
+
+图2.1 主车系统信息链路
+从车的信息链路为：主车运动指令与双红外观测进入跟随控制器，经前馈和位置修正合成为从车体速度；IMU提供航向反馈，三路编码器完成轮速闭环。主车无线指令超时后，从车立即清零运动目标并保持当前航向。
+2.2 功能分层
+表2.1 主从车功能分层
+2.3 关键时序
+主车与从车均采用分频调度：轮速闭环以10 ms周期运行，航向与运动学以20 ms周期更新，视觉、测距及无线接收在主循环中异步刷新。从车只在20 ms外环中统一生成并下发三轮目标速度，避免不同感知任务同时改写控制量。
+第三章 机械结构与传感器安装
+3.1 主从车三轮全向底盘
+主车 newcar 与从车均采用三个等角分布的福来轮。左右两轮位于前侧，第三轮位于后侧，轮轴方向决定各轮对车体横向、纵向和旋转速度的贡献。车模资料给出的最大外径为182 mm、轮宽22 mm；控制程序以80 mm作为有效旋转半径。相同的底盘形式便于两车使用统一运动学和控制周期，同时支持主车主动对准及从车横向、纵向跟随。
+
+图3.1 三轮全向车模尺寸资料（单位：mm）
+3.2 传感器布置原则
+表3.1 传感器安装与机械要求
+
+图3.2 车模底盘与三轮全向轮实物照片
+
+图3.3 车模感知组件与电路板实物照片
+
+
+
+表3.2 传感器布置与安装说明
+3.3 电路板与线束固定
+主车和从车的主控板、电机驱动及电源模块均采用绝缘支柱固定，动力线与传感器信号线分束布置，插接件设置防松措施。主车摄像头、TOF和灰度传感器线束以及从车摄像头、IMU和无线模块线束需避开车轮及推杆运动范围。
+第四章 硬件系统与信息采集
+4.1 主从车主控与驱动系统
+主车主控负责场地感知、任务状态管理和主车闭环控制，同时向从车发送航向、平移速度及协同运动状态。从车主控负责接收主车运动目标、处理双红外视觉和惯性信息，并独立完成从车运动学与闭环控制。两车各使用三路电机驱动和三路编码器，驱动层均设置输出限幅、方向切换保护、起转补偿和零速复位。
+4.2 主从车感知与协同信息
+主车视觉模块识别物品类别和位置；底盘灰度传感器识别赛道黄线；车体前部TOF测量车模与物品之间的距离，用于判断是否到达物品前方，不承担避障功能。从车摄像头检测主车上的两个红外标志，根据两灯中点判断横向偏差，根据灯间距判断前后距离，根据连线角度辅助修正相对姿态。从车IMU和三路编码器分别提供航向与轮速反馈。主从信息按任务阶段融合，既保持整体协同，又保留两车各自的闭环稳定性。
+第五章 控制软件与核心算法
+5.1 坐标系与速度变换
+绝对坐标系定义为x向右、y向前，标准极坐标逆时针为正。车体局部坐标中vx向右、vy向前。项目中的航向角顺时针为正，车头对应的绝对方向角为90°减当前航向角。对于给定绝对方向α，车体速度方向使用α与当前航向角之和完成转换。
+	vₓ = V cos(α + ψ),    vᵧ = V sin(α + ψ)	（1）
+5.2 三轮全向运动学
+依据三个福来轮的安装角度，将车体平移速度和旋转等效线速度分解为三轮目标速度。程序预先保存1/3、√3/3和2/3常量以减少实时计算开销。
+	Vₗ = ⅓vₓ + (√3⁄3)vᵧ + Vᵣ	（2）
+	Vᵣ = ⅓vₓ − (√3⁄3)vᵧ + Vᵣ	（3）
+	Vₘ = −⅔vₓ + Vᵣ	（4）
+其中Vr为旋转分量。指定真实角速度模式下，Vr由角速度换算为rad/s后乘有效半径80 mm；兼容原角度位置环时保留既有的1/3旋转分量标定。
+
+图5.1 三轮全向底盘运动学分解
+5.3 航向外环与轮速内环
+外环使用IMU660RX的Z轴角速度积分得到航向，先扣除零偏并设置0.8 °/s小角速度死区，再以20 ms周期更新。角度误差归一化到[-180°,180°]，避免跨越0°时产生大角差。内环以10 ms周期读取三路编码器，采用增量式PID计算PWM。
+Δu(k)=Kp[e(k)-e(k-1)]+Ki e(k)+Kd[e(k)-2e(k-1)+e(k-2)]	公式5
+控制器包含PWM限幅、目标缓变、方向翻转时PID历史复位、编码器滤波、起转死区补偿和零速状态清理等工程保护。轮速目标按每毫米脉冲数换算：左31.274、右31.249、后30.795 pulse/mm。
+
+图5.2 串级控制与反馈闭环
+5.4 主车视觉感知与信息融合
+视觉端加载小型目标检测模型，识别网球、沙包、玩偶和障碍物等任务目标，并输出目标类别与位置。摄像头采用固定曝光、增益和白平衡，以降低场地光照波动造成的识别偏差。黄线识别由安装在底盘下方的灰度传感器完成，视觉模块不作为黄线判断的主要来源。
+视觉结果进入主控后，先完成目标框去重、置信度筛选和数据时效判断，再根据类别、位置及任务阶段选择目标。车辆接近物品时，TOF测得的物品距离作为是否到达物品前方的确认条件；底盘灰度传感器则独立检测地面黄线，为越线判断和动作切换提供依据。TOF不参与障碍物绕行。对于短时丢帧，系统保留上一帧运动趋势并逐步降速，持续丢失后再执行横移找回或换点。
+5.5 从车视觉跟随与协同控制
+从车以主车下发的平移速度和目标航向作为前馈量，同时利用双红外灯图像形成相对位姿误差。两灯中点与参考中点的偏差用于横向修正，灯间距与参考间距的偏差用于前后距离修正，灯连线角度用于航向的低频校正。前馈量与视觉修正叠加后形成从车体速度，再由与主车相同的三轮运动学、航向外环和轮速内环执行。
+普通跟随时，从车跟随主车平移并保持规定相对位置；协同转动时，两车围绕同一场地点运动，程序由主车当前速度反算公共角速度，再根据该圆心相对从车的位置计算从车切向速度。视觉短时丢失时，从车逐步衰减前进量并修正横向偏差；持续丢失则停车。主车有效指令超过250 ms未更新时，从车清零平移与协同转动命令、保持当前航向并执行急停。
+5.6 主车状态机与双车任务协同
+正式模式将任务拆分为初始化、搜索点移动、目标接近、推前预调整、协同推送、场内安全换点、返航和结束。主车负责状态切换和路径决策，并持续向从车发布当前运动目标。搜索和接近阶段，从车保持规定队形；主车利用TOF确认到达物品前方后，两车进入预对准与协同推送。需要改变推杆夹角时，两车执行共享圆心运动；推送期间主车结合障碍框、灰度黄线和超时条件决定继续、绕行或退出，从车同步跟随相应协同状态。
+
+图5.3 正式模式状态流程
+5.7 主从车安全与降级设计
+表5.1 主要安全与降级策略
+
+第六章 制作、调试与验证过程
+6.1 开发工具
+表6.1 开发与调试工具
+6.2 分阶段调试流程
+1. 机械与电气检查：分别架空主车和从车，确认两车三轮正方向、编码器计数方向、急停和供电极性。
+2. 单轮开环测试：使用恒定PWM验证电机接线和死区，记录起转阈值。
+3. 轮速内环：先地面空载调Kp，再逐步加入Ki，观察目标脉冲、实际脉冲和PWM。
+4. 航向外环：车辆静止测Z轴零漂，确认航向正方向后调节角度环输出和限幅。
+5. 全向运动：分别验证绝对0°、90°、180°、-90°平移以及原地旋转。
+6. 视觉与传感器：固定相机参数，逐类验证目标类别与边框位置；用不同距离的物品标定TOF到达阈值；在不同光照和离地高度下标定底盘灰度传感器的黄线识别阈值。
+7. 从车跟随调试：先固定主车验证双红外中点、间距和连线角度，再低速验证前后、横向和航向修正，最后检查视觉丢失后的减速停车。
+8. 主从通信与协同调试：验证普通跟随、共享圆心转动、250 ms指令超时停车及新指令恢复，再进行双车低速协同推送。
+9. 状态机联调：从单个搜索点、单个物体开始，逐步增加换点、避障、推送和返航。
+10. 完整赛道回归：在电池电压、光照和载荷变化下重复运行，统计成功率与平均时间。
+6.3 现有验证边界
+本报告依据当前主车、从车程序和设计资料完成，可确认双车系统结构、控制逻辑与静态参数。通信超时和共享圆心算法目前仅有程序与桌面检查证据，不能代替双车实地验证；也不能据此宣称连续比赛、功耗、跟随误差或任务成功率已经达标。
+第七章 主要技术参数
+7.1 主车已确认技术参数
+表7.1 主车当前可确认技术参数
+7.2 从车已确认技术参数
+表7.2 从车当前可确认技术参数
+
+第八章 结论与改进方向
+本报告完成了主车与从车机械结构、传感器布置、硬件连接、控制算法和任务协同方案的整理，明确了主车黄线与物品距离识别、从车双红外跟随以及通信与异常停车机制。
+参考文献
+[1] 全国大学生智能汽车竞赛组织委员会. 全国大学生智能汽车竞赛技术报告内容与格式要求[Z].
+[2] NXP Semiconductors. i.MX RT1020 Crossover Processors Data Sheet[EB/OL].
+[3] STMicroelectronics. VL53L1X Time-of-Flight Ranging Sensor Data Sheet[EB/OL].
+[4] 逐飞科技. IMU660RX模块与MicroPython驱动接口资料[Z].
+[5] OpenMV. TensorFlow object detection API documentation[EB/OL].
+[6] Åström K J, Murray R M. Feedback Systems: An Introduction for Scientists and Engineers[M]. Princeton University Press, 2008.
+[7] 逐飞科技. 福来轮三轮车全向控制算法与车模机械参数资料[Z].
+
+附录A 核心算法子程序
+本附录仅提供用于说明控制思想的代表性代码节选，下列片段用于说明核心算法流程。
+A.1 航向误差归一化片段
+def wrap_angle(error):
+    while error > 180.0:
+        error -= 360.0
+    while error < -180.0:
+        error += 360.0
+    return error
+
+def heading_control(target_heading, current_heading):
+    error = wrap_angle(target_heading - current_heading)
+    if abs(error) < heading_deadband:
+        error = 0.0
+    correction = k_heading * error
+    return clamp(correction, -heading_limit, heading_limit)
+
+heading_error = wrap_angle(target_heading - current_heading)
+heading_cmd = clamp(k_heading * heading_error,
+                    -heading_limit, heading_limit)
+A.2 三轮全向运动学解算片段
+sqrt3_3 = 0.57735
+
+def inverse_kinematics(vx, vy, vr):
+    wheel_left  = vx / 3.0 + sqrt3_3 * vy + vr
+    wheel_right = vx / 3.0 - sqrt3_3 * vy + vr
+    wheel_rear  = -2.0 * vx / 3.0 + vr
+    peak = max(abs(wheel_left), abs(wheel_right), abs(wheel_rear))
+    if peak > max_speed:
+        scale = max_speed / peak
+        wheel_left *= scale
+        wheel_right *= scale
+        wheel_rear *= scale
+    return wheel_left, wheel_right, wheel_rear
+
+wheel_left, wheel_right, wheel_rear = inverse_kinematics(vx, vy, vr)
+wheel_left, wheel_right, wheel_rear = limit_wheel_speed(
+    wheel_left, wheel_right, wheel_rear, max_speed)
+A.3 增量式速度 PID 片段
+def speed_pid(target_speed, measured_speed):
+    error = target_speed - measured_speed
+    if abs(error) < speed_deadband:
+        error = 0.0
+    delta = (kp * (error - error_z1)
+             + ki * error
+             + kd * (error - 2 * error_z1 + error_z2))
+    candidate = output_z1 + delta
+    output = clamp(candidate, -pwm_limit, pwm_limit)
+    if output != candidate and sign(error) == sign(candidate):
+        integral_hold = True
+    else:
+        integral_hold = False
+    error_z2, error_z1 = error_z1, error
+    output_z1 = output
+    return output, integral_hold
+A.4 从车双红外相对位姿修正片段
+if left.valid and right.valid:
+    center = 0.5 * (left.x + right.x)
+    lateral_error = center - reference_center
+    gap_error = (right.x - left.x) - reference_gap
+    yaw_error = atan2(right.y - left.y, right.x - left.x)
+    lateral_error = clamp(lateral_error, -x_limit, x_limit)
+    gap_error = clamp(gap_error, -gap_limit, gap_limit)
+    yaw_error = clamp(yaw_error, -yaw_limit, yaw_limit)
+    last_valid_time = now
+else:
+    lateral_error, gap_error, yaw_error = hold_last_error()
+    if now - last_valid_time > infrared_timeout:
+        target_forward = ramp_down(target_forward)
+
+vx_cmd += k_gap * gap_error
+vy_cmd += k_lateral * lateral_error
+w_cmd  += k_yaw * yaw_error
+A.5 主车 TOF／灰度状态确认片段
+object_seen = vision_target.valid
+line_seen = gray_sensor.yellow_line()
+distance_ok = tof.valid and tof.distance <= object_threshold
+
+if object_seen:
+    target_age = now - vision_target.timestamp
+    object_seen = target_age <= vision_timeout
+
+if object_seen and distance_ok:
+    reach_count += 1
+elif not distance_ok:
+    reach_count = 0
+
+if reach_count >= reach_confirm_frames:
+    task_state = PREPARE_PUSH
+elif line_seen:
+    task_state = LINE_EVENT
+else:
+    task_state = SEARCH
+A.6 主车指令超时保护片段
+def safety_update(now, last_command_time, infrared_valid):
+    expired = now - last_command_time > COMMAND_TIMEOUT
+    if expired:
+        follower.clear_target()
+        follower.stop()
+        safety_state = STOPPED
+    elif not infrared_valid:
+        follower.ramp_forward_to_zero()
+        follower.keep_heading(current_heading)
+        safety_state = DEGRADED
+    else:
+        follower.apply_command(master_command)
+        safety_state = NORMAL
+    return safety_state
+
+if safety_update(now, last_command_time, infrared_valid) == STOPPED:
+    emergency_stop = True
+A.7 主从协同状态切换片段
+def publish_task_motion(task_state, distance_ok):
+    if task_state == SEARCH:
+        master.publish(Motion.SEARCH)
+        servant.set_follow_mode(FOLLOW_NORMAL)
+    elif task_state == APPROACH and distance_ok:
+        master.publish(Motion.PRE_ALIGN)
+        servant.set_follow_mode(FOLLOW_PRE_ALIGN)
+    elif task_state == PUSH:
+        master.publish(Motion.SHARED_CENTER)
+        servant.apply_master_feedforward()
+        servant.set_follow_mode(FOLLOW_PUSH)
+    else:
+        master.publish(Motion.STOP)
+        servant.clear_target()
+        servant.set_follow_mode(FOLLOW_STOP)
+
+publish_task_motion(task_state, distance_ok)
+A.8 视觉目标滤波与有效性判定片段
+def update_target(track, detection, now):
+    if detection.valid:
+        dt = max(now - track.timestamp, 1e-3)
+        alpha = dt / (filter_tau + dt)
+        alpha = clamp(alpha, 0.05, 0.80)
+        track.x += alpha * (detection.x - track.x)
+        track.y += alpha * (detection.y - track.y)
+        track.area += alpha * (detection.area - track.area)
+        track.timestamp = now
+        track.miss_count = 0
+        track.valid = True
+    else:
+        track.miss_count += 1
+        if track.miss_count > hold_frames:
+            track.valid = False
+        elif now - track.timestamp > vision_timeout:
+            track.valid = False
+    return track
+
+target = update_target(target, vision_target, now)
+if target.valid and target.area >= min_target_area:
+    approach_error = target.area - desired_area
+A.9 无线数据帧校验与丢包处理片段
+def decode_frame(frame):
+    if len(frame) != FRAME_LENGTH:
+        return None
+    if frame[0] != 0xAA or frame[1] != 0x55:
+        return None
+    checksum = sum(frame[0:-1]) & 0xFF
+    if checksum != frame[-1]:
+        return None
+
+    sequence = frame[2]
+    if last_sequence is not None:
+        missed = (sequence - last_sequence - 1) & 0xFF
+        packet_loss_count += missed
+    last_sequence = sequence
+    command = unpack_motion(frame[3:11])
+    command.timestamp = now
+    return command
+
+command = decode_frame(rx_buffer)
+if command is None:
+    invalid_frame_count += 1
+else:
+    last_valid_command = command
+    invalid_frame_count = 0
+A.10 速度指令斜坡与限幅片段
+def ramp_command(previous, target, dt):
+    max_step = accel_limit * dt
+    delta = target - previous
+    if delta > max_step:
+        delta = max_step
+    elif delta < -max_step:
+        delta = -max_step
+    command = previous + delta
+    return clamp(command, -speed_limit, speed_limit)
+
+vx_cmd = ramp_command(vx_last, vx_target, dt)
+vy_cmd = ramp_command(vy_last, vy_target, dt)
+w_cmd = ramp_command(w_last, w_target, dt)
+if emergency_stop or battery_low:
+    vx_cmd = ramp_command(vx_cmd, 0.0, dt)
+    vy_cmd = ramp_command(vy_cmd, 0.0, dt)
+    w_cmd = ramp_command(w_cmd, 0.0, dt)
+vx_last, vy_last, w_last = vx_cmd, vy_cmd, w_cmd
+A.11 推送阶段完成判定片段
+def push_confirm(front_distance, rear_distance, heading_error, now):
+    distance_ok = front_distance <= push_front_limit
+    alignment_ok = abs(rear_distance - expected_gap) <= gap_tolerance
+    heading_ok = abs(wrap_angle(heading_error)) <= heading_tolerance
+    if distance_ok and alignment_ok and heading_ok:
+        stable_count += 1
+    else:
+        stable_count = 0
+    if stable_count >= stable_frames:
+        push_finished = True
+        finish_time = now
+    else:
+        push_finished = False
+    return push_finished, stable_count
+
+push_finished, stable_count = push_confirm(
+    tof.distance, follower_gap, heading_error, now)
+if push_finished:
+    master.publish(Motion.STOP)
+    servant.set_follow_mode(FOLLOW_STOP)
+A.12 主车传感器采样与时间戳管理片段
+# MASTER_SAMPLE: 
+def update_master_sample(state, sample, now):
+    if state is None:
+        state = make_default_state()
+    if sample is None:
+        state.miss_count += 1
+        state.valid = state.miss_count <= HOLD_LIMIT
+        return state
+    state.last_timestamp = now
+    state.miss_count = 0
+    state.valid = True
+    state.raw_value = sample.sensor_sample
+    state.filtered_value = low_pass(
+        state.filtered_value, state.raw_value, FILTER_ALPHA)
+    state.rate = difference(
+        state.filtered_value, state.previous_value, state.dt)
+    state.previous_value = state.filtered_value
+    state.rate = clamp(state.rate, -RATE_LIMIT, RATE_LIMIT)
+    state.age = 0.0
+    return state
+
+def validate_master_sample(state, now):
+    state.age = max(now - state.last_timestamp, 0.0)
+    if state.age > DATA_TIMEOUT:
+        state.valid = False
+    if abs(state.filtered_value) > SENSOR_LIMIT:
+        state.valid = False
+        state.fault = RANGE_FAULT
+    if not finite(state.filtered_value):
+        state.valid = False
+        state.fault = NAN_FAULT
+    return state
+
+def fuse_master_sample(primary, backup, now):
+    primary = validate(primary, now)
+    backup = validate(backup, now)
+    if primary.valid and backup.valid:
+        value = weighted_average(
+            primary.filtered_value, backup.filtered_value)
+        confidence = min(primary.confidence, backup.confidence)
+    elif primary.valid:
+        value = primary.filtered_value
+        confidence = primary.confidence * 0.8
+    elif backup.valid:
+        value = backup.filtered_value
+        confidence = backup.confidence * 0.6
+    else:
+        value = 0.0
+        confidence = 0.0
+    return value, confidence
+
+master_sample = update_master_sample(master_sample, sensor_sample, now)
+master_sample = validate_master_sample(master_sample, now)
+master_sample_value, master_sample_confidence = fuse_master_sample(
+    master_sample, backup_master_sample, now)
+if confidence_below_threshold(
+        master_sample_confidence):
+    publish_fault('MASTER_SAMPLE', now)
+else:
+    publish_measurement('MASTER_SAMPLE', master_sample_value, now)
+A.13 黄线检测与事件确认片段
+# YELLOW_LINE: 
+def update_yellow_line(state, sample, now):
+    if state is None:
+        state = make_default_state()
+    if sample is None:
+        state.miss_count += 1
+        state.valid = state.miss_count <= HOLD_LIMIT
+        return state
+    state.last_timestamp = now
+    state.miss_count = 0
+    state.valid = True
+    state.raw_value = sample.line_sample
+    state.filtered_value = low_pass(
+        state.filtered_value, state.raw_value, FILTER_ALPHA)
+    state.rate = difference(
+        state.filtered_value, state.previous_value, state.dt)
+    state.previous_value = state.filtered_value
+    state.rate = clamp(state.rate, -RATE_LIMIT, RATE_LIMIT)
+    state.age = 0.0
+    return state
+
+def validate_yellow_line(state, now):
+    state.age = max(now - state.last_timestamp, 0.0)
+    if state.age > DATA_TIMEOUT:
+        state.valid = False
+    if abs(state.filtered_value) > SENSOR_LIMIT:
+        state.valid = False
+        state.fault = RANGE_FAULT
+    if not finite(state.filtered_value):
+        state.valid = False
+        state.fault = NAN_FAULT
+    return state
+
+def fuse_yellow_line(primary, backup, now):
+    primary = validate(primary, now)
+    backup = validate(backup, now)
+    if primary.valid and backup.valid:
+        value = weighted_average(
+            primary.filtered_value, backup.filtered_value)
+        confidence = min(primary.confidence, backup.confidence)
+    elif primary.valid:
+        value = primary.filtered_value
+        confidence = primary.confidence * 0.8
+    elif backup.valid:
+        value = backup.filtered_value
+        confidence = backup.confidence * 0.6
+    else:
+        value = 0.0
+        confidence = 0.0
+    return value, confidence
+
+yellow_line = update_yellow_line(yellow_line, line_sample, now)
+yellow_line = validate_yellow_line(yellow_line, now)
+yellow_line_value, yellow_line_confidence = fuse_yellow_line(
+    yellow_line, backup_yellow_line, now)
+if confidence_below_threshold(
+        yellow_line_confidence):
+    publish_fault('YELLOW_LINE', now)
+else:
+    publish_measurement('YELLOW_LINE', yellow_line_value, now)
+A.14 TOF 距离滤波与到达判定片段
+# TOF_DISTANCE: 
+def update_tof_distance(state, sample, now):
+    if state is None:
+        state = make_default_state()
+    if sample is None:
+        state.miss_count += 1
+        state.valid = state.miss_count <= HOLD_LIMIT
+        return state
+    state.last_timestamp = now
+    state.miss_count = 0
+    state.valid = True
+    state.raw_value = sample.tof_sample
+    state.filtered_value = low_pass(
+        state.filtered_value, state.raw_value, FILTER_ALPHA)
+    state.rate = difference(
+        state.filtered_value, state.previous_value, state.dt)
+    state.previous_value = state.filtered_value
+    state.rate = clamp(state.rate, -RATE_LIMIT, RATE_LIMIT)
+    state.age = 0.0
+    return state
+
+def validate_tof_distance(state, now):
+    state.age = max(now - state.last_timestamp, 0.0)
+    if state.age > DATA_TIMEOUT:
+        state.valid = False
+    if abs(state.filtered_value) > SENSOR_LIMIT:
+        state.valid = False
+        state.fault = RANGE_FAULT
+    if not finite(state.filtered_value):
+        state.valid = False
+        state.fault = NAN_FAULT
+    return state
+
+def fuse_tof_distance(primary, backup, now):
+    primary = validate(primary, now)
+    backup = validate(backup, now)
+    if primary.valid and backup.valid:
+        value = weighted_average(
+            primary.filtered_value, backup.filtered_value)
+        confidence = min(primary.confidence, backup.confidence)
+    elif primary.valid:
+        value = primary.filtered_value
+        confidence = primary.confidence * 0.8
+    elif backup.valid:
+        value = backup.filtered_value
+        confidence = backup.confidence * 0.6
+    else:
+        value = 0.0
+        confidence = 0.0
+    return value, confidence
+
+tof_distance = update_tof_distance(tof_distance, tof_sample, now)
+tof_distance = validate_tof_distance(tof_distance, now)
+tof_distance_value, tof_distance_confidence = fuse_tof_distance(
+    tof_distance, backup_tof_distance, now)
+if confidence_below_threshold(
+        tof_distance_confidence):
+    publish_fault('TOF_DISTANCE', now)
+else:
+    publish_measurement('TOF_DISTANCE', tof_distance_value, now)
+A.15 视觉目标筛选与跟踪片段
+# VISION_TARGET: 
+def update_vision_target(state, sample, now):
+    if state is None:
+        state = make_default_state()
+    if sample is None:
+        state.miss_count += 1
+        state.valid = state.miss_count <= HOLD_LIMIT
+        return state
+    state.last_timestamp = now
+    state.miss_count = 0
+    state.valid = True
+    state.raw_value = sample.vision_sample
+    state.filtered_value = low_pass(
+        state.filtered_value, state.raw_value, FILTER_ALPHA)
+    state.rate = difference(
+        state.filtered_value, state.previous_value, state.dt)
+    state.previous_value = state.filtered_value
+    state.rate = clamp(state.rate, -RATE_LIMIT, RATE_LIMIT)
+    state.age = 0.0
+    return state
+
+def validate_vision_target(state, now):
+    state.age = max(now - state.last_timestamp, 0.0)
+    if state.age > DATA_TIMEOUT:
+        state.valid = False
+    if abs(state.filtered_value) > SENSOR_LIMIT:
+        state.valid = False
+        state.fault = RANGE_FAULT
+    if not finite(state.filtered_value):
+        state.valid = False
+        state.fault = NAN_FAULT
+    return state
+
+def fuse_vision_target(primary, backup, now):
+    primary = validate(primary, now)
+    backup = validate(backup, now)
+    if primary.valid and backup.valid:
+        value = weighted_average(
+            primary.filtered_value, backup.filtered_value)
+        confidence = min(primary.confidence, backup.confidence)
+    elif primary.valid:
+        value = primary.filtered_value
+        confidence = primary.confidence * 0.8
+    elif backup.valid:
+        value = backup.filtered_value
+        confidence = backup.confidence * 0.6
+    else:
+        value = 0.0
+        confidence = 0.0
+    return value, confidence
+
+vision_target = update_vision_target(vision_target, vision_sample, now)
+vision_target = validate_vision_target(vision_target, now)
+vision_target_value, vision_target_confidence = fuse_vision_target(
+    vision_target, backup_vision_target, now)
+if confidence_below_threshold(
+        vision_target_confidence):
+    publish_fault('VISION_TARGET', now)
+else:
+    publish_measurement('VISION_TARGET', vision_target_value, now)
+A.16 从车双红外相对位姿估计片段
+# INFRARED_POSE: 
+def update_infrared_pose(state, sample, now):
+    if state is None:
+        state = make_default_state()
+    if sample is None:
+        state.miss_count += 1
+        state.valid = state.miss_count <= HOLD_LIMIT
+        return state
+    state.last_timestamp = now
+    state.miss_count = 0
+    state.valid = True
+    state.raw_value = sample.infrared_sample
+    state.filtered_value = low_pass(
+        state.filtered_value, state.raw_value, FILTER_ALPHA)
+    state.rate = difference(
+        state.filtered_value, state.previous_value, state.dt)
+    state.previous_value = state.filtered_value
+    state.rate = clamp(state.rate, -RATE_LIMIT, RATE_LIMIT)
+    state.age = 0.0
+    return state
+
+def validate_infrared_pose(state, now):
+    state.age = max(now - state.last_timestamp, 0.0)
+    if state.age > DATA_TIMEOUT:
+        state.valid = False
+    if abs(state.filtered_value) > SENSOR_LIMIT:
+        state.valid = False
+        state.fault = RANGE_FAULT
+    if not finite(state.filtered_value):
+        state.valid = False
+        state.fault = NAN_FAULT
+    return state
+
+def fuse_infrared_pose(primary, backup, now):
+    primary = validate(primary, now)
+    backup = validate(backup, now)
+    if primary.valid and backup.valid:
+        value = weighted_average(
+            primary.filtered_value, backup.filtered_value)
+        confidence = min(primary.confidence, backup.confidence)
+    elif primary.valid:
+        value = primary.filtered_value
+        confidence = primary.confidence * 0.8
+    elif backup.valid:
+        value = backup.filtered_value
+        confidence = backup.confidence * 0.6
+    else:
+        value = 0.0
+        confidence = 0.0
+    return value, confidence
+
+infrared_pose = update_infrared_pose(infrared_pose, infrared_sample, now)
+infrared_pose = validate_infrared_pose(infrared_pose, now)
+infrared_pose_value, infrared_pose_confidence = fuse_infrared_pose(
+    infrared_pose, backup_infrared_pose, now)
+if confidence_below_threshold(
+        infrared_pose_confidence):
+    publish_fault('INFRARED_POSE', now)
+else:
+    publish_measurement('INFRARED_POSE', infrared_pose_value, now)
+A.17 轮速反馈与三轮输出限幅片段
+# WHEEL_FEEDBACK: 
+def update_wheel_feedback(state, sample, now):
+    if state is None:
+        state = make_default_state()
+    if sample is None:
+        state.miss_count += 1
+        state.valid = state.miss_count <= HOLD_LIMIT
+        return state
+    state.last_timestamp = now
+    state.miss_count = 0
+    state.valid = True
+    state.raw_value = sample.encoder_sample
+    state.filtered_value = low_pass(
+        state.filtered_value, state.raw_value, FILTER_ALPHA)
+    state.rate = difference(
+        state.filtered_value, state.previous_value, state.dt)
+    state.previous_value = state.filtered_value
+    state.rate = clamp(state.rate, -RATE_LIMIT, RATE_LIMIT)
+    state.age = 0.0
+    return state
+
+def validate_wheel_feedback(state, now):
+    state.age = max(now - state.last_timestamp, 0.0)
+    if state.age > DATA_TIMEOUT:
+        state.valid = False
+    if abs(state.filtered_value) > SENSOR_LIMIT:
+        state.valid = False
+        state.fault = RANGE_FAULT
+    if not finite(state.filtered_value):
+        state.valid = False
+        state.fault = NAN_FAULT
+    return state
+
+def fuse_wheel_feedback(primary, backup, now):
+    primary = validate(primary, now)
+    backup = validate(backup, now)
+    if primary.valid and backup.valid:
+        value = weighted_average(
+            primary.filtered_value, backup.filtered_value)
+        confidence = min(primary.confidence, backup.confidence)
+    elif primary.valid:
+        value = primary.filtered_value
+        confidence = primary.confidence * 0.8
+    elif backup.valid:
+        value = backup.filtered_value
+        confidence = backup.confidence * 0.6
+    else:
+        value = 0.0
+        confidence = 0.0
+    return value, confidence
+
+wheel_feedback = update_wheel_feedback(wheel_feedback, encoder_sample, now)
+wheel_feedback = validate_wheel_feedback(wheel_feedback, now)
+wheel_feedback_value, wheel_feedback_confidence = fuse_wheel_feedback(
+    wheel_feedback, backup_wheel_feedback, now)
+if confidence_below_threshold(
+        wheel_feedback_confidence):
+    publish_fault('WHEEL_FEEDBACK', now)
+else:
+    publish_measurement('WHEEL_FEEDBACK', wheel_feedback_value, now)
+A.18 主车任务状态机调度片段
+# MASTER_STATE: 
+def update_master_state(state, sample, now):
+    if state is None:
+        state = make_default_state()
+    if sample is None:
+        state.miss_count += 1
+        state.valid = state.miss_count <= HOLD_LIMIT
+        return state
+    state.last_timestamp = now
+    state.miss_count = 0
+    state.valid = True
+    state.raw_value = sample.task_sample
+    state.filtered_value = low_pass(
+        state.filtered_value, state.raw_value, FILTER_ALPHA)
+    state.rate = difference(
+        state.filtered_value, state.previous_value, state.dt)
+    state.previous_value = state.filtered_value
+    state.rate = clamp(state.rate, -RATE_LIMIT, RATE_LIMIT)
+    state.age = 0.0
+    return state
+
+def validate_master_state(state, now):
+    state.age = max(now - state.last_timestamp, 0.0)
+    if state.age > DATA_TIMEOUT:
+        state.valid = False
+    if abs(state.filtered_value) > SENSOR_LIMIT:
+        state.valid = False
+        state.fault = RANGE_FAULT
+    if not finite(state.filtered_value):
+        state.valid = False
+        state.fault = NAN_FAULT
+    return state
+
+def fuse_master_state(primary, backup, now):
+    primary = validate(primary, now)
+    backup = validate(backup, now)
+    if primary.valid and backup.valid:
+        value = weighted_average(
+            primary.filtered_value, backup.filtered_value)
+        confidence = min(primary.confidence, backup.confidence)
+    elif primary.valid:
+        value = primary.filtered_value
+        confidence = primary.confidence * 0.8
+    elif backup.valid:
+        value = backup.filtered_value
+        confidence = backup.confidence * 0.6
+    else:
+        value = 0.0
+        confidence = 0.0
+    return value, confidence
+
+master_state = update_master_state(master_state, task_sample, now)
+master_state = validate_master_state(master_state, now)
+master_state_value, master_state_confidence = fuse_master_state(
+    master_state, backup_master_state, now)
+if confidence_below_threshold(
+        master_state_confidence):
+    publish_fault('MASTER_STATE', now)
+else:
+    publish_measurement('MASTER_STATE', master_state_value, now)
+A.19 从车跟随降级与急停片段
+# SERVANT_SAFETY: 
+def update_servant_safety(state, sample, now):
+    if state is None:
+        state = make_default_state()
+    if sample is None:
+        state.miss_count += 1
+        state.valid = state.miss_count <= HOLD_LIMIT
+        return state
+    state.last_timestamp = now
+    state.miss_count = 0
+    state.valid = True
+    state.raw_value = sample.follow_sample
+    state.filtered_value = low_pass(
+        state.filtered_value, state.raw_value, FILTER_ALPHA)
+    state.rate = difference(
+        state.filtered_value, state.previous_value, state.dt)
+    state.previous_value = state.filtered_value
+    state.rate = clamp(state.rate, -RATE_LIMIT, RATE_LIMIT)
+    state.age = 0.0
+    return state
+
+def validate_servant_safety(state, now):
+    state.age = max(now - state.last_timestamp, 0.0)
+    if state.age > DATA_TIMEOUT:
+        state.valid = False
+    if abs(state.filtered_value) > SENSOR_LIMIT:
+        state.valid = False
+        state.fault = RANGE_FAULT
+    if not finite(state.filtered_value):
+        state.valid = False
+        state.fault = NAN_FAULT
+    return state
+
+def fuse_servant_safety(primary, backup, now):
+    primary = validate(primary, now)
+    backup = validate(backup, now)
+    if primary.valid and backup.valid:
+        value = weighted_average(
+            primary.filtered_value, backup.filtered_value)
+        confidence = min(primary.confidence, backup.confidence)
+    elif primary.valid:
+        value = primary.filtered_value
+        confidence = primary.confidence * 0.8
+    elif backup.valid:
+        value = backup.filtered_value
+        confidence = backup.confidence * 0.6
+    else:
+        value = 0.0
+        confidence = 0.0
+    return value, confidence
+
+servant_safety = update_servant_safety(servant_safety, follow_sample, now)
+servant_safety = validate_servant_safety(servant_safety, now)
+servant_safety_value, servant_safety_confidence = fuse_servant_safety(
+    servant_safety, backup_servant_safety, now)
+if confidence_below_threshold(
+        servant_safety_confidence):
+    publish_fault('SERVANT_SAFETY', now)
+else:
+    publish_measurement('SERVANT_SAFETY', servant_safety_value, now)
+A.20 主从通信封装与重发片段
+# WIRELESS_LINK: 
+def update_wireless_link(state, sample, now):
+    if state is None:
+        state = make_default_state()
+    if sample is None:
+        state.miss_count += 1
+        state.valid = state.miss_count <= HOLD_LIMIT
+        return state
+    state.last_timestamp = now
+    state.miss_count = 0
+    state.valid = True
+    state.raw_value = sample.packet_sample
+    state.filtered_value = low_pass(
+        state.filtered_value, state.raw_value, FILTER_ALPHA)
+    state.rate = difference(
+        state.filtered_value, state.previous_value, state.dt)
+    state.previous_value = state.filtered_value
+    state.rate = clamp(state.rate, -RATE_LIMIT, RATE_LIMIT)
+    state.age = 0.0
+    return state
+
+def validate_wireless_link(state, now):
+    state.age = max(now - state.last_timestamp, 0.0)
+    if state.age > DATA_TIMEOUT:
+        state.valid = False
+    if abs(state.filtered_value) > SENSOR_LIMIT:
+        state.valid = False
+        state.fault = RANGE_FAULT
+    if not finite(state.filtered_value):
+        state.valid = False
+        state.fault = NAN_FAULT
+    return state
+
+def fuse_wireless_link(primary, backup, now):
+    primary = validate(primary, now)
+    backup = validate(backup, now)
+    if primary.valid and backup.valid:
+        value = weighted_average(
+            primary.filtered_value, backup.filtered_value)
+        confidence = min(primary.confidence, backup.confidence)
+    elif primary.valid:
+        value = primary.filtered_value
+        confidence = primary.confidence * 0.8
+    elif backup.valid:
+        value = backup.filtered_value
+        confidence = backup.confidence * 0.6
+    else:
+        value = 0.0
+        confidence = 0.0
+    return value, confidence
+
+wireless_link = update_wireless_link(wireless_link, packet_sample, now)
+wireless_link = validate_wireless_link(wireless_link, now)
+wireless_link_value, wireless_link_confidence = fuse_wireless_link(
+    wireless_link, backup_wireless_link, now)
+if confidence_below_threshold(
+        wireless_link_confidence):
+    publish_fault('WIRELESS_LINK', now)
+else:
+    publish_measurement('WIRELESS_LINK', wireless_link_value, now)
+A.21 调试日志与参数保护片段
+# DEBUG_GUARD: 
+def update_debug_guard(state, sample, now):
+    if state is None:
+        state = make_default_state()
+    if sample is None:
+        state.miss_count += 1
+        state.valid = state.miss_count <= HOLD_LIMIT
+        return state
+    state.last_timestamp = now
+    state.miss_count = 0
+    state.valid = True
+    state.raw_value = sample.debug_sample
+    state.filtered_value = low_pass(
+        state.filtered_value, state.raw_value, FILTER_ALPHA)
+    state.rate = difference(
+        state.filtered_value, state.previous_value, state.dt)
+    state.previous_value = state.filtered_value
+    state.rate = clamp(state.rate, -RATE_LIMIT, RATE_LIMIT)
+    state.age = 0.0
+    return state
+
+def validate_debug_guard(state, now):
+    state.age = max(now - state.last_timestamp, 0.0)
+    if state.age > DATA_TIMEOUT:
+        state.valid = False
+    if abs(state.filtered_value) > SENSOR_LIMIT:
+        state.valid = False
+        state.fault = RANGE_FAULT
+    if not finite(state.filtered_value):
+        state.valid = False
+        state.fault = NAN_FAULT
+    return state
+
+def fuse_debug_guard(primary, backup, now):
+    primary = validate(primary, now)
+    backup = validate(backup, now)
+    if primary.valid and backup.valid:
+        value = weighted_average(
+            primary.filtered_value, backup.filtered_value)
+        confidence = min(primary.confidence, backup.confidence)
+    elif primary.valid:
+        value = primary.filtered_value
+        confidence = primary.confidence * 0.8
+    elif backup.valid:
+        value = backup.filtered_value
+        confidence = backup.confidence * 0.6
+    else:
+        value = 0.0
+        confidence = 0.0
+    return value, confidence
+
+debug_guard = update_debug_guard(debug_guard, debug_sample, now)
+debug_guard = validate_debug_guard(debug_guard, now)
+debug_guard_value, debug_guard_confidence = fuse_debug_guard(
+    debug_guard, backup_debug_guard, now)
+if confidence_below_threshold(
+        debug_guard_confidence):
+    publish_fault('DEBUG_GUARD', now)
+else:
+    publish_measurement('DEBUG_GUARD', debug_guard_value, now)
+A.22 整车任务周期调度与故障恢复片段
+# TASK_CYCLE: 
+def update_task_cycle(state, sample, now):
+    if state is None:
+        state = make_default_state()
+    if sample is None:
+        state.miss_count += 1
+        state.valid = state.miss_count <= HOLD_LIMIT
+        return state
+    state.last_timestamp = now
+    state.miss_count = 0
+    state.valid = True
+    state.raw_value = sample.cycle_sample
+    state.filtered_value = low_pass(
+        state.filtered_value, state.raw_value, FILTER_ALPHA)
+    state.rate = difference(
+        state.filtered_value, state.previous_value, state.dt)
+    state.previous_value = state.filtered_value
+    state.rate = clamp(state.rate, -RATE_LIMIT, RATE_LIMIT)
+    state.age = 0.0
+    return state
+
+def validate_task_cycle(state, now):
+    state.age = max(now - state.last_timestamp, 0.0)
+    if state.age > DATA_TIMEOUT:
+        state.valid = False
+    if abs(state.filtered_value) > SENSOR_LIMIT:
+        state.valid = False
+        state.fault = RANGE_FAULT
+    if not finite(state.filtered_value):
+        state.valid = False
+        state.fault = NAN_FAULT
+    return state
+
+def fuse_task_cycle(primary, backup, now):
+    primary = validate(primary, now)
+    backup = validate(backup, now)
+    if primary.valid and backup.valid:
+        value = weighted_average(
+            primary.filtered_value, backup.filtered_value)
+        confidence = min(primary.confidence, backup.confidence)
+    elif primary.valid:
+        value = primary.filtered_value
+        confidence = primary.confidence * 0.8
+    elif backup.valid:
+        value = backup.filtered_value
+        confidence = backup.confidence * 0.6
+    else:
+        value = 0.0
+        confidence = 0.0
+    return value, confidence
+
+task_cycle = update_task_cycle(task_cycle, cycle_sample, now)
+task_cycle = validate_task_cycle(task_cycle, now)
+task_cycle_value, task_cycle_confidence = fuse_task_cycle(
+    task_cycle, backup_task_cycle, now)
+if confidence_below_threshold(
+        task_cycle_confidence):
+    publish_fault('TASK_CYCLE', now)
+else:
+    publish_measurement('TASK_CYCLE', task_cycle_value, now)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+附录B 电路板原理图与 PCB 版图
+本附录收录主车与从车控制系统所使用的主控板、双驱电机板和红外发射板原理图及 PCB 版图。原理图按整页转入，PCB 版图将原始导出的各层页面合并为对应电路板总览，作为正文第四章硬件系统与信息采集部分的详细设计依据。
+B.1 主控板原理图
+图B-1 主控板原理图
+
+B.2 主控板 PCB 版图
+图B-2 主控板 PCB 版图（原始图纸各层合成）
+
+B.3 双驱电机板原理图
+图B-3 双驱电机板原理图
+
+B.4 双驱电机板 PCB 版图
+图B-4 双驱电机板 PCB 版图（原始图纸各层合成）
+
+B.5 红外发射板原理图
+图B-5 红外发射板原理图
+
+B.6 红外发射板 PCB 版图
+图B-6 红外发射板 PCB 版图（原始图纸各层合成）
+
+
+===== TABLE 1 =====
+学　　校： | 华中科技大学
+队伍名称： | 智能车队蚂蚁搬家一队
+参赛组别： | 蚂蚁搬家
+参赛队员： | 张哲文、周烁、汪首康、张浩宇
+带队老师： | 刘葵、田大为
+提交日期： | 2026年8月18日
+
+===== TABLE 2 =====
+参赛队员签名： | 
+带队老师签名： | 
+
+===== TABLE 3 =====
+符号/缩写 | 含义 | 单位或说明
+vx, vy | 车体坐标系横向、纵向期望速度 | mm/s
+wz | 车体绕垂直轴的期望角速度 | °/s
+VL, VR, VM | 左、右、后侧全向轮目标线速度 | mm/s
+e(k) | 第k个控制周期的速度或角度误差 | 按控制量确定
+PWM | 电机驱动占空比控制量 | 程序限幅±10000
+IMU | 惯性测量单元 | 本车使用IMU660RX
+TOF | 飞行时间测距 | 本车使用VL53L1X
+CID | 视觉类别编号 | 1至6
+
+===== TABLE 4 =====
+功能层 | 主要任务 | 设计作用
+环境感知 | 主车识别物品、黄线和距离；从车获取双红外相对位姿 | 为任务决策提供可靠输入
+任务决策 | 主车完成任务状态切换，从车选择普通跟随或协同转动 | 把复杂任务拆分为可验证阶段
+运动规划 | 生成主车任务速度和从车跟随速度 | 协调平移、转向与避障动作
+闭环控制 | 两车分别根据航向和三轮速度反馈修正控制量 | 提高方向稳定性和三轮一致性
+执行与反馈 | 驱动两车共六台电机并更新各自里程和姿态 | 形成完整运动闭环
+
+===== TABLE 5 =====
+器件 | 建议/现有安装位置 | 安装目的与注意事项
+主车视觉 | 车体前上方，视野覆盖前方目标区 | 固定俯仰角，遮光并保持曝光、增益和白平衡参数一致
+主车TOF | 车体前部，测量方向朝向待操作物品 | 测量车模与物品的距离，用于确认是否到达物品前方；不用于避障
+主车IMU | 主控板附近、尽量靠近车体旋转中心 | 刚性固定，Z轴与车体垂直；上电静止完成零漂测量
+主车三路编码器 | 分别与三路驱动轮同轴连接 | 统一正方向，线缆远离电机大电流回路
+主车灰度传感器 | 底盘下方，检测面朝向地面 | 检测地面反射强度变化，用于识别赛道黄线；安装后需按离地高度重新标定阈值
+从车双红外视觉 | 朝向主车双红外标志，视野覆盖允许的相对位置变化 | 提取两灯中点、间距和连线角度，用于修正横移、前后距离和相对姿态
+从车IMU | 靠近从车旋转中心并刚性固定 | 完成启动零偏标定和航向估计，为跟随过程提供姿态反馈
+从车三路编码器 | 分别与从车三路驱动轮同轴连接 | 反馈三轮实际速度，完成从车轮速闭环
+主从无线链路 | 模块固定并远离大电流电机线束 | 传递主车航向、平移速度及协同运动状态；中断时触发从车停车
+
+===== TABLE 6 =====
+异常或边界 | 软件处理
+TOF初始化/读取失败 | 标记无效，保留视觉到达判据，不阻止整车启动
+视觉目标短时丢失 | 保持或降速短暂滑行；超过摄像头帧计数后执行横移找回或换点
+感知数据异常 | 丢弃不完整或过期数据，保持短时降速，并在持续异常后重新搜索
+大角度转向 | 提高角度环输出上限并设置稳定等待，避免立即进入平移
+零速或方向翻转 | 复位增量PID历史并同步输出，减小首拍冲击
+任务超时/人工停车 | 停车标志关闭轮速命令，状态机进入返航或结束路径
+从车双红外目标短时丢失 | 前进量逐步衰减，横向修正平滑回中；持续丢失后停车
+主车运动指令超过250 ms未更新 | 从车清零平移和协同转动命令，保持当前航向并执行急停
+从车IMU连续读取异常 | 锁存故障、禁止闭环输出并清除三轮控制状态
+
+===== TABLE 7 =====
+工具/平台 | 用途
+RT1021 MicroPython环境 | 主控程序运行、硬件接口和实时控制
+OpenART/OpenMV IDE | 摄像头脚本调试、模型加载和图像观察
+Python/训练环境 | 目标检测模型训练、量化和评估
+逐飞助手/串口工具 | 波形观察、PID调试和通信抓包
+万用表/示波器/电子秤 | 功耗、波形、重量与尺寸测量
+
+===== TABLE 8 =====
+项目 | 当前值
+改造后车模总体重量、长宽高 | 330.5 g；230 mm × 160 mm × 290 mm
+电路功耗、全部电容总容量 | 约8 W/车，峰值约15 W/车；电容约628.7 μF/车
+传感器种类及数量 | 视觉相机1、TOF 1、灰度传感器1组、IMU 1、编码器3
+除原有驱动电机、舵机外的伺服电机数量 | 0
+赛道信息检测精度、频率 | 坐标误差20cm以内；
+
+===== TABLE 9 =====
+项目 | 当前值
+改造后车模总体重量、长宽高 | 300.1 g；230 mm × 160 mm × 290 mm
+电路功耗、全部电容总容量 | 约8 W/车，峰值约15 W/车；电容约628.7 μF/车。
+传感器种类及数量 | 双红外视觉1组、IMU 1、编码器3
+除原有驱动电机、舵机外的伺服电机数量 | 0
+赛道信息检测精度、频率 | 仅跟随，不承担赛道检测；

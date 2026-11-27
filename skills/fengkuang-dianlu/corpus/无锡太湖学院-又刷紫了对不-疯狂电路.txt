@@ -1,0 +1,1026 @@
+第二十一届全国大学生智能汽车竞赛
+技 术 报 告
+基于TC264D视觉巡线的
+疯狂电路智能车
+参赛组别：疯狂电路组
+学    校：无锡太湖学院
+队伍名称：又刷紫了对不
+参赛队员：马一扬  张俊昊  黄曦杰
+带队老师：于莲双  吴阳
+二〇二六年八月
+
+
+
+关于技术报告和研究论文使用授权的说明
+本人完全了解全国大学生智能汽车竞赛关于保留、使用技术报告和研究论文的规定，即：参赛作品著作权归参赛者本人，比赛组委会可以在相关主页上收录并公开参赛作品的设计方案、技术报告以及参赛模型车的视频、图像资料，并将相关内容编辑收录在组委会出版论文集中。
+参赛队员签名：马一扬 张俊昊 黄曦杰
+带队教师签名：于莲双 吴阳
+日       期：2026年 8月 15日
+
+
+
+目 录
+主要符号与缩略语表	v
+第一章 引言	1
+1.1 竞赛任务与设计目标	1
+1.2 设计约束与相关技术综述	1
+1.3 报告内容安排	2
+第二章 总体方案设计	3
+2.1 系统需求与方案选择	3
+2.2 整车总体架构	3
+2.3 自制主驱一体板与双核分工	4
+2.4 整车主要技术参数	5
+第三章 机械结构与传感器安装	7
+3.1 四轮差速底盘	7
+3.2 同侧双轮齿轮传动	7
+3.3 摄像头、编码器与IMU安装	7
+3.4 负压系统与安全设计	8
+3.5 整车尺寸与重量	9
+第四章 电路设计	11
+4.1 供电系统	11
+4.2 TC264D核心板与主驱一体板	12
+4.3 双电机MOSFET驱动	13
+4.4 负压驱动现状与集成方案	14
+4.5 传感器与调试接口	15
+4.6 电容统计与PCB设计	16
+
+目 录（续）
+第五章 图像处理与赛道识别	17
+5.1 图像采集与双缓冲	17
+5.2 ROI OTSU二值化	17
+5.3 扫线中点与方向误差	18
+5.4 节点识别	18
+5.5 参数化路线决策数组	19
+5.6 丢线保护与检测指标	20
+第六章 运动控制与软件架构	21
+6.1 双核实时任务组织	21
+6.2 编码器测速与数字滤波	21
+6.3 视觉PD差速转向	22
+6.4 左右轮速度PI闭环	22
+6.5 启动、限幅与输出保护	22
+6.6 IMU660RC使用状态	22
+6.7 控制参数汇总	24
+第七章 制作、调试与问题分析	25
+7.1 开发工具与工程组织	25
+7.2 调试观察与参数修改	25
+7.3 软件边界与改进方向	25
+7.4 实测参数与资料归档	26
+第八章 结论与展望	27
+8.1 设计总结	27
+8.2 后续改进方向	28
+参考文献	i
+附录A 核心程序源代码	iii
+附录B 详细电路原理图	xiii
+附录C 实物照片与测量记录	xix
+
+主要符号与缩略语表
+表0.1 主要符号与缩略语
+表0.1（续） 主要符号与缩略语
+
+
+第一章 引言
+1.1 竞赛任务与设计目标
+疯狂电路组采用自制缩微轻量车模，车辆依靠光电或摄像头沿白色电路引导线运行，通过赛道中的电路回路和检测位置，并避免进入绝缘区域。赛道图中含有分支节点和电子元器件图形，车辆不仅需要稳定巡线，还需要在节点处按预定拓扑选择行驶方向。[1]
+本车以TC264D为主控制器，采用一颗前置MT9V03X摄像头获取灰度图像，利用ROI内OTSU阈值完成二值化，再通过逐行白段中点计算视觉偏差。车辆为四轮双电机结构，左右轮组独立驱动并依靠差速转向。两个编码器分别构成左右轮速度闭环，1103无刷电机提供负压。
+国赛地图不作为固定程序数据预先写死。软件将节点动作和相关时序参数组织为可配置数组，赛前观察赛道拓扑后由参赛队员人工填写左转、直行和右转决策。程序中的示例路线数组用于验证执行机制，比赛路线数组根据赛前赛道拓扑配置。
+1.2 设计约束与相关技术综述
+该赛题同时受到轻量化、图像处理速度、节点决策可靠性和小尺寸底盘机动性的约束。过大的机械尺寸和冗余硬件会增加重量；过慢的视觉链路会增大控制延迟；只依赖固定转向时间又容易受到电池电压和地面摩擦变化影响。因此，设计中采用自制一体化电路板减少连线与模块数量，以双核分工隔离图像处理和1 ms电机实时控制，并用左右轮独立速度PI减小负载差异。
+竞赛技术报告要求将总体方案、机械与电路、控制算法、制作调试过程和主要技术参数列为基本内容[2]。相关技术资料表明，TC264D具备双核处理资源，可将图像处理与周期严格的电机控制分开执行[3]；MT9V034灰度图像传感器的并行数据与同步接口适合车载实时图像采集[4]。在阈值分割方面，固定阈值法计算量小，但对光照变化较敏感；Otsu方法通过最大化类间方差自动确定阈值，可降低人工设定阈值的依赖[5]。DRV8701驱动资料给出的欠压、过流和过温保护，为双路有刷电机功率级设计提供了依据[6]。结合上述资料，本车将OTSU统计限制在赛道相关ROI内，并以双核分工兼顾图像处理效率和1 ms电机控制实时性。
+本车控制程序采用视觉PD外环与左右轮速度PI内环，IMU660RC不参与控制；路线数组根据赛前赛道拓扑人工配置。终点停车、摄像头超时保护和看门狗等功能列为后续软件鲁棒性改进内容。
+1.3 报告内容安排
+第二章介绍总体方案和主要技术参数；第三章说明机械传动、摄像头、编码器和负压装置的安装；第四章介绍供电、购买的TC264D核心板、自制主驱一体板及各功能电路；第五章分析图像二值化、扫线和节点识别；第六章给出双核软件、视觉PD和速度PI控制；第七章整理制作调试流程及软件边界；第八章给出结论与后续改进方向。附录收录核心程序源代码、详细原理图、实物照片和测量记录。
+
+第二章 总体方案设计
+2.1 系统需求与方案选择
+车辆需要完成三类基本任务：第一，连续识别白色引导线并输出稳定的横向误差；第二，在分支节点处读取当前路线决策并完成左转、直行或右转；第三，在双电机负载不一致、负压风扇工作和电池电压变化的条件下保持左右轮目标速度。基于这些任务，系统被划分为感知、决策、运动控制、驱动和供电五个部分。
+主控采用TC264D。该器件属于AURIX TC26x系列，具备双核处理资源，适合将吞吐量较高的视觉任务和周期严格的电机控制任务分离。[3]
+2.2 整车总体架构
+
+图2.1 整车硬件连接与供电关系
+
+图2.2 整车感知、算法与闭环控制信息流
+摄像头、左右编码器和外接IMU660RC构成车载传感器。CPU0接收图像并生成图像误差、节点标志和速度提示；CPU1读取这些共享变量，在1 ms节拍内完成编码器测速、速度PI与PWM输出，在5 ms节拍内计算视觉方向控制量。驱动侧包括板载DRV8701E与MOSFET双电机驱动，以及板外负压风扇电调。IPS200仅用于阶段调试显示，不作为赛道感知传感器。
+2.3 自制主驱一体板与双核分工
+整车采用参赛队自制的主驱一体板，并使用本车实际购买的TC264D核心板。主驱一体板按核心板引脚网络预留连接位置，集成DRV8701E与MOSFET双电机驱动、5 V和3.3 V电源转换、传感器接口及IPS200接口；当前实车的负压风扇电调位于板外。CPU0负责MT9V03X图像快照、二值化、扫线、节点判断和路线数组；CPU1负责负压启动、编码器采样、视觉差速、左右轮速度闭环和电机PWM。两核通过volatile共享结构交换帧号、图像误差、速度提示、场景标志和调试数据。
+实车安装的惯性传感器为IMU660RC，shared_data.h中保留的IMU660RB名称仅为早期接口命名。IMU读取编译开关保持关闭，控制程序不读取IMU数据，也不进行视觉与IMU融合。
+2.4 整车主要技术参数
+表2.1 整车主要技术参数
+表2.1（续） 整车主要技术参数
+
+
+第三章 机械结构与传感器安装
+3.1 四轮差速底盘
+车模采用四轮结构，左右两侧分别由一台逐飞N30 Pro电机驱动。车辆不使用舵机，转向完全依靠左右轮组速度差完成。差速转向避免了舵机、转向拉杆和前轮转向节所占空间，适合缩微车模的一体化布局。
+
+图3.1 四轮差速与同侧齿轮传动示意
+3.2 同侧双轮齿轮传动
+每侧电机位于同侧前轮和后轮之间。电机轴上的主动齿轮同时与前、后轮上的从动齿轮直接啮合，使一台电机带动同侧两个车轮。左右两套传动互相独立，从而形成四轮驱动。该结构传动路径短、零件数量少，但装配时需要控制三只齿轮的中心距和平行度，防止啮合过紧引起电流上升或啮合过松产生回差。
+3.3 摄像头、编码器与IMU安装
+一颗MT9V03X安装在车体正前方并朝向车辆前进方向，通过18 Pin排线连接一体板，由板载3.3 V供电；排线承载D0-D7八位并行图像数据、PCLK、VSYNC和SCCB配置信号。摄像头支架需要保证刚度，避免负压风扇和齿轮啮合振动使图像坐标抖动。摄像头支架的安装高度和俯角保持固定，以保证视场范围和图像坐标的一致性。
+左右各安装一个PD-1015-SDI-ENC-1024编码器。每个编码器的齿轮与对应侧后轮齿轮直接啮合，由后轮带动编码器转动；A、B两相信号分别接入TC264D的TIM4和TIM6编码器接口，形成左右轮速反馈。IMU660RC为外接模块，通过I²C连接一体板并由板载3.3 V供电，但最终控制不读取IMU数据，仅保留硬件连接。
+3.4 负压系统与安全设计
+底盘安装1103规格无刷电机作为负压风扇，板外负压电调由3S LiHV电池直接供电，并接收主控输出的50 Hz控制脉冲；电调与主控共地，三相输出连接1103无刷电机，当前没有转速或电流反馈返回TC264D。程序上电后先保持停止脉宽3 s，再按每100 ms增加1%的方式软启动至60%，用于减小突加负载对电源和车体姿态的冲击。
+负压系统装配时重点检查叶轮固定、底盘连接和线束走向；调试与维护均在断电状态下进行，避免手指、排线或其他异物进入高速旋转区域。
+3.5 整车尺寸与重量
+表3.1 整车强制测量参数
+
+
+图3.2 整车上视实物照片
+
+第四章 电路设计
+4.1 供电系统
+整车使用3S LiHV电池，标称电压11.4 V、容量300 mAh、倍率95C，标称能量为11.4 V x 0.3 Ah = 3.42 Wh，电池质量22.5 g。电池经输入保护与总开关形成VBAT母线，DRV8701E双电机功率级由该母线供电；SCT2450QSTER将VBAT降为5 V，RT9013-33GB支路进一步为核心板逻辑、传感器和摄像头产生3.3 V。实际电源原理图见图4.1，完整图纸见图B-1[7,8]。正常运行状态下，电路功耗约为2～3 W。
+
+图4.1 电池输入及5 V/3.3 V电源原理图
+4.2 TC264D核心板与主驱一体板
+本车实际使用的TC264D核心板为购买模块，图4.2来自该核心板随附资料，包含BOOT选择、下载复位接口、时钟与供电去耦以及TC264D端口网络；该图用于说明本车核心板连接依据，不作为本队自研电路。参赛队自行设计的是承载核心板并集成电源、双路电机驱动和外设接口的主驱一体板。
+
+（a）BOOT选择、下载与复位接口
+
+（b）TC264D最小系统、时钟与端口网络
+图4.2 购买TC264D核心板的BOOT、下载与最小系统参考电路
+4.3 双电机MOSFET驱动
+左右N30 Pro电机分别由一颗DRV8701E和外置N沟道MOSFET全桥驱动。DRV8701E采用PH/EN控制接口，并提供欠压、过流和过温等保护机制；SN74HC125用于控制信号缓冲。当前程序输出两路17 kHz PWM，占空比限幅为60%。双路驱动、使能与电机接口见图4.3，完整图纸见图B-4。[6]
+功率布线使电池、MOSFET桥、电机连接器和回流路径尽量短而宽，并将摄像头、编码器和核心板地参考与大电流换相回路分区。
+
+图4.3 双路DRV8701E电机驱动原理图
+4.4 负压驱动现状与集成方案
+当前实车仍使用板外独立电调驱动1103无刷负压电机：3S LiHV电池直接向电调供电，TC264D输出50 Hz控制脉冲并与电调共地，电调三相输出连接1103电机；当前无转速、电流等反馈返回主控。程序保持有效停止脉宽，完成3 s解锁后软启动；丢线锁存后先停驱动轮，再延迟关闭负压。
+主驱一体板同时预留了由AI8051U、FD6288Q和六管三相桥组成的板载负压驱动电路，如图4.4所示。该电路未用于参赛车辆，实车仍以板外电调作为负压驱动；图4.4用于记录预留集成方案。
+
+（a）直流母线、六管三相桥与FD6288Q栅极驱动
+
+（b）AI8051U控制、电池电压与三相采样网络
+图4.4 预留的AI8051U与FD6288Q三相负压驱动方案（未用于参赛车辆）
+4.5 传感器与调试接口
+主驱一体板集中布置摄像头FPC、IPS200显示、外接IMU660RC和左右编码器接口。摄像头接口承载D0-D7、PCLK、VSYNC与SCCB配置网络；IMU使用3.3 V I²C，编码器接入TIM4与TIM6。接口原理图见图4.5，软件归属与用途见表4.1，完整图纸见图B-3。
+
+图4.5 摄像头、显示、IMU与编码器接口原理图
+表4.1 主要接口与软件归属
+
+4.6 电容统计与PCB设计
+整车所有电容总容量统计为719.6 μF，主要用于电源输入、降压输出、驱动器去耦和局部高频旁路。PCB布局将大电流换相回路与摄像头、编码器和核心板参考地分区，减小电机开关噪声对图像采集和控制信号的影响。
+
+（a）功率与接口器件侧
+
+（b）TC264D核心板安装与连接器侧
+图4.6 主驱一体板两侧EDA渲染图
+图4.6为EDA渲染图，用于说明器件布局与走线分区；附录B收录电源、购买核心板参考图、接口、双路电机驱动及预留负压集成方案的完整原理图，附录C给出自制主驱一体板正反面、整车标准视图和实测尺寸记录。
+
+第五章 图像处理与赛道识别
+5.1 图像采集与双缓冲
+MT9V03X提供灰度图像，当前处理尺寸为188 x 120像素。摄像头通过18 Pin排线连接一体板：D0-D7输出八位并行像素数据，PCLK和VSYNC提供采集时序，参数配置由SCCB软件I²C的SCL、SDA完成。PCLK下降沿触发DMA，将像素数据写入原始缓冲区；VSYNC回调在一帧结束后将图像复制到处理缓冲区。若上一帧仍在处理，则主动丢弃新帧而不覆盖正在使用的数据，从而避免图像撕裂。由于CPU0数据RAM不足以再放置一幅完整图像，处理缓冲区被放在CPU1数据RAM并通过全局地址访问。[4]
+软件按一秒窗口统计完成二值化、识别和共享数据发布的帧数，实车完整图像处理频率约为165 FPS。该数值是完整处理链路频率，不只是摄像头标称输出帧率。
+5.2 ROI OTSU二值化
+
+图5.1 ROI、扫线范围与节点检测框
+为降低阈值统计开销并减少远处无关区域影响，程序仅在指定ROI内计算灰度直方图。对于188 x 120图像，ROI行为60至96，列为37至187，横纵方向均每隔2像素采样。OTSU方法遍历0至255灰度阈值，选择类间方差最大的阈值。[5]
+	σ_b²(t) = ω_0(t) ω_1(t) [ μ_0(t) - μ_1(t) ]²	公式1
+当前程序在OTSU阈值上增加20的补偿量，并将最终阈值限制在60至220，然后对整幅图像进行二值化。像素灰度高于阈值时置为255，否则置为0。
+	T_b = clamp(T_OTSU + 20, 60, 220)	公式2
+本方案在一个指定ROI内计算单一OTSU阈值，不对图像作多区域阈值分割，以下称为“ROI OTSU”。
+5.3 扫线中点与方向误差
+二值化后，程序从图像最底行向上扫描至高度的1/10处。每一行自左向右寻找第一个长度不少于5像素的连续白段，并取该白段中点。扫描列范围在代码中定义为图像中心左右各100像素，经过边界裁剪后对188像素宽图像等效为整行。
+当有效行数不少于5时，对所有有效行中点求算术平均，再减去图像中心94得到视觉方向误差；有效行不足5时误差置零。当前算法不提取左右边界，也不区分近瞻点与远瞻点。
+	e_v = (1/N) Σ x_i - W/2,    N ≥ 5	公式3
+5.4 节点识别
+节点识别使用宽165像素、高60像素的检测框。程序分别统计检测框上、下、左、右四条边上的白色像素；某条边累计出现不少于3个白色像素时置位对应标志。只有上边和下边同时出现白线时视为普通直行，其余非零穿框组合视为节点候选。检测框纵向中心可由当前路线数组项进行偏移，以适应不同节点的触发位置。
+该判定计算量小，适合高帧率运行，但对孤立噪声和非标准图案较敏感。后续可结合最小连通长度、连续帧确认或节点形态约束，避免仅有一条边出现少量白点时触发。
+5.5 参数化路线决策数组
+
+图5.2 参数化节点决策数组执行流程
+表5.1 路线数组项的主要字段
+
+每次检测到节点后，软件读取当前数组项，根据方向和延迟参数施加转向误差与速度提示，同时启动再检测屏蔽计数，然后将数组索引加1。数组由赛前人工观察地图拓扑后填写，属于预设路径决策表，不是程序自动生成地图或自动求最优路径。
+5.6 丢线保护与检测指标
+只有在检测框实际启用时才进行丢线判断。若检测框四条边连续5帧均没有白色像素，程序锁存丢线标志；CPU1收到标志后清零速度、转向、积分和PWM并立即停止驱动轮。随后达到设定延迟时，再向负压电调输出停止脉宽。锁存逻辑需要重新上电或在后续版本中增加明确复位条件。
+图像算法的坐标分辨单位为1像素，完整处理频率约165 FPS。受摄像头安装高度、俯角和赛道平面映射影响，本文不将图像坐标分辨单位换算为毫米级检测误差。
+
+第六章 运动控制与软件架构
+6.1 双核实时任务组织
+
+图6.1 双核软件任务与闭环控制流程
+CPU0主循环由摄像头完成帧标志驱动，依次完成阈值更新、整幅二值化、节点判断、扫线、路线附加误差和共享数据发布。CPU1通过CCU6通道产生1 ms周期中断，在中断中执行测速和速度控制；每5次中断执行一次方向外环，每20次中断发布调试数据。该分工使图像帧率变化不会改变速度环的1 ms采样周期。
+6.2 编码器测速与数字滤波
+CPU1每1 ms读取左右编码器计数并立即清零。左右安装方向不同，因此左侧计数在软件中取反。原始计数经过一阶IIR低通滤波，滤波系数为0.25，可抑制单周期量化抖动。
+	v[k] = 0.75 v[k-1] + 0.25 v_raw[k]	公式4
+当前程序中的基础速度175表示每个1 ms控制周期内的编码器计数目标，是程序内部量纲，不是m/s。换算实际线速度还需要确认编码器有效计数倍频、传动比和车轮周长，因此该数值不列入整车外部技术指标。
+6.3 视觉PD差速转向
+方向外环每5 ms运行一次。当前积分增益为0，因此实际控制器为视觉PD。比例项根据图像误差产生基本差速，微分项抑制误差快速变化；误差微分被限制在正负50，转向输出被限制在正负100，并以每5 ms最多变化20的斜率平滑。
+	u_s = sat(0.4 e_v + 1.5 [e_v(k)-e_v(k-1)], ±100)	公式5
+左右轮目标速度由基础速度和转向量合成：当转向量为正时，左轮目标降低、右轮目标提高，从而产生差速转矩。软件中的STEER_DIR用于适配摄像头坐标方向和电机安装方向。
+	v_L* = v_b - u_s,        v_R* = v_b + u_s	公式6
+6.4 左右轮速度PI闭环
+左右轮分别使用独立PI控制器。比例增益为1.0，积分增益为0.10，积分状态限制在正负500，控制输出限制为0至60%的PWM。左轮另加10的固定前馈偏置，右轮偏置为0，用于阶段性补偿左右驱动差异。
+	u_i = sat[K_p(v_i* - v_i) + K_i Σ(v_i* - v_i) + u_ff,i]	公式7
+6.5 启动、限幅与输出保护
+电机只有在负压风扇完成启动且摄像头至少输出一帧有效巡线结果后才允许进入闭环。首次启动以40个已处理图像帧将基础速度从0线性提高到目标值；正常运行时基础速度上升和下降分别受10和12的变化率限制。电机PWM每1 ms最多变化2个百分点，避免电流和机械冲击突变。
+控制程序暂未启用看门狗，也未设置摄像头frame_id超时判断。当图像链路停止更新而camera_ready保持为1时，CPU1仍可能沿用上一帧误差；相应风险和改进方案见7.3节。
+6.6 IMU660RC使用状态
+实车安装外接逐飞IMU660RC模块，通过I²C连接一体板并由3.3 V供电。程序将IMU_ENABLE_READ设为0，不读取IMU，也不把角速度反馈到视觉方向控制器；条件编译屏蔽的imu660rb代码仅作为早期接口预留，不属于最终控制链路。
+因此，本报告的正式控制方案为视觉PD外环加左右轮速度PI内环，IMU660RC不参与最终控制。软件仅保留硬件连接说明和关闭状态，不将预留驱动描述为已实现功能。
+6.7 控制参数汇总
+表6.1 控制参数汇总
+
+
+第七章 制作、调试与问题分析
+7.1 开发工具与工程组织
+软件使用C语言开发，基于逐飞TC264开源库和英飞凌iLLD接口。工程配置文件标注的开发环境为AURIX Development Studio v1.10.2。CPU0和CPU1分别具有独立入口，CCU6中断服务配置到CPU1，摄像头VSYNC、PCLK触发的DMA采集及SCCB配置由CPU0侧完成。[9]
+系统集成流程包括电源和一体板上电检查、摄像头采集与IPS200显示验证、左右电机方向与编码器极性检查、左右速度环整定，以及节点识别、路线数组、负压启动和丢线保护联调。
+
+7.2 调试观察与参数修改
+IPS200通过SPI显示二值图像、完整处理FPS、图像误差以及左右轮实际速度；图像每200 ms刷新一次，FPS按1 s窗口统计。PID参数、阈值补偿量、输出限幅和路线数组通过编译期宏或常量数组配置。工程中的通用ISR模板保留无线与GNSS回调接口，但实车未安装相应模块。
+7.3 软件边界与改进方向
+表7.1 软件边界及改进方向
+
+7.4 实测参数与资料归档
+整车按比赛装配状态完成测量：长度125 mm，车体本体宽度55 mm（不含板外电调），包含板外电调的最大外廓宽度90 mm，高度160 mm，含3S LiHV电池重量140.3 g。实物照片和实测记录见附录C。
+附录C收录整车上视、侧视和正视照片、自制主驱一体板正反面照片，以及长度、宽度和高度测量记录；相关数据已同步写入表2.1、表3.1和表C-1。
+
+第八章 结论与展望
+8.1 设计总结
+本车面向第二十一届全国大学生智能汽车竞赛疯狂电路组，形成了以购买TC264D核心板和自制主驱一体板为控制核心、单MT9V03X视觉感知、四轮双电机差速驱动和负压增附为主体的总体方案。机械上，每侧电机通过中心主动齿轮同时驱动前后两个车轮，编码器齿轮与对应侧后轮齿轮啮合；电气上，主驱一体板集成DRV8701E与MOSFET双电机驱动、5 V和3.3 V电源及外设接口，当前负压电调作为板外独立模块连接。
+当前软件完成188 x 120灰度图像处理，采用ROI OTSU、阈值补偿、逐行白段中点和165 x 60节点检测框，完整处理频率约165 FPS。路线采用赛前人工填写的参数化节点决策数组。运动控制采用5 ms视觉PD差速外环和1 ms左右轮速度PI内环，并设置启动斜坡、PWM斜率限制和丢线停车。
+8.2 后续改进方向
+整车实测参数：长125 mm、最大外廓宽90 mm、高160 mm、含电池重量140.3 g；附录C给出整车标准视图、PCB正反面和尺寸测量照片。IMU660RC仅保留硬件连接，不参与最终控制。
+当前程序还存在OTSU计数器宽度、帧数时间基准、摄像头超时、看门狗和路线结束状态等问题。后续应优先将所有时间逻辑改为真实定时器，增加通信超时和终点停车状态，并根据最终地图更新路线数组。
+整车采用购买的TC264D核心板、自制主驱一体板和板外负压电调；主驱一体板预留的负压集成方案未用于参赛车辆。
+
+参考文献
+[1] 全国大学生智能汽车竞赛组委会. 第二十一届全国大学生智能汽车竞赛比赛规则[EB/OL]. (2025-11-09)[2026-08-09]. https://blog.csdn.net/zhuoqingjoking97298/article/details/154598625.
+[2] 全国大学生智能汽车竞赛秘书处. 第二十一届全国大学生智能汽车竞赛技术报告要求[R]. 2026.
+[3] Infineon Technologies AG. TC260/TC264/TC265/TC267 32-Bit Single-Chip Microcontroller Data Sheet[R]. V1.0. 2017.
+[4] onsemi. MT9V034 1/3-Inch Wide-VGA CMOS Digital Image Sensor Data Sheet[EB/OL]. [2026-08-09]. https://www.onsemi.com/download/data-sheet/pdf/mt9v034-d.pdf.
+[5] OTSU N. A Threshold Selection Method from Gray-Level Histograms[J]. IEEE Transactions on Systems, Man, and Cybernetics, 1979, 9(1): 62-66.
+[6] Texas Instruments. DRV8701 Brushed DC Motor Full-Bridge Gate Driver Data Sheet[EB/OL]. [2026-08-09]. https://www.ti.com/lit/ds/symlink/drv8701.pdf.
+[7] Richtek Technology. RT9013 500 mA Low Dropout, Low Noise Ultra-Fast Regulator Data Sheet[EB/OL]. [2026-08-09]. https://www.richtek.com/RedirectToProduct?specid=RT9013.
+[8] SCT. SCT2450 5 A Synchronous Step-Down Converter Data Sheet[EB/OL]. [2026-08-09]. https://www.siitek.com.cn/Upfiles/down/SCT2450%20Datasheet%20Rev%201.0.pdf.
+[9] Infineon Technologies AG. AURIX Development Studio[EB/OL]. [2026-08-09]. https://softwaretools.infineon.com/tools/com.ifx.tb.tool.aurixide.
+
+附录A 核心程序源代码
+本附录收录与视觉处理、节点识别和运动控制直接对应的核心程序，涉及的源文件包括：cpu0_main.h、cpu0_main_l_pins_fixed.c、cpu1_main_l_pins_fixed.c、zf_device_mt9v03x_double.c、zf_device_mt9v03x_double.h、shared_data.c、shared_data.h、isr.c、isr.h和isr_config.h。附录代码保持工程中的实际控制逻辑，路线数组根据比赛赛道拓扑配置。
+程序A-1 视觉与节点检测关键参数
+    #define IPS200_TYPE             (IPS200_TYPE_SPI)
+    #define IMG_W                   (MT9V03X_1_W)
+    #define IMG_H                   (MT9V03X_1_H)
+ 
+    #define BIN_USE_OTSU            (1)
+    #define BIN_FIXED_THRESHOLD     (140)
+ 
+    #define OTSU_ROW_START          (IMG_H / 2)
+    #define OTSU_ROW_END            (IMG_H - 24)
+    #define OTSU_COL_START          (IMG_W / 5)
+    #define OTSU_COL_END            ((IMG_W * 1) / 1)
+    #define OTSU_CALC_INTERVAL      (360)
+    #define OTSU_SAMPLE_STEP        (2)
+ 
+    #define THRESH_OFFSET           (20)
+    #define THRESH_MIN              (60)
+    #define THRESH_MAX              (220)
+ 
+    #define BIN_WHITE               (255)
+    #define BIN_BLACK               (0)
+ 
+    #define SHOW_DEBUG_INFO         (0)
+ 
+    #define DISPLAY_REFRESH_INTERVAL_MS     (200)
+    #define FPS_MEASURE_INTERVAL_MS         (1000)
+    #define SYSTEM_TIMER_TICKS_PER_MS       (100000UL)
+    #define DISPLAY_REFRESH_INTERVAL_TICKS  (DISPLAY_REFRESH_INTERVAL_MS * SYSTEM_TIMER_TICKS_PER_MS)
+    #define FPS_MEASURE_INTERVAL_TICKS      (FPS_MEASURE_INTERVAL_MS * SYSTEM_TIMER_TICKS_PER_MS)
+    #define FPS_DISPLAY_X                   ((240 - 7 * 8) / 2)
+    #define FPS_DISPLAY_Y                   ((320 - 16) / 2)
+    #define ERROR_DISPLAY_X                 ((240 - 9 * 8) / 2)
+    #define ERROR_DISPLAY_Y                 (FPS_DISPLAY_Y + 16)
+    #define LEFT_SPEED_DISPLAY_X            ((240 - 10 * 8) / 2)
+    #define LEFT_SPEED_DISPLAY_Y            (ERROR_DISPLAY_Y + 16)
+    #define RIGHT_SPEED_DISPLAY_X           ((240 - 10 * 8) / 2)
+    #define RIGHT_SPEED_DISPLAY_Y           (LEFT_SPEED_DISPLAY_Y + 16)
+ 
+    #define SCAN_ROW_START          (IMG_H - 1)
+    #define SCAN_ROW_END            (IMG_H / 10)
+    #define SCAN_ROW_STEP           (1)
+    #define SCAN_CENTER_HALF_WIDTH  (100)
+    #define SCAN_COL_START          ((IMG_W / 2) - SCAN_CENTER_HALF_WIDTH)
+    #define SCAN_COL_END            ((IMG_W / 2) + SCAN_CENTER_HALF_WIDTH)
+    #define SCAN_WHITE_RUN_MIN      (5)
+    #define SCAN_VALID_ROW_MIN      (5)
+    #define SHOW_SCAN_MID_POINTS    (1)
+    #define SCAN_MID_GRAY           (128)
+ 
+    #define DETECT_BOX_SHOW         (1)
+    #define DETECT_BOX_CENTER_X     (IMG_W / 2)
+    #define DETECT_BOX_CENTER_Y_BASE (IMG_H / 2)
+    #define DETECT_BOX_WIDTH        (165)
+    #define DETECT_BOX_HEIGHT       (60)
+    #define DETECT_BOX_LINE_WIDTH   (1)
+    #define DETECT_BOX_GRAY         (128)
+    #define DETECT_BOX_EDGE_WHITE_MIN   (3)
+ 
+    #define DETECT_BOX_POWER_ON_DELAY_MS     (1000)
+    #define DETECT_BOX_FRAME_PERIOD_MS       (20)
+    #define DETECT_BOX_POWER_ON_DELAY_FRAMES ((DETECT_BOX_POWER_ON_DELAY_MS + DETECT_BOX_FRAME_PERIOD_MS - 1) / DETECT_BOX_FRAME_PERIOD_MS)
+ 
+    #define DETECT_BOX_EDGE_TOP             (0x01)
+    #define DETECT_BOX_EDGE_BOTTOM          (0x02)
+    #define DETECT_BOX_EDGE_LEFT            (0x04)
+    #define DETECT_BOX_EDGE_RIGHT           (0x08)
+    #define DETECT_BOX_INTERSECTION_FLAG    (0x10)
+ 
+    /* Lost-line protection: count only frames in which the detect box really runs. */
+    #define LINE_LOST_NO_WHITE_FRAMES       (5U)
+    #define LINE_LOST_FAN_STOP_DELAY_FRAMES (40U)
+    #define SCENE_FLAG_LINE_LOST             (0x20U)
+    #define SCENE_FLAG_LINE_LOST_FAN_STOP    (0x40U)
+ 
+    #define TRACK_NORMAL            (0)
+ 
+    #define ROUTE_DIR_STRAIGHT      (0)
+    #define ROUTE_DIR_LEFT          (1)
+    #define ROUTE_DIR_RIGHT         (2)
+ 
+typedef struct
+{
+    uint16 error_delay_frames;
+    uint8 dir;
+    uint16 detect_delay_frames;
+    uint16 turn_extra_frames;
+    int left_extra_error;
+    int right_extra_error;
+    int detect_box_y_offset;
+    int turn_speed;
+    uint16 turn_speed_frames;
+    int scan_extra_error;
+    uint16 scan_extra_error_frames;
+} route_step_t;
+ 
+/* Columns: error delay, direction, detect delay, turn frames, left error, right error, box Y offset, turn speed, speed frames, scan add error, scan add total frames. */
+
+程序A-2 ROI OTSU阈值与整幅二值化
+static uint8 otsu_threshold_region_fast(const uint8 *img,
+                                        int width,
+                                        int height,
+                                        int row_start,
+                                        int row_end,
+                                        int col_start,
+                                        int col_end)
+{
+    uint32 hist[256] = {0};
+    uint32 total = 0;
+    uint32 sum_total = 0;
+    uint32 sum_back = 0;
+    uint32 weight_back = 0;
+    uint32 weight_front = 0;
+    uint32 t = 0;
+    uint8 threshold = 128;
+    float max_var = -1.0f;
+    int x = 0;
+    int y = 0;
+ 
+    if (row_start < 0) row_start = 0;
+    if (row_end >= height) row_end = height - 1;
+    if (col_start < 0) col_start = 0;
+    if (col_end >= width) col_end = width - 1;
+    if ((row_start > row_end) || (col_start > col_end)) return 128;
+ 
+    for (y = row_start; y <= row_end; y += OTSU_SAMPLE_STEP)
+    {
+        for (x = col_start; x <= col_end; x += OTSU_SAMPLE_STEP)
+        {
+            uint8 gray = img[y * width + x];
+            hist[gray]++;
+            total++;
+            sum_total += gray;
+        }
+    }
+ 
+    if (total == 0) return 128;
+ 
+    for (t = 0; t < 256; t++)
+    {
+        weight_back += hist[t];
+        if (weight_back == 0) continue;
+ 
+        weight_front = total - weight_back;
+        if (weight_front == 0) break;
+ 
+        sum_back += t * hist[t];
+ 
+        {
+            float mean_back = (float)sum_back / (float)weight_back;
+            float mean_front = (float)(sum_total - sum_back) / (float)weight_front;
+            float diff = mean_back - mean_front;
+            float var_between = (float)weight_back * (float)weight_front * diff * diff;
+ 
+            if (var_between > max_var)
+            {
+                max_var = var_between;
+                threshold = (uint8)t;
+            }
+        }
+    }
+ 
+    return threshold;
+}
+ 
+static void binarize_image_in_place(uint8 *img, uint8 threshold)
+{
+    int i = 0;
+    int size = IMG_W * IMG_H;
+ 
+    for (i = 0; i < size; i++)
+    {
+        img[i] = (img[i] > threshold) ? BIN_WHITE : BIN_BLACK;
+    }
+
+程序A-3 检测框边缘标志与节点判断
+static uint8 detect_box_edge_flags(const uint8 *img)
+{
+#if DETECT_BOX_SHOW
+    int cx = DETECT_BOX_CENTER_X;
+    int cy = route_get_detect_box_center_y();
+    int box_w = DETECT_BOX_WIDTH;
+    int box_h = DETECT_BOX_HEIGHT;
+    int x1 = 0;
+    int x2 = 0;
+    int y1 = 0;
+    int y2 = 0;
+    int x = 0;
+    int y = 0;
+    int top_count = 0;
+    int bottom_count = 0;
+    int left_count = 0;
+    int right_count = 0;
+    uint8 flags = 0;
+ 
+    if (img == 0) return 0;
+    if (box_w <= 0) return 0;
+    if (box_h <= 0) return 0;
+    if (DETECT_BOX_EDGE_WHITE_MIN <= 0) return 0;
+ 
+    x1 = cx - box_w / 2;
+    y1 = cy - box_h / 2;
+    x2 = x1 + box_w - 1;
+    y2 = y1 + box_h - 1;
+ 
+    if (x1 < 0) x1 = 0;
+    if (y1 < 0) y1 = 0;
+    if (x2 >= IMG_W) x2 = IMG_W - 1;
+    if (y2 >= IMG_H) y2 = IMG_H - 1;
+    if (x1 > x2) return 0;
+    if (y1 > y2) return 0;
+ 
+    for (x = x1; x <= x2; x++)
+    {
+        if ((flags & DETECT_BOX_EDGE_TOP) == 0)
+        {
+            if (img[y1 * IMG_W + x] == BIN_WHITE)
+            {
+                top_count++;
+                if (top_count >= DETECT_BOX_EDGE_WHITE_MIN)
+                {
+                    flags |= DETECT_BOX_EDGE_TOP;
+                }
+            }
+        }
+ 
+        if ((flags & DETECT_BOX_EDGE_BOTTOM) == 0)
+        {
+            if (img[y2 * IMG_W + x] == BIN_WHITE)
+            {
+                bottom_count++;
+                if (bottom_count >= DETECT_BOX_EDGE_WHITE_MIN)
+                {
+                    flags |= DETECT_BOX_EDGE_BOTTOM;
+                }
+            }
+        }
+    }
+ 
+    for (y = y1; y <= y2; y++)
+    {
+        if ((flags & DETECT_BOX_EDGE_LEFT) == 0)
+        {
+            if (img[y * IMG_W + x1] == BIN_WHITE)
+            {
+                left_count++;
+                if (left_count >= DETECT_BOX_EDGE_WHITE_MIN)
+                {
+                    flags |= DETECT_BOX_EDGE_LEFT;
+                }
+            }
+        }
+ 
+        if ((flags & DETECT_BOX_EDGE_RIGHT) == 0)
+        {
+            if (img[y * IMG_W + x2] == BIN_WHITE)
+            {
+                right_count++;
+                if (right_count >= DETECT_BOX_EDGE_WHITE_MIN)
+                {
+                    flags |= DETECT_BOX_EDGE_RIGHT;
+                }
+            }
+        }
+    }
+ 
+    return flags;
+#else
+    (void)img;
+    return 0;
+#endif
+}
+ 
+static uint8 detect_box_is_intersection(uint8 edge_flags)
+{
+    if (edge_flags == 0)
+    {
+        return 0;
+    }
+ 
+    if (edge_flags == (DETECT_BOX_EDGE_TOP | DETECT_BOX_EDGE_BOTTOM))
+    {
+        return 0;
+    }
+ 
+    return 1;
+}
+
+程序A-4 路线数组项触发与索引更新
+static void route_update_by_detect_box(const uint8 *img,
+                                       uint8 *box_edge_flags,
+                                       uint8 *box_intersection,
+                                       uint8 *box_detection_active)
+{
+    *box_edge_flags = 0;
+    *box_intersection = 0;
+    *box_detection_active = 0;
+ 
+    if (detect_box_power_on_delay_frames > 0)
+    {
+        detect_box_power_on_delay_frames--;
+        return;
+    }
+ 
+    if (route_detect_delay_frames > 0)
+    {
+        route_detect_delay_frames--;
+        return;
+    }
+ 
+    *box_detection_active = 1;
+    *box_edge_flags = detect_box_edge_flags(img);
+    *box_intersection = detect_box_is_intersection(*box_edge_flags);
+ 
+    if (*box_intersection)
+    {
+        uint16 route_num = route_index;
+ 
+        route_start_step(route_plan[route_index].error_delay_frames,
+                         route_plan[route_index].dir,
+                         route_plan[route_index].detect_delay_frames,
+                         route_plan[route_index].turn_extra_frames,
+                         route_plan[route_index].left_extra_error,
+                         route_plan[route_index].right_extra_error,
+                         route_plan[route_index].turn_speed,
+                         route_plan[route_index].turn_speed_frames,
+                         route_plan[route_index].scan_extra_error,
+                         route_plan[route_index].scan_extra_error_frames,
+                         route_num);
+ 
+        route_index++;
+        if (route_index >= ROUTE_PLAN_COUNT)
+        {
+            route_index = 0;
+        }
+    }
+
+程序A-5 逐行白段中点与视觉误差
+static int find_first_white_segment_mid(const uint8 *img, int row, int *mid_out)
+{
+    int x = 0;
+    int run_start = 0;
+    int run_len = 0;
+    int col_start = SCAN_COL_START;
+    int col_end = SCAN_COL_END;
+ 
+    if (col_start < 0) col_start = 0;
+    if (col_end >= IMG_W) col_end = IMG_W - 1;
+    if (col_start > col_end) return 0;
+ 
+    for (x = col_start; x <= col_end; x++)
+    {
+        if (img[row * IMG_W + x] == BIN_WHITE)
+        {
+            if (run_len == 0)
+            {
+                run_start = x;
+            }
+            run_len++;
+        }
+        else
+        {
+            if (run_len >= SCAN_WHITE_RUN_MIN)
+            {
+                *mid_out = (run_start + x - 1) / 2;
+                return 1;
+            }
+            run_len = 0;
+        }
+    }
+ 
+    if (run_len >= SCAN_WHITE_RUN_MIN)
+    {
+        *mid_out = (run_start + col_end) / 2;
+        return 1;
+    }
+ 
+    return 0;
+}
+ 
+static int scan_midpoints_and_calc_error(uint8 *img, int *error_out)
+{
+    int row = 0;
+    int row_start = SCAN_ROW_START;
+    int row_end = SCAN_ROW_END;
+    int valid_count = 0;
+    int mid_sum = 0;
+ 
+    if (row_start >= IMG_H) row_start = IMG_H - 1;
+    if (row_start < 0) row_start = 0;
+    if (row_end >= IMG_H) row_end = IMG_H - 1;
+    if (row_end < 0) row_end = 0;
+ 
+    if (SCAN_ROW_STEP <= 0)
+    {
+        *error_out = 0;
+        return 0;
+    }
+ 
+    if (row_start >= row_end)
+    {
+        for (row = row_start; row >= row_end; row -= SCAN_ROW_STEP)
+        {
+            int mid = 0;
+            if (find_first_white_segment_mid((const uint8 *)img, row, &mid))
+            {
+                mid_sum += mid;
+                valid_count++;
+                mark_scan_midpoint(img, row, mid);
+            }
+        }
+    }
+    else
+    {
+        for (row = row_start; row <= row_end; row += SCAN_ROW_STEP)
+        {
+            int mid = 0;
+            if (find_first_white_segment_mid((const uint8 *)img, row, &mid))
+            {
+                mid_sum += mid;
+                valid_count++;
+                mark_scan_midpoint(img, row, mid);
+            }
+        }
+    }
+ 
+    if (valid_count >= SCAN_VALID_ROW_MIN)
+    {
+        int mid_avg = mid_sum / valid_count;
+        *error_out = mid_avg - (IMG_W / 2);
+    }
+    else
+    {
+        *error_out = 0;
+    }
+ 
+    return valid_count;
+}
+
+程序A-6 1 ms编码器测速与IIR滤波
+static void update_speed_measurement_1ms(void)
+{
+    int32 raw_left;
+    int32 raw_right;
+ 
+    raw_left = -encoder_get_count(ENCODER_L);
+    raw_right = encoder_get_count(ENCODER_R);
+ 
+    encoder_clear_count(ENCODER_L);
+    encoder_clear_count(ENCODER_R);
+ 
+    g_ctrl.raw_left_speed = raw_left;
+    g_ctrl.raw_right_speed = raw_right;
+ 
+    g_ctrl.filt_left_speed_q += ((raw_left << SPD_FILTER_SHIFT) - g_ctrl.filt_left_speed_q) >> SPD_FILTER_SHIFT;
+    g_ctrl.filt_right_speed_q += ((raw_right << SPD_FILTER_SHIFT) - g_ctrl.filt_right_speed_q) >> SPD_FILTER_SHIFT;
+ 
+    g_ctrl.actual_left_speed = g_ctrl.filt_left_speed_q >> SPD_FILTER_SHIFT;
+    g_ctrl.actual_right_speed = g_ctrl.filt_right_speed_q >> SPD_FILTER_SHIFT;
+
+程序A-7 视觉PD、差速目标与左右轮速度PI
+static int32 calc_pid_steer(void)
+{
+    int32 err;
+    int32 derr;
+    float p_term;
+    float i_term;
+    float d_term;
+    float steer_f;
+    int32 steer;
+ 
+    err = round_float_to_int32((float)g_shared_data.image_error * STEER_DIR);
+ 
+    if (g_ctrl.smooth_base_speed <= 0)
+    {
+        g_ctrl.steer_err_i = 0;
+        g_ctrl.last_image_error = err;
+        return 0;
+    }
+ 
+    derr = err - g_ctrl.last_image_error;
+    g_ctrl.last_image_error = err;
+    derr = limit_int32(derr, -STEER_D_LIMIT, STEER_D_LIMIT);
+ 
+    g_ctrl.steer_err_i += err;
+    g_ctrl.steer_err_i = limit_int32(g_ctrl.steer_err_i, -STEER_I_LIMIT, STEER_I_LIMIT);
+ 
+    p_term = STEER_KP * (float)err;
+    i_term = STEER_KI * (float)g_ctrl.steer_err_i;
+    d_term = STEER_KD * (float)derr;
+ 
+    steer_f = p_term + i_term + d_term;
+    steer = round_float_to_int32(steer_f);
+ 
+    return limit_int32(steer, -STEER_MAX, STEER_MAX);
+}
+ 
+static void direction_outer_loop_5ms(void)
+{
+    int32 steer_target;
+ 
+    steer_target = calc_pid_steer();
+    g_ctrl.steer_target = steer_target;
+    g_ctrl.steer_cmd = slew_toward(g_ctrl.steer_cmd, g_ctrl.steer_target, DIFF_SLEW_STEP_5MS);
+}
+ 
+static int32 wheel_pi_output(int32 ref, int32 actual, volatile int32 *err_i, int32 ff_offset)
+{
+    int32 err;
+    float out_f;
+    int32 out;
+ 
+    if (ref <= 0)
+    {
+        *err_i = 0;
+        return 0;
+    }
+ 
+    err = ref - actual;
+    *err_i += err;
+    *err_i = limit_int32(*err_i, -SPD_I_LIMIT, SPD_I_LIMIT);
+ 
+    out_f = SPD_FF * (float)ref + SPD_KP * (float)err + SPD_KI * (float)(*err_i) + (float)ff_offset;
+    out = round_float_to_int32(out_f);
+ 
+    return limit_int32(out, 0, PWM_MAX);
+}
+ 
+static void speed_inner_loop_1ms(void)
+{
+    int32 base = 0;
+    int32 steer = 0;
+    int32 left_ref;
+    int32 right_ref;
+    int32 left_req;
+    int32 right_req;
+ 
+    base = g_ctrl.smooth_base_speed;
+    steer = g_ctrl.steer_cmd;
+ 
+    left_ref = base - steer + LEFT_SPEED_OFFSET;
+    right_ref = base + steer + RIGHT_SPEED_OFFSET;
+ 
+    left_ref = limit_int32(left_ref, 0, BASE_SPEED_MAX + STEER_MAX);
+    right_ref = limit_int32(right_ref, 0, BASE_SPEED_MAX + STEER_MAX);
+ 
+    if (base <= 0)
+    {
+        left_ref = 0;
+        right_ref = 0;
+        g_ctrl.steer_cmd = 0;
+        g_ctrl.steer_target = 0;
+        g_ctrl.steer_err_i = 0;
+    }
+ 
+    g_ctrl.target_left_speed = left_ref;
+    g_ctrl.target_right_speed = right_ref;
+ 
+    left_req = wheel_pi_output(left_ref, g_ctrl.actual_left_speed, &g_ctrl.left_err_i, LEFT_FF_OFFSET);
+    right_req = wheel_pi_output(right_ref, g_ctrl.actual_right_speed, &g_ctrl.right_err_i, RIGHT_FF_OFFSET);
+ 
+    g_ctrl.left_pwm_req = left_req;
+    g_ctrl.right_pwm_req = right_req;
+ 
+    g_ctrl.left_pwm = slew_toward(g_ctrl.left_pwm, g_ctrl.left_pwm_req, PWM_SLEW_STEP_1MS);
+    g_ctrl.right_pwm = slew_toward(g_ctrl.right_pwm, g_ctrl.right_pwm_req, PWM_SLEW_STEP_1MS);
+ 
+    set_left_motor_percent(g_ctrl.left_pwm);
+    set_right_motor_percent(g_ctrl.right_pwm);
+}
+
+程序A-8 1 ms实时控制入口与丢线保护
+void cpu1_control_1ms_isr(void)
+{
+    static uint8 div_5ms = 0;
+    static uint8 div_20ms = 0;
+ 
+    if ((!g_ctrl.ready) ||
+        (!g_shared_data.camera_ready) ||
+        (!g_shared_data.fan_ready))
+    {
+        stop_motor();
+        return;
+    }
+ 
+    update_speed_measurement_1ms();
+ 
+    if (g_shared_data.scene_flags & SCENE_FLAG_LINE_LOST)
+    {
+        stop_motor_for_line_lost();
+ 
+        if (g_shared_data.scene_flags & SCENE_FLAG_LINE_LOST_FAN_STOP)
+        {
+            /* 0% throttle: keep the valid ESC stop pulse instead of removing PWM. */
+            neg_pressure_stop();
+        }
+ 
+        publish_debug_data();
+        return;
+    }
+ 
+    update_base_speed_1ms();
+ 
+    div_5ms++;
+    if (div_5ms >= 5)
+    {
+        div_5ms = 0;
+        direction_outer_loop_5ms();
+    }
+ 
+    speed_inner_loop_1ms();
+ 
+    div_20ms++;
+    if (div_20ms >= 20)
+    {
+        div_20ms = 0;
+#if IMU_ENABLE_READ
+        imu_update_flag = 1;
+#endif
+        publish_debug_data();
+} }
+
+
+附录B 详细电路原理图
+本附录按功能页收录本车相关原理图。图B-2来自本车实际使用的购买TC264D核心板资料，不作为本队自研电路；图B-5为计划集成到主驱一体板、但目前尚未调通且未用于实车的负压三相驱动方案。其余图页来自主驱一体板EDA设计。为保护个人信息，嵌入副本已裁除含姓名、手机号和身份证号的题栏，电路网络、器件参数和引脚连接未作改动。
+表B-1 原理图清单与使用状态
+
+
+图B-1 主驱一体板电池输入及5 V/3.3 V电源原理图
+
+图B-2 购买TC264D核心板参考原理图（左：BOOT与下载；右：最小系统，非本队自研）
+
+图B-3 主驱一体板传感器与调试接口原理图
+
+图B-4 主驱一体板双路DRV8701E电机驱动原理图
+
+图B-5 计划集成的负压三相驱动原理图（上：三相桥；下：AI8051U，尚未调通）
+
+附录C 实物照片与测量记录
+图C-1 自制主驱一体板PCB正反面实物照片
+
+图C-2 整车上视、侧视与正视实物照片
+
+表C-1 最终实测记录
+
+
+===== TABLE 1 =====
+符号或缩写 | 含义
+TC264D | 英飞凌AURIX TC26xD系列微控制器，本文所用主控
+MT9V03X | 灰度摄像头模块，输出图像在本工程中按188 x 120像素处理
+ROI | Region of Interest，感兴趣区域
+OTSU | 最大类间方差自动阈值选择方法
+DMA | Direct Memory Access，直接存储器访问
+PWM | Pulse Width Modulation，脉宽调制
+PI / PD | 比例积分控制 / 比例微分控制
+
+===== TABLE 2 =====
+符号或缩写 | 含义
+FPS | Frames Per Second，每秒完整处理图像帧数
+e_v | 由白色引导线中点相对图像中心得到的视觉方向误差
+v_b | 基础速度给定，阶段代码中采用编码器计数/1 ms的内部量纲
+v_L, v_R | 左、右轮目标速度
+u_s | 视觉方向控制器输出的差速控制量
+SCCB | Serial Camera Control Bus，MT9V03X寄存器配置总线
+I²C | Inter-Integrated Circuit，IMU660RC连接接口
+SPI | Serial Peripheral Interface，IPS200显示接口
+TIM | Timer Input Module，左右编码器计数接口
+IIR | Infinite Impulse Response，本文用于轮速一阶低通滤波
+MOSFET | 金属氧化物半导体场效应晶体管，电机全桥功率器件
+
+===== TABLE 3 =====
+项目 | 参数或说明
+参赛组别 | 疯狂电路组
+主控与电路板 | 购买TC264D核心板；自制主驱一体板集成双电机驱动、5 V/3.3 V电源和IPS200接口；当前负压电调板外
+车体与转向 | 四轮，左右各一台电机；同侧前后轮联动；差速转向；无舵机
+驱动电机 | 逐飞N30 Pro x2
+电机驱动 | DRV8701E双电机MOSFET驱动，电池母线供电；电机PWM 17 kHz
+编码器 | PD-1015-SDI-ENC-1024 ×2；A/B相；与左右后轮齿轮啮合
+视觉传感器 | MT9V03X ×1；188×120；3.3 V；18 Pin并行及PCLK/VSYNC/SCCB
+惯性传感器 | IMU660RC ×1；外接I²C，3.3 V；最终控制不读取IMU数据
+赛道检测 | 完整图像处理频率约165 FPS；图像坐标分辨单位1 pixel
+
+===== TABLE 4 =====
+项目 | 参数或说明
+电池 | 3S LiHV，11.4 V，300 mAh，95C，3.42 Wh，22.5 g
+电源 | 5 V：SCT2450QSTER；3.3 V：RT9013-33GB
+电路功耗 | 正常运行状态下约2～3 W
+负压装置 | 1103无刷电机；板外独立电调；50 Hz控制脉冲；与主控共地
+电容总容量 | 719.6 μF
+传感器数量 | 摄像头1、编码器2、IMU1，共4个传感器模块
+额外伺服电机 | 0个；另有1个负压风扇电机，不计作伺服电机
+整车尺寸与重量 | 长125 mm；车体宽55 mm（不含板外电调）；最大外廓宽90 mm（含板外电调）；高160 mm；含电池重量140.3 g
+
+===== TABLE 5 =====
+参数 | 数值 | 单位 | 测量口径
+整车长度 | 125 | mm | 含突出部件
+车体宽度 | 55 | mm | 车体本体宽度，不含板外电调
+整车最大外廓宽度 | 90 | mm | 含板外电调，取最大外廓
+整车高度 | 160 | mm | 含摄像头支架
+整车重量 | 140.3 | g | 含电池，按比赛检录状态
+
+===== TABLE 6 =====
+器件 | 接口 | 用途
+MT9V03X | 18 Pin：D0-D7并行数据、PCLK、VSYNC；SCCB软件I²C配置；DMA采集 | CPU0
+左编码器 | TIM4编码器接口 | CPU1，1 ms读取并清零
+右编码器 | TIM6编码器接口 | CPU1，1 ms读取并清零
+IPS200 | SPI | 显示图像、FPS、误差和左右速度
+IMU660RC | I²C；板载3.3 V供电 | 外接模块；最终控制不读取IMU数据
+负压电调 | 板外电调；50 Hz PWM控制脉冲；与主控共地 | CPU1启动与保护
+
+===== TABLE 7 =====
+字段 | 作用
+dir | 节点动作：直行、左转或右转
+error_delay_frames | 检测到节点后，延迟若干帧再施加固定转向误差
+detect_delay_frames | 本节点执行后屏蔽检测，防止同一节点重复触发
+turn_extra_frames | 固定转向误差保持帧数
+left/right_extra_error | 左转或右转时覆盖的图像误差
+detect_box_y_offset | 当前节点的检测框纵向偏移
+turn_speed / frames | 节点期间临时基础速度及持续帧数
+scan_extra_error / frames | 固定转向结束后的附加修正量及持续帧数
+
+===== TABLE 8 =====
+参数 | 当前值 | 说明
+速度测量周期 | 1 ms | 左右编码器读取并清零
+速度滤波 | α = 0.25 | 一阶IIR
+速度PI | Kp=1.0, Ki=0.10 | 积分限幅±500
+方向周期 | 5 ms | 视觉PD
+方向PD | Kp=0.4, Kd=1.5 | 微分限幅±50，输出限幅±100
+基础速度 | 175 | 编码器计数/1 ms内部量纲
+基础速度上限 | 180 | 内部量纲
+电机PWM | 17 kHz，最大60% | 每1 ms最多变化2%
+负压PWM | 50 Hz，目标60% | 3 s解锁，1%/100 ms软启动
+IMU | 未启用 | 最终控制不使用IMU
+
+===== TABLE 9 =====
+项目 | 现状 | 影响 | 改进方向
+OTSU计数器宽度 | OTSU_CALC_INTERVAL=360，但计数器为uint8 | 计数器在256帧回绕，条件>=360永远不成立 | 改为uint16，或按系统时间更新阈值
+帧数与时间不一致 | 节点时间常量按20 ms/帧换算，实测完整处理约165 FPS | 50帧约0.303 s，40帧约0.242 s，并非1.0 s和0.8 s | 所有超时改用系统tick；仅把图像帧用于事件去抖
+IMU型号与功能 | 硬件为IMU660RC；读取功能关闭，不参与最终控制 | 控制链路仅使用视觉误差和左右轮速 | 保留I²C硬件接口和关闭状态，不启用预留驱动
+摄像头超时 | camera_ready置位后无frame_id超时 | 图像链路停滞时可能沿用旧误差 | 记录最后帧时间，超时立即停车
+看门狗 | CPU0、CPU1均关闭看门狗 | 程序跑飞时缺少硬件复位保障 | 调试完成后启用并分核喂狗
+路线结束 | 阶段数组执行完后索引回到0 | 无独立终点停车条件 | 按最终地图增加完成状态和停车判据
+
+===== TABLE 10 =====
+图纸编号 | 内容及使用状态
+B-1 | 主驱一体板电池输入、SCT2450QSTER 5 V与RT9013-33GB 3.3 V电源电路
+B-2 | 购买TC264D核心板的BOOT、下载、时钟、供电与端口参考电路（非本队自研）
+B-3 | 主驱一体板摄像头、IPS200、外接IMU660RC与左右编码器接口
+B-4 | 主驱一体板双路DRV8701E与外置MOSFET电机驱动电路
+B-5 | AI8051U、FD6288Q与六管三相桥负压集成方案（尚未调通、未用于当前实车）
+
+===== TABLE 11 =====
+（a）PCB正面（核心板与接口侧） | （b）PCB背面（电源与驱动器件侧）
+
+===== TABLE 12 =====
+（a）整车上视图 | （a）整车上视图
+（b）整车侧视图 | （c）整车正视图
+
+===== TABLE 13 =====
+项目 | 数值 | 单位 | 测量说明
+长 | 125 | mm | 含突出部件
+车体宽 | 55 | mm | 车体本体宽度，不含板外电调
+整车最大外廓宽 | 90 | mm | 含板外电调，取最大外廓
+高 | 160 | mm | 含摄像头支架
+重量 | 140.3 | g | 含3S LiHV电池
+完整图像处理频率 | 约165 | FPS | 软件1 s窗口统计

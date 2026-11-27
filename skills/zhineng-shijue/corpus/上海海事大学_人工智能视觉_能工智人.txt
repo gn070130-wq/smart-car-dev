@@ -1,0 +1,1406 @@
+第二十一届全国大学生
+智能汽车竞赛
+
+技 术 报 告
+
+
+
+
+
+学    校：		上海海事大学
+队伍名称：		能工智人
+参赛队员：		周柏旭
+						黄舒阳
+						饶轩然
+张思远
+带队教师：		王天真
+ 虞  旦
+						
+
+
+
+
+
+关于技术报告和研究论文使用授权的说明
+本人完全了解第21届全国大学生智能汽车竞赛关保留、使用技术报告和研究论文的规定，即：参赛作品著作权归参赛者本人，比赛组委会可以在相关主页上收录并公开参赛作品的设计方案、技术报告以及参赛模型车的视频、图像资料，并将相关内容编纂收录在组委会出版论文集中。
+
+
+
+参赛队员签名
+
+
+带队教师签名：
+日        期：	  2026年8月10日  	     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+摘要
+摘要：本文围绕第二十一届全国大学生智能汽车竞赛人工智能视觉组M型车模的自主推箱子任务，完成了以NXP i.MX RT1064为核心的车载软件设计。系统采用四麦轮全向底盘，两块OpenART Plus分别提供地图/位姿信息与箱子、目标类别识别；主控制器通过两路串口接收视觉数据，并在16×12网格地图上组织巡视、识别、路径规划和运动执行。运动层通过麦轮运动学将车体速度分解为四轮目标转速，采用带前馈的增量式PID完成电机闭环；定位层融合双IMU航向、四路编码器里程计和视觉侧向修正，并利用地图墙体约束抑制累计误差。软件以分层状态机和周期调度器组织比赛流程，同时提供参数、调试和比赛三种运行模式，为整车联调与任务执行提供统一框架。
+
+关键词：RT1064；OpenART Plus；麦轮运动学；推箱子路径规划；多源定位
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+目录
+摘要	I
+目录	II
+第一章  绪 论	1
+1.1 智能车研究背景	1
+1.2 方案总体介绍	1
+1.3 本文结构	2
+第二章 机械结构设计及调整	3
+2.1 整车布局	3
+2.2 电池选型与安装	4
+第三章 硬件电路设计	5
+3.1 单片机系统设计	5
+3.2 电源模块设计	6
+3.3 电机驱动电路	7
+3.5 传感器的选择	8
+3.5.1 摄像头	8
+3.5.2 编码器	8
+第四章 软件控制设计	10
+4.1 软件总体架构	10
+4.1.1 系统初始化与运行模式	10
+4.1.2 分层周期调度	11
+4.2 视觉信息获取与通信	11
+4.2.1 双视觉模块分工	11
+4.2.2 串口协议与地图解码	12
+4.3 推箱子任务状态机	12
+4.3.1 任务初始化与关卡切换	12
+4.3.2 巡视、识别与目标匹配	13
+4.4 网格地图与路径规划	13
+4.4.1 地图建模	13
+4.4.2 受约束路径求解与指令生成	14
+4.5 麦轮运动控制	14
+4.5.1 麦轮运动学解算	14
+4.5.2 距离与航向控制	14
+4.5.3 四轮速度闭环	15
+4.6 多源定位与误差修正	15
+4.6.1 双IMU航向融合	15
+4.6.2 编码器里程计	15
+4.6.3 视觉侧向修正与地图约束	16
+4.7 软件安全与容错设计	16
+第五章 系统调试	17
+5.1 嵌入式开发与工程组织	17
+5.2 参数整定与数据观测	17
+5.3 分模块调试方法	18
+5.3.1 电机与麦轮运动调试	18
+5.3.2 定位与视觉通信调试	18
+5.3.3 状态机与路径规划联调	18
+5.4 比赛模式验证与异常处理	19
+第六章 模型车主要技术参数说明	20
+结论	21
+参考文献	23
+附录	24
+一、车模技术检查表	24
+二、车模照片	27
+1、车模外观照片	27
+2、电路板PCB图	29
+3、电路板原理图	31
+三、程序源代码	34
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+第一章  绪 论
+1.1 智能车研究背景
+全国大学生智能汽车竞赛将机械结构、嵌入式控制、视觉感知和智能决策集中在同一移动平台上，是检验学生系统设计与工程实现能力的重要实践载体。人工智能视觉组的任务不再局限于循迹，而是要求车辆在有限场地中理解地图、识别目标、规划动作并自主完成操作。推箱子任务同时具有运动约束、环境不确定性和实时性要求：车辆既要准确到达指定网格，还要保证箱体推动方向正确，并在视觉测量波动、车轮打滑和惯性器件漂移存在时维持可用的全局位姿。因此，软件必须把感知、定位、规划与控制连成闭环，而不能依赖单一传感器或单一控制算法。
+1.2 方案总体介绍
+本车采用M型四麦轮全向底盘，车载主控为NXP i.MX RT1064。两块OpenART Plus按功能分工：地图视觉模块输出网格地图和车辆位姿，人工智能视觉模块完成箱子与目标类别识别。主控端对串口帧进行校验和解码，在游戏状态机内依次完成关卡初始化、场景巡视、目标匹配、受约束路径求解、运动指令生成和任务结束判定。底层控制以1 ms节拍为时间基准，按10 ms、20 ms、50 ms等周期执行IMU更新、里程计、距离控制、轮速闭环、视觉数据处理和任务状态更新。
+车辆位置由多源信息共同维护。四路编码器经过方向和比例标定后形成平面里程计；比赛模式下两只IMU660RC独立估计航向，再采用圆周角融合得到统一偏航角；视觉位姿仅在满足时序、地图边界和创新量约束时用于侧向修正。运动控制层先将全局速度转换到车体坐标系，再根据麦轮运动学计算四轮目标角速度，最终由带前馈的增量式PID调节电机电压。该方案既保留了麦轮底盘的横移能力，也将高层规划与底层执行解耦，便于分模块调试和比赛模式切换。
+1.3 本文结构
+本文共分六章。第一章介绍任务背景、总体方案及报告结构；第二章说明车模机械结构；第三章介绍核心控制器、电机驱动、电源和传感器等硬件与电路设计；第四章结合车端程序阐述软件架构、视觉通信、推箱子状态机、网格路径规划、麦轮运动控制和多源定位方法；第五章给出工程开发、参数整定和分模块联调流程；第六章汇总从程序配置中可以核验的主要技术参数，最后对整车软硬件集成工作进行总结。
+第二章 机械结构设计及调整
+在智能视觉组中，控制策略与算法固然是完成任务的核心，但机械结构同样是限制车模性能的关键瓶颈。由于本赛题要求车模在物理场地中移动，并通过车载屏幕观察虚拟地图、完成推箱子任务，因此机械结构不仅影响运动性能，还直接影响图像识别的稳定性和全局定位的精度。
+如果车模机械结构设计不合理，例如屏幕支架刚性不足、OpenART与屏幕相对位置易变，会导致摄像头采集的虚拟画面出现抖动或偏移，从而引发地图识别错误、箱子位置误判等问题；同时，车模在快速启停或转向时若出现侧滑，会使编码器里程计产生累积误差，导致全局定位漂移，最终造成推箱子路径执行失败。此外，车顶标识牌的高度和水平度若不能严格保持在15cm且与AprilTag码对齐，全局视觉系统将无法准确解算车模的真实位姿，影响虚拟车模的同步精度。
+因此，我们在不违反规则的前提下，对车模进行了针对性的机械结构改造：采用高刚性、低重心的底盘布局，优化麦轮安装与减震，减少高速运动时的侧滑与振动；设计一体式刚性支架，将屏幕与双OpenART Plus固定为整体，确保三者相对位置恒定；同时精确调整车顶标识牌的安装高度与水平角度，使其与场地四角AprilTag码保持同一高度。这些改造有效提升了车模的运动性能和识别稳定性，为推箱子任务的精准执行提供了可靠的机械基础。
+2.1 整车布局
+我们组采用的是M车模，在原有底板的基础上加装碳纤维底板，采用高刚性、低重心的底盘布局。减少因车模自重过大带来的底盘形变，从而丢失定位精度。驱动电机为RS-380，7.2V的电机功率可达16W，额定电压7.2V，额定电流3.92A，额定转速14060rpm，动作速度高、响应快。智能车的外形大致如图2.1。
+
+
+图2.1 智能车外形图
+
+(1) 车模主要质量都靠近中轴，通过加装配重块使车模重心居中，以最大程度减小转向位置偏移。
+(2) 调整主板，电池，驱动板位置使车模重心尽可能低，以提高车模控制上限。
+(3) 设计一体式刚性支架，将屏幕与双OpenART Plus固定为整体，确保三者相对位置恒定。一体式刚性支架（部分）如图2.2所示
+
+						图2.2 一体式刚性支架（部分）
+
+2.2 电池选型与安装
+车模采用3S锂电池供电，额定电压为11.1 V，满电电压为12.6 V，可满足四路RS-380电机、主控制器和视觉模块的用电需求。电池安装在底盘中心附近并采用可靠固定，既减小线束长度和接触松动风险，也便于通过前后位置微调控制整车重心，使纵向、横向移动和原地转向时的轮胎载荷尽量均匀。
+
+
+第三章 硬件电路设计
+硬件是智能车比赛的起点，只有搭建起一个性能良好、耐受性强，绝缘保护好的硬件环境才能保证车能平稳快速的行驶。我们在整个系统设计过程中严格按照规范进行。本着可靠、高效的原则，在满足各个要求的情况下，尽量从原理设计时就注意简化电路，注重反向保护，同时在PCB布局布线时贯彻此原则。
+3.1 单片机系统设计
+单片机最小系统是智能车系统的核心控制部件。我们采用了NXP的RT1064芯片。原理图（部分）如图3.1所示
+
+
+图3.1 RT1064核心板原理图
+3.2 电源模块设计
+电源模块是系统的 “能量枢纽”，为其他所有模块输送所需电力。在设计环节，除了要精准把控电压范围、电流大小等基础参数，还需围绕电源转换效率、噪声抑制、抗干扰能力及电路精简性等维度进行优化。可以说，一套可靠的电源方案，是保障整个硬件电路稳定运行的核心基石。
+全部硬件电路的电源由格氏3s电池提供（额定电压11.1V，满电电压12.6V）。由于电路中的不同电路模块所需要的工作电压和电流容量各不相同，电源模块应该包含多个稳压电路，将充电电池电压转换成各个模块所需要的电压。为满足需要，本车模上存在4种供电电压：
+(1) DRV8701有刷全桥驱动使用3s锂电池供电，正常使用时电压在11.8-12.6V，可直接用于给驱动供电。
+(2) 使用降压电源芯片TPS5430 搭建12V-5V降压电路，输出电压5V，用于给各个线性稳压器，串口，核心板，以及OpenArtPlus供电。原理图如图3.2所示
+
+图3.2 降压电路12V-5V原理图
+(3) 使用线性稳压器RT9013-33 将5V输入降为3.3V输出，用于编码器，OLED、蜂鸣器、imu、WiFi模块、按键、拨码开关供电。
+
+图3.3 降压电路5V-3.3V原理图
+3.3 电机驱动电路
+采用DRV8701E作为驱动芯片，该驱动芯片相较于IR2104工作电压范围更宽，从5.9V-45V覆盖常见电池供电电压，给其供电一般无需附加升降压模块（而IR2104栅极驱动供电电压为10V-20V，无法使用直接使用2s航模电池(7.6V)供电）；且DRV8701E为全桥驱动芯片，仅需一个DRV8701E即可驱动一个H桥里的四块NMOS；且其驱动方式更简单，相较于常见的驱动需两路PWM波控制正反转，该驱动只需使用一路PWM信号控制转速加一个高低电平信号控制正反转。
+使用一片DRV8701可以构成一个MOS管全桥驱动电路，如图3.5所示。
+
+
+图3.5 一侧电机驱动原理图
+3.5 传感器的选择
+3.5.1 摄像头
+比赛所用的摄像头为OpenArtPlus。OpenArtPlus模块是一款视觉传感器模组。可以轻松完成机器视觉应用，其函数库和OpenMV的十分接近，能实现如人脸检测、Apriltag 追踪、圆形检测、矩形检测等功能，还可通过相关函数找到色块，返回色块的位置、高度、像素等信息。 该模块采用 MIMXRT1176 芯片，主频达到1GHz，拥有2M片内SRAM、64M外置SDRAM、16M外置FLASH，具备较强的计算能力，能够完成 OpenMV 不能完成的神经网络模型的部署和训练，可用于图像分类、手写字符识别等机器学习应用。 在智能车竞赛中，我们用来识别识别屏幕左侧的全局地图结构和屏幕右侧的箱子侧面图片，用于分类识别。
+3.5.2 编码器
+光电编码器是一种通过光电转换将输出轴上的机械几何位移量转换成脉冲或数字量的传感器, 这也是目前应用最多的测速传感器之一。其获取信息准确、精度高、应用简单。 
+采用正交式1024线光电编码器，其供电电压为3.3V~5V，输出为高电平电压3.3V。输出脉冲数为1024线，输出A/B相为步进脉冲，Z相为零位，正反转通过AB相信号脉冲顺序判断旋转方向，通过脉冲计数测量转速。
+	3.5.3 陀螺仪
+	IMU660RC是一款集成三轴加速度计与三轴陀螺仪的六轴惯性测量单元，可通过SPI接口实时输出角速度与加速度数据，具有体积小、精度高、零漂低、采样率高的特点。本系统中使用两块IMU660RC，反向安装在车体中心。两块IMU数据通过互补滤波与卡尔曼滤波融合处理，有效抑制振动噪声，保证了车模在快速启停和旋转过程中的姿态稳定性。
+第四章 软件控制设计
+本章按车端程序的实际调用关系说明软件控制系统。程序以嵌入式C语言实现，既包含电机、编码器、IMU和串口等底层驱动，也包含地图解析、推箱子任务规划和多源定位等上层功能。各模块通过统一的车辆状态、任务队列和周期调度器交换信息，使感知结果能够最终转化为四轮电机指令。
+4.1 软件总体架构
+车端软件可以划分为硬件适配层、实时控制层、定位与感知层、任务规划层以及调试管理层。硬件适配层负责PWM、正交编码器、IMU中断、串口接收、蜂鸣器和显示设备；实时控制层完成麦轮运动学、距离/角度控制和四轮速度闭环；定位与感知层维护编码器里程计、双IMU航向、视觉位姿与网格地图；任务规划层组织关卡、巡视识别、箱子—目标匹配和推箱子路径；调试管理层提供参数注册、上位机数据发送和模式选择。
+4.1.1 系统初始化与运行模式
+系统上电后首先将RT1064主频配置为600 MHz，随后初始化调试接口、片上Flash和延时模块。主程序调用模式设置函数选择参数模式、调试模式或比赛模式，再进入CPU0初始化。初始化阶段依次建立电机与编码器对象、车辆运动学参数、IMU任务、实时侧向修正、双路视觉通信、蜂鸣器、关卡管理、周期调度器、全局定位、里程计、运动控制以及比赛控制任务。
+三种模式共用同一套底层驱动，但启用的服务不同。参数模式用于修改并保存控制参数；调试模式启用显示、按键和AnoPTv8遥测，并以单IMU方式便于观察单项数据；比赛模式关闭不必要的人机界面，启用双IMU融合并运行完整游戏状态机。模式划分减少了调试功能对比赛实时性的影响，同时保证同一份程序可以覆盖标定、联调与正式运行。
+4.1.2 分层周期调度
+PIT通道每1 ms产生一次控制节拍，在中断中更新软件时基并触发控制器任务。控制器内部按照不同周期执行子任务：距离运动、IMU和视觉里程修正以10 ms为主要周期，电机轮速与编码器里程计以20 ms为周期，蜂鸣器状态以100 ms为周期，处理器负载统计以1 s为周期。主循环中的协作式调度器还按1 kHz、50 Hz、10 Hz和1 Hz分派通信解码、游戏状态更新、界面刷新和参数保存等工作。
+周期分层使高速闭环和低速逻辑互不阻塞。串口中断只把接收字节压入队列，完整帧的状态机解码在1 kHz任务中完成；游戏流程以50 Hz更新，不直接占用电机控制中断；Flash保存只在低频任务和允许的模式中执行。这样既降低了中断执行时间，也便于通过任务周期定位超时和数据更新不及时的问题。
+4.2 视觉信息获取与通信
+4.2.1 双视觉模块分工
+车辆使用两块OpenART Plus分别承担地图/位姿测量和人工智能分类。地图视觉模块连接UART4，向主控提供16×12场地地图、车辆所在网格及连续位置；人工智能视觉模块连接UART1，识别当前观察到的箱子或目标类别。两条通道均工作在115200 bit/s，数据在中断层独立入队，避免一类视觉任务阻塞另一类任务。
+主控不会在每个控制周期重复使用同一帧视觉数据。位姿修正模块记录帧序号和时间戳，只处理新的、时序连续的数据；AI识别则由任务状态机按需请求，在车辆停止并完成短暂稳定等待后启动。地图请求、AI请求和模型切换均由明确命令触发，并设置500 ms级重试机制，使偶发丢帧不会直接中断比赛流程。
+4.2.2 串口协议与地图解码
+通信帧以0xAA、0x55为帧头，随后包含设备标识、长度、命令字、数据区和CRC16-CCITT校验。接收状态机逐字节寻找帧头，并依据长度收集完整负载；只有设备号、长度和校验均通过的数据才会写入业务缓冲区。命令类型覆盖AI请求、车辆请求、箱子信息、炸弹信息、地图信息和识别模型切换，便于主控与两块视觉模块共享统一协议。
+地图数据采用压缩形式传输，主控支持三位编码和游程编码两种解码方式。解码后，每个网格被还原为墙体、可通行区域、箱子、目标点、箱子位于目标点或车辆等字符。业务层只访问统一的字符地图，不依赖视觉端的压缩细节，从而使地图显示、路径求解和地图修正使用同一数据源。
+4.3 推箱子任务状态机
+比赛流程由两层状态机组织。外层游戏状态机管理空闲、运行、暂停和结束；进入运行状态后，内层推箱子状态机依次经历等待、任务初始化、路径规划、运动控制和结束处理。状态转换只在规定条件满足时发生，例如地图有效、路径生成成功、当前运动指令完成或关卡结束，因此感知、规划和执行之间具有明确边界。
+4.3.1 任务初始化与关卡切换
+程序为三个关卡分别配置初始任务。第一关可直接依据固定场景建立起始位置和运动目标；第二、第三关先驶离起始区域，再向地图视觉模块请求场地信息。车辆会等待视觉位置达到稳定条件；若超过设定等待时间，则使用安全的初始化值继续执行，防止单次视觉异常造成状态机永久停滞。
+关卡对象统一维护当前等级、车辆位置、地图、箱子和目标点信息。每次切换关卡时，程序清空上一关的运动队列和识别结果，重新初始化地图及规划器，并通过蜂鸣器或调试数据标示状态变化。该设计防止旧关卡残留数据被后续路径规划误用。
+4.3.2 巡视、识别与目标匹配
+对于不能由初始地图直接确定类别的场景，车辆先生成巡视路线，到达观察点后加入DETECT指令。控制器完成上一段移动后停车约300 ms，再向AI视觉模块发出识别请求。识别结果被写入对应箱子或目标记录；若未识别到有效类别，状态机按限制次数重新请求，并可在已获得充分信息时提前结束巡视。
+巡视结果用于建立箱子与目标点的配对约束。程序优先按识别字符进行匹配，并把已知类别带入后续推箱子求解；当严格类别约束无法得到可行方案时，可按当前地图和剩余目标进行受控放宽，再重新求解。这样既利用了视觉语义信息，又避免单次分类不确定性使整个任务无法继续。
+4.4 网格地图与路径规划
+4.4.1 地图建模
+场地在主控中表示为16列、12行的二维网格，单格边长20 cm。墙体、空地、箱子、目标点和车辆分别占用离散状态，连续位姿通过除以20 cm映射到网格坐标。路径规划使用离散地图判断可达性，运动控制则使用网格中心对应的连续坐标，因此规划层与控制层之间可以通过统一的航点序列连接。
+地图进入规划器前会进行边界检查和车辆位置校正。视觉模块给出的车辆网格必须位于合法范围，连续位置也要满足场地尺寸限制；实时侧向修正模块还根据相邻墙体推算车辆中心允许区域。若地图帧无效、位置越界或与当前状态不一致，程序保留已有可靠状态并重新请求，而不直接覆盖全局地图。
+4.4.2 受约束路径求解与指令生成
+规划器根据车辆、箱子和目标点在网格中的关系求解推箱子任务，输出可执行的总路径与关键航点。第二关在条件满足时先尝试较短的直达方案；一般场景则先规划巡视路径，完成类别识别后再求解受配对约束的推箱子路径。若巡视通道被墙体阻断，程序可生成投放炸弹的路径、更新被清除的障碍网格，再继续后续规划。
+运动控制模块把相邻航点转换为上、下、左、右、转向和识别等队列指令。每跨越一个网格，对应20 cm的距离目标；转向指令把航向设置为0°、±90°或180°。执行器只有在当前指令达到终止条件后才取出下一条指令，并在每段直线结束时通知视觉侧向修正模块锁定新的锚点。
+4.5 麦轮运动控制
+4.5.1 麦轮运动学解算
+车辆采用A型四麦轮布局。控制器接收车体坐标系下的纵向速度Vx、横向速度Vy和角速度Vw，并根据轮半径、车宽和车长计算四个车轮的目标角速度。若任一车轮超过允许上限，程序按比例缩放四轮指令，保持合成运动方向不变。编码器测得的四轮速度还通过逆运动学恢复车体实际Vx、Vy和Vw，用于状态观测。
+上层给出的移动目标位于世界坐标系。执行直线任务时，程序先利用当前偏航角把世界速度旋转到车体坐标系，再叠加航向纠偏角速度。这样车辆即使存在小角度偏转，也能沿世界坐标中的水平或垂直方向继续运动，发挥麦轮横向移动时无需先转车头的优势。
+4.5.2 距离与航向控制
+距离运动状态机区分纵向、横向、原地转向、等待、超调修正和异常等状态。主运动轴根据剩余距离生成带限幅的速度，交叉轴采用位置反馈抑制侧向偏差；接近目标时逐步降低速度，并以厘米级目标死区判定完成。若车辆越过目标，状态机会进入超调修正阶段，以较低速度回到目标附近。
+原地转向控制根据当前角度与目标角度的最短圆周误差选择顺时针或逆时针方向。较大误差时角速度受上限限制，接近目标后降低转速；当误差进入约2°完成阈值时停车。直线运动过程中另设航向PID，将目标航向与双IMU融合航向的误差转换为角速度修正，避免长距离移动逐渐偏航。
+4.5.3 四轮速度闭环
+四个有刷直流电机分别配置PWM方向控制和正交编码器。每20 ms读取编码器增量并计算轮速，随后执行带前馈的增量式PID。前馈项根据目标转速给出基础电压，增量PID补偿负载和模型误差；输出经过电压限幅、死区补偿和方向处理后换算为20 kHz PWM占空比。前进、后退、横移和旋转方向可使用独立参数组，以补偿四轮机构在不同受力方向上的差异。
+4.6 多源定位与误差修正
+4.6.1 双IMU航向融合
+比赛模式下两只IMU660RC同时工作。上电后程序以10 ms间隔采集500组数据完成零偏和姿态初始化，随后分别通过快速航向卡尔曼过程更新偏航角。由于角度在±180°处存在跳变，两个结果不能直接算术平均，程序采用圆周角中点方法融合，并将结果归一化到统一角度范围。调试模式可仅启用一只IMU，以便独立检查传感器零偏和噪声。
+4.6.2 编码器里程计
+里程计读取四路编码器计数差并处理计数器回绕，再按等效轮半径和每计数弧度换算车轮位移。程序分别对前后、左右方向设置标定比例，以补偿麦轮滚子、地面摩擦和安装误差。四轮位移经逆运动学得到车体纵向与横向增量，再使用相邻采样时刻的航向中值旋转到世界坐标系，累加形成全局X、Y位置和网格坐标。
+4.6.3 视觉侧向修正与地图约束
+编码器适合提供连续运动增量，但会因打滑积累误差；视觉位置具有全局参照，却可能出现跳变。实时侧向修正只在直线段使用视觉对运动侧轴进行校正：左右移动时修正Y方向，上下移动时修正X方向。模块先检查新帧、时间间隔、候选点连续性和地图范围，再用短窗口中值过滤观测，并按运动状态限制单帧修正量。
+侧向候选位置还要通过墙体约束。程序根据车辆所在20 cm网格及相邻墙体，推算车体中心与墙面的合理距离；若视觉结果意味着车体明显穿墙或跨越过大，则拒绝该观测。直线段完成后，模块以最终可靠位置建立下一段锚点。由此形成IMU负责航向、编码器负责连续位移、视觉负责低频全局校正的互补定位结构。
+4.7 软件安全与容错设计
+控制程序在多个层次设置保护。车辆全局位置若超出0～320 cm和0～240 cm场地范围，运动控制器立即停止并清零麦轮目标；通信层丢弃帧头、长度或CRC错误的数据；地图和视觉位姿必须通过范围、时序与创新量检查；任务规划失败时不直接下发未验证路径，而是重新获取地图、调整约束或进入等待状态。
+运动队列、关卡状态和识别重试均设置明确结束条件，避免死循环；参数保存只在非比赛的低频任务中进行，降低Flash操作干扰实时控制的风险。蜂鸣器、显示界面和AnoPTv8遥测用于提示关键状态，但比赛模式不依赖这些调试外设。上述措施使系统在视觉丢帧、地图变化、定位短时异常或规划无解时能够保持可控状态。
+第五章 系统调试
+系统调试遵循由底层到上层、由单模块到整车闭环的顺序。先确认电源、PWM方向、编码器计数和串口收发，再完成轮速、距离与航向参数整定，最后联调视觉地图、状态机和路径规划。调试程序与比赛程序共用核心模块，差异由运行模式控制，避免两套代码长期演化后行为不一致。
+5.1 嵌入式开发与工程组织
+车端工程以Keil MDK管理，目标器件为NXP i.MX RT1064，程序使用C语言实现。工程目录按平台驱动、用户模块、控制算法、通信协议和任务逻辑划分；主函数只负责系统时钟、基础外设和CPU0任务入口，具体功能由初始化表和周期任务组织。编译前应检查所选运行模式、视觉串口号、IMU数量、麦轮几何参数和关卡配置，下载后先观察系统是否完成IMU初始化及任务调度。
+关键参数通过统一注册接口接入AnoPTv8协议，并保存在片上Flash。每次修改后先在参数模式或调试模式验证，再显式保存，避免未收敛参数直接进入比赛配置。版本管理时应把代码参数、车体几何尺寸和测试场地条件一并记录，特别是轮径、方向比例、PID系数和视觉修正阈值。
+5.2 参数整定与数据观测
+调试模式以50 Hz发送关键遥测，包括四轮目标/实际速度、电机输出电压、全局位置、编码器里程、IMU航向和任务状态。显示与按键界面用于现场查看和切换参数，AnoPTv8上位机用于连续曲线观察。整定时每次只改变一组参数，并保存目标量、反馈量和输出量的同一时间段数据，以判断问题来自指令生成、执行器饱和还是传感器噪声。
+轮速环先在车辆架空条件下确认电机方向与编码器正负，再在地面上分别测试前进、后退、横移和旋转。首先调节前馈，使中速目标附近的稳态误差减小；随后增加比例和积分以改善跟踪，同时观察电压限幅和低速死区。距离与航向环在轮速环稳定后整定，先使用低速、短距离目标，再逐步扩大到完整20 cm网格和90°转向。
+5.3 分模块调试方法
+5.3.1 电机与麦轮运动调试
+四轮调试首先核对PWM方向GPIO、编码器通道和轮序映射。给定单一Vx、Vy或Vw指令时，应检查四轮目标转速符号是否符合A型麦轮运动学，并用逆运动学结果确认实测车体速度方向。若车辆直行或横移时出现持续偏转，先排除轮序和机械阻力，再分别调整不同运动方向的轮速参数，不能仅依靠上层航向环掩盖底层不一致。
+5.3.2 定位与视觉通信调试
+IMU调试在车辆静止条件下完成500次初始化，检查两只传感器的零偏、角度方向和±180°跨界连续性。里程计调试分别执行固定距离前进、后退和横移，对比网格中心位置，修正方向比例和等效轮径。视觉通信先使用协议日志检查帧头、长度、命令和CRC，再核对16×12地图字符、连续位姿单位及网格索引方向。
+视觉侧向修正应在里程计可用后启用。测试时记录原始视觉位置、过滤后的候选值、当前运动段方向和最终修正量，分别制造丢帧、重复帧、越界点和靠墙场景，确认异常观测不会造成位置突跳。每段移动完成后还需检查锚点是否更新，否则下一段的修正基准可能继续沿用旧方向。
+5.3.3 状态机与路径规划联调
+上层联调先使用固定地图逐状态验证，确认等待、初始化、规划、运动和结束状态的进入与退出条件；再加入视觉地图和AI识别。调试输出应包含当前关卡、推箱子子状态、地图版本、路径长度、运动队列首指令和识别重试次数。规划成功后先在不驱动电机的条件下检查航点序列，再低速执行，防止地图坐标方向或箱子配对错误直接导致碰撞。
+对无解或通道受阻地图，应验证程序是否进入重新请求、约束放宽或炸弹路径分支，而不是持续重复同一失败规划。巡视识别测试要覆盖正常识别、空结果、重复识别和提前完成四种情况，并确认DETECT指令只在车辆停车稳定后发出。
+5.4 比赛模式验证与异常处理
+进入比赛模式前，使用与赛场一致的电池、载荷和地面完成连续测试。验证项目包括上电初始化时间、双IMU融合、地图首次获取、每关起始动作、整格移动与转向、巡视识别、推箱路径以及关卡结束停车。比赛模式关闭非必要显示与参数保存，但保留蜂鸣器状态提示、串口重试、地图范围保护和位置越界停车。
+若车辆异常，应按数据链从后向前定位：先确认电机是否收到目标，再检查运动队列、路径航点、地图与识别结果，最后检查通信原始帧。定位漂移则分别对比IMU航向、编码器增量和视觉修正是否连续。通过这种分层诊断，可以把整车问题快速归类为执行、控制、定位、感知或规划故障，减少无依据地同时修改多组参数。
+第六章 模型车主要技术参数说明
+
+
+
+
+
+
+结论
+本报告依据当前车端工程完成了M型四麦轮智能车的软硬件设计整理。硬件以i.MX RT1064为核心，完成四路有刷电机驱动、编码器、双IMU、双视觉模块及分级电源的集成；软件以周期调度和分层状态机为骨架，把地图通信、目标识别、推箱子规划、运动指令生成和四轮闭环控制连接为完整任务链。
+在运动与定位方面，程序利用麦轮正逆运动学支持纵向、横向和原地转向，采用带前馈的增量式PID调节四轮速度，并通过距离、交叉轴位置和航向控制完成网格化运动。双IMU航向、四轮编码器里程计和视觉侧向修正构成互补定位结构；地图边界、墙体约束、串口CRC、视觉异常点拒绝和位置越界停车为系统提供了必要保护。三种运行模式及AnoPTv8参数接口使同一工程能够覆盖参数标定、分模块调试和正式比赛运行。
+参考文献
+[1] 卓晴，黄开胜，邵贝贝．学做智能车 [M]．北京：北京航空航天大学出版社．2007.
+[2] 逐飞科技. 互补滤波浅析--逐飞科技 [EB/OL]. (2020-08-04). https://mp.weixin.qq.com/s/hcnLPSbKXnpAo4VSh872Cg
+[3] 逐飞科技. 第十七届智能车竞赛智能视觉组eIQ教程--逐飞科技 [EB/OL]. (2022-03-15). https://mp.weixin.qq.com/s/IQRksT90BO8bwEHRM1eaRQ
+[4] 逐飞科技. 第21届人工智能视觉组演示车模浅析-逐飞 [EB/OL]. (2025-01-20). https://mp.weixin.qq.com/s/bzW6Kdvn7R8pHLWfXLsfSg
+[5] 逐飞科技. 第20届智能视觉组演示车模浅析-逐飞 [EB/OL].(2024-12-17).https://mp.weixin.qq.com/s/9-G5HT_ZLGrwIogggICHig
+
+ 附录
+一、车模技术检查表
+
+
+
+二、车模照片
+1、车模外观照片
+  车模平放时，俯视照片，前视图，左或右（任选）视图照片.
+
+前视图
+
+右视图
+
+                                           俯视图
+
+2、电路板PCB图
+  
+       主控板正面
+
+主控板背面
+
+    驱动板正面
+
+驱动板背面
+
+3、电路板原理图
+   
+  
+主控板原理图
+
+
+                                 驱动板原理图
+三、程序源代码
+以下选取车端工程中具有代表性的11个头文件。内容覆盖系统调度、运动控制、麦轮运动学、电机闭环、PID、双IMU、编码器里程计、视觉修正、串口通信及比赛状态机等关键模块；保留接口声明以及理解接口所必需的类型、宏定义和注释，不附加第三方库及具体实现文件。
+1. Scheduler.h  —— 分层周期调度接口
+// Source: L_code/code/Scheduler/Scheduler.h
+001  /*
+002   * Scheduler.h
+003   *
+004   *  Created on: 2023年6月26日
+005   *      Author: Administrator
+006   */
+007   
+008  #ifndef USER_SCHEDULER_H_
+009  #define USER_SCHEDULER_H_
+010   
+011  #include <stdint.h>
+012  #include "USERCODE/USERCODE.h"
+013   
+014  #include "PushBoxes/Sokoban.h"
+015  #include "Map/map.h"
+016   
+017  #define TICK_PER_SECOND 1000
+018  #define TICK_US (1000000 / TICK_PER_SECOND)
+019   
+020  typedef struct
+021  {
+022      void (*task_func)(void);
+023      uint16_t rate_hz;
+024      uint16_t interval_ticks;
+025      uint32_t last_run;
+026  } sched_task_t; // 任务结构体
+027  // 计时器结构体，用于倒计时判断，单位ms
+028  typedef struct
+029  {
+030      uint32_t duration;  // 持续时间
+031      uint32_t start_time; // 开始时间
+032      bool is_running;  // 是否正在运行
+033  } timer_t;  // 计时器结构体
+034   
+035  void SysTick_Handler(void);  // 系统滴答中断处理函数
+036  void Scheduler_Setup(void);  // 调度器初始化函数
+037  void Scheduler_Run(void);  // 调度器运行函数，放在主循环中调用
+038  void InitTimer(timer_t *timer, uint32_t duration); // 初始化计时器
+039  bool IsTimerExpired(timer_t *timer);  // 检查计时器是否过期
+040  uint32_t GetSysRunTimeMs(void);  // 获取系统运行时间，单位ms
+041  #endif  /* USER_SCHEDULER_H_ */
+2. Controller.h  —— 实时控制任务接口
+// Source: L_code/code/Controller/Controller.h
+001  /*
+002   * Controller.h
+003   *
+004   *  Created on: 2025/2/15
+005   *      Author: doititit
+006   */
+007  #ifndef UNICYCLE_CONTROLLER_H_
+008  #define UNICYCLE_CONTROLLER_H_
+009   
+010  #include "zf_common_headfile.h"
+011  #include "stdint.h"
+012  #include "BDC/BDC_Hardware.h"
+013  #include "Mecanum_Wheel_Kinematics/Mecanum_Wheel_Kinematics.h"
+014  #include "Car/Car.h"
+015   
+016  #define ControllerTime 0.001f // 控制器时间间隔 1ms
+017   
+018  #define ENCORDER_SAMPLE_TIME (20) // 编码器采样时间
+019  #define BDC_SPEED_LOOP_TIME (20)  // BDC速度环处理时间
+020  #define IMUTASK_TIME (10)  // IMU任务处理时间
+021  #define SPEED_CAL_TIME (20)  // 速度计算时间
+022  #define DISTANCE_MOVE_TIME (10)  // 距离移动控制时间
+023  #define CAR_ODOM_TIME (10)  // 视觉里程计处理时间
+024  #define BUZZER_TASK_TIME (100)  // 蜂鸣器任务时间
+025  typedef struct
+026  {
+027      void (*task_func)(void);
+028      uint16_t interval_ticks;
+029      uint32_t last_run;
+030  } controller_task_t; // 控制器任务结构体
+031  void ControllerTick_Handle(void);
+032  void ControllerUpdate(void);
+033  void ControllerTaskInit(void);
+034  #endif
+3. Car.h  —— 车辆状态与速度设置接口
+// Source: L_code/code/Car/Car.h
+001  /*
+002   * Car.h
+003   *
+004   *  Created on: 2025/6/17
+005   *      Author: doititit
+006   */
+007   
+008  #ifndef _CAR_H
+009  #define _CAR_H
+010  #include "stdint.h"
+011  #include "USERCODE/USERCODE.h"
+012  #include "BDC/BDC_Hardware.h"
+013  #include "Mecanum_Wheel_Kinematics/Mecanum_Wheel_Kinematics.h"
+014  #include "IMUTASK/IMUTASK.h"
+015  #include "PID/PIDLib.h"
+016  #include "Controller/Controller.h"
+017   
+018  #define CAR_CONTROL_MODE_LINE (0)  // 速度控制模式
+019  #define CAR_CONTROL_MODE_ANGLE (1) // 角度控制模式
+020   
+021  #define CAR_ABS(x) ((x) > 0 ? (x) : -(x)) // 绝对值宏定义
+022   
+023  typedef struct
+024  {
+025      float x;
+026      float y;
+027      float z;
+028  } Car_Gyro_TypeDef;
+029   
+030  typedef struct
+031  {
+032      float pitch; // 俯仰角
+033      float roll;  // 翻滚角
+034      float yaw;  // 偏航角
+035  } Car_Euler_TypeDef;
+036   
+037  typedef struct
+038  {
+039      float Vx;  // x轴速度
+040      float Vy;  // y轴速度
+041      float Vw;  // 角速度
+042      float yaw; // 偏航角
+043   
+044      float BDC_OPEN_Voltage; // BDC开环电压
+045  } Car_Set_TypeDef;
+046   
+047  typedef struct
+048  {
+049      uint8_t State;  // 车辆状态
+050      uint8_t ControlMode;  // 车辆控制模式 0：速度控制，1：角度控制
+051      BDC_MOVE_DIR MoveDir;  // 车辆运动方向
+052      Car_Set_TypeDef Set;  // 车辆设置速度结构体
+053      Car_Euler_TypeDef Euler;  // 车辆欧拉角结构体
+054      Car_Gyro_TypeDef Gyro;  // 车辆陀螺仪数据结构体
+055      PidStruct Pid_Vw;  // 车辆角速度PID控制器
+056      PidStruct Pid_Angle;  // 车辆角度环PID控制器
+057      double Distance_Counter;  // 车辆行驶距离计数器
+058      double Horizontal_Counter; // 车辆水平距离计数器
+059      uint8_t Buzzer_Count;  // 蜂鸣器鸣叫次数
+060      float Distance_x;  // 车辆行驶距离
+061      float Distance_y;  // 车辆行驶距离
+062      uint16_t tof_distance;  // TOF测距数据
+063  } Car_Struct_TypeDef;
+064   
+065  void Car_LED_Task(void);  // 车辆LED任务
+066  void Car_GetData(Car_Struct_TypeDef *car);  // 获取车辆数据
+067  void Car_Init(void);  // 初始化车辆
+068  void Car_SetSpeed(float speed_x, float speed_y, float speed_angle); // 设置车辆速度
+069  extern Car_Struct_TypeDef Car;  // 车辆结构体实例
+070  void Car_State_Set(uint8_t state);  // 设置车辆状态
+071  void Car_ControlMode_Set(uint8_t mode);  // 设置车辆控制模式
+072  float Ramp_Update(float current, float target, float ramp_rate);  // 斜坡函数更新
+073  bool Is_Car_Stopped(void);  // 判断车辆是否停止
+074   
+075  extern float distance_x_factor; // 车辆水平行驶距离系数
+076  extern float distance_y_factor; // 车辆竖直行驶距离系数
+077   
+078  #endif
+4. Mecanum_Wheel_Kinematics.h  —— 麦轮正逆运动学接口
+// Source: L_code/code/Mecanum_Wheel_Kinematics/Mecanum_Wheel_Kinematics.h
+001  #ifndef __MECANUM_WHELL_KINEMATICS_H__
+002  #define __MECANUM_WHELL_KINEMATICS_H__
+003  #include "math.h"
+004  #define My_Pi 3.1415926525f
+005  #define Root_Number_2 1.414f
+006  #define RAD_TO_DEG 57.2957795f
+007  // #include "zf_common_headfile.h"
+008  /********************************************************/
+009  /****************** xyw都采用右手定则 SI单位制 */
+010  /********************************************************/
+011  /*轮的位置*/
+012  typedef enum
+013  {
+014      Left_Front = 0, /*左前*/
+015      Right_Front,  /*右前*/
+016      Left_Behind,  /*左后*/
+017      Right_Behind,  /*右后*/
+018  } positions;
+019  /*轮子的样式*/
+020  typedef enum /*麦轮上小轮的倾斜方向 down是\ up是/ */
+021  {
+022      down = 0,
+023      up,
+024  } styles;
+025  typedef enum
+026  {
+027      Type_A = 1,
+028      Type_B,
+029  } types;
+030  /*单麦轮*/
+031  typedef struct
+032  {
+033      float Wheel_theta;  /*车模质心到轮子质心与轮向夹角*/
+034      positions Wheel_position; /*哪个轮*/
+035      float Wheel_Vr;  /*线速度*/
+036      float Wheel_Vw;  /*角速度*/
+037      styles Wheel_style;  /*小轮的样式*/
+038      float Wheel_V_Vertical;  /*垂直小轮的速度分量*/
+039      float Wheel_V_Parallel;  /*平行小轮的速度分量*/
+040      float Wheel_Vx;
+041      float Wheel_Vy;
+042      float Wheel_R;
+043  } Wheel;
+044  /*好多轮和身子*/
+045  typedef struct
+046  {
+047      Wheel Wheel_Left_Front;  /*左前轮*/
+048      Wheel Wheel_Right_Front;  /*右前轮*/
+049      Wheel Wheel_Left_Behind;  /*左后轮*/
+050      Wheel Wheel_Right_Behind; /*右后轮*/
+051      float Vx;  /*x轴速度*/
+052      float Vy;  /*y轴速度*/
+053      float Vw;  /*w速度*/
+054      float Width;  /*横向两个轮子质心的距离*/
+055      float Length;  /*纵向两个轮子质心的距离*/
+056      float hypotenuse;  /*轮子的半径*/
+057      types type;  /*小轮方向*/
+058      float Restrict_Edge;
+059      float Err_to_Vw;
+060      float Dynamic_Vx;
+061      float Dynamic_Vy;
+062      float Dynamic_Vw;
+063  } Mecanums;
+064  /*麦轮结构体*/
+065  extern Mecanums Mecanum;
+066  /*初始化*/
+067  void Mecanum_Wheel_Kinematics_Init(Mecanums *_Mecanum, types style, float width, float length, float Wheel_R, float Restrict_Edge, float Err_to_Vw);
+068  /*算算算*/
+069  void Mecanum_Wheel_Kinematics_Cal(Mecanums *_Mecanum, float Vx, float Vy, float Vw, float Real_angle);
+070  // 逆向运动学
+071  void Mecanum_InverseKinematics(Mecanums *m, float LF_W, float RF_W, float LB_W, float RB_W);
+072  void Mecanum_EncoderYaw_Update(Mecanums *m, float dt_s);
+073  void Mecanum_EncoderYaw_Reset(float yaw_deg);
+074  float Mecanum_GetEncoderYaw(void);
+075  #endif
+5. BDC.h  —— 四路直流电机闭环接口
+// Source: L_code/code/BDC/BDC.h
+001  /*
+002   * BDC.h
+003   *
+004   *  Created on: 2025/2/14
+005   *      Author: doititit
+006   */
+007  #ifndef BDC_H_
+008  #define BDC_H_
+009  #include "zf_common_headfile.h"
+010  #include "stdint.h"
+011  #include "DSPTool/DSPTool.h"
+012  #include "PID/PIDLib.h"
+013   
+014  #define BDC_2PI 6.28318530718f
+015  typedef enum
+016  {
+017      BDC_Initilize = 0,
+018      BDC_STOP = 1,
+019      BDC_RUN = 2,
+020      BDC_Clibr = 3,
+021  } BDC_State_TypeDef;
+022  typedef struct _bdc_HardParam
+023  {
+024      int8_t Dir;
+025      float Voltage_power_supply;
+026      float Voltage_limit;
+027      float voltage_deadband;
+028   
+029      float I_amps;
+030      float I_offset;
+031  } BDC_HardParam_TypeDef;
+032   
+033  typedef struct _bdc_DynaParam
+034  {
+035      float Speed;
+036      float SmoothSpeed;
+037      float oriSpeed;
+038      float Current;
+039  } BDC_DynaParam_TypeDef;
+040   
+041  typedef struct _bdc_SetParam
+042  {
+043      float Speed;
+044      float Voltage;
+045      float Current;
+046  } BDC_SetParam_TypeDef;
+047   
+048  typedef struct _bdc_LPF
+049  {
+050      DSP_LPF_TypeDef Speed;
+051      DSP_LPF_TypeDef SmoothSpeed;
+052      DSP_LPF_TypeDef Current;
+053  } BDC_LPF_TypeDef;
+054   
+055  typedef struct _bdc_Func
+056  {
+057      float (*GetSpeed)(void);
+058      float (*GetADC_I)(void);
+059      void (*SetDuty)(float Duty);
+060  } BDC_Func_TypeDef;
+061   
+062  typedef struct _bdc
+063  {
+064      float ExcuteTime;
+065      BDC_State_TypeDef State;
+066      BDC_HardParam_TypeDef HardParam; // 参数
+067      BDC_DynaParam_TypeDef DynaParam; // 运行时状态
+068      BDC_SetParam_TypeDef SetParam;
+069      BDC_LPF_TypeDef Lpf;  // 滤波器
+070      AdaptiveLPF_t Speed_LPF;  // 速度自适应低通滤波器
+071      PidStruct Current_Loop;  // 电流环
+072      PidStruct Speed_Loop;  // 速度环
+073      PidStruct Up_Speed_Loop;  // 上速度环
+074      PidStruct Down_Speed_Loop;  // 下速度环
+075      PidStruct Left_Speed_Loop;  // 左速度环
+076      PidStruct Right_Speed_Loop;  // 右速度环
+077      PidStruct Left_Rotate_Speed_Loop;  // 左旋转速度环
+078      PidStruct Right_Rotate_Speed_Loop; // 右旋转速度环
+079      BDC_Func_TypeDef Func;  // 功能
+080  } BDC_TypeDef;
+081   
+082  typedef enum
+083  {
+084      BDC_MOVE_UP = 0,
+085      BDC_MOVE_DOWN = 1,
+086      BDC_MOVE_LEFT = 2,
+087      BDC_MOVE_RIGHT = 3,
+088      BDC_MOVE_LEFT_ROTATE = 4,
+089      BDC_MOVE_RIGHT_ROTATE = 5,
+090  } BDC_MOVE_DIR;
+091   
+092  void BDC_GetCurrent(BDC_TypeDef *_bdc, uint8_t lpf);
+093  void BDC_GetSpeed(BDC_TypeDef *_bdc, uint8_t lpf);
+094   
+095  void BDC_SetVoltage(BDC_TypeDef *_bdc, float voltage);
+096  void BDC_CurrentLoop(BDC_TypeDef *_bdc);
+097  void BDC_SpeedLoop(BDC_TypeDef *_bdc);
+098  void BDC_Up_SpeedLoop(BDC_TypeDef *_bdc);
+099  void BDC_Down_SpeedLoop(BDC_TypeDef *_bdc);
+100  void BDC_Left_SpeedLoop(BDC_TypeDef *_bdc);
+101  void BDC_Right_SpeedLoop(BDC_TypeDef *_bdc);
+102  void BDC_Left_Rotate_SpeedLoop(BDC_TypeDef *_bdc);
+103  void BDC_Right_Rotate_SpeedLoop(BDC_TypeDef *_bdc);
+104  void BDC_CurrentPidParCalc(PidParam *_pidparam, float L, float R, float ratio);
+105   
+106  void BDC_DefaultInit(BDC_TypeDef *_bdc);
+107   
+108  extern float vol_test_num;
+109  #endif
+6. PIDLib.h  —— PID控制算法接口
+// Source: L_code/code/PID/PIDLib.h
+001  #ifndef CODE_PIDLIB_PIDLIB_H_
+002  #define CODE_PIDLIB_PIDLIB_H_
+003   
+004  #include <stdint.h>
+005  extern float extern_error;
+006  typedef struct
+007  {
+008      float kp;
+009      float ki;
+010      float kd;
+011      float dt; // 单位s
+012  } PidParam;  // pid三项参数结构体
+013   
+014  typedef struct
+015  {
+016      float iMax; // 积分限幅
+017      float min;  // 输出最小值
+018      float max;  // 输出最大值
+019  } PidMax;  // pid输出限幅结构体
+020   
+021  typedef struct
+022  {
+023      float integrator;  //< 积分值
+024      float last_error;  //< 上次误差
+025      float last_derivative; //< 上次误差与上上次误差之差
+026      float last_get;  //< 上次获取
+027  } PidValue;  // pid暂存变量结构体
+028   
+029  typedef struct
+030  {
+031      float beta;  // 积分分离参数，不需要则改为尽可能大的值（如10000）
+032      float gamma;  // 不完全微分参数，不需要则改为1
+033      float K;  // 死区增益参数，不需要则改为1
+034      float deadband; // 死区，不需要则改为0
+035   
+036      float kf; // 前馈系数
+037  } PidImprove; // 改进的PID控制方案参数
+038   
+039  typedef struct
+040  {
+041      PidParam *pidParam;  // pid参数
+042      PidMax *pidMax;  // pid限幅
+043      PidValue *pidVallue;  // pid暂存
+044      PidImprove *pidImprove; // pid改进参数
+045   
+046      float out_p; // KP输出
+047      float out_i; // KI输出
+048      float out_d; // KD输出
+049      float out;  // pid输出
+050  } PidStruct;
+051   
+052  void PidInit(PidStruct *pid, PidImprove *imp, PidParam *k, PidMax *max, PidValue *val); // pid初始化
+053  void PidClearIntegrator(PidStruct *pid);  // 清除PID控制器的积分项
+054  void PidClearAll(PidStruct *pid);
+055  float PidLocCtrl_Classic(PidStruct *pid, float get, float set);  // 经典pid位置式控制器输出
+056  float PidLocCtrl_SplitIntegral(PidStruct *pid, float get, float set);  // 积分分离的pid位置式控制器输出
+057  float PidLocCtrl_IncompleteDerivative(PidStruct *pid, float get, float set); // 不完全微分的pid位置式控制器输出
+058  float PidLocCtrl_Deadband(PidStruct *pid, float get, float set);  // 带死区的pid位置式控制器输出
+059  float PidLocCtrl_Improve(PidStruct *pid, float get, float set);  // 优化的pid位置式控制器输出
+060  PidImprove *DefaultImproveInit(PidImprove *pidImprove);  // 默认改进参数初始化
+061  void Pid_Add_out_deadband(float *input, float deadband);  // 增加输出死区
+062  float PidIncCtrl(PidStruct *pid, float get, float set);  // 增量式PID控制器输出
+063  float PidIncCtrl_FF(PidStruct *pid, float get, float set);  // 增加前馈的增量式PID控制器输出
+064   
+065  #endif /* CODE_PIDLIB_PIDLIB_H_ */
+7. IMUTASK.h  —— 双IMU姿态与航向接口
+// Source: L_code/code/IMUTASK/IMUTASK.h
+001  /*
+002   * IMUTASK.h
+003   *
+004   *  Created on: 2025/2/15
+005   *      Author: doititit
+006   */
+007   
+008  #ifndef IMUTASK_H_
+009  #define IMUTASK_H_
+010  #include "zf_common_headfile.h"
+011  #include "Mecanum_Wheel_Kinematics/Mecanum_Wheel_Kinematics.h"
+012  #include "IMUTASK/imu_quat_kalman.h"
+013  #include "zf_device_imu660rc.h"
+014  #include "IMU660X/IMU660RC_SE.h"
+015   
+016  typedef struct
+017  {
+018      float x;
+019      float y;
+020      float z;
+021  } IMUData_Gyro_TypeDef;
+022   
+023  typedef struct
+024  {
+025      float x;
+026      float y;
+027      float z;
+028  } IMUData_ACC_TypeDef;
+029   
+030  typedef struct
+031  {
+032      float pitch;
+033      float roll;
+034      float fix_yaw;
+035      float se_yaw;
+036      float yaw;
+037  } IMUData_Euler_TypeDef;
+038   
+039  typedef struct
+040  {
+041      IMUData_Euler_TypeDef euler;
+042      IMUData_Gyro_TypeDef gyro;
+043      IMUData_ACC_TypeDef acc;
+044      float SenserTemp;
+045  } IMUData_TypeDef;
+046   
+047  void IMUTASK(void);
+048  void IMUTASK_Handle(void);
+049  void IMUTASK_Init(bool enable);
+050   
+051  extern IMUData_TypeDef IMUData;
+052  extern IMUData_TypeDef IMUData_Se;
+053   
+054  #endif
+8. encoder_pulse_odom.h  —— 编码器脉冲里程计接口
+// Source: L_code/code/GlobaLocal/encoder_pulse_odom.h
+001  #ifndef ENCODER_PULSE_ODOM_H
+002  #define ENCODER_PULSE_ODOM_H
+003   
+004  #include <stdint.h>
+005   
+006  typedef struct
+007  {
+008      float wheel_rad_per_count;
+009      float wheel_radius_cm;
+010   
+011      float scale_rf;
+012      float scale_lf;
+013      float scale_lb;
+014      float scale_rb;
+015   
+016      float forward_positive_scale;
+017      float forward_negative_scale;
+018      float lateral_positive_scale;
+019      float lateral_negative_scale;
+020   
+021      int32_t max_abs_delta_count;
+022  } EncoderPulseOdomConfig_t;
+023   
+024  typedef struct
+025  {
+026      int16_t last_counter[4];
+027      int16_t delta_count_raw[4];
+028      int32_t delta_count_normalized[4];
+029   
+030      float wheel_delta_cm[4];
+031      float body_forward_cm;
+032      float body_lateral_cm;
+033      float global_delta_x_cm;
+034      float global_delta_y_cm;
+035      float sample_dt_s;
+036   
+037      float previous_theta_rad;
+038      uint32_t last_update_ms;
+039      uint32_t update_count;
+040      uint8_t initialized;
+041      uint8_t time_initialized;
+042  } EncoderPulseOdomState_t;
+043   
+044  extern EncoderPulseOdomConfig_t g_encoder_pulse_odom_config;
+045  extern EncoderPulseOdomState_t g_encoder_pulse_odom_state;
+046   
+047  void EncoderPulseOdom_Init(void);
+048  void EncoderPulseOdom_Update(void);
+049   
+050  /*
+051   * Startup-slip correction fitted from the two 7/23 video/CSV runs.
+052   *
+053   * Pass the four final motor speed setpoints in A, B, C, D order:
+054   * A = right-front, B = left-front, C = left-rear, D = right-rear.
+055   * The detector reconstructs the two translational command components
+056   * internally, so Vx/Vy instability and the Vw component do not directly
+057   * trigger the state machine.  accel_x_raw and accel_y_raw are the unscaled
+058   * accelerometer readings; do not pass the gyro values multiplied by 100.
+059   *
+060   * This module never down-weights future samples.  It accumulates only the
+061   * displacement inside the startup window and, after IMU/encoder evidence is
+062   * available, corrects that stored displacement once.
+063   */
+064  typedef struct
+065  {
+066      float command_start_threshold;
+067      float velocity_lpf_tau_s;
+068      float imu_accel_lpf_tau_s;
+069      float accel_bias_tau_s;
+070      float stationary_wheel_count_rate;
+071   
+072      float min_observation_time_s;
+073      float feature_time_s;
+074      float correction_window_s;
+075      float min_encoder_velocity_change_count_s;
+076      float fitted_gain_forward;
+077      float fitted_gain_lateral;
+078      float downward_response_threshold;
+079      float upward_response_threshold;
+080      float severe_response_ratio;
+081      float min_guess_rejected_fraction;
+082      float max_guess_rejected_fraction;
+083      float command_dropout_grace_s;
+084      float startup_rearm_time_s;
+085   
+086      int8_t downward_forward_command_sign;
+087      int8_t accel_sign_forward;
+088      int8_t accel_sign_lateral;
+089      uint8_t correction_enabled;
+090  } EncoderPulseStartupSlipConfig_t;
+091   
+092  typedef struct
+093  {
+094      float velocity_lpf_count_s[2];
+095      float accel_bias_raw[2];
+096      float accel_lpf_raw[2];
+097   
+098      float start_velocity_count_s[2];
+099      float imu_velocity_impulse_raw_s[2];
+100      float accumulated_global_delta_x_cm[2];
+101      float accumulated_global_delta_y_cm[2];
+102      float observation_elapsed_s[2];
+103   
+104      float response_ratio[2];
+105      float score[2];
+106      float applied_weight[2];
+107      float command_inactive_elapsed_s[2];
+108      float stationary_elapsed_s[2];
+109   
+110      uint8_t active[2];
+111      uint8_t measurement_valid[2];
+112      uint8_t slipping[2];
+113      uint8_t startup_armed[2];
+114      uint8_t downward_start[2];
+115      uint8_t feature_captured[2];
+116      int8_t latched_command_sign[2];
+117      uint8_t accel_bias_initialized;
+118      uint8_t initialized;
+119      uint32_t last_odom_update_count;
+120  } EncoderPulseStartupSlipState_t;
+121   
+122  extern EncoderPulseStartupSlipConfig_t
+123      g_encoder_pulse_startup_slip_config;
+124  extern EncoderPulseStartupSlipState_t
+125      g_encoder_pulse_startup_slip_state;
+126   
+127  void EncoderPulseStartupSlip_Reset(void);
+128  void EncoderPulseStartupSlip_Update(float motor_a_set_speed,
+129                                      float motor_b_set_speed,
+130                                      float motor_c_set_speed,
+131                                      float motor_d_set_speed,
+132                                      float accel_x_raw,
+133                                      float accel_y_raw);
+134  void EncoderPulseStartupSlip_SetCorrectionEnabled(uint8_t enabled);
+135  uint8_t EncoderPulseStartupSlip_IsActive(void);
+136  uint8_t EncoderPulseStartupSlip_IsSlipping(void);
+137  uint8_t EncoderPulseStartupSlip_IsForwardMeasurementValid(void);
+138  uint8_t EncoderPulseStartupSlip_IsLateralMeasurementValid(void);
+139  float EncoderPulseStartupSlip_GetForwardScore(void);
+140  float EncoderPulseStartupSlip_GetLateralScore(void);
+141  float EncoderPulseStartupSlip_GetForwardResponseRatio(void);
+142  float EncoderPulseStartupSlip_GetLateralResponseRatio(void);
+143  float EncoderPulseStartupSlip_GetForwardAppliedWeight(void);
+144  float EncoderPulseStartupSlip_GetLateralAppliedWeight(void);
+145   
+146  /*
+147   * Simple global-Y downward correction.
+148   *
+149   * Downward travel is the direction in which Car.Distance_y increases.
+150   * The correction curve is based only on accumulated raw downward odometry:
+151   * 20 cm -> 0 cm, 100 cm -> 4 cm, 150 cm and above -> 5 cm maximum.
+152   */
+153  typedef struct
+154  {
+155      float no_correction_distance_cm;
+156      float four_cm_distance_cm;
+157      float saturation_distance_cm;
+158      float correction_at_four_cm;
+159      float max_correction_cm;
+160      float step_deadband_cm;
+161      float stop_reset_time_s;
+162      uint8_t enabled;
+163  } EncoderPulseDownwardCorrectionConfig_t;
+164   
+165  typedef struct
+166  {
+167      float accumulated_downward_cm;
+168      float applied_correction_cm;
+169      float inactive_elapsed_s;
+170      uint32_t last_odom_update_count;
+171      uint8_t active;
+172      uint8_t initialized;
+173  } EncoderPulseDownwardCorrectionState_t;
+174   
+175  extern EncoderPulseDownwardCorrectionConfig_t
+176      g_encoder_pulse_downward_correction_config;
+177  extern EncoderPulseDownwardCorrectionState_t
+178      g_encoder_pulse_downward_correction_state;
+179   
+180  void EncoderPulseDownwardCorrection_Reset(void);
+181  void EncoderPulseDownwardCorrection_Update(void);
+182  void EncoderPulseDownwardCorrection_SetEnabled(uint8_t enabled);
+183  float EncoderPulseDownwardCorrection_GetAccumulatedDistanceCm(void);
+184  float EncoderPulseDownwardCorrection_GetAppliedCorrectionCm(void);
+185   
+186  #endif
+9. realtime_side_correction.h  —— 视觉侧向修正接口
+// Source: L_code/code/Car_Odom/realtime_side_correction.h
+001  #ifndef REALTIME_SIDE_CORRECTION_H
+002  #define REALTIME_SIDE_CORRECTION_H
+003   
+004  #include <stdint.h>
+005   
+006  #include "Car/Car.h"
+007  #include "Map/map.h"
+008  #include "TASK/Task.h"
+009   
+010  #ifdef __cplusplus
+011  extern "C"
+012  {
+013  #endif
+014   
+015      /*
+016       * Continuous side-axis correction plus delayed stop-anchor recovery.
+017       *
+018       * LEFT/RIGHT: observe and correct Y only.
+019       * UP/DOWN:    observe and correct X only.
+020       *
+021       * X and Y stability are observed on every camera frame, including while
+022       * idle. A new segment reuses an already-trusted side-axis window, so a
+023       * stable side coordinate can be corrected without waiting for a minimum
+024       * travel distance. Strict plateau checks establish initial provenance;
+025       * post-main-axis provenance uses a shorter current-lane-constrained window.
+026       * Once trusted, long-straight tracking uses consecutive robust median
+027       * candidates, allowing a slow continuous side trend while rejecting jumps.
+028       *
+029       * Straight routes use the cell-center lanes 10, 30, 50, ... cm. The
+030       * commanded side-axis target must be one of those lanes, and a camera
+031       * candidate must stay close enough to that same lane to be accepted.
+032       * The accepted raw coordinate is not snapped to the lane center, and the
+033       * task target is never moved by visual correction.
+034       *
+035       * After every straight segment, a non-blocking handoff remembers the
+036       * completed main axis. As soon as that axis becomes stationary/side-axis,
+037       * a new post-FinishSegment() stable window can repair it while the next
+038       * perpendicular command is already running.
+039       *
+040       * Every visual coordinate write is checked against the map using the
+041       * current odometry main axis. With walls on both sides the write is
+042       * rejected; with one overlapping side wall, the corrected center allows
+043       * the configured 2 cm body penetration. A wall rule may adjust a visual
+044       * candidate by at most 3 cm and may never use the delayed camera main axis.
+045       *
+046       * The moving axis is never overwritten with a delayed camera coordinate.
+047       * After an axis stops being the main axis, it remains blocked until camera
+048       * progress proves that the old delayed plateau was crossed in the completed
+049       * direction and repeated post-motion samples have returned to the commanded
+050       * lane. No fixed camera delay is estimated or configured.
+051       * A previous stop can only contribute its historical odometry bias after
+052       * that stop plateau and the following same-axis departure are both observed.
+053       * Once accepted, a bias is repaid in small bounded steps until its
+054       * residual enters the deadband; evidence is not discarded after one step.
+055       *
+056       * Coordinate unit: cm. Time unit: ms.
+057       */
+058   
+059  #define RTSC_WINDOW_SIZE 8U
+060   
+061      typedef enum
+062      {
+063          RTSC_AXIS_NONE = 0,  // 无活动轴
+064          RTSC_AXIS_X_MOVING,  // X轴移动
+065          RTSC_AXIS_Y_MOVING  // Y轴移动
+066      } RealtimeSideCorrectionAxis_t; // 轴状态
+067   
+068      typedef enum
+069      {
+070          RTSC_RESULT_NO_UPDATE = 0, // 没有更新
+071          RTSC_RESULT_NO_NEW_FRAME,  // 没有新帧
+072          RTSC_RESULT_WAIT_STABLE,  // 等待稳定
+073          /* Retained for source compatibility; this result is no longer emitted. */
+074          RTSC_RESULT_MAP_REJECTED,  // 地图拒绝
+075          RTSC_RESULT_ERROR_REJECTED, // 错误拒绝
+076          RTSC_RESULT_SHORT_UPDATE,  // 短更新
+077          RTSC_RESULT_STRONG_UPDATE,  // 强更新
+078          RTSC_RESULT_FINAL_UPDATE  // 最终更新
+079      } RealtimeSideCorrectionResult_t;
+080   
+081      typedef enum
+082      {
+083          RTSC_SOURCE_NONE = 0,
+084          RTSC_SOURCE_MOVING_TRACK,
+085          RTSC_SOURCE_STEP_VERIFY,
+086          RTSC_SOURCE_SEGMENT_FINAL,
+087          RTSC_SOURCE_DELAYED_ANCHOR
+088      } RealtimeSideCorrectionSource_t;
+089   
+090      typedef enum
+091      {
+092          RTSC_REJECT_NONE = 0U,
+093          RTSC_REJECT_INVALID_CAMERA = 1U << 0,
+094          RTSC_REJECT_FRAME_GAP = 1U << 1,
+095          RTSC_REJECT_LANE = 1U << 2,
+096          RTSC_REJECT_WALL = 1U << 3,
+097          RTSC_REJECT_ERROR_RANGE = 1U << 4,
+098          RTSC_REJECT_INNOVATION = 1U << 5,
+099          RTSC_REJECT_MAIN_AXIS_DEBT = 1U << 6
+100      } RealtimeSideCorrectionReject_t;
+101   
+102      typedef struct
+103      {
+104          float value[RTSC_WINDOW_SIZE];  // 视觉坐标值
+105          uint32_t timestamp_ms[RTSC_WINDOW_SIZE]; // 视觉坐标时间戳
+106          uint8_t count;  // 视觉坐标数量
+107          float confidence;  // 视觉坐标置信度
+108      } RealtimeSideCorrectionWindow_t;  // 视觉坐标窗口
+109   
+110      typedef struct
+111      {
+112          volatile uint32_t camera_frame_sequence; // 摄像头帧序列号
+113          uint32_t processed_frame_sequence;  // 已处理的帧序列号
+114   
+115          RealtimeSideCorrectionAxis_t motion_axis; // 当前运动轴
+116          RealtimeSideCorrectionWindow_t x_window;  // X轴视觉坐标窗口
+117          RealtimeSideCorrectionWindow_t y_window;  //  Y轴视觉坐标窗口
+118   
+119          float last_candidate_x_cm; // 上一次候选X坐标
+120          float last_candidate_y_cm; // 上一次候选Y坐标
+121          float last_error_x_cm;  // 上一次X轴误差
+122          float last_error_y_cm;  // 上一次Y轴误差
+123          float last_step_x_cm;  // 上一次X轴步长
+124          float last_step_y_cm;  //  // 上一次Y轴步长
+125   
+126          float step_deviation_x_cm;  // 上一次X轴步长偏差
+127          float step_deviation_y_cm;  // 上一次Y轴步长偏差
+128          uint8_t step_verification_pending;  // 上一次步长验证挂起
+129          uint8_t step_verified;  // 上一次步长验证通过
+130          uint8_t step_verification_timed_out; // 上一次步长验证超时
+131          /* Retained for binary/source compatibility; wall writes now use map constraints. */
+132          uint8_t vision_suppressed_near_wall;
+133   
+134          uint8_t initialized; // 是否初始化
+135   
+136          float last_innovation_x_cm;
+137          float last_innovation_y_cm;
+138          float last_innovation_range_x_cm;
+139          float last_innovation_range_y_cm;
+140          uint32_t last_frame_gap;
+141          uint32_t skipped_camera_frames;
+142          uint16_t last_reject_reason;
+143          uint8_t last_correction_source;
+144   
+145          /* MCU-odometry-history fast-path diagnostics. */
+146          uint32_t fast_match_attempts;
+147          uint32_t fast_match_accepts;
+148          uint32_t fast_updates;
+149          uint32_t fast_confirmed_updates;
+150          uint32_t fast_rollbacks;
+151          uint32_t last_fast_match_age_ms;
+152          float last_fast_match_main_error_cm;
+153          float last_fast_innovation_cm;
+154          float last_fast_step_cm;
+155          float last_fast_rollback_step_cm;
+156      } RealtimeSideCorrectionState_t;
+157   
+158      extern RealtimeSideCorrectionState_t g_realtime_side_correction; // 全局实时侧向修正状态
+159   
+160      void RealtimeSideCorrection_Init(void); // 初始化实时侧向修正模块
+161   
+162      /* Call once after decoding every new CAR_MSG_REQ camera packet. */
+163      void RealtimeSideCorrection_NotifyNewCameraFrame(void); // 通知新的摄像头帧
+164   
+165      /*
+166       * Call periodically from Camera_Odom_Handle(). The implementation processes
+167       * every camera packet at most once.
+168       *
+169       * camera_pos must be the raw Current_Point XY.
+170       * direction must be Direction_t, not MoveControlState.
+171       */
+172      RealtimeSideCorrectionResult_t RealtimeSideCorrection_Update(
+173          Car_Struct_TypeDef *car,
+174          P_2D camera_pos,
+175          Direction_t direction,
+176          uint32_t now_ms); // 更新实时侧向修正
+177   
+178      /*
+179       * Call once after a straight segment has stopped. This records a delayed
+180       * main-axis anchor and may also perform the conservative final side update.
+181       */
+182      RealtimeSideCorrectionResult_t RealtimeSideCorrection_FinishSegment(
+183          Car_Struct_TypeDef *car,
+184          Direction_t finished_direction); // 完成段落的实时侧向修正
+185   
+186      /*
+187       * Optional insurance status; normal path execution does not need to wait
+188       * on it. If used as a gate, it fails open after 350 ms so camera loss or
+189       * bad points cannot wait forever. A timeout releases only the gate:
+190       * background verification remains active and may still repair later.
+191       */
+192      uint8_t RealtimeSideCorrection_IsStepVerified(void); // 实时侧向修正步长验证
+193   
+194      const RealtimeSideCorrectionState_t *RealtimeSideCorrection_GetState(void); // 获取实时侧向修正状态
+195   
+196  #ifdef __cplusplus
+197  }
+198  #endif
+199   
+200  #endif
+10. Communicate.h  —— 双视觉串口通信接口
+// Source: L_code/code/Communicate/Communicate.h
+001  /*
+002   * Communicate.h
+003   *
+004   *  Created on: 2025/6/17
+005   *      Author: doititit
+006   */
+007   
+008  #ifndef _COMMUNICATE_H
+009  #define _COMMUNICATE_H
+010   
+011  #include "stdint.h"
+012  #include "stddef.h"
+013  #include "Queue/Queue.h"
+014  #include "Car/Car.h"
+015   
+016  #define COMMUNICATE_UART_MAP UART_4  // 定义使用的UART接口
+017  #define COMMUNICATE_UART_MAP_TX_PIN UART4_TX_C16 // 定义UART发送引脚
+018  #define COMMUNICATE_UART_MAP_RX_PIN UART4_RX_C17 // 定义UART接收引脚
+019  #define COMMUNICATE_UART_AI UART_1  // 定义使用的UART接口
+020  #define COMMUNICATE_UART_AI_TX_PIN UART1_TX_B12  // 定义UART发送引脚
+021  #define COMMUNICATE_UART_AI_RX_PIN UART1_RX_B13  // 定义UART接收引脚
+022  #define COMMUNICATE_BAUDRATE 115200  // 定义通信波特率
+023   
+024  #define COMMUNICATE_RX_MAX_BUF_SIZE 256 // 定义通信接收缓冲区的最大大小
+025  #define COMMUNICATE_TX_MAX_BUF_SIZE 256 // 定义通信发送缓冲区的最大大小
+026   
+027  #define COMMUNICATE_MAX_CMD 20 // 定义通信命令的最大数量
+028   
+029  #define HEAD_BYTE1 0xAA // 定义通信协议头字节1
+030  #define HEAD_BYTE2 0x55 // 定义通信协议头字节2
+031  #define CAMERA_MAP_ID ((uint8_t)0x01)
+032  #define CAMERA_AI_ID ((uint8_t)0x02)
+033  typedef enum
+034  {
+035      AI_MSG_REQ = 0x00, // AI检测结果
+036      CAR_MSG_REQ = 0x01,
+037      BOX_MSG_REQ = 0x02,
+038      BOMB_MSG_REQ = 0x03,
+039      MAP_MSG_REQ = 0x04,
+040      MODEL_SWITCH_REQ = 0x05
+041   
+042  } Communicate_Cmd_ENUM;
+043   
+044  typedef struct Communicate
+045  {
+046      void *data;  // 通信数据指针
+047      uint8_t data_length; // 通信数据长度
+048  } Communicate_TypeDef;
+049   
+050  typedef enum
+051  {
+052      COMMUNICATE_DECODE_STATE_HEAD1 = 0, // 头字节1接收状态
+053      COMMUNICATE_DECODE_STATE_HEAD2,  // 头字节2接收状态
+054      COMMUNICATE_DECODE_STATE_GET_ID,  // ID接收状态
+055      COMMUNICATE_DECODE_STATE_GET_LEN,  // 数据长度接收状态
+056      COMMUNICATE_DECODE_STATE_GET_CMD,  // 命令接收状态
+057      COMMUNICATE_DECODE_STATE_GET_DATA,  // 数据接收状态
+058      COMMUNICATE_DECODE_STATE_GET_CHECK, // 校验和接收状态
+059  } Communicate_DecodeState_ENUM;
+060   
+061  void Communicate_Add_Message(Communicate_Cmd_ENUM cmd, void *data, uint8_t data_length, uint8_t device_id); // 添加通信消息到发送队列
+062  void Communicate_SendQueue(void);  // 发送通信队列中的数据
+063  void Communicate_ReceiveByte(uint8_t data);  // 接收字节数据并将其压入接收队列
+064  void Communicate_DecodeData(void);  // 解码接收到的数据
+065  void Communicate_Init(void);  // 初始化通信模块
+066  void Clear_Communicate_Flag(void);  // 清除通信标志
+067  void Set_Communicate_Flag(void);  // 设置通信标志
+068  bool Is_Communicate_Flag_Set(void);  // 检查通信标志是否被设置
+069  void Clear_Ai_Communicate_Flag(void);  // 清除AI通信标志
+070  void Set_Ai_Communicate_Flag(void);  // 设置AI通信标志
+071  bool Is_Ai_Communicate_Flag_Set(void);  // 检查AI通信标志是否被设置
+072   
+073  extern float test_num; // 定义一个外部变量，用于测试通信功能
+074  extern float test_num2;
+075   
+076  #endif
+11. Task.h  —— 距离运动任务接口
+// Source: L_code/code/TASK/Task.h
+001  #ifndef TASK_H
+002  #define TASK_H
+003   
+004  #include <stdint.h>
+005  #include <math.h>
+006  #include "Car/Car.h"
+007  #include "FSM/fsm.h"
+008  // 非线性速度控制函数的参数
+009  #define MAX_SPEED 0.04f  // 最大速度，单位为米每秒
+010  #define MIN_SPEED 0.01f  // 最小速度，单位为米每秒
+011  #define MAX_SPEED_DISTANCE 60.0f // 最大速度距离，单位为厘米
+012  #define K_SPEED 0.06f  // 速度控制的非线性因子
+013   
+014  #define ERROR_DEADZONE 0.5f  // 修正误差时的死区范围，单位为厘米
+015  #define DEADZONE 1.0f  // 到达目的地的死区范围，单位为厘米
+016  #define ERROR_SPEED_FACTOR 1.3f // 修正误差时的速度的比例因子
+017  #define ANGLE_DEADZONE 2.0f  // 角度死区范围，单位为度-
+018  #define OVERSHOOT_COUNT 3  // 过冲计数，单位为控制周期数，根据实际情况调整
+019  #define OVERSHOOT_FACTOR 20.0f  // 过冲减速因子，根据实际情况调整
+020  #define OVERSHOOT_SPEED 0.1f  // 过冲减速的速度，单位为米每秒
+021  // 此文件为了防止编码器计数移动特定距离会阻塞控制器其他任务的执行，定义了一个运动控制结构体和相关函数
+022   
+023  // 运动状态
+024  typedef enum
+025  {
+026      MOVE_IDLE,  // 空闲状态
+027      MOVE_RUNNING, // 运行状态
+028      MOVE_NUM  // 运动状态数量
+029   
+030  } MoveState;
+031  typedef enum
+032  {
+033      MOVE_NONE,  // 停止运动
+034      MOVE_VERTICAL, // 前后运动
+035      MOVE_HORIZON,  // 水平运动
+036      MOVE_ANG,  // 角度控制
+037      MOVE_ERROR,  // 错误修正
+038      MOVE_WAIT,  // 等待观察
+039      MOVE_OVERSHOOT // 过冲减速
+040   
+041  } MoveControlState;
+042  typedef enum
+043  {
+044      NONE = 0,
+045      UP,  // ↑
+046      DOWN,  // ↓
+047      LEFT,  // ←
+048      RIGHT,  // →
+049      ANGLE,  // 旋转
+050      DETECT, // 观察
+051      ERROR  // 修正
+052  } Direction_t;
+053  typedef struct
+054  {
+055      int64_t target_horizontal;  // 目标水平距离
+056      int64_t *current_horizontal; // 当前水平距离
+057      float target_angle;  // 目标角度
+058      float *current_angle;  // 当前角度
+059      float speed;  // 运动速度
+060      Direction_t direction;  // 运动方向
+061      MoveState state;  // 当前运动状态
+062  } MoveCtrl;
+063  extern FSM MoveCtrl_FSM;  // 运动控制状态机实例
+064  extern MoveCtrl MoveCtrl_t;  // 运动控制实例
+065  void MoveCtrl_Init(void);  // 运动控制初始化函数声明
+066  void stop_car(void);  // 停止车辆的函数声明
+067  void test_move_distance(float move_distance, Direction_t direction); // 测试移动指定距离的函数声明
+068  void test_move_loop(void);  // 测试移动循环函数声明
+069  MoveControlState Get_is_Moving();  // 获取当前运动标志位的函数声明，0代表没有运动，1代表y轴运动，2代表x轴运动，3代表角度控制
+070  extern float target_pos_x;  // 目标X坐标
+071  extern float target_pos_y;  // 目标Y坐标
+072  #endif  // TASK_H
+
+===== TABLE 1 =====
+系统平台 | 核心控制器 | NXP i.MX RT1064，主频600 MHz
+机械与驱动 | 车模与电机 | M型四麦轮车模，4个RS-380有刷直流电机
+运动学参数 | 车宽/车长/模型轮半径 | 17.85 cm / 19.80 cm / 3.35 cm
+视觉感知 | OpenART Plus | 2个，分别负责地图/位姿与目标类别识别
+惯性测量 | IMU660RC | 2个，比赛模式进行航向融合
+里程检测 | 正交编码器 | 4路，20 ms周期计数与里程更新
+场景地图 | 网格规模 | 16×12，单格20 cm
+通信 | 视觉串口 | UART1、UART4，115200 bit/s，CRC16校验
+控制周期 | 主要运动任务 | 距离/IMU/视觉10 ms，轮速与编码器20 ms
+任务流程 | 推箱子状态 | 初始化、巡视识别、路径规划、运动执行、结束
+软件配置 | 运行模式 | 参数模式、调试模式、比赛模式
+供电 | 电源系统 | 3S 11.1 V电池，板载5 V与3.3 V电源
+
+===== TABLE 2 =====
+队伍名称 | 能工智人 | 能工智人 | 能工智人 | 能工智人
+参赛学校 | 上海海事大学 | 上海海事大学 | 上海海事大学 | 上海海事大学
+赛题组组别 | 人工智能视觉 | 人工智能视觉 | 人工智能视觉 | 人工智能视觉
+检查项目 | 规格 （选手自行填写） | 符合 （） | 不符合（） | 备注
+1.车模类型是什么？ | M型车模 |  |  | 如果是自制车模，请标明自制。
+车模整体尺寸： （包括传感器在内）长，宽，高(mm) | 长：28.5cm宽：21.0cm高：15cm |  |  | 在填写是，请将所在组别规则对于车模尺寸限制同时进行填写。
+传感器种类、规格(型号)数量。 是否使用自带MCU的成品传感器模块？型号是什么？ | 传感器： 1.imu660rc陀螺仪2个 2.奥凯特编码器1024线 4个 模块： 1.OpenArtPlus 2个 |  |  | 
+控制转向舵机型号是否自行改装舵机？ 防伪易损标签是否完整？ | 无舵机 |  |  | 
+1. 是否增加伺服电机？ 2. 如果有那么种类、个数和作用？ | 否 |  |  | 
+电路中微处理器型号和个数？ | 1.MIMXRT1176(OpenArt Plus) 2个 2.RT1064 1个 |  |  | 
+是否具有其它可编程器件，个数与作用？ | 否 |  |  | 
+是否有无线通讯装置？ 如果有，那么种类和个数？ | 否 |  |  | 
+电池的种类、规格和数量？ | 格氏电池2200mah 3s 数量1 |  |  | 
+1. 是否使用GPS导航？ 2. 是否没有使用RTK？ | 1.否 2.是 |  |  | 
+后轮驱动电机是否是原车模电机？ 是否具有防伪易损标签？ | 是 是 |  |  | 
+1.轮胎是否是原车同款轮胎？ 轮胎的尺寸（直径和宽度）是否小于等于原车膜尺寸？ | 是 是 |  |  | 
+1.车轮轴距、轮距是否改装？ 改装参数是什么？ | 否 |  |  | 
+车模驱动轮传动机构是否改装？ 改装方式是什么？ | 否 |  |  | 
+车模差速器是否改装？ 改装方式是什么？ | 否 |  |  | 
+是否更换过原装车模中的机械元器件？更换后的规格 是什么？ | 否 |  |  | 
+车模电路板个数及功能。 其中是否有购买成品、哪一些？ | 1.3个，电机驱动和主板  2.无 |  |  | 
+自制电路板是否标记有学校名称、队伍名称、制作日期等信息？ 标示信息在PCB的哪一层？ | 有  正面敷铜层 |  |  | 
+其它待说明内容 | 无 |  |  | 
+检查人员签名： | 检查意见： | 检查意见： | 检查意见： | 检查意见：

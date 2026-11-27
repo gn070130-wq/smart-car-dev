@@ -1,0 +1,481 @@
+第二十一届全国大学生智能汽车竞赛
+技 术 报 告
+
+学    校：河南科技大学
+队伍名称：马铃薯
+参赛队员：赵智杰 刘家兴 曾宇佳
+带队教师：孙力帆 宋斌
+提交日期；2026.8.19
+关于技术报告和研究论文使用授权的说明
+本人完全了解全国大学生智能汽车竞赛关于保留、使用技术报告和研究论文的规定，即：参赛作品著作权归参赛者本人。比赛组委会可以在相关主页上收录并公开参赛作品的设计方案、技术报告以及参赛模型车的视频、图像资料，并将相关内容编入组委会出版的论文集。
+参赛队员签名：赵智杰 曾宇佳 刘家兴
+带队教师签名：孙力帆 宋斌
+日          期：2026.8.19
+目 录
+第一章 引言	1
+1.1 制作背景与任务概述	1
+1.2 技术路线与报告结构	1
+第二章 总体设计方案	2
+2.1 设计目标与总体思路	2
+2.2 系统组成与信息流	2
+第三章 机械结构与硬件设计	3
+3.1 机械安装与线束布置	3
+3.1.1 结构件设计	3
+3.1.2 实车安装与布置	6
+3.1.3 结构设计考虑	8
+3.2 电路设计说明	9
+3.2.1 PCB 实物	10
+3.3 陀螺仪模块	11
+3.4 5 V 电源模块	12
+3.5 3.3 V 电源模块	12
+3.6 电机驱动模块	13
+3.7 TC264DA 模块	14
+第四章 软件与控制算法	16
+4.1 程序结构与开发环境	16
+4.2 光电管循迹处理	16
+4.3 惯性导航与融合跑图	17
+4.4 跑图控制输出	18
+4.5 异常观测与失线恢复	18
+第五章 制作、安装与调试	19
+5.1 开发工具	19
+5.2 制作与安装过程	19
+5.3 调试过程与结果	20
+5.4 故障定位与保护	20
+第六章 主要技术参数	21
+第七章 结论	22
+参考文献	i
+附录 A 核心算法源代码	ii
+
+
+第一章 引言
+1.1 制作背景与任务概述
+本项目面向第二十一届全国大学生智能汽车竞赛“疯狂电路智能车”赛题，围绕赛道环境完成模型车的感知、决策与执行系统设计。为形成便于调试和复用的控制平台，本车以 TC264DA 微控制器为控制核心，采用 16 路模拟光电循迹板完成赛道信息采集，并配置六轴惯性测量单元接口、双直流电机驱动通道、显示与按键等人机交互接口；硬件原理图所示的信号与电源网络构成了后续机械安装和软件控制的基础。[1]
+1.2 技术路线与报告结构
+系统采用光电管循迹与惯性导航融合的跑图方案。16 路模拟光电循迹板检测赛道横向位置，IMU 连续测量角速度和车体运动状态；TC264DA 依次选通 A0-A15 完成 ADC 采样，结合惯性航向进行赛道状态判断、路径跟踪和速度规划，再通过 PWM 与方向信号控制左右电机。[1-3]
+第二章说明总体方案与信息流；第三章说明控制、供电、驱动和接口；第四章说明软件模块和控制算法；第五章说明开发、制作、安装和调试；第六章列出主要技术参数；第七章给出结论。
+
+第二章 总体设计方案
+2.1 设计目标与总体思路
+控制板的总体目标是在有限车载空间和电池供电条件下，为赛道信息采集、姿态测量、电机执行和调试显示提供统一的硬件接口。设计中将主控、传感、驱动与电源网络分开组织：16 路模拟光电板通过四根地址线和一根模拟输出线接入主控，IMU 通过 SPI 连接，左右直流电机分别由独立驱动器控制；电池输入经多级稳压后形成不同电压域，以降低各模块之间的相互干扰。
+2.2 系统组成与信息流
+表2.1 控制系统模块与接口关系
+
+表2.2 控制系统信息流（根据原理图整理）
+
+
+第三章 机械结构与硬件设计
+3.1 机械安装与线束布置
+车模机械结构由侧板、底板和主板安装板组成。侧板承担车体两侧的支撑与连接，底板连接前后结构并为电机、车轮和内部器件提供安装基础，主板安装板用于固定 TC264DA 控制板及相关接口板。结构件通过孔位和紧固件连接，便于拆装、检修和调整板卡位置。
+表3.1 机械安装项目
+
+3.1.1 结构件设计
+侧板采用纵向支撑轮廓，并设置多组连接孔和长圆孔，用于连接底板、横向支撑件及上层安装件。底板采用框架式开孔结构，在保证连接刚度的同时减小不必要的结构质量，中央区域为动力和内部器件留出安装空间。主板安装板设置对称安装孔和长圆孔，控制板通过螺钉固定在安装板上，便于拆卸和维护。
+
+图3.1 车模侧板结构
+
+图3.2 车模底板结构
+
+图3.3 主板安装板结构
+3.1.2 实车安装与布置
+实车安装时，16 路光电板布置在车体前端，传感器面朝向赛道；控制板和显示、调试接口布置在主板安装区域，电机驱动和电源连接位于车体内部。排线从光电板和控制板引出后沿板件边缘固定，避免悬垂到车轮、齿轮和电机附近。实物照片显示，光电板横向覆盖车体前方检测区域，主板安装板对控制板提供了稳定支撑，车体前后结构通过底板和侧板保持连接。
+
+图3.4 车模正面实物安装
+
+图3.5 车模背面实物安装
+3.1.3 结构设计考虑
+机械结构设计以稳定承载、减小质量和便于调整为主要考虑。侧板和底板共同形成车体的基础承力框架，连接孔和长圆孔既用于固定结构件，也为板卡位置和安装间隙的微调提供条件。底板采用开孔和框架化布局，在不影响主要连接位置的前提下减少非必要材料，使电机、车轮、电池和电路板能够在有限空间内分区布置。
+车体内部的器件布置遵循重心集中和受力路径清晰的原则。电池、主控 PCB、驱动模块和电机尽量布置在底板及主板安装板形成的稳定区域内，避免线束或板卡悬空；16 路光电板安装在车体前端，保证检测范围覆盖车头前方，并通过安装孔保持横向方向与车体基准一致。这样的层级布置有利于减少车体运动对传感器安装姿态的影响。
+维护与安全方面，结构件采用可拆卸连接，主控板和光电板均保留插拔及检修空间。线束沿板件边缘或支撑件固定，并与车轮、齿轮和电机转动区域保持避让；安装完成后应复核螺钉紧固、接口锁止和板卡边缘间隙。调试或更换模块时，可以按照光电板、主控板、电源和驱动器的功能分区逐项拆装，减少对其他连接的影响。
+3.2 电路设计说明
+主控制器采用 Infineon TC264DA（U17），外接 20 MHz 晶振 X1，并引出 TMS、TCK、TRST、P21.7 等 JTAG 调试信号。原理图还包含 DBTX/DBRX 串口调试网络，可用于输出运行状态、采集关键变量或进行现场故障定位。主控的模拟输入端用于电池电压采集，BATADC 的换算系数应使用实测基准电压完成标定。[1,5]
+16 路模拟光电循迹板采用四位地址选通和一路模拟输出的连接方式。AS 模拟输出接至 D7/P00_7/ADC3_CH5；S0、S1、S2、S3 分别接至 D6/P00_6、D5/P00_5、D4/P00_4、D3/P00_3。读取第 n 路（n=0..15）时，必须按 S3=(n>>3)&1、S2=(n>>2)&1、S1=(n>>1)&1、S0=n&1 设置地址，在地址稳定后读取 D7 的 ADC 原始值。A0 至 A15 在物理上从左到右排列，不允许因软件处理而重排。
+表3.2 16 路模拟光电循迹板通道与地址对应关系
+
+表3.2 中的二进制地址与物理位置一一对应：A0=0000，A1=0001，直至 A15=1111。算法计算横向位置或赛道误差时，数组下标 0 代表最左侧 A0，数组下标 15 代表最右侧 A15。
+惯性测量单元使用 LSM6DSV16X（U12），主控通过 IMU_SCK、IMU_MISO、IMU_MOSI、IMU_CS 完成 SPI 通信，IMU_INT 用于中断通知。[3]
+3.2.1 PCB 实物
+主控 PCB 以 TC264DA 为控制核心，板上集中布置控制、供电、驱动及调试连接电路。正反两面均设置器件和连接焊点，四周安装孔用于将 PCB 固定在主板安装板上，排线和插针接口用于连接光电循迹板及其他车载模块。
+
+图3.6 主控 PCB 正反面实物（左：正面；右：背面）
+16 路光电循迹 PCB 采用长条形结构。元件面布置信号处理和通道选通器件，传感器面沿横向布置 16 路光电检测单元；安装时传感器面朝向赛道。各通道的物理顺序固定为从左到右 A0-A15，并通过板上连接器接入主控板。
+
+图3.7 16 路光电循迹 PCB 实物（上：元件面；下：传感器面）
+3.3 陀螺仪模块
+陀螺仪模块采用 LSM6DSV16X（U12），由 VCC3.3 供电。TC264DA 通过 IMU_SCK、IMU_MISO、IMU_MOSI 和 IMU_CS 与模块进行 SPI 通信，IMU_INT 作为数据就绪中断信号。[3]
+
+图3.8 陀螺仪模块原理图
+3.4 5 V 电源模块
+5 V 电源模块以 U19 为核心，将 VCCBAT 转换为 VCC5V，为控制板和外部执行模块提供 5 V 电源。模块包含输入、使能、反馈、输出和状态指示接口。
+
+图3.9 5 V 电源模块原理图
+3.5 3.3 V 电源模块
+3.3 V 电源模块以 RT9013-33（U3）为核心，将 VCC5V 转换为 VCC3.3，为 TC264DA、陀螺仪及逻辑接口供电。模块包含输入、使能、输出、接地和状态指示接口。
+
+图3.10 3.3 V 电源模块原理图
+3.6 电机驱动模块
+电机驱动模块由 U16 和 U13 两片 DRV8243HQRXYRQ1 构成左右两路直流电机驱动。主控输出 PWM_L、DIR_L、PWM_R 和 DIR_R 控制信号，经 EN/IN、PH/IN 接口进入驱动器；驱动器输出 L_OUT1/L_OUT2 和 R_OUT1/R_OUT2 连接左右电机。nSLEEP、nFAULT、DIAG 等信号用于驱动状态控制和故障监测。[2]
+
+图3.11 电机驱动模块原理图
+3.7 TC264DA 模块
+TC264DA 模块以 U17 为核心，包含端口、模拟输入、电源、系统 I/O、20 MHz 晶振和 JTAG 调试接口。D3-D6 用于 16 路光电板地址选通，D7/P00_7/ADC3_CH5 用于读取 AS 模拟输出；P20、P21 等端口连接 IMU、驱动器和调试信号。模块通过 VCC1V3、VCC3V3 等电源网络完成核心和 I/O 供电。[1]
+
+图3.12 TC264DA 模块原理图
+
+第四章 软件与控制算法
+4.1 程序结构与开发环境
+软件以光电管循迹和惯性导航融合跑图为主线，划分为底层驱动、光电扫描、惯性导航、信息融合、跑图状态管理、运动控制、故障诊断和人机交互模块。底层驱动完成 TC264DA 时钟、GPIO、SPI、ADC、PWM、串口和中断初始化；光电扫描模块按固定顺序读取 A0-A15；惯性导航模块根据 IMU 数据更新航向和转弯趋势；信息融合与跑图状态管理模块生成路径跟踪量，运动控制模块据此计算左右电机输出。
+表4.1 软件模块与硬件资源对应关系
+
+4.2 光电管循迹处理
+光电循迹首先对 A0-A15 逐路采样，并使用每一路独立的暗场/亮场标定值将 ADC 原始值归一化为响应 q_i。归一化后根据加权中心计算横向误差 e_y，同时统计响应总量、有效通道数、峰值和相邻通道连续性，形成 0~1 的观测置信度。置信度不足时不直接把异常值送入转向控制，而是交给融合滤波器进行门控。
+光电观测采用固定的物理顺序：n=0 对应最左侧 A0，n=15 对应最右侧 A15。每次地址切换后先等待采样保持时间，再读取 D7/P00_7/ADC3_CH5。对突发饱和、单通道异常和失线情况分别设置有效性阈值，只有满足总响应、峰值和有效通道数条件的观测才参与后续校正。
+S3:S2:S1:S0 = ((n>>3)&1):((n>>2)&1):((n>>1)&1):(n&1),  n=0,...,15	公式1
+e_p = sum(w_i * q_i) / sum(q_i),  i=0,...,15	公式2
+式中，w_i 为从左到右单调递增的位置权重，q_i 为第 i 路光电管的标定响应，e_p 为光电横向偏差。光电有效性由有效通道数量、响应总量和分布连续性共同判断，避免单个通道突变直接改变转向输出。
+4.3 惯性导航与融合跑图
+惯性导航以 LSM6DSV16X 的 Z 轴角速度为短时航向预测量。控制周期开始时先扣除估计的陀螺零偏，再通过离散积分得到航向误差预测；光电管提供的横向误差作为外部观测，对预测状态进行校正。这样可以在光电响应短时减弱时保持运动连续性，同时利用光电观测抑制陀螺积分漂移。
+融合状态定义为 x=[e_y, psi_e, b_g]^T，分别表示横向误差、相对赛道切线的航向误差和 Z 轴陀螺零偏。状态预测模型为 e_y(k+1)=e_y(k)+v sin(psi_e)Delta t，psi_e(k+1)=psi_e(k)+(omega_z-b_g)Delta t，b_g(k+1)=b_g(k)。光电横向误差作为标量观测 z=e_y，通过三状态扩展卡尔曼滤波更新状态和协方差。
+预测模型中的车速 v 由车速估计接口提供，该接口使用电机输出与实车速度标定关系计算当前速度。光电管位置接口返回以阵列中心为零、左负右正的实测坐标，使光电观测与惯性预测统一使用米制单位。
+滤波更新加入三倍标准差创新门限：当光电观测与预测状态的差异超过门限时，认为可能存在反光、遮挡或单通道异常，本周期只进行惯性预测，不强行修正航向。观测噪声 R 随光电置信度自适应变化，置信度越高，光电校正权重越大；连续失线时降低基础速度并限制转向量，光电恢复后再逐步恢复闭环控制。
+psi_k = psi_(k-1) + (omega_z,k - b_z) * Delta_t	公式3
+融合跑图以光电偏差为主要闭环量，以惯性航向为连续运动约束。光电信息有效时，系统依据 e_p 跟踪赛道中心，并利用航向变化识别弯道阶段；光电响应短时减弱或赛道特征过渡时，系统保持惯性航向连续性，抑制转向量突变。光电信号恢复后重新以赛道中心偏差校正车辆路径，避免陀螺仪积分误差长期累积。
+表4.2 光电-惯性融合跑图流程
+
+4.4 跑图控制输出
+跑图控制使用融合后的横向误差 e_y、航向误差 psi_e 及横向误差变化率生成差速控制量 u=k_e e_y+k_psi psi_e+k_d de_y/dt。直道阶段保持较高基础速度，进入弯道时根据航向误差和光电置信度降低基础速度；输出端进行幅值限幅、变化率限制和故障关闭，最后转换为左右电机 PWM_L/DIR_L 与 PWM_R/DIR_R。
+控制器的参数整定顺序为先调整光电观测标定和滤波噪声，再调整横向误差比例项，最后加入航向误差和误差变化率项。调试时同时记录 e_y、psi_e、b_g、观测置信度和左右 PWM，避免只根据车模表面现象修改单一参数。
+4.5 异常观测与失线恢复
+当光电观测无效、创新门控拒绝观测或 IMU 通信异常时，系统进入降级状态。IMU 正常而光电失效时保持最近一次有效航向趋势，降低基础速度并限制最大转向；IMU 或驱动故障时立即关闭电机输出。光电连续有效若干周期后，采用渐增校正权重恢复闭环，避免从失线状态突然跳变到大转向。
+一个完整控制周期按“采集—观测—预测—校正—控制—记录”的顺序执行：先按 A0-A15 扫描光电管并读取 IMU，再由 Track_Observe 生成横向观测和置信度；FusionEkf_Predict 使用车速与陀螺角速度进行短时预测，FusionEkf_UpdateOptical 在观测有效且创新通过门控时修正状态，最后 Track_Control 将融合误差转换为左右电机差速。这样，光电负责绝对位置约束，惯导负责短时连续性，故障状态由同一周期统一处理。
+
+第五章 制作、安装与调试
+5.1 开发工具
+程序开发环境包括 IDE、编译器、JTAG 下载工具和串口调试工具；程序下载与在线调试通过 JTAG 接口完成，串口用于输出运行状态和关键调试数据。
+软件调试按照“底层接口、传感器采集、状态估计、运动控制”的顺序分层进行。首先分别验证 GPIO、ADC、SPI、PWM 和串口，再检查光电扫描、IMU 更新及电机输出。串口重点输出 A0-A15 原始值、横向偏差、Z 轴角速度、航向量和左右轮 PWM，便于将程序计算结果与车模实际运动进行对照。
+5.2 制作与安装过程
+整车制作从电路板和结构件检查开始。电路板完成焊接后，首先检查电源输入端、各级供电网络和地之间是否存在异常连接，并在不连接电机的条件下进行分级上电。确认主控下载、串口输出以及 5 V、3.3 V 和 1.3 V 供电正常后，再依次接入光电循迹板、IMU、电机驱动和显示调试接口。
+机械安装以底板、侧板和主板安装板为基准。16 路光电循迹板固定在车体前端，传感器面朝向赛道并保持横向布置；主控 PCB 固定在主板安装板上，接口方向为排线插拔和后续检修留出空间。电池及动力线束靠近车体内部布置，传感器排线沿支撑件固定，避免与车轮、齿轮和电机转动部件接触。
+接线完成后逐项核对接口关系：光电板的 S3:S2:S1:S0 对应 D3:D4:D5:D6，AS 模拟输出接入 D7/P00_7/ADC3_CH5；IMU 按 SPI 信号和中断引脚连接；左右电机分别接入对应驱动输出。接口、极性和紧固件检查完成后，先进行抬轮空载测试，再进入整车低速联调。
+表5.1 制作、安装与调试流程
+
+5.3 调试过程与结果
+调试遵循“先静态、后动态，先单模块、后整车”的原则。上电阶段先断开电机负载，检查各级电源和主控运行状态；随后通过 JTAG 与串口确认程序能够稳定执行，并观察采样周期、通信状态及故障标志。单项功能正常后，再逐步接入传感器和执行机构。
+光电循迹板调试时，按 A0-A15 的固定顺序逐路读取 ADC 原始值，核对 S3:S2:S1:S0 地址与物理位置是否一致，并比较赛道背景与边界条件下的响应变化。对各通道进行基线和幅值校正后，再计算横向偏差，避免通道一致性差异直接引起转向抖动。
+IMU 调试先在车体静止时采集角速度数据，用于确定零偏；随后缓慢向左、向右转动车模，核对 Z 轴角速度符号、航向更新方向和转弯趋势判断。光电扫描与 IMU 更新采用一致的控制周期，使横向偏差和航向变化能够在同一时间基准下参与融合。
+电机调试先将车轮悬空，分别验证左右电机方向、PWM 响应和驱动故障信号，再以较低输出进行直线行驶。整车闭环调试从低速直道开始，逐步加入弯道和连续赛道；调试过程中同步记录光电偏差、航向量、赛道状态以及左右轮 PWM，根据跑偏、振荡和转弯滞后现象调整控制参数。
+5.4 故障定位与保护
+当车模出现持续跑偏或转向振荡时，首先检查 A0-A15 是否按物理位置顺序存储，以及各通道校正值是否连续；若航向量在静止状态下持续变化，则检查 IMU 零偏、采样周期和积分更新；若左右轮响应不一致，则分别核对电机方向、启动区间、PWM 输出和驱动状态。通过将问题划分为感知、状态估计和执行三个层级，可以缩小故障定位范围。
+运行过程中持续监测光电有效性、IMU 通信状态、电池电压和电机驱动故障信号。当光电响应无效或驱动器报告故障时，控制程序限制或关闭电机输出，并通过串口和状态指示记录异常信息；恢复正常前不直接进入高速闭环，以避免错误数据造成突发转向。
+
+第六章 主要技术参数
+主要技术参数如下，数据单位与测试条件按表中项目记录。[4]
+模型车采用 3S 锂聚合物动力电池，额定容量为 300 mAh，质量约为 23 g。该电池体积较小、质量较轻，有利于降低整车载荷；电池输出接入 VCCBAT 电源网络，再由车载 5 V 和 3.3 V 电源模块为各功能电路供电。
+
+图6.1 3S 300 mAh 动力电池实物
+表6.1 模型车主要技术参数
+
+
+第七章 结论
+本报告依据控制板原理图和 16 路模拟光电循迹板定义，完成了第二十一届全国大学生智能汽车竞赛“疯狂电路智能车”控制系统的模块化整理。软件采用光电管循迹与惯性导航融合跑图：16 路光电管提供赛道横向偏差，LSM6DSV16X 提供航向与转弯趋势，TC264DA 完成状态融合、速度规划和左右电机控制。报告分别给出陀螺仪、5 V 电源、3.3 V 电源、电机驱动和 TC264DA 五个模块的原理图截图，并明确 A0-A15 的固定通道顺序及 D3-D7 的连接关系。附录 A 给出光电扫描核心代码。
+
+参考文献
+[1] Infineon Technologies AG. AURIX TC26xD Data Sheet[EB/OL].
+[2] Texas Instruments. DRV8243-Q1 Automotive H-Bridge Motor Driver Data Sheet[EB/OL].
+[3] STMicroelectronics. LSM6DSV16X iNEMO Inertial Module Data Sheet[EB/OL].
+[4] MAHONY R, HAMEL T, PFLIMLIN J M. Nonlinear Complementary Filters on the Special Orthogonal Group[J]. IEEE Transactions on Automatic Control, 2008, 53(5): 1203-1218. DOI: 10.1109/TAC.2008.923738.
+[5] MADGWICK S O H, HARRISON A J L, VAIDYANATHAN R. Estimation of IMU and MARG Orientation Using a Gradient Descent Algorithm[C]//2011 IEEE International Conference on Rehabilitation Robotics. IEEE, 2011: 1-7. DOI: 10.1109/ICORR.2011.5975346.
+[6] ASTROM K J, HAGGLUND T. Advanced PID Control[M]. Research Triangle Park: ISA, 2006.
+
+附录 A 核心算法源代码
+竞赛要求技术报告必须附带核心程序源代码。以下代码对应 16 路模拟光电板、LSM6DSV16X 和 TC264DA 控制接口，包含通道标定、观测置信度、三状态扩展卡尔曼滤波、创新门控、陀螺零偏估计、差速控制和失线保护。Track_BackgroundAdc、Track_LineAdc 和 Track_ChannelPositionM 分别读取实车标定的背景值、赛道值及通道物理坐标；底层 GPIO、ADC、SPI、PWM 函数映射到实际工程驱动。
+代码阅读提示：程序入口为 Track_NavControlStep，它每个控制周期调用一次，内部依次完成传感器采集、状态融合和电机输出。代码中的底层接口是对 TC264DA 工程驱动的抽象，实际移植时只需保持接口含义和返回单位一致。
+（1）通道读取与标定。Track_ReadOneRaw 将 n 的四位二进制地址分别输出到 D3、D4、D5、D6，其中 D3:D6 对应 S3:S0，随后从 D7/P00_7/ADC3_CH5 读取 AS。NormalizeChannel 使用每一路的背景值和赛道值做归一化，因此可以补偿不同光电管的灵敏度差异，并兼容 ADC 响应极性。
+（2）光电观测生成。Track_Observe 保持 A0-A15 的物理顺序不变，用标定后的通道坐标计算响应加权位置；总响应、峰值、有效通道数和连续响应长度共同形成 confidence。总响应不足或有效通道过少时，观测标记为无效，避免一只受反光影响的光电管直接造成大幅转向。
+（3）惯导预测与 EKF 校正。FusionEkf_Predict 根据车速和 Z 轴角速度推进横向误差、航向误差及陀螺零偏，并同步传播协方差。FusionEkf_UpdateOptical 把光电横向位置作为标量观测，按置信度调整观测噪声；创新超过 3σ 时拒绝本次校正，以抑制遮挡、反光和突发异常。
+（4）控制与保护。Track_Control 使用横向误差、航向误差和横向误差变化率生成差速量，并对基础速度和转向量限幅。连续失线时降低速度，长时间失线则停止电机；IMU 通信失败或驱动故障时直接输出零，光电恢复后通过 recovered_cycles 逐步恢复校正权重。
+参数整定时先记录 lateral_m、heading_deg、gyro_bias_dps 和 track_confidence，再依次调整通道标定、过程噪声、观测噪声和控制增益。代码中的初始增益仅作为工程起点，最终值应以本车轮胎、舵机和赛道条件下的实测日志为准。
+#include <math.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#define TRACK_COUNT             16U
+#define TRACK_DT_S              0.005f
+#define PI_F                    3.14159265359f
+#define DEG_TO_RAD_F            (PI_F / 180.0f)
+#define RAD_TO_DEG_F            (180.0f / PI_F)
+/* Platform functions are supplied by the TC264DA board support package. */
+extern void Gpio_Write(uint8_t pin, uint8_t value);
+extern void Track_AddressSettle(void);
+extern uint16_t Adc3_Ch5_ReadRaw(void);
+extern bool Imu_ReadGyroZ(float *gyro_z_dps);
+extern float VehicleSpeedEstimate_Mps(void);
+extern uint16_t Track_BackgroundAdc(uint8_t channel);
+extern uint16_t Track_LineAdc(uint8_t channel);
+extern float Track_ChannelPositionM(uint8_t channel);
+extern void Motor_Set(float left_cmd, float right_cmd);
+extern bool Driver_FaultActive(void);
+extern void Debug_Log(const char *name, float value);
+typedef struct {
+    float lateral_m;
+    float confidence;
+    float total_response;
+    uint8_t active_count;
+    bool valid;
+} TrackObservation;
+typedef struct {
+    /* x[0] = lateral error, x[1] = heading error, x[2] = gyro bias. */
+    float x[3];
+    float P[3][3];
+    uint16_t lost_cycles;
+    uint16_t recovered_cycles;
+} FusionEkf;
+static float clampf(float x, float lo, float hi)
+{
+    return (x < lo) ? lo : ((x > hi) ? hi : x);
+}
+static float wrap_pi(float x)
+{
+    while (x > PI_F)  x -= 2.0f * PI_F;
+    while (x < -PI_F) x += 2.0f * PI_F;
+    return x;
+}
+static float NormalizeChannel(uint8_t i, uint16_t raw)
+{
+    float background = (float)Track_BackgroundAdc(i);
+    float line = (float)Track_LineAdc(i);
+    float span = line - background;
+    if (fabsf(span) < 32.0f) return 0.0f;
+    /* This expression supports either ADC polarity after calibration. */
+    return clampf(((float)raw - background) / span, 0.0f, 1.0f);
+}
+static bool Track_ReadOneRaw(uint8_t n, uint16_t *raw)
+{
+    if ((n >= TRACK_COUNT) || (raw == NULL)) return false;
+    Gpio_Write(P00_3, (n >> 3) & 1U);  /* D3 = S3 */
+    Gpio_Write(P00_4, (n >> 2) & 1U);  /* D4 = S2 */
+    Gpio_Write(P00_5, (n >> 1) & 1U);  /* D5 = S1 */
+    Gpio_Write(P00_6, n & 1U);         /* D6 = S0 */
+    Track_AddressSettle();
+    *raw = Adc3_Ch5_ReadRaw();      /* D7/P00_7/ADC3_CH5 = AS */
+    return true;
+}
+static TrackObservation Track_Observe(void)
+{
+    uint16_t raw[TRACK_COUNT];
+    float response[TRACK_COUNT];
+    float sum = 0.0f;
+    float weighted_position = 0.0f;
+    float max_response = 0.0f;
+    uint8_t active = 0U;
+    uint8_t longest_run = 0U;
+    uint8_t current_run = 0U;
+    for (uint8_t i = 0U; i < TRACK_COUNT; ++i) {
+        if (!Track_ReadOneRaw(i, &raw[i])) {
+            return (TrackObservation){0.0f, 0.0f, 0.0f, 0U, false};
+        }
+        response[i] = NormalizeChannel(i, raw[i]);
+        sum += response[i];
+        weighted_position += response[i] * Track_ChannelPositionM(i);
+        if (response[i] > max_response) max_response = response[i];
+        if (response[i] > 0.18f) {
+            ++active;
+            if (++current_run > longest_run) longest_run = current_run;
+        } else {
+            current_run = 0U;
+        }
+    }
+    if ((sum < 0.65f) || (active < 2U) || (max_response < 0.28f)) {
+        return (TrackObservation){0.0f, 0.0f, sum, active, false};
+    }
+    float lateral = weighted_position / sum;
+    float concentration = clampf((max_response - 0.20f) / 0.60f, 0.0f, 1.0f);
+    float continuity = clampf((float)longest_run / (float)active, 0.0f, 1.0f);
+    float confidence = 0.55f * concentration + 0.45f * continuity;
+    return (TrackObservation){lateral, confidence, sum, active, true};
+}
+static void FusionEkf_Init(FusionEkf *f)
+{
+    *f = (FusionEkf){0};
+    f->P[0][0] = 0.010f * 0.010f;   /* lateral uncertainty, m^2 */
+    f->P[1][1] = 0.20f * 0.20f;     /* heading uncertainty, rad^2 */
+    f->P[2][2] = 0.05f * 0.05f;     /* gyro bias uncertainty */
+}
+static void FusionEkf_Predict(FusionEkf *f, float speed_mps,
+                              float gyro_z_dps, float dt)
+{
+    const float gyro = gyro_z_dps * DEG_TO_RAD_F;
+    float F[3][3] = {
+        {1.0f, speed_mps * cosf(f->x[1]) * dt, 0.0f},
+        {0.0f, 1.0f, -dt},
+        {0.0f, 0.0f, 1.0f}
+    };
+    float FP[3][3] = {{0}};
+    float Pn[3][3] = {{0}};
+    f->x[0] += speed_mps * sinf(f->x[1]) * dt;
+    f->x[1] = wrap_pi(f->x[1] + (gyro - f->x[2]) * dt);
+    for (uint8_t i = 0U; i < 3U; ++i)
+        for (uint8_t j = 0U; j < 3U; ++j)
+            for (uint8_t k = 0U; k < 3U; ++k)
+                FP[i][j] += F[i][k] * f->P[k][j];
+    for (uint8_t i = 0U; i < 3U; ++i)
+        for (uint8_t j = 0U; j < 3U; ++j)
+            for (uint8_t k = 0U; k < 3U; ++k)
+                Pn[i][j] += FP[i][k] * F[j][k];
+    /* Q increases slightly with speed and protects against model mismatch. */
+    Pn[0][0] += 0.0000005f + 0.000002f * fabsf(speed_mps);
+    Pn[1][1] += 0.0008f;
+    Pn[2][2] += 0.00001f;
+    for (uint8_t i = 0U; i < 3U; ++i)
+        for (uint8_t j = 0U; j < 3U; ++j)
+            f->P[i][j] = Pn[i][j];
+}
+static bool FusionEkf_UpdateOptical(FusionEkf *f,
+                                    const TrackObservation *obs)
+{
+    if (!obs->valid) {
+        if (f->lost_cycles < 60000U) ++f->lost_cycles;
+        f->recovered_cycles = 0U;
+        return false;
+    }
+    float pitch = fabsf(Track_ChannelPositionM(8U) -
+                        Track_ChannelPositionM(7U));
+    float sigma = pitch * (0.35f + 1.65f * (1.0f - obs->confidence));
+    float R = sigma * sigma;
+    float innovation = obs->lateral_m - f->x[0];
+    float S = f->P[0][0] + R;
+    /* 3-sigma gate rejects a single saturated or reflective channel. */
+    if ((innovation * innovation) > 9.0f * S) {
+        if (f->lost_cycles < 60000U) ++f->lost_cycles;
+        f->recovered_cycles = 0U;
+        return false;
+    }
+    float K[3] = {f->P[0][0] / S, f->P[1][0] / S, f->P[2][0] / S};
+    float old_row[3] = {f->P[0][0], f->P[0][1], f->P[0][2]};
+    for (uint8_t i = 0U; i < 3U; ++i) f->x[i] += K[i] * innovation;
+    f->x[1] = wrap_pi(f->x[1]);
+    for (uint8_t i = 0U; i < 3U; ++i)
+        for (uint8_t j = 0U; j < 3U; ++j)
+            f->P[i][j] -= K[i] * old_row[j];
+    for (uint8_t i = 0U; i < 3U; ++i)
+        for (uint8_t j = i + 1U; j < 3U; ++j) {
+            float s = 0.5f * (f->P[i][j] + f->P[j][i]);
+            f->P[i][j] = s; f->P[j][i] = s;
+        }
+    f->lost_cycles = 0U;
+    if (f->recovered_cycles < 1000U) ++f->recovered_cycles;
+    return true;
+}
+static void Track_Control(const FusionEkf *f, bool optical_accepted, float dt)
+{
+    static float last_lateral = 0.0f;
+    /* Initial gains; finalize them with the logging procedure in Section 5. */
+    const float kp_e = 7.50f;
+    const float kp_psi = 1.90f;
+    const float kd_e = 0.018f;
+    float de = (f->x[0] - last_lateral) / fmaxf(dt, 0.001f);
+    float correction = kp_e * f->x[0] + kp_psi * f->x[1] + kd_e * de;
+    float recovery = clampf((float)f->recovered_cycles / 20.0f, 0.0f, 1.0f);
+    float base = optical_accepted ? (0.22f + 0.20f * recovery) : 0.22f;
+    if (!optical_accepted) correction = clampf(correction, -0.28f, 0.28f);
+    if (f->lost_cycles > 100U) base = 0.0f;
+    float left = clampf(base - correction, -1.0f, 1.0f);
+    float right = clampf(base + correction, -1.0f, 1.0f);
+    Motor_Set(left, right);
+    last_lateral = f->x[0];
+}
+void Track_NavControlStep(void)
+{
+    static FusionEkf filter;
+    static bool initialized = false;
+    if (!initialized) { FusionEkf_Init(&filter); initialized = true; }
+    float gyro_z_dps = 0.0f;
+    TrackObservation obs = Track_Observe();
+    bool imu_ok = Imu_ReadGyroZ(&gyro_z_dps);
+    if (!imu_ok || Driver_FaultActive()) {
+        Motor_Set(0.0f, 0.0f);
+        return;
+    }
+    FusionEkf_Predict(&filter, VehicleSpeedEstimate_Mps(), gyro_z_dps,
+                      TRACK_DT_S);
+    bool optical_accepted = FusionEkf_UpdateOptical(&filter, &obs);
+    Track_Control(&filter, optical_accepted, TRACK_DT_S);
+    Debug_Log("lateral_m", filter.x[0]);
+    Debug_Log("heading_deg", filter.x[1] * RAD_TO_DEG_F);
+    Debug_Log("gyro_bias_dps", filter.x[2] * RAD_TO_DEG_F);
+    Debug_Log("track_confidence", obs.confidence);
+}
+
+
+===== TABLE 1 =====
+模块 | 原理图确认的器件/信号 | 功能与连接关系
+主控制器 | U17：TC264DA；20 MHz 晶振；JTAG | 处理传感器输入并输出驱动、显示和调试控制信号。
+光电循迹 | D7/P00_7/ADC3_CH5：AS；D3-D6：S3-S0 | 四位地址选通 A0-A15，再读取 D7 上的模拟原始值；通道顺序固定为从左到右。
+惯性测量 | U12：LSM6DSV16X；IMU_SCK/MISO/MOSI/CS/INT | 通过 SPI 获取惯性数据，并通过中断信号提示数据就绪。
+直流电机驱动 | U13、U16：DRV8243HQRXYRQ1；PWM/PH、nSLEEP、nFAULT | 两路独立 H 桥驱动，分别对应左右动力输出的控制需求。
+电源与人机接口 | VCCBAT、VCC5V、VCC3V3、VCC1V3；FPC、按键、RUN/ERR 指示 | 完成供电分配、显示、按键输入及运行状态指示。
+
+===== TABLE 2 =====
+环境与车体状态 | 感知与采集 | 控制与决策 | 执行与反馈
+赛道、车体运动 | 16 路光电管 / LSM6DSV16X | 光电-惯性融合跑图 | TC264DA -> 左右电机
+
+===== TABLE 3 =====
+项目 | 安装与改造内容
+侧板与底板 | 侧板形成车体两侧支撑，底板连接前后结构并承载动力和传感器安装件。
+主板安装板 | 主板安装板利用四角安装孔固定控制板，板间保留走线和插拔空间。
+光电板安装 | 16 路光电管横向安装在车体前端，A0 至 A15 从左到右排列，光电板与车体保持平行。
+线束与电源 | 主控板、光电板、驱动器、电机和电池之间采用分区走线，排线沿支撑件固定并避开车轮和传动件。
+
+===== TABLE 4 =====
+物理通道（从左到右） | S3:S2:S1:S0 | 对应 MCU 引脚 D3:D4:D5:D6 | 采样输入
+A0 | 0000 | 0:0:0:0 | D7 / P00_7 / ADC3_CH5
+A1 | 0001 | 0:0:0:1 | D7 / P00_7 / ADC3_CH5
+A2 | 0010 | 0:0:1:0 | D7 / P00_7 / ADC3_CH5
+A3 | 0011 | 0:0:1:1 | D7 / P00_7 / ADC3_CH5
+A4 | 0100 | 0:1:0:0 | D7 / P00_7 / ADC3_CH5
+A5 | 0101 | 0:1:0:1 | D7 / P00_7 / ADC3_CH5
+A6 | 0110 | 0:1:1:0 | D7 / P00_7 / ADC3_CH5
+A7 | 0111 | 0:1:1:1 | D7 / P00_7 / ADC3_CH5
+A8 | 1000 | 1:0:0:0 | D7 / P00_7 / ADC3_CH5
+A9 | 1001 | 1:0:0:1 | D7 / P00_7 / ADC3_CH5
+A10 | 1010 | 1:0:1:0 | D7 / P00_7 / ADC3_CH5
+A11 | 1011 | 1:0:1:1 | D7 / P00_7 / ADC3_CH5
+A12 | 1100 | 1:1:0:0 | D7 / P00_7 / ADC3_CH5
+A13 | 1101 | 1:1:0:1 | D7 / P00_7 / ADC3_CH5
+A14 | 1110 | 1:1:1:0 | D7 / P00_7 / ADC3_CH5
+A15 | 1111 | 1:1:1:1 | D7 / P00_7 / ADC3_CH5
+
+===== TABLE 5 =====
+软件模块 | 关联硬件资源 | 处理与验证内容
+光电扫描 | D3-D6：S3-S0；D7/P00_7/ADC3_CH5：AS | A0-A15 按 0000-1111 顺序选通、地址稳定时间、ADC 原始值与串扰。
+惯性导航 | SPI：IMU_SCK/MISO/MOSI/CS；IMU_INT | 角速度采集、零偏补偿、航向更新与转弯趋势判断。
+融合跑图 | 光电偏差、惯性航向、赛道状态 | 光电有效性判断、航向约束、状态切换与控制量连续性。
+电机控制 | PWM_L/DIR_L、PWM_R/DIR_R；DRV8243 状态引脚 | 方向逻辑、PWM 频率、启动阈值、故障响应。
+电压检测 | BATADC | 分压换算、ADC 标定系数、低压阈值和滤波。
+显示与交互 | FPC、按键、RUN/ERR LED、串口 | 参数显示、模式切换与调试日志输出。
+
+===== TABLE 6 =====
+处理阶段 | 输入 | 输出
+同步采集 | A0-A15 光电响应、IMU 角速度与加速度 | 同一控制周期的传感器数据
+状态计算 | 光电标定值、陀螺仪零偏 | 横向偏差、航向和转弯趋势
+融合判断 | 光电有效性、横向偏差、惯性航向 | 跑图状态与融合路径误差
+运动控制 | 融合路径误差、赛道状态 | 左右电机方向与 PWM 输出
+
+===== TABLE 7 =====
+阶段 | 主要操作 | 检查重点
+电路板检查 | 检查焊点、连接器、电源输入和地网络 | 排除明显连锡、虚焊及异常短路
+分级上电 | 暂不连接电机，依次检查主电源和各级稳压输出 | 电压极性、供电稳定性及主控启动状态
+结构安装 | 安装侧板、底板、主板安装板和光电循迹板 | 板件紧固、传感器朝向及转动部件间隙
+接口连接 | 连接光电板、IMU、驱动器、电机和调试接口 | 引脚对应关系、电源极性及线束固定
+程序下载 | 通过 JTAG 下载程序，并用串口观察关键变量 | 主控运行、传感器数据和控制量更新
+整车联调 | 完成抬轮空载、低速直道、弯道及连续跑图测试 | 电机方向、状态切换、输出连续性和故障响应
+
+===== TABLE 8 =====
+参数项目 | 参数记录 | 测试/说明
+整车重量 | 111g | 完整装配状态称量
+车模尺寸（长×宽×高） | 130mm ×130mm ×40mm | 改造后外廓尺寸
+动力电池 | 3S 锂聚合物电池；300 mAh；约 23 g | 整车 VCCBAT 输入电源
+电路功耗 | 空载：36 W；满载：72 W | 记录电池电压与测试工况
+所有电容总容量 | 863.6μF | 按最终 BOM 汇总
+传感器种类及数量 | 16 路模拟光电管（A0-A15，从左到右固定）1 组；LSM6DSV16X 1 个 | 
+额外伺服电机数量 | 0 个 | 不计入原有驱动电机和舵机
+赛道信息检测精度 / 频率 | 8mm（或像素） | 记录测试条件

@@ -1,0 +1,643 @@
+第二十一届全国大学生
+智能汽车竞赛
+
+技  术  报  告
+
+
+
+学 	 校：菏泽学院
+队伍名称：白茸三队
+参赛队员：燕宇
+刁书浩
+薛弘烨
+方志中
+带队教师：孟旭
+          祝凤金
+
+
+
+关于技术报告和研究论文使用授权的说明
+
+本人完全了解全国大学生智能汽车竞赛关保留、使用技术报告和研究论文:的规定，即:参赛作品著作权归参赛者本人，比赛组委会可以在相关主页上收录并公开参赛作品的设计方案、技术报告以及参赛模型车的视频、图像资料，并将相关内容编纂收录在组委会出版论文集中。
+
+参赛队员签名：燕宇、刁书浩、薛弘烨、方志中
+带队教师签名：孟旭、祝凤金
+日        期：2026年8月8日
+
+
+引言
+随着科技的不断进步，国家对智能化产业的产品和创新的关注也在日益上升，智能化技术几乎渗透到所有的领域，我们的生活方式随着智能化的普及发生了巨大改变。
+智能车技术依托于智能控制，前景广阔且发展迅速。全国大学生智能车竞赛以“立足培养，重在参与，鼓励探索，追求卓越”为指导思想，旨在促进高等学校素质教育，培养大学生的综合知识运用能力、基本工程实践能力和创新意识，激发大学生从事科学研究与探索的兴趣和潜能, 倡导理论联系实际、求真务实的学风和团队协作的人文精神，为优秀人才的脱颖而出创造条件。 
+全国大学生智能车竞赛，以智能寻迹小车为载体，包括了飞檐走壁、疯狂电路、走马观碑、燕过留痕、轮腿穿越、单车定向等多个组别，对小车的速度、智能启停和自主寻路等多项目标进行考核，培养了大学生的自主创新、综合实践等多方面能力，涵盖了机械、电子、电气、计算机等多方面的知识，具有很强的实际考核意义。
+本竞赛过程包括理论设计、实际制作、整车调试、现场比赛等环节，要求学生组成团队，协同工作，初步体会一个工程性的研究开发项目从设计到实现的全过程。竞赛融科学性、趣味性和观赏性为一体，是以迅猛发展、前景广阔的汽车电子为背景，涵盖自动控制、模式识别、传感技术、电子、电气、计算机、机械与汽车等多学科专业的创意性比赛。本竞赛规则透明，评价标准客观，坚持公开、公平、公正的原则，保证竞赛向健康、普及、持续的方向发展。
+
+
+模型车的设计制作与规格参数
+车模概述
+我们的轮腿车采用了官方给定的V车模。双轮自平衡 + 双侧伺服轮腿复合结构，兼顾高速竞速、越障、跳跃功能。
+V车模为博思威龙出品，是第21届全国大学生智能汽车竞赛平衡轮腿组官方指定标准车模， V 车模市场占有率、机械强度、可调性更优，是绝大多数备赛队伍首选。
+轮腿关键结构件采用开模注塑工艺一体化成型，一致性高、精度高、强度足。车模底盘采用高强度碳纤板；整车零件连接均使用轴承连接，共18个，保障车模运行、运动更加顺畅、灵活，结构更加稳定，使用寿命更长。
+车模尺寸长17cm宽18.7cm高19.2cm，后续经过换轮毂轮胎、安装电路板等原因，组装完成后的车模整体尺寸长17cm宽21cm高31cm。
+电池使用3S航模电池，45C/30C，2200mA。体积小、绿色环保、重量轻、无记忆，且储电量大，性能优胜。
+舵机
+车模有四个金属舵机，舵机型号为BDS300，类型为数字舵机，工作电压为7.4V，堵转扭力10kg.cm。四个腿根部各配备一个舵机，通过控制四个舵机，再搭配腿部的五连杆结构实现各种姿态。
+电机
+车模配备两个外转子三相无刷电机，自带霍尔传感器，兼顾平衡控制响应与跳跃越障扭矩需求，型号为BDS3620，额定电压为7.4-12.4V，堵转电流为12A，空载电流<400mA，电机极数14极，电机槽数12槽。
+外转子布局：转子在外、定子在内，转动惯量更大，平衡车高速行驶抗扰动更强，颠簸赛道车身姿态不容易剧烈晃动。 
+集成霍尔测速：内置霍尔位置传感器，相比无感 BLDC：起步零抖动、低速控制线性度极佳，非常适合平衡直立闭环控制；同时霍尔信号可直接用来做转速闭环测速。 
+一体化轮毂法兰：电机外转子自带车轮安装法兰，车轮直接锁紧转子端面，省去齿轮减速结构，传动无间隙、响应速度快，抬腿跳跃瞬间扭矩可以立刻输出。 
+轻量化散热壳体：镂空金属外壳，电机持续大电流爆发跳跃动作时散热效率更高，长时间比赛不易过热退磁。
+腿部结构
+整套 5 根连杆组成闭环平行四边形结构，全部铰接位置装配微型滚珠轴承（整车18个）：
+固定连杆：锁死在底盘上，作为机构基座；
+主动连杆：锁紧在伺服舵盘上，跟随舵机转动；
+上下从动连杆：传递力矩、约束运动轨迹；
+末端支撑连杆：底部接触地面，落地时承接车身重量；
+结构特性：舵机旋转时，末端支撑始终保持水平姿态，落地不会倾斜卡死。
+三种基础运动形态与动作原理
+1. 收纳折叠（竞速行驶状态）
+伺服收至低位，整套腿向上收拢紧贴底盘。
+效果：腿部离地，整车仅依靠中间双轮直立竞速，无额外重心扰动，平衡最稳定、车速最快；
+赛道场景：直道、八字环高速行驶。
+2. 单侧抬腿（越障过单边桥）
+单侧伺服独立转动，单侧腿部下摆落地支撑车身，将对应车轮抬离地面。
+逻辑：落地的腿充当支撑支点，车轮悬空跨过单边桥台阶，过完障碍后腿部收回。
+控制难点：抬腿瞬间车身重心偏移，平衡环必须同步补偿电机扭矩，防止倾倒。
+3. 双腿同步下压跳跃（跨越路障）
+左右伺服同步快速向下摆动，腿部蹬地产生向上反作用力，整车腾空起跳。
+原厂极限跳跃高度：10cm。
+电路设计与模块说明
+  智能车电路主要由系统模块、电源模块、传感器模块、驱动模块组成。
+系统模块
+  系统模块采用的是CYT4BB7核心板。
+电源模块
+电源是智能车各个模块的“心脏”，决定了系统之间能否稳定工作，在小车电路设计上，驱动与主控采用并联电路设计，核心板板供电电压为5V，舵机工作电压为7.2V左右，GPS模块、TOF模块等为5V，摄像头、屏幕、陀螺仪等为3.3V。
+主板的电源输入为12V左右，经过SCT 2450降压后形成5V供电源，再由RT9013-33稳定为3.3V。
+图表 三-1 5V电源
+
+
+
+由于舵机易受整体电源波动的影响，因此舵机是由12V电源输入通过SCT2450调整为4.0-9.3V可调电压进行供电。
+舵机电源板为四路完全独立的DC-DC降压电路，分别给4个舵机供电，实现电源隔离、互不干扰。由12V电源直接供入，通过SCT2450降压为可调节的4V~9.3V电压。
+
+驱动模块
+CYT2BL3无刷双驱是集成主控+双路功率驱动+电源+保护+接口的完整12V双无刷电机驱动板。选择TPN2R703NL作为承载电流的MOS管， 确保其能承载电机运行时的电流。12V输入负责供给电机工作，12V转5V供给磁编码器，转3V3供给CYT2BL3芯片。
+FOC算法运算（芯片内部），根据角度、电流、速度，算出三相电压矢量，输出6路PWM。
+   MOS桥驱动（功率输出），PWM控制每路6颗MOS有序导通，给电机三相通正弦电流，产生旋转磁场，带动转子转动。
+图表 三-4 预驱&MOS
+传感器模块
+磁编
+  采用TLE5012B芯片，iGMR 巨磁阻式 360° 绝对角度传感器，工业 / 车载电机专用，属于绝对式磁编码器，上电直接读取 0~360° 转子角度，无需回零。
+GPS模块
+采用了TAU1201 GNSS定位模块支持北斗、GPS、GLONASS、Galileo多卫星系统接收，主要用于室外环境获取经纬度坐标、地速、航向角，实现室外导航、定点行驶，可与IMU660RB姿态传感器做GNSS‑IMU组合导航，弥补GPS更新慢、短时丢星的缺陷。
+姿态传感器
+采用了IMU660RB六轴姿态传感器，核心芯片采用ST意法半导体 LSM6DSRTR，集成三轴加速度计、三轴陀螺仪与片内温度传感器，属于高性能MEMS惯性单元。模块自带LDO稳压，可直接兼容3.3V/5V单片机系统。
+摄像头
+    采用了总钻风MT9V034，这是一款基于安森美MT9V034芯片开发的全局快门灰度CMOS图像采集模块，作为小车的视觉感知单元，采集赛道灰度图像，交给主控单片机完成赛道边界提取、二值化、路径解算，输出偏差给PID控制器实现循迹控制。
+TOF模块
+采用了DL1B TOF测距模块，这是一款基于ST VL53L1X芯片开发的单点d‑ToF飞行时间激光测距模块。采用VCSEL红外激光发射、SPAD单光子接收，主要用于实现障碍物检测、距离测量、沿墙行驶、车库距离判定等功能，可与IMU、MT9V034视觉模块配合完成多传感器融合控制系统。
+微处理器算法说明及程序设计
+本系统以英飞凌 CYT4BB Cortex-M7 处理器为核心，基于逐飞科技开源库进行开发。程序整体采用"主循环 + 定时中断"的裸机架构，通过 1ms 定时中断驱动各控制模块按固定频率运行，实现了姿态解算、平衡控制、腿部运动学、惯性导航、视觉识别等多个功能模块的实时协同。
+IMU 姿态解算——Mahony 互补滤波
+姿态解算是平衡控制的基础。系统使用 IMU660RB 六轴惯性传感器（三轴加速度计 + 三轴陀螺仪），采用 Mahony 互补滤波算法实时计算车体俯仰角（Pitch）、横滚角（Roll）和航向角（Yaw）。
+Mahony 算法的核心思想是：以陀螺仪积分为主预测，以加速度计测量重力方向为参考，通过PI控制器对陀螺仪误差进行补偿，从而同时抑制陀螺漂移和加速度计噪声。
+算法每 1ms 调用一次，主要分为以下步骤：
+（1）陀螺仪数据转换与偏置补偿：
+float gx = (float)IMU_GYRO_X / IMU_GYRO_FACTOR * 0.017453293f;  // 转为 rad/s
+float gy = (float)IMU_GYRO_Y / IMU_GYRO_FACTOR * 0.017453293f;
+float gz = (float)IMU_GYRO_Z / IMU_GYRO_FACTOR * 0.017453293f;
+（2）加速度计重力向量与估算向量做叉积，得到姿态误差：
+float ex = ay*vz - az*vy;       float ey = az*vx - ax*vz;
+float ez = ax*vy - ay*vx;
+（3）PI 控制器更新陀螺仪修正量，快速旋转时自动压制比例增益以防止磁场干扰：
+imu_quat.bias[0] += ex * imu_quat.ki * imu_quat.cycle * int_rat; 
+gx += kp_use * ex + imu_quat.bias[0];  
+（4）一阶欧拉法积分四元数微分方程，并归一化，最终由旋转矩阵反算欧拉角：
+imu_angle.pit = asinf(r20)    * 57.29578f;  // 俯仰角
+imu_angle.rol = -atan2f(r21, r22) * 57.29578f;  // 横滚角
+系统上电时通过加速度计直接计算初始四元数，消除数秒的收敛等待期，前 2000ms 使用 50 倍高增益加速收敛，之后切换到正常增益稳定运行。
+级联 PID 平衡控制算法
+车体平衡控制采用三环级联 PID 架构：速度环（最外环，20ms）→ 角度环（中间环，5ms）→ 角速度环（内环，1ms）。这种多环结构兼顾了响应速度与稳定性。
+（1）位置式 PID（用于角度环、速度环、转向环）：
+void pid_control(pid_cycle_struct *pid_cycle, float target, float real)
+{
+    float proportion_value  = target - real;           // 当前误差
+    pid_cycle->i_value += proportion_value * pid_cycle->i_value_pro;  // 积分累加
+    pid_cycle->i_value = func_limit_ab(pid_cycle->i_value, ...);       // 积分限幅
+    float differential_value = proportion_value - pid_cycle->p_value_last; // 微分
+    pid_cycle->out = pid_cycle->p * proportion_value
+                   + pid_cycle->i * pid_cycle->i_value
+                   + pid_cycle->d * differential_value;
+    pid_cycle->p_value_last = proportion_value;
+}
+（2）增量式 PID（用于横滚角环，避免舵机积分饱和）：
+void pid_control_incremental(pid_cycle_struct *pid_cycle, float target, float real)
+{
+    float differential_value = proportion_value
+                              - 2.0f * pid_cycle->incremental_data[0]
+                              +        pid_cycle->incremental_data[1]; 
+    pid_cycle->out += pid_cycle->p * delta_p
+                    + pid_cycle->i * pid_cycle->i_value
+                    + pid_cycle->d * differential_value;
+}
+各环参数如下：
+- 角速度环（Kp=1.3, Ki=0.5, Kd=0）：直接以陀螺仪角速度为反馈，响应最快；
+- 角度环（Kp=200, Ki=1.0, Kd=70）：输出为角速度期望，目标平衡角约-7°；
+- 速度环（Kp=0.10, Ki=0.005, Kd=0.01）：输出修正目标平衡角，20ms执行一次；
+- 转向角度环（Kp=25, Ki=0, Kd=5）：纯PD控制，防止大角度转向时积分过冲；
+- 转向差速环（Kp=5, Ki=0, Kd=2）：控制两轮速度差实现转向。
+五连杆腿部运动学逆解
+轮腿机器人的腿部由五连杆机构构成，每侧腿由两个舵机驱动两个关节，通过五连杆传递到轮轴位置。程序中通过几何法进行逆运动学求解，将期望的腿端坐标（X, Y）转换为两个关节的舵机角度（α, β）。
+五连杆参数：L1=L4=6cm（上下连杆），L2=L3=9cm（中间连杆），L5=3.7cm（轮轴偏置）。
+逆解核心算法：
+void Inverse_solution(five_link_* fl, float X, float Y)
+{
+    float X_now = X + fl->L5 / 2;
+    float a = 2 * X_now * fl->L1;
+    float b = 2 * Y * fl->L1;
+    float c = pow(X_now,2) + pow(Y,2) + pow(fl->L1,2) - pow(fl->L2,2);
+    float temp1 = pow(a,2) + pow(b,2) - pow(c,2);
+    if(temp1 >= 0)
+        fl->alpha = 2 * atan((b + sqrt(temp1)) / (a + c)) * 180 / PI; // 上关节角
+    // 类似方法求 beta（下关节角）...
+}
+求得角度后，经过安装偏差补偿和限幅，转换为 PWM 占空比输出给舵机：
+pwm_set_duty(STEER_1_PWM, b_duty + Servo_Deviation_Angle_Pwm(Servo_1_Deviation_Angle));
+此外，系统还实现了横滚角差速补偿（地形自适应）和低通缓慢跟随（丝滑过渡），确保腿部运动平稳、不产生突变。
+惯导路径复现与航向纠正
+系统采用纯惯性导航（INS）实现赛道路径的录制与自动复现。导航系统以 IMU 航向角（Yaw）和编码器里程计为输入，将速度分解到二维坐标系并积分，每行进 1cm 存储一个位移向量 (dx, dy)，形成路径点序列写入 Flash，复现时按序读取并持续修正车辆航向。
+（1）前视切线法目标航向
+复现阶段，系统不直接用单个路径点方向作为目标航向，而是将当前位置前方 INS_LOOKAHEAD_STEPS（默认100个点，即约1m）的所有路径向量累加求和，取合向量方向作为目标航向。这样相当于对路径做了前向平滑，使车辆沿赛道曲线的切线行驶，避免因单步噪声导致的方向抖动：
+for(int i = ins.path_index; i < la_end; i++)
+{
+    tx += (float)path_data[ins_subject][i][0];
+    ty += (float)path_data[ins_subject][i][1];
+}
+float raw = atan2f(ty, tx) * 57.29578f * INS_YAW_SIGN + heading_bias + cte_corr;
+得到原始目标角后，再经低通滤波（系数 INS_HEADING_ALPHA = 0.01）平滑输出，防止航向目标值突变引起车体晃动：
+float diff = raw - heading_target;
+// 处理 ±180° 回绕后
+heading_target += diff * INS_HEADING_ALPHA;
+（2）横向偏差（CTE）修正
+复现中，车辆的实际位置 (ins.x, ins.y) 与路径位置 (ins.x_path, ins.y_path) 之间会产生横向偏差（Cross-Track Error）。系统将该偏差换算为对目标航向的修正量，叠加进前视切线结果，使车辆主动向路径靠拢：
+float ux  = tx / mag;  float uy = ty / mag;   // 路径单位切向量
+float cte = ux * (ins.y - ins.y_path) - uy * (ins.x - ins.x_path);
+float cte_corr = -INS_CTE_GAIN * cte;         
+偏左时 cte_corr 为正，目标航向右偏；偏右时左偏，形成比例纠偏回路，保证车辆不会因录制与复现的初始位置差异而累积漂移。
+（3）GPS 坐标区间——防空转污染
+赛道中存在通过元素时车轮可能打滑或空转的场合，此时编码器里程计失真，若继续用车速积分路径点将导致惯导位置大幅偏移，影响后续全程复现精度。
+为此，系统引入 GPS 坐标区间机制：在录制时，通过按键记录当前 GPS 经纬度，两次按下构成一个"GPS 区间"（进口 + 出口），对应的路径点序号同时保存。
+复现行驶时，当路径点序号到达进口标记，系统切换到 GPS 位移驱动模式：不再用编码器速度积分路径进度，而是每次收到新 GPS 数据包时计算实际位移，用于推进路径点：
+if(gps_zone_active)
+{
+    // 仅当 GPS 坐标更新时才累积位移（空转时 GPS 不动 → 路径冻结）
+    float dlat_m = (gnss.latitude  - ins_gps_lat_p) * 111320.0f;
+    float dlon_m = (gnss.longitude - ins_gps_lon_p) * 111320.0f * cosf(lat_rad);
+    float disp   = sqrtf(dlat_m*dlat_m + dlon_m*dlon_m);
+    if(disp >= 0.1f && disp < 3.0f)   // 下限过滤GPS噪声，上限过滤跳变
+        ins.dist_accum += disp;
+}
+车轮空转时 GPS 坐标不变，路径积累量冻结，彻底解耦编码器误差对路径的影响。
+出口判断以实际 GPS 距离为准：系统根据录制时进出口坐标之差，加上本次进入区间时的实际 GPS 坐标，计算出预期出口位置，当当前 GPS 与预期出口的距离小于阈值（GPS_ZONE_EXIT_DIST_M = 2m）时触发退出，并将惯导坐标原点对齐到出口 GPS 坐标，消除区间内积累的任何位置误差：
+// 预期出口 = 本次实际进口 + 录制时入
+double expected_exit_lat = gps_zone_entry_lat + (eff_lat - entry_stored_lat);
+double expected_exit_lon = gps_zone_entry_lon + (eff_lon - entry_stored_lon);
+// 距离达标后，将 ins.x/y 对齐到出口 GPS 坐标，重置路径点索引
+ins.x = cx;  ins.y = cy;
+ins.x_path = cx;  ins.y_path = cy;
+路径图像的二维重建
+为了验证惯导录制效果并在调试时直观呈现赛道轨迹，系统实现了基于 INS 积分坐标的二维路径重建机制。每次行驶时，程序在 1ms ISR 中以如下方式实时更新车辆的二维坐标：
+float heading_rad = (imu_angle.yaw * INS_YAW_SIGN) * 0.017453293f;
+ins.x += v * cosf(heading_rad) * 0.001f;   // 单位：m
+ins.y += v * sinf(heading_rad) * 0.001f;
+其中 v 为由编码器换算的线速度（m/s），heading_rad 为当前偏航角（弧度）。路径录制阶段，每行进 INS_STEP_M（默认 1cm）便将本步实际位移 (dx, dy) 以 int8_t 毫米精度压缩存入 path_data 数组：
+float dx_mm = (ins.x - ins.x_last) * 1000.0f;  // m → mm
+float dy_mm = (ins.y - ins.y_last) * 1000.0f;
+path_data[ins_subject][cnt][0] = (int8_t)dx_mm;
+path_data[ins_subject][cnt][1] = (int8_t)dy_mm;
+通过读取 Flash 中的复现坐标序列，可在上位机或屏幕上绘制出车辆行驶的二维轨迹图，直观反映赛道形状与转向情况，为录制质量评估和参数微调提供依据。同时，回放时路径坐标 (x_path, y_path) 与实时坐标 (x, y) 之间的横向偏差（CTE）被持续计算，用于修正目标航向，保证车辆沿录制路径行驶：
+float cte      = ux * (ins.y - ins.y_path) - uy * (ins.x - ins.x_path);
+float cte_corr = -INS_CTE_GAIN * cte;  
+分段惯导的路径管理与参数配置
+赛道路径并非单一整段，而是通过在录制过程中插入路径点标记，将完整路径划分为若干连续路段，每段可独立配置行驶参数。这套机制使得同一套惯导框架可以灵活适配不同特征的赛道区域。
+（1）行驶时，ins_update() 每毫秒根据当前路径点序号 ins_global_point_idx 与标记点比较，确定所在段号，再从对应列读取各配置项：
+float config_get_ins_speed(uint8_t slot, uint16_t point_idx)
+{
+    for(uint8_t i = 0; i < mc; i++)
+        if(point_idx < ins_mark_points[slot][i]) return spd[i]; // 当前段速度
+    return spd[mc - 1];  // 最后一段
+}
+（2）各配置项的作用
+速度（行1）：直接赋值给 speed_target，由速度闭环 PID 执行跟踪。
+视觉模式（行2）：段切换时自动写入 vision_enable，触发视觉模式的切换逻辑（如腿高中值切换、视觉 PID 复位）。
+航向角修正（行4）：在切段时叠加到全局航向偏置 heading_bias，使下一段的 heading_target 基准在正确方向上，补偿录制与复现时的系统性偏差：
+heading_bias += config_get_ins_angle_corr(s, mark_corr_next);
+距离修正（行5）：正值表示到达标记点后继续沿当前航向直行指定距离再换段（延伸模式），适合在弯道前提前对齐航向；负值表示提前若干厘米触发切段，适合在提前切速或视觉使能需要提前响应的场合：
+float dc = config_get_ins_dist_corr(s, mark_corr_next);  // 已换算为 m
+if(dc > 0.0f) { extend_remain = dc; extend_for_spin = 0; }  // 正值：延伸直行
+if(dc < 0.0f) { /* 提前 |dc| 距离触发切段 */ }
+（3）参数掉电保持
+所有分段参数均通过 config_flash_save() / config_flash_load() 写入/读出 Work Flash（页78、79、91），断电后自动恢复，无需重新配置：
+config_flash_save();  // 将 s_speed[8][6][20] 序列化写入 Flash
+摄像头视觉识别与场景切换
+系统使用 MT9V03X 灰度摄像头（分辨率 188×120）进行台阶检测和特殊路段识别，视觉处理在核心1上运行，结果通过全局变量 vision_enable 传递给核心0。vision_enable 定义了多种场景模式：0 为普通 INS 导航；1为台阶检测，2 为单边桥（Lg）；3 为颠簸路段（Bp）；4 为台阶循迹（Finally）。该变量由分段配置表在路段切换时自动更新，无需手动干预。
+台阶距离检测采用逐列扫描的边缘检测方式：以固定列步长对图像进行垂直扫描，从下往上寻找相邻行之间的黑白跳变（台阶边缘）：
+for(int r = 108; r >= 1; r--)
+{
+    uint8 prev_px = mt9v03x_image[r-1][c];
+    uint8 curr_px = mt9v03x_image[r][c];
+    if((prev_px <  stair_threshold && curr_px >= stair_threshold) ||
+       (prev_px >= stair_threshold && curr_px <  stair_threshold))
+    { best_r = r; break; }
+}
+找到各列的跳变行坐标后，对有效样本进行线性回归滤波，得到稳定的边缘行均值，再通过标定公式转换为距离：
+// 标定数据：row=65→300mm，row=82→250mm，row=99→200mm
+float dist_mm = -2.94f * (float)edge_row + 491.0f;
+当距离小于触发阈值时，发出跳跃指令控制小车腾空越过台阶。
+核心0在每个控制周期检测 vision_enable 的变化，并执行对应的场景切换初始化，确保切换过程无突变：
+else if(vision_enable == 3 && s_vis_prev != 3)  
+{
+    steer_bridge_enter();   // 预填横滚角前馈，切换腿高中值到桥梁档
+    bump_vision_init();     // 初始化颠簸路段视觉参数
+}
+else if(vision_enable != 2 && vision_enable != 3 &&
+       (s_vis_prev == 2 || s_vis_prev == 3))    
+{
+    if(s_vis_prev == 3) steer_bridge_exit();    // 恢复普通腿高中值
+    bridge_heading_offset = 0.0f;
+}
+单边桥模式下还叠加了横滚角持续补偿和速度差快速补偿，防止单侧着力造成侧翻：
+float speed_comp = func_limit_ab(-difspeed_filtered * speed_diff_kp, -2000.0f, 2000.0f);
+float roll_comp  = func_limit_ab(imu_angle.rol * roll_comp_kp,       -1000.0f, 1000.0f);
+LeftPWM  += (int16_t)(speed_comp + roll_comp);
+RightPWM -= (int16_t)(speed_comp + roll_comp);
+
+总结
+本次第二十一届全国大学生智能汽车竞赛轮腿穿越组参赛工作，围绕室外复杂地形自适应行驶、多赛事科目精准完成的核心目标，完成了轮腿智能车的机械结构设计、软硬件系统搭建、算法调试与整机联调优化。整车融合轮式高速移动与腿式地形适配的双重优势，依托英飞凌TRAVEO主控平台，搭配摄像头视觉识别、GPS定位、IMU姿态检测等传感器模块，实现竞速绕桩、定点排雷、复杂颠簸路段通行等全科目自主运行，顺利完成本次竞赛全部考核内容。通过本次备赛与参赛，团队全面积累了轮腿复合机器人的研发调试经验，同时也清晰认识到系统存在的短板与不足，现将整体工作总结如下。
+在机械结构设计方面，结合赛事室外赛道场景与尺寸规范要求，完成了双足轮腿车模的定制化设计与装配，严格控制车轮直径≤12厘米，采用轻量化高强度框架结构，搭配多自由度轮腿联动机构。针对赛事单边桥、三级台阶、陡坡、草地颠簸等复杂路况，优化了轮腿关节传动结构与减震布局，有效提升车体地形适配性与行驶稳定性。同时，合理规划主控、驱动模块、传感器、电池的安装布局，降低车体重心，减少运动过程中的机身晃动与姿态偏移，为后续控制算法的稳定运行奠定了良好的机械基础，满足高速竞速与复杂地形越障的双重工况需求。
+软硬件系统层面，整车以英飞凌TRAVEO芯片为主控核心，搭建稳定的底层驱动与硬件控制系统，完成电机、舵机、传感器的硬件适配与电路调试，基于CAN总线实现各模块的高效通信，保障数据传输实时性与稳定性。软件算法上，采用分层闭环控制架构，区分车体平衡控制与轮腿运动控制，通过优化多通道PID控制算法，解决轮腿机构多关节耦合、重心动态偏移带来的姿态不稳问题。视觉处理模块依托摄像头完成赛道标线、障碍区域的识别检测，GPS定位模块配合姿态解算算法，实现定点精准定位，满足定点排雷科目自旋定位、定点行进的赛事要求；同时针对往返绕桩竞速科目，优化路径规划与速度自适应调节算法，实现直道高速通行、弯道平稳减速，提升竞速效率。
+备赛调试阶段，团队针对轮腿组赛事多场景、多工况的特点，开展分模块专项调试与整机闭环测试。针对颠簸路段行驶抖动、定点定位偏移、绕桩轨迹偏差、地形切换姿态失衡等核心问题，逐一排查软硬件故障与算法缺陷，通过迭代PID参数、优化视觉阈值、修正GPS定位误差、调整轮腿运动轨迹，持续提升整车的稳定性、精准度与鲁棒性。同时完成多场景适配优化，兼顾平整赛道的竞速性能与复杂路况的通行能力，有效解决了轮腿机器人低速稳态差、地形适应性弱的行业共性问题，让整车能够适配室外操场复杂赛道的全部竞赛科目。
+通过本次竞赛备赛与参赛，团队成员系统掌握了轮腿复合智能车的机械设计、嵌入式开发、传感器融合、自动控制与路径规划等核心技术，提升了复杂工程问题的分析与解决能力。在团队协作中，明确分工、高效配合，攻克了多模块协同调试、多工况算法适配等技术难题，积累了完整的智能车研发、调试、优化实战经验，工程实践能力与创新思维得到充分锻炼。
+同时，本次参赛也暴露出作品存在的诸多不足。一是极端工况稳定性仍有欠缺，在高坡度、高强度颠簸路段，车体姿态响应存在轻微滞后，偶尔出现轨迹偏移问题；二是算法自适应能力有待提升，针对室外光线变化、场地干扰的抗干扰能力不足，参数泛化性较弱；三是整车响应速度仍有优化空间，多科目切换的逻辑流程不够精简，一定程度影响竞速效率。
+综上所述，本次第二十一届全国大学生智能汽车竞赛轮腿组参赛，是一次理论结合实践的完整历练。后续团队将针对本次发现的问题进一步优化改进，重点优化姿态控制算法、提升传感器抗干扰能力、精简程序运行逻辑，优化轮腿切换控制策略，进一步提升整车的稳定性、通用性与竞速性能。同时，持续深耕轮腿车技术，积累复杂地形智能移动机器人研发经验，为后续相关科创项目与工程实践奠定更坚实的基础。
+
+附录
+第二十一届全国大学生智能汽车竞赛
+车模技术检查表
+一、车模技术检查表
+
+
+二、车模照片
+1、车模外观照片
+
+▲ 图1.1 车模照片示例
+2、电路板PCB图
+  车模中所有电路板正反面照片。对于自制电路板，需要使用红色方框标出队伍独自LOGO所在处。
+
+
+
+
+▲ 图1.2 电路板
+3、电路板原理图
+
+
+
+▲ 图1.3 电路图
+部分程序源码
+#include "zf_common_headfile.h"
+
+#define IPS200_TYPE (IPS200_TYPE_SPI)
+
+uint8_t  vision_enable     = 0;
+uint8_t  leg_enable        = 0;
+
+static uint32_t detect_gate_ms    = 0;
+static uint8_t  jump_count        = 0;
+static uint8_t  prev_vision       = 0;
+
+static uint8_t  approach_mode     = 0;
+static float    approach_last_dist = 999.0f;  // 最后一次有效视觉距离
+static int32_t  approach_odo_start = 0;
+
+void stair_state_reset(void)
+{
+    detect_gate_ms     = 0;
+    jump_count         = 0;
+    approach_mode      = 0;
+    approach_last_dist = 999.0f;
+    approach_odo_start = 0;
+}
+
+static void dwt_init(void)
+{
+    CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
+    DWT->CYCCNT = 0;
+    DWT->CTRL  |= DWT_CTRL_CYCCNTENA_Msk;
+}
+
+//主函数
+int main(void)
+{
+    clock_init(SYSTEM_CLOCK_250M);
+    debug_init();
+    dwt_init();
+
+    ips200_init(IPS200_TYPE);
+    ips200_set_color(RGB565_WHITE, RGB565_BLACK);  /* 黑底白字 */
+    imu660rb_init();
+    small_driver_uart_init();
+    Key_init();
+    battery_widget_init();
+    Buzzer_init();
+    steer_control_init();
+    balance_cascade_init();
+
+    /* 上电平衡关闭、舵机中位 */
+    motor_armed   = 0;
+    run_flag      = 0;
+    steer_enabled = 0;
+    speed_target  = 0.0f;
+    nav_enable    = 0;
+    vision_enable = 0;
+
+    /* 初始化各模块 */
+    gnss_init(TAU1201);       
+    ins_module_init();        
+    config_flash_load();      
+
+    /* 摄像头初始化中 */
+    ips200_show_string(0, 0, "Camera init...");
+    while(mt9v03x_init())
+        system_delay_ms(500);
+    mt9v03x_set_gain((uint8)cam_gain);    
+    mt9v03x_set_exposure_time(cam_exp);   
+    ips200_show_string(0, 0, "Camera OK      ");
+    stair_vision_init();
+    bridge_vision_init();
+
+    /* 1ms定时器*/
+    pit_ms_init(PIT_CH0, 1);
+
+    Buzzer_check(100);
+
+    while(1)
+    {
+        key_scan();
+        get_GPS(); /*GPS解析*/
+
+        /* 路径复现结束蜂鸣 */
+        if(ins_path_end_event)
+        {
+            ins_path_end_event = 0;
+            Buzzer_check(1000);
+        }
+
+        /*  GPS区间蜂鸣 */
+        if(gps_zone_event)
+        {
+            uint8_t ev = gps_zone_event;
+            gps_zone_event = 0;   
+            if(ev == 1)
+            {
+                Buzzer_check(150);   /* 进入GPS区间 */
+            }
+            else        Buzzer_check(450);   /* 退出GPS区间 */
+        }
+
+        /* 每次发车做完整视觉初始化，后台运行，方式突然开启图像来不及反应  */
+        {
+            static uint8_t prev_run = 0;
+            if(run_flag && !prev_run)
+                bridge_vision_init();
+            prev_run = run_flag;
+        }
+
+        /*  模式切换检测  */
+        if(vision_enable != prev_vision)
+        {
+            if(vision_enable == 1)
+            {
+                stair_vision_init();            
+            if(vision_enable == 2)
+            {
+                bridge_vision_init();           
+            }
+            if(prev_vision == 2)
+            {
+                heading_bias += heading_get_offset();   /*将单标桥修正量叠加到后续路径*/
+                heading_set_offset(0.0f);
+                steer_high_reset();             /* 腿回中值位置 */
+            }
+            prev_vision = vision_enable;
+        }
+
+        if(mt9v03x_finish_flag)
+        {
+            mt9v03x_finish_flag = 0;
+            SCB_InvalidateDCache_by_Addr((uint32_t*)mt9v03x_image, MT9V03X_IMAGE_SIZE);
+
+            /* IMAGE菜单页模式化显示 */
+            uint32 ipc_stair_preview = STAIR_IPC_PACK(STAIR_STATUS_NO_EDGE, 0);
+            if(menu_show_camera)
+            {
+                if(menu_img_mode == 1)
+                {
+                    /* 模式1线条标注 */
+                    ipc_stair_preview = stair_vision_process();
+                    ips200_show_gray_image(0, 0, (uint8*)mt9v03x_image,
+                                           MT9V03X_W, MT9V03X_H, MT9V03X_W, MT9V03X_H, stair_threshold);
+                    for(int _i = 0; _i < STAIR_MAX_SAMPLES; _i++)
+                    {
+                        uint8 _row = stair_edge_map[_i];
+                        if(_row > 0 && _row < MT9V03X_H)
+                            ips200_draw_point((uint16)(_i * STAIR_COL_STEP), (uint16)_row, RGB565_GREEN);
+                    }
+                    
+                    if(STAIR_IPC_STATUS(ipc_stair_preview) != STAIR_STATUS_NO_EDGE)
+                    {
+                        uint16 _fit_row = (uint16)STAIR_IPC_ROW(ipc_stair_preview);
+                        if(_fit_row < MT9V03X_H)
+                            ips200_draw_line(0, _fit_row, MT9V03X_W - 1, _fit_row, RGB565_GREEN);
+                    }
+                    
+                    float _cur_trig = (jump_count == 0) ? stair_trigger_dist1_mm
+                                    : (jump_count == 1) ? stair_trigger_dist2_mm
+                                                        : stair_trigger_dist3_mm;
+                    int _trig_r = (int)((_cur_trig - 491.0f) / (-2.94f));
+                    if(_trig_r >= 0 && _trig_r < MT9V03X_H)
+                        ips200_draw_line(0, (uint16)_trig_r, MT9V03X_W - 1, (uint16)_trig_r, RGB565_RED);
+                }
+                else if(menu_img_mode == 2)
+                {
+                    /* 模式2线条标注*/
+                    bridge_vision_process();
+                    ips200_show_gray_image(0, 0, (uint8*)mt9v03x_image,
+                                           MT9V03X_W, MT9V03X_H, MT9V03X_W, MT9V03X_H, bridge_dbg_otsu);
+                    
+                    for(int _r = 0; _r < MT9V03X_H; _r++)
+                    {
+                        if(bridge_dbg_left[_r]  >= 0) ips200_draw_point((uint16)bridge_dbg_left[_r],  (uint16)_r, RGB565_RED);
+                        if(bridge_dbg_right[_r] >= 0) ips200_draw_point((uint16)bridge_dbg_right[_r], (uint16)_r, RGB565_RED);
+                        if(bridge_dbg_mid[_r] >= 0)
+                            ips200_draw_point((uint16)bridge_dbg_mid[_r], (uint16)_r, RGB565_GREEN);
+                    }
+                    
+                    for(uint16 _r = 0; _r < MT9V03X_H; _r++)
+                        if((_r % 7) < 4)
+                            ips200_draw_point((uint16)bridge_center_x, _r, RGB565_YELLOW);
+                }
+                else if(menu_img_mode == 3)
+                {
+                    /* 模式3线条标注 */
+                    bump_vision_process();
+                    ips200_show_gray_image(0, 0, (uint8*)mt9v03x_image,
+                                           MT9V03X_W, MT9V03X_H, MT9V03X_W, MT9V03X_H, bump_threshold);
+                    
+                    ips200_draw_line(0, (uint16)bump_ref_row, MT9V03X_W - 1, (uint16)bump_ref_row, RGB565_RED);
+                    
+                    for(int _i = 0; _i < bump_dbg_edge_count; _i++)
+                    {
+                        int _c = bump_dbg_left[_i];
+                        int _r = bump_dbg_right[_i];
+                        for(int _dy = 0; _dy <= 1; _dy++)
+                            for(int _dx = 0; _dx <= 1; _dx++)
+                                if(_c+_dx >= 0 && _c+_dx < MT9V03X_W && _r+_dy >= 0 && _r+_dy < MT9V03X_H)
+                                    ips200_draw_point((uint16)(_c+_dx), (uint16)(_r+_dy), RGB565_GREEN);
+                    }
+                }
+                else if(menu_img_mode == 4)
+                {
+                    /* 模式4线条标注 */
+                    finally_vision_process();
+                    ips200_show_gray_image(0, 0, (uint8*)mt9v03x_image,
+                                           MT9V03X_W, MT9V03X_H, MT9V03X_W, MT9V03X_H, finally_threshold);
+                    for(int _r = 0; _r < MT9V03X_H; _r++)
+                    {
+                        if(bridge_dbg_left[_r]  >= 0) ips200_draw_point((uint16)bridge_dbg_left[_r],  (uint16)_r, RGB565_RED);
+                        if(bridge_dbg_right[_r] >= 0) ips200_draw_point((uint16)bridge_dbg_right[_r], (uint16)_r, RGB565_RED);
+                        if(bridge_dbg_mid[_r] >= 0)
+                            ips200_draw_point((uint16)bridge_dbg_mid[_r], (uint16)_r, RGB565_GREEN);
+                    }
+                    for(uint16 _r = 0; _r < MT9V03X_H; _r++)
+                        if((_r % 7) < 4)
+                            ips200_draw_point((uint16)finally_center_x, _r, RGB565_YELLOW);
+                }
+                else
+                {
+                    /* 显示原始图像 */
+                    ips200_show_gray_image(0, 0, (uint8*)mt9v03x_image,
+                                           MT9V03X_W, MT9V03X_H, MT9V03X_W, MT9V03X_H, 0);
+                }
+            }
+
+            if(vision_enable == 1)
+            {
+                /*台阶模式*/
+                uint32 ipc_data;
+                if(system_count < detect_gate_ms)
+                {
+                    ipc_data = STAIR_IPC_PACK(STAIR_STATUS_NO_EDGE, 0);
+                    approach_mode      = 0;
+                    approach_last_dist = 999.0f;
+                }
+                else
+                {
+                    if(menu_show_camera && menu_img_mode == 1)
+                        ipc_data = ipc_stair_preview;
+                    else
+                        ipc_data = stair_vision_process();
+                    uint32 status = STAIR_IPC_STATUS(ipc_data);
+
+                    float vis_dist = stair_dbg_dist_mm;
+
+                    /* 距离增大说明切到了第二级台阶*/
+                    uint8_t vis_valid = (status == STAIR_STATUS_TRACKING)
+                                     && (approach_mode == 0
+                                         ? (vis_dist < 400.0f)
+                                         : (vis_dist < approach_last_dist + 10.0f));
+                    if(vis_valid)
+                    {
+                        approach_last_dist = vis_dist;
+                        approach_odo_start = stair_pulse_total;
+                        approach_mode      = 1;
+                    }
+                }
+            }
+            /*单边桥视觉循迹*/
+            if(run_flag && !(menu_show_camera && menu_img_mode == 2))
+                bridge_vision_process();
+            
+            if(run_flag && !(menu_show_camera && menu_img_mode == 3))
+            {
+                if(vision_enable == 3)
+                    bump_vision_process();
+            }
+            /* 返程上坡开启视觉循迹 */
+            if(run_flag && !(menu_show_camera && menu_img_mode == 4))
+            {
+                if(vision_enable == 4)
+                    finally_vision_process();
+            }
+
+        }
+
+        if(!vision_enable)
+        {
+            detect_gate_ms = 0;
+        }
+
+        
+        if(vision_enable == 1 && approach_mode == 1 && system_count >= detect_gate_ms)
+        {
+            float traveled       = (float)(stair_pulse_total - approach_odo_start)
+                                   * STAIR_MM_PER_PULSE;
+            float estimated_dist = approach_last_dist - traveled;
+
+            float cur_trig_dist = (jump_count == 0) ? stair_trigger_dist1_mm
+                                : (jump_count == 1) ? stair_trigger_dist2_mm
+                                                    : stair_trigger_dist3_mm;
+            if(estimated_dist <= cur_trig_dist && jump_count < 3)
+            {
+                jump_count++;
+                jump_flag          = 1;
+                detect_gate_ms     = system_count + stair_dly_ms;
+                approach_mode      = 0;
+                approach_last_dist = 999.0f;
+                Buzzer_check(80);
+            }
+        }
+
+        /* 菜单更新 */
+        menu_update();
+
+        
+
+        //printf("%f,%f,%f\r\n",imu_angle.rol,imu_angle.pit,imu_angle.yaw);
+        printf("%d,%d,%d\r\n",imu660rb_gyro_x,imu660rb_gyro_y,imu660rb_gyro_z);
+    }
+}
+
+===== TABLE 1 =====
+队伍名称 | 白茸三队 | 白茸三队 | 白茸三队 | 白茸三队
+参赛学校 | 菏泽学院 | 菏泽学院 | 菏泽学院 | 菏泽学院
+赛题组组别 | 轮腿穿越 | 轮腿穿越 | 轮腿穿越 | 轮腿穿越
+检查项目 | 规格 （选手自行填写） | 符合 （） | 不符合（） | 备注
+1.车模类型是什么？ | V车模 |  |  | 如果是自制车模，请标明自制。
+车模整体尺寸： （包括传感器在内）长，宽，高(mm) | 长17cm 宽21cm 高31cm |  |  | 今年比赛车模尺寸没有限制
+传感器种类、规格(型号)数量。 是否使用自带MCU的成品传感器模块？型号是什么？ | 1.总钻风摄像头一个  磁编两个，陀螺仪IMU660RB 2.否 |  |  | 
+控制转向舵机型号是否自行改装舵机？ 防伪易损标签是否完整？ | 否 是 |  |  | 
+1. 是否增加伺服电机？ 2. 如果有种类、个数和作用？ | 否 |  |  | 
+电路中微处理器型号和个数？ | CYT4BB7   1个 CYT2BL3   1个 |  |  | 
+是否具有其它可编程器件，个数与作用？ | 否 |  |  | 
+是否有无线通讯装置？ 如果有种类和个数？ | 否 |  |  | 
+电池的种类、规格和数量？ | 3S，45C，2200mA，一个 |  |  | 
+1. 是否使用GPS导航？ 2. 是否没有使用RTK？ | 1.是 2.否 |  |  | 
+后轮驱动电机是否是原车模电机？ 是否具有防伪易损标签？ | 是 是 |  |  | 
+轮胎是否是原车同款轮胎？ 轮胎的尺寸（直径和宽度）是否小于等于原车膜尺寸？ | 否 否 |  |  | 
+车轮轴距、轮距是否改装？ 改装参数是什么？ | 否 否 |  |  | 
+车模驱动轮传动机构是否改装？ 改装方式是什么？ | 否 否 |  |  | 
+是否更换过原装车模中的机械元器件？更换后的规格 是什么？ | 否 |  |  | 。
+车模电路板个数及功能。 其中是否有购买成品电路板？ | 1.四个。一个CYT4BB7核心板，一个主板，一个无刷双驱动，一个四路舵机电源。 2.是，CYT4BB7核心板。 |  |  | 
+自制电路板是否标记有学校名称、队伍名称、制作日期等信息？ 标示信息在PCB的哪一层？ | 1.是 2.覆铜层 |  |  | 请在表格中注明电路板队伍信息的内容。
+其它待说明内容 |  |  |  | 
+检查人员签名： | 检查意见： | 检查意见： | 检查意见： | 检查意见：

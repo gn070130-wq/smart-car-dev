@@ -1,0 +1,421 @@
+第二十一届全国大学生
+智能汽车竞赛
+技术报告
+
+
+参赛学校： 电子科技大学中山学院
+队伍名称： 莲峰乳鸽队
+参赛队员： 黄鑫培、李卓伦、刘银浩、姚悦
+带队教师： 钟远平
+
+
+关于技术报告和研究论文使用授权的说明
+本人完全了解全国大学生智能汽车竞赛关保留、使用技术报告和研究论文的规定，即：参赛作品著作权归参赛者本人，比赛组委会可以在相关主页上收录并公开参赛作品的设计方案、技术报告以及参赛模型车的视频、图像资料，并将相关内容编纂收录在组委会出版论文集中。
+参赛队员签名：	黄鑫培、李卓伦、
+刘银浩、姚悦  
+带队教师签名：	    钟远平        
+日        期：	   2026.8.11       
+
+
+摘要
+本文针对第二十一届全国大学生智能汽车竞赛轮腿穿越组赛事需求，设计并实现了一套基于CYT4BB7主控的轮腿式智能车系统。整车以轮腿复合结构为载体，结合总钻风灰度摄像头视觉识别、LSM6DSRTR六轴陀螺仪姿态解算、多周期串级PID控制算法，实现赛道循迹、姿态平衡、越障跳跃、定点行驶等赛事功能。
+硬件方面，系统完成主控最小系统、多级稳压电源、陀螺仪恒温电路等模块设计，保证设备在颠簸、光照变化、大电流负载工况下稳定工作。软件采用“主循环感知层+1ms中断控制层”双架构，将图像采集、人机交互与实时运动控制解耦。通过多周期PID分时调度、车身姿态保护、PID软启动、跳跃模式自适应降参、陀螺仪航向补偿等算法优化，有效解决了轮腿车起步抖动、高速漂移、落地失稳、姿态漂移等问题。
+经过分模块调试与整车联调，本车能够稳定完成赛道识别、差速循迹、姿态自平衡、分段式越障跳跃等任务，整体可靠性、实时性与环境适应性均满足轮腿穿越组竞赛要求。
+关键词：CYT4BB7、总钻风灰度摄像头、陀螺仪、差速循迹
+
+
+
+
+
+第一章：引言
+1.1智能车研究背景
+随着机器人技术、嵌入式控制、机器视觉与多体运动控制技术持续发展，兼具移动能力与环境适应能力的移动机器人成为智能领域重要研究方向。轮腿复合机器人结合轮式移动高速高效、腿式机器人越障能力强的优势，能够在平整路面快速行进，同时应对台阶、沟壑、颠簸路面、单边桥等复杂非结构化地形，在巡检、抢险、野外探测等场景具备广阔应用前景。
+1.2智能车发展现状（轮腿）
+轮腿复合机器人融合轮式机构高速移动与腿式机构优秀越障的优势，近年来成为移动机器人领域研究热点。国外相关研究起步较早，多款成熟轮腿样机依托多自由度关节、先进控制算法实现复杂地形自适应通行，但设备成本高、结构复杂。
+国内各大高校持续开展轮腿机器人样机研发，重点针对台阶、颠簸路面优化机械结构与姿态控制算法。在全国大学生智能汽车竞赛中，轮腿穿越组别参赛方案主要分为多舵机主动轮腿结构与六无刷轮腿结构两类。
+1.3报告框架
+报告整体遵循“理论铺垫—方案设计—硬件搭建—软件开发—调试优化”的完整逻辑逐层展开撰写，首先结合轮腿智能车的研究背景与发展现状，明确本次参赛车辆的设计目标与核心设计思路，确定整体软硬件架构方案；其次完成各功能器件的选型与安装，详细阐述主控、摄像头、陀螺仪等核心器件的选型依据与安装方案；随后系统性介绍整车硬件电路设计，涵盖核心最小系统、各级电源电路、传感器及外设驱动电路等硬件模块；在此基础上，分层拆解软件程序设计内容，依次对姿态感知、视觉图像处理、舵机与电机驱动、多周期PID控制、车辆状态自适应管理等核心软件模块进行详细说明；最后介绍系统开发环境与分阶段模块化调试流程，梳理调试过程中遇到的问题及优化方案，并总结全文工作成果、创新亮点与现存不足，同时提出后续优化方向，形成完整且严谨的智能车系统设计报告。
+第二章：项目设计思路
+本车以CYT4BB7主控芯片作为核心控制单元，搭载总钻风灰度摄像头完成赛道图像采集与图像解析工作，结合无刷电机差速控制算法实现车身稳定循迹行驶。姿态感知与惯性导航功能由LSM6DSRTR陀螺仪模块实现，实时采集车身姿态数据并完成姿态校正，保障车体行驶稳定性与运动控制精度。
+动力驱动方面，整车采用电调驱动无刷电机，搭配BDS300舵机完成车体转向与轮腿姿态调节。系统配备四位拨码开关与独立功能按键，可快速切换车辆运行模式、调试参数。同时搭载TFT显示屏与蜂鸣器模块，实现参数可视化显示、工作状态提示及故障预警，极大提升调试与实操便捷性。
+此外，车辆尾部增设自制灯光创意灯板。整车配合逐飞接收器实现可靠信号接收与远程控制，完善整车人机交互与状态指示体系，满足轮腿穿越组多场景、多模式的赛事运行需求。
+
+图2-1整车系统框图
+
+
+
+第三章：器件的选型与安装
+3.1摄像头部分
+3.1.1摄像头选型
+视觉采集选用总钻风灰度摄像头，FPC2 为总钻风摄像头 FPC 接插件，连接单片机多组 IO 口，包含 8 位数据信号 ZZF_D0~D7、行场同步信号 ZZF_VS、串口收发 ZZF_TX/RX 以及像素时钟 ZZF_PCLK，实现图像数据的采集传输。接口采用 3.3V 供电，并联 22μF 与 100nF 滤波电容 C67、C66 完成电源滤波降噪，保障摄像头供电稳定。该摄像头采用全局快门 CMOS 传感器，相较于卷帘快门摄像头，车辆高速行驶、颠簸越障过程中不易产生图像拖影畸变；支持帧率、曝光参数软件可调，环境光照适应性更强。模块输出灰度图像，有效降低主控图像处理开销；搭配并行 DVP 接口传输图像，数据传输实时性高、延迟低，可以持续输出清晰稳定的画面，满足锥桶识别、雷区检测、障碍边界提取等视觉任务需求，为轮腿智能车循迹、障碍预判与步态切换提供可靠图像信息。
+
+图3-1-1摄像头接口原理图
+
+
+
+3.1.2 摄像头安装
+
+图3-1-2摄像头安装实物图
+3.2 屏幕显示部分
+3.2.1 TFT屏幕
+屏幕显示上我们外接 SPI 协议 TFT 液晶屏幕。接口提供 3V3 电源与 GND，SPI 时钟 TFT_SCK、主机输出数据 TFT_MOSI；同时引出屏幕复位 TFT_RST、数据命令选择 TFT_DC、片选 TFT_CS、背光控制 TFT_BLK。所有信号分别接入 CYT4BB7 单片机对应 IO 口，单片机通过 SPI 总线发送显示数据，可完成画面刷新、硬件复位以及背光通断控制。
+
+图3-2-1TFT屏幕接口原理图
+
+3.2.2 TFT屏幕安装
+
+图3-2-2TFT屏幕安装实物图
+3.3陀螺仪姿态校准部分
+3.3.1 陀螺仪选型
+本系统选用 LSM6DSRTR 六轴惯性传感器作为姿态感知单元，模组通过 FPC1 接口与主控相连，采用 I2C 通信协议传输数据。电路中引出 I2C 时钟线 MPU_SCL、数据线 MPU_SDA，搭配地址选择引脚 MPU_SDO 与片选引脚 MPU_CS 接入主控 IO；同时预留外部中断引脚，能够主动向主控推送姿态信息。模块由 3.3V 电源供电，通信总线具备上拉电阻保证信号稳定。主控实时读取传感器输出的加速度与角速度数据完成姿态解算。该传感器集成度高、体积小巧，噪声水平低，数据输出速率高，动态响应迅速，能够持续输出高精度姿态信息，有效感知车体倾角、角速度变化，为车身姿态校正、惯性定位以及轮腿越障过程中的姿态稳定控制提供可靠数据支撑。
+
+图3-3-1陀螺仪接口原理图
+3.3.2陀螺仪安装
+
+
+图3-1-1、3-1-2 陀螺仪安装实物图
+
+第四章：硬件开发设计说明
+4.1核心板电路
+我们采用英飞凌CYT4BB7 单片机作为控制核心，CYT4BB7 具备高速运算、三核异构处理与强大实时计算能力。它的主 Cortex-M7 内核主频高达 250 MHz，采用双 Cortex-M7 加 Cortex-M0 + 三核架构，可实现任务解耦并行处理，能够满足复杂实时应用的需求。CYT4BB7 核心板集成了丰富的外设功能，包含多路 CAN-FD 接口、多路 UART、SPI、I2C 通信接口，多路 PWM 输出，同时搭载多路模拟输入输出与多通道高精度 12 位 ADC 模块。这些外设资源可用于连接和控制各类传感器、执行器与外部设备，完整实现整套系统各项功能。其最小系统原理图如下：
+
+图4-1-1、4-1-2核心板电路原理图
+4.2电源电路
+4.2.1舵机电源
+本系统采用四路独立同步降压 DC-DC 电源作为舵机供电核心，四路电源电路结构完全一致，相互独立输出，能够为多路舵机提供大电流、低纹波的稳定供电。该降压芯片支持大电流输出，具备内部过流保护、过压保护、过热保护功能，可应对舵机瞬间大电流冲击的工况。每路电源配置 4.7μH 功率电感，输入端配置大容量电解电容搭配多颗陶瓷电容组合滤波，抑制电源输入侧的电压尖峰与噪声；输出端同样采用大容量电解电容并联多颗陶瓷电容，实现输出纹波抑制，保障舵机工作时电压稳定。
+每路电源均配置分压电阻反馈网络，通过电阻分压设置输出电压，适配舵机额定工作电压；同时芯片使能引脚、电源良好指示引脚配套外围电阻，可实现电源使能控制与电源状态监测。四路独立电源相互隔离，各路舵机负载之间互不干扰，避免多路舵机同时动作产生的大电流互相串扰，防止电压跌落。该电源模块可用于多路舵机等大功率执行机构的供电，满足舵机频繁启停、瞬间大电流拉载的使用场景，保障整套执行机构稳定可靠运行。
+
+图4-2-1舵机电源电路原理图
+4.2.2 5V电源输出电路
+本系统采用同步降压 DC-DC 芯片实现 5V 电源输出，芯片内置过流、过压、过热保护，为主控、传感器等外设提供供电。输入端增加防反接保护，搭配多组电容滤波，配合 4.7μH 功率电感完成电压转换。通过 FB 分压电阻配置 5V 输出电压，EN 引脚支持主控使能控制，PG 引脚反馈电源状态。输出端采用电解与陶瓷电容并联，降低输出纹波；同时设置状态指示 LED，直观反映电源工作状态。模块可适应负载动态变化，保障系统数字电路稳定运行。
+
+图4-2-2 5V电源输出电路原理图
+4.2.3 3.3V电源输出电路
+采用 RT9013-33GB 线性 LDO 芯片，将 5V 电压转换为稳定 3.3V，为 CYT4BB7 主控内核及外设供电。输入端并联 10μF 与 100nF 电容滤除电源噪声，芯片 EN 引脚直接接 5V 持续使能。输出端配置 10μF、100nF 滤波电容，搭配 SMF3.3A 稳压管做输出保护，抑制浪涌尖峰。电路增设电源指示 LED，直观反馈 3.3V 电源工作状态。该 LDO 输出噪声低，外围电路简洁，可为主控芯片提供干净稳定的核心供电。
+
+图4-2-3 3.3V电源输出电路原理图
+4.3自制灯板
+电路为多颗 5050 RGB LED，采用共阳极架构，LED 阳极统一接 5V，红、绿、蓝三色负极分别由三路 SS8050 NPN 三极管做低侧驱动开关。三极管基极串联 1kΩ 限流电阻接入主控 IO，搭配 4.7kΩ 下拉电阻，IO 悬空时保证三极管可靠关断；三色支路分别串联 220Ω/330Ω 限流电阻，限制 LED 工作电流。U1 为 XH2.54-6P 接插件，引出控制信号、5V 与 GND，支持外接拓展 RGB 灯带。主控 IO 输出高电平时三极管导通，对应颜色 LED 点亮；输出 PWM 信号调节占空比，可实现多色混光，用于设备状态指示与灯光效果展示。
+
+图4-3-1 自制灯板电路原理图
+4.4 按键、开关电路
+电路包含 4 位拨码开关 与 4 路独立按键。3V3 通过 4.7kΩ 电阻作为上拉，开关 / 按键导通时引脚被拉至 GND；每条通路串联 470Ω 限流电阻，保护单片机 IO。拨码开关 SW1 对应 IO 21.6、21.5、22.5、22.6，按键对应 IO 20.3、20.2、20.1、20.0。单片机读取引脚电平，即可识别拨码档位与按键触发状态，用于模式选择、参数配置与人机交互。
+
+图4-4-1 按键、开关电路原理图
+4.5陀螺仪与恒温加热部分
+陀螺仪单元采用 LSM6DSRTR 芯片，芯片供电为 3V3，搭配 100nF 电源滤波电容 C73。I2C 通信引脚 SDA、SCL、CS、SDO/SA0 连接对外 FPC 接口，INT1、INT2 为中断输出引脚。LED2 为状态指示灯，经 4.7kΩ 限流电阻接 3V3，用于指示模块工作状态。
+恒温加热电路包含 NTC 热敏电阻 U36 与 AO3400 NMOS 管 Q2。NTC 接到主控 ADC0_P08_1 引脚，采集当前温度；主控输出 PWM_P09_0 信号，经 10kΩ 电阻 R3 驱动 MOS 管。MOS 管导通控制加热电阻 R9、R10 工作，通过 PWM 占空比调节加热功率，实现陀螺仪模组恒温，减小温度漂移对姿态采样的影响。L1 为磁珠，用于 FPC 接口电源滤波，抑制电源噪声。
+
+图4-5-1 陀螺仪与恒温加热电路原理图
+4.6蜂鸣器电路
+使用SS8050 NPN 三极管，作为开关驱动 2.7kHz 有源蜂鸣器 BUZZER1。主控 IO (19.4) 输出控制信号，经 1kΩ 电阻 R18 接入三极管基极；R19 为 4.7kΩ 下拉电阻，IO 悬空时保证三极管可靠关断。R17 (10Ω) 为蜂鸣器限流电阻；D3 (1N4148W) 续流二极管，吸收蜂鸣器断电产生的反向感应电动势，保护三极管。IO 输出高电平时三极管导通，蜂鸣器鸣响；输出低电平则停止发声，用于状态提示、报警提醒。
+
+图4-6-1 蜂鸣器电路原理图
+4.7磁编电路
+本电路采用 TLE5012BE1000 磁编码器芯片，电源输入端配置 SMF3.3A 稳压管做 ESD 防护，搭配 10μF 与 100nF 电容组成电源滤波网络，滤除供电噪声，保证芯片供电稳定。芯片通过 SPI 总线与主控进行通信，SCK、CS、MOSI 信号串联限流电阻，MISO 设置 470Ω 上拉电阻，提升信号完整性，抑制长线传输干扰。外接 6P 接插件对外引出 SPI 全部信号与供电、地引脚，方便与外部磁码盘结构对接，实现角度位置数据采集，为主控提供角度反馈信息。
+
+图4-7-1 磁编电路原理图
+4.8无刷电调驱动电路
+主控以CYT2BL3系列单片机作为核心控制器，外部配置16MHz晶振提供系统工作时钟，内核电源、模拟参考电源分别配置多组去耦电容，滤除电源噪声，保障主控稳定运行。芯片引出PWM控制信号输出至驱动芯片，同时引出SPI通信接口外接编码器，获取电机转速位置信息；配置复位按键与模式按键，实现系统复位与功能模式切换；预留调试下载接口，用于程序烧录与在线调试，状态指示灯通过IO口进行控制，直观反馈系统运行状态。主控同时引出UART串口，用于和外部设备的数据交互，完成整机控制逻辑运算、信号采集与电机驱动输出。
+
+图4-8-1、4-8-2无刷电调驱动电路原理图
+第五章：软件开发设计说明
+软件整体采用主循环感知层 + 1ms PIT 中断控制层分层架构。主循环负责图像采集、人机交互；PIT 定时器中断作为实时控制核心，完成 IMU 读取、姿态解算、多周期 PID 运算、舵机与电机驱动。
+5.1软件逻辑流程图
+
+图5-1-1 软件逻辑流程图
+5.2陀螺仪姿态感知部分
+5.2.1核心代码片段
+imu660rb_get_acc(); // 读取加速度计
+imu660rb_get_gyro(); // 读取陀螺仪                                  
+quaternion_module_calculate(&roll_balance_cascade);  // 四元数解算姿态角
+get_yaw();// 更新航向角                                           
+5.2.2模块说明
+系统使用 LSM6DSRTR 六轴 IMU，在 1ms 中断内高频采集加速度、原始角速度数据，通过四元数算法融合解算，得到横滚角 rol、俯仰角 pit、偏航角 yaw。
+1.横滚、俯仰角送入平衡串级 PID，维持车身直立平衡；
+2.Z 轴陀螺仪角速度作为转向内环反馈，同时叠加至电机差速输出，抑制转向漂移；
+3.姿态角同步送入car_state_calculate()进行安全判断：
+if(func_abs(roll_balance_cascade.posture_value.rol) > SAFETY_ANGLE_THRESHOLD ||    func_abs(roll_balance_cascade.posture_value.pit) > SAFETY_ANGLE_THRESHOLD)
+{
+    jump_flag = 0;
+    run_state = 0;                      // 停止运行
+roll_balance_cascade.angular_speed_cycle.i_value = 0;
+   pitch_balance_cascade.angle_cycle.i_value = 0;
+}
+当车身倾斜角度超过安全阈值，立刻切断动力，同时清空 PID 积分，防止倾覆后再次冲击硬件。
+5.3视觉摄像头图像处理部分
+5.3.1核心逻辑说明
+总钻风灰度摄像头运行于主循环感知层，采用 DMA 方式采集图像。
+5.3.2模块说明
+图像处理放置在主循环，不占用中断实时周期，避免图像运算波动破坏控制时序。
+图像运算输出赛道偏差LT_ERROR，作为转向串级 PID 外环目标值，实现循迹功能。同时主循环驱动 TFT 显示屏，实时打印图像、姿态角、PID 参数，支持现场按键调参。
+视觉输出偏差LT_ERROR持续提供给 50ms 周期的转向 PID，引导车辆沿赛道行驶、识别任务区域。
+5.4 舵机控制部分
+5.4.1核心代码片段
+if(run_state == 1) // 运行状态
+{
+    if(jump_flag == 0) // 正常行驶模式
+    {
+        steer_control(&steer_1, func_limit_ab(steer_target_offset[0] - steer_location_offset[0], -10, 10));
+        steer_control(&steer_2, func_limit_ab(steer_target_offset[1] - steer_location_offset[1], -10, 10));
+        steer_control(&steer_3, func_limit_ab(steer_target_offset[2] - steer_location_offset[2], -10, 10));
+        steer_control(&steer_4, func_limit_ab(steer_target_offset[3] - steer_location_offset[3], -10, 10));
+    }
+    else // 跳跃时序状态机
+    {
+        jump_time++;
+        if(jump_time < jump_time_num[0])                  // 阶段1:蓄力
+        {
+            steer_duty_set(&steer_1, steer_1.center_num + 2250);
+            steer_duty_set(&steer_2, steer_2.center_num - 2250);
+            steer_duty_set(&steer_3, steer_3.center_num - 2250);
+            steer_duty_set(&steer_4, steer_4.center_num + 2250);
+        }
+        else if(jump_time < (jump_time_num[0] + jump_time_num[1]))      // 阶段2:收腿
+        {
+            steer_duty_set(&steer_1, steer_1.center_num + 2100);
+            steer_duty_set(&steer_2, steer_2.center_num - 2100);
+            steer_duty_set(&steer_3, steer_3.center_num - 2100);
+            steer_duty_set(&steer_4, steer_4.center_num + 2100);
+        }
+        else if(jump_time < (jump_time_num[0] + jump_time_num[1] + jump_time_num[2]))   // 阶段3:预落地
+        {
+        }
+        else if(jump_time < (jump_time_num[0] + jump_time_num[1] + jump_time_num[2] + jump_time_num[3])) // 阶段4:缓冲
+        {
+            steer_control(&steer_1, -10);
+            steer_control(&steer_2, +10);
+            steer_control(&steer_3, +10);
+            steer_control(&steer_4, -10);
+        }
+        else
+        {
+            jump_flag = 0;
+            jump_time = 0;
+        }
+    }
+}
+else // 停止状态，舵机缓慢回中
+{
+    steer_control(&steer_1, func_limit_ab(steer_1.center_num - steer_1.now_location, -1, 1) * steer_1.steer_dir);
+    steer_control(&steer_2, func_limit_ab(steer_2.center_num - steer_2.now_location, -1, 1) * steer_2.steer_dir);
+    steer_control(&steer_3, func_limit_ab(steer_3.center_num - steer_3.now_location, -1, 1) * steer_3.steer_dir);
+    steer_control(&steer_4, func_limit_ab(steer_4.center_num - steer_4.now_location, -1, 1) * steer_4.steer_dir);
+}
+5.4.1模块说明
+四路 BDS300 舵机作为轮腿执行机构，分为三种工作模式：
+停机模式：舵机缓慢向中位回归，限幅小增量，防止机械冲击；
+正常行驶模式：采用对角线差动舵机分配策略，对舵机输出加入低通滤波，并引入俯仰角补偿系数，车身倾斜时自动削弱舵机动作，提升越障稳定性；
+跳跃模式：时序状态机实现四阶段动作：蓄力→收腿腾空→预落地姿态调整→落地缓冲。腾空结束后自动清除跳跃标志，切回正常转向控制。
+5.5 电机驱动控制部分
+5.5.1核心代码片段
+void car_motor_control(void)
+{
+    if(run_state)
+    {
+        int16 base_duty = (int16)roll_balance_cascade.angular_speed_cycle.out;
+        base_duty = func_limit_ab(base_duty, -BALANCE_DUTY_MAX, BALANCE_DUTY_MAX);
+        
+        // 电机差速计算公式
+        left_motor_duty  = base_duty - turn_pwm + imu660rb_gyro_z / JGEOYXUE;
+        right_motor_duty = base_duty + turn_pwm - imu660rb_gyro_z / JGEOYXUE;
+        left_motor_duty = func_limit_ab(left_motor_duty, -TURN_DUTY_MAX, TURN_DUTY_MAX);
+        right_motor_duty = func_limit_ab(right_motor_duty, -TURN_DUTY_MAX, TURN_DUTY_MAX);
+    }
+    else
+    {
+        left_motor_duty  = 0;
+        right_motor_duty = 0;
+    }
+    small_driver_set_duty(-left_motor_duty, right_motor_duty);
+}
+5.5.2模块说明
+无刷电机由电调驱动，依靠差速实现前进、转向。
+输出量组成解析：
+base_duty：平衡角速度环 PID 输出，维持车体直立的基础动力；
+2、turn_pwm：转向串级 PID 输出，实现左右轮差速转向；
+3、imu660rb_gyro_z //JGEOYXUE：Z 轴陀螺仪角速度补偿项，抑制转向时航向漂移；
+所有占空比进行上下限幅，避免电机功率饱和。车辆停止时直接清零占空比。
+5.6 多周期 PID 调度模块（PIT 1ms 中断）
+5.6.1核心代码片段
+// 持续执行：平衡角速度内环PID
+pid_control(&roll_balance_cascade.angular_speed_cycle, roll_balance_cascade.angle_cycle.out, (imu660rb_gyro_y));
+if(sys_times % 5 == 0) // 5ms：横滚、俯仰角度外环PID
+{
+    pid_control(&roll_balance_cascade.angle_cycle, 0 - roll_balance_cascade.posture_value.mechanical_zero, (roll_balance_cascade.posture_value.pit));
+    pid_control(&pitch_balance_cascade.angle_cycle, 0.0f - pitch_balance_cascade.posture_value.mechanical_zero, -(roll_balance_cascade.posture_value.rol));
+}
+if(sys_times % 20 == 0) // 20ms：速度环PID
+{
+    car_speed_difference = (motor_value.receive_left_speed_data - motor_value.receive_right_speed_data) / 2;
+    pid_control(&roll_balance_cascade.speed_cycle, S_Speed, (float)car_speed_difference);
+}
+if(sys_times % 50 == 0) // 50ms：转向串级PID
+{
+    float gyro_z_dps = imu660rb_gyro_transition((float)imu660rb_gyro_z - GyroOffset.Zdata);
+    pid_control(&roll_balance_cascade.turn_pid, LT_ERROR, 0);
+    pid_control(&roll_balance_cascade.turn_gyro_pid, roll_balance_cascade.turn_pid.out, gyro_z_dps);
+    turn_pwm = roll_balance_cascade.turn_gyro_pid.out;
+}
+5.6.2模块说明
+基于sys_times系统时标实现多速率 PID 调度，不同环路采用不同运行周期，平衡运算负载与控制实时性：
+	1ms 持续执行：平衡角速度内环，响应速度最快；
+	5ms 周期：横滚、俯仰角度外环，构成平衡串级 PID；
+	20ms 周期：速度环 PID，稳定行驶速度；
+	50ms 周期：转向串级 PID，接收视觉偏差LT_ERROR完成循迹转向。
+5.7 车辆自适应状态管理部分
+5.7.1核心逻辑说明
+// PID软启动：前500ms参数渐变
+if(sys_times < SOFT_START_DURATION)
+{
+    roll_balance_cascade.angle_cycle.p = roll_balance_cascade_resave.angle_cycle.p * 
+        (0.2f + (float)sys_times / SOFT_START_DURATION * 0.8f);
+    roll_balance_cascade.speed_cycle.p = roll_balance_cascade_resave.speed_cycle.p * 
+        (0.2f + (float)sys_times / SOFT_START_DURATION * 0.8f);
+    roll_balance_cascade.angle_cycle.i_value = 0;
+}
+else
+{
+    roll_balance_cascade.angle_cycle.p = roll_balance_cascade_resave.angle_cycle.p;
+    roll_balance_cascade.speed_cycle.p = roll_balance_cascade_resave.speed_cycle.p;
+}
+// 跳跃模式自动降低PID参数
+if(jump_flag)
+{
+    roll_balance_cascade.angle_cycle.p = roll_balance_cascade_resave.angle_cycle.p * 0.5f;
+    roll_balance_cascade.speed_cycle.p = roll_balance_cascade_resave.speed_cycle.p * 0.5f;
+    roll_balance_cascade.angle_cycle.i_value = 0;
+    pitch_balance_cascade.angle_cycle.i_value = 0;
+}
+else if(spin_active )
+    JGEOYXUE = 4;
+5.7.2模块说明
+函数实现整车自适应参数调节与安全控制：
+	软启动机制：上电前 500ms，P 参数由 20% 平滑提升至额定值，消除起步冲击，防止起步翻车；
+	跳跃自适应降参：腾空阶段降低平衡 PID 增益，清空积分项，规避陀螺仪漂移造成失控；
+	多工况参数切换：正常行驶、原地自旋、跳跃三种工况自动切换陀螺仪补偿系数JGEOYXUE；
+倾覆保护：倾角超限立刻停机，清空所有 PID 积分。
+第六章：系统开发环境与分阶段调试
+6.1 系统开发环境
+6.1.1 硬件开发环境
+主控芯片：CYT4BB7
+下载调试工具：J-Link 仿真器
+硬件绘图软件：嘉立创EDA（原理图、PCB 绘制）、SolidWorks（机械结构建模）	
+测试仪器：直流稳压电源、示波器、万用表等
+6.1.2 软件开发环境
+编程软件：IAR
+编程语言：C 语言
+图像配套工具：摄像头上位机、串口调试助手
+通信调试：串口助手，用于打印姿态、PID、控制参数
+6.2 系统分阶段调试
+采用模块化逐级调试思路，先单元模块，再联合调试，最后整车联调。
+阶段 1：底层硬件与驱动单独调试
+依次调试各外设底层驱动，保证硬件基础可用：
+系统时钟、串口驱动调试；
+IMU 陀螺仪读写测试，验证原始数据读取、姿态解算输出；
+四路舵机驱动调试，验证舵机位置控制、极限行程；
+无刷电机电调驱动调试，测试正反转、占空比输出范围；
+摄像头图像采集、DMA 图像传输调试。
+调试目标：所有硬件能够独立正常响应指令，无通信异常。
+阶段 2：控制算法单元调试
+硬件驱动正常后，单独调试控制逻辑：
+姿态解算验证：观察横滚角、俯仰角输出是否平稳无明显漂移；
+平衡串级 PID 参数整定，实现车体直立平衡；
+舵机逻辑调试：正常转向动作、跳跃时序动作测试；
+电机差速控制调试，测试转向响应；
+调试目标：车辆保护逻辑测试：倾角超限自动停机功能验证。
+阶段 3：视觉模块联合调试
+主循环图像采集、图像处理调试；
+赛道特征识别，验证横向偏差LT_ERROR输出稳定；
+调试目标：将视觉偏差接入转向 PID，实现基础循迹。
+阶段 4：整车系统联调与任务调试
+所有模块整合，进行整车综合调试：
+		主循环感知层与 1ms 中断控制层协同运行测试；
+		PID 自适应功能测试：上电软启动、跳跃模式参数自动切换；
+		完整任务测试：绕桩循迹、越障跳跃等赛事动作；
+调试目标：长时间稳定性测试，排查卡顿、失控、死机等问题。
+6.3 调试过程遇到的典型问题与解决思路
+1、陀螺仪数据漂移：优化初始校准，增加滑动均值滤波；
+2、车体起步抖动：启用 PID 上电软启动机制；
+3、转向循迹漂移：增加 Z 轴陀螺仪角速度补偿；
+4、图像运算干扰平衡控制：将图像处理放置主循环，实时控制放在定时器中断；
+5、跳跃落地失控：跳跃工况自动降低平衡 PID 增益，清空积分项
+第七章：结论
+7.1 工作总结
+本文完整完成了轮腿式智能车的整体设计、硬件搭建、软件编程与整车调试工作。机械结构采用轻量化轮腿布局，适配赛道越障与高速行驶需求；硬件电路完成多级电源系统、传感器接口、执行器驱动及拓展外设设计，电路稳定性强、抗干扰能力优异。软件系统采用分层架构设计，主循环负责图像采集与人机交互，定时器中断负责高频姿态解算与运动控制，保证系统运行稳定、逻辑清晰、实时性高。
+控制算法上，本车采用多周期串级PID控制方案，分别实现角度平衡、角速度闭环、速度闭环与转向闭环。同时加入上电软启动、倾角安全保护、跳跃自适应参数调整、Z轴陀螺仪航向补偿等优化策略，有效提升车辆起步平顺性、行驶稳定性与越障容错能力。视觉模块依靠总钻风摄像头完成赛道特征提取，输出稳定横向偏差，为车辆循迹行驶提供可靠输入。最终整车可稳定完成绕桩循迹、姿态平衡、分段跳跃越障等全部赛事核心任务。
+7.2 创新与亮点
+本次设计采用独立多路舵机电源方案，有效避免多舵机同步动作带来的电压跌落与串扰问题；针对陀螺仪漂移问题设计恒温加热电路，大幅提升姿态采样稳定性。软件层面采用多速率PID分时调度，在保证控制精度的同时降低主控运算压力。针对轮腿跳跃工况，设计四段式时序跳跃状态机并搭配自适应降参逻辑，解决腾空、落地阶段车体失控问题。同时搭载自定义灯板、按键与拨码多模式切换，人机交互便捷，调试效率高。
+7.3 现存不足
+车辆在高速连续弯道场景下，视觉识别容错性仍有提升空间；越障落地瞬间仍存在小幅姿态波动；未完全引入速度前馈算法，极限工况下响应速度仍有优化余地。同时复杂光影变化场景下，单一灰度视觉识别抗干扰能力有限。
+7.4 未来优化方向
+后续可引入图像预处理滤波与自适应阈值算法，提升复杂光照下赛道识别稳定性；增加速度前馈与姿态预测算法，进一步提升弯道与越障动态响应效果；优化跳跃时序参数，提升落地缓冲稳定性；
+同时可加入更多传感器融合策略，进一步提升整车定位精度与环境适应性；同时还可以对整车车身架构进行迭代优化，重新规划 PCB 电路板尺寸与器件摆放位置，优化整车重心分布，减少线缆杂乱带来的电磁干扰，提升车体结构紧凑度与机械抗冲击能力。
+在动力方案上，考虑将当前四舵机搭配两无刷电机的驱动方案升级为六无刷电机驱动架构，进一步提升车体动力储备，增强轮腿机构的地形适应与越障能力，更好应对台阶、颠簸路面等复杂赛道工况。
+第八章 车模主要参数
+8.1 车模基本技术参数说明
+
+表8.1 车模基本技术参数
+附录一：核心电路原理图：
+
+
+
+附录二：主要源代码：
+void pit_call_back(void)
+{
+    sys_times++;                                             // 系统计时累加
+      
+    // 更新周期状态标记
+    for (int i = 0; i < 20; i++)
+    {
+        system_time_state[i] = (sys_times % (i + 1) == 0 ? 1 : system_time_state[i]);
+    }
+      
+    imu660rb_get_acc();                                      // 读取加速度计
+    imu660rb_get_gyro();                                     // 读取陀螺仪
+    quaternion_module_calculate(&roll_balance_cascade);       // 四元数解算姿态角
+        get_yaw();                                           // 10ms更新航向角
+    if(sys_times % 20 == 0)
+    {
+        // 20ms: 计算左右轮速度差，速度环PID控制
+        car_speed_difference = (motor_value.receive_left_speed_data - motor_value.receive_right_speed_data) / 2;
+        pid_control(&roll_balance_cascade.speed_cycle, S_Speed, (float)car_speed_difference);
+    }
+    
+    if(sys_times % 5 == 0)
+    {
+        // 5ms: 角度环PID控制
+        // 横滚(pit)角度环: 目标=机械零点, 反馈=-pit
+        pid_control(&roll_balance_cascade.angle_cycle, 0 - roll_balance_cascade.posture_value.mechanical_zero, (roll_balance_cascade.posture_value.pit));
+        // 俯仰(rol)角度环: 目标=机械零点, 反馈=rol
+       pid_control(&pitch_balance_cascade.angle_cycle, 0.0f - pitch_balance_cascade.posture_value.mechanical_zero, -(roll_balance_cascade.posture_value.rol));//改过
+    }
+    
+    if(sys_times % 50 == 0)
+    {
+        // 50ms: 转向环PID控制(角度环+角速度环串级)
+        float gyro_z_dps = imu660rb_gyro_transition((float)imu660rb_gyro_z - GyroOffset.Zdata);  // Z轴角速度(deg/s)
+
+        pid_control(&roll_balance_cascade.turn_pid, LT_ERROR, 0);                              // 转向角度环
+        pid_control(&roll_balance_cascade.turn_gyro_pid, roll_balance_cascade.turn_pid.out, gyro_z_dps);  // 转向角速度环
+        turn_pwm = roll_balance_cascade.turn_gyro_pid.out;
+    }
+
+    // 角速度环PID: 目标=角度环输出, 反馈=Y轴陀螺仪
+    pid_control(&roll_balance_cascade.angular_speed_cycle, roll_balance_cascade.angle_cycle.out, (imu660rb_gyro_y));
+      
+    car_state_calculate();   // 检测车身状态
+    car_steer_control();     // 舵机控制
+    car_motor_control();     // 电机控制
+}
+
+===== TABLE 1 =====
+项目 | 单车
+车模长/宽/高(cm) | 17.5/21/29
+电路功耗 | 2.16W~50.4W
+所有电容容量 | 689.1uF
+伺服电机个数 | 0
+传感器种类与个数 | 摄像头1个 （总钻风） 陀螺仪1个 （LSM6DSRTR） 编码器2个 （TLE5012BE1000）
+赛道信息收集频率 | 50Hz
+整车重量（不含电池） | 1065.1g
+赛道信息检测精度 | 88%

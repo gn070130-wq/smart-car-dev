@@ -1,0 +1,874 @@
+
+
+
+
+
+第二十一届全国大学生智能汽车竞赛
+技 术 报 告
+空地协同信标搜寻系统设计
+
+
+
+
+
+关于技术报告和研究论文使用授权的说明
+本人完全了解全国大学生智能汽车竞赛关于保留、使用技术报告和研究论文的规定，即：参赛作品著作权归参赛者本人，比赛组委会可以在相关主页上收录并公开参赛作品的设计方案、技术报告以及参赛模型车的视频、图像资料，并将相关内容编纂收录在组委会出版论文集中。
+参赛队员签名：               
+
+带队教师签名：                                                                 日期：2026.08.17
+
+
+摘  要
+本项目面向第二十一届全国大学生智能汽车竞赛“飞跃雷区”任务，构建由空中飞行器和地面麦克纳姆轮小车组成的空地协同系统。飞行器采用飞控主板与后置视觉板双主控协同：飞控主板的 CM7_0 承担状态估计、位置与速度控制、姿态控制、高度控制、双摄仲裁及电机混控，CM7_1 承担前相机视觉、后置板链路接收、显示和调试遥测；后置视觉板的 CM7_1 独立完成后相机采集与识别，并通过 UART3 向飞控主板发送视觉结果和图像。地面小车使用独立 CYT4BB7 主控完成全向运动与任务控制。各板内部通过共享内存协调双核任务，板间通过 UART 链路完成视觉协同与空地协同。
+飞行器感知链由 IMU、ToF测距、光流和前后双视觉组成。后置视觉板把后相机图像旋转到统一坐标后输出结构化目标结果；飞控主板依据序号和本地时间判断前后观测的新鲜度，在前、后摄像头之间进行目标所有权仲裁、丢失宽限和坐标锁存，再将统一的信标—小车方向提供给飞行控制与地面小车。小车采用 B 型麦克纳姆轮运动学、四路编码器反馈、轮速 PID、IMU航向估计和任务状态机。系统进一步补入整机实拍、机架与电机产品参数、打印件模型及四类自制PCB正面图。
+关键词：飞跃雷区；空地协同；CYT4BB7；视觉跟踪；光流融合；麦克纳姆轮
+
+
+目  录
+关于技术报告和研究论文使用授权的说明	i
+摘  要	iii
+目  录	v
+主要符号与缩略词表	vii
+第一章 引言	1
+任务背景与设计目标	1
+系统组成与总体数据流	1
+软件分层、双核分工与双主控协同	2
+第二章 机械系统设计	5
+飞行器机械结构	5
+地面小车机械结构	6
+机械设计校核与装配	7
+第三章 硬件与电气系统	9
+主控平台、双核与双主控协同	9
+飞行器硬件接口	9
+地面小车硬件接口	12
+通信、电源与安全设计	15
+第四章 飞行器软件设计	17
+软件总体流程	17
+惯性姿态估计	17
+ToF高度处理与高度控制	18
+光流解码与平面状态融合	19
+双主控视觉处理与双摄仲裁	20
+串级控制与电机混控	21
+视觉追踪与保护逻辑	22
+第五章 地面小车软件设计	25
+小车软件架构	25
+B型麦克纳姆轮运动学	25
+四轮轮速闭环与里程估计	26
+IMU导航与航向控制	27
+精确转向控制	27
+信标任务状态机与安全回退	28
+第六章 系统联调与实验	31
+联调环境与观测量	31
+飞行器参数整定	31
+小车轮速与航向整定	32
+空地通信与任务联调	33
+实验结果与问题记录	34
+第七章 结论	35
+工作总结	35
+存在问题与改进方向	35
+附录 A 核心程序源码	i
+
+
+主要符号与缩略词表
+本报告采用的主要缩略词如下；其余符号在首次出现处说明。
+
+引言
+任务背景与设计目标
+“飞跃雷区”系统需要在受限场地内完成空中感知、地面运动和空地协同。当前工程将任务拆分为飞行器自主稳定与目标观测、地面小车全向运动与信标任务、空地信息交换和调试观测四类功能。软件设计强调感知、估计、控制、执行和任务管理分层，便于分别调参并在观测失效时进入受控状态。 本报告的组成与编排按照第二十一届竞赛技术报告要求细则执行[1]。
+系统组成与总体数据流
+系统由空中飞行器、地面四轮麦克纳姆小车、板间视觉链路、空地数据链和调试观测端组成。飞行器内部包含飞控主板和后置视觉板：后置视觉板负责后相机采集与识别，飞控主板负责前相机处理、后板数据接收、双摄仲裁和飞行闭环。飞控主板通过 UART3 与后置视觉板双向交换视觉结果、图像请求和运行配置，再通过共享内存把视觉结果交给 CM7_0。飞行器与小车通过任务串口交换目标、姿态和动作指令，并分别输出调试遥测。
+
+图 1.1 空地协同系统总体架构
+软件分层、双核分工与双主控协同
+表 1.1 双核任务分工与双主控协同职责
+本系统的技术特点体现在双主控分工、空地协同、分层控制和视觉有效性门控等实现机制。
+分层协同架构：飞控板内部将高频闭环与视觉/遥测分配到 CM7_0 和 CM7_1；后置视觉板独立处理后相机；两块飞行器主控通过 UART3 协同并由飞控板统一仲裁。
+多源状态融合：将 IMU、ToF、光流和视觉信息分别用于姿态、高度、平面运动和目标相对位置估计。
+分层控制与保护：飞行器采用位置—速度—姿态串级控制，小车采用运动学—轮速—航向分层控制，并设置有效性判断、限幅和丢失处理。
+空地任务闭环：飞行器提供目标与姿态信息，小车依据任务状态机选择跟踪、转向、后退或安全停止等动作。
+
+机械系统设计
+飞行器机械结构
+
+实物装配采用四旋翼布局，并在四个旋翼外侧设置环形防护结构。飞控与供电相关板卡沿机体中轴布置，线束集中连接。参数资料给出的机架外廓尺寸约为303 mm×303 mm，机架质量约195 g；整机起飞重量 740 g。
+
+
+
+图 2.1 飞行器实物三视图（俯视、前视、侧视）
+
+动力系统采用RS2205无感无刷电机。参数为12N14P、2300 KV，支持3S～4S锂电池；电机外径约27.9 mm、长度约31.7 mm、轴径约3 mm，单个电机标称质量约29 g。 “最大推力774 g”。
+
+飞行器机械系统需要同时安装飞控主板、后置视觉板、动力系统、IMU、ToF、光流和前后相机。当前代码确认后置视觉板为独立控制板，后相机物理倒置，软件在处理或显示前完成180°坐标统一；两板之间由高速UART线缆和公共地连接。
+地面小车机械结构
+
+实物采用 M 车模四轮麦克纳姆轮底盘，四个驱动轮分布于车体四角。电池、主控与通信模块集中布置于车体上层，前部 V 形灯带由独立支架固定，线束沿车体中部汇集。
+
+
+
+图 2.2 地面小车实物三视图（俯视、前视、侧视）
+地面平台采用四轮麦克纳姆轮结构。四个车轮建立独立的轮速与编码器对象，并实现 Type_A 与 Type_B 两种辊子布置，其中本文方案采用 B 型布置。该结构可将车体纵向、横向和平面转动速度分解为四轮目标角速度，为全向运动和快速姿态调整提供基础。
+车模底盘为注塑开模一体化结构，外廓尺寸为 282 mm×210 mm×63 mm；车轮直径 63 mm、宽度 32.5 mm。四个 380 有刷直流电机通过模数 0.6 齿轮驱动，从动齿轮为 70 齿，底盘预留 mini 编码器安装孔。根据车模底板尺寸图，轮距（左右轮中心距）为 120 mm，轴距（前后轴中心距）为 198 mm。车模标称质量约 1306.5 g，整车带电池净重 2290 g。
+机械设计校核与装配
+
+针对电池、灯带、电调和飞控主板，系统设计了小车电池仓、V形灯带支架、电调安装槽和飞控主板安装板等打印件。电池仓采用围挡与通孔结构兼顾约束和散热；灯带支架维持V形几何；电调安装槽和飞控主板安装板用于限制板卡位置并为紧固与走线预留空间。本文不对打印材料、层高、填充率和尺寸公差过多赘述，仅说明结构用途。
+
+
+
+图 2.3 主要打印件结构模型
+
+硬件与电气系统
+主控平台、双核与双主控协同
+飞控主板、后置视觉板和地面小车工程均基于 CYT4BB7 逐飞开源库平台。飞控主板内部由 CM7_0 承担确定周期的控制与双摄仲裁，CM7_1承担前相机视觉、后置板UART3接收、显示和遥测；后置视觉板当前由 CM7_1 完成后相机采集、识别和链路发送。飞控板内部使用共享数据区交换视觉与控制状态，并另设独立64字节视觉时钟块，避免双核时钟差和缓存行共享造成新鲜度误判。双主控之间则使用带序号、时间戳和CRC32的UART3帧传输结果。
+飞行器硬件接口
+
+飞行器端自制硬件由飞机主板与四路电调板构成。飞机主板主要控制芯片为CYT4BB7，承担双核飞行控制与接口管理；四路电调板主要控制芯片为CYT2BL3。飞机主板正面丝印可见双主控插座、屏幕、无线串口、光流、ToF、前后视觉及12 V/3.3 V电源接口。
+
+
+
+图 3.1 飞行器主板PCB正面
+
+
+
+图 3.2 飞行器四路电调PCB正面
+表 3.1 飞行器硬件接口与状态
+地面小车硬件接口
+
+小车端自制硬件由车主板和电驱板构成。车主板主要控制芯片为CYT4BB7，电驱板主要驱动芯片为RIGHT8701。车主板正面丝印可见四路编码器、PWM、陀螺仪、无线串口及5 V等接口，布局与四轮独立驱动和航向估计需求一致。
+
+
+
+图 3.3 地面小车主板PCB正面
+
+
+
+图 3.4 地面小车电驱PCB正面
+表 3.2 地面小车硬件接口与参数说明
+通信、电源与安全设计
+
+
+图 3.5 双主控视觉协同与空地通信数据流
+系统包含两类UART协同链路：UART3连接飞控主板与后置视觉板，采用3 Mbit/s、8N1，传输二值图、按需灰度图和结构化视觉结果，并反向传输配置与灰度请求；空地任务串口连接飞行器与小车，交换目标坐标、姿态和动作指令。WiFi SPI主要用于图像和运行状态调试。后置视觉接收端包含帧同步、CRC32校验、序号缺口统计、接收超时复位、双缓冲和500 ms离线判断；控制端还按本地主循环时钟判断结果新鲜度。
+
+飞行器软件设计
+软件总体流程
+飞控主板 CM7_0 进入 flight_app_run 主流程，按周期完成传感器更新、状态估计、双摄仲裁、控制器计算和执行器输出；飞控主板 CM7_1 并行完成前相机视觉、后置视觉板 UART3 接收、共享结果发布、显示和WiFi SPI遥测。后置视觉板 CM7_1 独立采集后相机，完成同类目标识别，并向飞控主板发送结构化视觉结果或诊断图像。主链最终把统一后的目标观测转换为位置、速度、姿态和电机控制量。
+飞行器软件主循环由 flight_app.c 的固定周期调度驱动。CONTROL_PERIOD_MS 为 5 ms 时，传感器读取、姿态更新、ToF 更新、视觉输入、串级控制和电机输出在同一周期内按“采样—估计—控制—执行”顺序完成；CM7_0 负责实时控制，CM7_1 负责图像/遥测并通过共享结构交换结果。
+/* flight_app.c：固定周期控制入口（摘录） */
+imu_process_update(CONTROL_DT_S);
+    // 读取 IMU 并更新姿态状态，输入为控制周期 dt
+tof_update(CONTROL_DT_S, roll_angle_deg, pitch_angle_deg, imu_acc_up_g);
+    // 更新 ToF 距离、滤波值和姿态投影修正值
+flight_attitude_loop_update(&attitude_input, &attitude_output);
+    // 执行横滚/俯仰姿态串级控制
+flight_altitude_loop_update(&altitude_input, &altitude_output);
+    // 执行高度—速度—加速度串级控制
+flight_mixer_apply(&attitude_output, altitude_output.thrust_duty);
+    // 将控制量混控为四路电机输出
+上述调用链中的输入是 IMU/ToF/光流/视觉误差，输出是姿态轴修正量与四路电机占空比；周期频率由代码常量决定，5 ms 对应 200 Hz。
+惯性姿态估计
+系统采用IMU660RB惯性传感器。IMU处理模块对加速度进行低通滤波，对陀螺仪进行零偏扣除、低通和死区处理；横滚角和俯仰角采用加速度倾角与陀螺积分的互补融合，偏航角主要由角速度积分获得。该结构计算量较低，适合高频姿态闭环。
+姿态估计先读取 IMU660RB 的加速度和角速度，在机体系与世界坐标系之间完成旋转，再将加速度中的重力分量扣除，供速度/位置预测和姿态环使用。
+/* flight_app.c：IMU 更新在控制周期内调用 */
+imu_process_update(CONTROL_DT_S);
+    // 读取 IMU 并更新姿态状态，输入为控制周期 dt
+/* flight_attitude_loop.c：角度误差先生成角速度目标，再进入角速度 PID */
+output->roll_rate_target_dps = pid_axis_update_pi(&roll_angle_pid, roll_error, dt_s);
+    // 角度环输出角速度目标
+output->roll_pid_out = pid_axis_update_pid_error(&roll_rate_pid, rate_error, dt_s);
+    // 代码执行语句
+离散预测可写为：p(k+1)=p(k)+v(k)Δt+0.5a(k)Δt²，v(k+1)=v(k)+a(k)Δt。代码中的 Δt 使用 CONTROL_DT_S 或输入的实际 dt_s。
+ToF高度处理与高度控制
+高度链对ToF原始测距进行跳变抑制和一阶低通，并结合当前姿态完成垂直方向投影。控制流程支持起飞爬升、目标高度保持和基础油门调整；在测距无效时，可利用垂向加速度进行短时预测并设置保护逻辑，以降低遮挡或异常值导致的突变。代码还保留基础油门自适应与诊断量。
+DL1B 的原始距离以毫米输入 tof_update。程序先进行有效性判断和滤波，再按横滚/俯仰投影修正斜距，最后加入传感器相对机体的力臂补偿，形成 tof_control_mm 供高度环使用。
+/* tof.c：斜距到垂直控制距离的核心关系 */
+roll_projection = cosf(roll_angle_rad);
+    // 横滚方向的垂直投影因子 cos(phi)
+pitch_projection = cosf(pitch_angle_rad);
+    // 俯仰方向的垂直投影因子 cos(theta)
+tof_control_mm = (tof_filtered_mm * roll_projection * pitch_projection)
+    // 横滚方向的垂直投影因子 cos(phi)
+                 + pitch_lever_arm_mm;
+    // 代码执行语句
+因此垂直高度近似为：h_z=(d_f·cosφ·cosθ)+l，d_f 为滤波后的 ToF 距离，φ/θ 为横滚/俯仰角，l 为安装力臂补偿。输入无效时，代码将 valid 置零并使用受控的参考值/保持策略，避免把异常距离直接送入控制器。
+/* flight_altitude_loop.c：高度—速度—加速度串级 */
+if(loop->height_elapsed_s >= loop->config.height_period_s)
+    target_velocity = alt_pid_update(&loop->height_pid, height_error, dt_s);
+    // 代码执行语句
+if(loop->velocity_elapsed_s >= loop->config.velocity_period_s)
+    target_accel = alt_pid_update(&loop->velocity_pid, velocity_error, dt_s);
+    // 代码执行语句
+accel_correction = alt_pid_update_asymmetric(&loop->acceleration_pid,
+                                             accel_error, dt_s);
+    // 代码执行语句
+alt_apply_slew(loop, blended_target_duty, dt_s);
+    // 代码执行语句
+高度环、速度环、加速度环分别由 height_period_s、velocity_period_s 和控制周期驱动；这些周期从配置结构读取，最终输出经过占空比斜率限制和饱和处理，再进入混控。
+光流解码与平面状态融合
+系统采用优象UP-FLOW-LC-302-3C光流模块。该型号由系统采用，并与工程采用的逐飞光流接收接口相对应。模块接收平面光流量和质量信息，利用陀螺角速度补偿机体转动分量，并依据DL1B测得高度进行尺度换算；融合模块维护平面加速度、速度和位置状态，在数据有效时修正估计，在质量不足或数据失效时对相关状态进行衰减。
+优象 UP-FLOW-LC-302-3C 的光流观测先换算为机体平面速度，再与 IMU 加速度积分预测进行有效性、时间间隔和质量门控融合；视觉或光流失效时由代码的 leak/guard 分支逐步释放而不是瞬时跳变。
+/* flight_speed_loop.c / flight_position_loop.c：位置误差到速度目标 */
+output->target_speed_x_cm_s = pid_axis_update_pi(&flow_x_pos_pid,
+                                                   input->error_x, input->dt_s);
+    // 代码执行语句
+output->target_speed_y_cm_s = pid_axis_update_pi(&flow_y_pos_pid,
+                                                   input->error_y, input->dt_s);
+    // 代码执行语句
+/* flight_app.c：无效观测时按 dt_s 进行衰减 */
+flight_speed_loop_invalid_leak(speed_dt_s);
+    // 代码执行语句
+平面位置环输出速度目标，速度环再输出俯仰/横滚目标角，随后进入姿态串级。每一步都保留 dt_s 和 valid 标志，使“没有新观测”与“观测值为零”在逻辑上区分开。
+双主控视觉处理与双摄仲裁
+CM7_1 对 MT9V03X 灰度帧进行方向归一化后调用 Image_Process_Frame；结果通过 IPC_Display/视觉共享结构交给 CM7_0。前后摄像机结果同时存在时，代码按 valid、score、observed/ready 和代际编号裁决，避免旧帧覆盖新帧。
+/* main_cm7_1.c：图像处理与共享结果 */
+Image_Process_Frame(canonical_image, &vision, capture_timestamp_ms);
+    // 对归一化灰度帧进行连通域和目标评分
+ipc_data.beacon_err_x = vision.beacon_err_x;
+    // 写入信标水平误差，供另一主控使用
+ipc_data.beacon_density = vision.beacon_density;
+    // 写入信标密度特征
+ipc_data.beacon_valid = vision.beacon_valid;
+    // 写入信标有效标志
+SCB_CleanInvalidateDCache_by_Addr(&ipc_data, sizeof(ipc_data));
+    // 清理/失效缓存，保证共享内存可见
+回传灰度图用于说明阈值分割、连通域和候选框输入，以及调试过程中用于特征值的提取。
+前、后视觉均以 MT9V03X 188×120灰度图像为输入，执行阈值二值化、连通区域搜索以及面积、边界、密度、主轴方向等特征计算。前相机由飞控主板 CM7_1处理；后相机由第二块 CYT4BB7 视觉板 CM7_1处理，后板先把物理倒置图像旋转到统一坐标，再发送目标误差、有效/观测/就绪标志和目标代数。
+飞控主板 CM7_0 将前后观测转换到统一坐标，只有年龄不超过150 ms且有效、已观测的结果才参与仲裁。仲裁器维护前相机激活、前相机宽限、后相机激活、后相机宽限和无信标五类状态；当前目标短时丢失时保留500 ms宽限，另一视角只有在候选目标稳定且相对小车明显更近时才接管。切换判据要求距离至少改善20像素且不超过当前距离的80%，小车横坐标在跨相机切换时用4个新帧渐变，以减小坐标跳变。只有信标与小车坐标同时有效时才输出统一方向。
+串级控制与电机混控
+
+图 4.1 飞行器状态估计与串级控制链路
+飞行器的控制链是“位置/视觉误差→速度目标→姿态角目标→角速度目标→轴向 PID 输出→四电机混控”。位置、速度和姿态环的输入输出均以结构体字段传递，最终由 mixer 把 roll/pitch/yaw 修正叠加到基础油门。
+/* flight_attitude_loop.c：角度环到角速度环 */
+roll_rate_target = pid_axis_update_pi(&roll_angle_pid, roll_error, dt_s);
+    // 角度环输出角速度目标
+roll_output = pid_axis_update_pid_error(&roll_rate_pid,
+    // 角速度环输出横滚修正量
+                                         roll_rate_target - gyro_roll_dps, dt_s);
+    // 角度环输出角速度目标
+/* flight_app.c：轴向修正进入混控并限幅 */
+motor_rf = base + pitch_output - roll_output + yaw_output;
+    // 角速度环输出横滚修正量
+motor_lf = base + pitch_output + roll_output - yaw_output;
+    // 角速度环输出横滚修正量
+motor_rr = base - pitch_output - roll_output - yaw_output;
+    // 角速度环输出横滚修正量
+motor_lr = base - pitch_output + roll_output + yaw_output;
+    // 角速度环输出横滚修正量
+控制频率方面，主循环固定为 5 ms（200 Hz）；各子环是否在每个周期执行由其 elapsed/period 条件决定。输出端还包含 motor saturation、slew 和失效保护，保护逻辑优先于正常控制输出。
+平面位置环根据目标与估计位置生成期望速度，速度环根据速度误差生成期望加速度或姿态，姿态环再产生横滚和俯仰修正；偏航控制与高度控制分别形成偏航修正和基础油门修正。最终将基础油门与三轴修正量按电机布局混合输出。当前调度关系为主姿态链5 ms更新，速度环20 ms更新，位置环40 ms更新。
+视觉追踪与保护逻辑
+图像处理先提取连通域，再计算候选区域的面积、宽高、密度、V 字开口率、两臂平衡度和轴向跨度。车体候选使用 Image_Car_Score_V2；信标候选使用 Image_Beacon_Score_V2，并以不同阈值和 observed/valid 状态区分。
+/* image_deal.c：候选分类与阈值裁决 */
+blobs[i].car_score = Image_Car_Score_V2(&blobs[i]);
+    // 代码执行语句
+blobs[i].is_car = (blobs[i].car_score >= IMAGE_CAR_SCORE_MIN);
+    // 代码执行语句
+blobs[i].beacon_score = Image_Beacon_Score_V2(&blobs[i], 0U);
+    // 代码执行语句
+if(blobs[i].beacon_score >= IMAGE_BEACON_SCORE_MIN)
+    blobs[i].beacon_valid = 1U;
+    // 代码执行语句
+V 字识别不是单一“看见亮点”：代码用 v_opening_ratio 表示开口几何关系，并结合 v_arm_balance、v_axis_span 等特征；当 v_opening_ratio 达到强/弱开口阈值时，车体得分增加 1.5 或 0.75 分（对应 image_deal.c 的加分分支）。信标则独立计算 beacon_score，当前工程参数文件中的 IMAGE_BEACON_SCORE_MIN 为 2.20f；两者分别取最高候选，避免把车体 V 字误判为信标灯。
+/* main_cm7_1.c：目标丢失后的保护接口 */
+Image_Set_Car_Motion_State(car_motion_state);
+    // 代码执行语句
+if(!vision.beacon_valid)
+    flight_follow_lost_guard(CONTROL_PERIOD_MS);
+    // 代码执行语句
+当目标连续丢失或帧时间跳变超过保护阈值时，代码降低跟踪控制权重、限制速度/姿态变化，并可切换到保持、刹车或安全降落状态；具体阈值以工程宏和状态机为准。
+视觉追踪以像素误差闭环为基础，结合速度规划、制动区、悬停锁定和重新捕获策略。控制输出经过限幅，并结合数据有效性、目标丢失状态、电压补偿和电机占空比边界进行处理。上述逻辑旨在避免目标短时丢失、测距异常或控制量突变直接传递到执行器。
+
+地面小车软件设计
+小车软件架构
+小车 CM7_0 负责硬件初始化、运动命令生成、麦克纳姆轮解算、四轮闭环、IMU导航、航向控制、精确转向和任务状态机；CM7_1从共享内存读取编码器等状态，并经WiFi SPI输出到调试端。运行显示模块同时解析飞行器串口帧并管理数据新鲜度。
+小车 CM7_0 负责 IMU 导航、运动学目标和四轮 PID，CM7_1 负责 WiFi SPI 遥测与飞行器数据解析；两核通过共享内存交换编码器、目标和遥测快照。
+/* main_cm7_0.c：导航与运动控制主线 */
+imu_nav_update();
+    // 更新 IMU 航向、角速度和零偏状态
+nav = imu_nav_get_state();
+    // 取得最新导航状态快照
+motion_control_update(nav);
+    // 代码执行语句
+car_ipc_encoder_write();
+    // 代码执行语句
+控制执行与通信执行分离，通信帧不能直接替代编码器闭环；所有轮速目标最终都要经过四路轮 PID 才转成电驱 PWM。
+B型麦克纳姆轮运动学
+运动学模块输入车体纵向速度、横向速度、角速度及方向误差，根据车体长度、宽度、轮半径和辊子布置计算四个车轮目标角速度。本文采用B型轮组方向。模块还对各轮目标进行统一限幅，防止运动合成后某一路超过执行能力。
+运动指令首先由方向角和速度得到车体平面分量 vx、vy，再按 B 型麦克纳姆轮符号矩阵分解到四个编码器目标。方向角为 θ 时，vx=v cosθ，vy=v sinθ。
+/* pid.c：方向—速度到四轮目标 */
+float rad = direction_deg * 3.1415926f / 180.0f;
+    // 代码执行语句
+float vx = speed * cosf(rad);
+    // 代码执行语句
+float vy = speed * sinf(rad);
+    // 代码执行语句
+encoder_target_lf = target_limit(vx + vy);
+    // 左前轮目标（转向时为正）
+encoder_target_rf = target_limit(vx - vy);
+    // 右前轮目标（转向时取反）
+encoder_target_lb = target_limit(vx - vy);
+    // 左后轮目标（转向时为正）
+encoder_target_rb = target_limit(vx + vy);
+    // 右后轮目标（转向时取反）
+因此可写成 [ωLF,ωRF,ωLB,ωRB]ᵀ = [[1,1],[1,-1],[1,-1],[1,1]]·[vx,vy]ᵀ（当前函数还对每个目标做 ±2000 限幅）。旋转指令在 motion_control.c 中以左右轮相反符号叠加到四轮目标。
+运动学计算采用实际装配几何参数：车轮半径为31.5 mm，轮距为120 mm，轴距为198 mm；底盘外廓尺寸为282 mm×210 mm×63 mm。
+四轮轮速闭环与里程估计
+四个车轮分别配置PID控制与编码器反馈。控制器根据目标轮速和测量轮速计算PWM输出，并包含输出饱和与积分约束思路；编码器增量还用于车轮里程和车体运动量估计。四轮独立闭环可补偿电机、负载和地面附着差异。
+PIT 周期中先 Get_Encoder() 读取四轮增量，再依次调用四个轮 PID；计算完成后清零计数，保证下一周期只统计新的脉冲。
+/* cm7_0_isr.c：四轮闭环介入点 */
+Get_Encoder();
+    // 读取本控制周期四轮编码器增量
+left_B_motor_pid(encoder_target_lb);
+    // 左后轮速度 PID，输出驱动占空比
+right_B_motor_pid(encoder_target_rb);
+    // 右后轮速度 PID，输出驱动占空比
+left_F_motor_pid(encoder_target_lf);
+    // 左前轮速度 PID，输出驱动占空比
+right_F_motor_pid(encoder_target_rf);
+    // 右前轮速度 PID，输出驱动占空比
+encoder_clear_count(ENCODER_LB); /* 其余三轮同理 */
+    // 清零计数，准备下一控制周期
+/* pid.c：单轮误差、死区积分与输出 */
+w->error = (float)(goal - encoder);
+    // 轮速目标减去编码器实测值
+if(abs_err > w->deadband) w->error_sum += w->error;
+    // 轮速目标减去编码器实测值
+output = kp * w->error + ki * w->error_sum - kd * encoder_delta;
+    // 轮速目标减去编码器实测值
+里程估计使用四轮编码器增量，结合轮半径31.5 mm、轮距120 mm、轴距198 mm和B型运动学反解计算车体位姿。
+IMU导航与航向控制
+IMU导航模块完成陀螺仪/加速度计校准，维护偏航、横滚、俯仰以及水平速度、位置和累计距离。航向控制器支持静止和运动状态下不同的增益组合，并叠加积分补偿、陀螺阻尼和输出限幅；系统可记录初始航向作为基准，也可切换为仅显示而不介入控制的模式。
+imu_nav_update() 更新航向角、角速度和零偏状态，motion_control.c 再用航向误差生成旋转修正，叠加到四轮目标；航向保持开启/关闭由状态机控制。
+/* main_cm7_0.c：航向状态与控制开关 */
+imu_nav_update();
+    // 更新 IMU 航向、角速度和零偏状态
+nav = imu_nav_get_state();
+    // 取得最新导航状态快照
+if(heading_hold_enabled) pid_z_heading_enable();
+    // 开启航向保持环
+else pid_z_heading_disable();
+    // 关闭航向保持环
+航向误差采用角度环绕后的最短角差，输出作为左右轮反向补偿；当小车进入精确转向状态时，平移目标清零，仅保留转向目标。
+精确转向控制
+转向模块支持绝对角度和相对角度目标，根据剩余角度规划转速与制动区，并通过容差、稳定计数和超时条件判定完成。该模块与航向估计配合，可用于任务状态切换前的姿态对准。
+转向任务由目标角和当前 yaw 计算误差，先以固定速度生成方向目标，再由四轮编码器闭环执行；turn_control_is_done() 负责结束判定，完成后清零四轮目标。
+/* main_cm7_0.c：精确转向目标 */
+encoder_target_lf = rot_delta;
+    // 左前轮目标（转向时为正）
+encoder_target_lb = rot_delta;
+    // 左后轮目标（转向时为正）
+encoder_target_rf = -rot_delta;
+    // 右前轮目标（转向时取反）
+encoder_target_rb = -rot_delta;
+    // 右后轮目标（转向时取反）
+if(turn_control_is_done()) {
+    // 判断目标角是否已达到
+    encoder_target_lf = encoder_target_rf = 0;
+    // 左前轮目标（转向时为正）
+    encoder_target_lb = encoder_target_rb = 0;
+    // 左后轮目标（转向时为正）
+}
+该路径与普通平移路径分开，避免在转向完成前被新的遥控平移量覆盖。
+信标任务状态机与安全回退
+任务层支持手动模拟和真实信标两种数据来源。在真实模式下，小车读取飞行器提供的信标、小车相对坐标和偏航信息，判断目标是否可见，并依据目标方向、距离特征和飞机/小车姿态选择前进、后退、平移或转向动作。代码还维护已观察、目标锁定、冷却计数和熄灭信标数量等状态。
+信标任务状态机在“搜索—对准—接近—刹车/回退—完成”之间切换。对准阶段使用 beacon_err_x/beacon_err_y 和 beacon_angle，接近阶段调用 mecanum_typeb_set_encoder_target()，超时或信标失效则停止目标或进入回退。
+/* motion_control.c：信标驱动与回退 */
+mecanum_typeb_set_encoder_target(beacon_angle_drive_deg, speed_cmd, 0.0f, 0.0f);
+    // 将信标方向转换为四轮编码器目标
+if(beacon_lost_or_timeout) {
+    // 代码执行语句
+    encoder_target_lf = encoder_target_rf = 0;
+    // 左前轮目标（转向时为正）
+    encoder_target_lb = encoder_target_rb = 0;
+    // 左后轮目标（转向时为正）
+    mecanum_typeb_set_encoder_target(180, BEACON_BACKOFF_SPEED, 0.0f, 0.0f);
+    // 将信标方向转换为四轮编码器目标
+}
+信标与车体的区分依赖视觉模块分别输出的 car_valid 与 beacon_valid，而非仅依据亮度；任务层只消费已经过评分和有效性门控的结果。
+当目标数据过期或丢失时，状态机不会无限沿用旧数据，而是结合最近观测、丢失计时和回退策略降低速度、搜索、后退或停止；运行显示模块对串口帧设置新鲜度判断，避免过期目标持续驱动。
+
+系统联调与实验
+联调环境与观测量
+自制图像采集上位机与算法调试闭环
+飞行器参数整定使用逐飞助手观察姿态、位置、速度和控制量；视觉算法调试采用自制图像采集上位机。上位机接收 CM7_1 发送的 CYIM v3 数据帧，按飞行器按键请求保存双摄灰度图，并同步保存高度、姿态、视觉阈值、曝光和增益等元数据。该方式使图像样本与飞行状态在同一采样时刻对应。
+
+图 6.1 自制图像采集上位机界面与回传数据
+图像回传服务在 CM7_1 上异步执行：前摄输出 188×120 灰度区域，后摄灰度区域经一次 180° 旋转后拼接为 188×240 图像；数据帧由 136 字节小端头、45120 字节 GRAY8 载荷和 CRC32 组成。服务端校验魔数、版本、长度和 CRC 后再保存 BMP，采集过程不阻塞 CM7_0 的 5 ms 飞行控制循环。
+调试闭环为：飞行器按键请求采集→上位机接收图像及高度、姿态元数据→分析连通域、面积、包围盒、亮度密度和车体 V 字特征→调整阈值与目标评分参数→在 Image_Process_Frame、Image_Car_Score_V2 和 Image_Beacon_Score_V2 中回放验证。该流程支撑车体随动、信标识别及信标—小车相对位置计算。
+空地通信与板间通信采用有线串口链路交换视觉结果、姿态和任务状态，能够支撑车辆跟随和信标任务闭环。
+当前工程提供屏幕状态显示、UART运行数据和WiFi SPI遥测，可观察姿态、高度、目标误差、双摄当前所有者、目标代数、结果年龄、UART3 CRC错误/序号缺口、控制输出、编码器和电机占空比等变量。调试应按“单相机—后置板链路—双摄坐标统一—仲裁切换—单闭环—空地协同”的顺序逐级验证。
+表 6.1 系统联调阶段、观测量与判据
+飞行器参数整定
+调试首先完成IMU与电机方向检查，再整定姿态环和基础油门；随后启用高度环，确认ToF投影与遮挡保护；再依次调试光流速度环、位置环和视觉像素误差环。每一步都应记录目标值、测量值、控制输出、饱和时间和恢复时间。
+小车轮速与航向整定
+小车首先应在架空或低速条件下验证四轮编号、编码器正负号和PWM方向，再分别整定单轮PID。四轮闭环稳定后进行直行、横移和旋转试验，最后启用航向保持与精确转向。工程目录中包含左前轮和四轮波形，可作为已有调试记录，测试工况记录状态不作定量判定和坐标轴定义。
+空地通信与任务联调
+联调应分别验证板间视觉链路和空地任务链路。UART3侧先用固定RCAM帧验证帧头、版本、类型、188×120尺寸、序号、时间戳和CRC32，再测试二值图、按需灰度图、结构化视觉结果以及配置反向下发；随后验证150 ms新鲜度、500 ms离线/宽限、前后坐标统一和相机切换平滑。空地侧再验证目标坐标、姿态、动作指令和数据新鲜度。WiFi SPI仅作为观测通道。
+
+结论
+工作总结
+当前代码已形成飞控主板、后置视觉板和地面小车三块CYT4BB7控制板的协同工程。飞控板内部使用双核共享内存，飞控板与后置视觉板通过UART3交换带CRC和序号的前后视觉协同数据，飞行器与小车通过任务串口交换目标与动作状态。飞行器现已具备前后视觉独立处理、统一时基判龄、目标所有权仲裁、丢失宽限、坐标锁存与切换平滑，并将统一结果接入原有姿态、高度、光流与串级控制；小车保持麦克纳姆运动学、轮速闭环、航向控制和任务状态机。
+系统已完成飞行器与地面小车的软硬件协同实现，形成了双主控视觉处理、姿态与高度控制、麦克纳姆轮全向运动、信标识别和车机协同任务链路。
+存在问题与改进方向
+优化飞行器与小车的结构布局，降低线束干扰和载荷变化对控制稳定性的影响。
+完善飞控主板与后置视觉板的数据同步、超时处理和异常恢复，提高复杂环境下的视觉连续性。
+继续优化定高、定点、视觉跟踪和小车全向运动控制参数，提升不同高度和速度下的动态响应。
+增加不同信标位置、不同车速和不同光照条件下的任务测试，增强系统对场地变化的适应能力。
+改进目标评分与多传感器融合策略，减少遮挡、反光和短时丢帧造成的误判。
+
+
+
+附录 A 核心程序源码
+A.1 图像预处理、车辆与信标识别
+// image_deal.c：灰度二值化
+void Image_Binarization(uint8 *p_src)
+{
+    Image_Binarization_Rect_Threshold(p_src,
+                                      0,
+                                      0,
+                                      MT9V03X_W - 1,
+                                      MT9V03X_H - 1,
+                                      BIN_THRESHOLD);
+// image_deal.c：车辆候选的高度归一化、V 形约束与打分
+    if((blob == 0) || (blob->valid == 0U) || (blob->roi_clipped != 0U))
+    {
+        return 0.0f;
+    }
+    box_w_u = blob->max_x - blob->min_x + 1U;
+    box_h_u = blob->max_y - blob->min_y + 1U;
+    height_mm = (image_tof_height_valid != 0U) ? image_tof_height_mm : IMAGE_CAR_REF_HEIGHT_MM;
+    scale = height_mm / IMAGE_CAR_REF_HEIGHT_MM;
+    norm_area = (float)blob->area * scale * scale;
+    norm_w = (float)box_w_u * scale;
+    norm_h = (float)box_h_u * scale;
+    aspect = (float)box_w_u / (float)box_h_u;
+    aspect_max = (Image_Blob_Touches_Any_Edge(blob) != 0U) ?
+                 IMAGE_CAR_EDGE_ASPECT_MAX : IMAGE_CAR_ASPECT_MAX;
+    if((norm_area < IMAGE_CAR_NORM_AREA_MIN) ||
+       (norm_area > IMAGE_CAR_NORM_AREA_MAX) ||
+       (norm_w < IMAGE_CAR_NORM_BOX_W_MIN) ||
+       (norm_w > IMAGE_CAR_NORM_BOX_W_MAX) ||
+       (norm_h < IMAGE_CAR_NORM_BOX_H_MIN) ||
+       (norm_h > IMAGE_CAR_NORM_BOX_H_MAX) ||
+       (aspect < IMAGE_CAR_ASPECT_MIN) ||
+       (aspect > aspect_max) ||
+    primary_v = (((blob->v_score_norm >= IMAGE_CAR_V_NORM_MIN) &&
+                  (blob->v_opening_ratio >= IMAGE_CAR_OPENING_RATIO_STRONG) &&
+                  (blob->v_arm_balance >= IMAGE_CAR_ARM_BALANCE_MIN)) ||
+                 ((blob->v_score_norm >= IMAGE_CAR_V_NORM_STRONG) &&
+                  (blob->v_opening_ratio >= IMAGE_CAR_OPENING_RATIO_MIN))) ? 1U : 0U;
+    if(primary_v == 0U)
+    {
+        return 0.0f;
+    }
+    score += 2.0f;
+    score += (blob->v_score_norm >= IMAGE_CAR_V_NORM_STRONG) ? 2.0f : 1.0f;
+    score += (blob->v_opening_ratio >= IMAGE_CAR_OPENING_RATIO_STRONG) ? 1.5f : 0.75f;
+    score += (blob->v_arm_balance >= 0.30f) ? 1.0f : 0.5f;
+    score += (blob->density <= 0.58f) ? 1.0f : 0.25f;
+    score += ((blob->elongation >= 1.35f) && (blob->elongation <= 4.5f)) ? 0.5f : 0.0f;
+    if((blob->density >= 0.65f) && (aspect >= 0.70f) && (aspect <= 1.45f))
+    {
+        score -= 2.0f;
+    }
+    return score;
+// image_deal.c：信标候选的面积、宽高比、密度和边界约束与打分
+    if((blob == 0) || (blob->valid == 0U) || (blob->roi_clipped != 0U))
+    {
+        return 0.0f;
+    }
+    box_w_u = blob->max_x - blob->min_x + 1U;
+    box_h_u = blob->max_y - blob->min_y + 1U;
+    if((blob->area < IMAGE_BEACON_MIN_AREA) ||
+       (blob->area > IMAGE_BEACON_MAX_AREA) ||
+       (box_w_u > IMAGE_BEACON_MAX_BOX_W) ||
+       (box_h_u > IMAGE_BEACON_MAX_BOX_H))
+    {
+        return 0.0f;
+    }
+    aspect = (float)box_w_u / (float)box_h_u;
+    aspect_min = (blob->area <= IMAGE_BEACON_TINY_AREA_MAX) ?
+                 IMAGE_BEACON_TINY_ASPECT_MIN : IMAGE_BEACON_ASPECT_MIN;
+    aspect_max = (blob->area <= IMAGE_BEACON_TINY_AREA_MAX) ?
+                 IMAGE_BEACON_TINY_ASPECT_MAX : IMAGE_BEACON_ASPECT_MAX;
+    density_min = (relaxed != 0U) ? IMAGE_BEACON_RELAXED_DENSITY_MIN : IMAGE_BEACON_DENSITY_MIN;
+    if((blob->density < density_min) || (aspect < aspect_min) || (aspect > aspect_max))
+    {
+        return 0.0f;
+    if((blob->v_score_norm > IMAGE_BEACON_V_NORM_MAX) &&
+       (blob->v_opening_ratio >= IMAGE_CAR_OPENING_RATIO_MIN))
+    {
+        return 0.0f;
+    }
+    aspect_centered = (aspect > 1.0f) ? (1.0f / aspect) : aspect;
+    score = 1.10f * aspect_centered;
+    score += 1.60f * (blob->density - density_min);
+    score += (blob->density >= 0.68f) ? 0.65f : 0.20f;
+    score += (blob->v_score_norm <= 2.8f) ? 0.45f : 0.10f;
+    score += ((float)blob->area > 8.0f) ? 0.25f : 0.10f;
+    if(Image_Blob_Touches_Any_Edge(blob) == 0U)
+    {
+        score += 0.20f;
+    }
+// image_deal.c：ROI 处理与整幅图像回退
+void Image_Process_Frame(uint8 *p_src, Visual_Result_t *result, uint32 frame_time_ms)
+{
+    uint8 use_roi = 0U;
+    Visual_Result_t roi_result = {0};
+    image_frame_time_ms = frame_time_ms;
+    roi_diag_mode = 0U;
+    roi_diag_hit = 0U;
+    roi_diag_fallback = 0U;
+    Image_Calibration_Clear_Target(&image_calibration_info.car);
+    Image_Calibration_Clear_Target(&image_calibration_info.beacon);
+    image_calibration_info.beacon_state = (uint8)beacon_track_state;
+    image_calibration_info.low_candidate_count = 0U;
+    image_calibration_info.beacon_ready = 0U;
+    if(roi_frame_count >= ROI_FULL_REFRESH_FRAMES)
+    {
+        use_roi = 0U;
+        roi_frame_count = 0U;
+    }
+    if(use_roi)
+    {
+        roi_diag_mode = 1U;
+        int half_w = (car_motion_state == IMAGE_CAR_MOTION_MOVING) ? ROI_MOVING_HALF_W : ROI_STATIC_HALF_W;
+        int half_h = (car_motion_state == IMAGE_CAR_MOTION_MOVING) ? ROI_MOVING_HALF_H : ROI_STATIC_HALF_H;
+        int x0 = (int)roi_car_center_x - half_w;
+        int y0 = (int)roi_car_center_y - half_h;
+        int x1 = (int)roi_car_center_x + half_w;
+        int y1 = (int)roi_car_center_y + half_h;
+        Image_Binarization_Rect(p_src, x0, y0, x1, y1);
+        Image_Find_Blobs_Rect(x0, y0, x1, y1);
+#if IMAGE_CLASSIFIER_V2_ENABLE
+        Image_Prepare_Low_Candidates(p_src, x0, y0, x1, y1, 0U);
+#endif
+A.2 双摄信标仲裁与车体坐标拼接
+// dual_camera_control.c：观测有效性与距离优先级
+static uint8 beacon_reliable(const dual_camera_observation_t *observation)
+{
+    return (uint8)((observation->age_ms <= DUAL_CAMERA_MAX_AGE_MS) &&
+                   (observation->beacon_valid != 0U) &&
+                   (observation->beacon_observed != 0U));
+}
+static uint8 beacon_candidate_ready(const dual_camera_observation_t *observation)
+{
+    return (uint8)((beacon_reliable(observation) != 0U) &&
+                   (observation->beacon_ready != 0U));
+}
+static uint8 car_reliable(const dual_camera_observation_t *observation)
+{
+    return (uint8)((observation->age_ms <= DUAL_CAMERA_MAX_AGE_MS) &&
+                   (observation->car_valid != 0U) &&
+                   (observation->car_observed != 0U));
+}
+static uint32 observation_time_ms(uint32 now_ms,
+                                  const dual_camera_observation_t *observation)
+{
+    return now_ms - (uint32)observation->age_ms;
+}
+static float distance_to_car(float target_x, float target_y)
+{
+    float dx = target_x - state.car_x_latched;
+    float dy = target_y - state.car_y_latched;
+    return sqrtf((dx * dx) + (dy * dy));
+}
+static uint8 beacon_materially_closer(float current_x,
+                                      float current_y,
+                                      float candidate_x,
+                                      float candidate_y)
+{
+    float current_distance = distance_to_car(current_x, current_y);
+    float candidate_distance = distance_to_car(candidate_x, candidate_y);
+    return (uint8)(((current_distance - candidate_distance) >=
+                    IMAGE_BEACON_SWITCH_MIN_GAIN_PX) &&
+                   (candidate_distance <=
+                    (current_distance * IMAGE_BEACON_SWITCH_MAX_DISTANCE_RATIO)));
+}
+static void acquire_owner(uint8 camera,
+                          const dual_camera_observation_t *observation,
+                          uint32 now_ms)
+{
+    state.active = camera;
+    state.owner_state = (camera == DUAL_CAMERA_FRONT) ?
+                        DUAL_CAMERA_STATE_FRONT_ACTIVE :
+                        DUAL_CAMERA_STATE_REAR_ACTIVE;
+    state.active_last_observed_ms = observation_time_ms(now_ms, observation);
+    state.beacon_x_latched = observation->beacon_x;
+    state.beacon_y_latched = observation->beacon_y +
+        ((camera == DUAL_CAMERA_REAR) ? DUAL_CAMERA_REAR_Y_OFFSET : 0.0f);
+    state.beacon_control_latched = 1U;
+    state.active_target_generation = observation->beacon_generation;
+    state.generation++;
+}
+// dual_camera_control.c：当前相机丢失后的宽限期切换与输出锁存
+    if(state.car_latched == 0U)
+    {
+        state.car_x_latched = raw_x;
+        state.car_latched = 1U;
+    }
+    else if(state.car_x_blend_frames_left != 0U)
+    {
+        state.car_x_latched += (raw_x - state.car_x_latched) /
+            (float)state.car_x_blend_frames_left;
+        state.car_x_blend_frames_left--;
+    }
+    else
+    {
+        state.car_x_latched = raw_x;
+    }
+    state.car_y_latched = raw_y;
+}
+void dual_camera_control_reset(void)
+{
+    memset(&state, 0, sizeof(state));
+    state.owner_state = DUAL_CAMERA_STATE_NO_BEACON;
+}
+void dual_camera_control_update(const dual_camera_control_input_t *input,
+                                dual_camera_control_output_t *output)
+{
+    uint8 front_new = (uint8)((state.front_seen == 0U) ||
+                              (input->front.sequence != state.front_sequence));
+A.3 飞行器四串级控制
+// flight_position_loop.c：视觉位置误差生成横滚/俯仰目标
+void flight_position_loop_update_vision(const flight_position_vision_input_t *input,
+                                        flight_position_vision_output_t *output)
+{
+    float vision_move_angle_deg;
+    float dir_inv_norm;
+    vision_move_angle_deg = pid_axis_update_pi(&vision_move_hold_pid,
+                                               input->error_norm_px,
+                                               CONTROL_DT_S);
+    dir_inv_norm = 1.0f / input->error_norm_px;
+    vision_move_angle_deg = func_limit_ab(vision_move_angle_deg, 0.0f, input->angle_limit_deg);
+    vision_move_angle_deg *= input->brake_scale * input->track_scale;
+    output->roll_deg = (-input->error_x_px * dir_inv_norm) * vision_move_angle_deg;
+    output->pitch_deg = (input->error_y_px * dir_inv_norm) * vision_move_angle_deg;
+    if(input->freeze_integrator)
+    {
+        vision_int_x *= VISION_HOLD_FLOW_I_DECAY;
+        vision_int_y *= VISION_HOLD_FLOW_I_DECAY;
+    }
+    else
+    {
+        vision_int_x += (-input->error_x_px) * VISION_HOLD_VECTOR_KI * CONTROL_DT_S;
+        vision_int_y += (input->error_y_px) * VISION_HOLD_VECTOR_KI * CONTROL_DT_S;
+    }
+    vision_int_x = func_limit_ab(vision_int_x, -VISION_HOLD_I_LIMIT_DEG, VISION_HOLD_I_LIMIT_DEG);
+    vision_int_y = func_limit_ab(vision_int_y, -VISION_HOLD_I_LIMIT_DEG, VISION_HOLD_I_LIMIT_DEG);
+    output->roll_deg += vision_int_x;
+    output->pitch_deg += vision_int_y;
+    output->integrator_roll_deg = vision_int_x;
+    output->integrator_pitch_deg = vision_int_y;
+}
+// flight_speed_loop.c：速度环目标角的斜率限制
+void flight_speed_loop_update_cascade(float roll_target_raw_deg,
+                                      float pitch_target_raw_deg,
+                                      float angle_step_deg)
+{
+    flow_roll_cascade_cmd_deg += func_limit_ab(roll_target_raw_deg - flow_roll_cascade_cmd_deg,
+                                               -angle_step_deg,
+                                                angle_step_deg);
+    flow_pitch_cascade_cmd_deg += func_limit_ab(pitch_target_raw_deg - flow_pitch_cascade_cmd_deg,
+                                                -angle_step_deg,
+                                                 angle_step_deg);
+}
+// flight_attitude_loop.c：角度外环与角速度内环
+void flight_attitude_loop_update(const flight_attitude_loop_input_t *input,
+                                 flight_attitude_loop_output_t *output)
+{
+    float rate_target_slew_limit;
+    float roll_rate_delta;
+    float pitch_rate_delta;
+    output->roll_error_deg = input->roll_target_deg - input->roll_angle_deg;
+    output->pitch_error_deg = input->pitch_target_deg - input->pitch_angle_deg;
+    output->roll_rate_target_dps = pid_axis_update_pi(&roll_angle_pid,
+                                                      output->roll_error_deg,
+                                                      CONTROL_DT_S);
+    output->pitch_rate_target_dps = pid_axis_update_pi(&pitch_angle_pid,
+                                                       output->pitch_error_deg,
+                                                       CONTROL_DT_S);
+    rate_target_slew_limit = ANGLE_OUT_SLEW_DPS_S * CONTROL_DT_S;
+    roll_rate_delta = output->roll_rate_target_dps - roll_rate_target_prev_dps;
+    roll_rate_delta = func_limit_ab(roll_rate_delta, -rate_target_slew_limit, rate_target_slew_limit);
+    output->roll_rate_target_dps = roll_rate_target_prev_dps + roll_rate_delta;
+    roll_rate_target_prev_dps = output->roll_rate_target_dps;
+    pitch_rate_delta = output->pitch_rate_target_dps - pitch_rate_target_prev_dps;
+    pitch_rate_delta = func_limit_ab(pitch_rate_delta, -rate_target_slew_limit, rate_target_slew_limit);
+    output->pitch_rate_target_dps = pitch_rate_target_prev_dps + pitch_rate_delta;
+    pitch_rate_target_prev_dps = output->pitch_rate_target_dps;
+    output->roll_rate_error_dps = output->roll_rate_target_dps - input->roll_rate_dps;
+    output->pitch_rate_error_dps = output->pitch_rate_target_dps - input->pitch_rate_dps;
+    output->roll_pid_out = pid_axis_update_pid_error(&roll_rate_pid,
+                                                     output->roll_rate_error_dps,
+                                                     CONTROL_DT_S);
+    output->pitch_pid_out = pid_axis_update_pid_error(&pitch_rate_pid,
+                                                      output->pitch_rate_error_dps,
+                                                      CONTROL_DT_S);
+}
+// flight_altitude_loop.c：高度—速度—加速度三级串级和占空比输出
+    if(input->measurement_valid && input->measurement_new &&
+       loop->height_elapsed_s >= loop->config.height_period_s)
+    {
+        float height_error_cm = loop->config.target_height_mm * 0.1f -
+                                loop->estimator.position_cm;
+        if(alt_abs(height_error_cm * 10.0f) <= ALT_HEIGHT_DEADBAND_MM)
+        {
+            height_error_cm = 0.0f;
+        }
+        loop->target_velocity_cm_s = alt_pid_update(
+            &loop->height_pid,
+            &loop->config.height_pid,
+            height_error_cm,
+            loop->height_elapsed_s,
+            true);
+        loop->output.height_dt_ms = (uint16)(loop->height_elapsed_s * 1000.0f + 0.5f);
+        loop->height_elapsed_s = 0.0f;
+        loop->height_run_count++;
+    }
+    if(loop->velocity_elapsed_s >= loop->config.velocity_period_s)
+    {
+        float velocity_error = loop->target_velocity_cm_s -
+                               loop->estimator.velocity_cm_s;
+        loop->target_acceleration_cm_s2 = alt_pid_update(
+            &loop->velocity_pid,
+            &loop->config.velocity_pid,
+            velocity_error,
+            loop->velocity_elapsed_s,
+            input->measurement_valid);
+        loop->output.velocity_dt_ms = (uint16)(loop->velocity_elapsed_s * 1000.0f + 0.5f);
+        loop->velocity_elapsed_s = 0.0f;
+        loop->velocity_run_count++;
+    }
+    acceleration_error = loop->target_acceleration_cm_s2 -
+                         loop->estimator.acceleration_cm_s2;
+    acceleration_correction = alt_pid_update_asymmetric(
+        &loop->acceleration_pid,
+        &loop->config.acceleration_pid,
+        acceleration_error,
+        dt_s,
+        input->measurement_valid,
+        (float)ALT_ACCEL_KI,
+        (float)ALT_ACCEL_KI_HIGH,
+        (float)ALT_ACCEL_KI_UNWIND);
+    thrust_margin = loop->hover_feedforward_duty - loop->config.motor_start_duty;
+    if(thrust_margin < 0.0f) thrust_margin = 0.0f;
+    acceleration_feedforward = thrust_margin *
+        loop->target_acceleration_cm_s2 / ALT_GRAVITY_CM_S2;
+    raw_target_duty = loop->hover_feedforward_duty +
+                      acceleration_correction + acceleration_feedforward;
+    raw_target_duty = alt_limit(raw_target_duty,
+                                loop->config.base_duty_min,
+                                loop->config.base_duty_max);
+    if(loop->phase != FLIGHT_ALTITUDE_HOLD)
+    {
+        raw_target_duty = alt_capture_brake(loop, raw_target_duty);
+    }
+    blend = (loop->config.capture_blend_s > 0.001f) ?
+            alt_limit(loop->capture_elapsed_s / loop->config.capture_blend_s, 0.0f, 1.0f) : 1.0f;
+    blended_target_duty = loop->hover_feedforward_duty +
+                          blend * (raw_target_duty - loop->hover_feedforward_duty);
+    alt_apply_slew(loop, blended_target_duty, dt_s);
+    loop->output.acceleration_feedforward_duty = acceleration_feedforward;
+A.4 小车运动学与信标跟随
+// Mecanum_Wheel_Kinematics.c：B 型麦克纳姆轮速度分解的核心关系
+	else if(_Mecanum->type == Type_B)
+	{
+			_Mecanum->Wheel_Left_Front.Wheel_V_Parallel = (_Mecanum->Wheel_Left_Front.Wheel_Vx * Root_Number_2/2.0f) + (_Mecanum->Wheel_Left_Front.Wheel_Vy * Root_Number_2/2.0f );
+			_Mecanum->Wheel_Left_Front.Wheel_V_Vertical = (_Mecanum->Wheel_Left_Front.Wheel_Vx * Root_Number_2/2.0f) - (_Mecanum->Wheel_Left_Front.Wheel_Vy * Root_Number_2/2.0f );
+		  _Mecanum->Wheel_Left_Behind.Wheel_V_Parallel = (_Mecanum->Wheel_Left_Behind.Wheel_Vx * Root_Number_2/2.0f) - (_Mecanum->Wheel_Left_Behind.Wheel_Vy * Root_Number_2/2.0f );
+		  _Mecanum->Wheel_Left_Behind.Wheel_V_Vertical = (_Mecanum->Wheel_Left_Behind.Wheel_Vx * Root_Number_2/2.0f) + (_Mecanum->Wheel_Left_Behind.Wheel_Vy * Root_Number_2/2.0f );
+		  _Mecanum->Wheel_Right_Front.Wheel_V_Parallel = (_Mecanum->Wheel_Right_Front.Wheel_Vx * Root_Number_2/2.0f) - (_Mecanum->Wheel_Right_Front.Wheel_Vy * Root_Number_2/2.0f );
+		  _Mecanum->Wheel_Right_Front.Wheel_V_Vertical = (_Mecanum->Wheel_Right_Front.Wheel_Vx * Root_Number_2/2.0f) + (_Mecanum->Wheel_Right_Front.Wheel_Vy * Root_Number_2/2.0f );
+		  _Mecanum->Wheel_Right_Behind.Wheel_V_Parallel = (_Mecanum->Wheel_Right_Behind.Wheel_Vx * Root_Number_2/2.0f) + (_Mecanum->Wheel_Right_Behind.Wheel_Vy * Root_Number_2/2.0f );
+		  _Mecanum->Wheel_Right_Behind.Wheel_V_Vertical = (_Mecanum->Wheel_Right_Behind.Wheel_Vx * Root_Number_2/2.0f) - (_Mecanum->Wheel_Right_Behind.Wheel_Vy * Root_Number_2/2.0f );
+	}
+	else
+	{
+		return;
+	}
+	_Mecanum->Wheel_Left_Front.Wheel_Vr = _Mecanum->Wheel_Left_Front.Wheel_V_Parallel * Root_Number_2;
+	_Mecanum->Wheel_Left_Behind.Wheel_Vr = _Mecanum->Wheel_Left_Behind.Wheel_V_Parallel * Root_Number_2;
+	_Mecanum->Wheel_Right_Front.Wheel_Vr = _Mecanum->Wheel_Right_Front.Wheel_V_Parallel * Root_Number_2;
+	_Mecanum->Wheel_Right_Behind.Wheel_Vr = _Mecanum->Wheel_Right_Behind.Wheel_V_Parallel * Root_Number_2;
+// motion_control.c：空地数据转为小车—信标方向，追击与象限输出
+        runtime_get_beacon_rel(&beacon_x, &beacon_y, &beacon_angle_deg, &beacon_valid);
+        runtime_get_beacon_b(&raw_bx, &raw_by, &beacon_den, &raw_b_valid);
+        runtime_get_car_c(&car_x, &car_y, &car_valid);
+        float dx = raw_bx - car_x;
+        float dy = car_y - raw_by;
+        beacon_x = dx;
+        beacon_y = dy;
+        beacon_angle_deg = atan2f(dx, dy) * 57.2957795f;
+        beacon_px_dist = sqrtf((dx * dx) + (dy * dy));
+    else if(beacon_visible)
+    {
+        int16 speed_cmd = BEACON_FIXED_SPEED;
+        if(beacon_use_real_mode && (beacon_px_dist < BEACON_SLOW_PX))
+        {
+            speed_cmd = BEACON_SLOW_SPEED;
+        }
+        mecanum_typeb_set_encoder_target((int16)beacon_angle_drive_deg, speed_cmd, 0.0f, 0.0f);
+        if(beacon_use_real_mode)
+        {
+            int quadrant = 0;
+            if(beacon_x > 0.0f && beacon_y > 0.0f)  quadrant = 1;
+            if(beacon_x < 0.0f && beacon_y > 0.0f)  quadrant = 2;
+            if(beacon_x < 0.0f && beacon_y < 0.0f)  quadrant = 3;
+            if(beacon_x > 0.0f && beacon_y < 0.0f)  quadrant = 4;
+            if(quadrant != 0)
+            {
+                char qd_buf[16];
+                int qd_len = snprintf(qd_buf, sizeof(qd_buf), "QD:%d\r\n", quadrant);
+                if(qd_len > 0) uart_write_buffer(UART_4, (uint8*)qd_buf, (uint32)qd_len);
+            }
+        }
+    }
+
+===== TABLE 1 =====
+学校： | 上海海事大学
+队伍名称： | 飞跃cybertron
+参赛队员： | 陈尧 王思溢 李胤辉 玉健炜 李东煊
+指导教师： | 虞旦 燕存良
+完成日期： | 2026.08
+
+===== TABLE 2 =====
+符号或缩略词 | 英文名称 | 含义
+CYT4BB7 | Infineon TRAVEO T2G CYT4BB7 | 飞控、后置视觉板及小车所用控制平台
+CM7_0 / CM7_1 | Cortex-M7 Core 0 / Core 1 | CYT4BB7双核处理单元
+IMU | Inertial Measurement Unit | 惯性测量单元
+ToF | Time of Flight | 飞行时间测距传感器
+PID | Proportional-Integral-Derivative | 比例—积分—微分控制
+ESC | Electronic Speed Controller | 电子调速器
+UART | Universal Asynchronous Receiver/Transmitter | 异步串行通信接口
+CRC32 | 32-bit Cyclic Redundancy Check | 32位循环冗余校验
+RCAM | Rear Camera Frame Protocol | 后置视觉板与飞控板之间的帧协议标识
+
+===== TABLE 3 =====
+平台 | CM7_0主要职责 | CM7_1主要职责
+飞行器 | 状态估计、位置/速度/姿态/高度控制、双摄仲裁、任务与电机输出 | 前相机视觉、后置板UART3接收、共享结果发布、图像/状态显示与WiFi SPI遥测
+地面小车 | 运动学、四轮PID、IMU导航、航向与转向控制、信标任务状态机 | 从共享内存读取编码器等状态并通过WiFi SPI遥测
+后置视觉板 | 当前工程未承载任务控制 | 后相机采集与识别、RCAM帧发送、配置与灰度请求接收
+
+===== TABLE 4 =====
+类别 | 代码可验证功能 | 外设
+惯性测量 | 读取加速度计与陀螺仪，完成零偏、滤波和姿态估计 | IMU660RB
+高度测量 | DL1B ToF测距接口，高度滤波、投影与失效预测 | DL1B
+平面运动 | 优象UP-FLOW-LC-302-3C光流数据解码、陀螺补偿、高度尺度换算与融合 | UP-FLOW-LC-302-3C
+视觉 | 前后均使用MT9V03X 188×120灰度相机；后相机由独立CYT4BB7视觉板处理 | Mt9v03 170°红外摄像头
+动力执行 | RS2205无刷电机；基础油门与三轴校正量经CYT2BL3电调混控输出 | RS2205
+
+===== TABLE 5 =====
+类别 | 代码可验证功能 | 外设
+驱动 | 四路PWM与方向控制，分别对应四个车轮 | 电驱主芯片RIGHT8701
+反馈 | 四路编码器用于轮速闭环与里程估计 | 1024线带方向编码器
+惯性测量 | 陀螺仪与加速度计用于航向、姿态和运动量估计 | IMU660RB；
+人机交互 | 显示屏和按键用于模式选择与运行状态显示 | Ips114
+通信 | UART4空地数据、WiFi SPI调试遥测 | 柔性线缆
+
+===== TABLE 6 =====
+阶段 | 建议观测量 | 通过判据
+飞行器传感器 | IMU零偏、姿态角、ToF高度、光流质量/速度、视觉有效标志 | 静态稳定、方向一致、异常数据能被识别
+飞行器控制 | 位置/速度/姿态误差、各环输出、电机占空比 | 阶跃响应无持续振荡，输出不长期饱和
+小车底盘 | 四轮目标/实测速度、PWM、航向角、累计距离 | 轮序与方向正确，直行/横移偏差可接受
+空地协同 | 帧计数、数据新鲜度、目标状态、状态机状态 | 断链或过期数据进入预期回退状态
+双主控视觉链路 | 前/后序号与年龄、CRC错误、序号缺口、当前相机、目标代数、切换坐标 | 错误帧可拒绝，超时可离线，切换不产生持续跳变或错误方向

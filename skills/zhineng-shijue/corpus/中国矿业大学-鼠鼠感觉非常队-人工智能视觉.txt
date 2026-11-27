@@ -1,0 +1,499 @@
+第二十一届全国大学生智能汽车竞赛
+技 术 报 告
+基于 i.MX RT1064 的双视觉全向智能搬运车设计与实现
+学      校：  中国矿业大学
+队伍名称：  鼠鼠感觉非常队
+参赛队员：  李思晗 蒋雨陈 乔家宝 巩尚骞
+指导教师：      陈亮亮 刘海
+
+二〇二六年八月
+关于技术报告和研究论文使用授权的说明
+本人完全了解全国大学生智能汽车竞赛关于保留、使用技术报告和研究论文的规定，即：参赛作品著作权归参赛者本人，比赛组委会可以在相关主页上收录并公开参赛作品的设计方案、技术报告以及参赛模型车的视频、图像资料，并将相关内容编辑收录在组委会出版的论文集中。
+本报告由参赛队员在指导教师指导下共同完成。报告中引用的资料已在参考文献中列出；除已注明内容外，不包含他人已经发表或撰写的研究成果。
+
+
+
+
+
+参赛队员签名：____________________________
+带队教师签名：____________________________
+日          期：________年____月____日
+目  录
+
+第一章  引言
+1.1  竞赛任务与研究背景
+智能搬运类竞赛要求模型车在有限时间内完成绝对定位、环境建图、目标语义识别、路径规划、物体推动及多轮回家等任务。系统既要具备较高层的离散规划能力，又必须在噪声、通信延迟和轮胎打滑条件下保持连续运动控制稳定。单纯依赖编码器会产生累积漂移，单纯依赖视觉又容易受到帧率和遮挡影响，因此本车采用“视觉给出全局约束、编码器和 IMU 完成高频闭环”的分层方案。
+本系统以 NXP i.MX RT1064 为主控制器，运行 RT-Thread 实时操作系统；采用四轮麦克纳姆底盘、四路正交编码器、IMU660RC 姿态传感器和两路 OpenART 视觉模块。OpenART PLUS(OpenART 1) 负责全局位姿与 12×16 栅格地图，OpenART MINI（OpenART 2） 负责近距离语义识别。主控完成协议解析、任务状态机、推箱/炸弹规划、路径执行和多环控制。[1-3]
+
+图 1.1  系统总体架构
+1.2  设计目标
+实时性：将 1 ms 软定时器作为统一节拍源，200 Hz 更新 IMU 与角度环，50 Hz 更新编码器、里程计与轮速闭环。
+鲁棒性：通过上电零偏收敛、运行时停车校正、视觉多帧滤波、CRC16 帧校验和执行超时减少异常扩散。
+可执行性：规划结果转换为控制层可直接跟踪的直线折线路径和推动分段，并在每个 waypoint 进行到位确认。
+内存确定性：决策句柄、消息缓冲和搜索 scratch 均使用固定容量或原地存储，避免比赛运行期堆分配。
+可维护性：感知、通信、决策、导航和底盘控制模块边界明确，通过消息队列与信号量交换事件。
+1.3  报告内容安排
+第二章介绍机械结构和总体方案；第三章说明电源、主控扩展板和电机驱动电路；第四章给出 RT-Thread 软件架构与板间通信；第五章阐述里程计、IMU 零偏估计和视觉位姿融合；第六章说明规划决策、导航和多环控制算法；第七章总结制作调试过程及当前技术指标；第八章给出结论、已知问题和改进方向。附录列出主要电路图和核心程序。
+
+表 1.1  主要符号与缩略语
+
+第二章  系统总体方案与机械结构
+2.1  总体方案
+整车采用四轮麦克纳姆全向底盘。四个驱动轮独立控制，底盘可在保持车头朝向的情况下沿任意平面方向平移，适合栅格地图中的横移、斜向接近和推箱对位。两个双路电机驱动板分别负责前后两组电机，RT1064 扩展板位于车体中央，缩短信号线并降低左右质量差。
+全局视觉模块布置在能够覆盖场地标志或定位目标的位置，第一视角语义模块面向车体前方，用于近距离识别目标点和箱子编号。IMU 应靠近车体旋转中心，减小平移冲击和安装偏心对角速度测量的影响；电池与大电流驱动板靠近底盘中心并尽量低置，以降低重心。
+
+图 2.1  底盘与模块布置示意
+2.2  麦克纳姆轮运动学
+设车体坐标系横向速度为 vx，前向速度为 vy，逆时针角速度等效命令为 ω。按照当前电机编号与安装方向，四轮目标量由下式给出：
+v1 = vy - vx + ω；v2 = vy + vx - ω；v3 = vy + vx + ω；v4 = vy - vx - ω    （1）
+上述关系直接对应 motor_speedCalculate()。导航层先在世界坐标系生成速度矢量，再根据实时航向旋转到车体坐标系，最后进行麦克纳姆逆解。这样里程计位置、地图目标和视觉位姿始终保持在统一世界坐标中，底盘局部运动则由当前车头姿态解释。
+2.3  机械安装与抗干扰要点
+四个轮轴应保持平行、轮径一致，麦克纳姆滚子方向按“X”形对称布置；轮子偏摆会直接引入横向里程系数差。
+编码器线与电机动力线分开走线，必要时使用双绞或屏蔽线，并在扩展板侧单点接地。
+OpenART 支架应具备角度锁紧结构；标定后不得随意改变高度、俯仰角和光轴位置。
+电机驱动板功率铜皮保持通风，470 μF 电解电容靠近 VM 与 PGND，减小换向电压泵升。
+推箱接触面需平直并位于底盘中心线附近，避免偏心接触导致箱体旋转。
+
+表 2.1  机械参数记录表
+
+第三章  硬件系统设计
+3.1  主控与电源架构
+主控采用 i.MX RT1064 Cortex-M7 平台，最高主频 600 MHz，具有充足的定时器、UART、SPI、PWM 和片上 SRAM 资源，适合同时运行多线程决策程序和高频运动控制。固件基于逐飞 RT1064 开源库和 RT-Thread，编译环境支持 MDK 5.33 及 IAR 8.32.4。[1-3]
+扩展板从电池端进入后依次设置保险丝、TVS、PMOS 防反接和稳压管钳位，形成过流、浪涌、反接和过压四级保护。XL1509-5.0 降压生成 5 V 主电源，TLV1117-3.3 线性稳压器为数字逻辑提供低纹波 3.3 V，SY6280AAC 负载开关由主控控制外设上电时序，以减小多外设同时启动的浪涌。
+
+图 3.1  RT1064 扩展板电源与最小系统原理图
+
+表 3.1  扩展板主要功能模块
+
+3.2  电机驱动板
+每块双路驱动板使用两颗 DRV8874，分别控制两路有刷直流电机；整车使用两块驱动板完成四电机独立控制。DRV8874 支持较宽的电机电压范围，集成电荷泵、电流镜、限流与故障保护，适合智能车频繁启停和换向工况。[4]
+控制端包含 PWM、SLEEP、PMODE 和故障/电流采样信号。每路 VM 端设置 100 nF 高频去耦和 470 μF 储能电容，故障端驱动 LED 指示。PCB 顶底层大面积铺铜、功率回路加宽，芯片散热焊盘下布置过孔阵列，将热量传至底层。
+
+图 3.2  双路 DRV8874 电机驱动原理图
+3.3  编码器、IMU 与视觉接口
+四路编码器连接到 RT1064 的 QTIMER 正交解码通道，当前引脚分别使用 QTIMER3_ENCODER1/2 和 QTIMER1_ENCODER1/2。四路计数每 20 ms 读取一次，随后立即清零硬件计数，滤波后的增量用于轮速闭环和全向里程计。
+IMU660RC 通过高速接口提供 Z 轴角速度，主控每 5 ms 读取并进行零偏补偿与梯形积分。OpenART1 使用 UART4（C16/C17），OpenART2 使用 UART5（C28/C29），两路波特率均为 115200 bit/s；中断只搬运字节，完整协议解析在线程上下文完成。
+3.4  电源容量与功耗
+由现有原理图可确认，两块双路驱动板至少包含 4×470 μF 的电机侧储能电容；主控扩展板还包含 470 μF、180 μF、10 μF 及若干小容量去耦电容。由于当前缺少最终 BOM 和实物焊接清单，本报告不对总电容量和功耗进行推断，提交前应以实装器件和实测数据填写。
+
+表 3.2  电气技术参数
+
+第四章  软件架构与通信设计
+4.1  软件分层
+程序由设备驱动层、实时控制层、导航执行层、决策规划层和视觉通信层组成。main() 依次初始化调试串口、IMU、上电零偏、四电机、四编码器、1 ms 定时器、UART 桥接、导航任务和决策任务。初始化完成后主线程仅周期休眠，业务均由软定时器、中断和 RT-Thread 线程驱动。
+表 4.1  主要线程与周期
+
+4.2  中断、队列与同步
+UART4/5 接收中断采用“最小化 ISR”策略：中断中只把字节写入 1024 B 环形缓冲，并在尚未通知时释放一次接收信号量；解析线程每次分别批量读取 128 B 或 64 B，调用流式解析器处理半包、粘包与噪声。若环形缓冲满，新字节被丢弃，解析器随后依靠帧头重新同步，避免 ISR 阻塞。
+地图通过 192 B×2 深度消息队列传给 decision_task，语义编号通过 4 B×4 深度队列传递。decision_task 与 navi_task 之间使用命令信号量和执行结果信号量；导航任务收到命令后先上报 RUNNING，完成后再上报 SUCCEEDED 或 FAILED。共享位姿快照、停止状态和校正窗口使用临界区或中断屏蔽保护。
+4.3  二进制通信协议
+板间协议采用 9 B 固定帧头：魔数 0xA5、0x5A，消息类型 kind，2 B 小端载荷长度，2 B 序号和 2 B CRC16；载荷最大 512 B。CRC 从 kind 字节开始计算到 payload 结束，采用 CRC16-CCITT 多项式 0x1021、初值 0xFFFF。
+Frame = A5 5A | Kind | Length(2) | Seq(2) | CRC16(2) | Payload    （2）
+表 4.2  主要协议消息
+
+4.4  固定容量内存设计
+决策 C 接口预留 3328 B 原地存储，路径上限 140 点，语义槽位 20 个。地图、候选集合和规划 scratch 使用 std::array、bitset 与固定容量 SmallVector，通信解析器和环形缓冲显式放置在静态存储或 OCRAM 段。该策略避免运行期堆碎片，并使最坏内存占用可在链接阶段检查。
+第五章  感知、定位与融合算法
+5.1  坐标系统与里程计
+地图固定为 12 行×16 列，每格边长 20 cm。决策层使用 row/col 离散坐标；视觉协议以 mg 表示千分之一格。车体中心位姿由 car.AbsoluteX/Y 表示格坐标，里程计增量则以 cm 累积。视觉坐标与车体中心之间根据车头朝向使用独立标定偏移，避免把不同方向的相机安装误差简单旋转。
+四轮编码器先通过系数为 0.5 的一阶 RC 低通，再按麦克纳姆正运动学得到车体系增量。当前标定系数为 MileageKx=0.007630、MileageKy=0.008030，随后使用实时航向把车体增量旋转到世界坐标：
+[ΔXw, ΔYw]ᵀ = [cosθ  -sinθ; sinθ  cosθ] · [ΔXb, ΔYb]ᵀ    （3）
+5.2  IMU 上电零偏与航向积分
+上电后先静置预热 500 ms，再以 5 ms 周期采集 4500 ms，共约 900 个原始 Z 轴角速度样本。卡尔曼滤波器状态为零偏 b 及其方差 P，过程噪声 Q=0.0003，单点测量噪声 R=0.00220。预测与更新为：
+Pₖ⁻ = Pₖ₋₁ + Q·Δt；Kₖ = Pₖ⁻/(Pₖ⁻+R)；bₖ=bₖ⁻+Kₖ(zₖ-bₖ⁻)    （4）
+每个有效样本先减去零偏，再使用相邻两次补偿角速度进行梯形积分。若实际采样间隔大于 20 ms，则将积分步长限幅到 20 ms；大于 50 ms 的周期直接拒绝，避免调试断点或线程阻塞造成角度突跳。
+5.3  运行时零偏校正
+正常比赛模式不按墙钟周期强制停车。系统仅累计实际平移运行时间；累计达到 4000 ms 后，把“校正到期”标志附着到下一个 waypoint。车辆到位后先切断 PWM 并继续采样编码器，当四轮编码器绝对值均不超过 5 且连续 3 个 20 ms 周期成立，才认为机械上真正静止。
+静止 50 ms 后启动 400 ms 采样窗口，按 5 ms 周期收集 80 个原始角速度。排序后删除最高 10 个和最低 10 个样本，对中间 60 点取均值，再进行一次批量 KF 更新。若均值与旧零偏相差超过 0.25 °/s，则拒绝本次更新并在后续 waypoint 重试。
+校正节拍  “4 秒”指累计实际运动时间，不含停车、视觉、语义和地图等待；达到 4 秒也不会中途急停，而是在下一个路径点完成校正。
+5.4  全局视觉位姿滤波与融合
+停止窗口最多保存 9 帧新鲜位姿，并用序号排除窗口开始前的缓存帧、重复帧和越界帧。样本数不少于 3 时，先计算 X/Y 分量中值；以中值为中心，在 150 mg（0.15 格，即 3 cm）半径内选取内点。满 5 帧且至少 4 个内点时采用内点均值，否则采用坐标中值。
+视觉位置与当前里程计残差超过 1500 mg（1.5 格）时拒绝融合；通过门限后采用 50% 视觉、50% 里程计的固定权重更新位置。推箱阶段不是每次 IMU 校正都使用视觉，而是每第 2 个运行时 KF 窗口选择一次联合视觉窗口，因此在连续成功情况下相当于约每 8 s 累计运动时间进行一次视觉位置校正。
+p_fused = p_odom + 0.5·(p_vision - p_odom)    （5）
+
+图 5.1  多速率闭环与运行时校正
+
+表 5.1  定位与融合关键参数
+
+第六章  规划决策与运动控制算法
+6.1  地图语义与任务状态机
+地图单元类型包括空地、外墙、内墙、目标点、箱子和炸弹。语义协议中 0～9 表示目标点类别，10～19 表示对应箱子类别，箱子 10+k 与目标 k 配对。顶层阶段为 Boot、Identify、Execute、ReturnHome 和 Abort；等待状态为 WaitMap、WaitExec 与 WaitSemantic。
+
+图 6.1  决策层主状态机
+Boot 阶段根据启动位姿选择左右锚点和回家点，到达锚点后请求全局视觉建图；Identify 阶段规划观察位并要求相同语义连续确认 3 帧，必要时推动炸弹清除内墙；Execute 阶段执行推箱、炸弹和回家任务；不可恢复错误进入 Abort 并发送 STOP。当前比赛流程共运行 3 轮，轮次之间复用线程和 IPC，仅复位动态状态。
+6.2  导航与观察规划
+普通导航采用四连通 BFS 计算最短格路径，并在最短路径 DAG 上优先选择转弯更少的父节点。逐格路径随后压缩为可执行折线；若两个折点闭合矩形内仅包含空地或目标点且不穿越临时禁行格，则允许进一步折叠为安全斜线，以减少停车次数。
+观察规划枚举目标四邻域中的可通行观察位，同时考虑前进、横移、绕行和四分之一转向代价。当前权重分别为 10、14、10 和 18，使规划倾向于选择移动距离短、侧移和转向较少的站位。观察到位后切换专用旋转角度环，在 3°误差内连续稳定 1 s 才上报成功。
+6.3  推箱问题建模与状态压缩
+推箱与普通导航的本质区别是：小车只有站在箱体反方向的相邻格，才能把箱体推入下一格；一旦把箱体推入墙角，后续可能永久不可恢复。因此规划器不把“小车位置 + 箱体位置”的所有组合直接展开，而把推动后的状态压缩为 s=(b,q)，其中 b 为箱体格，q∈{上、下、左、右} 表示小车位于箱体哪一侧。12×16 地图扣除外墙后为 10×14 个可玩格，故内部推动状态上限仅为 10×14×4=560。第一次推动仍使用小车真实起点，此后小车必然停在箱体原位置，状态即可稳定压缩。[9]
+s=(b,q)，q∈{U,D,L,R}；|S|max=(12-2)×(16-2)×4=560    （6）
+设候选推动方向为 d，当前箱位为 b，则接触位 p=b-d、下一箱位 b′=b+d。扩展前依次检查：接触位和 b′ 是否位于可玩区域；箱体目的格是否为空地或目标点；匿名配对时 b′ 是否占用其他保留目标；小车能否在把当前箱格视为障碍的条件下通过四连通 BFS 绕到 p；b′ 是否落入由横向与纵向静态墙共同构成的非目标死角。任一条件不满足就立即剪枝。该死角检测故意保持保守，只删除确定无解的静态墙角，不把其他箱体形成的临时拥堵误判为永久死锁。
+
+图 6.2  推箱算法的数据流与执行闭环
+6.4  单箱 A* 推动搜索
+单箱规划采用带 decrease-key 的二叉最小堆维护开放集。搜索代价 g 只计推动步数与推向改变次数，推向每改变一次增加 4 的惩罚；启发函数 h 使用箱位到目标位的曼哈顿距离。由于每次推动至少使曼哈顿距离变化一格，h 不高估剩余推动步数，可用于优先展开更接近目标的状态。分数相同时依次比较已有代价、转向次数、箱格索引和小车侧向，保证同一地图输入得到确定结果。
+g(s)=Npush+4Nturn；h(s)=|rb-rg|+|cb-cg|；f(s)=g(s)+h(s)    （7）
+搜索中的小车绕行不是另一个外层状态维度，而是在扩展推动方向时调用 BFS 验证。若同一状态需要检查多个接触侧，BuildApproachSideDistances 只进行一次 BFS，并同时得到最多四个侧向距离；若只需一个侧向，则直接调用路径 BFS。规划摘要另外累计这些绕行距离，供上层选择任务时计价，因此最终执行估价为“绕行步数 + 推动步数 + 4×推向改变次数”，但绕行距离不会改变单箱 A* 对推动序列的最优性定义。
+Open = min_heap()
+expand_first_push(car, box)
+while Open is not empty:
+    s = pop_min_f()
+    if s.box == goal: return backtrace_and_merge(s)
+    for d in {UP, DOWN, LEFT, RIGHT}:
+        contact = s.box - delta(d)
+        next_box = s.box + delta(d)
+        if destination_illegal(next_box): continue
+        if non_goal_static_corner(next_box): continue
+        if not bfs_reachable(s.car, contact, blocked=s.box): continue
+        next = (next_box, opposite(d))
+        g2 = push_steps + 1 + 4 * push_turns
+        if g2 improves next:
+            parent[next] = s
+            decrease_key_or_push(Open, next)
+6.5  多箱配对、任务排序与有限前瞻
+语义匹配模式下，目标 0～9 与箱子 10～19 按类别一一对应。决策层先对所有仍待处理的箱子调用 TrySummarizeBoxPush，保存最多 4 个代价较低的候选，再对前 2 个候选构造“推完当前箱后的地图”，评估余下箱子中代价最低的 2 项。最终按“后续箱体总代价、当前任务估价、小车到箱体距离、语义编号”的字典序选择任务。这样既避免只推最近箱导致后续通道被封，又把板端组合规模限制在常数范围内。
+匿名盲推模式下，箱体与目标尚未建立类别配对。系统先用 max(0, Manhattan(car,box)-1)+Manhattan(box,target) 形成乐观下界，为每个箱体建立目标短名单和互斥分配；常规路径最多精确评估 3 个主候选，主候选全部不可执行时才退回更广的候选扫描。规划具体匿名箱时，除本次目标外的其他目标格写入 blocked_object_cells，防止箱体提前占住仍需保留的目标。
+当当前地图没有直接可完成的箱任务时，决策层还会枚举箱体或炸弹的一格临时移动，比较新增可达格、潜在解锁箱数、后续炸弹收益及移动代价。只有确实扩大后续推动空间的临时动作才会进入候选，从而把“先挪开挡路物体”纳入滚动决策，而不进行无法在 RT1064 上承受的全排列全局搜索。
+
+表 6.1  推箱规划实现参数
+
+6.6  PushSegment 分段与板端执行闭环
+找到目标状态后，规划器沿 parent 数组回溯得到逐格推动序列，再把连续同方向的推动合并为 PushSegment。每段只保存 object_start、object_goal 和 push_dir，既缩短跨模块命令，也使控制层只在真正需要换推向时停车并重新绕到箱体另一侧。对于一段推向 d，决策层先规划小车从当前位置到接触位，再把最终停车位显式追加到同一命令路径。
+pcontact=bstart-d；pcar,final=bgoal-d    （8）
+板端 navi_task 依次跟踪“绕行路径点→接触位→最终车位”。从接触位到最终车位的直线段就是实际推箱运动，仍使用 20 ms 位置环、200 Hz 航向保持和 50 Hz 轮速闭环。每段返回 SUCCEEDED 后，决策层先把小车位姿吸附到理论最终车格，再调用 MoveDynamicObject 把箱体从本段起点写回本段终点；若终点是语义匹配目标，则同时清除目标掩码、停用对应语义对象并移出 pending_box_ids。随后段索引加一，继续派发下一 PushSegment。分段成功才更新内部世界，避免控制执行与规划地图错位。
+失败处理边界  当前代码对 PushSegment 执行失败采取保守策略：不写回箱体新位置，立即进入 Abort 并发送 STOP。它没有在箱体可能发生未知偏移后盲目重规划；若要增加自动恢复，应先由视觉重新确认箱位，再刷新地图并重新调用推箱规划器。
+6.7  嵌入式资源约束与确定性
+PushSearchScratch 由 best_cost、secondary、parent、push_turns、frontier_heap 和 frontier_pos 等固定数组组成，核心推动搜索工作区约 6.2 KB（不含编译器对齐）；访问过的 560 个状态用 18 个 32 位字记录，只复位本轮真正触及的状态。路径 BFS 也复用全局 scratch 和 generation 标记，避免每次搜索清空整张地图。状态索引和父索引均使用 uint16_t，推动转向数使用 uint8_t。固定边界使最坏内存占用可在链接期核算，并避免比赛运行中因频繁堆分配产生碎片或时延抖动。
+在固定 12×16 地图上，最多扩展 560 个推动状态，每个状态最多检查 4 个方向；每次必要的接触侧验证在 192 格地图上做四连通 BFS。虽然理论上仍可能多次执行 BFS，但状态、开放集和候选数量均为常数上限，适合板端滚动调用。批量目标摘要还能让多个候选共享一次搜索结果，减少多箱选择阶段的重复计算。
+6.8  waypoint 跟踪与速度整形
+导航层以 20 ms 周期计算目标点与当前位置的世界坐标误差。位置环采用 P=10，将 X/Y 误差转换为平移速度；当距离小于 8 cm 时进行末端减速，到达阈值为 1.5 cm。XY 向量保持方向不变地限制最小有效模长 80，并在麦克纳姆逆解后把最大轮速需求限制为 200。单 waypoint 超时为 5 s 加每格 2 s。
+6.9  角度环与轮速环
+路径跟踪阶段使用航向保持 PD：Kp=10、Ki=0、Kd=90；原地观察旋转使用独立 PD：Kp=6.2、Ki=0、Kd=10。两个控制器均把角度误差归一化到 [-180°,180°] 并将输出限制在 ±200。轮速闭环采用增量 PI，四轮参数一致，Kp=70、Ki=4、Kd=0。
+u(k)=Kp·e(k)+Ki·Σe(k)+Kd·[e(k)-e(k-1)]    （9）
+运动起步时加速度比例从 0.5 开始，每 20 ms 增加 0.02，约 0.5 s 达到 1.0。到位停车采用“滑行停机”而不是对零速度继续运行增量 PI：立即关闭 PWM，等待编码器确认静止后再清除速度环历史，避免残余 PWM 造成反向制动脉冲。
+当前改进点  观察旋转成功后会把 speed_Z 置零、目标角设为当前 angle_y 并切回移动角度环，但移动角度环的 last_error 未同步重置。由于移动角度环 Kd=90，切换后的首个 5 ms 周期可能出现一次短促 D 项脉冲。建议新增移动角度环 reset，并在临界区内按“目标角→历史量→输出→模式”顺序完成切换；IMU 航向 angle_y 不应清零。
+表 6.2  运动控制参数
+
+第七章  制作调试、试验与技术指标
+7.1  开发工具与构建方法
+底层工程使用逐飞 RT1064 开源库、NXP SDK 2.12 和 RT-Thread。板端项目文件为 project/mdk/rt1064.uvprojx，可使用 Keil MDK 5.33 以上版本编译；亦保留 IAR 8.32.4 工程。硬件原理图与 PCB 使用嘉立创 EDA 绘制。视觉侧脚本位于 vision 目录，板间协议常量由 C++ 头文件生成，避免多语言手工维护发生漂移。
+7.2  制作与联调流程
+先完成四电机方向与编码器符号核对：悬空逐轮给定正目标，检查轮向、编码器正负和电机编号一致性。
+标定 MileageKx/MileageKy：分别执行纯 X、纯 Y 定长运动，根据实测距离修正比例，并检查世界坐标旋转后对角线轨迹。
+静置采集 IMU 原始角速度，确认 5 s 上电零偏收敛；旋转 90°/180° 检查积分符号与尺度，再调原地旋转 PD。
+先以低速打通 Boot→锚点→INIT→MapReady，再接 ObserveAt 与三帧语义确认，最后启用 PushSegment、炸弹和三轮回家。
+通过 UART 日志记录 waypoint 误差、wheel_limited、IMU bias、视觉样本数、内点数与融合方式，定位超时和拒绝原因。
+完成运动测试后测量整车重量、尺寸、各电源轨静态/峰值功耗、视觉帧率和绝对定位误差，并填入本章表格。
+7.3  软件验证与故障保护
+通信模块包含协议编解码 round-trip、半包/粘包和 CRC 错误恢复验证；board_runtime_validation 覆盖从 Bootstrap、NavigateTo、ExecSucceeded 到 INIT 的桥接流程。导航层设置 waypoint 超时和命令失败硬停车；决策层限制导航重试 1 次，超过恢复能力后进入 Abort。轮次结束使用持续停车门，防止 1 ms 定时器重新生成轮速目标。
+
+表 7.1  功能验证记录
+
+7.4  推箱算法桌面规模基准
+仓库于 2026 年 8 月 11 日对生产 DecisionLayer 和 PathPlanner 进行了桌面规模基准。测试覆盖 N=5～10 个箱体，每档固定匹配与匿名盲推各 8 张固定随机种子地图，共 96 张参考可解地图；开放地图与少量内墙地图交替生成。当前算法通过正式事件接口运行，参考算法采用桌面宽 Beam（固定匹配宽度 192、匿名宽度 96）。双方统一按“总移动步数 + 4×总推向改变次数”计价。[10]
+
+表 7.2  推箱规模基准结果
+
+固定匹配模式端到端完成 45/48；其中两张失败发生在观察阶段，排除后推箱阶段完成 45/46。在双方均完成的地图上，当前算法总成本约比 Beam 高 7%，说明“短名单 + 两候选前瞻”在匹配已知时基本满足使用需求。匿名盲推完成 40/48，8 次未完成均发生在推箱阶段；双方均完成时平均成本差距约 15%，N=9～10 时约 20%。表中带 * 的固定匹配未完成包含观察阶段失败，不能归因于推箱。
+基准结论  当前实现的优势是状态和内存边界明确、固定匹配完成率较高；主要短板集中在箱体—目标未知且数量较大时的配对与任务顺序。后续优化应优先改进匿名模式的窄 Beam、滚动窗口或剩余少量箱体的精确尾部搜索，而不是扩大单箱 560 状态搜索。
+7.5  主要技术参数
+
+表 7.3  模型车主要技术参数
+
+7.6  实验数据建议
+为使最终报告满足竞赛评审的可复现性要求，建议至少完成 10 次直线定位、10 次 90°旋转、10 次视觉校正和 3 轮完整任务测试。分别记录终点误差、角度超调、完成时间、视觉有效帧率、零偏变化量和成功率，给出均值、标准差及最大值。当前仓库未包含可验证的现场实验数据，因此本报告不虚构结果。
+第八章  结论与展望
+8.1  工作总结
+本文完成了一套基于 i.MX RT1064 的双视觉全向智能搬运车方案。硬件采用四轮麦克纳姆底盘、四路 DRV8874 驱动、四路编码器、IMU660RC 及双 OpenART；软件在 RT-Thread 上实现中断—线程解耦通信、固定容量决策规划、折线路径执行、多速率闭环、运行时 IMU 零偏校正和停止窗口视觉融合。
+系统将 12×16 栅格任务分解为 Boot、Identify、Execute、ReturnHome 与 Abort 阶段。推箱部分以“箱格 + 小车侧向”压缩为最多 560 个状态，采用 A*、接触侧 BFS、静态死角剪枝、匹配/匿名两类任务排序和有限前瞻生成推动序列，再按连续同方向合并为 PushSegment。板端逐段完成绕行、接触和直推，只有收到成功状态后才写回小车与箱体位置。桌面基准表明固定匹配推箱阶段完成 45/46 张参考地图，当前路线成本约比宽 Beam 高 7%。运动层以 200 Hz 航向环和 50 Hz 轮速环闭环，使用滑行停机和物理静止证明降低到位扰动。
+8.2  存在问题
+报告仍缺少实车重量、尺寸、完整功耗、电容总量、视觉精度/帧率和现场成功率，提交前必须补测。
+视觉固定偏移按四个主方向离散选择，尚未建立随连续航向变化的相机外参模型。
+移动角度环在观察旋转结束切换时未显式重置 D 项历史，存在一次短促输出脉冲的可能。
+固定权重视觉融合未使用视觉置信度和里程计协方差，残差门限也需要结合实测噪声重新标定。
+当前推箱/炸弹规划以固定边界和可执行性为主，并非严格全局最优；匿名盲推在 N=9～10 的桌面基准中完成率下降，平均成本差距约 20%。
+PushSegment 执行失败后会直接 Abort；系统尚不能依据视觉重新估计偏移箱位并自动重规划。
+8.3  后续改进方向
+后续首先增加统一的角度环模式切换接口，在临界区内同步目标、误差历史和控制模式；其次使用时间戳与协方差建立扩展卡尔曼滤波或误差状态滤波，将视觉、编码器和 IMU 以统一不确定度融合；推箱规划侧优先为匿名模式增加窄 Beam 或滚动窗口，并在剩余箱体较少时切换精确尾部搜索。执行失败时应先触发全局视觉重新定位箱体，再基于更新地图重规划，而不是直接沿用原计划。
+硬件方面可增加电流采样闭环、驱动温度监测和电池电压估计，利用 DRV8874 的 IPROPI 与 nFAULT 实现堵转保护；机械方面进一步降低相机支架柔度与车体重心，并用统一基准完成四轮平行度和相机外参标定。完成上述工作后，系统的重复精度、异常诊断能力和比赛现场可维护性将进一步提高。
+参考文献
+[1] NXP Semiconductors. MIMXRT1062/1064 Processor Reference Manual [M]. Eindhoven: NXP, 2023.
+[2] RT-Thread Development Team. RT-Thread Programming Guide [EB/OL]. RT-Thread Documentation.
+[3] 深圳市逐飞科技有限公司. RT1064 开源库与核心板使用说明 [Z]. 2026.
+[4] Texas Instruments. DRV8874 40-V, 6-A H-Bridge Motor Driver with Integrated Current Sense and Regulation [DS]. 2024.
+[5] Welch G, Bishop G. An Introduction to the Kalman Filter [R]. University of North Carolina at Chapel Hill, 2006.
+[6] Muir P F, Neuman C P. Kinematic Modeling of Wheeled Mobile Robots [J]. Journal of Robotic Systems, 1987, 4(2): 281-340.
+[7] Cormen T H, Leiserson C E, Rivest R L, Stein C. Introduction to Algorithms [M]. 4th ed. Cambridge: MIT Press, 2022.
+[8] GB/T 7714-2015. 信息与文献 参考文献著录规则 [S]. 北京: 中国标准出版社, 2015.
+[9] 本项目. decision_planner.cpp、decision_layer_box.ipp 与 decision_layer_state_apply.ipp [CP]. 2026.
+[10] 本项目. 推箱规模桌面基准结果：box_planner_scale_benchmark_results.md [R]. 2026-08-11.
+附录 A  主要电路原理图与 PCB 图
+本附录给出两块双路驱动板和 RT1064 核心扩展板的主要设计图。图纸来源于桌面硬件设计文档，仅作技术报告展示；生产前应以 EDA 工程中的最新网络表、封装和设计规则检查结果为准。
+
+图 A-1  双路驱动板顶层 PCB
+
+图 A-2  双路驱动板底层 PCB
+
+图 A-3  RT1064 扩展板编码器、PWM、视觉和人机接口原理图
+
+图 A-4  RT1064 扩展板顶层 PCB
+
+图 A-5  RT1064 扩展板底层 PCB
+附录 B  核心算法程序
+以下列出与本文算法直接对应的核心程序节选。完整工程位于 SeekFree_RT1064_Opensource_Library/project/code，包含通信、决策、导航、控制及板端适配的全部源文件。
+B.1  麦克纳姆轮目标分解
+void motor_speedCalculate(float x, float y, float z)
+{
+    speed_tar_1 = y - x + z;
+    speed_tar_2 = y + x - z;
+    speed_tar_3 = y + x + z;
+    speed_tar_4 = y - x - z;
+}
+B.2  航向角误差与旋转 PID
+static float normalize_angle_error_deg(float error_deg)
+{
+    while (error_deg > 180.0f) error_deg -= 360.0f;
+    while (error_deg < -180.0f) error_deg += 360.0f;
+    return error_deg;
+}
+
+float Angle_rotate_pid(float current_angle, float target_angle)
+{
+    float error = normalize_angle_error_deg(target_angle - current_angle);
+    rotate_integral_error += error;
+    float output = ROTATE_ANGLE_KP * error
+        + ROTATE_ANGLE_KI * rotate_integral_error
+        + ROTATE_ANGLE_KD * (error - rotate_last_error);
+    rotate_last_error = error;
+    if (output > ROTATE_ANGLE_LIMIT) output = ROTATE_ANGLE_LIMIT;
+    if (output < -ROTATE_ANGLE_LIMIT) output = -ROTATE_ANGLE_LIMIT;
+    return output;
+}
+B.3  运行时 IMU 零偏截尾均值
+static rt_bool_t imu_bias_robust_mean(
+    uint16_t sample_count, float *measurement, uint16_t *inlier_count)
+{
+    if (sample_count != IMU_BIAS_WINDOW_SAMPLES) return RT_FALSE;
+    for (uint16_t i = 0; i < sample_count; ++i) {
+        float value = g_bias_samples[i];
+        uint16_t p = i;
+        while (p > 0 && g_bias_sort_buffer[p - 1] > value) {
+            g_bias_sort_buffer[p] = g_bias_sort_buffer[p - 1];
+            --p;
+        }
+        g_bias_sort_buffer[p] = value;
+    }
+    float sum = 0.0f;
+    for (uint16_t i = IMU_BIAS_TRIM_SAMPLES;
+         i < sample_count - IMU_BIAS_TRIM_SAMPLES; ++i) {
+        sum += g_bias_sort_buffer[i];
+    }
+    *inlier_count = sample_count - 2U * IMU_BIAS_TRIM_SAMPLES;
+    *measurement = sum / (float)(*inlier_count);
+    return RT_TRUE;
+}
+B.4  视觉与里程计固定权重融合
+static inline int stationary_pose_filter_fuse_mg(
+    int odom_x, int odom_y, int vision_x, int vision_y,
+    int *fused_x, int *fused_y)
+{
+    int64_t dx = (int64_t)vision_x - odom_x;
+    int64_t dy = (int64_t)vision_y - odom_y;
+    const int64_t max2 = (int64_t)STATIONARY_POSE_MAX_RESIDUAL_MG
+        * STATIONARY_POSE_MAX_RESIDUAL_MG;
+    if (dx * dx + dy * dy > max2) return 0;
+    *fused_x = odom_x + stationary_pose_filter_round_divide(
+        dx * STATIONARY_POSE_FUSION_WEIGHT_NUMERATOR,
+        STATIONARY_POSE_FUSION_WEIGHT_DENOMINATOR);
+    *fused_y = odom_y + stationary_pose_filter_round_divide(
+        dy * STATIONARY_POSE_FUSION_WEIGHT_NUMERATOR,
+        STATIONARY_POSE_FUSION_WEIGHT_DENOMINATOR);
+    return 1;
+}
+B.5  UART 中断与解析线程解耦
+void uart4_byte_handler(void)
+{
+    uint8_t byte;
+    rt_bool_t got_data = RT_FALSE;
+    while (uart_query_byte(OPENART1_UART, &byte)) {
+        ring_write(&g_uart4_ring, byte);
+        got_data = RT_TRUE;
+    }
+    if (got_data && g_uart4_rx_notified == 0) {
+        g_uart4_rx_notified = 1;
+        (void)rt_sem_release(g_uart4_rx_sem);
+    }
+}
+B.6  到位后的滑行停机
+void chassis_coast_stop_begin(void)
+{
+    rt_enter_critical();
+    g_chassis_coast_stop = RT_TRUE;
+    g_chassis_coast_complete = RT_FALSE;
+    g_chassis_stop_confirm_cycles = 0U;
+    car.speed_X = 0.0f;
+    car.speed_Y = 0.0f;
+    car.speed_Z = 0.0f;
+    car.targetAngle = (float)angle_y;
+    motor_speedCalculate(0.0f, 0.0f, 0.0f);
+    motor_control(false);
+    rt_exit_critical();
+}
+B.7  推箱 A* 的合法扩展与松弛
+for (Direction direction : kCardinalDirections) {
+    const GridPos delta = DirectionDelta(direction);
+    const GridPos pushing_pos = SubPos(source_object, delta);
+    const GridPos next_object = AddPos(source_object, delta);
+    if (!IsPlayableCell(pushing_pos) ||
+        !IsPlayableCell(next_object)) continue;
+    if (!CanPushObjectInto(object_type,
+            dynamic_cell_type(next_object), next_object,
+            goal_pos, allow_inner_wall)) continue;
+    if (is_simple_deadlock(next_object)) continue;
+    if (!TryBfsPathImpl(source_car, pushing_pos,
+            nullptr, nullptr, &source_object,
+            &object_pos, &approach_distance)) continue;
+
+    const int next_turn_count = source_turn_count +
+        (!first_push && direction != previous_push_dir ? 1 : 0);
+    const int next_cost = source_step_count + 1 +
+        next_turn_count * kPushTurnPenalty;
+    if (IsBetterPushPath(next_cost, next_turn_count,
+            scratch.best_cost[next_state_index],
+            scratch.push_turns[next_state_index])) {
+        scratch.best_cost[next_state_index] = next_cost;
+        scratch.parent[next_state_index] = parent_index;
+        frontier_push_or_decrease(next_state_index);
+    }
+}
+B.8  PushSegment 命令生成与成功写回
+const GridPos contact_pos = SubPos(
+    segment.object_start, DirectionDelta(segment.push_dir));
+const GridPos final_car_pos = SubPos(
+    segment.object_goal, DirectionDelta(segment.push_dir));
+NavigationPlan approach_plan;
+if (!planner_->TryPlanNavigation(
+        state_.world.CurrentCell(), contact_pos,
+        &approach_plan, segment.object_start)) {
+    return nullopt;
+}
+DecisionCommand command = BuildNavigationCommand(
+    std::move(approach_plan), ActionType::PushSegment,
+    &final_car_pos);
+
+// Only after SUCCEEDED: commit this segment to the world model.
+DecisionWorldReducer::MoveDynamicObject(
+    this, segment.object_start, segment.object_goal,
+    push_task->object_type, !box_consumed);
+push_task->segment_index += 1;
+state_.current_command.reset();
+
+===== TABLE 1 =====
+符号/缩写 | 含义 | 单位或范围
+mg | 视觉协议中的千分之一格坐标 | 1 mg = 0.001 格；
+KF | 卡尔曼滤波 | 用于陀螺仪零偏估计
+PWM | 脉宽调制 | 电机驱动载波 17 kHz
+CRC16 | 16 位循环冗余校验 | CCITT，多项式 0x1021
+waypoint | 折线路径中的控制停靠点 | 目标距离阈值 1.5 cm
+
+===== TABLE 2 =====
+项目 | 设计/实测值 | 测量说明
+整车质量 | 1.7 kg | 含电池、相机和推箱结构
+外形尺寸（长×宽×高） | 320*210*150 mm | 按比赛状态最大包络测量
+轴距/轮距 | 190 mm | 轮轴中心距
+轮径 | 55 mm | 四轮取平均值
+
+===== TABLE 3 =====
+模块 | 主要器件/接口 | 设计目的
+输入保护 | 保险丝、SMF13CA、PMOS、稳压管 | 抑制过流、浪涌、反接与过压
+5 V 电源 | XL1509-5.0 + 68 μH + SS36 | 为视觉、蜂鸣器和屏幕供电
+3.3 V 电源 | TLV1117-3.3 | 为核心板与数字接口供电
+上电时序 | SY6280AAC | 软启动、限流，避免核心板复位
+姿态接口 | SPI1 + INT1/INT2 | 连接高速 IMU
+视觉通信 | UART4、UART5 | 双 OpenART，115200 bit/s
+运动接口 | 4 路编码器 + 8 路 PWM | 四轮独立闭环
+
+===== TABLE 4 =====
+项目 | 当前设计值 | 备注
+主控制器 | i.MX RT1064，Cortex-M7，最高 600 MHz | 逐飞核心板
+电机驱动 | DRV8874 ×4 | 两块双路驱动板
+电机 PWM | 17 kHz | 四路独立方向与占空比
+视觉串口 | UART4/UART5，115200 bit/s | 两路二进制协议
+外加伺服电机 | 0 个（按当前硬件与代码） | 若实车增设机构需修改
+
+===== TABLE 5 =====
+对象 | 栈/周期 | 优先级 | 职责
+timer1 软定时器 | 1 ms 周期 | RT-Thread 定时器线程 | 5 ms IMU/角度环；20 ms 编码器/轮速环
+uart4_rx | 6144 B | 18 | 解析全局位姿与地图
+uart5_rx | 6144 B | 18 | 解析语义编号
+decision_task | 24576 B；10 ms | 20 | 处理事件、规划任务、分发命令
+navi_task | 6144 B；事件触发 | 24 | 执行导航、观察、推动和停车
+
+===== TABLE 6 =====
+方向 | 消息 | 载荷
+OpenART1→主控 | Pose | x_mg、y_mg
+OpenART1→主控 | MapReady | 12×16=192 B 行优先地图
+OpenART2→主控 | SemanticResult | int16 语义 ID
+主控→OpenART1 | GlobalVisionAction | INIT
+主控→OpenART2 | FirstPersonVision Action | 观察状态 toggle
+决策→导航 | DecisionCommand | action、observe_dir、path[]
+
+===== TABLE 7 =====
+参数 | 当前值 | 作用
+IMU 更新周期 | 5 ms（200 Hz） | 角速度读取、KF 预测与航向积分
+编码器更新周期 | 20 ms（50 Hz） | 轮速闭环与全向里程计
+运行校正运动预算 | 4000 ms | 到期后在下一 waypoint 校正
+零偏窗口 | 80 点 / 400 ms | 去掉两端各 10 点后平均
+视觉内点半径 | 150 mg = 3 cm | 剔除离群帧
+视觉残差门限 | 1500 mg = 30 cm | 拒绝突变位姿
+融合权重 | 视觉 50%，里程计 50% | 平滑修正累计漂移
+
+===== TABLE 8 =====
+实现项 | 当前配置 | 代码作用
+推动状态上限 | 560 | 10×14 箱格与 4 个小车侧向
+开放集 | 二叉最小堆，容量 560 | 支持插入与 decrease-key
+推向改变惩罚 | 4 | 减少箱体转折和小车换侧
+匹配候选短名单 | 最多 4 个 | 先筛除明显昂贵任务
+匹配候选精评 | 前 2 个 | 构造推后地图并评估后续箱体
+后续箱体前瞻 | 代价最低 2 项 | 近似衡量剩余任务负担
+匿名主候选精评 | 最多 3 个 | 失败时才进行广扫描兜底
+推动段内联容量 | 64 段 | 保存连续同方向合并后的计划
+
+===== TABLE 9 =====
+控制环节 | 参数 | 输出限制/条件
+位置环 | Kp=10，Ki=0，Kd=0 | 平移速度 ±200
+移动航向环 | Kp=10，Ki=0，Kd=90 | 角速度命令 ±200
+原地旋转环 | Kp=6.2，Ki=0，Kd=10 | 角速度命令 ±200
+四轮速度环 | Kp=70，Ki=4，Kd=0 | PWM 占空值 ±10000
+到位判据 | 距离 <1.5 cm | 编码器静止确认后结束
+观察角度判据 | 误差 <3° 持续 1000 ms | 超时 3000 ms
+
+===== TABLE 10 =====
+测试项目 | 当前代码依据 | 实车结果
+上电 IMU 零偏 | 500 ms 预热 + 4500 ms KF 采样 | 0.02°/min
+四轮闭环 | 50 Hz 增量 PI，17 kHz PWM | 误差1.2%
+全局视觉通信 | UART4，CRC16，位姿/地图消息 | 正确
+语义识别通信 | UART5，连续 3 帧确认 | 正确
+waypoint 到位 | 1.5 cm 阈值 + 60 ms 静止证明 | 误差1.5%以内
+运行时零偏校正 | 累计运动 4 s，下一 waypoint 执行 | 0.0014°/min
+三轮状态复位 | 复用线程，清理 IPC/解析器/里程计动态状态 | 正确
+
+===== TABLE 11 =====
+箱数 N | 固定匹配完成 | 固定模式成本差距 | 匿名盲推完成 | 匿名模式成本差距
+5 | 8/8 | 3.5% | 8/8 | 5.3%
+6 | 8/8 | 8.1% | 7/8 | 12.7%
+7 | 7/8* | 7.6% | 8/8 | 16.9%
+8 | 8/8 | 4.6% | 6/8 | 12.0%
+9 | 7/8 | 8.8% | 6/8 | 20.0%
+10 | 7/8* | 8.6% | 5/8 | 20.3%
+
+===== TABLE 12 =====
+类别 | 项目 | 参数
+机械 | 质量、长×宽×高 | 320mm*210mm*150mm
+执行 | 驱动电机/额外伺服 | 4 个直流电机 / 0 个伺服
+感知 | 传感器种类与个数 | 编码器×4、IMU×1、OpenART×2
+地图 | 地图与物理分辨率 | 12×16；20 cm/格
+控制 | 角度/轮速/导航更新频率 | 200 Hz / 50 Hz / 50 Hz
+通信 | 视觉串口 | UART4/5，115200 bit/s
+到位 | 位置/角度判据 | 1.5 cm / 3°持续1 s
+视觉 | 实测精度与帧率 | 20FPS

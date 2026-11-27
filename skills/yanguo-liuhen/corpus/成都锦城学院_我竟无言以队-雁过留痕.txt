@@ -1,0 +1,285 @@
+第二十一届全国大学生
+智能汽车竞赛
+技术报告
+
+学校名称：成都锦城学院
+队伍名称：我竟无言以队
+参赛队员：陈俊杰
+      刘奇霄
+          李欣怡
+带队教师：高扬
+何香霓
+
+
+关于技术报告及研究论文使用授权说明
+本人完全了解全国大学生智能汽车竞赛关于保留、使用技术报告和研究论文的规定，即：参赛作品著作权归参赛者本人，比赛组委会可以在相关主页上收录并公开参赛作品的设计方案、技术报告以及参赛模型车的视频、图像资料，并将相关内容编纂收录在组委会出版论文集中。
+
+参赛队员签名：
+带队教师签名：
+日        期：       2026.8.15        
+摘 要
+本文是第二十一届全国大学生智能车竞赛雁过留痕组的技术报告。报告介绍了我们关于智能车整体设计过程，我们采用了采用STC32G144K246单片机作为核心主控芯片，搭载龙邱科技MT9V034神眼摄像头完成赛道图像采集与场景识别；动力驱动环节采用DRV8701P驱动芯片实现直流电机高精度调速控制，根据偏差处理控制舵机循迹；通过编码器检测智能车的实时速度；利用涵道提供向下的抓地力与大气压差来提高车模上限；使用 PID 控制算法调节电机的转速和舵机的打角，实现智能车在运动过程中速度和方向的闭环控制，使用 IMU660RA陀螺仪作为姿态传感器获取角速度和加速度。
+
+关键词：STC32G144K246；MT9V034；PID 控制；DRV8701P
+Abstract
+This paper is the technical report of the "Passing Through and Leaving Traces" group in the 21st National College Students' Intelligent Vehicle Competition. The report introduces our overall design process of the intelligent vehicle. We used the STC32G144K246 single-chip microcontroller as the core main control chip, and equipped with the Longqi Technology MT9V034 eye camera to complete the image acquisition and scene recognition of the race track; the power drive section used the DRV8701P drive chip to achieve high-precision speed control of the DC motor, and controlled the steering motor to follow the track based on deviation processing; the real-time speed of the intelligent vehicle was detected by the encoder; the air duct was used to provide downward grip force and atmospheric pressure difference to increase the upper limit of the vehicle model; the PID control algorithm was used to adjust the speed of the motor and the angle of the steering motor, achieving closed-loop control of the speed and direction of the intelligent vehicle during movement, and using the  IMU660RA gyroscope as the attitude sensor to obtain angular velocity and acceleration.
+
+Key words: STC32G144K246; MT9V034; PID control; DRV8701P
+
+目录
+第一章  引言	1
+1.1 研究背景	1
+1.2 方案总体介绍	1
+1.3 本文结构	2
+第二章  机械设计	3
+2.1 车模安装	3
+2.2 整车布局	4
+2.3前轮定位参数调节	5
+2.3.1 主销后倾	5
+2.3.2 主销内倾	6
+2.3.3 前轮前束	6
+第三章  硬件电路设计	7
+3.1主控最小系统	7
+3.2电源转接板	9
+3.3电机驱动	10
+3.4 AI8051U电调	12
+3.5激光扩展板	13
+第四章  软件编程部分	15
+4.1系统软件架构	15
+4.2图像的获取与处理	16
+4.3元素识别	16
+4.4纯跟踪转向控制	17
+4.5 电机速度控制与差速	18
+4.6 涵道与激光控制	19
+第五章  模型车主要技术参数说明	21
+5.1 车模基本参数	21
+5.2 电路功耗与电容容量	21
+5.3 传感器配置	21
+5.4 执行器配置	22
+结论	23
+参考文献	25
+附录A 核心算法子程序	I
+
+
+
+
+第一章  引言
+1.1 研究背景
+全国大学生智能汽车竞赛自 2006 年创办以来，由教育部高等教育司委托高等学校自动化类教学指导委员会主办，是一项以智能汽车为研究对象的创意性科技竞赛，至今已成功举办二十届。竞赛以 "立足培养、重在参与、鼓励探索、追求卓越" 为指导思想，旨在促进高等学校素质教育，培养大学生的综合知识运用能力、基本工程实践能力和创新意识，激发大学生从事科学研究与探索的兴趣和潜能。
+该竞赛以迅猛发展、前景广阔的汽车电子为背景，涵盖自动控制、模式识别、传感技术、电子电气、计算机、机械与汽车等多学科专业，融科学性、趣味性和观赏性为一体。竞赛过程包括理论设计、实际制作、整车调试、现场比赛等环节，要求学生组成团队协同工作，初步体会一个工程性研究开发项目从设计到实现的全过程。
+第二十一届全国大学生智能汽车竞赛在传统竞速组别的基础上继续拓展竞赛内涵，其中 "雁过留痕" 组要求车模在高速循迹行驶的同时，通过特定装置在赛道上留下可识别的痕迹，这不仅对车辆的运动控制精度和稳定性提出了更高要求，也促使参赛队伍在气动设计、动力匹配等方面进行创新探索。本论文主要介绍雁过留痕组智能车制作的整体思路、电路设计、控制算法及调试过程，详尽阐述我们在硬件设计与算法实现方面的想法和创意。
+1.2 方案总体介绍
+根据竞赛规则相关规定，本智能车系统采用博思出品的 C 车模，STC32G144K246 单片机作为核心控制器。视觉方面搭载龙邱科技 MT9V034 神眼摄像头完成赛道图像采集与场景识别，经图像处理后提取赛道中心线及元素信息，为路径规划提供实时依据；动力驱动环节采用 DRV8701P 驱动芯片实现左右轮双直流电机的独立调速控制，配合双编码器检测实时车速，构成速度闭环；转向环节根据图像偏差通过纯跟踪算法结合 PID 控制舵机打角[1]，实现稳定循迹。
+为提升车模在高速工况下的附着极限，本设计引入双涵道装置，利用向下气流产生的附加抓地力与大气压差效应，有效抑制高速过弯时的侧滑与甩尾现象；姿态感知方面搭载IMU660RA 陀螺仪，获取角速度与加速度数据，为车辆动态控制与元素判断提供辅助参考。系统总体结构如图 1.1 所示。
+
+
+图1.1系统总体结构
+1.3 本文结构
+本文共分为五章。第一章为引言，主要介绍竞赛背景及智能车系统总体方案；第二章从机械结构出发，详细阐述整车布局、涵道选型与安装、舵机安装及前轮倾角调节等机械设计要点；第三章重点介绍系统硬件电路设计，包括主控最小系统、负压电调、电机驱动等；第四章介绍软件控制设计，涵盖图像处理算法、PID 控制策略及舵机与电机的闭环控制实现；第五章对模型车的主要技术参数进行说明，并总结设计过程中的经验与不足。
+
+
+第二章  机械设计
+2.1 车模安装
+第二十一届全国大学生智能汽车竞赛中，本队选用博思出品的 C 车模作为基础平台。该车模采用 380 直流电机驱动，搭配 BDS300 舵机实现转向控制，前轮设计为前束内倾结构[2]。
+前轮采用前束内倾结构，主要出于以下考虑：主销内倾使转向轮在偏转后产生自动回正力矩，同时转向时车轮以较小半径抬起车身，利用车身重力促使转向轻便，出弯时舵机回正更快；前轮前束则抵消轮胎滚动时自然向内偏斜的趋势，使两轮滚动方向趋于平行，减少轮胎内外侧异常磨损。对于雁过留痕组高速循迹的工况，前束内倾配合涵道提供的下压力，能让轮胎在直线行驶时保持稳定接地、过弯时外侧胎面充分贴合地面，在不增加舵机负荷的前提下提升整车的直线稳定性与过弯抓地力。
+为提升整车在高速工况下的结构强度，在原车模基础上加装了 1.5mm 碳纤维板进行加固。动力方面，搭载两组 5000Kv 涵道装置，对称布置于电池两侧，利用向下气流产生的附加抓地力与大气压差效应，提高车模在高速过弯时的附着极限，如图 2.1 所示：
+
+
+图 2.1 车身侧面
+2.2 整车布局
+整车从前向后依次为：舵机与前轮前桥结构、碳素杆支架、主控与涵道组件、后轮后桥及电机驱动板。
+传感器安装方面，碳素杆竖直固定于车体前部，杆顶搭载龙邱科技 MT9V034 神眼摄像头，可稳定实现 100 帧图像采集，抬高安装位置使其视野更高更远；杆身通过 3D 打印件按一定角度规律固定 9 个 100mW 激光模块，用于雁过留痕组的打靶任务，如图 2.2 所示：
+
+
+图 2.2 车身正面
+中部为核心组件区：为容纳两侧涵道，专门设计了两边内凹的异形主板，主板下方放置电池，电池两侧对称安装涵道；涵道后方数毫米处布置基于 AI8051U 设计的电调，上方为连接主板的电源转接板。主板末端通过 XT30 接头为电源转接板供电，电源转接板采用涵道与驱动分开供电的设计，避免大功率器件相互干扰。驱动板布置在后桥末端，缩短与电机之间的接线距离，如图 2.3 所示：
+
+
+图 2.3 车身俯视图
+
+2.3前轮定位参数调节
+为使智能车直线行驶稳定、转向轻便且转向后能自动回正，需对前轮定位参数进行调试。本车模两个后轮同轴固定、无法调整，与前进方向保持平行，因此只能通过调节前轮的主销后倾、主销内倾和前轮前束三个参数，优化车辆与地面的接触方式。
+2.3.1 主销后倾
+主销后倾是指在纵向平面内，主销轴线与地面垂直线之间的夹角，向后为正。车辆转弯时，主销后倾会产生与车轮偏转方向相反的回正力矩，使车轮自动恢复到中间位置。后倾角越大、车速越高，回正能力越强，但过大的后倾角会增加转向阻力，造成转弯迟滞。
+本车搭载 BDS300 数字舵机，堵转扭力达 10kg.cm，扭力充足，因此适当增大主销后倾角以提升高速出弯时的回正速度，设定为 2°~3°，通过增减转向节处的垫片厚度进行微调。
+2.3.2 主销内倾
+主销内倾是指从车前方看去，主销轴线上端向内倾斜，与通过前轮中心的垂线之间形成的夹角。其作用有二：一是转向时车轮以较小半径抬起车身，利用车身重力促使转向轻便、回正迅速；二是直线行驶时轮胎内侧着地，过弯时由于惯性车身向外侧倾斜，事先调好的内倾角恰好使外侧轮胎胎面完全贴合地面，从而在弯道获得最佳抓地力。
+本车模在出厂前束内倾结构基础上，结合涵道提供的额外下压力，适当增大了主销内倾角，使高速过弯时外侧轮胎接地面积更充分，减少侧滑趋势。
+2.3.3 前轮前束
+前轮前束是指从上往下看，两轮前端距离小于后端距离，即车轮指向略微向内收拢的状态。轮胎在滚动时，受惯性力影响自然有向内偏斜的趋势，适当的前束可以抵消这一偏斜，使两轮实际滚动方向趋于平行，减少轮胎内外侧的异常磨损，同时保证直线行驶的稳定性。
+调试过程中，通过改变转向拉杆长度来调整前束值，最终设定为轻微前束（前端比后端小 1~2mm），在保证直线不跑偏的前提下，尽量降低前进阻力，如图 2.4 所示。
+
+
+图 2.4 前轮定位图
+
+第三章  硬件电路设计
+3.1主控最小系统
+本设计采用 STC32G144K246-LQFP100 单片机作为核心控制器。该芯片为增强型 8051 内核，最高主频 120MHz，本设计通过内部 PLL 将系统时钟配置为 124MHz，内置 144KB Flash 和 246KB SRAM，支持在线仿真与 ISP 下载，无需外部晶振和外部复位电路即可工作，宽电压设计（2.0~5.5V）使其适配多种供电场景，满足智能车图像处理与实时控制的运算需求。
+主控最小系统电路如图 3.1 所示，主要包括电源滤波、复位、晶振及下载接口四部分。
+
+
+图 3.1主控最小系统电路
+
+电源滤波：芯片 VCC 引脚采用 3.3V 供电，在每个电源引脚附近放置 100nF 去耦电容，并在电源入口处并联 22μF 电解电容，滤除高频噪声与电源纹波，保证主控运行稳定。
+复位电路：采用 RC 上电复位与手动复位相结合的设计，复位引脚串联 47kΩ 电阻上拉至 3.3V，并联 100μF 电容与按键，确保上电时复位电平稳定，调试时可手动复位。
+晶振电路：芯片内置高精度 IRC 振荡器，正常工作无需外部晶振；同时预留 32.768kHz 外部低速晶振，配合 15pF 负载电容，为系统提供精确的时基参考。
+下载与仿真接口：板载 USB Type-C 接口及 USBLink ID 接口，支持串口 ISP 下载与在线仿真调试，无需额外下载器即可完成程序烧录与在线调试，提高开发效率。
+
+
+图3.2主板PCB（正面）
+
+图3.3主板PCB（反面）
+
+3.2电源转接板
+电源转接板负责整车电源的输入保护与分配，同时集成按键与指示灯等人机交互接口，电路如图 3.4 所示。
+
+
+图 3.4电源转接板电路
+电源输入与防反接：电源通过 XT30 接口输入，经 HSU4119 P 沟道 MOS 管构成的防反接电路后输出 VCCBAT。当电源正负极接反时，MOS 管栅极电压不满足导通条件，电路自动切断输出，保护后级器件；正常接入时 MOS 管导通，压降小、效率高。输入端并联 BZT52B5V1 稳压管用于栅极钳位，配合 10kΩ 下拉电阻与电源开关 SW2，实现整车电源的通断控制。
+双路功率输出：转接板提供两路独立的功率输出接口（电源 1、电源 2），分别为涵道电调和电机驱动板供电，避免大功率器件启停时的电流波动相互干扰。每路输出端串联 SM5S18A TVS 二极管，抑制插拔和启停瞬间的电压尖峰，保护后端电路。
+按键与指示：板载 4 路独立按键，每路采用 4.7kΩ 上拉电阻配合 470Ω 限流电阻，分别接入主控 PB1~PB4 引脚，用于参数整定、模式切换与菜单操作；同时设有 3.3V 电源指示灯，便于直观判断主板供电状态。转接板通过 2×4 排针与主控板连接，传输电源与控制信号。
+
+
+图3.5电源转接板PCB
+
+3.3电机驱动
+本设计采用 DRV8701P 作为有刷直流电机驱动芯片，外部搭配 4 颗 TPH1R403NL N 沟道 MOS 管构成 H 桥功率级，实现电机的正反转与 PWM 调速控制。驱动板集成两路完全独立的驱动通道，电路如图 3.6 所示。
+
+
+图 3.6电机驱动电路
+
+功率级设计：每路驱动由 4 颗 TPH1R403NL 组成全桥，该 MOS 管导通电阻低、开关速度快，适合大电流高频 PWM 应用。DRV8701P 内部集成栅极驱动电路，无需额外驱动变压器，通过自举电容（1μF）为高侧 MOS 管提供浮动电源，保证上桥臂可靠导通。
+信号缓冲：主控输出的 PWM 信号经 74HC125 四总线缓冲门后接入 DRV8701P 的 IN1、IN2 引脚，提高信号驱动能力并抑制长线传输干扰。缓冲门输入端设有 10kΩ 下拉电阻，确保上电或主控复位时驱动芯片输入电平确定，避免电机误动作。
+电源与保护：驱动电源 VIN 经 XT60 接口输入，入口并联 220μF 电解电容与 100nF 陶瓷电容，滤除低频纹波与高频噪声；每路 DRV8701P 的 VM 引脚处单独配置 10μF + 100nF 滤波电容。芯片内置过流保护、过热保护与欠压锁定，nSLEEP 引脚可由主控控制进入低功耗休眠模式，板载红色 LED 指示驱动板工作状态。
+输出接口：两路电机输出分别通过 XT30 接口引出，接线方便且接触可靠，可同时驱动主行驶电机及其他执行机构
+
+图3.7电机驱动PCB
+
+3.4 AI8051U电调
+涵道采用无刷电机驱动，需专用电调进行换向控制。本设计基于 AI8051U 单片机自制无刷电调，采用无感方波驱动方案，通过反电动势过零检测实现电机换向，电路如图 3.8 所示。
+
+
+
+图 3.8电调电路
+主控与预驱：电调以 AI8051U-34K64 为控制核心，负责 PWM 生成、换向逻辑与保护策略；功率级驱动采用 FD6288T 三相 MOS 预驱芯片，接收主控 6 路 PWM 信号后输出大电流栅极驱动信号，驱动三相全桥。预驱高侧采用自举供电，每相配 22μF 自举电容与 BZT52C15 稳压管，保证上桥臂可靠导通。
+三相功率桥：由 6 颗 AOTL66518 N 沟道 MOS 管组成三相全桥[3]，每相上下桥臂各一颗，栅极串联 4.7Ω 电阻抑制开关振荡。电源输入端并联 20 颗 22μF 陶瓷电容及 220μF 电解电容，构成大容量低 ESR 滤波阵列，承受无刷电机换向时的大电流脉动。
+反电动势换向检测：采用无感驱动方案，通过 MID 虚拟中点与三相端电压（VSA、VSB、VSC）的分压比较，检测反电动势过零点，推算转子位置并完成换相，无需额外霍尔传感器。每相检测通道配置 RC 滤波，抑制 PWM 开关噪声对过零判断的干扰。
+电源与保护：电调输入 VBAT 经 SE8650XK-LF LDO 稳压至 5V，为主控与逻辑电路供电；47kΩ+10kΩ 电阻分压构成电池电压检测电路，接入主控 ADC 实现低压保护。PWM 控制信号通过 PH-2A 接口输入，板载 RUN（绿）与 ERR（红）指示灯分别指示运行与故障状态。
+3.5激光扩展板
+雁过留痕组要求车模在行驶过程中完成打靶任务，本设计采用 9 路 100mW 激光模块，按一定角度规律固定在碳素杆上，通过激光扩展板统一驱动，电路如图 3.9 所示。
+
+
+图3.9激光扩展板PCB
+
+驱动电路：每路激光采用独立的 AO3400 N 沟道 MOS 管作为开关器件。主控 IO 口输出的控制信号经 100Ω 限流电阻接入 MOS 管栅极，栅极并联 10kΩ 下拉电阻，确保上电或主控复位时 MOS 管可靠关断，避免激光误触发。MOS 管漏极接激光模块负极，源极接地，通过控制栅极电平实现激光的亮灭切换。
+供电与接口：9 路激光模块统一由 5V_EXT 供电，每路通过 XH2.54-2P 直插插座引出，接线方便且接触可靠。扩展板设有 2×7 排针接口，将控制信号与电源引出至主控板，实现 9 路激光的独立控制。
+工作方式：主控根据摄像头识别到的靶标位置，选择性点亮对应角度的激光，完成打靶动作。多路激光按角度分布的设计扩大了有效命中范围，降低了对车辆姿态精度的要求。
+第四章  软件编程部分
+4.1系统软件架构
+本系统软件基于 STC32G144K 单片机开发，主频配置为 124MHz，采用 "主循环 + 定时器中断" 的前后台架构。主循环负责图像处理与决策，定时器中断负责实时控制与数据采集，各任务按优先级分配不同周期，确保控制的实时性与系统的稳定性。
+系统软件架构图如图 4.1 所示
+
+
+图 4.1系统软件架构图
+4.2图像的获取与处理
+图像处理是智能车循迹的基础，本设计采用 MT9V034 灰度摄像头，分辨率 188×120，帧率 100fps。图像处理流程包括：动态阈值分割、迷宫法边线提取、逆透视变换、平滑滤波、等距重采样与角度变化率计算。
+动态阈值分割：采用局部最小最大阈值法，以搜索点为中心取邻域内的灰度极值作为二值化阈值，适应赛道不同区域的光照变化，避免固定阈值在明暗交界处失效的问题。
+迷宫法边线提取：从车头位置（car_head_x, car_head_y）开始，分别向左、右两侧以步长 6 搜索边线起始点；找到起始点后，沿边线向上进行逐行提取边线坐标。为提高远距离元素的识别能力，系统同时维护近端与远端两套边线数据，远端区域从图像更上方开始搜索，扩大有效视距。
+逆透视变换[4]：将原始图像中的边线坐标通过透视变换矩阵映射到俯视图平面，消除摄像头视角带来的梯形畸变，使变换后的边线距离与实际物理距离成线性关系，为后续纯跟踪算法提供准确的几何输入。
+平滑滤波与等距采样[5]：逆透视后的边线存在噪声跳变，采用滑动均值滤波（blur_points_fast）对边线点进行平滑处理；随后通过 ResampleEdge 函数按固定物理间隔重采样，使相邻点间距均匀，保证角度变化率计算的一致性。
+角度变化率计算：对重采样后的边线逐点计算局部斜率变化率，该值反映边线的弯曲程度。直道区域角度变化率接近零，弯道处出现极值，十字、圆环等元素的角点处角度变化率发生突变，为元素识别提供关键依据
+4.3元素识别
+雁过留痕组赛道包含十字、圆环、坡道、障碍、斑马线等多种元素，本设计采用 "角度变化率 + 直角点统计" 的方法进行元素识别，并通过状态机管理各元素的处理流程。
+识别原理：对左右边线分别统计角度变化率极值（ll_max_angle、lr_max_angle 等）与直角点个数（L_L_number、R_L_number），结合边线是否触碰图像边界（touch_boundary）等条件，综合判断当前元素类型。例如：左右边线同时出现直角点且位置较近时判定为十字；单侧出现直角点且另一侧为直道时判定为圆环入口；左右边线同时向上边界汇聚且角度变化率满足条件时判定为障碍。
+元素状态机：系统定义 element_t 结构体管理元素状态，包括元素索引（index）、十字标志（cross_flag）、圆环标志（circle_flag）、坡道标志（ramp_flag）、障碍标志（barr_flag）等。识别到元素后锁定 index，进入对应处理函数执行减速、走线切换等动作，元素结束后恢复正常循迹。编码器累加器用于判断元素行驶里程，确保在正确位置退出元素状态。如图4.2所示。
+
+
+图4.2赛道状态图
+
+靶环识别与打靶：element_ring () 函数在图像中搜索靶环的左右边线，通过拟合计算靶环中心坐标（ring_x_middle, ring_y_middle），根据靶环相对于车身的位置选择性点亮对应角度的激光模块，激光开启 3ms 后自动关闭，形成脉冲打靶。9 路激光按角度分布的设计扩大了有效命中范围。
+4.4纯跟踪转向控制
+转向控制采用纯跟踪（Pure Pursuit）算法，相比传统的位置式 PID，纯跟踪基于几何模型计算舵机角度，在弯道上的跟随效果更平滑、更具前瞻性。
+单边线跟踪策略：系统不直接使用双边线取中线，而是选择寻线点数更多、更可靠的一侧边线作为跟踪参考（track_type），通过 CalcCenterLineFromSingle 函数将该边线向赛道内侧偏移固定距离推算出虚拟中线。这种策略在单边线丢失（如圆环入口、障碍绕行）时仍能保持稳定跟踪。障碍元素中强制切换到远离障碍一侧的边线，十字元素中根据直角点位置选择跟踪侧。
+纯跟踪计算：对推算出的中线进行平滑滤波与等距采样后，根据当前车速设定前视距离，在中线上选取对应距离的目标点；通过整车几何模型（轴距 wheel_base）计算目标点与车身纵轴的夹角 pure_angle，作为舵机控制的输入。为提高运算效率，atan2、开方等数学运算均采用定点查表法实现（fast_atan2_16bit、isqrt_16），避免浮点运算开销。
+舵机闭环：舵机控制采用二次 PID（quadradic_pid_solve），以 pure_angle 为输入计算舵机 PWM 输出。为适应不同弯道曲率，引入模糊 PID 参数自整定：以误差 error 和误差变化率 dedt 为输入，通过 7×7 模糊规则表在线调整 KP 和 KD 的增量，大误差时增大比例增益提高响应，误差变化率大时增大微分增益抑制超调。舵机输出限幅为左转 - 520、右转 + 490，防止机械过冲。
+4.5 电机速度控制与差速
+电机驱动采用双轮独立速度闭环，配合差速分配实现转向时的内外轮速差，提高过弯稳定性。
+编码器测速：左右轮各安装一路带方向增量编码器，每 10ms 读取一次编码器计数，转换为实际转速。编码器同时作为元素里程计，通过累加器（encoder_accum_1/2/3 等）记录进入元素后的行驶距离，用于判断元素退出时机。
+速度 PID：左右轮分别执行 PI 控制，目标速度为 motor_left 和 motor_right，实际速度为编码器反馈值，输出经限幅（±8000）后通过 17kHz PWM 驱动 DRV8701P。双极模式驱动保证正反转切换平滑。
+差速分配：在编码器中断中，根据舵机打角 out_pwm 动态调整左右轮目标速度。转向时内侧轮按比例减速，外侧轮保持或适当提速，差动量由 diff_coe 系数控制，使车辆在弯道中产生主动横摆力矩，减少转向不足。差速计算与舵机角度非线性映射，大角度转向时差动量更大
+4.6 涵道与激光控制
+涵道控制：双涵道风扇由独立 PWM 通道驱动，频率 300Hz。fan_flag 标志控制涵道启停，启动时采用渐进式加速（每 10ms 增加 20 单位占空比），避免电流突变触发保护；关闭时直接清零。涵道通常在出赛道检测（out_bound）时关闭，正常行驶时保持开启以提供下压力。
+激光控制：9 路激光由主控 GPIO 直接驱动，通过激光扩展板的 AO3400 MOS 管开关。打靶时根据靶环位置点亮对应激光，3ms定时器中断自动关闭，形成短脉冲。系统初始化时激光按组依次闪烁，作为硬件自检与启动提示
+。
+
+
+
+
+第五章  模型车主要技术参数说明
+5.1 车模基本参数
+本设计基于博思 C 车模进行改装，改装后的整车基本参数如表 5.1 所示。
+
+表 5.1 车模基本参数
+5.2 电路功耗与电容容量
+整车电路由锂电池供电，各模块独立稳压供电。主控及逻辑电路工作电压 3.3V，电机驱动与涵道电调直接使用电池电压，舵机由独立可调稳压供电。整机静态功耗约1.8W，全速运行时最大功耗约 240W。
+5.3 传感器配置
+整车传感器配置如表 5.2 所示。
+表 5.2 传感器种类及数量
+5.4 执行器配置
+除车模原有的驱动电机与转向舵机外，本设计新增执行器如表 5.3 所示
+表 5.3执行器配置
+
+结论
+本文详细介绍了第二十一届全国大学生智能汽车竞赛雁过留痕组的智能车设计方案。整车以博思C车模为基础平台，采用STC32G144K246单片机为主控核心，搭建了一套完整的软硬件系统。
+硬件方面，设计了主控板、电源转接板、双路DRV8701P电机驱动板、AI8051U无感无刷电调板和9路激光扩展板共五块自制电路板，实现了双电机独立驱动、双涵道下压力控制、9路激光打靶等功能；机械方面，通过加装碳纤维板加固、调整前轮定位参数、优化整车布局，提升了高速行驶稳定性。
+软件方面，采用"主循环+定时器中断"的前后台架构，主循环以100fps帧率完成图像处理与决策，中断实现舵机5ms、电机10ms的实时闭环控制。图像处理采用动态阈值分割与迷宫法边线提取，配合逆透视变换提高了路径检测精度；元素识别基于角度变化率与直角点统计，通过状态机处理十字、圆环、坡道、障碍等多种赛道元素；转向控制引入纯跟踪算法与模糊PID，相比传统位置式PID在弯道跟随上更平滑、更具前瞻性；双轮独立速度闭环配合差速分配，有效改善了过弯性能。
+经过反复调试与场地测试，该车模能够稳定完成循迹行驶与靶环打靶任务，在直道和弯道均表现出良好的速度与稳定性。但仍存在一些不足：一是极端光照条件下图像二值化阈值自适应能力有待加强；二是圆环等复杂元素的出环成功率仍有提升空间；三是涵道下压力与车速的匹配策略可进一步优化。后续可从图像算法鲁棒性、元素处理逻辑和气动匹配三个方向继续改进。
+此外，本设计的完成离不开多方的支持与帮助。感谢带队教师高扬老师在方案选型、电路调试和算法优化等环节给予的悉心指导，老师严谨的治学态度和丰富的工程经验使我们受益匪浅；感谢成都锦城学院为参赛队伍提供的实验室场地与设备支持，为项目的顺利开展提供了坚实保障；同时感谢队友陈俊杰、李欣怡在整个备赛过程中的默契配合与分工协作，从机械拆装到硬件焊接，从代码调试到场地测试，三人各司其职、互相补位，共同克服了诸多技术难题。这段经历不仅提升了我们的工程实践能力，也让我们深刻体会到了团队协作的重要性。
+
+
+
+参考文献
+白金乐,权悦,胡俊泽.融合改进纯跟踪与模糊PID的履带机器人轨迹跟踪控制[J].现代制造工程,2026,(6):1-10.DOI:10.16731/j.cnki.1671-3133.2026.06.001.
+徐观.汽车四轮定位仪检定方法与装置的研究[D].吉林大学,2006.
+张凯,尹长青,江建慧.三相全桥电路中功率MOS管失效原因分析[J].计算机技术与发展,2013,23(6):208-210.
+刘景锋,李炎亮,江奎,等.基于改进逆透视变换的车道线检测算法[J].智能计算机与应用,2021,11(3):109-112.
+王珍,徐晓光.基于最小二乘法的车道线弯道检测算法[J].绥化学院学报,2019,39(8):145-149.
+
+附录A 核心算法子程序
+A-1Main函数
+
+A-2 PID
+
+A-3巡线代码
+
+
+===== TABLE 1 =====
+参数 | 数值
+车模长度 | 300mm
+车模宽度 | 185mm
+车模高度（含碳素杆） | 350mm
+整车重量（含电池） | 1.75kg
+
+===== TABLE 2 =====
+传感器 | 型号 | 数量 | 功能
+数字摄像头 | MT9V034 | 1 | 赛道图像采集与元素识别
+六轴姿态传感器 | IMU660RA | 1 | 角速度与加速度采集
+方向编码器 | 1024普地 | 2 | 左右轮转速检测
+激光模块 | 100mW | 9 | 靶环打靶
+
+===== TABLE 3 =====
+执行器 | 型号 / 参数 | 数量 | 功能
+直流驱动电机 | 380 电机 | 2 | 左右轮独立驱动
+转向舵机 | BDS300（10kg·cm） | 1 | 前轮转向控制
+无刷涵道电机 | 5000Kv | 2 | 提供下压力
+无刷电调 | AI8051U 自制 | 1 | 驱动双涵道
+激光模块 | 100mW | 9 | 打靶执行
+
+===== TABLE 4 =====
+#include "zf_common_headfile.h" #define PIT_CH1                          (TIM1_PIT )                 // 使用的周期中断编号 如果修改 需要同步对应修改周期中断编号与 isr.c 中的调用 #define PIT_CH2                          (TIM2_PIT )                 // 使用的周期中断编号 如果修改 需要同步对应修改周期中断编号与 isr.c 中的调用    #define PIT_CH3                          (TIM3_PIT )                 // 使用的周期中断编号 如果修改 需要同步对应修改周期中断编号与 isr.c 中的调用    #define PIT_CH4                          (TIM4_PIT )                 // 使用的周期中断编号 如果修改 需要同步对应修改周期中断编号与 isr.c 中的调用    #define PIT_CH5                          (TIM5_PIT )                 // 使用的周期中断编号 如果修改 需要同步对应修改周期中断编号与 isr.c 中的调用    #define PIT_CH6                          (TIM6_PIT )                 // 使用的周期中断编号 如果修改 需要同步对应修改周期中断编号与 isr.c 中的调用    #define PIT_CH7                          (TIM7_PIT )               uint16 numn = 0; // void num_sl() // { //     if(numn >100) //         BUZZER(1); //     else  //         BUZZER(0); //     numn = 0; // }   void main(void) {     clock_init(SYSTEM_CLOCK_124M); 				// 时钟配置及系统初始化<务必保留>     debug_init();                       		// 调试串口信息初始化     system_init();     pit_ms_init(PIT_CH1, 5, control_set_duty); //tim1<tim2<tim3     pit_ms_init(PIT_CH2, 10, encoder_error_count);     pit_ms_init(PIT_CH3, 5, imu660ra_get_gyro);     pit_ms_init(PIT_CH4, 10, fan_set_duty);     pit_ms_init(PIT_CH5, 3, close_laser);     pit_ms_init(PIT_CH6, 50, key_state);     //pit_ms_init(PIT_CH7, 1000, num_sl);     // 此处编写用户代码 例如外设初始化代码等     while(1)     {         if(mt9v03x_finish_flag)         {              //seekfree_assistant_camera_send();             search_start_point();              mt9v03x_finish_flag = 0;             element_start();             element_ring();             switch (element.index)             {                 case index_none:                     UI_OS();                     break;                 case index_cross:                     element_cross();                     break;                 case index_circle:                     element_circle();                     break;                 case index_ramp:                     element_ramp();                     break;                 case index_barr:                     element_barr();                     break;                 case index_zebra:                     element_zebra();                     break;                 default:                     break;             }             //UI_OS();             track();             // if(element.ramp_flag)             //     BUZZER(1);             // else             //     BUZZER(0);             //numn++;         }           } }
+
+===== TABLE 5 =====
+#include "pid.h"  int16 ERROR_MAX = 20.0;                         //误差最大值 int16 DEDT_MAX = 1.0;                           //误差变化率最大值 int16 KP_Fuzzy = 5168;                           //kp模糊值 int16 KD_Fuzzy = 3072;                          //kd模糊值  int16 KP_Base = 13360;                              //kp基础值 int16 KD_Base = 3584;                              //kd基础值  static uint8 er_liShu[2];                      //er隶属 static uint8 dedt_liShu[2];                    //dedt隶属 static int16 er_liShuDu[2];                    //er隶属度 static int16 dedt_liShuDu[2];                  //dedt隶属度  /* WWWWWWWWWWWWWWWWWWWWWWWWWWWW Error论域 WWWWWWWWWWWWWWWWWWWWWWWWWWWWW */  #define ER_ZO0                              (0)//*2 #define ER_PSS                              (7) #define ER_PSB                              (8) #define ER_PMS                              (9) #define ER_PMB                              (10) #define ER_PBS                              (11) #define ER_PBB                              (12)  const int16 Er_lunYu[7] = {ER_ZO0, ER_PSS, ER_PSB, ER_PMS, ER_PMB, ER_PBS, ER_PBB}; /* WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW */  /* WWWWWWWWWWWWWWWWWWWWWWWWWWWW dedt论域 WWWWWWWWWWWWWWWWWWWWWWWWWWWWW */ #define DT_NB                               (-6)//左移十位 #define DT_NM                               (-4) #define DT_NS                               (-2) #define DT_Z0                               (0) #define DT_PS                               (2) #define DT_PM                               (4) #define DT_PB                               (6)  const int16 Dedt_lunYu[7] = {DT_NB, DT_NM, DT_NS, DT_Z0, DT_PS, DT_PM, DT_PB}; /* WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW */  /* WWWWWWWWWWWWWWWWWWWWWWWWWWWW KP规则 WWWWWWWWWWWWWWWWWWWWWWWWWWWWW */ #define KP_ZO0                              (0) #define KP_PSS                              (1) #define KP_PSB                              (2) #define KP_PMS                              (3) #define KP_PMB                              (4) #define KP_PBS                              (5) #define KP_PBB                              (6) const uint8 KP_Rule[7][7] = { /*  er/dedt          DT_NB   DT_NM   DT_NS   DT_Z0   DT_PS   DT_PM   DT_PB */     /*ER_ZO0*/      {KP_ZO0, KP_ZO0, KP_ZO0, KP_ZO0, KP_ZO0, KP_ZO0, KP_ZO0},     /*ER_PSS*/      {KP_PSS, KP_PSS, KP_PSS, KP_PSS, KP_PSS, KP_PSS, KP_PSS},     /*ER_PSB*/      {KP_PSS, KP_PSS, KP_PSS, KP_PSB, KP_PMS, KP_PMS, KP_PMS},     /*ER_PMS*/      {KP_PSB, KP_PSB, KP_PMS, KP_PMS, KP_PMS, KP_PMB, KP_PMB},     /*ER_PMB*/      {KP_PMS, KP_PMS, KP_PMB, KP_PMB, KP_PMB, KP_PBS, KP_PBS},     /*ER_PBS*/      {KP_PMB, KP_PBS, KP_PBS, KP_PBS, KP_PBS, KP_PBS, KP_PBB},     /*ER_PBB*/      {KP_PBB, KP_PBB, KP_PBB, KP_PBB, KP_PBB, KP_PBB, KP_PBB}, }; /* WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW */  /* WWWWWWWWWWWWWWWWWWWWWWWWWWWW KD规则 WWWWWWWWWWWWWWWWWWWWWWWWWWWWW */ #define KD_ZO0                              (0) #define KD_PSS                              (1) #define KD_PSB                              (2) #define KD_PMS                              (3) #define KD_PMB                              (4) #define KD_PBS                              (5) #define KD_PBB                              (6) const float KD_Rule[7][7] = { /*  er/dedt          DT_NB   DT_NM   DT_NS   DT_Z0   DT_PS   DT_PM   DT_PB */     /*ER_ZO0*/      {KD_PBB, KD_PBS, KD_PMB, KD_PMB, KD_PMB, KD_PMS, KD_PSB},     /*ER_PSS*/      {KD_PBB, KD_PBS, KD_PMB, KD_PMB, KD_PMB, KD_PMS, KD_PSB},     /*ER_PSB*/      {KD_PBB, KD_PBS, KD_PMB, KD_PMS, KD_PMS, KD_PSB, KD_PSB},     /*ER_PMS*/      {KD_PBS, KD_PMB, KD_PMS, KD_PMS, KD_PSB, KD_PSB, KD_PSS},     /*ER_PMB*/      {KD_PMB, KD_PMS, KD_PMS, KD_PMS, KD_PSB, KD_PSS, KD_ZO0},     /*ER_PBS*/      {KD_PMS, KD_PMS, KD_PMS, KD_PSB, KD_PSB, KD_PSS, KD_ZO0},     /*ER_PBB*/      {KD_PMS, KD_PMS, KD_PMS, KD_PSB, KD_PSB, KD_PSS, KD_ZO0}, };  /* 函数用处：   隶属度获取  *  * 传入参数：   float value         映射到论域上的值  * 传入参数：   float* liShu        映射值的隶属  * 传入参数：   float* liShuDu      映射值的隶属度  * 传入参数：   const int* lunYu    论域  * 函数介绍：   统一隶属度获取接口，由于er和dedt的隶属逻辑相同，故封装统一接口便于代码阅读  */ void calculateMembership (int32 value, uint8* liShu, int16* liShuDu, const int16* lunYu) {//隶属度乘了20倍率，误差是0.05     uint8 i;     if (value > (lunYu[0] * 20) && value < (lunYu[6] * 20)) {         for (i = 0; i < 6; i++) {             if ((lunYu[i] * 20) < value && value <= (lunYu[i + 1] * 20)) {             /* 判断在哪个区间内 */                 /* 三角隶属度 */                 liShu[0] = i;                                                                   /* 记录前隶属 */                 liShu[1] = i + 1;                                                               /* 记录后隶属 */                 liShuDu[0] = (value - (lunYu[i] * 20)) / (lunYu[i + 1] - lunYu[i]);                    /* 记录前隶属度 */                 liShuDu[1] = (lunYu[i + 1] * 20 - value) / (lunYu[i + 1] - lunYu[i]);                /* 记录后隶属度 */                 break;             }         }     } else if (value <= (lunYu[0] * 20)) {//完全隶属取最小值         /* 三角隶属度 */         liShu[0] = 0;                   /* 记录前隶属 */         liShu[1] = 1;                   /* 记录后隶属 */         liShuDu[0] = 20;               /* 记录前隶属度(100%) */         liShuDu[1] = 0;                 /* 记录后隶属度 */     } else if (value >= (lunYu[6] * 20)) {//完全隶属取最大值         /* 三角隶属度 */         liShu[0] = 5;                   /* 记录前隶属 */         liShu[1] = 6;                   /* 记录后隶属 */         liShuDu[0] = 0;                 /* 记录前隶属度 */         liShuDu[1] = 20;               /* 记录后隶属度(100%) */     } }  /* 函数用处：   获取er与de/dt的隶属度  *   * 传入参数：   float er        当前差值  * 函数介绍：   传入输出与输入目标值的差值作为er, 内部自动更新上一次误差, 对误差和变化率做归一化映射  */ void get_degree_of_membership (int16 er) {     static int16 laster = 0;     int16 dedt = er - laster;      int16 erRemap = er * 20 * ER_PBB / ERROR_MAX ;        /* 对er映射 *//*乘40*/     int16 dedtRemap = dedt * 20 * DT_PB / DEDT_MAX ;      /* 对dedt映射 */      //误差为负时 取反     if(erRemap < 0) {         erRemap = -erRemap;         dedtRemap = -dedtRemap;     }     //误差在正负震荡时让KD最大     if(laster * er < 0) {         dedtRemap = -DT_NB;     }      calculateMembership(erRemap, er_liShu, er_liShuDu, Er_lunYu);     calculateMembership(dedtRemap, dedt_liShu, dedt_liShuDu, Dedt_lunYu);      laster = er; }  /* 函数用处：   更新pd参数  *  * 传入参数：   float *kp           传递pid->kp用于更新  * 传入参数：   float *kd           传递pid->kd用于更新  * 函数介绍：   通过隶属规则更新pid中pd的参数  */ void upPIDdata_pd(pid_param_t *pid) {//前隶属度*后隶属度     int32 kptmp = er_liShuDu[0] * dedt_liShuDu[0] * KP_Rule[(uint8)er_liShu[0]][(uint8)dedt_liShu[0]]                 + er_liShuDu[0] * dedt_liShuDu[1] * KP_Rule[(uint8)er_liShu[0]][(uint8)dedt_liShu[1]]                 + er_liShuDu[1] * dedt_liShuDu[0] * KP_Rule[(uint8)er_liShu[1]][(uint8)dedt_liShu[0]]                 + er_liShuDu[1] * dedt_liShuDu[1] * KP_Rule[(uint8)er_liShu[1]][(uint8)dedt_liShu[1]];      int32 kdtmp = er_liShuDu[0] * dedt_liShuDu[0] * KD_Rule[(uint8)er_liShu[0]][(uint8)dedt_liShu[0]]                 + er_liShuDu[0] * dedt_liShuDu[1] * KD_Rule[(uint8)er_liShu[0]][(uint8)dedt_liShu[1]]                 + er_liShuDu[1] * dedt_liShuDu[0] * KD_Rule[(uint8)er_liShu[1]][(uint8)dedt_liShu[0]]                 + er_liShuDu[1] * dedt_liShuDu[1] * KD_Rule[(uint8)er_liShu[1]][(uint8)dedt_liShu[1]];      kptmp = (kptmp / KP_PBB) * KP_Fuzzy / 400;     kdtmp = (kdtmp / KD_PBB) * KD_Fuzzy / 400;      pid->kp = KP_Base + kptmp;     pid->kd = KD_Base + kdtmp; }  /* 函数用处：   模糊PD控制器  *   * 传入参数：   float er        差值  * 传入参数：   float *kp       传递pid->kp用于更新  * 传入参数：   float *kd       传递pid->kd用于更新  * 函数介绍：     * 实现模糊控制，同时更新最新的pid->kp 和 pid->kd  */ void get_updataPD_pid (int16 er, pid_param_t *pid) {     get_degree_of_membership(er);     upPIDdata_pd(pid); }  // 二次kP项PD控制，参数中的P是一次项kP，kp2是二次项kP // int16 quadradic_pid_solve(pid_param_t *pid, int16 error) // { //     pid->out_p = (((pid->kp2 / 100 * error * error / 125) + pid->kp)); //     pid->out_d = (error * pid->ki + (pid->pre_error - pid->pre_pre_error) * (1024 - pid->ki)); //     // pid->out_i = 0;  //     pid->pre_pre_error = pid->pre_error; //     pid->pre_error = error;  //     return (int16)(((error * pid->out_p) + ((pid->kd * pid->out_d) >> 10) + (imu660ra_gyro_z * pid->kgyro)) >> 10); // }  float quadradic_pid_solve(pid_param_t *pid, float error) {     pid->out_p = (((pid->kp2 * error * error / 12500.0) + pid->kp));     pid->out_d = (error * pid->ki + (pid->pre_error - pid->pre_pre_error) * (1 - pid->ki));     // pid->out_i = 0;      pid->pre_pre_error = pid->pre_error;     pid->pre_error = error;      return (((error * pid->out_p) + ((pid->kd * pid->out_d) /*>> 10*/) + (imu660ra_gyro_z * pid->kgyro)) /*>> 10*/); }   //增量式PID int16 increment_pid_solve(pid_param_t *pid, int16 error) {     //pid->out_d = MINMAX(pid->kd * (error - 2 * pid->error + pid->pre_error), -pid->d_max, pid->d_max);     pid->out_p = MINMAX(pid->kp * (error - pid->error), -pid->p_max, pid->p_max);     pid->out_i = MINMAX(pid->ki * error, -pid->i_max, pid->i_max) / 10;      pid->pre_error = pid->error;     pid->error = error;      pid->output = pid->out_p + pid->out_i /*+ pid->out_d*/;      if (pid->pre_output > 10000)         if (pid->output > 0)             pid->output = 0;     if (pid->pre_output < -10000)         if (pid->output < 0)             pid->output = 0;      pid->pre_output = pid->output;      return (int16)pid->output; }   int16 Servo_Control_Compute(pid_param_t *pid, int16 current_angle)  {     // 1. 基础误差     int32 error = current_angle;     int32 abs_error = (error < 0) ? -error : error;          // 2. 计算 P 项 (基础 P + 急弯二次 P)     int32 p_out = error * pid->kp;     int32 d_out, total_delta, final_pwm;     if (abs_error > 10) {         int32 excess = abs_error - 10;         int32 p2_val = excess * excess * pid->kp2; // 二次项增益         if (error > 0) p_out += p2_val;         else           p_out -= p2_val;     }      // 3. 计算 I 项 (抗饱和处理) 可以不用，但不能没有     // pid->integral += error;     // if (pid->integral > pid->i_limit) pid->integral = pid->i_limit;     // else if (pid->integral < -pid->i_limit) pid->integral = -pid->i_limit;     // int32_t i_out = pid->integral * pid->ki;      // 4. 计算 D 项     d_out = (error - pid->pre_error) * pid->kd;     pid->pre_error = error;      // 5. 汇总并缩放 (还原回实际 PWM 增量)     total_delta = p_out /*+ i_out*/ + d_out;      // 6. 最终输出 = 中位 PWM + 调整增量     final_pwm = total_delta;      // 7. 硬件安全限幅 (防止舵机打死、堵转)     if (final_pwm > pid->max_out) final_pwm = pid->max_out;     if (final_pwm < pid->min_out) final_pwm = pid->min_out;      return (int16)final_pwm; }   int16 Calculate_Servo_PWM(pid_param_t *pid, int16 error)  {     int32 output_32;     int16 diff;      /* 1. 计算微分项: 误差的变化率 */     diff = error - pid->pre_error;          /* 2. PD计算 (使用32位中间变量防止乘法溢出) */     /* 公式: Output = (Kp * error + Kd * diff) / 1024 */     output_32 = (int32)pid->kp * error;     output_32 += (int32)pid->kd * diff;     output_32 += ((int32)pid->kgyro * imu660ra_gyro_z << 1) / 33; // 加入陀螺仪反馈补偿 /* * 增量式 PID  */ int16 MotorPID_Calc(pid_param_t *pid, int16 current_speed)  {     int32 p_term, i_term, d_term;     int32 delta_pwm;     int32 d_diff;           /* 1. 更新当前状态与误差 */     pid->error = current_speed;     //pid->err = pid->target - pid->current;          /* 2. 计算比例项 (P): Kp * (e(k) - e(k-1)) */     p_term = ((pid->error - pid->pre_error) * pid->kp) * 4;          /* 3. 计算积分项 (I): Ki * e(k) */     i_term = (pid->error * pid->ki) * 4;          /* 4. 计算微分项 (D): Kd * (e(k) - 2e(k-1) + e(k-2)) */     /* 拆开写避免编译器的隐式提升，同时清晰表达逻辑 */     d_diff = pid->error - pid->pre_error - pid->pre_error + pid->out_p;     d_term = (d_diff * pid->kd) * 4;          /* 5. 汇总增量 */     delta_pwm = p_term + i_term + d_term;          /* 6. 更新当前输出 */     pid->output += delta_pwm;          /* 7. 输出限幅 (至关重要，防止电机全速暴走烧毁驱动) */     if (pid->output > power_max) {         pid->output = power_max;     } else if (pid->output < -power_max) {         pid->output = -power_max;     }          /* 8. 推进历史误差记录 */     pid->out_p = pid->pre_error;     pid->pre_error = pid->error;          return (int16)pid->output; }
+
+===== TABLE 6 =====
+#include "image.h" #include "camera_param.h"  //丢边先可能起始点标志位也没有 bit start_point_l_flag = false;   //是否找到起始点的标志位 bit start_point_r_flag = false;   //是否找到起始点的标志位  bit far_start_point_l_flag = false;   //是否找到起始点的标志位 bit far_start_point_r_flag = false;   //是否找到起始点的标志位  // 迷宫搜线有没有搜到边界，十字和圆环标志位权重相对较低，但可以作为判断依据 uint8 touch_boundary0 = 0; uint8 touch_boundary1 = 0; uint8 touch_up_boundary0 = 0; uint8 touch_up_boundary1 = 0;  // 原图左右边线 ips200pro_image_line_uint8_struct ipts0[BOUNDARY_NUM]; ips200pro_image_line_uint8_struct ipts1[BOUNDARY_NUM]; uint16 ipts0_num, ipts1_num;  //逆透视左右边线 ips200pro_image_line_uint8_struct rpts0[BOUNDARY_NUM]; ips200pro_image_line_uint8_struct rpts1[BOUNDARY_NUM]; uint16 rpts0_num, rpts1_num;  // 变换后左右边线+滤波 ips200pro_image_line_uint8_struct rpts0b[BOUNDARY_NUM]; ips200pro_image_line_uint8_struct rpts1b[BOUNDARY_NUM]; uint16 rpts0b_num, rpts1b_num;  // 变换后左右边线+等距采样 ips200pro_image_line_uint8_struct rpts0s[BOUNDARY_NUM]; ips200pro_image_line_uint8_struct rpts1s[BOUNDARY_NUM]; uint16 rpts0s_num, rpts1s_num;  // 左右边线局部角度变化率 int16 rpts0a[BOUNDARY_NUM];       //按常理应该是float但是stc不能按常理最后值为定点数所以用的时候也是定点数 int16 rpts1a[BOUNDARY_NUM]; uint16 rpts0a_num, rpts1a_num;  //左/右中线 ips200pro_image_line_uint8_struct rptsc0[BOUNDARY_NUM]; ips200pro_image_line_uint8_struct rptsc1[BOUNDARY_NUM]; uint16 rptsc0_num, rptsc1_num;  //远端原图边线 ips200pro_image_line_uint8_struct far_ipts0[BOUNDARY_NUM]; ips200pro_image_line_uint8_struct far_ipts1[BOUNDARY_NUM]; uint16 far_ipts0_num, far_ipts1_num;  //远端逆透视边线 ips200pro_image_line_uint8_struct far_rpts0[BOUNDARY_NUM]; ips200pro_image_line_uint8_struct far_rpts1[BOUNDARY_NUM]; uint16 far_rpts0_num, far_rpts1_num;  // 变换后左右边线+滤波 ips200pro_image_line_uint8_struct far_rpts0b[BOUNDARY_NUM]; ips200pro_image_line_uint8_struct far_rpts1b[BOUNDARY_NUM]; uint16 far_rpts0b_num, far_rpts1b_num;  //远端等距采样边线 ips200pro_image_line_uint8_struct far_rpts0s[BOUNDARY_NUM]; ips200pro_image_line_uint8_struct far_rpts1s[BOUNDARY_NUM]; uint16 far_rpts0s_num, far_rpts1s_num;  //远端角度变化率 int16 far_rpts0a[BOUNDARY_NUM]; int16 far_rpts1a[BOUNDARY_NUM]; uint16 far_rpts0a_num, far_rpts1a_num;  uint8 l_bor_x[110] = {10};  //105-30 uint8 r_bor_x[110] = {178}; uint8 left_bor_y = 120; uint8 right_bor_y = 120; uint8 left_low_y = 0; uint8 right_low_y = 0;  uint8 start_x_l,start_y_l,       start_x_r,start_y_r;  uint8 far_satrt_x_l,far_satrt_y_l,       far_satrt_x_r,far_satrt_y_r;  uint8 far_min_x,far_min_y; //从此点开始找远端起始点  uint8 mid = 0;  /*从中线点从下往上搜索迷宫法起始点*/ void search_start_point(void) //找起始点要优化，有可能起始点会找成黑白跳变点后续迷宫法会导致大量资源浪费 {     uint8 thre_l,thre_r;     uint8 med_y; 	uint8 i;     L_L_number = 0;     R_L_number = 0;     start_point_l_flag = false;     start_point_r_flag = false;     ipts0_num = sizeof(ipts0) / sizeof(ipts0[0]);     ipts1_num = sizeof(ipts1) / sizeof(ipts1[0]);     right_bor_y = 120;     left_bor_y = 120;     right_low_y = 0;     right_low_y = 0;     for(i = 10; i < 110; i++)     {         l_bor_x[i] = 10;         r_bor_x[i] = 178;     }     //左/右边线起始点     for (med_y = car_head_y; med_y > 70; med_y -= 3)     {         const uint8 *img_data = &mt9v03x_image[med_y][0];         if(!start_point_l_flag)         {             for (start_x_l = car_head_x; start_x_l > border_l_x; start_x_l -= 6)             {                 thre_l = get_minmax_threshold(&mt9v03x_image[0][0], start_x_l - block_v_size, med_y, block_v_size, 1, 188);                 if(thre_l == 0)                     continue;                 else if(start_x_l > border_l_x + block_v_size)                 {                     i = (start_x_l - block_v_size) < border_l_x ? border_l_x : (start_x_l - block_v_size);                     for(start_x_l = start_x_l; start_x_l > i; start_x_l--)                     {                         if(img_data[start_x_l] < thre_l)                             break;                         else if(img_data[start_x_l] > thre_l && img_data[start_x_l - 1] < thre_l && img_data[start_x_l - 2] < thre_l)                         {                             uint8 i;                             bit flag = false;                             for(i = 4; i < 8; i++)                             {                                 if(img_data[start_x_l - i] > thre_l)                                 {                                     start_x_l -= i;                                     flag = true;                                     break;                                 }                             }                             if(flag) continue;                             start_y_l = med_y;                             start_point_l_flag = true;                             break;                         }                     }                 }                 if (start_point_l_flag)                     break;             }         }         if(!start_point_r_flag)         {             for(start_x_r = car_head_x; start_x_r < border_r_x; start_x_r += 6)             {                 thre_r = get_minmax_threshold(&mt9v03x_image[0][0], start_x_r, med_y, block_v_size, 1, 188);                 if(thre_r == 0)                     continue;                 else if(start_x_r < border_r_x - block_v_size)                 {                     i = (start_x_r + block_v_size) > border_r_x ? border_r_x : (start_x_r + block_v_size);                     for(start_x_r = start_x_r; start_x_r < i; start_x_r++)                     {                         if(img_data[start_x_r] < thre_r)                             break;                         else if(img_data[start_x_r] > thre_r && img_data[start_x_r + 1] < thre_r && img_data[start_x_r + 2] < thre_r)                         {                             uint8 i;                             bit flag = false;                             for(i = 4; i < 8; i++)                             {                                 if(img_data[start_x_r + i] > thre_r)                                 {                                     start_x_r += i;                                     flag = true;                                     break;                                 }                             }                             if(flag) continue;                             start_y_r = med_y;                             start_point_r_flag = true;                             break;                         }                     }                 }                 if (start_point_r_flag)                     break;             }         }         if (start_point_l_flag && start_point_r_flag) break;     }      if(start_point_l_flag)         maze_left(&mt9v03x_image[0][0], block_size, start_x_l, start_y_l, ipts0, &ipts0_num);     else         ipts0_num = 0;     if(start_point_r_flag)         maze_right(&mt9v03x_image[0][0], block_size, start_x_r, start_y_r, ipts1, &ipts1_num);     else         ipts1_num = 0;       // //适用于stc逆透视，需要重新打表     for(i = 0; i < ipts0_num; i++)     {         uint8 cy = ipts0[i].y;          uint8 cx = ipts0[i].x;         uint8 rx = mapx[cy][cx];          if(cx > l_bor_x[cy])             l_bor_x[cy] = cx;         if(cy < left_bor_y)             left_bor_y = cy;         if(cy > left_low_y)             left_low_y = cy;         if(rx == 0 || rx == 187)             break;         rpts0[i].x = rx;         rpts0[i].y = mapy[cy][cx];     }     rpts0_num = i;     for(i = 0; i < ipts1_num; i++)     {         uint8 cy = ipts1[i].y;          uint8 cx = ipts1[i].x;         uint8 rx = mapx[cy][cx];          if(cx < r_bor_x[cy])             r_bor_x[cy] = cx;         if(cy < right_bor_y)             right_bor_y = cy;         if(cy > right_low_y)             right_low_y = cy;         if(rx == 0 || rx == 187)             break;         rpts1[i].x = rx;         rpts1[i].y = mapy[cy][cx];     }     rpts1_num = i;      if(left_low_y == 0 && right_low_y == 0) mid = car_head_y - 2;     else if(left_low_y == 0) mid = right_low_y - 3;     else mid = left_low_y - 3;      //边线滤波     blur_points_fast(rpts0, rpts0_num, rpts0b);     rpts0b_num = rpts0_num;      blur_points_fast(rpts1, rpts1_num, rpts1b);     rpts1b_num = rpts1_num;      //等距采样     rpts0s_num = sizeof(rpts0s) / sizeof(rpts0s[0]);     rpts0s_num = ResampleEdge(rpts0b, rpts0b_num, rpts0s, rpts0s_num);     rpts1s_num = sizeof(rpts1s) / sizeof(rpts1s[0]);     rpts1s_num = ResampleEdge(rpts1b, rpts1b_num, rpts1s, rpts1s_num);      // 边线局部角度变化率(返回值-1800-1800)     calc_edge_true_angle_rate_feature_l_optimized(rpts0s, rpts0s_num, rpts0a, 14, 150, &ll_max_angle, &lr_max_angle, &L_L_number);     rpts0a_num = rpts0s_num;     calc_edge_true_angle_rate_feature_r_optimized(rpts1s, rpts1s_num, rpts1a, 14, 150, &rl_max_angle, &rr_max_angle, &R_L_number);     rpts1a_num = rpts1s_num;      // //找角度变化率最大的那个值     // find_angle_max(rpts0a, rpts0a_num, &ll_max_angle, &lr_max_angle, &L_L_number, rpts0s);     // find_angle_max(rpts1a, rpts1a_num, &rr_max_angle, &rl_max_angle, &R_L_number, rpts1s); }       /*迷宫法搜线*/ const int16 dir_front[4][2] = {{0, -1},  // 向上                                {1, 0},   // 右                                {0, 1},   // 下                                {-1, 0}}; // 左 const int16 ofs_front[4]     = {-188, 1, 188, -1};          /* 上，右，下，左 */ const int16 dir_frontleft[4][2] = {{-1, -1},                                    {1, -1},                                    {1, 1},                                    {-1, 1}}; const int16 ofs_frontleft[4] = {-189, -187, 189, 187};      /* 左上，右上，右下，左下 */ const int16 dir_frontright[4][2] = {{1, -1},                                     {1, 1},                                     {-1, 1},                                     {-1, -1}};  const int16 ofs_frontright[4] = {-187, 189, 187, -189};   /*左手扶墙，左边线*/ void maze_left(uint8 img[120][188], int16 block_size, int16 x, int16 y, ips200pro_image_line_uint8_struct pts[], uint16 *num) {     int16 half = block_size >> 1;     uint16 step = 0;     uint16 dir = 0;     uint16 turn = 0;     uint8 front_value, frontleft_value;     uint8 local_thres = 0;     const uint8 *img_ptr = &img[0][0];      int16 current_offset = y * 188 + x;      uint8 max_num = *num;     touch_boundary0 = 0;     touch_up_boundary0 = 0;      if (max_num == 0 || x < 0 || x >= 188 || y < 0 || y >= 120) return;      while (step < max_num && x < border_r_x && y < border_l_y && x > border_l_x && turn < 4)     {         if ((step & 0x03) == 0)              local_thres = get_minmax_threshold(img_ptr, x - half, y - half, block_size, block_size, 188);          front_value     = img_ptr[current_offset + ofs_front[dir]];         frontleft_value = img_ptr[current_offset + ofs_frontleft[dir]]; void ring_maze_left(uint8 img[120][188], int16 block_size, int16 x, int16 y, ips200pro_image_line_uint8_struct pts[], uint16 *num) {     int16 half = block_size >> 1;     uint16 step = 0;     uint16 dir = 0;     uint16 turn = 0;     uint8 front_value, frontleft_value;     uint8 local_thres = 0;     const uint8 *img_ptr = &img[0][0];      int16 current_offset = y * 188 + x;      uint8 max_num = *num;     uint8 start_x = x;     uint8 start_y = y;     touch_boundary0 = 0;     touch_up_boundary0 = 0;      if (max_num == 0 || x < 0 || x >= 188 || y < 0 || y >= 120) return;      while (step < max_num && x < border_r_x && y < border_l_y && x > border_l_x && turn < 4)     {         if ((step & 0x03) == 0)              local_thres = ring_get_minmax_threshold(img_ptr, x - half, y - half, block_size, block_size, 188);          front_value     = img_ptr[current_offset + ofs_front[dir]];         frontleft_value = img_ptr[current_offset + ofs_frontleft[dir]];          if (front_value < local_thres)          {              /* 前方是黑墙 -> 右转 */             dir = (dir + 1) & 3;              turn++;         }         else if (frontleft_value < local_thres)         {              /* 前方可走，左前方是黑墙 -> 直走 */             x += dir_front[dir][0];             y += dir_front[dir][1];             current_offset += ofs_front[dir]; /* 同步更新一维偏移量 */             pts[step].x = x;              pts[step].y = y;             step++;             turn = 0;         }         else         {              /* 前方可走，左前方也可走 -> 左前走 (左转并前进一步) */             x += dir_frontleft[dir][0];             y += dir_frontleft[dir][1];             current_offset += ofs_frontleft[dir]; /* 同步更新一维偏移量 */             dir = (dir + 3) & 3;              pts[step].x = x;             pts[step].y = y;             step++;             turn = 0;         }         if(x < ring_left_l)             ring_left_l = x;         if(x > ring_right_l)             ring_right_l = x;         if(y > ring_low_l)             ring_low_l = y;         if(y < ring_up_l)             ring_up_l = y;         if((start_x - x > -3 && start_x - x < 3 && start_y - y > -3 && start_y - y < 3)/*x == start_x && y == start_y && step > 8*/ || y > car_head_y)         {             ring_left_flag = true;             break;         }         else if(x == start_x && y == start_y && step > 1 && step <= 8)             break;     }     *num = step; }  //搜靶子边线 void ring_maze_right(uint8 img[120][188], int16 block_size, int16 x, int16 y, ips200pro_image_line_uint8_struct pts[], uint16 *num) {     int16 half = (block_size >> 1);     uint16 step = 0;     uint16 dir = 0;   /* 初始朝上 */     uint16 turn = 0;     uint8 front_value, frontright_value;     uint8 local_thres = 0;     const uint8 *img_ptr = &img[0][0];     int16 current_offset = y * 188 + x;     uint8 max_num = *num;     uint8 start_x = x;     uint8 start_y = y;     touch_boundary1 = 0;     touch_up_boundary1 = 0;      if (max_num == 0 || x < 0 || x >= 188 || y < 0 || y >= 120) return;      while (step < max_num && x > border_l_x && y > border_u_y && y < border_l_y && x < border_r_x && turn < 4)     {         /* 每 4 步更新一次局部阈值 */         if ((step & 0x03) == 0)             local_thres = ring_get_minmax_threshold(img_ptr, x - half, y - half, block_size, block_size, 188);          front_value = img_ptr[current_offset + ofs_front[dir]];         frontright_value = img_ptr[current_offset + ofs_frontright[dir]];          if (front_value < local_thres)         {             /* 前方是黑墙 -> 左转 */             dir = (dir + 3) & 3;              turn++;         }         else if (frontright_value < local_thres)         {             /* 前方可走，但右手边是墙 -> 直走 */             x += dir_front[dir][0];             y += dir_front[dir][1];             current_offset += ofs_front[dir];             pts[step].x = x;             pts[step].y = y;             step++;             turn = 0;         }         else         {             /* 前方可走，且右手边也是空的 -> 向右前方转 */             x += dir_frontright[dir][0];             y += dir_frontright[dir][1];             current_offset += ofs_frontright[dir];             dir = (dir + 1) & 3; /* 右转 */             pts[step].x = x;             pts[step].y = y;             step++;             turn = 0;         }         if(x < ring_left_r)             ring_left_r = x;         if(x > ring_right_r)             ring_right_r = x;         if(y > ring_low_r)             ring_low_r = y;         if(y < ring_up_r)             ring_up_r = y;         if((start_x - x > -3 && start_x - x < 3 && start_y - y > -3 && start_y - y < 3)/*(x == start_x && y == start_y && step > 8)*/ || y > car_head_y)         {             ring_right_flag = true;             break;         }         else if(x == start_x && y == start_y && step > 1 && step <= 8)             break;     }     *num = step; }

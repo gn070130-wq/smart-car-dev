@@ -1,0 +1,723 @@
+第二十一届全国大学生智能汽车竞赛
+技 术 报 告
+基于TRAVEO T2G双核平台的
+轮腿式智能车系统设计
+
+
+
+
+
+关于技术报告和研究论文使用授权的说明
+本人完全了解全国大学生智能汽车竞赛关于保留、使用技术报告和研究论文的规定，即：参赛作品著作权归参赛者本人，比赛组委会可以在相关主页上收录并公开参赛作品的设计方案、技术报告以及参赛模型车的视频、图像资料，并将相关内容编辑收录在组委会出版的文集中。
+
+
+
+
+
+
+
+目　录
+主要符号与缩略语
+第1章  引言
+1.1 竞赛任务与设计背景
+1.2 主要工作与技术特点
+1.3 报告结构
+第2章  系统总体方案
+2.1 需求分析
+2.2 双核软硬件分工
+2.3 控制与任务时序
+第3章  机械结构、传感器与电路设计
+3.1 车体机械方案
+3.2 传感器与执行器
+3.3 电路接口与抗干扰设计
+3.4 机械与电气安装检查
+第4章  环境感知与导航算法
+4.1 基于四元数的姿态解算
+4.2 自动曝光与图像预处理
+4.3 边线搜索与中线偏差
+4.4 特殊元素识别
+4.5 航向录制与复现
+第5章  姿态与运动控制系统
+5.1 控制总体结构
+5.2 离散PID与限幅
+5.3 俯仰稳定与电机控制
+5.4 航向与视觉融合循迹
+5.5 四舵机车身姿态控制
+第6章  连续任务决策与特殊路段控制
+6.1 分层状态机
+6.2 特殊点预减速与元素接管
+6.3 多方案与现场调试
+6.4 安全保护与故障降级
+第7章  开发、调试与技术参数
+7.1 开发环境与工程组织
+7.2 分阶段调试方法
+7.3 工程指标
+7.4 车模参数
+第8章  结论与展望
+8.1 工作总结
+8.2 现存问题
+8.3 改进方向
+参考文献
+附录A  电路原理图与接口核对表
+附录B  核心算法子程序
+附录C  工程源文件索引与提交清单
+
+主要符号与缩略语
+表0.1 主要符号与缩略语
+
+第1章  引言
+1.1 竞赛任务与设计背景
+全国大学生智能汽车竞赛要求参赛车模在限定场地中自主感知环境、规划或复现路线，并完成规定的特殊路段任务。技术报告说明模型车总体方案、机械安装、电路、控制算法、开发调试过程、主要技术参数，并附电路原理图与核心程序[1]。本项目面向包含三级台阶、原地自转、颠簸路段、掉头、单边桥及回程台阶的连续任务链，系统同时满足直立稳定、路径跟随、障碍通过和异常保护要求。
+传统单一循迹控制在特殊路段易受车身俯仰、视角变化和光照变化影响；纯惯导路线复现又会受轮胎打滑、编码器尺度误差和航向漂移影响。因此，本车采用“惯性导航确定宏观路段、视觉感知修正局部轨迹、任务状态机切换控制参数”的分层策略，并利用TRAVEO T2G双Cortex-M7内核实现感知和控制的并行处理。
+1.2 主要工作与技术特点
+建立CM7_0实时控制核与CM7_1视觉感知核的双核分工，通过固定地址共享内存交换任务码、视觉误差和元素状态。
+实现基于低灰度10%分位数的自动曝光，使黑色地面亮度稳定在目标附近，降低白色元素面积变化对曝光的干扰。
+采用5×5种子点搜索、差比和爬线、中线补洞和平滑、16行加权偏差计算，形成对缺边与短时噪声具有容错能力的视觉循迹链路。
+采用Mahony四元数姿态解算与多环PID控制，利用左右电机共模/差模和四舵机协同调节俯仰、横摆、横滚和车身高度。
+将路线按5 cm里程间隔记录为相对航向序列，并存入片内Flash；复现阶段加入编码器补偿、跨点推进、数据完整性检查和停滞看门狗。
+针对台阶、自转、颠簸、单边桥等元素设置视觉触发、定时或惯导兜底与总时长保护，提高现场调试的可切换性。
+1.3 报告结构
+第二章给出系统总体方案；第三章说明机械、传感器和电路接口；第四章介绍姿态感知、视觉循迹与航向复现；第五章阐述多环控制和执行机构协同；第六章说明连续任务状态机及特殊路段策略；第七章总结开发、调试、验证与技术参数；第八章给出结论和改进方向。附录提供电路资料清单、核心算法子程序和工程源文件索引。
+
+第2章  系统总体方案
+2.1 需求分析
+系统功能可分为感知、估计、决策、控制、执行和人机交互六层。感知层采集灰度图像、六轴惯性数据和左右轮速度；估计层输出姿态角、里程和视觉横向偏差；决策层根据航向复现索引与特殊点索引切换任务；控制层计算电机与舵机指令；执行层完成驱动、转向/姿态调节；人机交互层承担参数选择、路线录制、调试显示和无线图像传输。
+
+图2.1 轮腿式智能车总体系统架构
+2.2 双核软硬件分工
+两核均运行于250 MHz。CM7_0负责1 ms硬实时控制链路：读取IMU、姿态解算、保护判断、遥控处理、任务状态机、多环PID、电机和舵机控制；每5 ms还执行外环计算、编码器里程更新和航向复现。CM7_1负责MT9V03X图像处理，摄像头配置为188×120像素、50 fps；PIT通道以5 ms周期轮询帧完成标志，在新帧到达时执行曝光、边线、中线、元素识别与数据发送。
+感知核与控制核通过0x28005000开始的共享内存交换数据。工程将CM7_1写入的结果量放在第一个Cache Line，将CM7_0写入的任务与模式量从+32字节开始放置，避免两个内核清理缓存时出现伪共享覆盖。每次读写均调用SCB_CleanInvalidateDCache_by_Addr维护一致性。
+
+图2.2 双核共享内存映射
+2.3 控制与任务时序
+表2.1 主要周期任务
+
+第3章  机械结构、传感器与电路设计
+3.1 车体机械方案
+本车采用左右差速驱动和四点独立车身姿态调节结构。四舵机分别对应左前、左后、右前、右后位置，中心PWM值4500左右，软件通过统一的方向系数将“车身升高”映射为一致的正向偏移。
+
+图3.1 车体机械与传感器建议布置示意
+摄像头沿车体纵向中心线固定，保证光轴与车体对称面一致，并通过刚性支架减小跳跃和颠簸引起的相对位姿变化。保持左右配重对称，同时预留舵机运动范围与散热空间。
+3.2 传感器与执行器
+表3.1 工程可核实的主要器件与接口
+3.3 电路接口与抗干扰设计
+驱动指令通过UART4发送7字节协议帧，占空比在发送前限制于±10000；驱动器回传左右轮速度，右侧软件取反以统一前进方向。四舵机使用独立TCPWM通道输出300 Hz PWM。IMU采用硬件SPI，摄像头和Wi-Fi分别使用各自高速接口。显示、按键和蜂鸣器用于现场调试与状态指示。
+
+
+3.4 机械与电气安装检查
+四舵机零位时车身几何高度一致，连杆无卡滞，满行程不与轮胎、车架或线束干涉。
+摄像头固定无松动，镜头视野覆盖近端控制区和远端预瞄区；调整后锁紧螺纹。
+IMU坐标轴方向与软件符号一致，静止时加速度模接近1 g，绕各轴转动时符号正确。
+左右轮正向命令对应同一前进方向，速度回传符号、轮径和5 ms里程换算一致。
+动力、舵机和主控供电在峰值负载下不复位；线束具备应力释放与防松措施。
+
+第4章  环境感知与导航算法
+4.1 基于四元数的姿态解算
+IMU660RB输出三轴角速度和三轴加速度。程序以1 ms周期运行Mahony四元数滤波：先对加速度低通并归一化，再由四元数计算重力向量，将实测加速度方向与估计重力方向的叉乘作为俯仰/横滚校正误差；偏航轴不引入重力反馈，避免动态加速度噪声泄漏到yaw。四元数积分后归一化，并转换为欧拉角。Mahony非线性互补滤波可在陀螺短期响应和重力长期参考之间取得平衡[4]。
+系统根据加速度模判断静止或运动状态：静止时采用更强加速度计校正；运动时降低校正增益；加减速标志刚切换后的600 ms进一步降低比例和积分校正，避免纵向动态加速度被误认为俯仰变化。上电前0.3 s使用较大比例系数快速收敛。yaw另设阈值锁存、零漂补偿与3 s超时初始归零，机械俯仰/横滚零点及yaw阈值可保存至Flash。
+4.2 自动曝光与图像预处理
+赛道为黑色地面与高反射白色元素时，按全图平均灰度或白像素比例控制曝光会受到白色区域面积变化影响。工程每4帧统计一次256级灰度直方图，取最低10%分位数作为地面代表灰度，将其闭环控制到25。误差绝对值小于6时保持曝光；超出死区后按每8级灰度增加一步的方式调节，并根据强光、中光、暗光模式限制步长、曝光范围和增益。
+三种光照模式同步设置二值化阈值为85、75和70。CM7_1上电后丢弃前100帧用于曝光收敛，避免摄像头内部AEC尚未关闭时的过亮帧污染边线历史数组。
+4.3 边线搜索与中线偏差
+视觉算法首先在可变扫描起始行使用5×5滑窗寻找左右种子点，并要求两种子点间距至少20像素，以排除窄线干扰。随后采用差比和爬线算法向上跟踪左右边界。对于同一行连续出现6个以上爬线点的水平边沿，认为其不代表真实纵向赛道边界并整段剔除；短于4行的空洞使用最近有效值补偿，长空洞保持无效。
+中线计算优先使用左右边界平均；仅有一侧边界时，用另一侧图像边沿估计缺失边界。当前中线与上一帧按0.7/0.3平滑。控制偏差选取扫描起始行附近16行，使用由12.0递减到0.60的固定权重加权，并以0.7、0.2、0.1融合当前、上一拍和上上拍偏差，最终限制在±94像素。有效点少于3或寻线失败时输出0，防止错误边线驱动转向。
+
+图4.1 视觉处理与元素识别流水线
+4.4 特殊元素识别
+表4.1 特殊元素的主要视觉判据
+4.5 航向录制与复现
+路线录制时，以左右轮5 ms里程增量的平均值作为前进距离，每累计5 cm记录一次相对起点的yaw，并在遥控触发时记录特殊点索引。数组最大4000点，对应约200 m路径；特殊点最多50个。Flash使用8个数据页、每页500点，角度乘100后以整数保存，另存点数和特殊点元数据。
+复现时将步长设为5 cm减去0.06 cm或0.13 cm的经验补偿，并使用while循环推进索引，以解决高速状态下一拍跨过多个采样间隔而航向命令滞后的问题。若点数不足、数据页缺失、路径溢出或索引连续约3 s不推进，则进入安全结束和刹停流程。特殊元素执行期间暂停路径索引推进，完成后恢复。
+
+图4.2 基于里程采样的航向录制—复现机制
+
+第5章  姿态与运动控制系统
+5.1 控制总体结构
+控制系统由俯仰直立、航向/视觉循迹、车速与车身姿态三类回路组成。左右电机同向分量用于维持俯仰和速度，反向分量用于产生横摆；四舵机通过同向、左右差动及前后差动实现车身高度、横滚、俯仰补偿和跳跃动作。任务状态机改变目标值、增益、限幅和舵机偏移，而底层控制器保持统一接口。
+
+图5.1 姿态、循迹与执行机构多环控制结构
+5.2 离散PID与限幅
+工程PID结构体保存Kp、Ki、Kd、积分、前次误差、最大输出和最大积分。控制器采用位置式离散PID，并对积分项和总输出独立限幅。俯仰角环、航向角环和视觉误差环每5 ms计算，内侧角速度环每1 ms计算。
+表5.1 主要控制器参数（代码当前值）
+5.3 俯仰稳定与电机控制
+俯仰外环将机械零点与当前pitch之差转换为目标俯仰角速度，内环以IMU y轴角速度为反馈产生电机共模输出。机械零点默认为5.5°，可通过按键微调并保存。上电前1.5 s完成IMU初始化和姿态收敛，随后在1500 ms内将控制参数由20%渐变至额定值，降低突然使能造成的冲击。俯仰或横滚超过45°触发保护。
+加速时俯仰零点向前倾方向偏移，减速时偏移更大，并用0.996低通渐变；同时调整俯仰环积分、舵机速度环增益及车身升高量。复现结束后目标速度置零并保持减速标志，直至实际速度低于300才释放刹停状态。
+5.4 航向与视觉融合循迹
+常规路段由航向复现角作为目标，航向角外环输出目标横摆角速度；摄像头循迹开启时，视觉偏差经过0.5低通后进入独立PD环，其输出与航向环、遥控横摆指令共同构成内环设定值。横摆内环以IMU z轴角速度反馈驱动左右电机差模。该结构允许惯导负责长距离趋势、视觉负责特殊路段局部中线。
+5.5 四舵机车身姿态控制
+四舵机基于各自中心值和方向系数统一控制。速度变化通过车身抬高和俯仰补偿提高轮胎接地；单边桥时车身整体抬高200个控制量，并渐变启用横滚积分环；颠簸路段提高横滚限幅与直立环增益；转向时以滤波后的横摆角速度生成腿部高度差辅助。跳跃状态机依次执行伸腿60 ms、收腿110 ms、缓冲65 ms和结束80 ms，并在动作期间降低俯仰环比例，避免控制器与预定动作相互对抗。
+
+第6章  连续任务决策与特殊路段控制
+6.1 分层状态机
+导航状态机管理初始化、录制、Flash写入、读取、复现和结束；任务状态机管理常规路段与特殊元素；车体状态机切换正常、自转、台阶、单边桥、颠簸和回程台阶控制参数；跳跃子状态机细化舵机时序。多层状态机通过明确标志交互，避免在一个巨型状态表中同时处理导航、感知和执行细节。
+
+图6.1 连续任务状态机与视觉兜底策略
+6.2 特殊点预减速与元素接管
+路径录制时将特殊元素位置保存为采样点索引。复现阶段在当前索引加提前量达到特殊点索引时，系统先降低目标速度并调整车身；到达特殊点后切入相应元素状态，暂停惯导索引推进，并向CM7_1下发唯一视觉任务码。元素完成后恢复惯导、增加特殊点索引、恢复目标速度并重新进入常规状态。
+表6.1 各路段当前目标速度与保护时间
+6.3 多方案与现场调试
+三级台阶提供“摄像头循迹+视觉触发、摄像头循迹+定时、yaw锁定+视觉触发、yaw锁定+定时”四种组合；自转提供视觉点位与纯惯导两种方案。按键可切换强/中/暗光模式、各级台阶扫描行的稳妥/极限设置、特殊点提前减速量以及路段速度。重新进入元素时，CM7_0递增复位序号，CM7_1检测变化后清空识别锁存与扫描行状态，支持同一元素反复调试。
+6.4 安全保护与故障降级
+姿态保护：pitch或roll超过45°时禁止继续输出，防止翻覆后电机持续驱动。
+输出保护：电机占空比在协议规定的±10000范围内钳位，舵机位置在2400～5400内限制。
+导航保护：点数不足、Flash数据页缺失、路径数组溢出或索引停滞时进入结束刹停。
+感知保护：寻线失败或有效中线点不足时视觉偏差归零；元素识别使用消隐、消抖和阶段锁存。
+任务保护：颠簸、桥和回程台阶均设置进入超时和总时长上限；自转视觉识别设置超时兜底。
+调试保护：Flash擦写仅在主循环执行，不放入1 ms中断，避免阻塞硬实时控制。
+
+第7章  开发、调试与技术参数
+7.1 开发环境与工程组织
+表7.1 开发环境
+7.2 分阶段调试方法
+单模块检查：先验证电机方向与速度回传、四舵机中心与行程、IMU轴向、摄像头图像、显示和遥控。
+静态姿态标定：在水平静止状态完成yaw零漂阈值与pitch/roll机械零点标定，保存Flash并断电复核。
+底层闭环：离地或低功率验证俯仰角速度内环，再启用俯仰角外环；确认保护角、输出限幅和上电渐变。
+视觉链路：在强、中、暗三种环境观察曝光、种子点、边线和中线；分别测试缺一侧边线与水平边沿。
+路线录制/复现：先短直线和单弯，核对5 cm点数、起点姿态变换、索引推进和结束刹停，再增加全路线。
+元素单测：通过遥控任务标志反复进入台阶、自转、颠簸、单边桥和回程台阶，先低速确定识别时序。
+全流程联调：记录每个特殊点提前减速索引、目标速度、进入时间和完成状态，逐步减小冗余并固定比赛参数。
+7.3 工程指标
+表7.2 软件与接口指标
+7.4 车模参数
+表7.3 车模主要技术参数
+
+
+
+
+
+第8章  结论与展望
+8.1 工作总结
+完成一套基于TRAVEO T2G双核平台的轮腿式智能车控制系统。CM7_1独立处理MT9V03X灰度图像，实现光照分档、暗区分位数自动曝光、左右边线搜索、中线偏差和特殊元素识别；CM7_0以1 ms周期完成IMU姿态解算、多环控制、任务决策和执行机构输出，并以5 ms周期完成里程更新与航向录制/复现。共享内存按Cache Line分区，兼顾了双核并行效率与数据一致性。
+控制系统以左右电机共模/差模分别完成俯仰稳定与横摆控制，以四舵机实现高度、横滚、重力补偿和跳跃动作。连续任务由导航、任务、车体和跳跃四级状态机协同，针对视觉失效、路径停滞、数据缺失、姿态超限和元素超时设置了降级或保护措施。
+8.2 现存问题
+第一，航向复现仍主要依赖轮速里程和陀螺积分，长距离打滑或温漂可能造成索引与实际位置错位；第二，视觉阈值和多项消抖参数依赖场地标定，尚缺基于置信度的统一评价；第三，多个特殊路段参数以宏定义方式分散在头文件中，版本管理和现场回退成本较高。
+8.3 改进方向
+引入轮速、IMU与视觉航向的扩展卡尔曼滤波或误差状态滤波，在线估计轮径尺度与打滑。
+为边线和元素识别建立置信度，将有效点数、边线连续性和灰度分离度统一输入任务决策。
+将比赛参数集中为带版本号和CRC的Flash配置块，支持一键切换场地参数并记录固件哈希。
+建立自动数据记录机制，输出时间戳、状态、目标/实际姿态、视觉偏差、电机与舵机输出，形成可复现调参闭环。
+补充硬件电源监测、欠压降额、驱动温度或故障码处理，并用硬件急停链路提高安全性。
+
+参考文献
+[1] 卓晴. 第二十一届全国大学生智能汽车竞赛技术报告要求细则[EB/OL]. CSDN, 2026-08-07[2026-08-08]. https://zhuoqing.blog.csdn.net/article/details/163553155.
+[2] Infineon Technologies AG. TRAVEO T2G CYT4BB Series Architecture Technical Reference Manual[R]. Neubiberg: Infineon Technologies AG.
+[3] onsemi. MT9V034 1/3-Inch Wide-VGA CMOS Digital Image Sensor Data Sheet[R]. Phoenix: onsemi.
+[4] MAHONY R, HAMEL T, PFLIMLIN J M. Nonlinear complementary filters on the special orthogonal group[J]. IEEE Transactions on Automatic Control, 2008, 53(5): 1203-1218.
+[5] ÅSTRÖM K J, HÄGGLUND T. PID Controllers: Theory, Design, and Tuning[M]. 2nd ed. Research Triangle Park: ISA, 1995.
+[6] 成都逐飞科技有限公司. CYT4BB开源库、MT9V03X与IMU660RB设备驱动[CP/OL]. 工程随附libraries目录.
+[7] IAR Systems. IAR Embedded Workbench for Arm User Guide[Z]. Uppsala: IAR Systems.
+[8] 国家质量监督检验检疫总局, 中国国家标准化管理委员会. GB/T 7714—2015 信息与文献 参考文献著录规则[S]. 北京: 中国标准出版社, 2015.
+
+附录A  电路原理图与接口核对表
+表A-1 固件接口核对表
+【整车电气系统详细原理图】
+
+主板原理图
+
+
+
+
+
+
+
+舵机电源板原理图
+
+
+
+
+电调原理图
+
+
+磁编原理图
+
+附录B  核心算法子程序
+程序B-1 1 ms姿态控制总调度（posture.c）
+void pit0_callback(void)
+{
+    sys_times++;
+    // 姿态解算
+    posture_calculate();
+    // 电机保护
+    car_protect();
+    // 遥控函数
+    remote_control();
+    // 惯导摄像头的任务函数
+    mission_control();
+    // 自动全局状态机处理不同状态
+    car_state_update();
+    // pid控制器计算
+    all_pid_calculate();
+    // 进行不同状态控制
+    motor_control();
+    steer_control();
+}
+程序B-2 暗区分位数自动曝光（auto_exp.c）
+void auto_exp_update(uint8 img[MT9V03X_H][MT9V03X_W])
+{
+    ae_frame_cnt++;
+    if (ae_frame_cnt < AE_EVAL_INTERVAL)
+        return;
+    ae_frame_cnt = 0;
+ 
+    // 1) 灰度直方图（total < 65535，单个bin用uint16足够）
+    static uint16 hist[256];
+    for (int i = 0; i < 256; i++) hist[i] = 0;
+    for (uint16 row = 0; row < MT9V03X_H; row++)
+        for (uint16 col = 0; col < MT9V03X_W; col++)
+            hist[img[row][col]]++;
+ 
+    // 2) 暗区分位数灰度 = “地面”亮度（白元素占到75%时仍落在地面内）
+    const uint32 total = (uint32)MT9V03X_H * MT9V03X_W;
+    uint32 target_cnt = total * AE_LOW_PCT / 100u;
+    uint32 acc = 0;
+    uint16 ground_gray = 0;
+    for (int v = 0; v < 256; v++)
+    {
+        acc += hist[v];
+        if (acc >= target_cnt) { ground_gray = (uint16)v; break; }
+    }
+ 
+    // 3) 只按地面亮度闭环：偏亮→减曝光，偏暗→加曝光（元素进出画面不影响本控制）
+    int16 err = (int16)ground_gray - (int16)AE_GROUND_TARGET;
+    uint16 new_exp = ae_current_exp;
+    uint32 step;
+ 
+    if (err > AE_DEAD_ZONE)          // 地面太亮 → 减曝光
+    {
+        step = (uint32)(err - AE_DEAD_ZONE) / AE_STEP_DIVISOR + 1u;
+        if (step > ae_step_max) step = ae_step_max;
+        new_exp = (ae_current_exp > (uint16)step)
+                  ? (ae_current_exp - (uint16)step)
+                  : ae_exp_min;
+    }
+    else if (err < -AE_DEAD_ZONE)    // 地面太暗 → 加曝光
+    {
+        step = (uint32)(-err - AE_DEAD_ZONE) / AE_STEP_DIVISOR + 1u;
+        if (step > ae_step_max) step = ae_step_max;
+        new_exp = ae_current_exp + (uint16)step;
+    }
+ 
+    // 钳位
+    if (new_exp < ae_exp_min) new_exp = ae_exp_min;
+    if (new_exp > ae_exp_max) new_exp = ae_exp_max;
+ 
+    if (new_exp != ae_current_exp)
+    {
+        ae_current_exp = new_exp;
+        mt9v03x_set_exposure_time(ae_current_exp);
+    }
+}
+程序B-3 视觉中线加权偏差（search.c）
+float MidLine_Calculate_Weighted_Deviation(void)
+{
+    // 历史偏差缓存
+    static float last_deviation = 0.0f;
+    static float last_last_deviation = 0.0f;
+ 
+    // ==================== 优先判断寻线全局状态 ====================
+    // 寻线失败时直接清空所有历史返回0
+    if (search_Status == 2)
+    {
+        last_deviation = 0.0f;
+        last_last_deviation = 0.0f;
+        return 0.0f;
+    }
+ 
+    #define CONFIDENCE_START_Y    (scan_start_row - 15)  //最上面权重行
+    #define CONFIDENCE_END_Y      (scan_start_row)                  //最下面权重行
+ 
+    const float FIXED_WEIGHTS[16] = {
+        12.0f,  9.82f,  8.04f,  6.59f,  5.40f,
+        4.43f,  3.63f,  2.98f,  2.44f,  2.00f,
+        1.64f,  1.34f,  1.10f,  0.90f,  0.74f,
+        0.60f
+    };
+ 
+    int valid_count = 0;
+    float mid_weighted_sum = 0.0f;
+    float weight_sum = 0.0f;
+ 
+    // 只遍历80~100行的置信区间
+    for (int y = CONFIDENCE_END_Y; y >= CONFIDENCE_START_Y; y--)
+    {
+        if (MidLine_ValidFlag[y])
+        {
+            // 计算当前行对应的权重数组索引
+            int weight_index = y - CONFIDENCE_START_Y;
+            // 取出预先定义好的固定权重
+            float current_weight = FIXED_WEIGHTS[weight_index];
+ 
+            // 加权累加
+            mid_weighted_sum += MidLine_Points_Value[y] * current_weight;
+            weight_sum += current_weight;
+            valid_count++;
+        }
+    }
+ 
+    // ==================== 有效点不足时清空偏差 ====================
+    // 置信区间内有效点少于3个，认为寻线不稳定
+    if (valid_count < 3)
+    {
+        last_deviation = 0.0f;
+        last_last_deviation = 0.0f;
+        return 0.0f;
+    }
+ 
+    // ==================== 计算当前偏差 ====================
+    float current_deviation;
+    if (weight_sum > 0)
+    {
+        float weighted_mid = mid_weighted_sum / weight_sum;
+        current_deviation = weighted_mid - CENTER_REF;
+    }
+    else
+    {
+        current_deviation = 0.0f;
+    }
+ 
+    // ==================== 三级互补滤波 ====================
+    float filtered_deviation = current_deviation * 0.7f
+                             + last_deviation * 0.2f
+                             + last_last_deviation * 0.1f;
+ 
+    // 更新历史偏差值
+    last_last_deviation = last_deviation;
+    last_deviation = filtered_deviation;
+ 
+    // 数值限幅
+    if (filtered_deviation > 94.0f) return 94.0f;
+    if (filtered_deviation < -94.0f) return -94.0f;
+    return filtered_deviation;
+}
+程序B-4 航向路径录制（navigation.c）
+void nav_yaw_record(void)
+{
+    float delta = (LEFT_MILEAGE + RIGHT_MILEAGE) * 0.5f;
+ 
+    N.total_mileage += delta;
+    N.period_mileage += delta;
+ 
+    // 特殊点触发：把“下一个将要记录的点”登记为特殊点，随后由while循环把它真正写进数组
+    if (N.get_special_point_start && (!N.get_special_point_once_flag))
+    {
+        N.get_special_point_once_flag = 1;
+        if (N.current_special < SPECIAL_POINT_MAXSIZE)
+        {
+            N.special_point_index[N.current_special] = N.save_index;
+            N.current_special++;
+            special_record_flag = 1;
+        }
+        N.nag_pause_flag = 1; // 暂停惯导（科目三/科目二自转）
+    }
+ 
+    // 循环处理，保证一拍内跑过多个间隔时不漏记
+    while (N.period_mileage >= NAV_GET_POINT_MILEAGE)
+    {
+        // 写满就停止记录、冻结save_index，但车照常跑完打点（不用zf_assert死机）
+        if (N.save_index >= YAW_READ_MAXSIZE)
+        {
+            N.overflow_flag = 1;
+            N.period_mileage = 0.0f;
+            break;
+        }
+ 
+        nav_read_yaw[N.save_index] = nav_yaw_wrap180(YAW_DATA - N.start_yaw_angle); //
+            RAM里存相对起始角的偏移，不做缩放
+        N.save_index++;
+ 
+        if (N.period_mileage > 0)
+            N.period_mileage -= NAV_GET_POINT_MILEAGE;
+        else
+            N.period_mileage += NAV_GET_POINT_MILEAGE; // 倒车
+    }
+}
+程序B-5 航向路径复现（navigation.c）
+void nav_yaw_recurrent(void)
+{
+    // 点数太少直接结束，避免下面的推进逻辑在空数据上跑
+    if (N.save_index < 3)
+    {
+        N.nav_system_state = NAVIGATION_RECURRENT_FINISHED;
+        return;
+    }
+ 
+    // 看门狗：run_index连续这么多拍没推进，说明里程长期不涨（编码器故障、卡住、打滑等），
+    // 强制安全停车，复用“复现结束”的刹停流程，不依赖猜中具体原因。
+    // nag_pause_flag期间nav_system()在入口就return了，这里不会计数，自转/元素不会误触发
+    N.stall_counter++;
+    if (N.stall_counter >= NAV_STALL_TIMEOUT_TICKS)
+    {
+        N.nav_system_state = NAVIGATION_RECURRENT_FINISHED;
+        nav_stall_flag = 1;
+        return;
+    }
+ 
+    float delta = (LEFT_MILEAGE + RIGHT_MILEAGE) * 0.5f;
+    N.total_mileage += delta;
+    N.period_mileage += delta;
+ 
+    // 系统性误差处理
+    float recurrent_encoder_offset = (N.current_special == 1 || N.current_special == 2)
+        ? RECURRENT_ENCODER_OFFSET_HIGH : RECURRENT_ENCODER_OFFSET_LOW;
+ 
+    // 复现阈值比打点间隔小一点，补偿打点与复现之间的系统性里程差
+    float recurrent_step = NAV_GET_POINT_MILEAGE - recurrent_encoder_offset;
+ 
+    // 用while而非if：高速段一拍可能走过不止一个点位间隔（speed=2500时约5.7cm/拍，已超过
+    // recurrent_step），用if会让run_index每拍最多只推进1个点，推进速率被钳死在200点/秒，
+    // 而打点侧nav_yaw_record()用的是while、按实际里程如实记录。两侧不对称会导致回放的
+    // 航向持续落后于车的真实位置，且越跑越多（30m直道可累计数米），直道尽头接弯时晚转。
+    uint8 advanced = 0;
+    while (N.period_mileage >= recurrent_step)
+    {
+        // 到最后的点自动退出。写成加法，避免save_index<3时uint16做减法回绕成65533以上
+        if (N.run_index + 1 >= N.save_index)
+        {
+            N.nav_system_state = NAVIGATION_RECURRENT_FINISHED;
+            return;
+        }
+        N.run_index++;
+        advanced = 1;
+        N.period_mileage -= recurrent_step;
+    }
+ 
+    // 角度赋值与标志位放在循环外：一拍内推进多个点时只有最后一次有意义，
+    // 放循环里等于反复覆盖，白做功
+    if (advanced)
+    {
+        uint16 prospect = N.run_index;
+        if (prospect >= N.save_index)
+            prospect = N.save_index - 1;                              //
+                越界保护，此处save_index>=3已成立
+        N.run_yaw_angle = nav_yaw_wrap180(nav_read_yaw[prospect] + N.start_yaw_angle);
+            // 相对偏移+本轮复现起点朝向，还原成绝对目标角
+ 
+        every_point_flag = 1;
+        N.stall_counter = 0; // 推进了，看门狗清零
+    }
+}
+程序B-6 视觉核帧处理与任务分发（element_recognize.c）
+void pit_10_callback(void)
+{
+    extern uint8 camera_calculate_finished_flag;
+    static uint16 startup_frame_cnt = 0;   // 上电已处理帧计数（到阈值后不再自增）
+    //时序处理
+    if(mt9v03x_finish_flag)
+    {
+        mt9v03x_finish_flag = 0;
+ 
+        // 关键修复：将最新图像拷贝到 OLED_Bin_data
+        memcpy(OLED_Bin_data, mt9v03x_image, MT9V03X_IMAGE_SIZE);
+        // 根据0核KEY_3短按切换的强光/暗光模式，先更新曝光运行时参数，auto_exp_update才能用上新边界
+        Apply_Light_Mode(inter_core_m71_get_light_mode());
+        // 自动曝光
+        auto_exp_update(OLED_Bin_data);   // 直方图自动曝光（调节下一帧曝光时间）
+        
+        // 防止启动丢帧：仍跑自动曝光让曝光收敛，但不跑 Get_Maze_Image，避免启动帧写脏边线数组。
+        // 边线数组保持上电的全零状态，助手此期间不画任何边线。
+        if(startup_frame_cnt < STARTUP_DISCARD_FRAMES)
+        {
+            startup_frame_cnt++;
+            return;
+        }
+        
+//根据0核KEY_3长按/KEY_4/KEY_5短按切换的行模式(steady/extreme)，分别更新STEP1/STEP2/STEP3_SCAN_ROW（相互独立）
+        Apply_Step1_Row_Mode(inter_core_m71_get_step1_row_mode());
+        Apply_Step2_Row_Mode(inter_core_m71_get_step2_row_mode());
+        Apply_Step3_Row_Mode(inter_core_m71_get_step3_row_mode());
+        //检测0核是否请求了元素识别复位（遥控重新进入某元素START时序号+1）：
+        //序号发生变化就清空本核的识别自锁状态和起始行切换状态，使同一元素可反复调试
+        static uint32_t last_element_reset_seq = 0;
+        uint32_t element_reset_seq = inter_core_m71_get_element_reset_seq();
+        if(element_reset_seq != last_element_reset_seq)
+        {
+            last_element_reset_seq = element_reset_seq;
+            Element_Recognize_Reset();
+            Scan_Row_Reset();
+        }
+ 
+        //根据获取0核发来的当前特殊点序号，更新大的起始行
+        uint32_t camera_task = inter_core_m71_get_camera_task();
+        Update_Scan_Row(camera_task);  // 根据当前识别任务更新巡线起始行
+ 
+        //爬线
+        Get_Maze_Image();
+ 
+        //发中线误差
+        float inter_core_camera_track_error_1 = MidLine_Calculate_Weighted_Deviation();
+            //中线偏差计算
+        inter_core_m71_send_error(inter_core_camera_track_error_1);  //发送偏差
+ 
+        //元素识别并发标志位：按0核分发的任务只跑对应识别
+        switch(camera_task)
+        {
+            case CAMERA_TASK_STAIRS:    Three_Level_Stairs_Detect(); break;  //三级台阶
+            case CAMERA_TASK_BRIDGE:    Unilateral_Bridge_Detect();  break;  //单边桥
+            case CAMERA_TASK_BUMPY:     Bumpy_Road_Detect();         break;  //颠簸路段
+            case CAMERA_TASK_STEP_BACK: Step_Back_End_Detect();      break;  //从左到右通过结束
+            case CAMERA_TASK_ROTATE:    Rotate_Point_Detect();       break;  //科目二自转点位识别
+            default: Element_State_Recognition = 0; Rotate_Point_Reset(); break;
+                //NONE/掉头/加速：不识别并清结果码，顺带复位自转识别阶段
+        }
+        inter_core_m71_send_element_flag(Element_State_Recognition);
+ 
+        //允许发送到上位机
+        camera_calculate_finished_flag = 1;
+    }    
+}
+
+附录C  工程源文件索引与提交清单
+表C-1 核心源文件与职责
+
+
+===== TABLE 1 =====
+学　　校： | 哈尔滨工业大学（威海）
+队伍名称： | YYZZ
+参赛组别： | 轮腿穿越组
+参赛队员： | 宋清一，杜鑫哲，吕喆，李东逸
+带队教师： | 李泽，崔子浩
+完成日期： | 2026年8月18日
+
+===== TABLE 2 =====
+参赛队员签名：________________
+带队教师签名：________________
+日　            期：________________
+
+===== TABLE 3 =====
+符号/缩写 | 含义 | 单位或说明
+CM7_0 / CM7_1 | TRAVEO T2G的两个Cortex-M7内核 | 控制核 / 视觉核
+IMU | 惯性测量单元 | 三轴角速度与三轴加速度
+yaw, pitch, roll | 偏航角、俯仰角、横滚角 | °
+PID | 比例—积分—微分控制器 | 离散控制算法
+AE | 自动曝光 | 按暗区分位数闭环
+e(k) | 第k拍控制误差 | 随控制量而定
+u(k) | 第k拍控制输出 | PWM/占空比等
+D-Cache | 数据缓存 | 核间共享前后需维护一致性
+
+===== TABLE 4 =====
+周期/事件 | 执行核 | 主要任务
+1 ms | CM7_0 | IMU读取、Mahony解算、保护、任务调度、内环PID、电机/舵机输出
+5 ms | CM7_0 | 俯仰角外环、航向/视觉外环、编码器里程、路径录制或复现
+新图像帧（50 fps） | CM7_1 | 自动曝光、种子点、爬线、中线偏差、元素识别
+主循环 | CM7_0 | Flash阻塞读写、IPS200显示、调试串口与状态输出
+主循环 | CM7_1 | 逐飞助手图像和边线数据发送
+
+===== TABLE 5 =====
+模块 | 数量 | 接口/配置 | 用途
+TRAVEO T2G CYT4BB核心板 | 1 | 双Cortex-M7，250 MHz | 感知与控制计算
+MT9V03X灰度摄像头 | 1 | 188×120，50 fps | 路径与特殊元素检测
+IMU660RB | 1 | 硬件SPI，±8 g、±2000 °/s | 姿态角与角速度反馈
+无刷驱动/左右电机 | 1套/2 | UART4，460800 bit/s | 差速驱动及速度回传
+车身姿态舵机 | 4 | 300 Hz PWM | 高度、俯仰/横滚补偿与跳跃动作
+IPS200显示屏 | 1 | SPI | 参数、状态与调试信息显示
+Wi-Fi SPI模块 | 1 | TCP上位机链路 | 图像、边线与调试数据传输
+遥控接收机/按键/蜂鸣器 | 各1 | UART/GPIO | 录制、复现、模式选择与提示
+
+===== TABLE 6 =====
+q̇ = 1/2 · q ⊗ [0, ω + Kp·e + Ki∫e dt] | 公式1
+
+===== TABLE 7 =====
+g₁₀ = min{g | Σᵢ₌₀ᵍ h(i) ≥ 0.10·N}，e = g₁₀ − 25 | 公式2
+
+===== TABLE 8 =====
+元素 | 主要判据 | 抗误判措施
+三级台阶 | 固定中心5×5窗口灰度、左右边线Y差 | 分级状态锁存；末级连续16帧确认
+自转点 | 100行白→100行黑→60行白 | 阶段机；离开任务即复位
+颠簸路段 | 中心5×5窗口黑白变化 | 结束连续8帧消抖；总时长兜底
+单边桥 | 10个连续点、左右Y差≤5、结束X差 | 上桥后12帧消隐；丢线连续12帧确认
+回程台阶 | 五阶段黑白跳变 | 各阶段独立消抖并联动扫描行切换
+
+===== TABLE 9 =====
+ψᵣ[i] = wrap₁₈₀(ψ[i] − ψstart)，ψ* = wrap₁₈₀(ψᵣ[i] + ψstart,new) | 公式3
+
+===== TABLE 10 =====
+u(k)=Kp·e(k)+Ki·Σᵢ₌₀ᵏe(i)+Kd·[e(k)−e(k−1)] | 公式4
+
+===== TABLE 11 =====
+控制器 | Kp | Ki | Kd | 输出限幅
+俯仰角速度内环 | 1.25 | 0 | 0 | 10000
+俯仰角外环 | 570 | 0.8 | 65 | 50000
+横摆角速度内环 | 1.1 | 0 | 0 | 8000
+航向角外环 | 120 | 0 | 20 | 40000
+视觉偏差环 | 85 | 0 | 10 | 40000
+舵机速度环 | 5.0 | 0.001 | 6 | 1450
+横滚环 | 0 | 8.0 | 0 | 200
+重力补偿环 | 900 | 0 | 90 | 500
+
+===== TABLE 12 =====
+路段 | 目标速度 | 进入/完成条件与兜底
+常规行驶 | 2500 | 路径索引推进，特殊点前提前减速
+三级台阶 | 350 | 视觉分级触发或定时；三次跳跃完成后退出
+自转 | 250→0 | 纯惯导直接触发或视觉点位；1500 ms超时
+颠簸路段 | 380并缓升 | 视觉开始/结束；200 ms进入兜底、3000 ms总时长
+掉头 | 900 | 由两个特殊点界定，增强航向跟随
+单边桥 | 380/320/350 | 视觉分段；5000 ms进入、6000 ms总时长
+回程台阶 | 380 | 五阶段视觉；3000 ms进入、4000 ms总时长
+
+===== TABLE 13 =====
+项目 | 配置
+MCU平台 | Infineon TRAVEO T2G CYT4BB，双Cortex-M7，250 MHz
+IDE/编译器 | IAR Embedded Workbench 9.40.1
+基础库 | 逐飞科技CYT4BB开源库与设备驱动
+上位机 | 逐飞助手，经Wi-Fi SPI发送灰度图、左右边线和中线
+工程入口 | main_cm7_0.c / main_cm7_1.c
+核心业务目录 | project/code，共20个C/H模块；双核中断位于project/user
+
+===== TABLE 14 =====
+指标 | 工程值 | 依据
+控制基本周期 | 1ms | CM7_0 PIT_CH0/PIT_CH1初始化与回调
+外环/导航周期 | 5ms | sys_times%5条件
+摄像头分辨率 | 188×120 | MT9V03X_W/H
+摄像头帧率 | 50fps | MT9V03X_FPS_DEF
+路线采样间隔 | 5.0cm | NAV_GET_POINT_MILEAGE
+路线容量 | 4000点，约200m | YAW_READ_MAXSIZE
+特殊点容量 | 50个 | SPECIAL_POINT_MAXSIZE
+舵机控制频率 | 300Hz×4路 | STEER1～4_FRE
+电机驱动通信 | UART4，460800bit/s | SMALL_DRIVER_BAUDRATE
+姿态保护阈值 | pitch/roll±45° | PITCH/ROLL_PROTECT_ANGLE
+
+===== TABLE 15 =====
+参数 | 结果 | 测试条件/方法
+整车质量 | 约1.08kg | 含电池、外壳、全部线束
+外形尺寸（长×宽×高） | 181*206*325mm | 比赛状态最大包络
+整车静态功耗 | 约为12W | 上电直立
+板载与外接电容总容量 | 约2636.1μF | 汇总
+除原车驱动/舵机外伺服电机 | 0个 | 四路车身姿态舵机
+赛道检测精度 | 像素级：188×120 | 摄像头实测
+赛道检测频率 | 50fps | 摄像头实测
+
+===== TABLE 16 =====
+功能 | 固件接口
+左右电机驱动 | UART4，P14_1/P14_0，460800 bit/s
+左前舵机 | TCPWM_CH10_P05_1，300 Hz
+左后舵机 | TCPWM_CH12_P05_3，300 Hz
+右前舵机 | TCPWM_CH11_P05_2，300 Hz
+右后舵机 | TCPWM_CH09_P05_0，300 Hz
+IMU660RB | 硬件SPI + CS
+MT9V03X | 总钻风摄像头接口
+IPS200 | SPI显示接口
+Wi-Fi SPI | 高速SPI模块
+蜂鸣器 | P19_4
+
+===== TABLE 17 =====
+源文件 | 职责
+auto_exp.c/h | 自动曝光与光照模式
+drv_motor.c/h | 双路无刷驱动通信与占空比
+drv_steer.c/h | 四路舵机PWM与位置限制
+element_recognize.c/h | 台阶、自转、颠簸、单边桥等识别
+encoder.c/h | 轮速低通与5 ms里程换算
+hardware_init_0/1.c/h | 双核硬件初始化
+imu.c/h | Mahony姿态解算、yaw校准与Flash
+inter_core_0/1.c/h | 双核共享内存通信
+inter_core_common.h | 共享任务码、光照与元素枚举
+key.c/h | 按键、模式与参数调整
+mission.c/h | 连续任务状态机与速度规划
+navigation.c/h | 航向录制/复现与Flash路径库
+pid.c/h | 通用位置式PID及参数
+posture.c/h | 车体状态、控制器调度与执行输出
+remote.c/h | 遥控解析、录制与元素单测
+scan_row_update.c/h | 特殊元素的动态扫描行
+search.c/h | 种子点、爬线、中线与偏差
+main_cm7_0.c | 控制核主程序、Flash和显示
+main_cm7_1.c | 视觉核主程序、图像上位机
+cm7_0_isr.c / cm7_1_isr.c | 双核中断入口

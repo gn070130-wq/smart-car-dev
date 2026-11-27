@@ -1,0 +1,814 @@
+
+
+
+
+第二十一届全国大学生智能汽车竞赛
+“飞跃雷区”技术报告
+
+
+学　　校：中国地质大学（北京）
+队伍名称：雷区穿越者
+参赛队员：俞炘炀 杨晓赟 王一鸣 郭旭
+带队教师：彭爱民 曾卫华
+
+关于技术报告和研究成果使用授权的说明
+本人（本队全体成员）完全了解全国大学生智能汽车竞赛关于保存、使用技术报告及其研究成果的有关规定，同意竞赛组织方保存并按竞赛管理、评审、交流和资料归档需要使用本报告。报告中涉及的程序、图表和技术说明由本队依据实际参赛系统整理，引用资料已在参考文献中列出。
+本报告不包含未经允许公开的第三方保密资料。
+参赛队员签名：
+指导教师签名：
+日期：2026年8月19日
+摘  要
+本报告面向第二十一届全国大学生智能汽车竞赛“飞跃雷区”任务，介绍一套由四旋翼飞行器、麦克纳姆轮智能车和机载视觉模块组成的空地协同系统。飞行器采用双核 CYT4BB7 控制器：CM7_0承担姿态、高度、水平位置、安全状态和通信调度，CM7_1负责188×120灰度图像处理。视觉链路通过梯度自适应双阈值、孤立点清除、八邻域连通域、双灯车辆配对以及信标时序跟踪，输出车辆中心、轴向角、信标相对误差和有效性状态，并通过固定共享RAM交给飞控核心。
+飞控采用1 ms基准多速率调度，形成角速度、姿态、垂向速度、高度、水平速度和视觉位置等层级控制，并通过锁定、解锁、失控下降、人工优先和输出限幅等机制约束执行器。地面车利用IMU660RA、四路编码器和麦克纳姆轮底盘完成航向保持、里程计、世界坐标导航和视觉跟随。空地间通过UART3传输16字节定长帧，飞行器根据信标有效性发送跟随或返回中心命令，地面车在500 ms通信超时后强制进入空闲状态。
+报告中的软件流程、调度周期、接口字段、方向关系和控制参数均取自当前工程源码。尚未由源码证明的机械、电气和实测性能数据保持空白，不以估计值替代。
+关键词：飞跃雷区；空地协同；四旋翼；麦克纳姆轮；视觉跟踪；双核控制
+
+ABSTRACT
+This report presents an air-ground cooperative robotic system developed for the Flying over the Minefield category of the 21st National University Student Intelligent Car Competition. The system consists of a quadrotor, a Mecanum-wheel ground vehicle, and an onboard vision processor. A dual-core CYT4BB7 controller is used on the aerial platform. CM7_0 executes flight control, state estimation, safety arbitration, and communication, while CM7_1 processes 188 by 120 grayscale frames and publishes vehicle and beacon observations through a fixed shared-memory contract.
+The flight controller uses a 1 ms base tick and multiple execution rates for inertial acquisition, angular-rate control, attitude control, altitude control, optical-flow velocity estimation, and vision-aided horizontal control. The ground vehicle performs attitude estimation, four-wheel odometry, field-oriented navigation, visual following, and Mecanum-wheel speed control. A 16-byte UART frame carries commands and target information between the platforms. All software parameters and interfaces described in this report are traced to the current source tree; unverified mechanical, electrical, and measured performance data are intentionally left blank.
+Keywords: air-ground cooperation; quadrotor; Mecanum wheel; visual tracking; dual-core control
+
+目  录
+摘  要	i
+ABSTRACT	ii
+符号与缩略语	vi
+第一章  绪论	1
+1.1 竞赛任务与系统目标	1
+1.2 总体技术路线	1
+1.3 报告内容与证据边界	2
+第二章  系统总体方案与机械结构	3
+2.1 系统组成与空间关系	3
+2.2 飞行器机械与安装约束	4
+2.3 地面车底盘	5
+2.4 主要机械参数	5
+第三章  硬件与电路系统	7
+3.1 控制器与核心外设	7
+3.2 飞行器执行器与通信电路	7
+3.3 地面车驱动与编码器接口	13
+3.4 电气参数	15
+第四章  飞行器控制系统	17
+4.1 双核软件分工与初始化	17
+4.2 多速率实时调度	17
+4.3 姿态与角速度串级控制	18
+4.4 高度融合与垂向控制	19
+4.5 光流与视觉水平控制	19
+4.6 飞行安全状态机	19
+第五章  视觉感知系统	21
+5.1 图像采集与处理总流程	21
+5.2 梯度自适应双阈值	22
+5.3 孤立点去除与连通域	22
+5.4 车辆双灯配对与轴向角	23
+5.5 信标时序跟踪	23
+5.6 双核共享与缓存一致性	23
+5.7 视觉调试指标	25
+第六章  地面车控制系统	27
+6.1 软件调度与姿态估计	27
+6.2 编码器里程计	27
+6.3 轮速与航向闭环	27
+6.4 视觉跟随	28
+6.5 任务状态机与双目标点导航	28
+第七章  空地协同与系统调试	31
+7.1 空地通信协议	31
+7.2 信标有效性与任务切换	32
+7.3 端到端数据链	32
+7.4 开发工具与调试方法	33
+7.5 测试项目与记录	33
+7.6 系统主要参数汇总	34
+第八章  结论与展望	35
+8.1 工作总结	35
+8.2 方案特点	35
+8.3 后续工作	35
+参考文献	I
+附录A  电路图	III
+附录B  核心算法程序	IX
+附录C  通信与参数表	XVII
+
+
+符号与缩略语
+表0.1  主要符号与缩略语
+
+第一章  绪论
+1.1 竞赛任务与系统目标
+“飞跃雷区”任务要求空中平台与地面车辆在限定环境中协同完成信息感知、目标搜索、越障与引导等动作。系统既要解决飞行器姿态和高度稳定问题，又要将机载视觉得到的车辆、信标信息转换为地面车可执行的运动指令。技术报告必须覆盖总体方案、机械安装、电路、控制软件、开发调试及主要参数，并给出原理图与核心算法程序[1-2]。
+本系统以“感知与飞控分核、空地任务分层、有效性显式传递、安全优先于任务”为设计原则。CM7_1只发布经过筛选的视觉结果，CM7_0根据遥控状态、传感器有效性与飞行状态决定是否让自动控制获得权限；地面车则把通信命令解释为有限状态，并在串口超时后主动停止平移。
+1.2 总体技术路线
+
+图1.1  空地协同系统总体架构
+系统由飞行器子系统、地面车子系统、视觉与通信子系统构成。飞行器上层视觉识别车辆中心、车辆轴向和独立信标；飞控内核完成姿态、垂向和水平控制；地面车根据空中下发的视觉误差或导航命令驱动四轮底盘。三条数据链分别是双核共享RAM、空地UART3链路和各平台内部传感器/执行器链路。
+表1.1  子系统分工
+1.3 报告内容与证据边界
+本文以当前UAV与UGV工程的启用调用链为准，区分正在运行的主流程、仅保留的备用函数以及尚需实物测试确认的性能。已有HEX文件只说明工程目录中存在编译产物，不能证明本文生成时重新编译成功，也不能替代飞行、越障和通信可靠性测试。
+
+第二章  系统总体方案与机械结构
+2.1 系统组成与空间关系
+飞行器采用四旋翼X形布局，视觉摄像头朝向任务区域，IMU位于机体控制坐标系基准附近，ToF测距与光流模块用于垂向和水平状态估计。地面车采用四麦克纳姆轮底盘，可在不改变车头朝向的情况下实现前后、横移与旋转合成，从而适应视觉误差直接映射为平面速度的控制方式。
+图2.1  飞行器总体结构与传感器安装位置
+图2.2  地面车机械结构与麦克纳姆轮安装方向
+2.2 飞行器机械与安装约束
+飞行器电机逻辑位置定义为M1前右、M2前左、M3后左、M4后右。四合一驱动协议的物理通道并不按逻辑编号顺排，而是CH1连接M3、CH2连接M2、CH3连接M4、CH4连接M1。软件在发送前完成通道重排，因此机械装配、电机旋向和桨叶方向必须与该映射共同核验。
+摄像头安装角度直接决定图像坐标与车辆坐标之间的方向关系。当前视觉程序先求车辆中心与轴向角，再把信标相对像素坐标旋转到车体系；光流速度另通过FLOW_X_DIR=-1、FLOW_Y_DIR=+1校正模块安装方向。机械变更后不能只调整PID，应先重新验证坐标轴、旋向和零点。
+2.3 地面车底盘
+
+图2.3  麦克纳姆轮底盘坐标与轮速分配
+地面车定义vx为前进正方向、vy为横移正方向、ω为旋转分量。四轮目标速度按照式（1）分配。该关系允许地面车在保持航向闭环的同时跟踪二维视觉误差。
+	vA=vx-vy-ω，vB=vx+vy+ω，vC=vx+vy-ω，vD=vx-vy+ω	（1）
+2.4 主要机械参数
+表2.1  机械参数
+
+第三章  硬件与电路系统
+3.1 控制器与核心外设
+飞行器和地面车均使用CYT4BB7双核控制器，主频配置为250 MHz。飞行器同时启用CM7_0和CM7_1，分别承担控制与视觉任务；地面车当前只在CM7_0中运行控制程序，CM7_1保持空闲循环。双核器件的资源划分使图像处理不会直接阻塞飞控的高频控制环。
+表3.1  主要传感器与接口
+3.2 飞行器执行器与通信电路
+飞行器电机控制采用UART1、460800 bit/s，帧长11字节：0xA5帧头、0x01功能字、四路16位大端命令和累加校验。控制层将混控输出限制在800～8000；电机驱动层又把低于可靠起转门槛的命令转换为0，并把协议上限限制为10000。两级限制分别承担飞控安全余量与驱动协议合法性约束。
+图3.1  飞行器主控、电源与传感器连接原理图
+图3.2  四合一电调与电机连接原理图
+3.3 地面车驱动与编码器接口
+地面车四路PWM频率宏为10000 Hz。左前A轮使用P05_0/P05_1，右前B轮使用P05_2/P05_3，左后C轮使用P10_2/P10_3，右后D轮使用P09_0/P09_1。编码器分别使用TIM5、TIM3、TIM4、TIM2对应的正交输入；读取函数对不同安装方向进行符号修正后再执行0.7旧值加0.3新值的一阶滤波。
+图3.3  地面车电源、主控与四路电机驱动原理图
+3.4 电气参数
+
+表3.2  电气参数
+
+第四章  飞行器控制系统
+4.1 双核软件分工与初始化
+CM7_0是飞控核心，初始化顺序包括电机串口并立即发送停转、PID参数、IMU、陀螺仪校准、iBUS遥控、调试遥测、光流、VL53L8CX、空地UART3和1 ms周期定时器。主循环持续推进ToF非阻塞后台任务、读取视觉共享区并执行20 ms无线任务。CM7_1初始化MT9V03X后等待DMA完成标志，每获得一帧完整图像才调用一次image_process。
+4.2 多速率实时调度
+
+图4.1  飞控多速率任务调度
+1 ms基准使高频惯性数据与低频视觉、光流任务共享统一时钟。500 Hz角速度内环直接决定电机差动量；200 Hz姿态外环提供角速度目标；100 Hz高度链路处理遥控目标和垂向状态；50 Hz水平链路融合光流、视觉位置反馈与前馈。频率由被控对象带宽和传感器更新速度分层设置。
+表4.1  飞控周期任务
+4.3 姿态与角速度串级控制
+
+图4.2  飞行器级联控制与安全仲裁
+姿态外环以滚转、俯仰和航向误差生成角速度目标，角速度内环根据陀螺仪反馈生成控制量，再由X形混控分配给四个电机。当前源码中的初始参数为：滚转角速度环P=1.6、I=1、D=20；俯仰角速度环P=1.8、I=1、D=20；航向角速度环P=4、I=1、D=0。外环滚转P=3.2、俯仰P=3.6、航向P=4。参数只代表当前源码初值，不代表已完成全部飞行工况调优。
+	uPID(k)=Kp·e(k)+Ki·Σe(k)+Kd·[e(k)-e(k-1)]	（2）
+混控输出在控制层限制为800～8000。若处于锁定状态，电机命令为停转；起飞请求成立后，油门基值以每2 ms增加0.001的斜坡方式建立，约2 s完成，以降低突加推力造成的姿态扰动。
+4.4 高度融合与垂向控制
+垂向链路以VL53L8CX测距和IMU信息形成高度估计，外层高度PID给出垂向速度目标，内层垂向速度PID生成油门补偿。当前高度环初始参数为P=2.45、I=1、D=50，垂向速度环为P=1.75、I=1、D=0。起飞目标高度超过100 mm时判定为起飞请求。
+4.5 光流与视觉水平控制
+光流模块经UART2接收数据并结合滚转、俯仰角速度进行旋转补偿。当前启用路径采用固定有效高度height_used=1.5 m进行尺度换算，X方向取反、Y方向保持原符号。该值是当前工程保留的标定量，除非重新进行专门标定，否则不在报告中按实时高度改写。
+视觉位置误差按焦距80 pixel和融合高度换算为平面距离；位置环P为0.05。视觉前馈根据连续坐标差形成速度项，增益0.20，死区30 cm/s，限幅40 cm/s，低通系数0.20；位置反馈和前馈合成后的水平目标限幅为65 cm/s。视觉丢失后，残余目标在约15个50 Hz周期内衰减，最终限制在±5 cm/s以内。
+	vx,target=-uy,pos+vy,ff；vy,target=ux,pos-vx,ff	（3）
+4.6 飞行安全状态机
+飞控状态包括LOCKED、ARMED和FAILSAFE_LANDING。遥控在线且满足解锁条件后进入ARMED；空中连续500 ms未收到有效遥控帧时进入失控下降，以0.2 m/s目标速度受控下降；地面状态下失联则直接锁定。FlowHold只在解锁并且对应开关有效时启用，横滚或俯仰人工输入超过1°即覆盖自动水平控制。
+表4.2  飞控安全约束
+
+第五章  视觉感知系统
+5.1 图像采集与处理总流程
+CM7_1使用MT9V03X采集188×120灰度图像。DMA完成一帧后，主循环调用image_process。当前启用的处理链为：灰度快照、梯度自适应阈值、孤立点清除、八邻域连通域、信标时序滤波、双灯车辆配对、坐标旋转和共享结果发布。固定阈值Binary、形态学膨胀、边缘提取及线形车辆识别函数仍保留在源文件中，但未进入当前主流程。
+
+
+图5.1  当前启用的视觉处理流程
+
+
+
+图5.2  不同亮度条件下的视觉调试场景
+
+5.2 梯度自适应双阈值
+算法先计算局部水平与垂直梯度。当梯度超过默认阈值30时采用边缘灰度阈值105，以保留高对比度边缘；平坦区域采用灰度阈值160，抑制背景亮度缓慢变化带来的大面积误检。二值化输入和输出分离保存，使调试图像不会改变连通域输入。
+	G(x,y)=|I(x+1,y)-I(x-1,y)|+|I(x,y+1)-I(x,y-1)|	（4）
+	B(x,y)=1，当[G>Tg且I>Te]或[G≤Tg且I>Tf]；否则B=0	（5）
+5.3 孤立点去除与连通域
+二值图像采用最少1个邻域像素的原地清噪规则，去除孤立单点和无法形成结构的小噪声。随后执行两遍标记：第一遍在八邻域中建立临时标签与等价关系，第二遍压缩等价类并统计面积、边界、中心和亮度信息。信标候选面积范围为5～400 pixel。
+采用八邻域而非四邻域，可把斜向相连的灯斑归入同一目标，减少离散采
+样导致的碎裂；同时通过面积上下限阻断小噪点和大面积反光区域进入时序跟踪池。
+5.4 车辆双灯配对与轴向角
+车辆识别从符合类型条件的灯斑中寻找最近的一对目标，以两点几何关系确定车头、车尾、中心和车辆轴向角。视觉相对坐标不是直接把图像X/Y发送给地面车，而是依据车辆轴向角进行旋转，使Error_X、Error_Y表达信标相对车辆坐标系的位置。
+	Xc=Xraw·cosα-Yraw·sinα；Yc=Xraw·sinα+Yraw·cosα	（6）
+5.5 信标时序跟踪
+信标跟踪池最多维护8条轨迹。当前帧候选与历史轨迹采用最近邻关联，匹配距离平方阈值为400，即最大约20 pixel。新轨迹连续存在3帧后才置为confirmed；连续丢失6帧后删除。确认和超时形成迟滞，可降低单帧噪声触发任务切换的概率。
+表5.1  信标时序跟踪参数
+5.6 双核共享与缓存一致性
+
+
+
+图5.3  CM7双核视觉共享数据映射
+共享数组固定放置在0x28001000，共10个float。CM7_1在完整计算后一次性写入车辆中心、车辆轴向角、信标相对误差、候选数、车辆有效性、信标有效性和信标图像位置，并执行DCache维护；CM7_0在读取前失效相关缓存行。显式有效位避免用“坐标是否为零”推断识别状态。
+表5.2  共享数组字段定义
+5.7 视觉调试指标
+表5.3  视觉主要参数与测试记录
+
+第六章  地面车控制系统
+6.1 软件调度与姿态估计
+地面车CM7_0在system_init中初始化显示与菜单、四路编码器、四路PWM电机、姿态估计、控制器、UART3接收和三个PIT周期任务。PIT0每1 ms执行姿态更新，PIT1每10 ms读取编码器并执行控制主循环，PIT2每20 ms扫描按键。CM7_1当前不承担实时任务。
+姿态模块使用IMU660RA。陀螺仪和加速度计分别经过截止频率100 Hz与35 Hz的二阶Bessel滤波，再由Mahony互补滤波更新四元数。比例增益为0.75，积分增益为0.006，陀螺仪零偏校准采样2000次。航向角通过跨越±180°时累加圈数得到连续total_yaw，供世界坐标里程计使用[6]。
+6.2 编码器里程计
+四轮编码器每10 ms读取一次，各通道根据机械安装方向修正正负号，并用0.7倍历史值与0.3倍新值形成低通输出。车体前向与横向增量由四轮组合获得，再依据当前连续航向旋转到世界坐标系。位置换算比例POS_COUNTS_TO_METERS为0.00002093。
+	Δxw=Δxr·cosψ-Δyr·sinψ；Δyw=Δxr·sinψ+Δyr·cosψ	（7）
+场地坐标导航反向把世界系速度目标旋转到车体系，再调用麦克纳姆轮分配函数。这样位置规划不随车头朝向改变，而航向控制仍可独立保持。
+6.3 轮速与航向闭环
+
+
+
+图6.1  地面车坐标、轮序与麦克纳姆运动学
+四个轮速增量式PID初始参数均为P=15、I=2.15、D=0。四轮目标按式（1）生成后，如果任一目标幅值超过6000，则按相同比例归一化，保持轮间比例不变。航向控制器初始参数为P=6.5、D=1.5，输出作为ω分量叠加到四轮速度。
+6.4 视觉跟随
+视觉跟随不直接使用线性PID，而是分别通过查表把Error_Y映射为前向vx，把Error_X取反后映射为横向vy，并叠加航向保持ω。误差落入死区时平移速度为零，但航向闭环仍然工作。该映射必须与CM7_1的车辆坐标旋转保持一致。
+	vx=fY(Error_Y)，vy=-fX(Error_X)	（8）
+6.5 任务状态机与双目标点导航
+
+
+
+
+
+图6.2  地面车任务状态机
+车辆上电后先执行引导导航，前往当前默认目标(3.0 m, 1.0 m)，稳定后旋转30°，然后才接受空中任务命令。0x00为空闲，车辆停止平移并保持航向；0x01执行视觉跟随；0x03在目标A(3.0 m, 1.0 m)与目标B(1.5 m, -1.0 m)之间切换，切换周期宏为3000 ms。上述坐标均为当前源码默认值，比赛场地标定后可通过菜单调整。
+导航误差通过分段速度表线性插值为vx、vy，并分别限制加速和减速变化率。到达判定死区为0.10 m，连续稳定10个控制周期后进入下一阶段。任意状态下若UART超过500 ms没有接收到字节，立即把命令强制改为空闲。
+表6.1  地面车控制参数
+
+第七章  空地协同与系统调试
+7.1 空地通信协议
+
+图7.1  UAV至UGV的16字节通信帧
+空地通信使用UART3、115200 bit/s。发送帧由0xA5帧头、1字节命令、X/Y/Yaw三个小端float、0～13字节累加和及0x5A帧尾构成，共16字节。接收中断采用逐字节状态机，只在帧头、校验和与帧尾全部正确时发布新数据。飞行器当前主要使用地面车返回的命令和航向字段，X/Y解析在飞行器端未启用。
+表7.1  空地通信帧定义
+7.2 信标有效性与任务切换
+飞行器无线任务每20 ms执行一次。当Beacon_Valid为1时，下发0x01及Error_X、Error_Y；偶发丢失时不会立即改变任务，而是连续10个无线周期无效后才发送0x03。由于周期为20 ms，该防抖时间约200 ms。地面车收到0x03后进入双目标点导航；如果通信完全中断，则500 ms超时保护优先于任务状态。
+7.3 端到端数据链
+
+图7.2  感知、决策与执行的端到端数据链
+CM7_1采集图像，完成车辆与信标识别，并发布10个共享浮点量。
+CM7_0读取有效位与相对误差，结合遥控开关和飞行状态决定自动控制权限。
+飞控按20 ms节拍生成地面车命令，编码为16字节UART帧。
+地面车解析完整帧并更新命令状态；10 ms控制循环执行视觉跟随或导航。
+四轮闭环把vx、vy、ω转换为PWM；超时或空闲状态停止平移。
+7.4 开发工具与调试方法
+UAV和UGV均采用IAR Embedded Workbench工程组织，调试数据通过VOFA/无线串口观察。视觉核心保留原始或处理图像输出路径，但当前相机助手WiFi发送开关关闭；用于调试时应确认显示的是灰度快照还是实际连通域二值输入，避免依据错误画面调整阈值。
+
+图7.3  分阶段联调与安全放行流程
+联调顺序应从静态协议和方向核对开始，再进行拆桨飞行器电机映射、架空地面车轮序、单机闭环、空地通信和低风险整机测试。飞行器在桨叶安装前必须先验证M1～M4逻辑位置、物理通道和旋向；地面车必须确认四编码器正方向与麦克纳姆轮安装方向一致。
+7.5 测试项目与记录
+表7.2  系统测试记录
+7.6 系统主要参数汇总
+表7.3  竞赛报告主要参数
+
+第八章  结论与展望
+8.1 工作总结
+本文完成了“飞跃雷区”空地协同系统的源码级技术梳理。飞行器利用双核架构把视觉处理与高频控制隔离，以1 ms基准完成多速率姿态、高度和水平控制，并通过显式飞行状态、遥控新鲜度、人工优先和执行器限幅建立安全边界。视觉系统从灰度图像中提取车辆双灯与独立信标，经时序确认和坐标旋转发布10槽共享结果。地面车以1/10/20 ms任务执行姿态估计、编码器里程计、世界坐标导航、视觉跟随和四轮闭环。
+空地链路使用16字节定长帧，把信标相对误差和任务命令传递到地面车；连续丢标防抖、车辆500 ms通信超时以及飞行器失控下降构成跨平台异常处理链。上述结论均由当前源码调用链支持。
+8.2 方案特点
+视觉计算与飞控闭环分核运行，并通过固定地址、固定长度、显式有效位和DCache维护保证数据契约清晰。
+信标追踪使用3帧确认与6帧删除，任务层再使用约200 ms连续丢标判定，形成感知层与决策层两级迟滞。
+地面车将视觉跟随、世界坐标导航和航向保持统一到vx、vy、ω接口，复用同一套麦克纳姆轮分配与轮速闭环。
+UAV和UGV均设置独立失联处置，异常时分别受控下降或停止平移，避免把通信旧值长期作为有效目标。
+8.3 后续工作
+后续工作应围绕机械、电气和实测证据完善：补充整机尺寸、质量、电源功耗、总电容、传感器安装图与原理图；在统一坐标与测试条件下测量视觉检测精度、帧率、端到端延迟、通信丢包与超时响应；完成拆桨、架空、单机和整机分阶段测试。参数调整必须建立在有效性、方向、单位、时序和控制权限均已确认的基础上。
+
+参考文献
+[1] 卓晴. 第21届全国大学生智能汽车竞赛技术报告要求细则[EB/OL]. https://zhuoqing.blog.csdn.net/article/details/163553155, 2026-08-19访问.
+[2] 卓晴. 第21届智能汽车竞赛飞跃雷区优秀技术报告示例[EB/OL]. https://zhuoqing.blog.csdn.net/article/details/163733139, 2026-08-19访问.
+[3] Infineon Technologies AG. TRAVEO T2G CYT4BB Family Architecture Technical Reference Manual[Z].
+[4] onsemi. MT9V034 1/3-Inch Wide-VGA CMOS Digital Image Sensor Data Sheet[Z].
+[5] STMicroelectronics. VL53L8CX Time-of-Flight 8×8 Multizone Ranging Sensor User Manual[Z].
+[6] Mahony R, Hamel T, Pflimlin J M. Nonlinear Complementary Filters on the Special Orthogonal Group[J]. IEEE Transactions on Automatic Control, 2008, 53(5): 1203-1218.
+[7] Ilon B E. Wheels for a Course Stable Selfpropelling Vehicle Moving in Any Desired Direction on the Ground or Some Other Base: US3876255[P]. 1975.
+[8] Åström K J, Murray R M. Feedback Systems: An Introduction for Scientists and Engineers[M]. Princeton University Press, 2008.
+[9] 本队飞行器UAV与地面车UGV当前工程源代码[Z]. 本报告工作目录, 2026.
+
+附录A  电路图
+图A-1  飞行器主控及传感器电路原理图
+图A-2  飞行器电源与四合一电调电路原理图
+图A-3  地面车主控、电源与电机驱动电路原理图
+附录B  核心算法程序
+B.1 视觉单帧主流程 image_process()
+* 当前 image_process() 里这条路线是注释掉的，实际使用的是 car_follow()。
+ */
+void line_car_follow(void) // 基于线形目标的车身方向估计入口；选出最大type==1色块，由车头/车尾两点求方向角
+{
+    first_car_blob = (Blob){0};  // 清零三档候选车色块，准备重新挑选
+    second_car_blob = (Blob){0}; // 清零第二候选车色块
+    third_car_blob = (Blob){0};  // 清零第三候选车色块
+    head_x = 94.0f;              // 车头坐标默认为图像中心（X=94）
+    head_y = 60.0f;              // 车头坐标默认为图像中心（Y=60）
+    end_x = 94.0f;               // 车尾坐标默认为图像中心
+    end_y = 60.0f;
+    delta_alpha = 0.0f;   // 方向角先清零，后面命中目标再更新
+    float k_alpha = 0.4f; // 角度低通滤波系数：新角占0.4，旧角占0.6，平滑防跳变
+    // [修改1] 加上 static，让它在帧与帧之间记住上一次的角度，修复滤波和历史记忆
+    static float last_alpha;                             // 静态变量保存上一帧方向角，跨帧传递实现历史记忆
+    static float last_head_x = 0.0f, last_head_y = 0.0f; // 新增：最后有效车头
+    static float last_end_x = 0.0f, last_end_y = 0.0f;   // 新增：最后有效车尾
+
+    // [新增] 丢失目标的帧数计数器
+    static unsigned int lost_frame_count = 0; // 统计连续丢目标帧数，用于防丢失保持逻辑
+
+    // 获取当前的帧率作为 1 秒的阈值。加入防零保护，如果开机瞬间 fps 为 0，默认按 10 帧算
+    unsigned int current_fps = (fps > 0) ? fps : 10; // 当前帧率用于丢失计数钳制，开机阶段以10兜底。
+
+    for (int i = 1; i <= label_count; i++) // 遍历所有色块，挑出 type==1 的线形目标按面积排名
+    {
+        if (blobs[i].type == 1) // 仅处理被线形识别判定为直线的色块
+        {
+            if (blobs[i].area > first_car_blob.area) // 当前面积超过暂列第一
+            {
+                third_car_blob = second_car_blob; // 第二退居第三
+                second_car_blob = first_car_blob; // 第一退居第二
+                first_car_blob = blobs[i];        // 当前成为新的最大候选车
+            }
+            else if (blobs[i].area > second_car_blob.area)
+            {
+                third_car_blob = second_car_blob; // 第二退居第三
+                second_car_blob = blobs[i];       // 当前成为第二
+            }
+            else if (blobs[i].area > third_car_blob.area)
+            {
+                third_car_blob = blobs[i]; // 当前成为第三
+            }
+        }
+    }
+
+    if (first_car_blob.area > 5) // 最大线形目标面积够大（>5像素）才认为有效目标
+    {
+        lost_frame_count = 0;                    // 命中目标，立即清零丢帧计数
+        int yc = (int)first_car_blob.y_centroid; // 取质心行作为车头/车尾采样基准
+        if (yc >= 3 && yc <= 116)                // 质心行距上下边界至少留3行余量，避免左右边界数组越界
+        {
+            head_x = (first_car_blob.left_edge[yc - 3] + first_car_blob.right_edge[yc - 3]) / 2.0f; // 车头X：质心上方3行的左右边界中点
+            head_y = first_car_blob.y_centroid - 5.0f;                                              // 车头Y：质心上方5行处
+            end_x = (first_car_blob.left_edge[yc + 3] + first_car_blob.right_edge[yc + 3]) / 2.0f;  // 车尾X：质心下方3行的左右边界中点
+            end_y = first_car_blob.y_centroid + 5.0f;                                               // 车尾Y：质心下方5行处
+            last_head_x = head_x;
+            last_head_y = head_y; // 保存最后有效值
+            last_end_x = end_x;
+            last_end_y = end_y;                      // 保存最后有效值
+            float dx = head_x - end_x;               // 车头到车尾的X分量
+            float dy = end_y - head_y;               // 车尾到车头的Y分量（注意y向下为正，故取 end_y - head_y）
+            float mid_alpha = atan2f(dx, dy) * RTOD; // 用atan2算方向角；RTOD把弧度转成角度
+            // 滤波（连续变化，防止空格跳）
+            delta_alpha = (1.0f - k_alpha) * last_alpha + k_alpha * mid_alpha; // 一阶低通：保留大部分旧角+小部分新角，防抖动
+
+            last_alpha = delta_alpha; // 更新历史角，供下一帧滤波使用
+        }
+    }
+    else /* 没找到有效线形目标，进入防丢失保持逻辑 */
+    {
+
+        // 防丢失
+        lost_frame_count++; // 丢帧计数+1
+
+        if (lost_frame_count <= 3) // 保持 3 帧
+        {
+            /* 按上一个信息继续发送：head/end + 角度 */
+            head_x = last_head_x;
+            head_y = last_head_y;
+            end_x = last_end_x;
+            end_y = last_end_y;
+            delta_alpha = last_alpha;
+        }
+        else // 丢帧超过1秒，认为目标真的丢失
+        {
+            delta_alpha = 0.0f; // 方向角清零
+            last_alpha = 0.0f;  // 历史角清零，避免恢复时受旧值影响
+
+            lost_frame_count = current_fps + 1; // 钳制计数器，防止无限累加溢出
+        }
+    }
+}
+B.2 视觉坐标旋转 x_y_calculate()
+void x_y_calculate(int16 X_raw, int16 Y_raw, float alpha, float *X_cal, float *Y_cal)
+{
+    // 1. 构建 2x2 旋转矩阵 R (alpha 乘以 3.1415926f / 180.0f 转为弧度)
+    R[0][0] = cosf(alpha * 3.1415926f / 180.0f);
+    R[0][1] = sinf(alpha * 3.1415926f / 180.0f);
+    R[1][0] = -sinf(alpha * 3.1415926f / 180.0f);
+    R[1][1] = cosf(alpha * 3.1415926f / 180.0f);
+
+    // 2. 构建 2x1 的平移后位置向量 P
+    // 公式：新坐标 = 目标点原始像素坐标 - 新坐标系原点像素坐标 (车身中心)
+    P[0] = (float)X_raw - (head_x + end_x) / 2.0f;
+    P[1] = (float)Y_raw - (head_y + end_y) / 2.0f;
+    if (X_raw == 0 && Y_raw == 0)
+    {
+        *X_cal = 0.0f;
+        *Y_cal = 0.0f;
+    }
+    else
+    {
+        // 旋转矩阵求得相对坐标
+        //  3. 矩阵相乘：[2x2] * [2x1] 得到目标相对坐标
+        *X_cal = R[0][0] * P[0] + R[0][1] * P[1];
+        *Y_cal = -R[1][0] * P[0] - R[1][1] * P[1];
+    }
+}
+B.3 空地发送函数 uav_To_car()
+void uav_To_car(float x, float y, float yaw, uint8 cmd)
+{
+    cy4_uav_value.send_data_buffer[0] = CAR_FRAME_HEADER;
+    cy4_uav_value.send_data_buffer[1] = cmd;
+
+    communication_write_float(cy4_uav_value.send_data_buffer, 2u, x);
+    communication_write_float(cy4_uav_value.send_data_buffer, 6u, y);
+    communication_write_float(cy4_uav_value.send_data_buffer, 10u, yaw);
+
+    cy4_uav_value.send_data_buffer[14U] =
+        communication_checksum(cy4_uav_value.send_data_buffer, 14U);
+    cy4_uav_value.send_data_buffer[CAR_FRAME_END_INDEX] = CAR_FRAME_TRAILER;
+
+    uart_write_buffer(CAR_UART,
+                      (const uint8 *)cy4_uav_value.send_data_buffer,
+                      CAR_FRAME_LENGTH);
+}
+B.4 地面车视觉跟随 vision_follow_control()
+void vision_follow_control(float error_x, float error_y)
+{
+    // 查表得到速度绝对值，再赋予方向
+    // error_y → 前后移动(vx), error_x → 左右移动(vy)
+    float vx = error_y_to_speed(error_y);   // Y误差决定前后
+    float vy = -error_x_to_speed(error_x);   // X误差决定左右
+
+    if (vx == 0.0f && vy == 0.0f)
+    {
+        // 目标在死区内（接近画面中心），只做yaw修正
+        car_mecanum_run(0.0f, 0.0f, omega_speed_target);
+    }
+    else
+    {
+        // 同时输出前后+左右，无旋转
+        car_mecanum_run(vx, vy, omega_speed_target);
+    }
+}
+B.5 麦克纳姆轮分配 car_mecanum_run()
+void car_mecanum_run(float vx, float vy, float omega)
+{
+
+    // ================= 核心解算公式 (X型安装) =================
+    // 注意：正负号可能需要根据电机实际接线方向微调
+    // 理想情况：
+    // mA = Vx - Vy - W  // 左前
+    // mB = Vx + Vy + W  // 右前
+    // mC = Vx + Vy - W  // 左后
+    // mD = Vx - Vy + W  // 右后	
+    /*
+             前
+           ⬆️vx正方向                   
+        ⬅️vy正方向   omega为顺时针方向
+         \mA      /mB  
+          \      /  
+           \    /  
+    左      \  /       右
+            /  \    
+           /    \  
+          /      \
+         /mC      \mD   
+             后
+    */
+    speed_mA_target = vx - vy - omega;
+    speed_mB_target = vx + vy + omega;
+    speed_mC_target = vx + vy - omega;
+    speed_mD_target = vx - vy + omega;
+
+    // ================= 归一化处理 (防止超速失真) =================
+    // 如果某个轮子计算出的速度超过了电机最大值（比如PWM满占空比）
+    // 必须等比例缩小所有轮子的速度，否则车走的方向会歪。
+
+    float max_speed = 0.0f;
+    float limit_pwm = 6000.0f; // 假设你的PWM最大限制是 8000，这里给到6000留点余量
+
+    speed_mA = PID_Calc_Incremental(&pid_mA_speed, speed_mA_target, encoder_quad_A);
+    speed_mB = PID_Calc_Incremental(&pid_mB_speed, speed_mB_target, encoder_quad_B);
+    speed_mC = PID_Calc_Incremental(&pid_mC_speed, speed_mC_target, encoder_quad_C);
+    speed_mD = PID_Calc_Incremental(&pid_mD_speed, speed_mD_target, encoder_quad_D);
+
+    // 找最大值
+    if (fabs(speed_mA) > max_speed)
+        max_speed = fabs(speed_mA);
+    if (fabs(speed_mB) > max_speed)
+        max_speed = fabs(speed_mB);
+    if (fabs(speed_mC) > max_speed)
+        max_speed = fabs(speed_mC);
+    if (fabs(speed_mD) > max_speed)
+        max_speed = fabs(speed_mD);
+
+    // 如果最大值超过限制，进行缩放
+    if (max_speed > limit_pwm)
+    {
+        float ratio = limit_pwm / max_speed;
+        speed_mA *= ratio;
+        speed_mB *= ratio;
+        speed_mC *= ratio;
+        speed_mD *= ratio;
+    }
+
+    // ================= 输出到电机(底层) =================
+    motor_set_duty(motor_A, -(int16)speed_mA);
+    motor_set_duty(motor_B, (int16)speed_mB);
+    motor_set_duty(motor_C, -(int16)speed_mC);
+    motor_set_duty(motor_D, (int16)speed_mD);
+}
+B.6 地面车10 ms控制主循环 control_loop_10ms()
+void control_loop_10ms(void)
+{
+    g_sys_tick_ms += 10;
+#if PWM_VOLTAGE_MODE // ===== 硬件盲盒电压输出模式 =====
+
+    speed_pwm = set_pwm * 100.0f; 
+
+    if(speed_pwm>10000.0f) speed_pwm = 10000.0f;
+    else if(speed_pwm<-10000.0f) speed_pwm = -10000.0f;
+
+    motor_set_duty(motor_A, (int16)speed_pwm);
+    motor_set_duty(motor_B, -(int16)speed_pwm);
+    motor_set_duty(motor_C, (int16)speed_pwm);
+    motor_set_duty(motor_D, -(int16)speed_pwm);
+
+
+#else    // ===== 正常控制主循环模式 =====
+    
+/* ===== 开机菜单控制旋转阶段（自转完成之后重新执行惯导，所以惯导要改方向的话，改在惯导里面，这部分代码只为了完成软件盲盒自转） ===== */
+    // 收到菜单启动请求
+    if (spin_start_request)
+    {
+        spin_start_request = 0;
+
+        // 当前累计角度 + 菜单设置的相对角度
+        spin_target_total_yaw =
+            SystemIMU.angle.total_yaw + spin_request_angle_deg; 
+
+        spin_stable_count = 0;
+        spin_done = 0;
+        spin_active = 1;
+
+        PID_Reset(&pid_yaw_turn);
+    }
+    if (spin_active)
+    {
+        car_spin_control_10ms();
+        return;// 自转过程中完全接管底盘
+    }
+/* ===== 结束菜单控制旋转阶段 ===== */
+
+/* ===== 开始开机boot引导惯导阶段（未完成前，接收无人机命令但不执行任何操作） ===== */
+    if (!boot_nav_done)
+    {
+        // 与正常路径一致的航向保持
+        float yaw_error_boot = yaw_angle_target - SystemIMU.angle.yaw;
+        if (yaw_error_boot > 180.0f)   yaw_error_boot -= 360.0f;
+        if (yaw_error_boot < -180.0f)  yaw_error_boot += 360.0f;
+        omega_speed_target = -PID_Calc_Positional(&pid_yaw_turn, 0.0f, yaw_error_boot);
+
+        update_position_estimate();
+        boot_navigation_control();
+
+        // 整套动作完成 → 收尾并切换到无人机命令模式
+        if (boot_nav_phase == BOOT_NAV_DONE)
+        {
+            boot_nav_done = 1;
+            car_mecanum_run(0.0f, 0.0f, 0.0f);
+
+            // 清残留：引导状态机回到MOVE，防止二次进入时状态错乱
+            boot_nav_phase = BOOT_NAV_MOVE;
+            boot_pos_stable_count = 0;
+            boot_pos_deadzone_active = 0;
+            pos_last_vx = 0.0f;
+            pos_last_vy = 0.0f;
+        }
+        return;
+    }
+/* ===== 结束开机引导惯导阶段（未完成前，无人机命令暂不执行） ===== */
+
+/* ===== 开始主循环状态机 ===== */
+    /* ─── 1. 获取 Yaw修正值（已累加菜单配置变量，锁头为菜单配置锁头） ─── */
+    float yaw_error = yaw_angle_target - SystemIMU.angle.yaw;
+    if (yaw_error > 180.0f)   yaw_error -= 360.0f;
+	if (yaw_error < -180.0f)  yaw_error += 360.0f; //防止197- -197突变
+    omega_speed_target = -PID_Calc_Positional(&pid_yaw_turn, 0.0f, yaw_error);
+
+    /* ─── 2. 更新位置估计 ─── */
+    update_position_estimate();
+    
+    /* ─── 3. 更新命令 ─── */
+    static uint8 cmd = CAR_CMD_IDLE;
+
+    if (target_data.updated)
+    {
+        // 将接收到的命令读取一次
+        uint8 new_cmd = target_data.cmd;
+
+        // 只有命令发生改变时才进行切换处理
+        if (cmd != new_cmd)
+        {
+            pos_last_vx = 0.0f;
+            pos_last_vy = 0.0f;
+
+            // 清除上一种运动留下的四轮速度PID历史
+            PID_Reset(&pid_mA_speed);
+            PID_Reset(&pid_mB_speed);
+            PID_Reset(&pid_mC_speed);
+            PID_Reset(&pid_mD_speed);
+
+            /*
+            * 每次从IDLE或TRACKING进入GOTO_CENTER：
+            * 1. 重新选择A点
+            * 2. 重新开始1000ms计时
+            */
+            if ((cmd == CAR_CMD_IDLE ||
+                cmd == CAR_CMD_TRACKING) &&
+                new_cmd == CAR_CMD_GOTO_CENTER)
+            {
+                goto_center_target =
+                    GOTO_CENTER_TARGET_A;
+
+                goto_center_switch_tick =
+                    g_sys_tick_ms;
+            }
+        }
+
+        target_data.updated = 0;
+        cmd = new_cmd;
+    }
+    // 500ms 超时保护：ISR超过500ms没收到任何字节 → 强制空闲
+    if (g_sys_tick_ms - g_last_byte_tick > 500)
+    {
+        cmd = CAR_CMD_IDLE;
+    }
+    
+    switch(cmd)
+    {
+        case CAR_CMD_IDLE:
+            car_mecanum_run(0.0f, 0.0f, omega_speed_target);
+            break;
+
+        case CAR_CMD_TRACKING:
+        
+            vision_follow_control(target_data.x, target_data.y);
+            break;
+            
+        case CAR_CMD_GOTO_CENTER:
+
+            /*
+            * 只有cmd持续保持GOTO_CENTER时才会执行到这里。
+            * 每经过1000ms切换一次A/B目标。
+            */
+            if ((uint32)(g_sys_tick_ms -
+                        goto_center_switch_tick)
+                >= GOTO_CENTER_SWITCH_MS)
+            {
+                // 重新开始下一轮1000ms计时
+                goto_center_switch_tick =
+                    g_sys_tick_ms;
+/* 后续防御性分支与统计代码见当前工程源文件。 */
+
+附录C  通信与参数表
+表C-1  UAV主要接口
+表C-2  UGV主要接口
+表C-3  关键阈值与保护参数
+
+
+===== TABLE 1 =====
+符号 | 含义 | 单位
+UAV | 无人飞行器（Unmanned Aerial Vehicle） | —
+UGV | 无人地面车辆（Unmanned Ground Vehicle） | —
+CM7_0 / CM7_1 | CYT4BB7双核处理器的两个Cortex-M7核心 | —
+vx、vy | 地面车前向与横向速度指令 | 编码器速度量
+ω | 地面车旋转速度指令 | 编码器速度量
+φ、θ、ψ | 滚转角、俯仰角、航向角 | °
+Error_X、Error_Y | 信标相对车辆中心的视觉误差 | pixel
+ToF | 飞行时间测距 | mm
+PID | 比例-积分-微分控制器 | —
+
+===== TABLE 2 =====
+子系统 | 主要输入 | 主要处理 | 主要输出
+飞行器CM7_0 | 遥控、IMU、ToF、光流、共享视觉量 | 状态估计、级联控制、安全仲裁 | 四路电机命令、地面车指令
+飞行器CM7_1 | MT9V03X灰度图像 | 二值化、连通域、车辆/信标跟踪 | 10槽共享结果
+地面车CM7_0 | 空地帧、IMU、四路编码器 | 任务状态机、里程计、航向及轮速控制 | 四路PWM与方向
+地面车CM7_1 | — | 当前工程为空闲循环 | —
+
+===== TABLE 3 =====
+
+
+===== TABLE 4 =====
+
+
+===== TABLE 5 =====
+项目 | 飞行器 | 地面车 | 备注
+外形尺寸 | 30cm×30.5cm | 29.5cm×29.5cm | —
+整机质量 | 600g | 1000g | —
+轴距/轮距 | 18.5cm，19cm | 15cm，20cm | —
+电机及执行器数量 | 4 | 4 | 源码通道数量
+摄像头安装高度 | 3.6cm | — | —
+
+===== TABLE 6 =====
+平台 | 器件/模块 | 作用 | 当前接口
+飞行器 | MT9V03X | 188×120灰度图像采集 | 摄像头DMA
+飞行器 | IMU660RB | 角速度与加速度采集 | 板级驱动
+飞行器 | VL53L8CX | ToF高度测量 | 软件I²C/平台接口
+飞行器 | 光流模块 | 水平速度观测 | UART2，19200 bit/s
+飞行器 | 四合一电调 | 四路电机驱动 | UART1，460800 bit/s
+地面车 | IMU660RA | 姿态与连续航向 | 板级驱动
+地面车 | 四路编码器 | 轮速和里程计 | TIM2/3/4/5
+地面车 | 四路电机驱动 | PWM及方向控制 | 10 kHz PWM
+
+===== TABLE 7 =====
+
+
+
+
+
+===== TABLE 8 =====
+
+
+
+
+
+
+===== TABLE 9 =====
+
+
+
+
+===== TABLE 10 =====
+项目 | 设计/源码信息
+飞行器电调串口 | UART1，460800 bit/s，11字节
+空地通信串口 | UART3，115200 bit/s，16字节
+地面车PWM频率 | 10 kHz
+
+===== TABLE 11 =====
+周期 | 频率 | 主要任务 | 控制层级
+1 ms | 1000 Hz | 遥控失联计时、IMU采样与预处理 | 基础采集
+2 ms | 500 Hz | 角速度内环、起飞斜坡、X形混控、电机发送 | 快速执行
+5 ms | 200 Hz | 姿态更新、体地变换、姿态外环、航向保持 | 姿态
+10 ms | 100 Hz | 遥控状态、高度融合、高度/垂向速度串级 | 垂向
+20 ms | 50 Hz | 光流、视觉位置及水平速度控制 | 水平
+
+===== TABLE 12 =====
+条件 | 判定 | 系统动作
+地面锁定 | LOCKED | 四路电机停转
+允许飞行 | 遥控在线且解锁 | 进入ARMED并运行级联控制
+空中遥控失联 | 连续500 ms无有效帧 | FAILSAFE_LANDING，0.2 m/s下降
+人工接管水平通道 | 滚转或俯仰输入超过1° | 覆盖自动水平目标
+输出越界 | 混控结果超限 | 限制到800～8000
+
+===== TABLE 13 =====
+参数 | 源码值 | 作用
+跟踪池容量 | 8 | 限制同时维护的候选轨迹数
+最近邻阈值 | 距离平方400（约20 pixel） | 关联相邻帧目标
+确认帧数 | 3 | 抑制瞬时亮点
+删除帧数 | 6 | 容忍短时遮挡或漏检
+面积范围 | 5～400 pixel | 过滤噪点和大反光区域
+
+===== TABLE 14 =====
+槽位 | 变量 | 语义 | 单位/类型
+0 | Position_X | 车辆中心图像X坐标 | pixel / float
+1 | Position_Y | 车辆中心图像Y坐标 | pixel / float
+2 | Camera_Alpha | 车辆轴向角 | degree / float
+3 | Error_X | 旋转后的信标相对X | pixel / float
+4 | Error_Y | 旋转后的信标相对Y | pixel / float
+5 | blob_num | 有效候选连通域数量 | count / float
+6 | car_vision_valid | 车辆识别有效位 | 0或1 / float
+7 | Beacon_Valid | 信标跟踪有效位 | 0或1 / float
+8 | Beacon_Position_X | 信标图像X坐标 | pixel / float
+9 | Beacon_Position_Y | 信标图像Y坐标 | pixel / float
+
+===== TABLE 15 =====
+项目 | 设计值
+图像分辨率 | 188×120
+梯度阈值 | 30
+边缘区灰度阈值 | 105
+平坦区灰度阈值 | 160
+图像处理频率 | 按完整DMA帧触发
+
+===== TABLE 16 =====
+项目 | 源码值
+姿态更新周期 | 1 ms
+轮速/主控制周期 | 10 ms
+按键周期 | 20 ms
+轮速PID | P=15，I=2.15，D=0
+航向PID | P=6.5，I=0，D=1.5
+轮速合成限幅 | 6000
+位置换算比例 | 0.00002093 m/count
+通信超时 | 500 ms
+
+===== TABLE 17 =====
+字节 | 字段 | 长度 | 说明
+0 | Header | 1 | 固定0xA5
+1 | Command | 1 | 0x00、0x01或0x03
+2～5 | X | 4 | IEEE 754 float，小端
+6～9 | Y | 4 | IEEE 754 float，小端
+10～13 | Yaw | 4 | IEEE 754 float，小端
+14 | Checksum | 1 | 字节0～13累加和低8位
+15 | Tail | 1 | 固定0x5A
+
+===== TABLE 18 =====
+测试项目 | 方法 | 设计判据
+视觉静态识别 | 不同距离、亮度、背景下记录有效位与误差 | 无单帧噪声直接触发任务切换
+共享内存一致性 | 观察10槽数据及有效位同步 | 完整帧更新，无旧值混读
+空地协议 | 逐字段发送、校验错误与帧尾错误注入 | 错误帧不发布，正确帧更新
+UGV通信超时 | 停止UART发送 | 500 ms后进入IDLE
+UAV遥控失联 | 安全条件下断开遥控 | 空中受控下降，地面锁定
+人工接管 | 自动水平控制时施加摇杆输入 | 超过1°阈值后人工优先
+整机协同 | 按比赛任务顺序运行 | 状态切换符合预期
+
+===== TABLE 19 =====
+类别 | 项目 | 设计/源码值
+整机 | 飞行器总质量与尺寸 | 600g，30cm×30.5cm
+整机 | 地面车总质量与尺寸 | 1000g，29.5cm×29.5cm
+传感器 | 飞行器传感器 | 摄像头、IMU、ToF、光流
+传感器 | 地面车传感器 | IMU、四路编码器
+视觉 | 分辨率 | 188×120
+视觉 | 检测精度与频率 | 完整DMA帧触发
+通信 | 空地链路 | UART3，115200 bit/s，16字节
+
+===== TABLE 20 =====
+
+

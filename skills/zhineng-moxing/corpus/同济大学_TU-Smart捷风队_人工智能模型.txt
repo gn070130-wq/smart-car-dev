@@ -1,0 +1,786 @@
+第二十一届全国大学生
+智能汽车竞赛
+技 术 报 告
+人工智能模型车视觉感知与协同控制系统
+组别：人工智能模型组    车模：C 型阿克曼转向四轮车
+
+
+
+
+学    校：同济大学
+队伍名称：TU-Smart捷风队
+参赛队员：景钰翔 李积洋 董家豪 徐意 柳一凡
+带队教师：田炜 唐辰
+2026年8月19日
+
+关于技术报告和研究论文使用授权的说明
+本人完全了解全国大学生智能汽车竞赛有关保留、使用技术报告和研究论文的规定，即：参赛作品著作权归参赛者本人，竞赛组委会可以在相关主页上收录并公开参赛作品的设计方案、技术报告以及参赛模型车的视频、图像资料，并将相关内容编辑收录在组委会出版论文集中。
+
+
+
+
+
+
+参赛队员签名：____________________
+
+带队教师签名：____________________
+日        	期：___2026年8月19日__
+
+摘  要
+本文面向全国大学生智能汽车竞赛人工智能模型组，给出一套基于 C 型阿克曼转向四轮车的视觉感知、任务决策与分层控制方案。系统采用 RK3588 类平台作为上位机，完成图像帧读取、逆透视变换、HSV 赛道边线提取、RKNN/YOLO 目标检测以及车辆、行人、禁止左转、金币和停车标志等任务的状态管理；采用 TC264 主驱一体控制板作为下位机，通过 3 Mbps 串口接收速度与舵机 PWM 指令，并利用电机驱动、舵机和编码器接口完成执行与状态回传。
+巡迹部分对 640×480 俯视图进行颜色阈值分割，逐行提取左右边界，按照断点距离分段并利用二次曲线进行拟合，再由边线偏移生成参考跟踪线。在预瞄区间内采用近端权重更高的横向误差统计，并通过带微分滤波的 PD 控制器换算舵机 PWM。目标检测部分以 320×320 RGB 图像作为 NPU 输入，使用三上下文并发推理、DFL 解码和分类感知 NMS，实现 13 类赛道元素识别。多任务层采用明确的速度与转向优先级，降低不同任务同时触发时的控制冲突。
+现有工程能够证明上述软件架构、通信格式、配置参数和主驱控制板电路设计；车模总质量、整车外形尺寸、实装传感器型号及数量、总电容容量、整车功耗、实测检测精度和控制频率尚需结合校赛技术检查表、下位机源码和最终实车补录。本报告以可追溯方式区分已证实内容与待测内容，为后续联调和正式提交提供统一文档基础。
+关键词：人工智能模型车；阿克曼转向；逆透视变换；HSV 巡迹；RKNN；多任务决策
+
+目  录
+关于技术报告和研究论文使用授权的说明	i
+摘  要	iii
+目  录	v
+第一章 引言	1
+1.1 竞赛背景与任务要求	1
+1.2 相关技术与方案选择	1
+1.3 主要工作与技术特点	1
+1.4 报告结构安排	2
+第二章 总体方案与机械结构	3
+2.1 系统总体方案	3
+2.2 C 型阿克曼四轮车结构	4
+2.3 部件安装与重心控制	4
+2.3.1 视觉与上位机安装	4
+2.3.2 主控板与线束固定	4
+2.3.3 机械复核项目	4
+第三章 电路系统设计	5
+3.1 主驱一体板总体构成	5
+3.2 电源系统	5
+3.2.1 电池输入与高边开关	5
+3.2.2 5 V、3.3 V 与舵机电源	6
+3.3 电机与舵机驱动	8
+3.4 通信、传感器与人机接口	9
+第四章 上位机视觉感知与巡迹算法	11
+4.1 图像输入与逆透视变换	11
+4.2 HSV 赛道边线提取	11
+4.2.1 颜色分割与轮廓筛选	11
+4.2.2 边线分段与二次拟合	12
+4.3 加权预瞄误差与 PD 控制	12
+4.4 RKNN/YOLO 目标检测	12
+4.4.1 NPU 并行推理	12
+4.4.2 后处理与类别	13
+4.5 并发与实时性设计	13
+第五章 多任务决策与控制策略	15
+5.1 统一任务仲裁框架	15
+5.2 车辆与行人处理	15
+5.2.1 车辆避障	15
+5.2.2 行人冻结决策	16
+5.3 禁止左转任务	16
+5.4 金币吸引策略	16
+5.5 STOP 标志与故障回退	16
+第六章 下位机执行与串口通信	17
+6.1 下位机功能边界	17
+6.2 上位机下发控制帧	17
+6.3 下位机状态回传	17
+6.4 执行控制与安全要求	18
+第七章 开发工具、制作与调试过程	19
+7.1 开发工具与软件环境	19
+7.2 制作与安装流程	19
+7.3 视觉与转向参数标定	20
+7.4 联调观察量	20
+第八章 结论与展望	21
+8.1 工作总结	21
+8.2 方案特点	21
+参考文献	i
+附录 A 主驱一体板详细原理图	iii
+附录 B 核心程序源代码	ix
+B.1 带微分滤波的 PD 与 PWM 限幅	ix
+B.2 加权预瞄带误差计算	ix
+B.3 DFL 解码与分类感知 NMS	xi
+B.4 RKNN 三上下文推理	xii
+B.5 12 字节控制帧发送	xiii
+B.6 Frenet 金币吸引误差	xiv
+B.7 STOP 延时停车状态	xv
+附录 C 基于 Frenet 路径偏移的金币吸引策略研究	xvii
+C.1 问题描述	xvii
+C.2 方法	xvii
+C.3 工程实现与局限	xvii
+C.4 试验设计	xvii
+
+第一章 引言
+1.1 竞赛背景与任务要求
+全国大学生智能汽车竞赛要求总决赛参赛队在赛前提交模型汽车制作技术报告。报告既是参赛作品的一部分，也是评委了解技术路线、工程实现与创新工作的主要依据。根据组委会给出的写作规范，基本内容必须覆盖机械安装与改造、传感器布置、电路设计、微处理器控制算法、开发与调试过程、主要技术参数、详细原理图及核心算法子程序，并在正文后列出参考文献和附录。[1]
+本队参加人工智能模型组，选用 C 型阿克曼转向四轮车。该类车模通过前轮转向形成曲率、后轮提供驱动力，机械结构与普通乘用车的转向关系相近。比赛场景同时包含连续赛道边线与多种语义目标，因此系统既要保持高速、稳定的几何巡迹，又要对行人、车辆、禁止左转、金币、停车标志等离散事件进行识别和响应。
+1.2 相关技术与方案选择
+传统电磁或灰度传感器方案具有响应快、控制链路短的优点，但对人工智能模型组中的语义目标缺少直接表达能力。视觉方案能够在同一输入中同时获得赛道几何信息和目标类别信息，但需要处理透视畸变、颜色变化、推理延迟与任务冲突。OpenCV 提供成熟的颜色空间转换、轮廓提取和几何变换算法，[6] Rockchip RKNN 运行时可利用 RK3588 的 NPU 进行神经网络推理，TC264 则具有适合电机与舵机控制的 GTM、CCU6、VADC、ASCLIN 等外设资源。[2]
+综合实时性和可维护性，本方案采用“上位机感知与决策、下位机执行与反馈”的分层结构。上位机保留可快速调参的 JSON 配置，将巡迹与检测放在并行链路中；下位机负责稳定产生电机和舵机控制信号。两者通过固定长度串口帧通信，使算法开发与底层驱动相互解耦。
+1.3 主要工作与技术特点
+构建共享内存防撕裂取帧与 640×480 IPM 俯视变换链路，统一赛道几何坐标。
+设计基于左右边线分段二次拟合、边线偏移和加权预瞄误差的视觉巡迹方法。
+采用三个 RKNN 上下文并行完成 13 类目标识别，以非阻塞缓存降低推理对控制主循环的阻塞。
+针对车辆、行人、禁止左转、金币和 STOP 标志设计独立状态机，并在主循环中进行统一速度与转向仲裁。
+制定 3 Mbps、12 字节控制帧和 6 字节状态帧，实现上位机指令下发与编码器状态回传。
+1.4 报告结构安排
+第二章说明总体方案、机械结构和部件安装；第三章分析主驱一体板、电源、电机驱动和接口电路；第四章介绍上位机视觉巡迹与目标检测；第五章说明多任务状态机及控制仲裁；第六章介绍下位机功能边界和串口协议；第七章记录开发工具、制作与调试过程；第八章汇总技术参数和测试项目；第九章给出结论、问题与改进方向。正文之后附参考文献、详细原理图、核心程序、技术检查映射表和可选研究论文。
+
+第二章 总体方案与机械结构
+2.1 系统总体方案
+模型车由机械底盘、视觉/上位机模块、TC264 主驱一体板、转向舵机、后轮驱动电机、编码器以及供电和线束组成。系统的感知、决策、执行和反馈关系如图 2.1 所示。视觉输入首先进入上位机，经过赛道几何处理和目标识别后生成速度与舵机 PWM；TC264 接收指令并驱动执行机构，编码器状态沿串口返回上位机。
+
+图 2.1 人工智能模型车软硬件总体架构
+表 2.1 系统层级与功能分工
+
+2.2 C 型阿克曼四轮车结构
+车模采用前轮转向、后轮驱动的四轮布局。阿克曼几何要求转弯时内侧前轮转角大于外侧前轮转角，使两前轮延长线与后轴延长线近似交于同一瞬时转动中心，从而减小轮胎侧滑。对于轴距 L、前轮轮距 B 和转弯半径 R，理想内外轮转角满足：
+	tan(δin)=L/(R−B/2)，tan(δout)=L/(R+B/2)	（1）
+实际车模通过舵机、摆臂和转向拉杆形成近似阿克曼关系。
+2.3 部件安装与重心控制
+2.3.1 视觉与上位机安装
+视觉模块应安装在车辆纵向中心面附近，并保证支架具有足够刚度。相机俯仰角、离地高度或 AR 图像坐标系变化会直接影响 IPM 单应矩阵，因此支架位置一旦标定完成不应在比赛前随意调整。上位机板卡宜靠近车体中心布置，接口朝向应便于插拔和散热，同时避免遮挡舵机连杆。
+2.3.2 主控板与线束固定
+TC264 主驱一体板承担电源转换和电机驱动，宜置于通风、低重心且远离轮胎卷入区域的位置。电机相线和电池线采用短而粗的布线，与视觉信号线、编码器线分开走线；连接器应有极性标识和应力释放。板卡底面不得与金属底盘直接接触，固定柱高度应为焊点和散热留出余量。
+2.3.3 机械复核项目
+整车尺寸为294×187×145（单位mm）
+轴距198mm、
+前轮轮距128.85mm（轮胎内侧）
+后轮轮距128.2mm
+轮宽 26.5mm 
+
+第三章 电路系统设计
+3.1 主驱一体板总体构成
+主驱一体板以 TC264 核心板为控制核心，集成电池高边开关、5 V/3.3 V/6.9 V 多路电源、CH340C USB 转串口、双路编码器接口、舵机和蜂鸣器接口以及两路 DRV8701P 外置 MOSFET H 桥。TC264 属于 AURIX TC26x 系列，含两颗 TriCore CPU、最高 200 MHz，并提供 GTM、CCU6、VADC、QSPI 和 ASCLIN 等外设。[2]
+
+图 3.1 TC264 核心板及主要接口原理图
+3.2 电源系统
+3.2.1 电池输入与高边开关
+电池正极经 P 沟道 MOSFET Q2 形成高边开关，R83 提供栅极偏置，BZT52C16 用于限制栅源电压，开关后母线命名为 VCCBAT。C30=1000 μF 作为母线储能电容。该电路可完成受控通断，但是否具备完整反接保护仍需结合 Q2 器件方向和 PCB 实物确认。
+
+图 3.2 电池输入、高边开关与母线储能电路
+3.2.2 5 V、3.3 V 与舵机电源
+VCCBAT 经 TPS56637 同步降压得到约 5 V。由反馈电阻 R28=73.2 kΩ、R29=10 kΩ 和 0.6 V 基准可得：
+	V5V=0.6×(1+73.2/10)=4.992 V	（2）
+5 V 再经 RT9013-33 LDO 得到 3.3 V，为 CH340、传感器及小信号逻辑供电。另一路 TPS5430 非同步降压电路采用 47 kΩ/10 kΩ 反馈，输出约 6.96 V，为高压舵机接口供电。只有明确支持约 7.4 V 的舵机才可直接接入该电源轨。[4][5]
+
+图 3.3 VCCBAT 至 5 V 同步降压电路
+
+图 3.4 VCCBAT 至 6.9 V 舵机电源电路
+表 3.1 电源轨与负载分配
+
+3.3 电机与舵机驱动
+两路有刷直流电机均采用 DRV8701P 栅极驱动器和四只外置 N 沟道 MOSFET 构成 H 桥。DRV8701P 支持 5.9~45 V 电机电源、1.8/3.3/5 V 逻辑输入和外置 MOSFET 栅极驱动。[3] TC264 的 P21.2~P21.5 经 SN74HC125 缓冲后送入两颗驱动器的 IN1/IN2，可映射为连续 GTM PWM 输出。舵机控制信号由 P33.9 输出并经 100 Ω 串联电阻连接接口。
+
+图 3.5 第一通道 DRV8701P 与外置 MOSFET H 桥
+表 3.2 DRV8701P 输入逻辑与工作状态
+
+现有原理图未充分利用 nFAULT、SNSOUT 和电流采样接口，软件难以直接获得驱动故障和电机电流。后续若改版，可增加分流电阻、故障引脚上拉及 ADC 采样，以提高堵转保护和系统可观测性。
+3.4 通信、传感器与人机接口
+USB 数据接口采用 CH340C，D+/D− 经 USBLC6-2SC6 进行 ESD 保护，串口信号经 120 Ω 电阻连接 TC264 P00.0/P00.1。主板另提供两组正交编码器接口，合理映射为 P33.6/P33.7 与 P20.0/P20.3 的 GTM 输入捕获资源；姿态传感器、屏幕、蜂鸣器、按键和扩展 SPI 接口也在原理图中预留。
+
+图 3.6 电池采样、编码器、姿态传感器与蜂鸣器接口
+
+第四章 上位机视觉感知与巡迹算法
+4.1 图像输入与逆透视变换
+当前上位机程序在 Linux 系统中以只读方式映射 POSIX 共享内存 shm_ar_video。共享区头部包含 frame_id、width 和 height，程序在深拷贝图像前后两次读取头部；若帧号或尺寸变化，则判定写入过程中发生撕裂并最多重试 3 次。有效 RGB 图像经上下翻转和 RGB→BGR 转换后进入算法。
+为减弱透视缩短对道路几何测量的影响，程序根据已标定单应矩阵建立映射表，并通过 cv::remap 生成固定 640×480 俯视图。若俯视坐标为 p=(x,y,1)^T、原图坐标为 q=(u,v,1)^T，则映射关系可写为：
+	λq=Hp	（4）
+矩阵 H 由 config.json 保存，当前 9 个系数与 ar_renderer.cpp 中的默认矩阵一致。相机支架或输入图像裁剪发生变化后，必须重新标定并更新矩阵，否则边线位置和目标 IPM 坐标会系统性偏移。
+4.2 HSV 赛道边线提取
+
+图 4.1 视觉巡迹与转向控制流程
+4.2.1 颜色分割与轮廓筛选
+程序将 BGR 图像转换至 HSV 空间，当前阈值下界为 (96,121,134)，上界为 (133,255,255)。二值掩膜经外轮廓提取后，以 100 pixel² 作为一般最小面积阈值；行人活跃时将普通有效轮廓阈值提高至 2000 pixel²，以减少行人附近碎片对巡迹的干扰。阈值通过 JSON 配置，便于在不同光照或仿真渲染参数下重新标定。
+4.2.2 边线分段与二次拟合
+算法对有效掩膜逐行扫描，提取每一行的最左和最右像素作为原始边界点。相邻点欧氏距离超过阈值时将边线切分为多个连续段，当前左右最大断点阈值分别为 400 和 100 pixel。对不少于 3 个点的边线段采用最小二乘二次曲线拟合：
+	x(y)=ay²+by+c	（5）
+拟合问题通过 SVD 求解，失败时退化为原始点序列。常规模式优先跟踪左边线并向右偏移 35 pixel 生成中心参考；禁止左转任务锁定右线时改用右边线并向左偏移 40~60 pixel。该方法允许在只观测到单侧边线时仍构造稳定参考路径。
+4.3 加权预瞄误差与 PD 控制
+在 y=200~230 的预瞄带内取 30 个目标点。对每一行插值得到跟踪线横坐标，并令靠近车辆的行具有更大权重。以图像中心 x0=320 为参考，横向误差为：
+	e=Σwi[x(yi)−320]/Σwi，wi=1+(yi−ytop)	（6）
+控制器采用比例加带一阶记忆的微分项。当前 Kp=0.06、Kd=0.60，微分更新及舵机 PWM 换算为：
+	Dk=0.9Kd(ek−ek−1)+0.1Dk−1	（7）
+	PWM=clip[3290−10(Kpek+Dk), 2890, 3690]	（8）
+PWM 限幅同时保护舵机机械行程并抑制异常误差。由于 PWM 中值和边界会受舵机、拉杆孔位和前束影响，正式参数应在车轮离地、低速直行和连续弯道三阶段逐步标定。
+4.4 RKNN/YOLO 目标检测
+4.4.1 NPU 并行推理
+Detector 初始化 3 个 RKNN 上下文，并分别绑定 RK3588 的三个 NPU 核。输入图像缩放至 320×320，优先使用 RGA 完成 BGR→RGB 与尺寸变换，失败时回退至 OpenCV CPU 路径。工作线程从任务队列取出最新帧，完成推理后将结果写入完成队列；主循环通过 try_get 非阻塞获取最新结果，并丢弃过时排队帧。
+4.4.2 后处理与类别
+网络输出同时兼容 NCHW 和 NHWC 排布。边界框采用 DFL 期望值解码，类别得分按类别设置阈值，再用分类感知 NMS 删除高重叠候选框。[8] 当前一般目标阈值为 0.50，red 为 0.38，person 为 0.35，noleft 为 0.40，NMS 阈值为 0.45。
+	d=Σi·exp(zi−zmax)/Σexp(zi−zmax)	（9）
+表 4.1 模型输出的 13 个目标类别
+
+4.5 并发与实时性设计
+巡迹线程使用双缓冲交换 IPM 图像，主循环与巡迹计算解耦；RKNN 线程池采用有界队列，队列已满时移除旧任务；目标检测默认每 2 个主循环帧提交一次，并返回最新缓存框。该架构的目标是让控制始终使用“最近可用结果”，避免因单次 NPU 推理或可视化编码造成长时间阻塞。实际主循环 FPS、巡迹 FPS、NPU 单核 FPS 和端到端延迟需在比赛硬件上记录。
+
+第五章 多任务决策与控制策略
+5.1 统一任务仲裁框架
+各任务模块不直接写串口，而是输出速度建议、横向偏移、边线选择或等待状态。主循环先取得基础巡迹结果，再按固定顺序更新车辆/行人、门区、禁止左转、金币和 STOP 状态，最后统一生成 ControlCmd。该结构将“看见什么”“当前处于什么状态”和“最终执行什么”分离，便于单独测试每个任务。
+
+图 5.1 速度与转向策略仲裁优先级
+5.2 车辆与行人处理
+5.2.1 车辆避障
+CarAvoid 将车辆检测框底部中心映射至 IPM 坐标，并与当前跟踪线在相同 y 处的横坐标比较。车辆进入有效区域后，模块输出横向路径偏移；连续 5 帧未检测到车辆后解除避障，偏移量按衰减系数平滑回归零，避免瞬时回正造成舵机阶跃。当前配置的车辆偏移量为 −70 pixel，避障速度上限为 0.50（控制量纲以技术检查表为准）。
+5.2.2 行人冻结决策
+行人检测置信度阈值为 0.35。模块对“行人与跟踪线的横向间距”进行 EMA 平滑，并利用相邻帧差分判断移动方向。当行人进入 IPM 图像 y≥180 的近场区域时冻结当前 STOP/GO 决策，防止检测抖动导致命令反复切换；STOP 转 GO 需要连续 5 帧满足释放条件。行人消失后保留短时粘滞停车，并在连续丢失达到阈值后清除历史。
+5.3 禁止左转任务
+NoleftHandler 对 noleft 目标进行连续帧确认、面积和置信度筛选。当前配置要求连续 3 帧、面积大于 8000 pixel²、置信度不低于 0.75。确认后可裁剪局部图像并请求外部视觉语言模型判断直行或右转，在等待期间令车辆停车；决策完成后通过左/右边线模式切换和 6 s 右线锁定实现路径选择，并在目标连续清除 3 帧后重新布防。
+5.4 金币吸引策略
+金币模块沿当前参考路径建立累计弧长 s 和切向角 θ，将金币投影至 Frenet 坐标，得到纵向位置 sg 与横向偏移 lg。仅保留预瞄点前后窗口内的金币，并按弧长距离给予高斯权重：
+	wj=exp{−(spre−sg,j)²/(2σ²)}	（10）
+加权横向期望经限幅和低通滤波后转换为像素偏移，并叠加到基础巡迹误差。当前 delta_back=50、delta_forward=250、sigma=45、最大横移=50、滤波系数 alpha=0.3、增益=1.2；可见金币数量达到 3 个时速度限制为 0.40。现有 imgToWorld/worldToImg 仍为恒等映射，因此这些量目前本质上是像素域参数，后续可引入真实平面标定。
+5.5 STOP 标志与故障回退
+首次识别 STOP 标志后启动稳态时钟，默认延迟 3.0 s 再输出速度 0，使停车位置相对识别时刻前移。STOP 指令处于最高优先级。若巡迹结果无效，程序应使用保守速度和舵机中值或最近有效值；若串口、图像或检测器初始化失败，正式比赛版本还应增加明确的安全停车条件和故障指示。
+
+第六章 下位机执行与串口通信
+6.1 下位机功能边界
+TC264 下位机在系统中承担确定性执行：接收上位机速度和舵机 PWM，产生电机 H 桥与舵机控制波形，读取编码器并回传状态。主驱板端口资源表明 P21.2~P21.5 适合 GTM 电机 PWM，P33.9 适合舵机输出，P33.6/P33.7 和 P20.0/P20.3 适合编码器捕获。
+6.2 上位机下发控制帧
+串口端口为 /dev/ttyUSB0，通信格式为 3,000,000 bit/s、8 数据位、1 停止位、无校验（8N1）。控制帧固定为 12 字节，两个 float 按本机小端顺序写入，末字节为前 11 字节的 8 位累加和。
+表 6.1 上位机至 TC264 的 12 字节控制帧
+
+	checksum=(Σbi) mod 256，i=0,…,10	（11）
+6.3 下位机状态回传
+上位机接收线程识别 6 字节编码器帧：0x42、0x06、0x06、编码器高字节、编码器低字节、累加校验。解析后的 16 位无符号值写入 CarState.encoder_distance。当前代码未给出距离单位和溢出处理，需结合 TC264 发送端定义确认。协议还预留 0x03 Ping 与 0x04 Pong 帧用于通信延迟测试。
+表 6.2 TC264 至上位机的 6 字节状态帧
+
+6.4 执行控制与安全要求
+上电时保持 DRV8701 nSLEEP 为低，先验证各电源轨和 PWM 默认状态，再使能电机桥。
+舵机 PWM 首先设为机械中值，并以小步进确认左右方向和极限，禁止一次跳至配置边界。
+速度闭环若使用编码器，应定义采样周期、计数方向、倍频系数、轮径和减速比，并处理计数溢出。
+通信超时、图像超时或校验连续失败时，下位机应进入速度为零的安全状态。
+电机相线测量必须使用正确的差分方法，普通接地探头地夹不得连接开关节点。
+
+第七章 开发工具、制作与调试过程
+7.1 开发工具与软件环境
+表 7.1 开发工具与软件环境
+
+7.2 制作与安装流程
+机械底盘检查：确认车轮自由度、转向回差、舵机连杆和紧固件状态。
+板卡断电检查：测量 VCCBAT、5 V、3.3 V、6.9 V 对地阻值并确认极性。
+限流上电：不接电机和舵机，按 VCCBAT→5 V→3.3 V→6.9 V 顺序测量电压和温升。
+低风险外设验证：依次测试串口、按键、蜂鸣器、ADC、编码器，再使能电机桥。
+视觉安装与标定：固定相机/图像链路，采集标定点，求取 IPM 矩阵并保存配置。
+分模块调试：分别验证巡迹、目标检测和单个任务状态机，最后进行多任务联调。
+7.3 视觉与转向参数标定
+HSV 阈值应在比赛光照和赛道材质下采集多帧图像，通过直方图和掩膜可视化确定上下界；轮廓面积阈值要兼顾远处赛道和近处噪声。IPM 标定后先检查直线边界是否近似平行，再检查同一地面点的原图/IPM 双向映射误差。
+舵机标定从 PWM 中值开始，记录车轮直行时的计数值和机械左右限位。PD 参数先将 Kd 设为较小值，通过低速直线调 Kp，再在连续弯道增加 Kd 抑制超调。每次只改变一组参数，并保存配置和视频，避免无法追溯有效组合。
+7.4 联调观察量
+表 7.2 分模块联调观察量
+
+第八章 结论与展望
+8.1 工作总结
+本报告完成了人工智能模型组 C 型阿克曼四轮车技术方案的系统整理。现有上位机工程实现了共享内存防撕裂取帧、640×480 IPM 变换、HSV 边线提取与二次拟合、加权预瞄 PD 控制、三上下文 RKNN/YOLO 目标检测以及车辆、行人、禁止左转、金币和 STOP 等任务的统一仲裁。主驱一体板提供 TC264 控制、电池与多路稳压、双路电机 H 桥、舵机、编码器、电池采样和通信接口，形成感知、决策、执行和反馈闭环所需的硬件基础。
+8.2 方案特点
+边线分段二次拟合与单边偏移参考线相结合，在局部断线或仅单侧可见时仍能构造控制目标。
+巡迹线程、主循环和三核 NPU 推理池并发运行，配合有界队列与最新结果缓存降低旧帧积压。
+任务模块仅输出建议量，由主循环统一仲裁，减少多个功能直接争夺执行器命令的耦合。
+金币任务采用 Frenet 投影、高斯加权和低通滤波，把离散语义目标平滑转换为路径偏移。
+配置参数集中于 JSON，便于赛道、车模和光照变化时快速复现实验。
+
+参考文献
+[1] 全国大学生智能汽车竞赛组委会. 全国大学生智能汽车竞赛技术报告内容与格式要求[Z].
+[2] Infineon Technologies AG. AURIX TC26xB Data Sheet: TC260, TC264, TC265, TC267[R]. 2018.
+[3] Texas Instruments. DRV8701 Brushed DC Motor Full-Bridge Gate Driver Data Sheet[R]. 2020.
+[4] Texas Instruments. TPS56637 4.5-V to 28-V, 6-A Synchronous Step-Down Converter Data Sheet[R].
+[5] Texas Instruments. TPS5430 3-A, Wide Input Range Step-Down Converter Data Sheet[R].
+[6] Bradski G, Kaehler A. Learning OpenCV 3: Computer Vision in C++ with the OpenCV Library[M]. O'Reilly Media, 2016.
+[7] Rockchip Electronics. RKNN Toolkit2 User Guide and RKNN Runtime API Reference[R].
+[8] Li X, Wang W, Wu L, et al. Generalized Focal Loss: Learning Qualified and Distributed Bounding Boxes for Dense Object Detection[C]//NeurIPS. 2020.
+[9] Hartley R, Zisserman A. Multiple View Geometry in Computer Vision[M]. 2nd ed. Cambridge University Press, 2004.
+[10] Rajamani R. Vehicle Dynamics and Control[M]. 2nd ed. Springer, 2012.
+[11] Richtek Technology. RT9013 Low-Noise 500 mA LDO Regulator Data Sheet[R].
+[12] Nexperia. SN74HC125 Quad Buffer/Line Driver with 3-State Outputs Data Sheet[R].
+
+附录 A 主驱一体板详细原理图
+本附录收录当前工作区中由主驱一体板原理图导出的功能分图。正式提交前应优先替换为原始 EDA 导出的高清 PDF 或矢量图，并核对页码、网络名、器件位号和实装 BOM。
+
+图 A-1 TC264 核心板与端口
+
+图 A-2 电池输入与高边 MOS 开关
+
+图 A-3 5 V 至 3.3 V LDO
+
+图 A-4 VCCBAT 至 5 V 同步降压
+
+图 A-5 VCCBAT 至 6.9 V 舵机电源
+
+图 A-6 USB 转串口 CH340C
+
+图 A-7 USB 5 V 供电输出
+
+图 A-8 传感器、编码器、电池采样与蜂鸣器
+
+图 A-9 按键、串口与 SPI 扩展
+
+图 A-10 第一通道电机 H 桥
+
+图 A-11 第二通道电机 H 桥
+
+图 A-12 电机使能与状态电路
+
+附录 B 核心程序源代码
+以下代码直接摘自当前上位机主线工程。完整上位机源程序已另存为“附录B_上位机完整源代码.zip”随报告提交。TC264 下位机源程序尚未出现在当前工作区，取得 TC264_code 分支后应继续追加串口解析、电机 PWM、舵机、编码器和安全保护源文件。
+B.1 带微分滤波的 PD 与 PWM 限幅
+程序 B.1 带微分滤波的 PD 与 PWM 限幅
+double HsvLineTracker::pid_control(double error) {
+    double out_d = 0.9 * steering_d_ * (error - last_error_) + 0.1 * last_out_d_;
+    double output = steering_p_ * error + out_d;
+    last_error_ = error;
+    last_out_d_ = out_d;
+    return output;
+}
+ 
+int HsvLineTracker::calculate_pwm(double tracking_error) {
+    double pwm_offset = pid_control(tracking_error) * pwm_scale_;
+    int pwm = pwm_mid_ - static_cast<int>(std::lround(pwm_offset));
+    return clip(pwm, pwm_min_, pwm_max_);
+}
+ 
+int HsvLineTracker::clip(int val, int lo, int hi) {
+    if (val < lo) return lo;
+    if (val > hi) return hi;
+    return val;
+}
+
+B.2 加权预瞄带误差计算
+程序 B.2 加权预瞄带误差计算
+struct WeightedPathBandMetrics {
+    double mean_x = 320.0;
+    double mean_error = 0.0;
+    bool valid = false;
+};
+ 
+static bool interpolate_path_x_at_y(
+    const std::vector<cv::Point>& sorted_points,
+    int target_y,
+    double* out_x) {
+    if (out_x == nullptr || sorted_points.empty()) {
+        return false;
+    }
+ 
+    for (const auto& point : sorted_points) {
+        if (point.y == target_y) {
+            *out_x = static_cast<double>(point.x);
+            return true;
+        }
+    }
+ 
+    if (sorted_points.size() < 2U) {
+        return false;
+    }
+ 
+    for (size_t i = 0; i + 1U < sorted_points.size(); ++i) {
+        const cv::Point& p0 = sorted_points[i];
+        const cv::Point& p1 = sorted_points[i + 1U];
+        const int segment_top_y = std::min(p0.y, p1.y);
+        const int segment_bottom_y = std::max(p0.y, p1.y);
+        if (target_y < segment_top_y || target_y > segment_bottom_y) {
+            continue;
+        }
+ 
+        const int delta_y = p1.y - p0.y;
+        if (delta_y == 0) {
+            *out_x = 0.5 * static_cast<double>(p0.x + p1.x);
+            return true;
+        }
+ 
+        const double ratio =
+            static_cast<double>(target_y - p0.y) / static_cast<double>(delta_y);
+        *out_x = static_cast<double>(p0.x) +
+                 ratio * static_cast<double>(p1.x - p0.x);
+        return true;
+    }
+ 
+    return false;
+}
+ 
+static WeightedPathBandMetrics compute_weighted_path_band_metrics(
+    const std::vector<cv::Point>& path_points,
+    int sample_bottom_y,
+    int sample_top_y,
+    double reference_x) {
+    WeightedPathBandMetrics metrics;
+    if (path_points.empty()) {
+        return metrics;
+    }
+ 
+    const int band_top_y = std::min(sample_top_y, sample_bottom_y);
+    const int band_bottom_y = std::max(sample_top_y, sample_bottom_y);
+ 
+    std::vector<cv::Point> sorted_points = path_points;
+    std::sort(sorted_points.begin(), sorted_points.end(),
+              [](const cv::Point& a, const cv::Point& b) {
+                  if (a.y != b.y) return a.y > b.y;
+                  return a.x < b.x;
+              });
+ 
+    double weighted_x_sum = 0.0;
+    double weighted_error_sum = 0.0;
+    double weight_sum = 0.0;
+    for (int y = band_top_y; y <= band_bottom_y; ++y) {
+        double path_x = 0.0;
+        if (!interpolate_path_x_at_y(sorted_points, y, &path_x)) {
+            continue;
+        }
+ 
+        const double weight = 1.0 + static_cast<double>(y - band_top_y);
+        weighted_x_sum += weight * path_x;
+        weighted_error_sum += weight * (path_x - reference_x);
+        weight_sum += weight;
+    }
+ 
+    if (weight_sum > 1e-6) {
+        metrics.mean_x = weighted_x_sum / weight_sum;
+        metrics.mean_error = weighted_error_sum / weight_sum;
+        metrics.valid = true;
+    }
+    return metrics;
+}
+
+B.3 DFL 解码与分类感知 NMS
+程序 B.3 DFL 解码与分类感知 NMS
+static float dfl_decode(const float* vals, int len) {
+    float max_v = vals[0];
+    for (int i = 1; i < len; i++)
+        if (vals[i] > max_v) max_v = vals[i];
+    float sum_exp = 0, result = 0;
+    for (int i = 0; i < len; i++) {
+        float e = std::exp(vals[i] - max_v);
+        sum_exp += e;
+        result += e * static_cast<float>(i);
+    }
+    return result / sum_exp;
+}
+ 
+// -- NMS: class-aware, in-place modification (matches reference nms) --
+static void nms(std::vector<DetResult>& dets, float threshold) {
+    std::sort(dets.begin(), dets.end(),
+        [](const DetResult& a, const DetResult& b) {
+            return a.score > b.score;
+        });
+ 
+    std::vector<bool> suppressed(dets.size(), false);
+    for (size_t i = 0; i < dets.size(); i++) {
+        if (suppressed[i]) continue;
+        for (size_t j = i + 1; j < dets.size(); j++) {
+            if (suppressed[j] || dets[i].class_id != dets[j].class_id) continue;
+            float xx1 = std::max(dets[i].x1, dets[j].x1);
+            float yy1 = std::max(dets[i].y1, dets[j].y1);
+            float xx2 = std::min(dets[i].x2, dets[j].x2);
+            float yy2 = std::min(dets[i].y2, dets[j].y2);
+            float iw = std::max(0.0f, xx2 - xx1);
+            float ih = std::max(0.0f, yy2 - yy1);
+            float iarea = iw * ih;
+            float uarea = (dets[i].x2 - dets[i].x1) * (dets[i].y2 - dets[i].y1) +
+                          (dets[j].x2 - dets[j].x1) * (dets[j].y2 - dets[j].y1) - iarea;
+            if (uarea > 0 && iarea / uarea > threshold) suppressed[j] = true;
+        }
+    }
+ 
+    std::vector<DetResult> kept;
+    for (size_t i = 0; i < dets.size(); i++)
+        if (!suppressed[i]) kept.push_back(dets[i]);
+    dets = kept;
+}
+
+B.4 RKNN 三上下文推理
+程序 B.4 RKNN 三上下文推理
+InferResult RknnPool::do_inference(int ctx_idx, cv::Mat& frame, std::vector<cv::Point>& curve_pts)
+{
+    rknn_context ctx = contexts_[ctx_idx];
+ 
+    int orig_w = frame.cols, orig_h = frame.rows;
+ 
+    // Pre-processing: resize to 320x320 + BGR→RGB
+    cv::Mat rgb;
+#ifdef USE_RGA
+    rgb.create(INPUT_H, INPUT_W, CV_8UC3);
+    rga_buffer_t rga_src = wrapbuffer_virtualaddr(frame.data,
+        frame.cols, frame.rows, RK_FORMAT_BGR_888);
+    rga_buffer_t rga_dst = wrapbuffer_virtualaddr(rgb.data,
+        INPUT_W, INPUT_H, RK_FORMAT_RGB_888);
+    if (imresize(rga_src, rga_dst) != IM_STATUS_SUCCESS) {
+        // RGA failed → CPU fallback
+        cv::Mat resized;
+        cv::resize(frame, resized, cv::Size(INPUT_W, INPUT_H));
+        cv::cvtColor(resized, rgb, cv::COLOR_BGR2RGB);
+    }
+#else
+    cv::Mat resized;
+    cv::resize(frame, resized, cv::Size(INPUT_W, INPUT_H));
+    cv::cvtColor(resized, rgb, cv::COLOR_BGR2RGB);
+#endif
+ 
+    // Input: UINT8, NHWC, 320x320x3
+    rknn_input inputs[1];
+    memset(inputs, 0, sizeof(inputs));
+    inputs[0].index = 0;
+    inputs[0].type = RKNN_TENSOR_UINT8;
+    inputs[0].fmt = RKNN_TENSOR_NHWC;
+    inputs[0].size = INPUT_W * INPUT_H * 3;
+    inputs[0].buf = rgb.data;
+    inputs[0].pass_through = 0;
+    if (rknn_inputs_set(ctx, 1, inputs) < 0) return {cv::Mat(), std::move(curve_pts), {}};
+    if (rknn_run(ctx, nullptr) < 0) return {cv::Mat(), std::move(curve_pts), {}};
+ 
+    // Output: want_float=1 (matches reference)
+    std::vector<rknn_output> outs(num_outputs_);
+    for (int i = 0; i < num_outputs_; ++i) {
+        memset(&outs[i], 0, sizeof(rknn_output));
+        outs[i].index = i;
+        outs[i].want_float = 1;
+        outs[i].is_prealloc = 0;
+    }
+    rknn_outputs_get(ctx, num_outputs_, outs.data(), nullptr);
+ 
+    // Build float* array and shape array for yolo_post_process
+    std::vector<float*> ptrs(num_outputs_);
+    for (int i = 0; i < num_outputs_; ++i) ptrs[i] = (float*)outs[i].buf;
+ 
+    int shf_arr[num_outputs_ * 4];
+    for (int i = 0; i < num_outputs_; ++i)
+        for (int j = 0; j < 4; ++j) shf_arr[i * 4 + j] = output_shapes_[i][j];
+ 
+    auto dets = yolo_post_process(
+        ptrs.data(),
+        (const int(*)[4])shf_arr,
+        output_is_nchw_.data(),
+        num_outputs_,
+        orig_h, orig_w,
+        INPUT_W, INPUT_H);
+ 
+    rknn_outputs_release(ctx, num_outputs_, outs.data());
+    return {cv::Mat(), std::move(curve_pts), std::move(dets)};
+}
+
+B.5 12 字节控制帧发送
+程序 B.5 12 字节控制帧发送
+void Uart::sendControlCmd(const ControlCmd& cmd) {
+    if (!is_open_ || fd_ < 0) return;
+ 
+    uint8_t buff[12];
+    Float32Union s_u, a_u;
+    s_u.float32 = cmd.speed;
+    a_u.float32 = cmd.steering_angle;
+ 
+    buff[0] = 0x42; // 包头1 0x42
+    buff[1] = 0x01; // 包头2 0x01
+    buff[2] = 12;   // 长度
+ 
+    // 写入 4字节 speed (下标 [3~6])
+    buff[3] = s_u.buff[0];
+    buff[4] = s_u.buff[1];
+    buff[5] = s_u.buff[2];
+    buff[6] = s_u.buff[3];
+ 
+    // 写入 4字节 angle (下标 [7~10])
+    buff[7] = a_u.buff[0];
+    buff[8] = a_u.buff[1];
+    buff[9] = a_u.buff[2];
+    buff[10] = a_u.buff[3];
+ 
+    uint8_t check = 0;
+    for (int i = 0; i < 11; i++) {
+        check += buff[i];
+    }
+    buff[11] = check; // 累加和校验位
+ 
+    // ================= 测试通信连接: 增加发送输出 =================
+    ;//std::cout << "[Uart TX] 发送: 速度=" << cmd.speed << " 角=" << cmd.steering_angle << std::endl;
+    // =============================================================
+ 
+    ssize_t wr = ::write(fd_, buff, 12);
+    (void)wr;
+}
+
+B.6 Frenet 金币吸引误差
+程序 B.6 Frenet 金币吸引误差
+float FrenetGoldAttractor::computeError(float mean_preview_x,
+                                         const std::vector<cv::Point2f>& gold_coins,
+                                         bool& should_slow_down)
+{
+    // 1. Get preview point arc length s_pre
+    const cv::Point2f preview_pt_img(mean_preview_x, 288.0f);
+    const cv::Point2f preview_pt_world = imgToWorld(preview_pt_img);
+ 
+    float s_pre, l_pre_unused, theta_ref;
+    cv::Point2f ref_pt_pre;
+    projectToRef(preview_pt_world, s_pre, l_pre_unused, ref_pt_pre, theta_ref);
+ 
+    // 2. Process each gold coin
+    float l_des_raw = 0.0f;
+    float weight_sum = 0.0f;
+    int valid_gold_count = 0;
+ 
+    for (const auto& coin : gold_coins) {
+        const cv::Point2f coin_world = imgToWorld(coin);
+ 
+        float s_g, l_g, theta_g;
+        cv::Point2f ref_g;
+        projectToRef(coin_world, s_g, l_g, ref_g, theta_g);
+ 
+        // Filter: only coins within the relative window around preview point
+        if (s_g < s_pre - delta_back_ || s_g > s_pre + delta_forward_)
+            continue;
+        if (s_g - s_pre > max_lookahead_)
+            continue;
+ 
+        valid_gold_count++;
+ 
+        // Gaussian weight based on arc-length distance to preview point
+        const float ds = s_pre - s_g;
+        const float w = std::exp(-(ds * ds) / (2.0f * sigma_ * sigma_));
+        l_des_raw += w * l_g;
+        weight_sum += w;
+    }
+ 
+    if (valid_gold_count > 0 && weight_sum > 1e-9f) {
+        l_des_raw /= weight_sum;
+    } else {
+        l_des_raw = 0.0f;
+    }
+ 
+    // 3. Clamp to max lateral offset
+    l_des_raw = std::clamp(l_des_raw, -max_l_, max_l_);
+ 
+    // 4. Low-pass filter
+    const float l_des = alpha_ * l_des_raw + (1.0f - alpha_) * l_des_prev_;
+    l_des_prev_ = l_des;
+ 
+    // 5. Compute pixel offset
+    const float X_ref = ref_pt_pre.x;
+    const float Y_ref = ref_pt_pre.y;
+ 
+    // Desired path point (shifted laterally from reference)
+    const float X_des = X_ref - l_des * std::sin(theta_ref);
+    const float Y_des = Y_ref + l_des * std::cos(theta_ref);
+ 
+    const cv::Point2f des_img = worldToImg(cv::Point2f(X_des, Y_des));
+    const cv::Point2f ref_img = worldToImg(cv::Point2f(X_ref, Y_ref));
+ 
+    const float delta_pixel = des_img.x - ref_img.x;
+ 
+    // 6. Compute final error
+    const float error_raw = mean_preview_x - 320.0f;
+    const float error = error_raw + delta_pixel;
+ 
+    // 7. Slow down when gold coins are in range
+    should_slow_down = (valid_gold_count > 0);
+ 
+    return error;
+}
+
+B.7 STOP 延时停车状态
+程序 B.7 STOP 延时停车状态
+double StopSign::update(const std::vector<Box>& boxes)
+{
+    // 扫描 STOP 标志 (class_id=3)
+    bool has_stop = false;
+    for (const auto& b : boxes) {
+        if (b.class_id == DetClassId::STOP) { has_stop = true; break; }
+    }
+ 
+    // 首次检测到 STOP → 启动定时器
+    if (has_stop && !timer_active_) {
+        timer_active_ = true;
+        timer_start_ = std::chrono::steady_clock::now();
+    }
+ 
+    // 定时器激活 → 计时，到期返回 0.0 停车
+    if (timer_active_) {
+        const auto now = std::chrono::steady_clock::now();
+        double elapsed = std::chrono::duration<double>(now - timer_start_).count();
+        if (elapsed >= stop_delay_sec_) {
+            if (!stop_printed_) {
+                std::cout << std::string(100, '?') << std::endl;
+                stop_printed_ = true;
+            }
+            return 0.0;  // 停车（最高优先级）
+        }
+    }
+ 
+    return -1.0;  // 不干预速度
+}
+
+附录 C 基于 Frenet 路径偏移的金币吸引策略研究
+C.1 问题描述
+人工智能模型组赛道中的金币属于离散视觉目标。若直接将金币横坐标作为舵机误差，车辆容易在多个金币之间来回摆动，且目标远近关系无法与当前道路曲率统一表达。为此，本文以巡迹参考线为基准建立 Frenet 坐标，并把金币吸引转换为沿参考线的平滑横向偏移。
+C.2 方法
+首先对参考折线累计弧长得到 s，并由相邻点计算切向角 θ。对每个金币点遍历参考线段，求取最近投影点，得到纵向弧长 sg 和横向偏移 lg。仅保留 sg∈[spre−Δback, spre+Δforward] 的金币，按式（D-1）计算权重：
+	wj=exp{−(spre−sg,j)²/(2σ²)}	（D-1）
+期望横向偏移为金币横向位置的加权平均，并经最大偏移限幅与一阶低通滤波。最后在预瞄点处把横向偏移映射回图像横坐标，与原巡迹误差相加。该方法能够让多个金币共同作用，并通过 σ、最大偏移和滤波系数分别调节作用范围、控制强度和响应平滑性。
+C.3 工程实现与局限
+当前实现以像素坐标作为参考线坐标，imgToWorld 和 worldToImg 为恒等函数，因此 Δback、Δforward、σ 和最大横移均是像素域参数。这种实现无需额外标定，便于快速调试，但相机高度或 IPM 比例变化会改变参数物理含义。后续可利用地面标定将参考线和金币统一到米制坐标，并在不同速度下调整预瞄距离。
+C.4 试验设计
+表 D-1 金币吸引策略对比试验
+
+
+===== TABLE 1 =====
+层级 | 主要部件 | 主要职责
+感知层 | 视觉帧/相机链路 | 提供 RGB 图像和赛道、目标信息
+上位机 | RK3588 类平台 | IPM、HSV、RKNN 推理、任务仲裁
+下位机 | TC264 主驱一体板 | 串口解析、电机/舵机执行、编码器反馈
+执行层 | 舵机、双路有刷电机 | 阿克曼转向和车辆驱动
+
+===== TABLE 2 =====
+电源轨 | 标称值 | 主要负载
+VCCBAT | 等于开关后电池电压 | H 桥、两路 Buck
+VCC5V | 约 5.0 V | TC264 核心板、USB、LDO
+VCC3V3 | 约 3.3 V | CH340、传感器、逻辑
+VCC_6V9 | 约 6.9 V | 转向舵机
+
+===== TABLE 3 =====
+nSLEEP | IN1 | IN2 | 电机状态
+0 | X | X | 休眠/高阻
+1 | 0 | 0 | 滑行
+1 | 0 | 1 | 反转
+1 | 1 | 0 | 正转
+1 | 1 | 1 | 制动
+
+===== TABLE 4 =====
+序号 | 类别 | 任务用途
+0 | noleft | 禁止左转识别与路径切换
+1 | limit | 限速标志预留
+2 | door | 门区状态切换
+3/4 | stop/go | 停车与通行语义
+5/6 | person/car | 行人决策与车辆避障
+7/8 | gold/stone | 金币吸引与障碍预留
+9/10/11 | red/yellow/green | 交通灯预留
+12 | zebra | 斑马线预留
+
+===== TABLE 5 =====
+字节 | 字段 | 说明
+0 | 0x42 | 帧头 1
+1 | 0x01 | 控制命令类型
+2 | 0x0C | 帧长度 12
+3~6 | speed(float32) | 速度控制量，小端
+7~10 | steering_angle(float32) | 当前实际承载舵机 PWM 计数值，小端
+11 | checksum | 字节 0~10 的累加和低 8 位
+
+===== TABLE 6 =====
+字节 | 字段 | 说明
+0 | 0x42 | 帧头
+1 | 0x06 | 编码器状态类型
+2 | 0x06 | 帧长度
+3~4 | encoder | 16 位大端状态值
+5 | checksum | 字节 0~4 的累加和低 8 位
+
+===== TABLE 7 =====
+类别 | 工具/平台 | 用途
+上位机语言 | C++17 | 视觉、推理、状态机和通信
+构建系统 | CMake 3.10+ | 组织源码与依赖
+视觉库 | OpenCV | 颜色转换、IPM、轮廓和可视化
+AI 运行时 | RKNN API / RK3588 NPU | 目标检测推理
+系统接口 | POSIX shm、pthread、termios、socket | 取帧、并发、串口和调试推流
+配置 | nlohmann/json | 运行参数加载
+调试显示 | HTTP/MJPEG 6154 端口 | 查看巡迹与检测叠加画面
+下位机 | TC264 工具链[待补] | 编译、下载和在线调试
+
+===== TABLE 8 =====
+链路 | 观察量 | 判定重点
+取帧 | frame_id、tear_count、skip_count | 无长时间停帧和持续撕裂
+巡迹 | mask、左右边线、误差、PWM、latency | 边线连续、输出无高频抖动
+检测 | 检测框、score、各 NPU FPS | 类别正确、旧框不过度滞留
+任务 | 状态机状态、速度覆盖、路径偏移 | 进入/保持/退出条件完整
+通信 | 发送计数、校验、编码器回传 | 无连续丢包和字段歧义
+整车 | 电压跌落、温升、跑偏、制动距离 | 满足安全与稳定要求
+
+===== TABLE 9 =====
+对比方案 | 主要参数 | 评价指标
+无金币吸引 | gold_gain=0 | 金币获取数、通过时间、横向误差
+直接像素偏移 | 按最近金币横坐标 | 舵机峰值、摆动次数、丢线次数
+Frenet 加权 | σ、max_l、alpha、gain | 获取数、平滑性、成功率

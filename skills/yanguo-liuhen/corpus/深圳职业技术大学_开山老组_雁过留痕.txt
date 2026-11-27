@@ -1,0 +1,673 @@
+
+
+
+第二十一届全国大学生智能汽车竞赛
+
+技术报告
+
+
+参赛学校：深圳职业技术大学
+队伍名称：开山老组
+参赛队员：叶海波 江浩庭 董浩
+带队教师：孙庆轩 郭钰
+
+关于技术报告以及研究论文使用授权的说明
+本人完全了解全国大学生智能汽车竞赛组委会关于保留、使用技术报告和研究论文的规定，即：参赛作品著作权归参赛者本人，竞赛组委会可以在相关主页上收录并公开参赛作品的设计方案、技术报告以及参赛模型车的视频、图像资料，并将相关内容编录在组委会出版的论文集中。
+本人同意并遵守上述规定。
+
+参赛队员签名：叶海波    
+江浩庭    
+董浩
+带队教师签名：孙庆轩    
+郭钰
+日        期：2026-8-15
+
+摘  要
+本文以第二十一届全国大学生智能汽车竞赛为背景，介绍了开山老组参赛智能车的系统设计与实现。模型车以STC32G144K单片机为控制核心，采用MT9V034灰度摄像头进行赛道感知，结合逆透视变换、边线提取和纯追踪算法实现路径跟踪；通过增量式PID与斜坡限幅实现速度闭环；利用状态机完成十字、圆环、斑马线制动停车和避障等赛道元素识别，并实现打靶激光发射、延时发车与冲出赛道安全保护。硬件方面设计并实现了主板、双路有刷驱动板和无刷电调三块电路板，其中主板与驱动板为四层板，无刷电调为六层板。经整车联调，系统能够稳定完成竞赛规定的主要任务，直道目标速度达到3.0 m/s。
+关键词：智能汽车；STC32G144K；图像处理；纯追踪；PID控制；元素识别
+
+目  录
+摘要
+第一章  引言
+1.1  竞赛背景与任务分析
+1.2  相关技术综述
+1.3  报告内容安排
+第二章  总体技术方案
+2.1  系统需求分析
+2.2  系统总体架构
+2.3  控制方案概述
+第三章  机械结构设计与安装
+3.1  车模平台与改造思路
+3.2  传感器安装设计
+3.3  电路板与线束布置
+第四章  电路设计
+4.1  电源系统设计
+4.2  主板电路设计
+4.3  驱动板电路设计
+4.4  无刷电调电路设计
+4.5  PCB设计要点
+第五章  软件设计
+5.1  软件总体结构
+5.2  图像采集与预处理
+5.3  边线提取与中线拟合
+5.4  路径跟踪控制
+5.5  速度闭环控制
+5.6  赛道元素识别
+5.7  打靶识别与激光发射
+5.8  避障与安全保护
+第六章  开发工具与调试过程
+6.1  开发环境
+6.2  图像标定方法
+6.3  系统调试过程
+第七章  主要技术参数
+7.1  模型车基本参数
+7.2  电路与功耗参数
+7.3  传感器参数
+第八章  结论与展望
+参考文献
+附录A  算法推导与关键设计说明
+附录B  核心算法子程序清单
+
+主要符号表
+注：表中符号在正文首次出现时均有相应说明。
+第一章  引言
+1.1  竞赛背景与任务分析
+全国大学生智能汽车竞赛以“立足培养、重在参与、鼓励探索、追求卓越”为宗旨，要求参赛队伍在规定时间内完成模型车的机械、电路与软件设计，并在指定赛道上完成竞速和任务动作。第二十一届全国大学生智能汽车竞赛在基础竞速之外，还设置了十字、左右圆环、斑马线制动停车、打靶、延时发车、避障等赛道元素和比赛任务，对模型车的图像识别稳定性、路径跟踪精度、速度控制能力以及多任务协同可靠性提出了较高要求。
+本队以“稳定通过所有元素、兼顾直道速度、任务动作可靠”为设计目标，采用灰度摄像头作为主要环境感知手段，以STC32G144K单片机作为控制核心，结合纯追踪路径跟踪、增量式速度PID、状态机元素识别和逆透视变换，完成了可复现、可调试、可迭代的智能车系统。
+1.2  相关技术综述
+智能车视觉导航通常包括图像预处理、赛道边线提取、中线生成和路径跟踪几个环节。针对赛道灰度图像，常用局部动态阈值方法克服光照不均和阴影影响；边线提取可采用逐行搜索或方向跟踪，方向跟踪在弯道和元素处具有更好的连续性。
+路径跟踪方面，纯追踪算法以车前固定距离处的前视点为期望点，根据车体几何关系计算期望转向角，具有算法简单、参数直观、弯道适应性好的特点。速度控制方面，增量式PID配合斜坡限幅和目标速度决策，可以在直道高速、弯道减速与元素低速之间平稳过渡。元素识别方面，以边线点数、角点特征和左右线差异作为判据，配合状态机可以稳定完成十字、圆环、斑马线、避障等任务。
+本报告所涉及的开源软件库、摄像头传感器和驱动芯片资料见参考文献。
+1.3  报告内容安排
+第二章介绍系统总体技术方案与控制架构；第三章说明机械结构与传感器安装设计；第四章说明主板、驱动板和无刷电调的电路设计；第五章详细说明软件算法与程序结构；第六章说明开发工具、标定方法和调试过程；第七章给出模型车主要技术参数；第八章进行总结并展望改进方向。附录给出电路原理图说明与核心算法子程序。
+ 
+第二章  总体技术方案
+2.1  系统需求分析
+根据竞赛任务，系统应满足以下需求：
+表2-1  系统需求分析
+2.2  系统总体架构
+系统以STC32G144K主控为核心，由图像感知、惯性测量、速度反馈、执行机构和电源管理组成，总体架构如图2.1所示。
+
+图2.1  智能车系统总体架构
+系统主要部件如表2-2所示。
+表2-2  系统主要部件
+2.3  控制方案概述
+控制方案分为“感知—路径—执行”三层：感知层完成图像二值化、边线提取、逆透视变换和元素识别；路径层以纯追踪算法生成期望转向角，并根据转向量、赛道元素给出目标速度；执行层由舵机PWM和速度PID驱动。主循环完成图像处理与任务调度，定时器中断分别完成系统时钟、舵机刷新、编码器采样和速度PID计算，保证控制周期稳定。
+ 
+第三章  机械结构设计与安装
+3.1  车模平台与改造思路
+车模选用竞赛指定模型车平台，在保留原有车架、转向机构和驱动轮系的基础上，拆除原车控制电路，重新设计安装主控电路板、驱动电路板、无刷电调、摄像头、惯性测量单元和激光阵列。改造中遵循“降低重心、提高刚度、减轻簧上质量、便于拆装维护”的原则，并对传感器支架和电路板安装位置进行了预留。
+3.2  传感器安装设计
+摄像头安装在车体前部支架上，镜头保持水平并略向下俯视，使近处赛道位于图像底部、远处赛道位于图像顶部；安装角度与逆透视标定工况保持一致，以保证鸟瞰坐标换算准确。摄像头通过2×8P接口连接主板，图像数据经AL422B缓存后由DMA读取。
+左右轮编码器与驱动轮轴通过联轴器连接，正交信号分别接入主控PWM编码器通道；IMU660RB固定在车体中部且接近车架中心，以减小振动和离心力对测量带来的影响；7路激光按左右方向排列安装在车头前部，与摄像头鸟瞰图像中的横向位置相对应，激光选择与打靶识别使用同一套坐标映射关系。主要传感器安装位置如表3-1所示。
+表3-1  传感器安装位置
+7路激光发射单元通过专用激光支架固定于车头前部。支架采用轻量化刚性结构，将7路激光按左右方向等距排列，激光管发射方向统一朝前，并与摄像头鸟瞰坐标系中的横向位置一一对应；支架预留安装孔和调节余量，可对激光管的横向间距和俯仰角度进行微调，保证打靶识别结果与激光选通位置一致。激光支架安装结构如图3.1所示。
+
+图3.1  7路激光支架安装结构
+3.3  电路板与线束布置
+主板布置在车体上层主安装板上，驱动板布置在靠近驱动电机的位置以缩短大电流走线，无刷电调与无刷电机就近安装。电路板之间采用XT30/XT60接口线连接，利用其防反接和锁紧特性保证功率连接可靠；信号线通过接插件连接，线束沿车架走线槽整理并固定，避免运动过程中摩擦和松脱。功率线与信号线分开走线，减小电机电流对图像和控制信号的影响。
+ 
+第四章  电路设计
+4.1  电源系统设计
+模型车以电池作为总电源，通过XT60/XT30接口进入电源系统。主板以VCCBAT作为电池直通网络，由SY6280等降压电路产生VCC5V、VCC5V_EXT，由RT9013-33等LDO产生VCC3V3，同时提供VCCCAM摄像头电源和VCCSERVO舵机电源，并通过SS54肖特基二极管实现防反接和隔离保护，使用BZT52C16进行过压保护。驱动板采用VIN直通供电，由LR8341A-T33产生3.3V逻辑电源DVDD。无刷电调使用电池电压经内部电源管理供电。主要电源网络包括VCCBAT、VCC5V、VCC5V_EXT、VCC3V3、VCCCAM、VCCSERVO以及驱动板VIN/DVDD等。主板电源设计原理图如图4.1所示。
+
+图4.1  主板电源设计原理图
+4.2  主板电路设计
+主板完成主控、图像缓存、传感器接口、执行接口和任务装置的集中管理。主板上集成STC32G144K246核心板模块，包含主控最小系统；采用AL422B作为摄像头FIFO缓存，解决高速图像数据与DMA读取之间的时序配合问题；使用SN74LVC1G00完成逻辑信号处理。主板提供摄像头2×8P接口、编码器接口、舵机接口、电机PWM与方向接口、串口、无线SPI、屏幕接口、按键与拨码开关、蜂鸣器、LED以及7路激光接口。主要器件如表4-2所示。
+表4-1  主板主要器件
+4.3  驱动板电路设计
+驱动板采用两片DRV8701E栅极驱动器，每路配合4只TPH1R403NL MOSFET构成H桥，实现左右两个驱动电机的双向调速。SN74HC125用于逻辑缓冲，LR8341A-T33提供3.3V逻辑电源。主控通过PH、EN、NSLEEP信号控制驱动状态，GH/GL为栅极输出，MOTOR1_A/B与MOTOR2_A/B连接电机两端。主要器件包括两片DRV8701E栅极驱动器、8只TPH1R403NL MOSFET、SN74HC125逻辑缓冲、LR8341A-T33电源芯片，以及XT30功率接口和WJ126V电机接线端子。驱动板电路原理图如图4.2所示。
+
+图4.2  驱动板电路设计原理图
+驱动板采用四层板设计，顶层和底层用于信号与功率布线，内层设置完整的电源层和地层，以降低功率回路阻抗并提高电磁兼容性。电机功率走线按大电流要求加宽，栅极驱动信号靠近MOSFET布置，输入输出接口和滤波电容就近放置，保证驱动波形质量和电源稳定性。驱动板PCB如图4.3所示。
+
+图4.3  驱动板PCB图
+4.4  无刷电调电路设计
+无刷电调用于驱动无刷电机，为任务装置提供负压动力。电路以SE8650KX-LF为电调主控，辅以STC32G12K128单片机进行控制与通信，三相驱动采用FD6288Q栅极驱动器，功率级由6只TPN2R703NL MOSFET构成三相桥，实现PWM A/B/C高低边控制。板上包含电压采样BATADC、电流采样、串口DBRX/DBTX和状态LED等电路。无刷电调电路原理图如图4.4所示。
+
+图4.4  无刷电调电路设计原理图
+无刷电调采用六层板设计，内部设置完整的电源层与地层，三相功率走线按大电流要求加宽，栅极驱动信号靠近MOSFET布置，电压采样和电流采样线路独立走线，以减小功率回路对控制信号的影响。无刷电调PCB如图4.5所示。
+
+图4.5  无刷电调PCB图
+4.5  PCB设计要点
+主板与驱动板采用四层板设计，无刷电调采用六层板设计，电源层与地层完整，关键信号远离功率走线。主板、驱动板和无刷电调的PCB外形尺寸如表4-2所示。
+表4-2  电路板外形尺寸与层数
+ 
+第五章  软件设计
+5.1  软件总体结构
+软件基于逐飞STC32G144K开源库开发，采用“主循环 + 定时器中断”的结构。主循环负责按键、姿态解算、图像处理、元素识别、路径跟踪、打靶和速度决策；定时器中断分别完成系统时钟、舵机PWM刷新、编码器采样和速度PID计算。主程序流程如图5.1所示，中断任务分配如表5-1所示。
+
+图5.1  主程序软件流程
+表5-1  定时器中断任务分配
+5.2  图像采集与预处理
+MT9V034输出188×120灰度图像，帧率默认配置为100fps。图像通过VSYNC和DMA中断完成采集，主循环使用image_copy图像备份数组，在发送和调试时避免图像撕裂。预处理采用5×5局部窗口平均得到局部阈值，再减去去噪系数cap，实现随光照自适应变化的二值化；左右边线在起点搜索时使用独立动态阈值LThreshold、RThreshold，并依据边线追踪结果逐步更新全局threshold。
+5.3  边线提取与中线拟合
+边线提取从图像近端开始搜索左右边线起点，随后采用方向跟踪算法逐点延伸边线。算法使用四个主方向与四个对角方向，根据局部灰度跳变决定前进方向，并设置局部阈值刷新和方向回溯，能够适应弯道、缺线和元素区域。提取完成后将原始图像坐标通过reflection查表映射到鸟瞰坐标，再按当前贴边方向（左线或右线）向赛道内侧法向偏移centerLineDistance生成中心线。中心线经一阶滤波、等距重采样和角点截断后供路径跟踪使用。
+5.4  路径跟踪控制
+路径跟踪采用纯追踪算法。取中心线AIM_POS处前视点，根据车体前方距离DEVICE_H计算转向角：
+	θ = atan2(2·DEVICE_H·dy, dx² + dy²)	公式1
+其中dx、dy为前视点相对车体坐标的纵向与横向距离。转向角乘以PURE_PURSUIT_GAIN后叠加陀螺仪偏航角速度阻尼，得到舵机PWM值，并限制在舵机左、右极限之间。舵机PWM由5ms定时器中断持续刷新。在纯追踪基础上，本系统加入阿克曼转向几何限速与差速计算。根据转向角d查正切表得到tan(d)，按轴距L=PP_AXLE_CM计算转弯半径r=L/tan(d)，再以向心加速度预算PP_A_MAX得到弯道限制车速，并将其限制在PP_MIN_SPEED与PP_MAX_SPEED之间；同时按半轮距计算左右轮差速，差速pp_diff送入速度PID，与左右轮基础占空比叠加，实现转向时内外轮转速差。
+	r = L / tan(d)	公式2
+	v = sqrt(PP_A_MAX × r)	公式3
+	Δv = v × PP_HALF_TRACK_CM / r	公式4
+本版本阿克曼参数取PP_AXLE_CM=20 cm、PP_HALF_TRACK_CM=6 cm、PP_A_MAX=6 m/s²、PP_MAX_SPEED=2.5 m/s、PP_MIN_SPEED=0.8 m/s。
+5.5  速度闭环控制
+速度环采用左右轮独立增量式PID。编码器每5ms采样一次，速度经一阶低通滤波后与目标速度比较，PID输出与基础占空比叠加得到左右电机PWM。为防止输出突变，目标速度通过斜坡逐步逼近：加速时每周期增加0.025 m/s，减速时每周期减小0.02 m/s。速度决策按转向量和赛道元素给出目标速度上限，具体规则如表5-2所示；实际执行时再经阿克曼限速约束。
+表5-2  速度决策分级
+5.6  赛道元素识别
+十字识别采用两态状态机。进入十字区域后，左右边线点数明显减少，系统禁止阈值更新，从远端重新跟踪边线并合成远端正中线，使车辆沿合成中线稳定直行通过十字。
+圆环识别采用READY、START、IN、END、EXIT五态状态机，如图5.2所示。系统通过边线缺口、边线点数恢复和角点特征判断进环、环内绕行和出环时机；进环前保持正常巡线，进环后切换贴边方向，出环后恢复主赛道巡线，并复位状态机。发车后延时500ms再开启圆环识别，避免发车区图像干扰。
+
+图5.2  圆环识别五态状态机
+斑马线识别沿左边线扫描黑白交替的条带数量，在识别到圆环之后才允许触发。触发后设置制动标志，电机先反转制动300ms，再进入锁停状态，实现可靠停车。
+5.7  打靶识别与激光发射
+打靶识别根据车速和转向角动态选择扫描行，在左右边线之间搜索靶环边缘，并利用reflection表计算靶环的横向宽度dh和纵向高度dv，通过尺寸范围校验排除干扰目标。识别到靶心后，将靶心列坐标映射到7路激光中的一路：列坐标80~115对应激光0~6，发射后150ms内禁止再次发射，6ms后自动关断激光，避免误触发和连续发射。
+5.8  避障与安全保护
+避障逻辑通过比较车头附近路宽与前方最窄路宽判断是否存在障碍：当前方明显变窄时，根据左右边线位移判断障碍所在侧，将贴边方向切换到另一侧，并以缩小贴边距离的方式绕行；路宽恢复或超时后退出避障并复位十字、圆环状态机，避免误触发。
+安全保护包括两项：冲出赛道保护在图像底部5个固定采样点同时低于灰度阈值时立即停车；斑马线停车采用反转制动后锁停。两种保护均具有锁存机制，重新发车按键会清除锁存标志。
+ 
+第六章  开发工具与调试过程
+6.1  开发环境
+软件开发使用MDK C251与逐飞STC32G144K开源库，硬件设计使用嘉立创EDA专业版。主要开发工具如表6-1所示。
+表6-1  主要开发工具
+6.2  图像标定方法
+逆透视查表reflection由标定脚本生成。标定时在地面布设已知世界坐标的标定点，记录其在图像中的像素坐标，通过单应矩阵建立图像到鸟瞰平面的映射；脚本根据赛道实际半宽确定鸟瞰像素与厘米的换算比例，并自动检查中线偏差、单调性等约束，输出可直接替换到Image.c的reflection数组。
+6.3  系统调试过程
+调试按“图像—路径—速度—元素—任务”的顺序分阶段进行，如表6-2所示。每个阶段均通过可视化调试图像、示波器通道和状态标志确认效果，再进行下一阶段联调。
+表6-2  系统调试过程
+关键参数均通过头文件宏集中管理，如避障阈值、进环时机、目标速度、PID参数等，便于在赛道现场快速调整并固化版本。
+ 
+第七章  主要技术参数
+7.1  模型车基本参数
+模型车总体参数如表7-1所示，。
+表7-1  模型车基本参数
+7.2  电路与功耗参数
+电路与功耗相关参数如表7-2所示。
+表7-2  电路与功耗参数
+7.3  传感器参数
+传感器种类、数量及检测参数如表7-3所示。
+表7-3  传感器参数
+第八章  结论与展望
+8.1  工作总结
+本队完成了模型车机械改造、三块电路板设计、软件算法开发和整机联调。系统以灰度摄像头和逆透视变换为核心，结合纯追踪路径跟踪、增量式速度PID和状态机元素识别，实现了直道高速、弯道平稳、十字与圆环可靠通过、斑马线制动停车、打靶、延时发车、避障和安全急停等功能。电路方面完成了主板、驱动板和无刷电调的方案设计与工程实现，软件方面建立了分层清晰、参数集中的调试体系。
+8.2  存在的问题与改进方向
+目前仍存在以下可改进之处：一是车模机械参数需要按实车最终状态进一步确认；二是图像处理完全依赖单帧灰度信息，在强光、逆光和阴影突变条件下仍有误识别风险；三是路径跟踪参数以固定增益为主，弯道速度与转向的耦合还可进一步优化。
+后续可以从以下方向改进：引入更稳定的动态阈值和亮度补偿；将陀螺仪偏航数据融入路径预测，提高弯道响应速度；针对不同赛道元素做参数自适应；利用无线调试工具建立更完整的离线回放与自动调参流程；同时完善机械参数测量和设计资料归档，为最终提交技术报告提供完整数据。
+参考文献
+[1] 全国大学生智能汽车竞赛. 第二十一届全国大学生智能汽车竞赛比赛规则. https://smartcar.cdstm.cn.
+[2] 逐飞科技. 智能车竞赛开源库与学习资料. https://seekfree.taobao.com.
+[3] onsemi. MT9V034 1/3-Inch Wide-VGA CMOS Digital Image Sensor Datasheet. https://www.onsemi.com.
+[4] Texas Instruments. DRV8701E H-Bridge Gate Driver Datasheet. https://www.ti.com.
+[5] Fortune Semiconductor. FD6288Q Three-Phase BLDC Motor Driver Datasheet. https://www.fortune-semi.com.
+[6] 嘉立创 EDA. 专业版工程文件格式说明. https://github.com/easyeda/easyeda-pro-file-format.
+附录A  算法推导与关键设计说明
+A.1  纯追踪转向角推导
+设前视点在车体坐标系中的纵向距离为dx、横向偏移为dy，前视距离取DEVICE_H。将车辆前方路径近似为圆弧，由前视点几何关系可得期望转向角：
+	d = atan2(2·DEVICE_H·dy, dx² + dy²)	公式A-1
+式中d为期望转向角，再乘以PURE_PURSUIT_GAIN转换为舵机PWM偏移，并叠加陀螺仪偏航角速度阻尼后输出给舵机。
+A.2  阿克曼限速与差速推导
+设轴距为L=PP_AXLE_CM、转向角为d，则车辆转弯半径为：
+	r = L / tan(d)	公式A-2
+为保证侧向加速度不超过PP_A_MAX，允许车速为：
+	v = sqrt(PP_A_MAX × r)	公式A-3
+车速在PP_MIN_SPEED与PP_MAX_SPEED之间限幅。设半轮距为B_half=PP_HALF_TRACK_CM，则转向时内外轮线速度差为：
+	Δv = v × B_half / r	公式A-4
+Δv经限幅后作为左右轮差速pp_diff输入速度PID，与左右轮基础占空比叠加。
+A.3  增量式PID推导
+设e(k)为当前速度误差，e(k-1)、e(k-2)为前两次速度误差，增量式PID输出增量为：
+	Δu(k) = Kp·(e(k)-e(k-1)) + Ki·e(k) + Kd·(e(k)-2e(k-1)+e(k-2))	公式A-5
+实际PWM占空比由基础值累加Δu得到，并对输出和积分量进行限幅，防止积分饱和。
+A.4  逆透视映射与鸟瞰坐标推导
+以地面标定点建立世界坐标(X,Y)与图像坐标(col,row)的对应关系，通过单应矩阵求解逆透视映射。设像素比例scale=半宽像素/实际半宽，鸟瞰坐标为：
+	x = NEAR_X - X/scale          y = CENTER_Y + Y/scale	公式A-6
+式中NEAR_X=119为鸟瞰近端行，CENTER_Y=94为鸟瞰横向中线。标定脚本生成reflection[120][188][2]查表，供边线和中心线变换直接使用。
+A.5  打靶坐标映射推导
+设靶心鸟瞰列坐标为Y，有效发射区间为Y_MIN~Y_MAX，对应激光编号为：
+	k = (int)((Y - Y_MIN) × 7 / (Y_MAX - Y_MIN))	公式A-7
+k限制在0~6，实现靶心位置到7路激光的选通映射。
+附录B  核心算法子程序清单
+附录给出路径跟踪、速度闭环、边线提取、元素识别与打靶控制等核心算法子程序清单和代表性代码节选，完整程序源代码见随队提交的MDK工程文件。核心子程序如表B-1所示。
+表B-1  核心算法子程序清单
+以下为核心路径跟踪与速度控制代码节选。
+B.1  纯追踪路径跟踪 alongLine
+void alongLine(Point roadLine[], int16 count, int16 aimPos)
+{
+    int16 pos, dx, dy;
+    int8 d;
+ 
+    if (count <= 5)
+    {
+        pp_set_speed = PP_MAX_SPEED;
+        pp_diff = 0;
+        diff = 0;
+        return;
+    }
+ 
+    pos = (int16)func_limit_ab(aimPos, 5, count - 2);
+    dx = (int16)(MT9V03X_H - roadLine[pos].x + DEVICE_H);
+    dy = (int16)(94 - roadLine[pos].y);
+ 
+    d = (int8)func_limit_ab(atan2_int(2 * (int32)DEVICE_H * dy, (int32)dx * dx + (int32)dy * dy), -32, 32);
+ 
+    /* steering with yaw-rate damping (gyro_z from IMU) to kill low-frequency weave */
+    final_pwm = (int16)((float)STEER_MID + (float)d * PURE_PURSUIT_GAIN + PP_GYRO_DAMP * gyro_z);
+    if (final_pwm < STEER_RIGHT) final_pwm = STEER_RIGHT;
+    if (final_pwm > STEER_LEFT)  final_pwm = STEER_LEFT;
+ 
+    /* speed + differential */
+    pp_update_speed(d);
+    diff = pp_diff;
+}
+B.2  阿克曼限速与差速计算 pp_update_speed
+static void pp_update_speed(int8 d)
+{
+    uint8 ad = (uint8)func_limit_ab(func_abs((int32)d), 0, 32);
+    int16 t = pp_tani[ad];
+    int32 r_cm;
+    int32 v100;
+    int32 dv;
+ 
+    if (t == 0)
+    {
+        pp_set_speed = PP_MAX_SPEED;
+        pp_diff = 0;
+        return;
+    }
+ 
+    r_cm = (int32)PP_AXLE_CM * 1000 / t;      /* turning radius in cm */
+    if (r_cm < 5) r_cm = 5;
+ 
+    /* v100 = speed * 100 (0.01 m/s) */
+    v100 = sqrt_int((int32)PP_A_MAX * r_cm * 100);
+    if (v100 > (int32)(PP_MAX_SPEED * 100.0f)) v100 = (int32)(PP_MAX_SPEED * 100.0f);
+    if (v100 < (int32)(PP_MIN_SPEED * 100.0f)) v100 = (int32)(PP_MIN_SPEED * 100.0f);
+    pp_set_speed = v100 / 100.0f;
+ 
+    /* differential in 0.1 m/s units; positive when d>0 (left turn, right wheel faster) */
+    dv = v100 * PP_HALF_TRACK_CM / r_cm / 10;
+    if (d < 0) dv = -dv;
+    pp_diff = (int8)func_limit_ab(dv, -PP_DIFF_MAX, PP_DIFF_MAX);
+}
+B.3  速度PID motor_speed_pid_calc
+void motor_speed_pid_calc(float target_speed, float Left_motor_speed, float Right_motor_speed, int8 diff)
+ 
+{
+ 
+    float left_delta, right_delta;
+ 
+    int16 base_left, base_right;
+ 
+ 
+ 
+    motor_gyro_diff = diff;
+ 
+ 
+ 
+    // 误差（单位 0.01m/s）
+ 
+    left_speed_err  = (target_speed - Left_motor_speed)  * 100.0f;
+ 
+    right_speed_err = (target_speed - Right_motor_speed) * 100.0f;
+ 
+ 
+ 
+    // 增量式PID，全程float计算，不再用int8强转
+ 
+    left_delta = pid_kp * (left_speed_err - left_speed_err_last)
+ 
+               + pid_ki * left_speed_err
+ 
+               + pid_kd * (left_speed_err - 2.0f*left_speed_err_last + left_speed_err_prev);
+ 
+    right_delta = pid_kp * (right_speed_err - right_speed_err_last)
+ 
+                + pid_ki * right_speed_err
+ 
+                + pid_kd * (right_speed_err - 2.0f*right_speed_err_last + right_speed_err_prev);
+ 
+ 
+ 
+    // 增量限幅
+ 
+    if (left_delta  >  100.0f) left_delta  =  100.0f;
+ 
+    if (left_delta  < -100.0f) left_delta  = -100.0f;
+ 
+    if (right_delta >  100.0f) right_delta =  100.0f;
+ 
+    if (right_delta < -100.0f) right_delta = -100.0f;
+ 
+ 
+ 
+    // ===== 关键修复：增量累加，积分才真正存在 =====
+ 
+    left_pid_out  += (int16)(left_delta  * (PWM_DUTY_MAX / 1000.0f));
+ 
+    right_pid_out += (int16)(right_delta * (PWM_DUTY_MAX / 1000.0f));
+ 
+		
+ 
+		// 累加后立即限幅，防止int16溢出和积分饱和
+ 
+		if (left_pid_out  >  MAX_DUTY*100) left_pid_out  =  MAX_DUTY*100;
+ 
+		if (left_pid_out  < -MAX_DUTY*100) left_pid_out  = -MAX_DUTY*100;
+ 
+		if (right_pid_out >  MAX_DUTY*100) right_pid_out =  MAX_DUTY*100;
+ 
+		if (right_pid_out < -MAX_DUTY*100) right_pid_out = -MAX_DUTY*100;
+ 
+ 
+ 
+    // 基础前馈：每周期用当前目标速度实时算，不再依赖TARGET_SPEED的赋值时机
+ 
+    base_left  = (int16)((target_speed * 10.0f + FIX_COMP - motor_gyro_diff) * (PWM_DUTY_MAX / 100.0f));
+ 
+    base_right = (int16)((target_speed * 10.0f - FIX_COMP + motor_gyro_diff) * (PWM_DUTY_MAX / 100.0f));
+ 
+ 
+ 
+    // 输出 = 前馈(基础+差速) + 累加PID
+ 
+    left_final_pwm  = base_left  + left_pid_out;
+ 
+    right_final_pwm = base_right + right_pid_out;
+ 
+ 
+ 
+    // 总限幅
+ 
+    if (left_final_pwm  > MAX_DUTY * (PWM_DUTY_MAX / 100)) left_final_pwm  = MAX_DUTY * (PWM_DUTY_MAX / 100);
+ 
+    if (left_final_pwm  < 0) left_final_pwm = 0;
+ 
+    if (right_final_pwm > MAX_DUTY * (PWM_DUTY_MAX / 100)) right_final_pwm = MAX_DUTY * (PWM_DUTY_MAX / 100);
+ 
+    if (right_final_pwm < 0) right_final_pwm = 0;
+ 
+ 
+ 
+    // 更新历史误差
+ 
+    left_speed_err_prev  = left_speed_err_last;
+ 
+    right_speed_err_prev = right_speed_err_last;
+ 
+    left_speed_err_last  = left_speed_err;
+ 
+    right_speed_err_last = right_speed_err;
+ 
+}
+B.4  图像路径处理 loadRoad
+void loadRoad(void) {
+ 
+    Point LStart = getLStart(), RStart = getRStart();
+ 
+    int16 i;
+ 
+ 
+ 
+    LRoadCount = expRoadCount;
+ 
+    RRoadCount = expRoadCount;
+ 
+    getLBorder(LRoad, LStart, &LRoadCount, 0);
+ 
+    getRBorder(RRoad, RStart, &RRoadCount, 0);
+ 
+ 
+ 
+    LBorderCount = LRoadCount;
+ 
+    memcpy(LBorder, LRoad, (uint16)LBorderCount * sizeof(Point));
+ 
+    RBorderCount = RRoadCount;
+ 
+    memcpy(RBorder, RRoad, (uint16)RBorderCount * sizeof(Point));
+ 
+ 
+ 
+    getGodRoadLine(LRoad, LRoadCount);
+ 
+    getGodRoadLine(RRoad, RRoadCount);
+ 
+    filterRoad(LRoad, LRoadCount);
+ 
+    filterRoad(RRoad, RRoadCount);
+ 
+    resampleRoad(LRoad, &LRoadCount, 0, 3);
+ 
+    resampleRoad(RRoad, &RRoadCount, 0, 3);
+ 
+    LCorner = findCorner(LRoad, LRoadCount, 0);
+ 
+    RCorner = findCorner(RRoad, RRoadCount, 0);
+ 
+ 
+ 
+    /* truncate borders at their first corner so cross/round detection sees short lines */
+ 
+    if (LCorner) {
+ 
+        if (LCorner < 3) LCorner = 0;
+ 
+        else LRoadCount = LCorner;
+ 
+    }
+ 
+    if (RCorner) {
+ 
+        if (RCorner < 3) RCorner = 0;
+ 
+        else RRoadCount = RCorner;
+ 
+    }
+ 
+ 
+ 
+    /* follow the configured side (ALONG) to synthesize the centerline */
+ 
+    if (ALONG == ALONG_L) {
+ 
+        getCenterLineByLBorder(LRoad, centerLine, LRoadCount);
+ 
+        centerLineCount = LRoadCount;
+ 
+    } else {
+ 
+        getCenterLineByRBorder(RRoad, centerLine, RRoadCount);
+ 
+        centerLineCount = RRoadCount;
+ 
+    }
+ 
+    ALONG = LRoadCount > RRoadCount ? ALONG_L : ALONG_R;
+ 
+ 
+ 
+    /* extend the centerline down to the bottom image row for pure pursuit */
+ 
+    for (i = 1; i < centerLineCount; i++)
+ 
+        if (centerLine[i].x < (MT9V03X_H - 1)) { i--; break; }
+ 
+    if (i < centerLineCount) {
+ 
+        centerLine[i].x = MT9V03X_H - 1;
+ 
+        centerLine[i].y = centerLine[i + 1].y;
+ 
+    }
+ 
+    filterRoad(centerLine, centerLineCount);
+ 
+    resampleRoad(centerLine, &centerLineCount, i, 2);
+ 
+}
+B.5  斑马线识别 haveZebra
+uint8 haveZebra(void) {
+ 
+    int16 i = 0;
+ 
+    if (!LBorderCount) return 0;
+ 
+    while (i < LBorderCount && LBorder[i].x > ZEBRA_TRIGGER_POS)
+ 
+        i += 3;
+ 
+    if (i >= LBorderCount) return 0;
+ 
+    if (LBorder[i].x > ZEBRA_TRIGGER_POS) return 0;
+ 
+    return findZebra(i);
+ 
+}
+B.6  激光发射 laser_fire
+void laser_fire(uint8 col)
+{
+	uint8 k;
+	if (Nowtime < laser_ready_time) return;// 还没到冷却时间，直接不发射
+	if (col <= 80 || col >= 115) return;// 靶心不在中间有效区（79~112），不发射//col <= 78 || col >= 113
+	laser_ready_time = Nowtime + 150;///// 这次发射后，150ms 内禁止再发射
+	laser_off_time = Nowtime + 6;//6ms 后自动关闭激光
+	k = (uint8)((col - 80) * 7 / 27);// 把列坐标映射成 0~6（选第几个激光管）78-35
+	if (k >= 7) k = 6;// 兜底，防止越界
+	laser_dismiss();// 先关掉所有激光
+	gpio_set_level(laser_pin[k], 1); // 只点亮第 k 个激光管
+}
+
+===== TABLE 1 =====
+符号 | 含义 | 单位
+MT9V034_H / MT9V034_W | 摄像头图像高 / 宽 | 像素
+LRoadCount / RRoadCount | 左 / 右边线点数 | 个
+centerLineCount | 当前中心线点数 | 个
+threshold | 图像二值化阈值 | 灰度
+centerLineDistance | 贴边距离（鸟瞰坐标） | 像素
+final_pwm | 舵机输出PWM占空比 | 0.01%
+STEER_MID / PURE_PURSUIT_GAIN | 舵机中值 / 纯追踪增益 | PWM
+gyro_z | 偏航角速度 | °/s
+current_target_speed | 当前目标车速 | m/s
+Left_motor_speed / Right_motor_speed | 左 / 右轮实测速度 | m/s
+encoder_count | 编码器每米计数值 | 个/m
+pid_kp / pid_ki / pid_kd | 速度PID比例 / 积分 / 微分系数 | —
+ramp_target | 斜坡过渡后的目标速度 | m/s
+PP_AXLE_CM | 阿克曼轴距标定值 | cm
+PP_HALF_TRACK_CM | 阿克曼半轮距标定值 | cm
+PP_A_MAX | 弯道向心加速度预算 | m/s²
+pp_diff | 阿克曼左右轮差速输出 | 0.1 m/s
+Nowtime | 系统运行时间戳 | ms
+
+===== TABLE 2 =====
+类别 | 需求 | 实现措施
+功能 | 识别直道、弯道、十字、左右圆环、斑马线等赛道元素 | 灰度图像处理 + 状态机
+功能 | 完成打靶、延时发车、避障等任务动作 | 激光阵列、按键发车、避障状态机
+性能 | 直道目标速度不低于3.0 m/s | 速度决策 + 斜坡控制
+性能 | 元素处平稳减速、可重复通过 | 元素分级限速
+可靠 | 冲出赛道可自动急停，误触发少 | 底部多点灰度保护
+
+===== TABLE 3 =====
+部件 | 型号/规格 | 数量 | 作用
+主控 | STC32G144K246核心板 | 1 | 图像处理、控制算法、任务调度
+摄像头 | MT9V034 188×120灰度 | 1 | 赛道图像采集
+惯性测量 | IMU660RB | 1 | 偏航角速度测量与转向阻尼
+速度反馈 | 正交编码器 | 2 | 左右轮速度闭环
+转向执行 | BDS300舵机 | 1 | 前轮转向
+动力执行 | 双路有刷驱动板 | 1 | 驱动左右驱动电机
+负压动力 | 无刷电调 + 无刷电机 | 1 | 任务装置负压动力
+打靶执行 | 7路激光阵列 | 1 | 按靶心位置选通发射
+调试接口 | 无线串口/调试串口 | 1 | 参数与图像调试
+
+===== TABLE 4 =====
+传感器 | 安装位置 | 安装要点
+MT9V034摄像头 | 车头前部支架 | 水平放置、俯仰可调，与标定姿态一致
+正交编码器 ×2 | 左右驱动轮 | 与轮轴同轴连接，避免径向窜动
+IMU660RB | 车体中部 | 靠近车架中心，减震固定
+激光阵列 ×7 | 车头前部 | 与鸟瞰横向坐标对齐，线束固定
+
+===== TABLE 5 =====
+位号 | 器件 | 功能
+U1 | STC32G144K246核心板 | 主控与最小系统
+U8 | AL422B | 摄像头FIFO图像缓存
+U9 | SN74LVC1G00 | 逻辑信号处理
+U2/U7 | SY6280 / RT9013-33 | 电源变换
+U4/U6 | SCT2450 | 功率开关/电源管理
+Q3~Q9 | AO3400 ×7 | 激光/负载驱动
+P26 | 摄像头接口 8×2 | 接入MT9V034
+P6/P14等 | 编码器/电机/舵机接口 | 执行反馈连接
+
+===== TABLE 6 =====
+电路板 | 外形尺寸（约） | 层数 | 主要功能
+主板 | 120mm × 65mm | 4层 | 主控、感知、接口、电源管理
+驱动板 | 30mm × 70mm | 4层 | 双路有刷电机驱动
+无刷电调 | 88mm × 93mm | 6层 | 三相无刷电机驱动
+
+===== TABLE 7 =====
+定时器 | 周期 | 任务
+TIM1_PIT | 1 ms | 系统时间戳Nowtime、激光自动关断
+TIM2_PIT | 5 ms | 舵机PWM刷新（BDS300）
+TIM3_PIT | 5 ms | 编码器采样、速度低通滤波
+TIM4_PIT | 10 ms | 速度PID计算与PWM输出
+
+===== TABLE 8 =====
+工况 | 目标速度 | 说明
+直道（转向误差≤10且连续确认） | 3.0 m/s | 速度决策上限，受阿克曼限速约束
+小转向（误差≤20） | 2.8 m/s | 轻微弯道
+中转向（误差≤40） | 2.3 m/s | 普通弯道
+大转向（误差>40） | 1.9 m/s | 急弯
+十字 | 2.5 m/s | 元素限速
+左右圆环 | 2.2 m/s | 元素限速
+
+===== TABLE 9 =====
+用途 | 工具/平台
+嵌入式软件 | MDK C251（C251编译器）
+底层驱动库 | 逐飞STC32G144K开源库
+电路设计 | 嘉立创EDA专业版
+图像标定 | Python + OpenCV + 标定脚本
+调试监控 | 串口/无线调试、示波器功能
+
+===== TABLE 10 =====
+阶段 | 调试内容 | 主要手段
+1 | 图像二值化与边线提取 | 调试图像、动态阈值观察
+2 | 逆透视与中心线 | 鸟瞰视图、中线叠加显示
+3 | 直道与弯道路径跟踪 | 舵机PWM、车速示波器
+4 | 速度PID与斜坡 | 左右轮速度曲线、阶跃响应
+5 | 十字/圆环/斑马线 | 状态机标志、慢速实跑
+6 | 打靶与激光 | 靶心坐标、激光选通验证
+7 | 避障与急停 | 全任务联调、边界条件测试
+
+===== TABLE 11 =====
+参数 | 数值/说明
+车型 | 竞赛指定模型车
+驱动方式 | 双后轮有刷电机独立驱动
+转向方式 | BDS300舵机 + 前轮转向
+轮距/轴距参考 | 软件标定值：半轮距6cm、轴距20cm
+
+===== TABLE 12 =====
+参数 | 数值/说明
+主控 | STC32G144K，系统时钟96MHz
+电机PWM | 17kHz
+舵机PWM | 50Hz，5ms刷新
+速度环周期 | 10ms
+编码器采样 | 5ms
+电路板 | 主板、驱动板为4层板；无刷电调为6层板
+
+===== TABLE 13 =====
+传感器 | 数量 | 主要参数
+灰度摄像头 | 1 | 188×120，默认100fps，逆透视检测精度约1.25cm/像素
+正交编码器 | 2 | 每米计数值约11553.7，5ms采样
+惯性测量单元 | 1 | IMU660RB，偏航角速度用于转向阻尼
+激光发射单元 | 7 | 按靶心列坐标映射选通
+赛道信息检测频率 | — | 图像帧率100fps，路径控制主循环逐帧执行
+
+===== TABLE 14 =====
+子程序 | 源文件 | 功能
+loadRoad | Image.c | 边线提取、逆透视、中心线拟合
+getLBorder / getRBorder | Image.c | 左右边线方向跟踪
+findCorner | Image.c | 边线角点检测
+alongLine | pure_pursuit.c | 纯追踪路径跟踪
+pp_update_speed | pure_pursuit.c | 阿克曼限速与差速计算
+motor_speed_pid_calc | SpeedErr_pid.c | 左右轮速度PID
+runCross / runRRound / runLRound | cross.c / Round.c | 十字与圆环状态机
+haveZebra / findZebra | Image.c | 斑马线识别
+findTargetByL / laser_fire | Image.c / main.c | 打靶识别与激光发射
+updateAvoid | main.c | 避障判断

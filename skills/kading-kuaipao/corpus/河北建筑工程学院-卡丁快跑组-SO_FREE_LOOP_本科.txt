@@ -1,0 +1,312 @@
+
+第二十一届全国大学生
+智能汽车竞赛
+
+
+
+技 术 报 告
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+第二十一届全国大学生智能汽车竞赛竞速组技术报告
+学 校：         河北建筑工程学院     
+队伍名称：      SO FREE LOOP         
+参赛队员：高朗、曹智涵、史琦玮、武怡康、张国岩
+带队教师：杨亚楠、安兆杰
+日 期：2026 年 8月 18日
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+关于技术报告使用授权的说明
+本人完全了解全国大学生智能汽车竞赛关于保留、使用技术报告的规定，即：参赛作品著作权归参赛者本人，比赛组委会可以在相关主页上收录并公开参赛作品的设计方案、技术报告以及模型车相关资料，并将相关内容编纂收录在组委会出版论文集中。
+参赛队员签名：_高朗，曹智涵，史琦玮，武怡康，张国岩__ 
+带队教师签名：_杨亚楠，安兆杰__
+日 期：2026 年 8月 18日
+
+项目概述
+1.1 项目概述
+本项目依据第二十一届全国大学生智能汽车竞赛竞速组规则，完成智能竞速车模的整体设计、机械改造、硬件搭建、软件开发及系统调试。车模以稳定跟随、稳定行驶、精准过弯为核心目标，满足竞赛竞速行驶要求。
+1.2 报告结构说明
+本报告严格按照竞赛要求完成基础部分撰写，不含研究论文附加内容。依次阐述车模总体方案、机械结构、硬件电路、控制算法、调试过程、技术参数及总结结论。
+模型车总体设计方案
+2.1 设计思路
+遵循稳定优先、速度兼顾、结构简洁、调试便捷原则，采用经典后轮驱动架构，通过传感器采集赛道信息，经主控 MCU 运算处理，实现电机速度闭环与电机转向闭环控制，完成赛道自动竞速行驶。
+2.2 技术方案概要
+主控芯片：_英飞凌TC377  
+赛道检测：_摄像头+惯性导航__（凌瞳彩色摄像头）
+驱动模块：_自制电机驱动板___
+执行机构：驱动电机 + 转向电机
+控制逻辑：赛道信号采集 → 偏差解算 → PID 闭环控制 → 执行机构输出
+传感器类型：IMU660RA陀螺仪、增程式编码器、凌瞳高帧率摄像头
+
+ 机械结构与安装
+3.1 车模改造与安装
+基础车模：  卡丁车模  （官方指定车模）
+改造内容：底盘加固、电池仓移位、重心配重、防撞结构加装、车轮定位校准。
+装配标准：紧固件牢固、运动部件无卡顿、整体重心居中。
+3.2 传感器布局与固定
+安装位置，摄像头：前挡板
+             陀螺仪：车模底板
+             编码器：与电机通过差速齿轮连接
+固定方式：3D 打印支架 / 亚克力板 / 尼龙扎带
+布局要求：检测区域覆盖赛道需识别区域，无机械遮挡，抗震动干扰。
+3.3 电路板安装与布线
+安装位置：车模重心区域，减震固定
+布线规范：电源线与信号线分离，走线整齐，接口牢固，做好绝缘处理
+抗震措施：海绵减震、卡扣固定，避免行驶震动松脱
+
+硬件电路设计
+4.1 总体硬件架构
+PCB控制板种类及数量：
+主控核心板一块（英飞凌TC377），
+主板一块，
+电机驱动板（DRV8701E）两块,
+灯板一块
+
+4.2 电源与驱动电路
+供电方案：锂电池  24 V 输入，稳压输出 24 V 供系统使用
+驱动方式：PWM 调速，直流电机驱动，具备过流、反接保护
+电源滤波：大容量电容滤波，保证电压稳定
+4.3 传感器接口电路
+供电电压：24V
+信号类型：模拟量采集 / 数字量输入
+信号处理：滤波、分压、抗干扰处理
+
+控制软件与算法
+5.1 开发环境与工具
+开发软件：__AURIX™ Development Studio_ 编程语言： C 语言 
+调试工具：逐飞串口助手、vofa+上位机
+5.2 主控程序框架
+系统初始化：时钟、GPIO、ADC、PWM、定时器配置
+主循环：传感器采集 → 数据滤波 → 控制运算 → 输出执行
+中断配置：定时采样中断、速度检测中断
+5.3 核心控制算法说明
+赛道识别：视觉色素跟踪+惯性采样+PID闭环算法
+转向控制：增量式 PID / 位置式 PID 算法
+速度控制：根据赛道偏差自动调速，直道加速、弯道减速
+滤波处理：均值滤波 / 中值滤波，消除信号抖动
+
+制作、安装与调试过程
+6.1 制作与装配流程
+机械装配 → 电路焊接 → 模块固定 → 整体布线 → 绝缘与安全检查
+6.2 硬件调试
+电源调试：电压校准、电流检测、稳定性测试
+传感器调试：黑白线阈值标定、信号一致性调试
+驱动调试：电机正反转、PWM 线性度、转向电机角度校准
+6.3 软件调试与参数整定
+传感器标定：赛道中心位置校准
+PID 参数整定：先转向后速度，分步优化
+实车调试：直道、弯道、S 弯综合优化
+故障处理：跑偏、抖动、失速、信号丢失等问题解决
+
+ 模型车主要技术参数
+7.1 整车物理参数
+1.总重量：30KG
+2.长度： 1.4  m 宽度： 0.6  m 高度  0.5  m
+7.2 电气参数
+1.工作电压： 24 V
+2.工作电流：5—10A
+3.总电容容量：300__ uF
+7.3 传感器与执行机构参数
+1.传感器类型及数量：
+   高帧率摄像头   1个
+   增程式编码器   3个
+   IMU660RA陀螺仪 1个
+
+7.4 赛道检测性能参数
+1.检测精度： 2-3  mm
+2.采样频率：__100__ Hz
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+附录 1 电路板详细设计原理图
+
+
+主板原理图1
+
+
+主板原理图2
+
+主板PCB图
+
+灯板原理图
+
+
+灯板PCB图
+
+
+电机驱动板原理图
+
+
+电机驱动板PCB图
+
+
+
+
+
+
+附录 2 核心算法子程序
+Cpu0.c
+/*********************************************************************************************************************
+* cpu0.c 主程序
+* 改模式：code/config/app_mode.h → APP_MODE → 重新编译
+*********************************************************************************************************************/
+#include "zf_common_headfile.h"
+#include "app_mode.h"
+#include "hw_enc_front.h"
+#include "hw_config.h"
+#include "hw_wireless_uart.h"
+
+#pragma section all "cpu0_dsram"
+
+int core0_main(void)
+{
+clock_init();
+
+#if (APP_MODE == APP_MODE_PATROL) || (APP_MODE == APP_MODE_STEER_PD)
+/* 前轮 SPI4 必须在 debug_init 之前 init */
+(void)hw_enc_front_early_init();
+#endif
+
+debug_init();
+#if (0u != HW_WIRELESS_UART_ENABLE) && (APP_MODE != APP_MODE_CAM_VIEW)
+/* CAM_VIEW 专跑 UART0 传图，不开无线，避免抢带宽/误开其它 COM */
+hw_wireless_uart_init();
+#endif
+cpu_wait_event_ready();
+app_main_init();
+
+while(TRUE)
+{
+app_main_poll();
+}
+}
+
+#pragma section all restore
+Cpu0.h
+
+#ifndef CPU0_MAIN_H
+#define CPU0_MAIN_H
+
+/******************************************************************************/
+/*----------------------------------Includes----------------------------------*/
+/******************************************************************************/
+#define TEST_T 0
+
+#include "Cpu/Std/Ifx_Types.h"
+/*****************************************************************
+typedef struct
+{
+float32 sysFreq; /**< \brief Actual SPB frequency */
+float32 cpuFreq; /**< \brief Actual CPU frequency */
+float32 pllFreq; /**< \brief Actual PLL frequency */
+float32 stmFreq; /**< \brief Actual STM frequency */
+} AppInfo;
+
+/** \brief Application information */
+typedef struct
+{
+AppInfo info; /**< \brief Info object */
+} App_Cpu0;
+IFX_EXTERN App_Cpu0 g_AppCpu0;
+
+#endif
+
+Cpu1.c
+#include "zf_common_headfile.h"
+#include "core_nav_task.h"
+#pragma section all "cpu1_dsram"
+void core1_main(void)
+{
+disable_Watchdog();
+interrupt_global_enable(0); 
+cpu_wait_event_ready(); 
+while (TRUE)
+{
+core_nav_task_poll();
+}
+}
+#pragma section all restore
+
+Cpu2.c
+/*********************************************************************************************************************
+* cpu2_main — CPU2：IPS200 刷屏 + Flash 后台（CORE_FLASH_TASK_ON_CPU2）+ 摄像头曝光下发
+*********************************************************************************************************************/
+#include "zf_common_headfile.h"
+#include "follow_config.h"
+#include "camera_config.h"
+#include "nav_config.h"
+#include "core_ips_task.h"
+#include "core_bg_task.h"
+#include "hw_camera.h"
+
+#pragma section all "cpu2_dsram"
+
+void core2_main(void)
+{
+disable_Watchdog();
+interrupt_global_enable(0);
+cpu_wait_event_ready();
+
+#if (CORE_IPS_ON_CPU2 != 0u)
+core_ips_task_init();
+#endif
+
+while(TRUE)
+{
+#if (CORE_IPS_ON_CPU2 != 0u)
+core_ips_task_poll();
+#endif
+#if (0u != CORE_FLASH_TASK_ON_CPU2)
+core_bg_task_poll();
+#endif
+#if (0u != CAM_EXPO_APPLY_ON_CPU2)
+/* 亮度下发会阻塞等摄像头应答，放这里以免污染 CPU0 的控制环时序 */
+hw_camera_expo_poll();
+#endif
+}
+}
+
+#pragma section all restore

@@ -1,0 +1,413 @@
+
+
+第21届全国大学生智能
+车竞赛
+
+       技术报告
+
+
+        学    校：          盐城工学院             
+队伍名称：           无刺有刺              
+参赛队员：闵紫辰、徐哲伟、黄俊豪、王俊惠、姚淇耀
+
+带队教师：             孟海涛              
+
+
+
+
+
+关于技术报告和研究论文使用授权的说明
+    本人完全了解全国大学生智能汽车竞赛关保留、使用技术报告和研究论文的规定，即：参赛作品著作权归参赛者本人，比赛组委会可以在相关主页上收录并公开参赛作品的设计方案、技术报告以及参赛模型车的视频、图像资料，并将相关内容编纂收录在组委会出版论文集中。
+参赛队员签名：                      
+带队教师签名：                      
+日        期：     2026.8.8                 
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
+
+
+一．引言
+本小车和四旋翼无人机是以cyt4bb7单片机核心，飞机ov2640彩色摄像头和mt9v034灰色摄像头分别作为跟踪系统和寻灯系统主要原件，通过串级PID实现飞机平衡，最终飞机指挥小车驶向红外灯板。主要使用mt9v034搭配红外滤光片进行红外”地雷”的寻找。我们将从机械结构、硬件设计、软件设计三个维度介绍飞机和小车的技术细节以及我们调试平衡飞机和下车的设计过程。
+
+
+图表 1 小车和飞机实物图
+
+二．正文
+1. 机械结构
+为了控制重量我使用碳纤维机架。性价比非常高。
+
+图表 2 飞机架和车架
+小车我们使用移动非常灵活的麦克纳姆轮小车，这主要是因为麦轮小车可以向任意方向自由移动并且可以原地自旋等操作。
+在这个项目中我们使用了大量的3D打印件，包括飞机的脚架，小车的V型灯板标志物，小车的遮光板。飞机的螺旋桨保护罩我们建模完成后委托厂家使用碳板进行制造。
+车模最终的重量为： 1699g   长宽高分别为：290x290x145
+飞机最终的重量为： 728.5g  长宽高分别为：355x300x128
+
+图表 3 小车和飞机的3D打印件三维图
+
+2. 硬件设计
+电路设计上我们使用嘉立创eda进行设计，并委托嘉立创进行PCB制造。在layout的过程中，我们严格按照行业标准，保留每一个元器件的位号，对针脚接口定义进行丝印标注，方便后续的故障排除。主板PCB进行多次迭代后各项性能已经稳定，图中所示是目前使用的一版。
+
+图表 4 飞机小车主板实物图·
+ 
+主控方案
+    比赛指定使用英飞凌CYT系列作为小车和飞机的控制器，我们在飞机和小车上使用CYT4bb7，该芯片基于ARM cortex-m7和cortex-m0内核，cortex-m7主频高达250Mhz并带有数据和指令cache以及TCM内存，足够我们进行图像算法的运算。如下图是总系统框图以及电源配置。
+图表 5 系统连接框图
+主板连接设计
+CYT4BB7单片机核心我们仿照逐飞核心板进行仿制，其核心板内部已经集成了较为完整的保护电路，可便于我们直接使用。小车主板接口部分仿制逐飞科技，保证对逐飞模块的兼容性。飞机主板我们大量使用GH1.25接口，其带锁扣的特性保证其相对于2.54杜邦线有更高的稳固能力，保证我们的飞机在意外掉落时连接线不会脱落。
+主板电源模块设计
+    小车主板电源输入部分我们使用了100uF的固态电容进行滤波。使用。电源模块为系统其他各个模块提供所需的电压，全部硬件电路电源由格氏航模12v锂电池提供，其他数字电路提供5v电源支持。在DC-DC降压5v电路上我们采用与逐飞开发板同款电源芯片SCT2450STER，并严格按照手册上推荐的layout方案进行布局更好的抗干扰，滤波电容使用一个220uF电容和47uF陶瓷电容进行滤波。
+
+图表 7电源模块设计视图
+
+图表 8电源芯片手册layout参考
+
+图表 9 电源部分原理图
+经测量小车系统空载功耗约为2W，最大峰值功耗为55W
+飞机系统空载功耗约为3W，飞行运动时最大峰值功耗高达200W
+    电池方面，折合重量和体积因素，我们使用16.8v 3000mAh航模电池，放电倍率35C，最大放电电流105A。
+对于3.3v部分我们使用一个非常经典的LDO芯片RT9013进行5v到3.3v降压的转换，并且将5v电源的纹波进行过滤，在3.3v电路上我们使用一颗10uF的钽电容进行滤波。
+飞机悬停时最大功耗高达180w，通过P=UI得知飞机在悬停时电流高达11.25A为了支持这样的电流我们使用了18AWG的线材为了减少压降，并且在有无人机向下吹的气流散热时，18AWG的线材也能够应付11A的电流。为了防止短路发生火灾风险，我们在锂电池输出端接了一个额定电流16A的直流空气开关保证主电路在短路时空气开关跳开并断开锂电池电源。
+小车主板和有刷电机驱动板整体电路用于储能和滤波的电容总值为610.3uF
+有刷电机驱动设计
+    有刷电机由于其带有电刷和换相片的设计，实际仅需要电源就可以使其转动。为了实现其正反转我们需要一个H桥来控制电路电流方向来实现电机正反转的控制，并且通过开关管的快速通断实现来控制电机的扭矩，最终配合编码器实现对电机转速的控制。由于单片机的带载能力有限并且上管需要更高的电压才能驱动，所以这里我们采用来自德州仪器专门用于控制有刷电机的驱动芯片DRV8701。为了防止电机驱动电路对数字电路的影响，在单片机与电机驱动芯片的信号连接中我们使用一个4路的缓冲器来实现对单片机芯片的保护。最终在电源入口处使用一个220uF的电解电容对输入电源进行滤波和储能。
+
+图表 10有刷电机驱动板实物图
+
+图表 11有刷电机驱动板原理图
+小车和飞机没有使用任何伺服电机和舵机
+传感器方案设计
+车模和飞机使用4个传感器分别为[光流]PMW3901用于获取飞机相对于地面的水平速度，[陀螺仪]IMU660RB(ST LSM6DSRTR)用于小车旋转转向闭环控制，[陀螺仪]IMU660RC(ST LSM6DSV16X)用于飞机姿态控制，[彩色图像传感器]OV2640用于识别放在小车正上方的V型绿色灯板，[灰度图像传感器]MT9V034用于识别红外信标灯。
+摄像头驱动设计
+系统同时挂载两路 DVP（Digital Video Port）并行摄像头，由不同核心独立驱动：
+驱动自下而上分为四层：SCCB 控制总线 → 寄存器配置 → GPIO 并行数据采集（DMA）→ HSYNC/VSYNC 帧同步。
+硬件连接与信号分配
+两路相机的数据/同步信号均直接连到 GPIO，而非专用的 DCMI 接口：
+两组 SCCB 引脚分属 PRT19 的不同引脚，互不冲突，可并行操作。
+SCCB 控制总线
+SCCB 是 OmniVision 定义的两线串行控制总线（帧格式兼容 I²C）。项目没有使用硬件 I²C/SCB 外设，而是用 GPIO 软件模拟（sccb.cpp 供 MT9V034 使用、sccb2.cpp 供 OV2640 使用，实现几乎一致，仅寄存器寻址宽度不同）：
+引脚初始化（sccb.cpp:36）：ModusToolbox 的配置路由默认把这两组引脚挂到 SCB2 I²C 外设，必须先通过 Cy_GPIO_Pin_FastInit(..., CY_GPIO_DM_OD_DRIVESLOW, 1UL, HSIOM_SEL_GPIO) 把 HSIOM 强制切回 GPIO 并配置为开漏输出，之后才能位操作模拟时序；
+位时序：每 bit 间 cyhal_system_delay_us(1)（≈500 kHz 标称速率），完整实现 START/STOP 条件、MSB-first 逐位收发、主机读字节时的 ACK/NACK 控制；
+写寄存器：SCCB_RegWrite = 起始 → 写器件地址（addr<<1）→ 写寄存器地址 → 写数据字节 → 停止；MT9V034 的寄存器为 16 位值，按大端分两字节写入（sccb.cpp:245），OV2640 为 8 位值（sccb2.cpp:268）；
+读寄存器：先发"器件地址 + 寄存器地址"并停止，再发读地址（addr<<1|1）连续读回（sccb.cpp:146，支持 8/16 位寄存器地址两种模式）；
+总线扫描：sccb_scan_cyhal() 扫描 0x08~0x77 全部 7 位地址并打印应答设备，上电初始化时先跑一遍用于诊断（sccb.cpp:278）；
+每字节写入返回 ACK 状态，驱动层据此判断通信失败并报 USER_LOG_ERROR。
+MT9V034 驱动流程
+总线扫描 + 回读 CHIP_VERSION(0x00) 校验芯片（应为 0x1324），结果通过串口打印；
+分辨率与采样（MT9V034_SetFrameResolution(120, 188)，mt9v034.cpp:59）：
+目标 188×120，感光阵列 752×480。120×4=480 ≤ 480 → 行 4 倍 BIN；188×4=752 ≤ 752 → 列 4 倍 BIN，即 4×4 binning（4 个像素合并输出一个，提高灵敏度）；
+READ_MODE(0x0D) = ROW_BIN_4 | COL_BIN_4 | ROW_FLIP | COLUMN_FLIP（水平和垂直镜像，修正安装方向）；
+WINDOW_WIDTH(0x04)=752、WINDOW_HEIGHT(0x03)=480、COLUMN_START(0x01)=1、ROW_START(0x02)=4；
+曝光控制（MT9V034_SetAutoExposure(0)，自动曝光关闭）：
+AEC_AGC_ENABLE(0xAF) 清除 AEC/AGC 位；
+固定增益 MAX_GAIN(0xAB)=30；
+固定曝光 TOTAL_SHUTTER_WIDTH(0x0B)=CAMERA_EXPOSURE_TIME=150（快门宽度 0~32765）；
+目标亮度 AGC_AEC_DESIRED_BIN(0xA5)=50（自动模式备用）；
+帧率设定（MT9V034_SetFrameRate(60)）：通过垂直消隐行数控制帧率，消隐量按 6 段分段线性公式计算（mt9v034.cpp:92），60 fps 对应 vertical ≈ −8.85×60+957.58 ≈ 426 行；
+图像质量：行消隐 HORIZONTAL_BLANKING(0x05)=1023（最大）、ANALOG_CTRL(0xC2) 开启抗反晕（anti-eclipse）、ADC 分辨率 ADC_RES_CTRL(0x1C)=0x0303（双通道 10 bit）、对比度 0x20=0x03C7、HDR 0x0F=0x0103、若干黑电平/增益寄存器；
+最后调用 cameraDMAInit(188) 启动逐行 DMA 采集（见 3.1.5）。
+OV2640 驱动流程（ov2640_init）
+总线扫描（sccb2）；
+软件复位：BANK_SEL(0xFF)=0x01 切到传感器寄存器组，COM7(0x12)=0x80 复位，延时 1 ms；
+先初始化 DMA 再写寄存器：camera2DMAInit(176*2) 在寄存器配置完成前就把采集通道打开，保证首帧不丢（OV2640 复位后立即输出时序）；
+顺序表驱动：ov2640_write_array()（ov2640.cpp:10）遍历寄存器表直到 {0xff, 0xff} 结束标记，任一写失败立即上报错误。寄存器表来自 Linux ov2640 驱动（ov2640_registers.c），按阶段依次写入：
+行消隐最小化：REG2A(0x2A)=0、FRARL(0x2B)=0，即不插入任何 dummy 像素，把 PCLK 全部用于有效像素，获取最高帧率（ov2640.cpp:49）；
+寄存器组切换机制：OV2640 有 DSP 与传感器双寄存器组，通过 BANK_SEL(0xFF)=0x00/0x01 切换，所有配置表均以正确的 BANK_SEL 开头（ov2640_registers.h:169）。
+DMA 逐行采集与帧同步（camera_dma / camera2_dma）
+摄像头数据通路为"GPIO 并行口 → TrigMux → DMA → 共享内存"：
+数据源：8 位数据总线直接接 GPIO 端口输入寄存器，DMA 源地址指向 &GPIO_PRT13->IN（灰度）/ &GPIO_PRT18->IN（RGB），srcXincrement=0——每次传输都读同一个端口寄存器（camera_dma.cpp:61）。灰度通路以 CM7_1 侧实现为准（CM7_1 为 MT9V034 的实际驱动核心），RGB 通路在 CM7_0。
+触发方式：Cy_TrigMux_Connect 把 HSYNC 引脚路由到 DMA 通道触发输入（camera_dma.cpp:56），HSYNC 每来一个脉冲即启动一次行搬运。灰度通道用 LEVEL 触发、RGB 通道用 EDGE 触发（camera2_dma.cpp:60）。
+HSYNC 中断（每行一次，camera2_dma.cpp:22）：
+边界检查：row_offset + window_w ≤ sizeof(缓冲区) 不满足则直接关闭 DMA 通道，防止越界写共享内存；
+重设描述符目的地址为该行起始：share->c1_image + row×188（灰度，1 B/像素）或 share->c2_image + row×352（RGB565，2 B/像素）；
+DW_CH_IDX = 0 复位描述符索引 → Cy_DMA_Channel_Enable 使能通道开始搬运；
+SCB_CleanDCache_by_Addr 维护描述符与 D-Cache 一致性（Cortex-M7 带 D-Cache，DMA 访问的描述符需主动刷缓存，camera2_dma.cpp:36）。
+VSYNC 中断（每帧一次，camera2_dma.cpp:41）：
+行号清零，下一帧从头开始；
+帧就绪通知：RGB 通路 xSemaphoreGiveFromISR(image2_mutex) 唤醒图像处理任务（中断安全 API，无内存分配）；灰度通路仅做 fps 统计（任务按固定周期轮询，无需信号量）；
+fps 统计：以 1 s 窗口计数 VSYNC 次数，输出 fps/fps2 供调试。
+热变量优化：img_row、image_mutex、last_success_tick 等中断高频访问的变量显式放入 .cy_dtcm 段（DTCM 紧耦合内存，零等待，camera2_dma.cpp:15）。
+缓冲布局：灰度 120 行 × 188 B = 22560 B 与 c1_image[188][120] 精确匹配；RGB 144 行 × 352 B = 50688 B ≤ c2_image[220][231]（50820 B），由 hsync 边界检查兜底。
+整条链路全程无 CPU 逐像素拷贝：每行仅一次中断开销（约 120/144 次中断/帧），像素搬运全部由 DMA 完成，为 30fps 灰度 + 高速 RGB 采集留足了 CPU 余量。
+
+
+3. 软件设计
+本项目为一套四旋翼无人机 + 麦克纳姆轮小车空地协同系统。空中无人机负责主任务（定点悬停、视觉引导、航向自旋），地面小车在无人机 RGB 视觉引导下自主行驶，双机通过视觉与 CAN 总线协同完成目标任务。软件设计总体上我们使用C++编程语言进行编写，为了方便使用面向对象的方法进行编程，CYT4BB7使用cortex-m7性能足够强方便我使用C++的RAII功能和STL容器库。每个内核有不同的职责和工作。
+FreeRTOS任务分布
+由于我们移植使用FreeRTOS操作系统，针对不同的工作使用不同的优先级，充分利用CYT4BB7的性能
+系统 tick 频率 configTICK_RATE_HZ = 10000。
+
+姿态平衡算法设计
+    此过程的核心并不在于控制系统的设计，而是控制系统参数的调整。
+
+图表 13 位置式PID公式
+转速→电压→占空比：电调闭环按电压指令工作，先做转速—电压线性标定 V = (rpm − 1078) / 1609，再按当前电源电压补偿 duty = V / V_now × 100%，最终由 11 字节 UART 帧下发给电调。
+
+
+图表 14飞机姿态控制系统框图
+姿态反馈：states_.attitude = {pitch, roll, yaw} 由 INS 取角度并转弧度；陀螺原始值作为内环角速度反馈。安装偏置在代码中做固定补偿
+速度环（9ms 节流）：vx/vy 速度 PID 输出叠加到目标角度上，使速度环以角度前馈方式并入姿态环（串级外置）。速度环输出限幅 ±5°；
+角度外环：target_roll_rate = roll_pid(roll_meas, target_roll)；
+角速度内环（带前馈）：roll_out = roll_rate_pid(gyro_x, target_roll_rate)，前馈直接作用于设定值，加快响应；
+高度环：测距有效且非降落时，height_pid(高度, 目标高度) 输出垂直速度目标，再经垂直速度环 height_speed_pid 输出油门修正；测距失效时高度环清零，仅依赖惯性积分；
+偏航：直接由目标偏航角速度 yaw_rate_pid 控制（角度闭环 yaw_pid 为备用，当前未投入）。
+
+保护算法设计
+
+视觉算法设计
+视觉处理分布在两个核心：CM7_0 处理 RGB565 相机（V 形标记检测），CM7_1 处理灰度相机（小车光斑检测与导航）。
+视觉基础库
+项目移植了 OpenMV 的 imlib 图像处理库，提供：LAB 颜色阈值判定、imlib_find_blobs 连通域检测（含面积/像素/合并 margin/凸包角点 corners[]）、绘图（圆/线/字符串）等能力，是上层视觉算法的基础。帧缓冲区使用 fb_alloc 管理，任务内 fb_alloc_init0() / fb_free_all() 配对使用。
+灰度图像处理（image_handle）
+traveo_cm7_0/User/Algorithm/Image/image_handle.cpp 处理 MT9V034 灰度图（188×120）：
+亮度阈值 L ∈ [160, 255] 二值化（提取高亮目标）；
+imlib_find_blobs 全图 ROI 检测连通域（最小面积/像素 30）；
+以圆度 roundness > 0.6 筛选近似圆形光斑，统计数量供上层使用。
+CM7_1 侧同文件在阈值参数上更宽松（L ≥ 190，圆度 >0.1，面积 3），用于检测地面小车顶部的绿色 LED 光斑；检测到的光斑通过仿射变换（3.4 节）映射到 RGB 相机坐标系，与 CM7_0 检测的小车位置比对，选出距当前小车位置最近的光斑作为导航目标点，并计算目标相对角度：
+absolute_angle = atan2(dx, dy)          // 车头朝 y- 为 0°，顺时针为正
+car_dest_point.angle = absolute_angle − 小车当前航向
+RGB565 V 形标记检测（rgb565_handle）
+traveo_cm7_0/User/Algorithm/Image/rgb565_handle.cpp 处理 OV5640 RGB565 图（176×144），检测地面绿色 "V 形（>）"标记并输出顶点坐标与朝向角，是双机协同的核心视觉算法。
+阈值：LAB 空间绿色提取（rgb565_handle.cpp:30）：L∈[10,100], A∈[−128,5], B∈[−13,127]。A 通道负值为绿方向，AMax=5 收紧以滤除非纯绿干扰。阈值列表只初始化一次，后续帧复用避免重复分配。
+连通域合并：BLOB_MERGE_MARGIN=8 保证 V 形两臂断裂时仍合并为一个 blob。
+最大面积三角形（findBestTriangle，rgb565_handle.cpp:240）：从 blob 凸包角点中枚举所有三点组合，取面积最大且三点互距 ≥5 px 的组合作为候选顶点；约束最小三角形面积 20 px²。
+Apex 判定（detectVVertices，rgb565_handle.cpp:327）：对每个候选顶点，沿其到另两点的方向各采样 7 个点、统计 3×3 邻域内阈值命中数（sampleArmScore），取两条臂命中均值最大的顶点为 Apex，要求 junction score ≥0.35（保证 apex 处确实连通两臂）。
+顶点精炼（refineVertexByProjection，rgb565_handle.cpp:273）：以 rough 顶点的对边方向为投影轴，在 blob 包围盒内扫描阈值像素，取投影极值 ±2.5 px 带宽内的像素质心作为精化顶点，消除角点采样误差。
+几何校验：臂长比 ≥0.35、张角 ∈[25°, 155°]，防止错误三角形通过。
+朝向角：heading = atan2(apex_y − mid_y, apex_x − mid_x)（apex 相对两臂中点方向），归一化到 [−180°, 180°)，再按安装角度偏移 90° 后写入 car_point.heading（rgb565_handle.cpp:496）。
+有效性：检测成功后记录时间戳，超过 100 ms 未检测到则 car_valid=false（rgb565_handle.cpp:527），触发上层视觉失效保护。
+双摄像头坐标映射（camera_projection）
+两相机视场不同（Grey 188×120 / RGB 176×144），需将灰度相机检测的光斑坐标映射到 RGB 坐标系。采用仿射变换 + RANSAC 鲁棒拟合：
+rx = A·gx + B·gy + C        A=0.761073  B=0.057553  C=49.207273
+ry = D·gx + E·gy + F        D=0.050538  E=0.873877  F=−8.431366
+离线标定脚本 script/camera_projection.py：解析 test.log 中的同目标双相机坐标对 → RANSAC（2000 次迭代、3 px 内点阈值、3 点最小样本）剔除错配 → 内点集 OLS 最小二乘精炼 → 自动生成 camera_projection.h 头文件。运行时仅为 6 次乘加，开销可忽略。
+标记空间定位与悬停跟踪（model_tracker）
+traveo_cm7_0/User/Model/model_tracker.cpp 将 V 形标记的像素位置转换为相对飞机的水平位置，并输出姿态目标使飞机悬停在标记正上方：
+归一化像素偏差：offset = clamp((marker − target) / 半幅, −1, 1)，图像中心目标点 (88, 72)；
+视线角：θ_image = atan(offset · tan(FOV/2))，FOV=170°；
+姿态补偿：摄像头正朝下安装，标记视线角叠加机身姿态角得到标记相对机体的水平角：θ_marker = θ_image + 姿态角；
+高度投影：位置 = −h · tan(θ_marker)，将角度转为水平位移（米）；
+控制：横/纵方向各一个 PID（Kp=0.075，max_out=0.15），输出叠加为目标俯仰/横滚角。
+该模型实现"视觉 + 高度"的空间几何解算，无需地面标定，将 2D 像素检测升级为 3D 相对定位，是无人机悬停追踪的闭环核心。
+小车自主跟踪（app_tracker，CM7_1）
+traveo_cm7_1/User/Application/app_tracker.cpp 以 20 ms 周期执行地面小车导航：
+目标有效性：目标点 100 ms 内更新、坐标有限且小车视觉有效；
+到达判断：距离目标 ≤4 px 即停车；
+速度规划：speed = 5 × distance，钳位 [15, 50]；方向沿目标角（车头 y- 为 0°，顺时针为正）分解为 vx/vy；
+角速度控制：角度偏差 >6° 死区时 omega = 0.01 × angle，钳位 ±12；
+坐标系变换：小车速度指令变换到图像坐标系（heading 旋转）后，按增益（0.008 / −0.02）生成飞机前馈目标（vx/vy/yaw_rate），通过共享内存发布给 CM7_0，实现"小车追目标、飞机跟小车"的双机联动；
+失效保护：目标失联超 1 s 且小车视觉有效时，小车原地自旋（omega=10.5）重新搜寻目标。
+通讯设计
+traveo_cm7_0/User/Base/base_can.cpp（CM7_1 相同实现）实现"中断入队 + 单任务分发"的 CAN 通信架构：
+设计要点：
+中断零开销：中断内仅做数据拷贝 + 队列发送，不调用任何阻塞/分配 API，符合"中断中不分配内存"的项目规范；
+观察者模式：CanSubNode 抽象节点注册到单例 CanRootSwitch，各应用（DroneMiddleware、canReceiver 等）以继承方式订阅；分发线程持有互斥锁保护节点列表；
+强制复位通道：dest_id == 0xff 时任意帧触发 NVIC_SystemReset()，作为上位机的应急复位手段（base_can.cpp:161）；
+标准帧：Classic CAN 标准帧，DLC 上限 8 字节（base_can.cpp:119 钳位）。
+协议目录
+
+4. 调试过程
+开发调试工具
+CYT4BB7开发工具我们使用jetBrains家族的编辑器Clion，编译器使用arm-none-eabi-gcc，项目控制工具使用cmake，烧录程序使用英飞凌定制openocd进行烧写，由于CYT4BB7是ARM cortex内核的MCU，同样支持CMSIS标准，所以我们可以使用CMSIS-DAP进行烧写。为了保证项目的健康发展，我们使用GIT VCS版本控制工具，并将代码上传至gitee进行备份。
+
+图表 15 clion软件
+调试/图传 IPC 协议
+CM0 上运行 IPC 输出服务器（TARGET_drone/share/base_debug_output.c），CM7_0/CM7_1 通过队列将日志与图像帧汇聚到 CM0，由 CM0 统一串口输出，避免多核 printf 竞争。这样方便进行调试和debug
+帧协议：头部 28 字节小端格式——
+帧尾追加载荷 CRC16（2 字节），采用 CRC-16/CCITT-FALSE（多项式 0x1021，初值 0xFFFF，app_transmit_image.cpp:19）。
+图像压缩：灰度帧 188×120（22.5 KB）与 RGB 帧 176×144×2（49.6 KB）使用 LZ4（LZ4_compress_default）压缩，压缩率足够时置 LZ4 标志并发送压缩流，显著降低 10 fps 图传带宽占用；debugOutputWriteFrame 将"头部+载荷+CRC"三缓冲拼接为单帧发送，保证帧完整性。
+
+三．结论
+  在此份技术报告中，我们主要介绍了准备国赛包括机械、电路以及最重要的控制算法的思想。在电路方面，通过高标准的layout，电源模块、有刷电机控制板分别设计，经过不断实验，最后决定了最终的电路图。在程序方面，以 Traveo II 三核异构架构实现了无人机平衡控制、视觉引导、多通道通讯三大子系统，平衡控制上基于 AHRS 梯度下降姿态解算 + 串级 PID（角度→角速度）主环、速度环角度前馈、高度/速度惯性-测距互补融合的三层控制架构，配合完备的倾角/失联/重捕获保护，实现了稳定悬停与视觉引导飞行。视觉算法上基于 imlib 的 LAB 阈值 + 连通域分析实现 V 形标记与光斑检测，通过凸包三角形几何 + 投影精炼完成亚像素级顶点定位，经双摄仿射映射与高度投影实现空间定位，形成"地面小车目标跟踪 → 飞机悬停跟随"的闭环。通讯算法上CAN 中断入队 + 观察者分发架构承载飞行指令，奇偶序列号 + 内存屏障实现核间无锁原子发布，LZ4 + CRC16 + 三缓冲帧协议实现可靠图传便于进行调试，形成了覆盖"片上多核、板间 CAN、对外串口"的完整通讯方式。利用开发工具调试程序，图像算法经过不断地迭代，不断地测试，小组成员不断讨论、改进，终于设计出一套比较通用稳定的程序。
+
+附录一：部分源代码
+飞机姿态控制核心代码：
+DronePidModel::DronePidModel(INSPtr ins, const std::array<ZfBLDCSubMotor *, 4> &motors, HeightHandler *height,SpeedHandler *speed)
+    : roll_rate_pid(PID_POSITION, FF_DIRECT, {20.5f, 0.02f, 0.0f}, 0.315f, 2000.0f, 400.f),
+      pitch_rate_pid(PID_POSITION, FF_DIRECT, {20.5f, 0.02f, 0.0f}, 0.315f, 2000.0f, 400.f),
+      yaw_rate_pid(PID_POSITION, {60.f, 0.0f, 0.0f}, 1500.0f, 1.04f),
+      height_speed_pid(PID_POSITION, {3000.0f, 0.0f, 0.0f}, 2000.0f, 100.0f),
+      roll_pid(PID_POSITION, {400.1f, 0.0f, 0.f}, 70.7f, 20.8f),
+      pitch_pid(PID_POSITION, {400.1f, 0.0f, 0.f}, 70.7f, 20.8f),
+      vx_pid(PID_POSITION,FF_DIRECT, {0.0575f, 0.00f, 0.00f},0.0015f * kPi / 180.0f, kMaxVelocityTargetAngleRad, 1.f),
+      vy_pid(PID_POSITION,FF_DIRECT, {0.0575f, 0.00f, 0.00f}, 0.0015f * kPi / 180.0f,kMaxVelocityTargetAngleRad, 1.f),
+      yaw_pid(PID_POSITION, {30.18f, 0.0f, 0.0f}, 80.7f, 0.52f),
+      height_pid(PID_POSITION, {1.1f, 0.0f, 0.f}, 0.8f, 0.1f),
+      height_handler(height),
+      speed_handler(speed),
+
+      ins_(ins),
+      motors_(motors) {
+    const TickType_t now_tick = xTaskGetTickCount();
+    speed_update_tick_ = now_tick;
+    debug_tick_ = now_tick;
+}
+void DronePidModel::update(float dt) {
+    GyroList gyro{};
+    ins_->getGyro(gyro);
+    states_.attitude = {
+        degToRad(ins_->getPitch()),
+        degToRad(ins_->getRoll()),
+        degToRad(ins_->getYaw()),
+    };
+    states_.accel_mps2 = {
+        ins_->getXAccel(),
+        ins_->getYAccel(),
+        ins_->getZAccel(),
+    };
+    states_.gyro_dps = {
+        gyro[0],
+        gyro[1],
+        gyro[2],
+    };
+
+    const float control_dt = dt > 0.0f ? dt : kDefaultDt;
+    states_.attitude[1] += 0.038055f;
+    states_.attitude[0] += 0.034986f;
+    states_.height = height_handler->getHeight();
+
+    if (xTaskGetTickCount() - speed_update_tick_ > 80) {
+        last_vx_out_ = vx_pid.Calc(speed_handler->getXVelocity(), states_.target_vx,control_dt);
+        last_vy_out_ = vy_pid.Calc(speed_handler->getYVelocity(), states_.target_vy,control_dt);
+        speed_update_tick_ = xTaskGetTickCount();
+    }
+    states_.target_pitch +=last_vx_out_;
+    states_.target_roll  +=last_vy_out_;
+    const float yaw_error = normalizeRadian(states_.target_yaw - states_.attitude[2]);
+    (void)yaw_error;
+    states_.target_roll_rate = roll_pid.Calc(states_.attitude[1], states_.target_roll);
+    states_.target_pitch_rate = pitch_pid.Calc(states_.attitude[0], states_.target_pitch);
+    // const float yaw_rate_target = yaw_pid.Calc_error(yaw_error);
+    float height_speed_target = 0;
+    if (height_handler->isRangefinderValid() && !states_.landing) {
+        states_.accel_mps2[2] = height_handler->getVerticalVelocity();
+        height_speed_target = height_pid.Calc(states_.height, states_.target_height);
+    } else {
+        height_pid.clear();
+    }
+    float base_throttle = 10400.f;
+
+    if (states_.landing) {
+        share->landing_flag = true;
+        height_speed_target = -0.0f;
+        base_throttle = 10350.f;
+        if (states_.height < 0.11f) {
+            share->is_flight_flag = false;
+            stop();
+        }
+    }
+   // printf("%f\r\n",yaw_rate_target);
+    const float roll_out = roll_rate_pid.Calc(states_.gyro_dps[0],  states_.target_roll_rate, control_dt);
+    const float pitch_out = pitch_rate_pid.Calc(states_.gyro_dps[1], states_.target_pitch_rate, control_dt);
+    const float yaw_out = yaw_rate_pid.Calc(states_.gyro_dps[2], states_.target_yaw_rate);
+    float height_out = height_speed_pid.Calc(states_.accel_mps2[2], height_speed_target);
+
+    states_.rpm[0] = base_throttle + roll_out + pitch_out - yaw_out + height_out;
+    states_.rpm[1] = base_throttle - roll_out + pitch_out + yaw_out + height_out;
+    states_.rpm[2] = base_throttle - roll_out - pitch_out - yaw_out + height_out;
+    states_.rpm[3] = base_throttle + roll_out - pitch_out + yaw_out + height_out;
+
+
+    if (std::fabs(states_.attitude[0]) > kStopAngleRad || std::fabs(states_.attitude[1]) > kStopAngleRad) {
+        states_.stop = true;
+        share->comp_start = false;
+
+    }
+
+    if (states_.stop) {
+        share->comp_start = false;
+        share->is_flight_flag = false;
+        stopMotors();
+        resetController();
+    } else {
+        share->is_flight_flag = true;
+        for (std::size_t i = 0; i < motors_.size(); ++i) {
+            if (motors_[i] != nullptr && motors_[i]->isMotorReady()) {
+                motors_[i]->setRPM(states_.rpm[i], states_.supply_voltage);
+            }
+        }
+    }
+}
+
+
+===== TABLE 1 =====
+相机 | 传感器分辨率 | 输出图像 | 控制总线 | 驱动核心 | 用途
+MT9V034 | 752×480（感光 782×492） | 188×120 灰度 8bit，30fps | SCCB（16bit 寄存器寻址） | CM7_1 | 小车光斑检测
+OV2640 | 1600×1200（UXGA） | 176×144@15fps RGB565，DVP 8bit×2 | SCCB（8bit 寄存器寻址） | CM7_0 | V 形标记检测
+
+===== TABLE 2 =====
+信号 | OV2640（c1_*） | MT9V034（c2_*）
+SCCB 数据/时钟 | c1_sda / c1_scl（GPIO_PRT19） | c2_sda / c2_scl（GPIO_PRT19）
+HSYNC 行同步 | c1_hsync（GPIO_PRT14） | c2_hsync（GPIO_PRT12）
+VSYNC 帧同步 | c1_vsync（GPIO_PRT6） | c2_sync（GPIO_PRT10）
+8-bit 数据总线 | GPIO_PRT18->IN | GPIO_PRT13->IN
+DMA 通道 | c1_dma（PDMA0） | c2_dma（PDMA1）
+DMA 触发源 | TRIG_IN_MUX_0_HSIOM_IO_INPUT9 → PDMA0_TR_IN0（EDGE） | TRIG_IN_MUX_2_HSIOM_IO_INPUT19 → PDMA1_TR_IN0（LEVEL）
+
+===== TABLE 3 =====
+阶段 | 寄存器表 | 作用
+① | ov2640_init_regs | 传感器/DSP 基础配置（时钟分频、AEC、色彩矩阵、白平衡等）
+② | size_change_preamble_regs | 切 DSP 组、DVP 复位、使能 DCW/SDE/UV 调整/CMX，窗口置为 UXGA 全幅
+③ | qcif_regs | 输出 176×144：CTRLI 垂直/水平分频各 ÷2，ZMOW/ZMOH/ZMHH 设缩放窗口 176×144，R_DVP_SP=38 像素时钟分频，RESET=0 解除复位
+④ | format_change_preamble_regs | R_BYPASS=0，启用内部 DSP
+⑤ | rgb565_le_regs | IMAGE_MODE=`LBYTE_FIRST
+
+===== TABLE 4 =====
+内核 | 职责
+CM0+ | 启动引导、电源管理、IPC 调试输出服务器（日志与图传帧汇聚后统一串口输出）
+CM7_0 | 主飞控：姿态解算、串级 PID 平衡控制、高度/速度估计、电调驱动、双摄像头视觉处理、CAN 指令解析、外部控制器输入
+CM7_1 | 小车视觉导航：灰度相机光斑检测、小车目标点解算、小车运动控制、向 CM7_0 发布飞机前馈目标
+
+===== TABLE 5 =====
+任务 | 核心 | 优先级 | 周期 | 说明
+mainTask | CM7_0 | 84 | — | 系统初始化
+Fusion 姿态解算 | CM7_0 | 95 | ~4ms | AHRS 解算任务（最高优先级）
+droneLoop | CM7_0 | 80 | 10ms | 飞行状态机 + 控制目标更新
+CanRootSwitch.loop | CM7_0 | 80 | 事件驱动 | CAN 包分发
+HeightHandler | CM7_0 | 60 | 2ms | 高度估计融合
+SpeedHandler | CM7_0 | 58 | 8ms | 水平速度估计融合
+rgb565ImageTask | CM7_0 | 9 | 66ms | RGB V 形标记检测
+imageTransmit | CM7_0 | 9 | 100ms | LZ4 图传，默认不使用
+imageHandleTask | CM7_0 | 3 | 10ms | 灰度处理（备用）
+CarCan 小车指令 | CM7_1 | — | 10ms | 交替发送速度/角速度 CAN 帧
+CarTracker 小车跟踪 | CM7_1 | — | 20ms | 小车导航 + 前馈发布
+灰度检测任务 | CM7_1 | 9 | 33ms | 光斑检测与目标点解算
+
+===== TABLE 6 =====
+倾角保护 | |pitch| / |roll| > 30° | 立即停机并复位全部控制器
+降落完成 | 高度 < 0.11 m 且 landing | 自动停机
+停机联动 | stop 标志 | 电机停转、控制器清零、is_flight_flag=false
+最小目标高度 | 0.1 m | 指令低于该值被钳位
+
+===== TABLE 7 =====
+ID | 指令 | 载荷 | 说明
+0x01 | 飞行状态控制 | 4 字节标志位：[0]=start, [1]=take_off, [2]=stop, [3]=landing | 标志位不可逆，顺序 start→take_off→landing/stop
+0x02 | 方向控制 | float target_height + float target_yaw_rate | 目标高度（下限 0.1 m）与航向角速度
+0x03 | 水平速度控制 | float target_vx + float target_vy | 机体系水平速度目标
+0x04 | 小车速度控制 | float target_vx + float target_vy（packed） | CM7_1→小车，10 ms 周期
+0x05 | 小车角速度控制 | float omega（packed） | CM7_1→小车，与 0x04 交替发送
+0xff | 强制复位 | 任意 | 系统复位
+
+===== TABLE 8 =====
+偏移 | 长度 | 字段 | 说明
+0 | 4 | magic | 帧魔数 FRAME_MAGIC
+04 | 4 | frame_index | 帧序号
+8 | 2 | width / 10: height | 图像宽高（非图像帧为 0）
+12 | 4 | raw_size | 原始载荷长度
+16 | 4 | comp_size | 压缩后长度，0=未压缩
+20 | 1 | payload_type | IMAGE / STRING 等
+21 | 1 | image_format | GRAY8 / RGB565
+22 | 1 | channel | 逻辑通道
+23 | 1 | flags | FRAME_FLAG_LZ4 压缩标志
+24 | 2 | header_size | 头部长度（28）
+26 | 2 | header_crc16 | 覆盖 [0..25]

@@ -1,0 +1,1034 @@
+
+
+
+
+第 21 届全国大学生智能汽车竞赛
+技 术 报 告
+
+学  校：中北大学
+队 伍 名 称：破晓战队
+参 赛 队 员：宋晨曦 彭汉笙 闫晨阳
+带 队 教 师：耿精 寇国辉
+
+
+关于技术报告使用授权的说明
+本人已了解全国大学生智能汽车竞赛关于保留和使用技术报告及模型车资料的相关规定。参赛作品的著作权归参赛者本人，比赛组委会可在相关主页收录并公开参赛作品的设计方案、技术报告以及参赛模型车的视频、图像资料，并可将相关内容编辑收入组委会出版物。
+
+           参赛队员签名： 
+
+
+
+          
+            带队教师签名：
+
+
+
+日    期：2026年8月16日
+
+
+目  录
+第一章 引言
+1.1 项目背景
+智能车比赛本质上不是单独比某一个算法，而是看一辆车能不能在规则限制下稳定跑起来。对单车定向组来说，车体本身没有四轮车那样的横向支撑，机械安装、传感器固定、供电抗干扰和控制参数都会直接影响最后表现。因此，本报告重点记录我们这辆 N1 单车模从硬件搭建到纯惯导寻迹、平衡控制和调试复盘的实现过程。
+第 21 届单车定向组是室外操场赛道项目，车模需要在真实地面上完成直线、慢速八字和复杂路段等任务。规则限制车模不能靠负压、惯量机构或加宽轮胎来维持平衡，轮胎宽度也有限制。也就是说，车辆能不能站稳、能不能在转向时不倒，主要还是要靠舵机、电机和 IMU 控制闭环来解决。[1]
+根据规则说明，单车定向组比赛科目包括往返直线竞速、八字慢速运行、复杂路段通行。其中往返直线考察车辆加速、制动和定向保持能力，八字慢速科目考察低速平衡和连续转向控制能力，复杂路段则引入坡道、草地和锥桶绕桩等扰动。国赛阶段科目二采用平行线间距 10 cm 判定车模不可倒车穿越，并采用单调下降函数（所有车模该科目时间平均值 ÷ 队伍实际时间）计算比赛成绩；科目一（往返直线竞速）在国赛阶段取消，不参与国赛排名。
+1.2 任务描述与约束
+这辆车的目标很明确：不用 GPS，也尽量不依赖外部环境特征，让车在短时间、短距离动作段里自己保持平衡、按目标方向走、完成转弯和绕行。纯惯导会漂移，所以我们没有把它当成长时间绝对定位系统使用，而是把比赛动作拆成直线、转弯、绕桶、坡道、草地和停车等小段，每一段尽量缩短误差累积时间。
+表1.1 单车定向组规则约束与处理方式
+
+1.3 本文主要工作
+分析单车车模的机械结构特点，确定 IMU、主控板、电源模块、舵机和驱动机构的安装位置与连接关系。
+建立以 IMU 为核心的纯惯性导航流程，包括静止标定、姿态解算、航向估计、短时速度/位移推算和漂移抑制。
+设计横滚角平衡控制、速度控制和航向控制的分层闭环结构，使车模在动作段内优先保持姿态稳定，再完成运动目标。
+构建软件状态机与调试流程，记录传感器数据、控制输出和故障状态，为参数整定、实验复盘提供依据。
+第二章 车模总体方案设计
+2.1 设计目标与总体思路
+整车方案按单车定向组规则来做。车模采用 N1 单车模，前轮靠 BDS300 舵机转向，后轮由 BDS3620 无刷电机驱动。主控用 TC264 核心板，主要负责 IMU 读取、姿态解算、路径状态机、舵机输出和串口发送电机控制量。整体思路不是堆传感器，而是先把平衡和短距离寻迹做稳。
+系统上电以后先静止标定 IMU，然后进入等待启动状态。运行时主控周期读取 IMU660RA，更新横滚角、俯仰角和航向角，再根据当前任务段决定目标速度和目标方向。底层先保证车不倒，再执行速度和转向要求。这样调试时可以分层处理：先看 IMU 方向和舵机方向，再看平衡环，最后再打开导航和寻迹。
+2.2 车模平台与执行机构
+本项目使用的车模型号为 N 型单车模，即 N1 车模。该车模为单轨两轮结构，相比普通四轮车模没有天然横向支撑，低速行驶和转弯时更容易受到重心偏移、地面扰动和转向迟滞的影响。总体设计中，N1 车模承担机械承载和运动平台作用，车体安装空间主要分配给主控核心板、IMU、电池、电机驱动和调试显示模块。由于本项目采用纯惯导方案，IMU 的安装位置和固定方式直接影响姿态解算质量，后续机械章节将进一步说明传感器安装与减振处理。
+前轮转向执行机构采用 BDS300 舵机，负责按照控制器输出改变前轮转角。舵机不仅用于完成直线修正和定向转弯，也参与单车横滚平衡控制：当车体出现侧倾趋势时，控制器通过修正转向角改变车体运动方向，从而产生恢复姿态所需的横向动态效果。驱动电机采用 BDS3620，作为车模前进和速度调节的主要动力源。电机输出不只影响行驶速度，也影响单车稳定性；速度过低会使车体难以自稳，速度过高则会放大转弯侧倾风险，因此系统需要在速度环和姿态环之间进行协调。
+
+图2.1 N1 单车车模整体实物图
+2.3 控制核心与惯性测量
+主控芯片采用英飞凌 SAK-TC264D-40F200N BC，核心板为 TC264 智能车核心板。TC264 核心板承担传感器采集、姿态解算、状态机运行、舵机控制、电机控制和调试通信等任务。对于单车定向组而言，控制系统的实时性十分关键，因为横滚角变化较快，控制延迟会直接导致车体倾倒。主控程序中需要优先保证 IMU 采样和控制输出周期稳定，串口输出、液晶显示等调试功能应降频运行，避免影响底层闭环。
+惯性测量单元采用 IMU660RA。该器件在本系统中提供角速度和加速度信息，是纯惯导方案的核心状态来源。上电静止阶段，主控根据 IMU660RA 的输出估计陀螺仪零偏和加速度静态噪声；运行阶段，系统对角速度进行零偏补偿，对加速度进行滤波和重力分离，并结合姿态解算得到横滚角、俯仰角和航向变化。由于本文方案不使用 GPS 定位，航向和位移只能在短时间动作段内作为相对量使用，必须通过动作段重置、积分限幅和异常状态保护降低漂移影响。
+2.4 显示调试与供电方案
+人机交互与调试显示采用逐飞科技 2.0 英寸 IPS 全彩液晶屏，屏幕分辨率为 320×240，采用 SPI 串行通信，显示色深为 16 位 RGB565，驱动芯片型号为 ST7789。该屏幕主要用于现场调试和参数观察，可显示 IMU 原始数据、横滚角、航向角、状态机阶段、电机 PWM、舵机输出和故障标志等信息。正式比赛运行时，液晶屏不参与闭环控制，只作为调试和状态确认工具。[3]
+整车供电采用 3S 锂电池，容量为 1550mAh，放电倍率为 75C。电池同时为主控系统、舵机、电机驱动和显示模块提供能量。由于 BDS3620 电机和 BDS300 舵机在启动、急停和快速转向时可能产生较大的瞬态电流，供电设计需要注意动力回路和控制回路的布线、稳压与滤波。主控板和 IMU 供电应尽量保持稳定，避免电源跌落或地线噪声导致姿态数据异常。
+2.5 系统工作流程
+系统启动后首先进入静止标定状态，TC264 核心板读取 IMU660RA 的静态数据并计算陀螺零偏。标定完成后，车模进入待运行状态，液晶屏显示关键状态量和当前任务段。运行过程中，主控按照固定周期完成 IMU 数据读取、姿态解算、状态机更新和控制输出。状态机将比赛任务划分为直线、慢速八字、复杂路段和停车保护等动作段，每个动作段只在有限时间内使用惯性积分结果，以减少纯惯导漂移带来的误差累积。
+在底层控制中，横滚角平衡控制优先级最高，速度控制和航向控制在保证车体不倾倒的前提下执行。BDS300 舵机负责转向和平衡修正，BDS3620 电机负责提供合适的前进速度，TC264 主控根据 IMU660RA 输出实时修正控制量。若检测到横滚角超过安全阈值、IMU 数据异常、电池电压明显下降或动作段无法收敛，系统将进入保护状态，降低电机输出或停止运行，避免车模继续失稳。
+第三章 单车车模机械结构设计
+3.1 车体结构
+车模是典型的前轮转向、后轮驱动单轨结构。单车模最麻烦的地方不是能不能跑快，而是低速和转弯时容易倒。机械安装时我们优先保证 IMU 固定牢、车架不晃、电池和主板位置不要让重心偏得太离谱。后续调参时，如果车体本身松动，再好的 PID 参数也很难稳定。
+
+图3.1 单车车模俯视图
+
+图3.2 单车车模前视图
+
+图3.3 单车车模右视图
+
+图3.4 单车车模左视图
+3.2 IMU 安装与减振
+纯惯导方案对惯性传感器安装质量高度敏感。IMU 固定在靠近车体质心的位置，安装面保持水平，芯片坐标系与车体坐标系方向一致。安装时使用刚性底座保证姿态角响应不滞后，同时在底座与车体之间加入薄层减振材料，以降低电机振动和路面冲击带来的高频噪声。
+表3.1 IMU 安装检查项
+
+第四章 硬件系统设计
+4.1 硬件系统总体结构
+硬件系统由主控板、无刷 FOC 驱动板、磁编码器模块、IMU660RA 惯性测量单元、BDS300 舵机、BDS3620 电机、显示调试模块和锂电池供电系统组成。主控板负责传感器采集、姿态解算、状态机运行和控制指令生成；无刷 FOC 驱动板负责接收主控板给出的速度控制信号并驱动 BDS3620 电机；磁编码器模块用于获取电机或转子角度反馈；IMU660RA 用于获取车身姿态变化；BDS300 舵机执行前轮转向和平衡修正。各模块之间按照“状态测量-控制计算-串口传输-驱动执行-反馈修正”的闭环关系工作。
+本系统的接口关系中，主控板和无刷驱动板之间采用串口通信。主控板根据当前任务段、目标速度、横滚角状态和保护状态计算速度控制量，再通过串口向无刷 FOC 驱动板发送速度控制信号。无刷驱动板不直接承担上层导航决策，而是作为电机执行层，根据接收到的速度命令完成电机闭环驱动。这样可以把车模的姿态/任务控制与电机底层换相控制分离，便于调试，也便于在后续实验中单独修改速度控制策略。
+4.2 主控板与调试接口模块
+主控模块以 TC264 智能车核心板为控制核心，核心 MCU 按材料清单采用英飞凌 SAK-TC264D-40F200N BC。该芯片属于 Infineon AURIX TC26xD 系列，具有 32 位 TriCore 架构、较强的实时控制能力、丰富的 ADC/PWM/通信外设和车规级安全设计，适合作为智能车姿态解算、电机控制和多传感器融合的主控制器。本项目主控程序采用英飞凌 ADS（AURIX Development Studio）开发、编译和调试；由于使用的是成品 TC264 智能车核心板，报告中只说明核心板对外接口、供电和调试连接，不重复展开核心板内部完整电路。对于单车车模而言，主控板需要稳定运行高频 IMU 采样和横滚角闭环，因此控制周期和中断优先级设置比普通四轮车更关键。
+主控板原理图中包含核心 MCU、晶振时钟、电源输入、按键、指示灯、调试接口和外设连接引脚。晶振为主控提供稳定时钟源；SWD/SWCLK 等调试引脚用于程序下载和在线调试；UART_RX、UART_TX 等串口信号用于运行日志输出、参数整定以及与无刷 FOC 驱动板之间的速度命令传输。实际调试时，ADS 用于主控侧断点调试、编译下载和寄存器观察，串口日志输出应控制频率，避免大量打印影响控制周期。
+
+图4.1 主控板原理图
+
+图4.2 主控板实物图（正面）
+
+图4.3 主控板实物图（背面）
+4.3 无刷 FOC 驱动模块
+无刷 FOC 驱动板用于驱动 BDS3620 电机，是整车动力执行部分的核心。无刷驱动板硬件参考逐飞科技 CYT2BL3 无刷双驱方案自行设计制作，固件在 IAR Embedded Workbench 环境下开发，由逐飞开源 BLDC 驱动工程移植改造为 FOC 控制，主控板不直接参与底层换相和功率管驱动，而是通过串口发送目标速度或占空比控制量。驱动板根据自身 FOC 控制程序完成三相无刷电机驱动。该结构将上层姿态控制与底层电机换相解耦：TC264 主控侧更关注车体横滚角、航向和任务状态，FOC 驱动板侧更关注电机电流、换相、转速响应和功率器件保护。
+FOC 驱动板中重要的栅极驱动芯片为 FD6288。该芯片是三相半桥栅极驱动器，适用于驱动 MOSFET/IGBT，并带有欠压保护、直通防止和死区时间控制等功能。对于 BDS3620 电机驱动而言，FD6288 将控制信号转换为高低侧 MOS 栅极驱动信号，是连接控制逻辑和功率级的关键器件。
+
+图4.4 无刷 FOC 驱动板原理图
+
+图4.5 无刷 FOC 驱动板实物图（正面）
+
+图4.6 无刷 FOC 驱动板实物图（背面）
+4.4 MOS 功率级模块
+MOS 功率级承担电机相电流输出，是无刷驱动板中电流和发热最集中的部分。原理图中每相桥臂由高侧、低侧 MOS 管及其栅极电阻、续流/自举相关器件组成，三相桥共同驱动 BDS3620 电机。功率 MOS 管型号在图中标注为 TPN2R703NL，该器件为东芝 N 沟道功率 MOSFET，适用于低压大电流开关电源或电机驱动类场景。MOS 功率级设计时需要重点关注导通电阻、栅极驱动速度、散热路径和走线电流承载能力。
+单车车模在启动、急停和快速修正姿态时会出现较大的电流变化，因此 MOS 功率级不仅影响最高速度，也影响整车稳定性。若 MOS 管温升过高或驱动波形异常，可能导致电机响应变慢、速度控制抖动甚至驱动保护。后续调试中应记录电机启动、低速平衡和转弯阶段的电池电压、驱动板温升和串口速度命令响应。
+4.5 磁编码器反馈模块
+磁编码器模块用于获取转子或轴系角度信息，为电机控制和速度估计提供反馈。原理图中核心芯片为 Infineon TLE5012BE3005XUMA1。TLE5012B 是 360° 磁角度传感器，通过检测外部磁场方向输出角度信息，支持 SPI 兼容的同步串行通信接口，并适合用于电机位置反馈。对于 FOC 驱动而言，磁编码器可以提高电机低速运行和启动阶段的角度反馈可靠性。
+磁编码器与主控或驱动板之间通过 SCK、CS、MOSI、MISO 等 SPI 信号连接。原理图中在 SCK、CS、MOSI 等线上串联小阻值电阻，用于抑制高速数字信号边沿带来的振铃和干扰；芯片供电端配置 100nF 去耦电容，用于降低局部电源噪声。由于单车车模的电机和舵机动作会带来明显电磁干扰，磁编码器信号线应尽量短，并避免与电机相线平行长距离布线。
+
+图4.7 磁编码器原理图
+
+图4.8 磁编码器实物图（正面）
+
+图4.9 磁编码器实物图（背面）
+4.6 磁编码器降压与局部供电模块
+磁编码器模块的局部供电采用 5V 输入转 3.3V 输出的降压/稳压电路。图中稳压芯片标注为 RT9013-33GB-JSM，对应 RT9013 系列 3.3V LDO 稳压器。RT9013 属于低压差、低噪声 LDO，能够为磁编码器提供较稳定的 3.3V 电源。输入侧串联 1N5819WS 肖特基二极管，可起到一定的防反接或压降隔离作用；输入输出侧的 10uF、4.7uF 和 100nF 电容用于滤波和瞬态稳定。
+磁编码器供电稳定性直接影响角度反馈质量。如果 3.3V 电源纹波过大，SPI 通信可能出现偶发错误，角度数据也可能发生跳变。因此，磁编码器降压电路应靠近传感器放置，地线回路要短，传感器地与功率地连接应避免大电流回流路径穿过传感器区域。
+4.7 电源滤波与抗干扰设计
+整车采用 3S 1550mAh 75C 锂电池供电。电池需要同时支撑主控、舵机、无刷驱动板、显示屏和传感器模块，其中无刷电机和舵机是主要瞬态负载。为了降低电机换相、电流突变和线缆寄生参数对控制系统的影响，电源输入端配置了大容量并联滤波电容阵列。图中电源输入滤波网络由多只 22uF 电容并联组成，用于降低母线纹波、改善瞬态电流响应，并减小功率级对主控和传感器电源的干扰。
+抗干扰设计的基本思路是动力电流与信号电流分开处理。电机驱动和 MOS 功率级走线应尽量短而宽，主控、IMU、磁编码器和液晶屏等低压模块应通过稳压和局部去耦获得干净电源。主控板与无刷驱动板之间的串口线应与电机三相线分开走线，必要时降低串口线长度并增加可靠接地，以避免速度控制信号受到功率开关噪声干扰。
+
+
+第五章 纯惯性导航与寻迹算法设计
+5.1 导航数据来源与坐标约定
+当前工程不使用 GPS 做实时定位。代码里还有 GPS_X、GPS_Y 这类历史命名，但在这版方案里它们更像是目标路径点数组；车辆当前位置来自 INS_X、INS_Y，也就是根据航向角和速度反馈推出来的局部坐标。这样做的好处是实现简单、硬件依赖少，代价是时间一长会有漂移，所以任务段必须尽量短、切点要明确。
+坐标系在任务开始时建立，起点记为原点。运行中，QEKF_INS.Yaw 表示车体当前航向角，INS_X、INS_Y 表示车辆在该局部坐标系下的估计位置。由于没有外部绝对位置校正，系统更适合完成短时间、短距离的路径回放、绕桶和定点停车任务；调试时需要尽量缩短单次积分时间，并在任务开始前完成静止校准。
+5.2 IMU 姿态解算与零偏处理
+姿态部分由 IMU660RA 提供三轴角速度和三轴加速度。上电后，Attitude_Init() 会在车辆静止时连续采集 2000 次陀螺仪数据，在角速度总量低于阈值时累加并求平均，得到三轴零偏。运行阶段，Attitude_Calculate() 先读取加速度和角速度，完成单位换算和零偏扣除，再把很小的角速度量置零，减少静止附近的积分抖动。
+四元数 EKF 是姿态解算的核心。程序调用 IMU_QuaternionEKF_Update()，用陀螺仪完成姿态预测，用归一化后的加速度方向修正横滚角和俯仰角，并通过卡方检验判断当前加速度是否可信。需要注意的是，代码没有使用磁力计，也没有用 GPS 修正航向，Z 轴偏航角只能由陀螺仪积分获得，因此 Yaw 会存在慢漂移。报告中的导航方案也按这一限制设计：不追求长时间绝对定位，而是把航向用于短时动作段和路径跟随。
+5.3 速度反馈与惯导位置推算
+位置递推没有直接对加速度做二次积分，因为那样漂移会很快放大。实际代码用无刷驱动板返回的速度作为前进速度，再结合 QEKF_INS.Yaw 分解成xy 方向位移。主控收到速度帧后更新 motor_value.receive_left_speed_data，INS_Speed_Calc() 再把速度换算成 INS_X、INS_Y 的增量。
+代码中的速度换算关系为：speed = encoder_num / 790.0 * 8.85 * PI / ENCODER_TIME，其中 ENCODER_TIME 为 10 ms。随后按 speed_x = speed * cos(Yaw)、speed_y = speed * sin(Yaw) 分解速度，并通过 INS_X += speed_x * 0.01、INS_Y += speed_y * 0.01 完成位置递推。这种方法避免了加速度二次积分带来的快速发散，但仍会受到速度反馈误差、轮胎打滑和航向漂移影响，所以更适合作为比赛任务中的短时局部定位。
+
+图5.1 纯追踪算法跟踪八字路径仿真
+
+（公式 5-1）速度换算
+
+（公式 5-2）位置递推
+5.4 路径记录与回放机制
+绕桶部分采用先采样、再回放的办法。采样时车辆按固定距离踩点，保存 yaw_id 以及 X_read_Plus、Y_read_Plus。回放时不需要重新识别赛道，只需要按当前 INS 坐标和保存下来的轨迹点计算目标方向。这个方法比较朴素，但对纯惯导方案来说好调，也方便把问题定位到 IMU、速度反馈或者转向控制上。
+轨迹保存时，Write_IMU() 将 yaw_id 写入 Flash，Write_IMU_XY() 将 X_read_Plus、Y_read_Plus 分页保存；启动后 Flash_Init() 会读回参数、路径点和轨迹坐标。如果 X/Y 轨迹页无有效数据，Read_IMU_XY() 会根据 yaw_id 重新构建轨迹。这样即使不使用 GPS，也可以把一次人工采样或低速采样得到的路径转化为后续自动回放的参考线。
+5.5 逐点导航与航向误差计算
+逐点导航由 data_analysis_ins() 完成。程序使用 INS_X、INS_Y 与当前目标点 GPS_X[keypoint]、GPS_Y[keypoint] 计算两类量：一是车辆到目标点的距离，二是目标点相对车辆当前位置的方位角。随后 ServoGPS_Dispose() 计算 QEKF_INS.Yaw 与目标方位角的差值，并通过 angle_limiter() 把误差限制到 -180° 到 180°，得到后续转向环使用的 servo_pid_err。
+在 Car_control() 中，keypoint 是路径段状态机的核心变量。车辆接近目标点后，程序按照距离阈值切换到下一个点；科目一的切点阈值约为 2 m，科目三普通路径约为 1 m。虽然变量名称沿用了 GPS，但这里的“当前位置”来自 INS 推算，所以实际控制过程仍然不依赖 GPS。
+5.6 IMU 航向回放寻迹
+基础寻迹函数是 IMU_Go()。它不直接计算几何横向偏差，而是按路径点编号回放采样时的航向角：current_target 指向当前目标点，feedforward_lookahead 用来提前读取后方若干点的 yaw_id，得到前瞻目标航向。程序将当前 QEKF_INS.Yaw 与 yaw_id[lookahead_idx] 相减，并进行角度归一化，得到 delt_degree。
+点位推进由累计距离控制。IMU_Go() 将 Speed 与 Judge_distance 比较，Judge_distance 由 imu_point_step_cm 换算得到；当车辆行驶距离达到一个点距后，current_target 自增，Speed 扣除一个点距。这个方法结构简单，适合路线重复性较好的绕桶或短路径回放。它的缺点是对初始位置、轮速误差和航向漂移比较敏感，因此代码又保留了增强版纯追踪寻迹作为补充。
+5.7 增强版纯追踪与 Stanley 备用算法
+IMU_Pure_Pursuit_Control() 是目前更像样的一套几何寻迹。它先把 INS 坐标转到采样轨迹坐标系，再在轨迹点里找最近点，并用提前几个点的位置算目标航向。横向误差通过 atan() 做有限幅修正，曲率前馈用来让车辆进弯前提前打一点方向，避免只靠误差反馈时反应太慢。
+找到最近点后，算法不直接使用该点，而是取 closest + pure_calc_offset 作为提前计算点。这样车辆在进入弯道前就能提前修正方向。程序根据相邻路径点求切向角，计算车辆相对路径的横向误差 lateral_m，再用 atan(pure_k_lat * lateral_m / pure_speed_base) 形成横向修正量，并用 pure_correction_limit 把修正限制在较小范围内，避免舵机来回抖动。
+除横向误差反馈外，代码还根据前后三个路径点估算曲率，并用 atan(pure_wheelbase_m * curvature) 计算转向前馈，最后乘以 pure_ff_gain。目标航向由路径切向角、横向修正和曲率前馈三部分合成，输出量仍然写成 QEKF_INS.Yaw 与目标航向的误差，因此可以复用原来的转向 PID 链路。
+
+图5.2 纯惯导位置漂移仿真
+
+（公式 5-3）纯追踪横向误差修正
+
+（公式 5-4）曲率前馈
+
+（公式 5-5）Stanley 控制器转向角
+Stanley.c 中还实现了 Stanley 横向控制器。它会搜索全局路径最近点，计算路径航向误差和带符号横向误差，再按 steering = heading_error + atan(k * cte / speed) 得到舵机修正量。从 Car_control() 的调用关系看，当前主流程优先使用 IMU_Go() 或 IMU_Pure_Pursuit_Go()，Stanley 更适合作为后续对比测试或替换寻迹模块。
+第六章 自主平衡与运动控制
+6.1 控制任务分层
+整车运行主要由 Car_control() 串起来。上层根据 mode_change 选择直线、IMU 绕桶、复杂路段等模式；中间层计算目标速度、目标点和航向误差；底层再交给平衡环、速度环、转向环和串口电机驱动。实际调试时，我们也是按这个顺序排问题：先让车能站住，再让它能稳速，最后再让它沿轨迹走。
+控制量传递关系可以简单理解为：导航/寻迹给出方向误差，速度规划给出 PWM_TARGET，平衡控制根据横滚角和角速度不断修正舵机和电机输出。单车模里平衡优先级最高，如果平衡环没有压住，速度和寻迹再准确也没有意义。
+6.2 舵机转向控制
+舵机由 ATOM0_CH1_P33_9 输出 PWM，频率设置为 300 Hz。Servo_Control() 以 90° 为中位，将输入转向量叠加到舵机中位上，并限制在 30° 到 150° 范围内；Servo_Control_PWM() 则直接在 PWM 中值附近做增量输出，并限制在 2500 到 6500 的占空比范围内。
+转向误差来源随任务不同而变化。逐点导航时，servo_pid_err 来自当前航向与目标点方位角的差；IMU 绕桶时，delt_degree 来自 yaw 回放或纯追踪目标航向。这些误差不会直接大幅打舵，而是先经过 balance_turn_PID()。该转向环包含比例、积分和微分项，积分项有限幅，输出再限制在 ±10 左右，从而让单车在转向时保持可控的横向姿态变化。
+6.3 平衡环与速度环
+单车车模的稳定性主要依赖横滚角控制。代码中把平衡控制拆成角度环和角速度环：balance_angle_PID() 根据目标角度与实际角度误差输出控制量，balance_gyro_PID() 再根据角速度误差进行快速阻尼修正。角度环带有积分限幅，IMU 绕桶模式下输出限制在 ±2000，角速度环输出限制在 ±50，防止瞬时控制量过大。
+速度环采用增量式 PID。balance_velocity_PID() 计算目标速度与反馈速度的差值，把本次误差、上次误差和上上次误差组合成增量输出，并将最终输出限制在 ±8000。不同模式使用不同参数：IMU 绕桶模式速度环参数偏稳，点位导航模式会根据接近目标点或进入特殊路段调整 PWM_TARGET 和角度环 D 项，使车辆在直线段保持速度，在近点或复杂路径处降低动态冲击。
+
+图6.1 横滚角平衡 PD 控制阶跃响应仿真
+
+图6.2 速度环增量式 PID 阶跃响应仿真
+
+（公式 6-1）增量式 PID 输出增量
+
+（公式 6-2）理想速度（速度环目标）
+6.4 无刷驱动串口闭环
+主控板与无刷 FOC 驱动板通过 UART3 通信，波特率为 460800。small_driver_set_duty() 发送 7 字节控制帧：第 1 字节为 0xA5 帧头，第 2 字节为功能字 0x01，后 4 字节分别为左右电机占空比高低字节，最后 1 字节为前 6 字节和校验。虽然单车实际只有一个主驱动电机，代码仍沿用左右通道格式，便于复用驱动板协议。
+速度反馈通过 0x02 功能字获得。small_driver_get_speed() 启动速度回传后，驱动板默认周期发送速度数据；uart_control_callback() 在接收中断中完成帧头检查、长度判断和校验。解析出的 receive_left_speed_data 被 INS_Speed_Calc() 用作速度输入，因此串口通信的稳定性会直接影响里程积分和寻迹精度。
+6.5 绕桶路径与安全保护
+科目三中保留了 Task_Cone_Cos() 余弦绕锥函数。它把相邻锥桶点之间的中心线平滑改造成左右交替的余弦曲线，通过 CONE_LOOK_AHEAD 提前观察前方路径，通过 CONE_CROSS_DISTANCE 设置绕桶横向偏移，并根据车辆当前位置与目标曲线之间的横向误差生成反馈角。输出的 tracking_angle 同样会转换成当前航向相对目标航向的误差，交给后级转向控制。
+安全保护由 Path_Safety_Check() 实现。程序计算车辆到当前路径线段的最短距离，如果偏离超过 PATH_SAFE_DISTANCE 就置位 stop_flag；在绕锥段会额外叠加横向绕行距离，避免正常绕桶动作被误判为越界。除此之外，Car_control() 在目标点走完、IMU 轨迹回放结束或特殊段完成后也会主动停车。
+第七章 软件系统与调试流程
+7.1 软件总体流程
+软件结构比较直接：初始化阶段配置外设和参数，周期任务里更新 IMU、状态机和控制输出，中断回调负责串口接收、速度反馈等实时数据。TC264 主控工程用英飞凌 ADS 开发，无刷驱动板固件用 IAR 开发，两边通过 UART 帧传速度或占空比控制量。
+从代码分工看，Navigation.c 负责目标点距离和方位角计算，imu.c 负责 IMU 轨迹记录、回放和纯追踪，car_control.c 负责模式切换，balance.c 负责几个 PID 环，small_driver_uart_control.c 负责和无刷驱动板通信。调试时如果车不按预期走，可以沿着这个链路一层一层查。
+7.2 开发工具与工程分工
+本项目的软件开发分为主控工程和无刷驱动工程两部分。TC264 主控核心板采用英飞凌 ADS 开发，主要完成传感器采样、姿态解算、路径记录与回放、平衡控制和系统状态机；无刷电机驱动板采用 IAR 开发，主要完成 FOC 驱动、功率级控制和速度数据回传。两部分之间通过 UART3 传递 7 字节控制帧和速度反馈帧，接口清晰，便于分别调试。
+制作与安装阶段先完成车体结构固定、IMU 安装方向确认、主控板与驱动板固定、供电线和信号线整理，再进行程序下载和单模块测试。正式联调前，先在架空状态下验证舵机方向、电机转向、串口帧校验和速度反馈，再把车辆放地进行低速平衡、IMU 轨迹采样和路径回放测试。
+7.3 制作、安装与调试流程
+首先进行静态 IMU 检查：确认三轴方向、陀螺仪零偏和 QEKF_INS.Roll/Pitch/Yaw 的变化方向正确。若车体静止时 Yaw 漂移过快，应重新固定 IMU 或延长静止标定。
+然后架空测试无刷驱动串口：发送 0 占空比、正负小占空比和速度读取命令，确认 0xA5 帧头、和校验、速度回传和电机转向都正常。
+接着只调平衡环和速度环：先不启用寻迹，让车在低速下能稳定直行，并确认舵机转向不会把横滚误差放大。
+再进行 IMU 轨迹采样：以较低速度沿目标路线采样，检查 TT、imu_odom.point.imu_num、X_read_Plus/Y_read_Plus 是否随距离正常增加，并写入 Flash。
+最后启用回放寻迹：先用 IMU_Go() 验证航向回放，再打开 use_pure_pursuit 测试纯追踪。调参顺序建议为 pure_calc_offset、pure_k_lat、pure_correction_limit、pure_ff_gain，逐步提高贴线能力。
+7.4 关键调试量
+调试时应重点观察 current_target、delt_degree、cross_track_error、pure_locate_index、pure_target_index、INS_X、INS_Y、QEKF_INS.Yaw 和 motor_value.receive_left_speed_data。这些变量能够直接反映车辆是否找到了正确路径点、是否产生了合理的转向修正，以及速度反馈是否支持惯导位置递推。
+第八章 实验验证与结果分析
+8.1 实验设计
+实验验证按几个最容易暴露问题的项目来做：先看 IMU 静止零偏和姿态方向，再看架空状态下舵机、电机和串口反馈是否正常；接着低速调平衡环和速度环；最后再跑航向保持、定角转弯和完整动作段。每次实验都应保存关键变量日志，尤其是 INS_X、INS_Y、Yaw、Roll、current_target、delt_degree 和电机速度反馈。
+
+8.2 结果分析口径
+纯惯导系统不能只看某一次跑得好不好，更要看漂移边界和失败原因。若车辆出现低速倾倒、航向越跑越偏、绕桶切内侧或串口速度反馈异常，就要回到日志里看 IMU 零偏、速度换算、路径点推进和舵机输出是否一致。这个过程比单纯改 PID 更可靠。
+
+参考文献
+[1] 卓晴. 第二十一届全国大学生智能汽车竞赛比赛规则[EB/OL]. [2026-08-10]. https://blog.csdn.net/zhuoqingjoking97298/article/details/154598625.
+[2] 卓晴. 第十八届全国大学生智能汽车竞赛技术报告资料[EB/OL]. [2026-08-10]. https://blog.csdn.net/zhuoqingjoking97298/article/details/132534760.
+[3] 卓晴. 单车车模简析[EB/OL]. [2026-08-10]. https://mp.weixin.qq.com/s/L3UzIkJ3fxPY9S0g5Vwvow.
+[4] INFINEON TECHNOLOGIES AG. AURIX TC26xD data sheet[EB/OL]. [2026-08-10]. https://www.infineon.com/.
+[5] INFINEON TECHNOLOGIES AG. TLE5012B GMR-based angle sensor data sheet[EB/OL]. [2026-08-10]. https://www.infineon.com/.
+[6] SAKAI A. PythonRobotics: Python sample codes and textbook for robotics algorithms[EB/OL]. [2026-08-10]. https://github.com/AtsushiSakai/PythonRobotics.
+[7] BEAUREGARD B. Arduino PID Library[EB/OL]. [2026-08-10]. https://github.com/br3ttb/Arduino-PID-Library.
+
+
+
+
+
+
+
+
+
+
+
+
+附录 A 技术参数表
+表A-1 技术参数表
+
+附录 B 系统原理图
+本附录集中放置主要硬件原理图，便于和第四章的硬件说明对照。主控板完成传感器采集和控制决策，无刷 FOC 驱动板负责 BDS3620 电机执行，磁编码器和电源滤波电路用于提高速度反馈和供电稳定性。
+
+图B-1 主控板原理图
+
+图B-2 主控板实物图（正面）
+
+图B-3 主控板实物图（背面）
+
+图B-4 无刷 FOC 驱动板原理图
+
+图B-5 无刷 FOC 驱动板实物图（正面）
+
+图B-6 无刷 FOC 驱动板实物图（背面）
+
+图B-7 磁编码器原理图
+
+图B-8 磁编码器实物图（正面）
+
+图B-9 磁编码器实物图（背面)
+附录 C 核心代码
+以下代码摘自当前工程目录，覆盖姿态解算、惯导位置递推、路径点计算、IMU 回放、纯追踪、任务状态机、PID 控制和无刷驱动串口通信。菜单界面、普通显示和外设封装代码没有全文列入，主要是为了让附录聚焦在车辆跑起来所依赖的核心链路上。
+C.1 IMU 姿态标定与姿态解算
+源文件：IMU/Attitude.c
+void Attitude_Init()
+{
+    IMU_QuaternionEKF_Init(10, 0.001, 10000000, 0.9996, 0.001f,0); //ekf初始化
+    //===========================================================================================
+    for (int i = 0; i < 2000; ++i) { //0漂初始化
+//        imu660ra_get_gyro();
+        imu660ra_get_gyro();
+        //0漂初始化阈值判断
+        if(fabsf(gyroscope[0])+ fabsf(gyroscope[1])+ fabsf(gyroscope[2])<gyroscope_threshold) {
+            gyroscopeOffset[0] += imu660ra_gyro_transition(imu660ra_gyro_x)* 0.0174533f;
+            gyroscopeOffset[1] += imu660ra_gyro_transition(imu660ra_gyro_y)* 0.0174533f;
+            gyroscopeOffset[2] += imu660ra_gyro_transition(imu660ra_gyro_z)* 0.0174533f;
+        }
+        else
+        {
+            i--;   //超过阈值了再取一次
+        }
+        system_delay_ms(1);  //按照自己的采样率来取值 demo是1000Hz即1ms中断
+    }
+    gyroscopeOffset[0]/=2000;
+    gyroscopeOffset[1]/=2000;
+    gyroscopeOffset[2]/=2000;
+    //=============================================================================================
+    gyro_offset_done_flag = 1;
+}
+void Attitude_Calculate()
+{
+    // replace this with actual gyroscope data in degrees/s
+    imu660ra_get_acc();
+    imu660ra_get_gyro();
+    //imu963ra_get_mag();
+    //要进行角度切换 具体角度单位请看下面的注释
+    gyroscope[0]= imu660ra_gyro_transition(imu660ra_gyro_x)* 0.0174533f;
+    gyroscope[1]= imu660ra_gyro_transition(imu660ra_gyro_y)* 0.0174533f;
+    gyroscope[2]= imu660ra_gyro_transition(imu660ra_gyro_z)* 0.0174533f;
+    accelerometer[0]=imu660ra_acc_transition(imu660ra_acc_x);
+    accelerometer[1]=imu660ra_acc_transition(imu660ra_acc_y);
+    accelerometer[2]=imu660ra_acc_transition(imu660ra_acc_z);
+    //=================================================================
+    //减去零飘 如果前面零漂去了 这里记得注释
+    gyroscope[0]-= gyroscopeOffset[0];
+    gyroscope[1]-= gyroscopeOffset[1];
+    gyroscope[2]-= gyroscopeOffset[2];
+    //作弊 cheat_define 是阈值 小于多少值就置零，你也可以把下面三句话注释了
+    //===============================================================================
+    if(fabsf(gyroscope[0])<cheat_define) gyroscope[0]=0;
+    if(fabsf(gyroscope[1])<cheat_define) gyroscope[1]=0;
+    if(fabsf(gyroscope[2])<cheat_define) gyroscope[2]=0;
+    //===================================================================================
+    //gpio_set_level(P20_0,1); 我拿来测运算时间的
+//===================================================================================================
+    IMU_QuaternionEKF_Update(gyroscope[0],gyroscope[1],gyroscope[2],accelerometer[0],accelerometer[1],accelerometer[2]);
+//    printf("%f,%f,%f\n",  QEKF_INS.Roll,QEKF_INS.Gyro[0],QEKF_INS.Gyro[2]);
+   // gpio_set_level(P20_0,0);
+    //姿态解算 后三位为磁力计，一般不用就行 填0
+}
+C.2 速度反馈惯导位置递推
+源文件：GPS_INS.c
+//编码器测速的惯性导航
+void INS_Speed_Calc(INS_SPEED *ins)
+{
+    ins->speed = speed_param(-motor_value.receive_left_speed_data);
+    ins->speed_x = ins->speed * cosf(ANGLE_TO_RAD(QEKF_INS.Yaw));
+    ins->speed_y = ins->speed * sinf(ANGLE_TO_RAD(QEKF_INS.Yaw));
+    INS_X += ins->speed_x * ENCODER_TIME / 1000;
+    INS_Y += ins->speed_y * ENCODER_TIME / 1000;
+}
+C.3 逐点导航距离与方位角计算
+源文件：Navigation.c
+double angle_limiter(double angle)
+{
+    double delat;
+    delat = angle;
+    if(delat > 180) delat -= 360;
+    else if(delat < -180) delat += 360;
+    else delat = angle;
+    return delat;
+}
+void data_analysis_ins(void)
+{
+   if((Usedata_GPS_IMU.keypoint >= 0) && (Usedata_GPS_IMU.keypoint <= Usedata_GPS_IMU.GPS_Num))
+    {
+       Usedata_GPS_IMU.dis_now_next_point = sqrtf(powf(INS_X-GPS_X[Usedata_GPS_IMU.keypoint],2) + powf(INS_Y-GPS_Y[Usedata_GPS_IMU.keypoint],2));             //与下一个目标点距离
+       if(Usedata_GPS_IMU.keypoint>1) Usedata_GPS_IMU.dis_now_point = sqrtf(powf(INS_X-GPS_X[Usedata_GPS_IMU.keypoint-1],2) + powf(INS_Y-GPS_Y[Usedata_GPS_IMU.keypoint-1],2));    //与当前点距离
+       Usedata_GPS_IMU.azimuth_err_now_next_point = RAD_TO_ANGLE(atan2f(GPS_Y[Usedata_GPS_IMU.keypoint] - INS_Y , GPS_X[Usedata_GPS_IMU.keypoint] - INS_X));  //现在点和目标点的方位角
+    }
+}
+C.4 IMU 轨迹参数与纯追踪辅助函数
+源文件：imu.c
+#include "imu.h"
+ImuOdom imu_odom;
+int current_target;      // current_target当前目标索引，用于define_target的点索引
+float delt_degree=0, delt_dis=0 , Judge_distance=134.0f ;//控制变量，约等于5cm内部累计量
+float imu_point_step_cm = 4.0f;         // 科目二踩点距离，单位 cm，5表示现实5cm
+float deltaT=0.05;//时间差，用于速度计算
+int feedforward_lookahead = 0;  // 前馈控制：提前4-5个点位计算误差
+// 全局参考轨迹（控制回路使用）
+float traj_global_x[IMU_MAX_POINTS];
+float traj_global_y[IMU_MAX_POINTS];
+int traj_global_num = 0;
+float X_read_Plus[IMU_MAX_POINTS];      // 直接坐标路径X，单位 m
+float Y_read_Plus[IMU_MAX_POINTS];      // 直接坐标路径Y，单位 m
+uint8 pure_origin_ready = 0;            // 纯追踪坐标原点是否已锁定
+// 横向误差控制
+float cross_track_error = 0;
+float K_CTE =- 0.0001f;  // 横向误差增益(deg/cm)，可在线调整
+float INS_X_origin = 0, INS_Y_origin = 0;
+// 纯追踪控制变量（备用模块，不接管原有 IMU_Go 逻辑）
+uint8 use_pure_pursuit = 0;          // 纯追踪启用开关：0=原IMU_Go，1=纯追踪
+int pure_locate_index = 0;            // 纯追踪最近路径点索引
+int pure_target_index = 0;            // 纯追踪前瞻目标点索引
+float pure_lookahead = 4.0f;          // 保留变量，当前核心纯追踪未直接使用
+float pure_path_step = 4.0f;          // 路径点平均间距，当前核心纯追踪未直接使用
+float pure_max_index_step = 15.0f;    // 需要注意：最近点索引单次最大跳变，太小跟踪滞后，太大可能跳点
+float pure_vehicle_x = 0.0f;          // 车辆在科目二轨迹坐标系下的 X 坐标
+float pure_vehicle_y = 0.0f;          // 车辆在科目二轨迹坐标系下的 Y 坐标
+float pure_target_x = 0.0f;           // 当前前瞻目标点 X 坐标
+float pure_target_y = 0.0f;           // 当前前瞻目标点 Y 坐标
+float pure_output_angle = 0.0f;       // 纯追踪输出角度，单位 deg
+float pure_filter_k = 0.35f;          // 保留调参变量，当前增强版纯追踪不使用输出滤波
+int pure_calc_offset = 2;             // 需要注意：路径提前计算点数，越大越提前，太大弯道可能切内侧
+float pure_k_lat = 0.1f;             // 需要注意：横向误差修正增益，越大越贴线，过大容易抖动
+float pure_speed_base = 0.2f;         // 需要注意：横向修正分母，越小修正越强，低速可适当小
+float pure_correction_limit = 2.0f;  // 需要注意：横向修正限幅，单位 deg，限制横向误差最多给多少角度
+float pure_wheelbase_m = 0.205f;     // 需要注意：车辆轴距，单位 m，应填实际轴距，一般不当调参量
+float pure_ff_gain = 0.18f;          // 需要注意：曲率前馈强度，越大弯道转向越积极，过大容易内切
+// 踩点距离 cm 转原Speed内部累计量
+static float IMU_Point_Cm_To_SpeedValue(float distance_cm)
+{
+    return distance_cm * 790.0f / (8.85f * 3.1415926535898f);
+}
+// 构建全局参考轨迹（从yaw_id重建XY坐标）
+void build_global_trajectory(void)
+{
+// 踩点距离 cm 转原Speed内部累计量
+static float IMU_Point_Cm_To_SpeedValue(float distance_cm)
+{
+    return distance_cm * 790.0f / (8.85f * 3.1415926535898f);
+}
+// 构建全局参考轨迹（从yaw_id重建XY坐标）
+void build_global_trajectory(void)
+{
+    int i;
+    float point_step_m = imu_point_step_cm / 100.0f;
+    int num = imu_odom.point.imu_num;
+    if (num < 1 || num > IMU_MAX_POINTS) return;
+    traj_global_x[0] = 0.0f;
+    traj_global_y[0] = 0.0f;
+    for (i = 1; i < num; i++)
+    {
+        float yaw_rad = imu_odom.yaw_id[i] * 3.1415926535898f / 180.0f;
+        traj_global_x[i] = traj_global_x[i-1] - sinf(yaw_rad) * point_step_m;
+        traj_global_y[i] = traj_global_y[i-1] + cosf(yaw_rad) * point_step_m;
+    }
+    traj_global_num = num;
+    // 记录回放起始位置（INS坐标系原点，用于车辆坐标变换）
+    INS_X_origin = INS_X;
+    INS_Y_origin = INS_Y;
+}
+// 角度归一化：把角度限制到 [-180, 180]，避免跨 0/360 时跳变
+static float IMU_Pure_Angle_Limit(float angle)
+{
+    while(angle > 180.0f) angle -= 360.0f;
+    while(angle < -180.0f) angle += 360.0f;
+    return angle;
+}
+// 限幅函数：把 value 限制在 [min, max] 范围内
+static float IMU_Pure_Limit(float value, float min, float max)
+{
+    if(value > max) return max;
+    if(value < min) return min;
+    return value;
+}
+// 路径点索引限幅
+static int IMU_Pure_Index_Limit(int index, int total_points)
+{
+    if(index < 0) return 0;
+    if(index >= total_points) return total_points - 1;
+    return index;
+}
+// 寻找最近路径点：前后 30 点窗口搜索
+static int IMU_Pure_Find_Closest(float x, float y, int total_points)
+{
+    int i;
+    int start;
+    int end;
+    int closest;
+    float min_dist_sq;
+    start = pure_locate_index - 30;
+    end = pure_locate_index + 30;
+    if(start < 0) start = 0;
+    if(end >= total_points) end = total_points - 1;
+    closest = start;
+    min_dist_sq = 1000000.0f;
+    for(i = start; i <= end; i++)
+    {
+        float dist_sq = IMU_Pure_Distance_Sq(x, y, X_read_Plus[i], Y_read_Plus[i]);
+        if(dist_sq < min_dist_sq)
+        {
+            min_dist_sq = dist_sq;
+            closest = i;
+        }
+    }
+    return closest;
+}
+// 计算路径切向角
+static float IMU_Pure_Path_Tangent(int idx, int total_points)
+{
+    int prev;
+    int next;
+    float dx;
+    float dy;
+    float theta_math;
+    float theta_cw;
+    idx = IMU_Pure_Index_Limit(idx, total_points);
+    prev = (idx > 0) ? idx - 1 : idx;
+    next = (idx < total_points - 1) ? idx + 1 : idx;
+    if(prev == next) return 0.0f;
+    dx = X_read_Plus[next] - X_read_Plus[prev];
+    dy = Y_read_Plus[next] - Y_read_Plus[prev];
+    theta_math = atan2f(dy, dx);
+    theta_cw = 3.1415926535898f / 2.0f - theta_math;
+    if(theta_cw > 3.1415926535898f) theta_cw -= 2.0f * 3.1415926535898f;
+    if(theta_cw < -3.1415926535898f) theta_cw += 2.0f * 3.1415926535898f;
+    return theta_cw;
+}
+// 计算横向误差，单位 m
+static float IMU_Pure_Cross_Error(int idx, int total_points)
+{
+    float dx;
+    float dy;
+    float theta_path;
+    idx = IMU_Pure_Index_Limit(idx, total_points);
+    dx = X_read_Plus[idx] - pure_vehicle_x;
+    dy = Y_read_Plus[idx] - pure_vehicle_y;
+    theta_path = IMU_Pure_Path_Tangent(idx, total_points);
+    return dx * cosf(theta_path) - dy * sinf(theta_path);
+}
+// 计算路径曲率
+static float IMU_Pure_Path_Curvature(int idx, int total_points)
+{
+    float x1, y1, x2, y2, x3, y3;
+    float ax, ay, bx, by, cx, cy;
+    float area;
+    float a, b, c;
+    float radius;
+    float cross;
+    float sign;
+    if(idx <= 0 || idx >= total_points - 1) return 0.0f;
+    x1 = X_read_Plus[idx - 1];
+    y1 = Y_read_Plus[idx - 1];
+    x2 = X_read_Plus[idx];
+    y2 = Y_read_Plus[idx];
+    x3 = X_read_Plus[idx + 1];
+    y3 = Y_read_Plus[idx + 1];
+    ax = x2 - x1;
+    ay = y2 - y1;
+    bx = x3 - x2;
+    by = y3 - y2;
+    cx = x3 - x1;
+    cy = y3 - y1;
+    area = 0.5f * fabsf((x3 - x1) * (y3 - y2) - (y3 - y1) * (x3 - x2));
+    if(area < 1e-6f) return 0.0f;
+    a = sqrtf(bx * bx + by * by);
+    b = sqrtf(cx * cx + cy * cy);
+    c = sqrtf(ax * ax + ay * ay);
+    radius = (a * b * c) / (2.0f * area);
+    cross = ax * by - ay * bx;
+    sign = (cross < 0.0f) ? 1.0f : -1.0f;
+    return sign / radius;
+}
+C.5 IMU 回放寻迹与增强版纯追踪
+源文件：imu.c
+// 重置纯追踪内部状态：需要启用纯追踪跑车前手动调用
+void IMU_Pure_Pursuit_Reset(void)
+{
+    pure_locate_index = 0;
+    pure_target_index = 0;
+    pure_output_angle = 0.0f;
+    pure_vehicle_x = 0.0f;
+    pure_vehicle_y = 0.0f;
+    pure_target_x = 0.0f;
+    pure_target_y = 0.0f;
+    pure_origin_ready = 0;
+}
+// 纯追踪核心函数：使用横向修正 + 曲率前馈
+float IMU_Pure_Pursuit_Control(void)
+{
+    int total_points;
+    int raw_closest;
+    int delta_index;
+    int closest;
+    int calc_index;
+    float path_yaw_rad;
+    float path_yaw_deg;
+    float lateral_m;
+    float correction_rad;
+    float correction_deg;
+    float curvature;
+    float feedforward_rad;
+    float feedforward_deg;
+    float desired_yaw;
+    total_points = imu_odom.point.imu_num;
+    if(total_points < 3) return 0.0f;
+    if(pure_origin_ready == 0)
+    {
+        INS_X_origin = INS_X;
+        INS_Y_origin = INS_Y;
+        pure_origin_ready = 1;
+    }
+    // 把 INS 坐标转换到原科目二轨迹坐标系，单位 m
+    pure_vehicle_x = -(INS_Y - INS_Y_origin);
+    pure_vehicle_y =  (INS_X - INS_X_origin);
+    // 1. 稳定最近点索引，限制单次索引跳变
+    raw_closest = IMU_Pure_Find_Closest(pure_vehicle_x, pure_vehicle_y, total_points);
+    delta_index = raw_closest - pure_locate_index;
+    delta_index = (int)IMU_Pure_Limit((float)delta_index, -pure_max_index_step, pure_max_index_step);
+    closest = pure_locate_index + delta_index;
+    closest = IMU_Pure_Index_Limit(closest, total_points);
+    pure_locate_index = closest;
+    // 使用最近点前方的点计算切向、横向误差和曲率
+    calc_index = IMU_Pure_Index_Limit(closest + pure_calc_offset, total_points);
+    pure_target_index = calc_index;
+    pure_target_x = X_read_Plus[pure_target_index];
+    pure_target_y = Y_read_Plus[pure_target_index];
+    // 2. 路径切向角
+    path_yaw_rad = IMU_Pure_Path_Tangent(calc_index, total_points);
+    path_yaw_deg = path_yaw_rad * 57.29578f;
+    // 3. 横向误差修正
+    lateral_m = IMU_Pure_Cross_Error(calc_index, total_points);
+    cross_track_error = lateral_m * 100.0f;
+    correction_rad = atanf(pure_k_lat * lateral_m / pure_speed_base);
+    correction_deg = correction_rad * 57.29578f;
+    correction_deg = IMU_Pure_Limit(correction_deg, -pure_correction_limit, pure_correction_limit);
+    // 4. 曲率前馈
+    curvature = IMU_Pure_Path_Curvature(calc_index, total_points);
+    feedforward_rad = atanf(pure_wheelbase_m * curvature);
+    feedforward_deg = pure_ff_gain * feedforward_rad * 57.29578f;
+    // 5. 合成增强版目标航向，再转换成原转向 PID 需要的航向误差
+    desired_yaw = path_yaw_deg + correction_deg + feedforward_deg;
+    desired_yaw = IMU_Pure_Angle_Limit(desired_yaw);
+    pure_output_angle = IMU_Pure_Angle_Limit(QEKF_INS.Yaw - desired_yaw);
+    current_target = closest;
+    if(closest >= total_points - 2)
+    {
+        current_target = total_points;
+    }
+    return pure_output_angle;
+}
+// 纯追踪包装函数：把纯追踪输出写入 delt_degree，便于复用原转向 PID 链路
+void IMU_Pure_Pursuit_Go(void)
+{
+    delt_degree = IMU_Pure_Pursuit_Control();
+    delt_dis = Speed;
+}
+void IMU_Go(void)
+{
+    int lookahead_idx;
+//    int total_points = imu_odom.point.imu_num;
+//    static int last_num = 0;
+//
+//    // 轨迹点数变化时重建全局轨迹
+//    if (total_points != last_num)
+//    {
+//        build_global_trajectory();
+//        last_num = total_points;
+//    }
+//
+//    /* 前馈计算：提前4-5个点位往前看 */
+    lookahead_idx = current_target + feedforward_lookahead;
+//    if (lookahead_idx >= total_points)
+//        lookahead_idx = total_points - 1;
+//
+   delt_degree= QEKF_INS.Yaw - imu_odom.yaw_id[lookahead_idx] ;
+    if(delt_degree>180)  delt_degree= delt_degree-360;
+    else if(delt_degree<-180)  delt_degree=delt_degree+360;
+//
+////    // 计算横向误差（前馈点CTE，单位cm，正=偏右，负=偏左）
+//    if (traj_global_num > 0 && lookahead_idx < traj_global_num)
+//    {
+//        float veh_x, veh_y, dx, dy;
+//        float yaw_rad = imu_odom.yaw_id[lookahead_idx] * 3.1415926535898f / 180.0f;
+//
+//        // 车辆INS位置转换到轨迹坐标系
+//        veh_x = -(INS_Y - INS_Y_origin);
+//        veh_y =  (INS_X - INS_X_origin);
+//
+//        // 到前馈点的向量
+//        dx = veh_x - traj_global_x[lookahead_idx];
+//        dy = veh_y - traj_global_y[lookahead_idx];
+//
+//        // 右向法向量投影得CTE，乘100转为厘米
+//        cross_track_error = 100.0f * (dx * cosf(yaw_rad) + dy * sinf(yaw_rad));
+//    }
+    delt_dis=Speed;
+    Judge_distance = IMU_Point_Cm_To_SpeedValue(imu_point_step_cm);
+    if(delt_dis>=Judge_distance)//距离巡航判断，imu_point_step_cm单位为现实cm
+      {
+         current_target++;
+         Speed-= Judge_distance;
+      }
+}
+void IMU_GetPoint(void)
+{
+    float point_step_value = IMU_Point_Cm_To_SpeedValue(imu_point_step_cm);
+    if(TT<1023 && mode_change==2 )
+    {
+        if(imu_odom.point.sign==1)
+        {
+            if(Speed >= point_step_value)
+            {
+                if(TT == 0)
+                {
+                    INS_X_origin = INS_X;
+                    INS_Y_origin = INS_Y;
+                    X_read_Plus[TT] = 0.0f;
+                    Y_read_Plus[TT] = 0.0f;
+                }
+                else
+                {
+                    X_read_Plus[TT] = -(INS_Y - INS_Y_origin);
+                    Y_read_Plus[TT] =  (INS_X - INS_X_origin);
+                }
+                imu_odom.yaw_id[TT]= QEKF_INS.Yaw;
+                TT++;
+                imu_odom.point.imu_num=(int16)TT;
+                Speed-=point_step_value;
+            }
+        }
+    }
+    if(TT_actual<1023 && mode_change==2 && Go_flag==1 && stop_flag!=1)
+    {
+        if(imu_odom.point.sign==0)
+        {
+            if(Speed_actual >= point_step_value)
+            {
+                imu_odom.yaw_id_actual[TT_actual]= QEKF_INS.Yaw;
+                TT_actual++;
+                imu_odom.point.imu_num_actual=TT_actual+1;
+                Speed_actual-=point_step_value;
+            }
+        }
+    }
+}
+C.6 任务状态机与模式切换
+源文件：car_control.c
+void Car_control()
+{
+    if(mode_change==1)   //科目一：GPS逐点导航
+      {
+        data_analysis_ins();    //计算当前点到目标点距离和方位角
+        ServoGPS_Dispose();//GPS角度处理
+        if(Usedata_GPS_IMU.keypoint<3)
+          {
+               if(Usedata_GPS_IMU.dis_now_next_point <=2 && Usedata_GPS_IMU.dis_now_next_point>0 && Usedata_GPS_IMU.keypoint!=3)   Usedata_GPS_IMU.keypoint++;
+               if(Usedata_GPS_IMU.keypoint>=2 && Usedata_GPS_IMU.dis_now_point<4)//
+                {
+                   PWM_TARGET=car_speed.Speed_Medium;
+                   balance_angle_pid.kd = 0.8*car_pid.Angle_D;
+                }
+               else
+               {
+                   PWM_TARGET=car_speed.Speed_Quick;
+                   balance_angle_pid.kd = car_pid.Angle_D;
+                }
+           }
+         if(Usedata_GPS_IMU.keypoint==3)   stop_flag=1;
+      }
+    if(mode_change==2 )   //科目二：绕桶（IMU里程计模式）
+     {
+        PWM_TARGET=car_speed.Speed_imu;
+       if(imu_odom.point.sign==0)
+         {
+           if(current_target<imu_odom.point.imu_num)
+           {
+              if(use_pure_pursuit == 1)  IMU_Pure_Pursuit_Go();
+              else                       IMU_Go();
+           }
+           else if(imu_odom.point.imu_num>0 && current_target==imu_odom.point.imu_num)  stop_flag=1;
+          }
+      }
+    if(mode_change==3)   //科目三：GPS逐点导航
+    {
+        if(Usedata_GPS_IMU.keypoint<Usedata_GPS_IMU.GPS_Num)
+        {
+            data_analysis_ins();    //计算当前点到目标点距离和方位角
+            if( !(Usedata_GPS_IMU.keypoint>=Usedata_GPS_IMU.S_start  && Usedata_GPS_IMU.keypoint < Usedata_GPS_IMU.S_over))
+            {
+                if(Usedata_GPS_IMU.dis_now_next_point <=1 && Usedata_GPS_IMU.dis_now_next_point>0 && Usedata_GPS_IMU.keypoint!=Usedata_GPS_IMU.GPS_Num)   Usedata_GPS_IMU.keypoint++;
+            }
+            if(Usedata_GPS_IMU.keypoint==2 && Usedata_GPS_IMU.dis_now_point<4)//
+            {
+                ServoGPS_Dispose();//GPS角度处理
+                PWM_TARGET=car_speed.Speed_Medium;
+                balance_angle_pid.kd = 0.9*car_pid.Angle_D_3th;
+            }
+            else if(Usedata_GPS_IMU.keypoint >= Usedata_GPS_IMU.S_start && S_finish_flag==0)
+            {
+                servo_pid_err = Task_Cone_Cos(INS_X, INS_Y);
+                PWM_TARGET=car_speed.Speed_Medium;
+                balance_angle_pid.kd = 0.9*car_pid.Angle_D_3th;
+            }
+            else
+            {
+                ServoGPS_Dispose();//GPS角度处理
+                PWM_TARGET=car_speed.Speed_Quick;
+                balance_angle_pid.kd = car_pid.Angle_D_3th;
+            }
+        }
+        if(Usedata_GPS_IMU.keypoint==Usedata_GPS_IMU.GPS_Num)  stop_flag = 1;
+    }
+    if((mode_change == 1 || mode_change == 3) && stop_flag != 1)
+    {
+        Path_Safety_Check(INS_X, INS_Y);
+    }
+}
+C.7 余弦绕桶轨迹与安全保护
+源文件：car_control.c
+                servo_pid_err = Task_Cone_Cos(INS_X, INS_Y);
+                PWM_TARGET=car_speed.Speed_Medium;
+                balance_angle_pid.kd = 0.9*car_pid.Angle_D_3th;
+            }
+            else
+            {
+static float Point_To_Segment_Distance(float px, float py,
+                                      float x0, float y0,
+                                      float x1, float y1)
+{
+    float dx = x1 - x0;
+    float dy = y1 - y0;
+    float len_sq = dx * dx + dy * dy;
+    if(len_sq < 0.0001f)
+    {
+        float ex = px - x0;
+        float ey = py - y0;
+        return sqrtf(ex * ex + ey * ey);
+    }
+    float t = ((px - x0) * dx + (py - y0) * dy) / len_sq;
+    if(t < 0.0f) t = 0.0f;
+    if(t > 1.0f) t = 1.0f;
+    float proj_x = x0 + t * dx;
+    float proj_y = y0 + t * dy;
+    float ex = px - proj_x;
+    float ey = py - proj_y;
+    return sqrtf(ex * ex + ey * ey);
+}
+static void Path_Safety_Check(float x, float y);
+void car_control_init(void)
+{
+    pwm_init(ATOM0_CH1_P33_9,SERVO_MOTOR_FREQ,(uint32)SERVO_MOTOR_DUTY(SERVO_MOTOR_MID));//舵机初始化
+    small_driver_uart_init();       //小驱串口通讯初始化
+    gpio_init(P33_11,GPI,1,GPI_PULL_UP);
+    gpio_init(P33_5,GPI,1,GPI_PULL_UP);//按键初始化
+}
+C.8 平衡、转向、速度控制 PID
+源文件：balance.c
+-------------------------------------------------------------------------------------------------------------------*/
+float balance_velocity_PID(float encoder,float target)
+{
+    static float out = 0;
+    balance_velocity_pid.error = target - encoder;
+    balance_velocity_pid.i_integral += balance_velocity_pid.error;
+    out+= balance_velocity_pid.kp*(balance_velocity_pid.error - balance_velocity_pid.last_error)
+               + balance_velocity_pid.ki*balance_velocity_pid.error +
+               balance_velocity_pid.kd*(balance_velocity_pid.error -
+                       2*balance_velocity_pid.last_error + balance_velocity_pid.next_error);
+    balance_velocity_pid.next_error = balance_velocity_pid.last_error;
+    balance_velocity_pid.last_error = balance_velocity_pid.error;
+    if (out>8000)
+        out = 8000;
+    else if (out<-8000)
+        out = -8000;
+    return out;
+}
+-------------------------------------------------------------------------------------------------------------------*/
+float balance_turn_PID(float encoder,float target)
+{
+    float out = 0;
+    float JOKER = 0;
+    balance_turn_pid.error = target - encoder ;
+    balance_turn_pid.i_integral += balance_turn_pid.error;
+    if(balance_turn_pid.i_integral <-10*car_pid.Turn_I_imu)        balance_turn_pid.i_integral= -10*car_pid.Turn_I_imu; //限幅
+    else if(balance_turn_pid.i_integral > 10*car_pid.Turn_I_imu)   balance_turn_pid.i_integral= 10*car_pid.Turn_I_imu ; //限幅
+    if (mode_change==2||mode_change==1)
+        JOKER =  (QEKF_INS.Gyro[2]);
+    else if(mode_change==3)
+        JOKER = (balance_turn_pid.error- balance_turn_pid.last_error);
+    out =  balance_turn_pid.kp * balance_turn_pid.error + balance_turn_pid.ki*balance_turn_pid.i_integral+balance_turn_pid.kd*JOKER;
+    balance_turn_pid.last_error = balance_turn_pid.error;
+    if(mode_change!=2)
+    {
+        if (out > 10)
+        out = 10;
+        else if (out < -10)
+        out = -10;
+    }
+    else if(mode_change==2)
+    {
+        if (out > 10)
+        out = 10;
+        else if (out < -10)
+        out = -10;
+    }
+    return out;
+}
+-------------------------------------------------------------------------------------------------------------------*/
+float balance_angle_PID(float encoder,float target)
+{
+    float out = 0;
+    float DOG = 0;
+    balance_angle_pid.error = target - encoder ;
+    balance_angle_pid.i_integral += balance_angle_pid.error;
+    if(balance_angle_pid.i_integral <-balance_angle_integral)        balance_angle_pid.i_integral= -balance_angle_integral; //限幅
+    else if(balance_angle_pid.i_integral > balance_angle_integral)   balance_angle_pid.i_integral= balance_angle_integral ; //限幅
+    if (mode_change==3||mode_change==1)
+        DOG =  (QEKF_INS.Gyro[0]);
+    else if(mode_change==2)
+        DOG = (balance_angle_pid.error- balance_angle_pid.last_error);
+    out =  balance_angle_pid.kp * balance_angle_pid.error + balance_angle_pid.ki*balance_angle_pid.i_integral+balance_angle_pid.kd*DOG;
+    balance_angle_pid.last_error = balance_angle_pid.error;
+    if(mode_change==2)
+    {
+    if (out > 2000)
+        out = 2000;
+    else if (out<-2000)
+        out = -2000;
+    }
+    return out;
+}
+-------------------------------------------------------------------------------------------------------------------*/
+float balance_gyro_PID(float encoder,float target)
+{
+    float out = 0;
+    if(mode_change==1)  balance_gyro_pid.kp = car_pid.Angle_V_P-fabsf(0.00005f*(-(float)motor_value.receive_left_speed_data));
+    else if(mode_change==3) balance_gyro_pid.kp = car_pid.Angle_V_P_3th - fabsf(0.00005f*(-(float)motor_value.receive_left_speed_data));
+    balance_gyro_pid.error = target - encoder;
+    balance_gyro_pid.i_integral += balance_gyro_pid.error;
+    out = balance_gyro_pid.kp * balance_gyro_pid.error + balance_gyro_pid.ki*balance_gyro_pid.i_integral+balance_gyro_pid.kd * (balance_gyro_pid.error - balance_gyro_pid.last_error);
+    balance_gyro_pid.last_error = balance_gyro_pid.error;
+    if (out > 50)
+        out = 50;
+    else if (out<-50)
+        out = -50;
+  return out;
+}
+C.9 无刷驱动 UART 通信
+源文件：small_driver_uart_control.c
+//-------------------------------------------------------------------------------------------------------------------
+// 函数简介     无刷驱动 串口接收回调函数
+// 参数说明     void
+// 返回参数     void
+// 使用示例     uart_control_callback(1000, -1000);
+// 备注信息     用于解析接收到的速度数据  该函数需要在对应的串口接收中断中调用
+//-------------------------------------------------------------------------------------------------------------------
+void uart_control_callback(void)
+{
+    uint8 receive_data;                                                                     // 定义临时变量
+    if(uart_query_byte(SMALL_DRIVER_UART, &receive_data))                                   // 接收串口数据
+    {
+        if(receive_data == 0xA5 && motor_value.receive_data_buffer[0] != 0xA5)              // 判断是否收到帧头 并且 当前接收内容中是否正确包含帧头
+        {
+            motor_value.receive_data_count = 0;                                             // 未收到帧头或者未正确包含帧头则重新接收
+        }
+        motor_value.receive_data_buffer[motor_value.receive_data_count ++] = receive_data;  // 保存串口数据
+        if(motor_value.receive_data_count >= 7)                                             // 判断是否接收到指定数量的数据
+        {
+            if(motor_value.receive_data_buffer[0] == 0xA5)                                  // 判断帧头是否正确
+            {
+                motor_value.sum_check_data = 0;                                             // 清除校验位数据
+                for(int i = 0; i < 6; i ++)
+                {
+                    motor_value.sum_check_data += motor_value.receive_data_buffer[i];       // 重新计算校验位
+                }
+                if(motor_value.sum_check_data == motor_value.receive_data_buffer[6])        // 校验数据准确性
+                {
+                    if(motor_value.receive_data_buffer[1] == 0x02)                          // 判断是否正确接收到 速度输出 功能字
+                    {
+                        motor_value.receive_left_speed_data  = (((int)motor_value.receive_data_buffer[2] << 8) | (int)motor_value.receive_data_buffer[3]);  // 拟合左侧电机转速数据
+                        motor_value.receive_right_speed_data = (((int)motor_value.receive_data_buffer[4] << 8) | (int)motor_value.receive_data_buffer[5]);  // 拟合右侧电机转速数据
+                    }
+                    motor_value.receive_data_count = 0;                                     // 清除缓冲区计数值
+                    memset(motor_value.receive_data_buffer, 0, 7);                          // 清除缓冲区数据
+                }
+                else
+                {
+                    motor_value.receive_data_count = 0;                                     // 清除缓冲区计数值
+                    memset(motor_value.receive_data_buffer, 0, 7);                          // 清除缓冲区数据
+                }
+            }
+            else
+            {
+                motor_value.receive_data_count = 0;                                         // 清除缓冲区计数值
+                memset(motor_value.receive_data_buffer, 0, 7);                              // 清除缓冲区数据
+            }
+        }
+    }
+}
+//-------------------------------------------------------------------------------------------------------------------
+// 函数简介     无刷驱动 设置电机占空比
+// 参数说明     left_duty       左侧电机占空比  范围 -10000 ~ 10000  负数为反转
+// 参数说明     right_duty      右侧电机占空比  范围 -10000 ~ 10000  负数为反转
+// 返回参数     void
+// 使用示例     small_driver_set_duty(1000, -1000);
+// 备注信息
+//-------------------------------------------------------------------------------------------------------------------
+void small_driver_set_duty(int16 left_duty, int16 right_duty)
+{
+    motor_value.send_data_buffer[0] = 0xA5;                                         // 配置帧头
+    motor_value.send_data_buffer[1] = 0X01;                                         // 配置功能字
+    motor_value.send_data_buffer[2] = (uint8)((left_duty & 0xFF00) >> 8);           // 拆分 左侧占空比 的高八位
+    motor_value.send_data_buffer[3] = (uint8)(left_duty & 0x00FF);                  // 拆分 左侧占空比 的低八位
+    motor_value.send_data_buffer[4] = (uint8)((right_duty & 0xFF00) >> 8);          // 拆分 右侧占空比 的高八位
+    motor_value.send_data_buffer[5] = (uint8)(right_duty & 0x00FF);                 // 拆分 右侧占空比 的低八位
+    motor_value.send_data_buffer[6] = 0;                                            // 和校验清除
+    for(int i = 0; i < 6; i ++)
+    {
+        motor_value.send_data_buffer[6] += motor_value.send_data_buffer[i];         // 计算校验位
+    }
+    uart_write_buffer(SMALL_DRIVER_UART, motor_value.send_data_buffer, 7);                     // 发送设置占空比的 字节包 数据
+}
+//-------------------------------------------------------------------------------------------------------------------
+// 函数简介     无刷驱动 获取速度信息
+// 参数说明     void
+// 返回参数     void
+// 使用示例     small_driver_get_speed();
+// 备注信息     仅需发送一次 驱动将周期发出速度信息(默认10ms)
+//-------------------------------------------------------------------------------------------------------------------
+void small_driver_get_speed(void)
+{
+    motor_value.send_data_buffer[0] = 0xA5;                                         // 配置帧头
+    motor_value.send_data_buffer[1] = 0X02;                                         // 配置功能字
+    motor_value.send_data_buffer[2] = 0x00;                                         // 数据位清空
+    motor_value.send_data_buffer[3] = 0x00;                                         // 数据位清空
+    motor_value.send_data_buffer[4] = 0x00;                                         // 数据位清空
+    motor_value.send_data_buffer[5] = 0x00;                                         // 数据位清空
+    motor_value.send_data_buffer[6] = 0xA7;                                         // 配置校验位
+    uart_write_buffer(SMALL_DRIVER_UART, motor_value.send_data_buffer, 7);                     // 发送获取转速数据的 字节包 数据
+}
+//-------------------------------------------------------------------------------------------------------------------
+// 函数简介     无刷驱动 串口通讯初始化
+// 参数说明     void
+// 返回参数     void
+// 使用示例     small_driver_uart_init();
+// 备注信息
+//-------------------------------------------------------------------------------------------------------------------
+void small_driver_uart_init(void)
+{
+    uart_init(SMALL_DRIVER_UART, SMALL_DRIVER_BAUDRATE, SMALL_DRIVER_RX, SMALL_DRIVER_TX);      // 串口初始化
+    uart_rx_interrupt(SMALL_DRIVER_UART, 1);                                                    // 使能串口接收中断
+    small_driver_init();                                                                        // 结构体参数初始化
+    small_driver_set_duty(0, 0);                                                                // 设置0占空比
+    small_driver_get_speed();                                                                   // 获取实时速度数据
+}
+
+===== TABLE 1 =====
+约束项 | 本文采用的处理方式
+不使用 GPS | 规则允许 GPS，但本方案定位环节不使用 GPS；报告中不使用经纬度、卫星数量、RTK 差分等作为控制依据，航向和位移估计来自 IMU 与动作段约束。
+单车结构易倾倒 | 采用横滚角闭环、角速度阻尼和速度限制，优先保证姿态稳定，再进行导航动作。
+惯导存在累积漂移 | 将纯惯导定位限定在短时、分段任务中使用；每个动作段开始前进行静止校准，结束后根据任务状态重置积分。
+现场环境不可控 | 室外操场赛道包含坡道、草地和绕桩等扰动，通过 IMU 固定、减振、电源滤波和异常状态机降低振动、冲击和电压波动对估计结果的影响。
+
+===== TABLE 2 =====
+检查项 | 要求 | 不满足时的后果
+坐标方向 | X/Y/Z 轴与车体前向、左向、上向对应关系明确 | 姿态解算符号错误，控制方向反向
+安装刚度 | IMU 与车体相对位移尽量小 | 横滚角估计滞后，平衡控制发散
+减振处理 | 抑制电机和地面冲击的高频振动 | 加速度积分噪声增大，航迹推算漂移加剧
+线缆固定 | 避免线缆拉扯 IMU 或接插件松动 | 运行中数据突变或掉线
+
+===== TABLE 3 =====
+项目 | 参数
+车模型号 | N1 单车模
+车模总质量 | 0.71 kg（含车模本体、电池、主板、无刷驱动板、磁编码器模块、舵机、屏幕、传感器及附件）
+车模尺寸（长×宽×高） | 297 mm × 130 mm × 570 mm（N1 单车模车把展开状态）
+主控芯片 | 英飞凌 SAK-TC264D-40F200N BC（AURIX TC264D/TC26xD 系列 32 位 TriCore 控制器）
+驱动电机 | BDS3620 无刷电机（堵转电流 12 A、空载 0.4 A、KV=500）
+转向舵机 | BDS300 舵机（用于前轮转向和平衡修正）
+附加伺服电机数量 | 0（除车模原驱动电机与转向舵机外未加装额外伺服电机）
+惯性测量单元 | IMU660RA ×1（六轴 IMU）
+磁编码器 | Infineon TLE5012BE3005XUMA1 ×1（360°磁角度传感器，用于 FOC 驱动板）
+传感器种类及个数 | IMU660RA 1 个；TLE5012B 磁编码器 1 个；BDS3620 电机内置霍尔 1 套；闭环控制不使用摄像头、GPS、电磁传感器
+电池类型与容量 | 3S 锂电池，容量 1550 mAh，放电倍率 75 C
+电路功耗（静态 / 带载运行） | 静态约 4 W / 带载典型运行约 40 W（11.1 V × 3.7 A；峰值电流 ≤ 12 A）
+所有电容总容量 | 电源输入端 22 μF ×6 + 局部 10 μF / 4.7 μF / 100 nF 多颗；电解+薄膜总容量约 350 μF
+赛道信息检测精度 | 科目二轨迹按 IMU/里程计踩点回放，默认路径点间距 4 cm；横向误差按实车日志统计
+赛道信息检测频率 | 姿态 EKF 按 1 ms 周期（1 kHz）；电机速度/编码器更新按 10 ms 周期；轨迹点采样按行驶距离触发（非固定视觉帧率）

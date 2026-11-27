@@ -1,0 +1,502 @@
+
+第二十一届全国大学生
+智能汽车竞赛
+
+技 术 报 告
+                 
+
+学    校：郑州轻工业大学
+队伍名称：华丽转身五队
+参赛队员：徐召阳 刘翔宇 窦文硕
+带队教师：焦玉召  周林涛
+
+
+关于技术报告和研究论文使用授权的说明
+
+
+本人完全了解全国大学生智能汽车竞赛关保留、使用技术报告和研究论文的规定，即：参赛作品著作权归参赛者本人，比赛组委会可以在相关主页上收录并公开参赛作品的设计方案、技术报告以及参赛模型车的视频、图像资料，并将相关内容编纂收录在组委会出版论文集中。
+
+
+
+
+
+
+参赛队员签名：			      
+带队教师签名：			      
+    日       期：2026年8月17日 
+
+
+
+
+
+
+摘要
+
+本文以第二十一届全国大学生智能汽车竞赛单车定向组竞赛任务为研究背景，基于逐飞 N1 演示单车模完成整套软硬件系统设计与优化分析。本届单车定向组取消动量轮辅助平衡，整车仅依靠 BDS300 舵机实现车身平衡与路径转向，主控采用赛事指定英飞凌 TC264 单片机。整车系统融合九轴 IMU 姿态解算、磁编码器速度采集、TAU1201 双频 GPS 定位、陀螺仪惯导融合导航四大核心模块；控制层面采用三环串级 PID 架构实现车身自平衡，通过修改角度环目标值完成路径转向，搭配增量式速度闭环抵消电池电压波动、弥补低速离心力不足问题。赛道分为直线往返、2 米半径八字绕桩、坡道草地综合三个科目，无科目四；长直道采用 GPS + 陀螺仪融合定位，小场地绕桩采用纯惯导方案提升稳定性。本文从机械改装、硬件电路、软件算法、整机调试全维度拆解逐飞 N1 单车模优化方案，对比多套平衡、导航控制方案，完成实车场地验证，可为本组别参赛队伍提供完整开发参考。 
+
+关键词：单车定向组；英飞凌 TC264；逐飞 N1 车模；串级 PID 自平衡；GPS 惯导融合；舵机平衡控制
+目  录
+第一章 引言	1
+第二章 整体方案系统设计	2
+2.1 单车定向组整车系统总体架构	2
+第三章 逐飞 N1 单车模机械结构改装与优化	4
+3.1 原厂 N1 单车模基础结构建模	4
+3.2 整车重心与配重优化调校	5
+3.3 BDS300平衡舵机安装与零点校准	5
+3.4 磁编码器固定支架改装	6
+3.5 GPS、IMU 陀螺仪布局抗遮挡设计	6
+3.6 防撞架结构设计	6
+第四章 整车硬件电路设计与优化	8
+4.1 全外设参数与功能选型表	8
+4.2 CYT2BL3 无刷双驱电路方案分析	9
+4.3 英飞凌 TC264 最小系统电路设计	10
+4.4 多级隔离稳压电源系统设计	12
+4.5 PCB的设计、制作、焊接与测试	13
+4.6 硬件电路整体设计小结	13
+第五章 整车软件控制程序设计	15
+5.1 姿态解算与串级 PID 平衡控制	15
+5.2 单车专属转向控制算法	16
+5.3 增量式速度闭环控制设计	17
+5.4 GPS 与惯导融合路径规划	17
+第六章 开发工具、整机组装与分阶段调试	19
+6.1 全套软件开发与硬件测试工具	19
+第七章 逐飞 N1 单车模整机技术参数	20
+结论	22
+参考文献	I
+附录A：程序源代码	II
+附录B：电路原理图	VIII
+主要符号表
+
+第一章 引言
+全国大学生智能汽车竞赛秉持 “立足培养、重在参与、鼓励探索、追求卓越” 办赛宗旨，第二十一届单车定向组为室外自主导航组别，相比往届最大改动为彻底取消动量轮，仅依靠前轮舵机调节产生离心力维持车身直立平衡，大幅提升平衡控制难度。竞赛赛道仅设置三大科目：科目一直线往返竞速、科目二 2 米半径锥桶八字低速绕桩、科目三坡道 + 草地 + 锥桶综合赛道，取消国赛科目四电磁门任务，全部科目考核单车高速、低速两种工况下平衡与定向导航能力[1]。
+本队选用逐飞原厂 N1 单车模作为基础载体，严格遵循赛事硬件限制：主控仅允许使用英飞凌 TC 系列单片机，参赛主板、无刷驱动板必须自主绘制 PCB，禁止直接使用成品拓展板。整车开发分为机械、硬件、软件三大模块：机械层面针对原厂重心偏高、后轮霍尔磁编码器精度不足问题加装外置磁编码器、下移电池降低倾覆力矩；硬件层面选用 CYT2BL3 开源无刷驱动适配后轮无刷电机，设计 3.3V/5V / 动力三级隔离电源抑制电机 PWM 电磁干扰，避免 GPS 定位漂移；软件层面核心搭建三环串级 PID 平衡框架，区分高速直道、低速绕桩两套控制逻辑，长赛道采用 GPS+IMU 融合导航，小场地八字绕桩切换纯惯导模式消除卫星遮挡带来的定位跳变[2]。
+队伍由三名队员组成，依托校内智能车实验室完成多轮场地实车迭代调试，针对原厂车模高速转向倾倒、低速剧烈抖动、GPS 信号干扰三大痛点完成全套优化方案，完整梳理单车定向组从机械改装到算法调参标准化开发流程，报告全部内容基于逐飞科技官方演示车模技术文档与赛道规则撰写，可作为同组别参赛通用设计参考[1][3]。
+第二章 整体方案系统设计
+2.1 单车定向组整车系统总体架构
+整车以英飞凌 TC264 单片机为核心运算单元，分层分为感知采集层、姿态解算层、导航规划层、PID 控制层、动力执行层五大模块，系统硬件拓扑结构如下：
+
+图2.1 整车硬件系统拓扑结构图
+逐飞演示车模定向系统工作流程：
+感知采集层：IMU963RA 九轴陀螺仪实时采集车身倾斜角速度、翻滚角度；磁编码器采集后轮实时转速；TAU1201 双频 GPS 输出经纬度坐标；2 寸 IPS 液晶、按键、无线串口作为人机调试外设。
+姿态解算层：单片机读取陀螺仪原始数据，采用一阶低通滤波降噪，通过四元数算法解算车身实时俯仰、翻滚姿态角，为串级 PID 平衡环提供误差输入。
+导航规划层：预采集赛道所有目标点位存储数组，长直道融合 GPS 坐标与陀螺仪航向角计算车身偏差；科目二小场地关闭 GPS，依靠磁编码器里程 + IMU 航向实现纯惯性导航。
+PID 控制层：分为三环平衡串级 PID、路径转向 PD、增量速度 PID 三部分，输出舵机 PWM 信号与后轮电机调速指令。
+动力执行层：TC264 通过串口向自主设计 CYT2BL3 无刷驱动板发送占空比指令，由驱动板内部完成 FOC / 换相，驱动后轮 BDS3620 无刷电机实现加减速；输出专用舵机 PWM 控制 BDS300 前轮转向舵机，依靠离心力完成平衡与路径转向。
+整车运行完整流程：传感器实时采集车身姿态、速度、定位数据→TC264 完成滤波、姿态解算、导航偏差计算→多层 PID 控制器输出控制量→驱动舵机与后轮电机动作，循环闭环实现三大科目自主行驶。
+第三章 逐飞 N1 单车模机械结构改装与优化
+所有平衡、导航算法的稳定运行均依赖可靠机械底盘，原厂逐飞 N1 单车模存在重心偏高、转速采集精度低、GPS 易被金属支架遮挡缺陷，本章针对三大赛道工况完成针对性机械改装调校。
+3.1 原厂 N1 单车模基础结构建模
+此次竞赛的单车车模参考逐飞科技设计车模。车模外形如图3.1所示[3]。
+
+
+
+
+图3.1 单车车模图
+
+3.2 整车重心与配重优化调校 
+原厂 3S 锂电池安装于底盘上部，整车重心高度超过 90mm，低速绕桩、高速掉头时倾覆力矩大，极易失去平衡。优化方案：
+·  设计 3D 打印下沉电池支架，将 2200mAh 30C 锂电池固定于底盘最底部，重心高度降至 42mm；
+·  全部电路板、陀螺仪、驱动板沿车身中轴线对称布置，左右重量误差控制在 5g 以内，消除单侧偏重带来的车身固有跑偏；金属支架全部缩短 15mm，减少整车上部金属遮挡区域，同时降低整车风阻，提升草地、坡道行驶稳定性。
+3.3 BDS300平衡舵机安装与零点校准
+单车平衡完全依靠舵机转向产生离心力，转向幅值由软件 PWM 上下限限幅，安装重点在于机械零点校准：
+·  重新校准舵机机械零点，保证无导航偏差时前轮完全居中，消除平衡环固有稳态误差。
+
+3.4 磁编码器固定支架改装
+原厂后轮霍尔传感器分辨率低，里程计算、速度闭环误差极大，无法满足纯惯导八字绕桩需求，本次加装 MENC15A 十五位绝对磁编码器，其输出 0~32767 绝对角度，由 CYT2BL3 驱动板 SPI 读取后经串口上报，主控按轮半径与角度差累计里程、低通滤波得到车速：
+1.设计同步齿轮传动支架，磁编码器从动齿轮与后轮电机主轴啮合，传动间隙小于 0.1mm；
+2.支架固定于底盘右侧无金属遮挡区域，不干涉电池拆装、后轮转动；
+3.磁编码器线缆增加波纹保护管，坡道、草地颠簸路面不会出现线材拉扯、信号断连问题。
+
+3.5 GPS、IMU 陀螺仪布局抗遮挡设计
+GPS 模块对金属遮挡极其敏感，铝合金立柱、电路板铜箔都会造成定位跳点、丢星：
+1.GPS 抬高 25mm 独立支架，布置于整车最前端无金属区域，四周无任何铝合金、铜质器件遮挡；
+2.IMU 陀螺仪紧贴底盘中轴线刚性底座安装，与底盘完全平行，避免颠簸震动引入姿态噪声；
+3.GPS、陀螺仪线缆分开走线，与电机动力电源线分区布置，减少大功率 PWM 驱动带来的电磁干扰。
+
+3.6 防撞架结构设计
+赛道存在锥桶、坡道等易碰撞工况，为保护舵机与前叉、避免撞击造成结构变形或零点偏移，设计 3D 建模防撞架：
+采用 3D 建模打印防撞架，包裹保护舵机与前叉，防止撞锥桶、坡道磕碰导致结构变形或舵机零点偏移。
+第四章 整车硬件电路设计与优化
+硬件是平衡控制、导航定位稳定运行底层基础，单车动力 BDS3620 无刷电机高频 PWM 会产生强电磁干扰，极易造成 GPS 丢星、陀螺仪数据漂移，本章围绕英飞凌 TC264 主控完成模块化抗干扰电路设计，全部主板、驱动板自主绘制 PCB，不使用成品拓展板。
+4.1 全外设参数与功能选型表
+
+表4.1 全外设参数与功能选型表
+	
+4.2 CYT2BL3 无刷双驱电路方案分析 
+原厂无刷驱动方案对比后选用 CYT2BL3 自主改版驱动板，适配 N1 车后轮 BDS3620 无刷电机，相比传统分立 MOS H 桥优势明显：[4]
+·  集成 FOC 矢量控制算法，低速绕桩时电机扭矩输出平稳，不会出现转速卡顿，大幅降低低速平衡抖动；
+·  驱动板独立隔离电源设计，动力地与信号地单点共地，抑制电机开关电磁干扰，保护 GPS、陀螺仪信号；
+·  采用 UART 串口通讯（0xA5 帧头 + 功能字 + 和校验），支持设置占空比、读取速度与角度，仅占用一组串口；另保留 1~2ms 脉宽输入模式供无感电调使用；
+·  内置过流、过压、堵转保护电路，八字绕桩频繁加减速时不会烧毁功率器件；
+·  体积小巧，适配底盘侧边狭小安装空间，布线更简洁。
+
+图4.1 CYT2BL3 无刷驱动板电路设计图
+4.3 英飞凌 TC264 最小系统电路设计 
+严格遵循赛事要求使用英飞凌 TC264 作为唯一主控芯片，最小系统划分独立外设接口分区：[2][7]
+1.SPI 高速接口：分配给 IPS 屏幕、IMU 陀螺仪，保障姿态、图像数据高速传输；
+2.UART 串口：多路独立串口，一路对接无刷驱动（BDS3620 + CYT2BL3），一路对接 GPS，另预留无线调试串口；
+3.磁编码器接口：MENC15A 十五位绝对磁编码器接于 CYT2BL3 驱动板，由驱动板 SPI 读取绝对角度并经串口帧协议上报，主控无需占用正交解码 IO；
+4.多路 PWM 输出：供给 BDS300 舵机，输出频率独立可调；另提供一路脉宽捕获输入，供无刷驱动无感电调模式使用；
+5.IO 保护电路：所有外设输入增加限流电阻、TVS 稳压二极管，防止插拔线材、静电击穿单片机引脚。
+
+
+图4.2 TC264 最小系统主板实物图
+
+图4.3 主板外设接口与电源布局图
+4.4 多级隔离稳压电源系统设计
+整车供电为 3S 2200mAh 30C 航模锂电池（11.5V~12.6V），动力电机、传感器、主控供电电压需求完全不同，设计四级隔离稳压，分区供电抑制串扰：[6]
+·  3.3V 低压隔离支路：为陀螺仪、按键、蜂鸣器、无线模块供电，模拟信号专用，低噪声 LDO 稳压；
+·  5V 数字隔离支路：TC264 单片机、IPS 液晶专用，与动力电路完全分开；
+·  5VO 高精度支路：TAU1201 GPS 专用，超低纹波电源，避免电压波动造成定位误差；
+·  电池原生动力支路：直接供给 CYT2BL3 无刷驱动、BDS300 舵机，保证动力输出电压充足。 电源总开关采用大功率 PMOS 管，支持分模块断电调试，闲置时切断动力电路降低整机待机功耗。
+
+4.5 PCB的设计、制作、焊接与测试 
+放弃万能板飞线方案，使用 Altium Designer 分层绘制主控主板、无刷驱动板两块独立 PCB，全程手动布局布线，禁用自动布线，遵循强弱电分区核心原则：
+1.左侧区域：全部信号线路（GPS、陀螺仪、磁编码器、串口）；
+2.右侧区域：全部功率线路（无刷驱动、舵机动力电源线）；
+    3.模拟地、数字地、功率地仅在电源输入处单点连接，杜绝地环路干扰 GPS；
+4.PCB 铺铜层刻印郑州轻工业大学、华丽转身五队、队员姓名、制作日期，满足赛事车检标识要求。
+
+焊接与分阶段测试流程：先焊接电源模块，逐级测量 3.3V/5V/5VO 输出电压正常；再焊接 TC264 最小系统，下载测试程序验证单片机运行；最后依次接入陀螺仪、GPS、磁编码器、驱动板，单独测试每一路外设通信、信号波形，排查虚焊、短路、串扰故障
+
+
+  
+4.6 硬件电路整体设计小结
+整套硬件围绕英飞凌 TC264 与逐飞 N1 单车模适配设计，核心解决电机 PWM 干扰 GPS、低速电机扭矩不足、传感器供电纹波三大工程痛点。模块化分区供电、强弱电分离布线大幅提升室外赛道定位、平衡控制稳定性；全部电路板自主绘制符合赛事规则，无外购成品控制板。硬件调试过程中验证，单点共地、模拟电源独立 LDO 稳压可将 GPS 定位漂移量降低 70%，有效减少赛道行驶路径偏移。
+第五章 整车软件控制程序设计
+软件基于 AURIX Development Studio 开发，使用标准 C 语言编程，核心分为姿态解算、三环串级 PID 平衡、转向 PD 控制、增量速度 PID、GPS / 惯导融合导航五大模块，区分高速、低速两套控制逻辑适配三大竞赛科目[8]。
+5.1 姿态解算与串级 PID 平衡控制
+单车无动量轮，平衡控制是整车核心，采用行业成熟串级 PID 架构：由内至外依次为角速度环、角度环、转向（航向）环，三级输出逐级传递，速度闭环独立运行；软件在 1ms 定时中断内完成角速度环，5ms 完成角度环，20ms 完成转向环。
+5.1.1 陀螺仪原始数据低通滤波处理
+IMU 原始角速度、角度数据包含路面颠簸、电机震动带来的高频噪声，直接输入 PID 会造成舵机高频抖动，采用一阶数字低通滤波降噪，滤波公式如公式1所示。
+data_out = α × data_raw + (1 − α) × data_last   （公式1）
+滤波系数 α 取 0.3，兼顾响应速度与平滑度；滤波后再送入姿态解算模块，采用四元数算法融合加速度、角速度数据，输出无漂移车身翻滚角、倾斜角速度。
+5.1.2 三环串级 PID 完整控制原理
+·  最内环：角速度 PID 环 输入为车身倾斜角速度误差，作用是快速抑制瞬时倾倒趋势，P 参数 0.1~0.6 分段调试，参数过大会放大噪声导致舵机抖动，软件限制舵机 PWM 输出上下限，防止舵机堵转；仅科目一、科目三高速工况启用。
+·  中间环：角度 PD 环（取消积分项） 输入为车身直立 0° 目标角与实际翻滚角偏差，输出作为角速度环给定值；仅保留比例、微分项，取消 Ki 防止长距离积分累积震荡，核心逻辑：车身向一侧倾倒时，控制舵机同步向同侧转向，依靠行驶离心力拉回车身直立。 调试最优参数 Kp=400，Kd=1000，设置 12% 基础电机低速 PWM 用于初始平衡调试[10]。
+·  转向外环：航向环将目标航向与实际航向偏差转换为角度环目标修正量，实现“以平衡环零点偏移完成转向”；速度闭环独立运行，车身倾斜角度越大，自动提升目标车速以增大离心力快速恢复直立，速度计算如公式2所示。
+目标车速 = 基础设定速度 + |车身翻滚角度| × 速度比例系数   （公式2）
+该策略可抵消电池压降、转向阻力带来的车速衰减，稳定平衡所需离心力。
+
+5.1.3 低速绕桩专用控制逻辑（关闭角速度环）
+科目二为 2 米半径低速八字绕桩，行驶速度极低，依靠转向产生的离心力微弱，三环串级 PID 中角速度环参数极易引发整车剧烈抖动，因此软件设置工况切换判断： 当检测车速低于阈值时，直接关闭角速度内环，仅保留转向环与角度环，由角度环输出直接作为舵机控制量，简化控制结构，消除低速超调、抖动问题，大幅提升八字绕桩行驶成功率。
+5.2 单车专属转向控制算法
+单车转向逻辑与四轮车完全相反：舵机左转，车身受离心力向右偏移，实现向右路径转向，不可直接修改舵机 PWM 值（会破坏平衡环闭环），官方推荐优化方案：不直接输出舵机偏移量，修改角度环平衡目标零点实现路径转向：
+ 默认平衡目标角为 0°（车身直立直行）；当导航检测车身偏离赛道中心线产生航向偏差时，给角度环目标值叠加偏移量，角度环自动输出对应舵机转向，平衡环与转向环无控制冲突，调参难度大幅降低。 
+航向偏差越大，叠加的目标偏移量越大，实现自适应转向力度，弯道自动加大舵机修正幅度，直道小幅修正无抖动
+
+5.3 增量式速度闭环控制设计
+采用前馈＋增量式 PID 复合控制实现后轮电机调速（对应工程 Motor_pid()），前馈按目标速度拟合占空比基线，增量式输出仅为转速变化量，选用增量式原因：输出仅为转速变化量，电机堵转、程序异常时不会出现全速失控，适配频繁加减速的八字绕桩、坡道场景[5][10]。 速度闭环三大核心作用：
+1.抵消 3S 锂电池电压随行驶持续下降带来的转速衰减；
+2.转向阻力增大时自动提升 PWM 输出，维持平衡所需最低车速；
+3.坡道上坡自动提速，下坡自动减速，防止坡道高速倾倒。 程序设置速度调节死区，转速偏差小于阈值时不输出调节量，消除直道微小速度震荡；同时设置车速上下限，科目二限制最高低速，科目一、三放开高速上限。
+
+5.4 GPS 与惯导融合路径规划
+区分长赛道（科目一、三）、小场地（科目二）两套导航方案，自动工况切换。
+5.4.1 GPS 原始定位误差抑制滤波
+室外树木、金属护栏、电机电磁干扰会造成 GPS 坐标跳变，软件采用 5 点滑动平均滤波 + 跳点剔除算法：单次坐标与前 5 组均值偏差超过阈值直接丢弃，不参与路径计算，避免车身剧烈修正跑偏。提前完整采集赛道所有边界、中心线经纬度点位存储数组，程序实时计算当前车身与中心线横向偏差、航向偏差，作为转向控制输入[9]。
+5.4.2 分段赛道导航切换策略
+·  科目一、三（长直道 / 坡道）：GPS 为主导航，IMU 陀螺仪航向角实时补偿 GPS 更新间隙的瞬时航向误差，定位稳定、路径跟踪平滑；
+·  科目二（2 米八字绕桩）：自动关闭 GPS 模块，采用纯惯性导航方案，依靠磁编码器累计行驶里程 + 陀螺仪实时航向角，预存储八字绕桩分段目标航向与行驶距离，小场地短距离行驶惯导漂移量极小，绕桩稳定性远高于纯 GPS。
+第六章 开发工具、整机组装与分阶段调试
+6.1 全套软件开发与硬件测试工具
+软件开发工具
+AURIX Development Studio：英飞凌 TC 系列单片机专用编译、下载、在线调试 IDE，可实时监控陀螺仪角度、GPS 坐标、PID 输出、车速全部变量，支持断点调试；
+逐飞助手上位机：2.4G 无线串口连接车模，实时波形显示车身倾角、航向偏差、车速，在线修改全部 PID 参数无需重新烧录程序，大幅减少场地反复烧写调试工作量；
+Altium Designer：主板、无刷驱动板原理图绘制、PCB 布局布线、3D 结构预览。
+硬件测试工具
+直流稳压电源、数字万用表、示波器、逻辑分析仪：用于硬件焊接后稳压输出、传感器通信波形、电机 PWM 信号检测；3D 打印软件用于下沉电池支架、防撞架、磁编码器支架结构打印。
+整机分阶段调试流程
+硬件独立调试：分模块测试电源、主控、传感器通信，无短路、通信故障后组装整车；
+室内静态平衡调试：固定车模架空离地，单独调试串级 PID 平衡参数，实现空载直立平衡；
+室内低速场地调试：仅开启纯惯导模式，完成科目二八字绕桩低速参数整定；
+室外完整赛道调试：接入 GPS 融合导航，分别调试科目一直线、科目三坡道草地工况；
+全科目连续自动运行测试，迭代优化滤波系数、PID 分段参数，消除高速倾倒、低速抖动、路径偏移问题。
+第七章 逐飞 N1 单车模整机技术参数
+表7.1 整机技术参数表
+
+结论
+整车以英飞凌 TC264 为控制核心，配合逐飞 N1 单车模、BDS3620 后轮无刷电机与 CYT2BL3 无刷驱动、TAU1201 双频 GPS 与 IMU963RA 九轴陀螺仪，实现了科目一、科目二、科目三的自主行驶；整车重量 720g，外形尺寸 310mm×185mm×240mm，静态功耗 4.2W、高速满载功耗 9.8W，平衡控制稳定。调试过程中仍存在可进一步改进之处：低速极端颠簸路面下纯惯导累计漂移偏大、GPS 受电磁干扰时偶有定位跳变、舵机长时间高速摆动存在温升等；后续可在滤波算法、传感器融合与机械减震方面继续优化。
+自报名参加第二十一届全国大学生智能汽车竞赛以来，我们小组成员从查找资料、设计机构、组装车模、编写程序一步一步的进行，最后终于完成了最初目标，定下了现在这个设计方案。
+在此份技术报告中，我们主要介绍了准备比赛时的基本思路，包括机械、电路以及最重要的控制算法的创新思想。在机械结构方面，我们分析了整车质量分布，调整重心位置，优化机械结构。在电路方面，我们以模块形式分类，在最小系统、主板、电机驱动等模块分别设计，在查找资料的基础上各准备了几套方案；然后我们分别实验，最后以报告中所提到的形式决定了我们最终的电路图。在程序方面，我们使用C语言编程，利用比赛推荐的开发工具调试程序，经过小组成员不断讨论、改进，终于设计出一套比较通用稳定的程序。在这套算法中，我们结合路况调整车速，做到直道加速、弯道减速，保证在最短时间内跑完全程。
+在这几个月的备战过程中，场地和经费方面都得到了学校和学院的大力支持，在此特别感谢一直支持和关注智能车比赛的学校和学院领导以及各位指导老师、指导学长，同时也感谢比赛组委会能组织这样一项有意义的比赛。
+现在，面对即将到来的大赛，在历时近五个月的充分准备以及华北赛的考验之后，我们有信心在全国比赛中取得优异成绩。也许我们的知识还不够丰富，考虑问题也不够全面，但是这份技术报告作为我们小组辛勤汗水的结晶，凝聚着我们小组每个人的心血和智慧，随着它的诞生，这份经验将永伴我们一生，成为我们最珍贵的回忆。
+参考文献
+卓晴. 全国大学生智能汽车竞赛技术指南[M]. 北京: 清华大学出版社, 2025.
+逐飞科技. 英飞凌 TC264 单片机开发手册[Z]. 2025.
+逐飞科技. 第21届单车定向组演示车模技术浅析[EB/OL]. 微信公众号, 2025.
+峰岹科技. CYT2BL3无刷驱动芯片数据手册[Z]. 2024.
+王晓明. 电动机单片机控制技术[M]. 北京: 北京航空航天大学出版社, 2023.
+童诗白, 华成英. 模拟电子技术基础(第六版)[M]. 北京: 高等教育出版社, 2015.
+阎石. 数字电子技术基础(第六版)[M]. 北京: 高等教育出版社, 2016.
+谭浩强. C语言程序设计[M]. 北京: 清华大学出版社, 2010.
+刘福强. 四元数姿态解算与IMU融合滤波算法[J]. 嵌入式应用, 2024(3): 45-50.
+李飞. 串级PID自平衡单车控制算法工程实现[J]. 自动化与仪表, 2025, 40(4): 22-26.
+附录A：程序源代码
+以下为整车控制核心算法子程序节选，与 AURIX Development Studio 主控工程（TC264）保持一致，代码按功能模块编号，对应正文第五章各小节。
+
+// ===== 1. 姿态滤波与四元数解算（imu.c 节选） =====
+float iir_lpf(float in, float out, float lpf_factor)   // IIR 一阶低通
+{
+    return out + lpf_factor * (in - out);
+}
+
+// 四元数互补滤波：加速度计叉积误差修正陀螺仪积分
+void quaternion_module_calculate(cascade_value_struct *cv)
+{
+    float x = (float)(GYRO_DATA_X / 10 * 10) / GYRO_TRANSITION_FACTOR * 0.017453249f;
+    float y = (float)(GYRO_DATA_Y / 10 * 10) / GYRO_TRANSITION_FACTOR * 0.017453249f;
+    float z = (float)(GYRO_DATA_Z / 10 * 10) / GYRO_TRANSITION_FACTOR * 0.017453249f;
+    float ax = (float)ACC_DATA_X / ACC_TRANSITION_FACTOR;
+    float ay = (float)ACC_DATA_Y / ACC_TRANSITION_FACTOR;
+    float az = (float)ACC_DATA_Z / ACC_TRANSITION_FACTOR;
+    acc_lowpass_filter(&ax, &ay, &az, &cv->quaternion.pro.acc_filtered[0],
+                       &cv->quaternion.pro.acc_filtered[1],
+                       &cv->quaternion.pro.acc_filtered[2],
+                       is_static_state(ax, ay, az) ? 0.8f : 0.5f);
+    acc_normalize(&ax, &ay, &az);
+
+    // 重力投影叉积误差修正角速度，四元数微分方程更新（归一化略）
+    float q0 = cv->quaternion.pro.qua[0], q1 = cv->quaternion.pro.qua[1];
+    float q2 = cv->quaternion.pro.qua[2], q3 = cv->quaternion.pro.qua[3];
+    float gx = 2 * (q1*q3 - q0*q2), gy = 2 * (q0*q1 + q2*q3);
+    float gz = q0*q0 - q1*q1 - q2*q2 + q3*q3;
+    float ex = ay*gz - az*gy, ey = az*gx - ax*gz, ez = ax*gy - ay*gx;
+    x += cv->posture_value.correct_kp * ex;
+    y += cv->posture_value.correct_kp * ey;
+    z += cv->posture_value.correct_kp * ez;
+    cv->quaternion.pro.qua[0] += ((-q1*x - q2*y - q3*z) * cv->posture_value.call_cycle / 2.0f);
+    cv->quaternion.pro.qua[1] += (( q0*x + q2*z - q3*y) * cv->posture_value.call_cycle / 2.0f);
+    cv->quaternion.pro.qua[2] += (( q0*y - q1*z + q3*x) * cv->posture_value.call_cycle / 2.0f);
+    cv->quaternion.pro.qua[3] += (( q0*z + q1*y - q2*x) * cv->posture_value.call_cycle / 2.0f);
+    quaternion_normalize(cv);
+}
+
+// ===== 2. 三环串级 PID（pid.c 节选）：20ms 转向环→5ms 角度环→1ms 角速度环 =====
+void pid_control(void)
+{
+    tim_ms++;
+    if (fabs(imu.roll) < 90.0f)
+    {
+        if (tim_ms % 20 == 0)                     // 转向环（航向环）
+        {
+            pid.yaw_setpoint = target_jiaodu;
+            float smooth = normalize_angle(pid.yaw_setpoint) - rotation_angle;
+            pid_yaw_common(normalize_angle(smooth), imu.yaw);
+            pid.angle_setpoint = pid.balance_angle - pid.yaw_out;  // 零点偏移转向
+        }
+        if (tim_ms % 5 == 0) pid_angle_common();  // 角度环
+        pid_gyro();                               // 角速度环
+    }
+    pid.servo_out = range(SERVO_MOTOR_MID - pid.gyro_out,
+                          SERVO_MOTOR_L_MAX, SERVO_MOTOR_R_MAX);
+    pwm_set_duty(SERVO_MOTOR_PWM, pid.servo_out);
+    tim_ms %= 20;
+}
+
+// ===== 3. 增量式速度闭环 + 前馈（motor.c 节选） =====
+float Motor_pid(pid_struct *pid, int target, int actual)
+{
+    float old_ff = pid->ff_out;
+    float ff = motor_speed_feedforward(pid, target);   // 前馈占空比基线
+    float raw_error = (float)(target - actual);
+    float error = pid->lpf_alpha * raw_error + (1.0f - pid->lpf_alpha) * pid->prev_error;
+    float delta_u = pid->Kp * (error - pid->prev_error)
+                  + pid->Ki * error
+                  + pid->Kd * (error - 2.0f * pid->prev_error + pid->prev_prev_error);
+    float new_out = CLAMP(ff + (pid->last_output - old_ff) + delta_u,
+                          pid->min_out, pid->max_out);
+    pid->prev_prev_error = pid->prev_error;
+    pid->prev_error = error;
+    pid->last_output = new_out;
+    return new_out;
+}
+
+// 目标车速 = 基础设定速度 + |车身翻滚角度| × 比例系数
+float get_compensated_target_speed(pid_struct *pid, float roll_angle)
+{
+    float comp = (float)pid->Target;
+    if (fabsf(roll_angle) > pid->comp_deadzone)
+        comp += fabsf(roll_angle) * pid->angle_speed_factor;
+    return range(comp, pid->comp_min, pid->comp_max);
+}
+
+// ===== 4. 磁编码器速度与里程（motor.c flesh_distance 节选） =====
+void flesh_distance(void)
+{
+    int16 speed_raw; uint16 angle_raw;
+    if (!(get_latest_data(&speed_raw, NULL, &angle_raw, NULL) & 0x03)) return;
+    float rad = (360.0f - angle_to_degree(angle_raw)) * DEG_TO_RAD;
+    if (!first_angle_sample)
+    {
+        float drad = rad - last_physical_angle_rad;
+        if (drad > M_PI) drad -= 2.0f * M_PI;
+        else if (drad < -M_PI) drad += 2.0f * M_PI;
+        gd_distance += (double)(WHEEL_RADIUS * drad);
+    }
+    else first_angle_sample = 0;
+    last_physical_angle_rad = rad;
+    Speed = SPEED_LPF_ALPHA * (-(float)speed_raw) + (1.0f - SPEED_LPF_ALPHA) * Speed;
+}
+
+// ===== 5. GPS 目标点距离/航向（cpu0_main.c 主循环节选） =====
+juli[dian]   = get_two_points_distance(gnss.latitude, gnss.longitude,
+                                       correct_write_latitude[dian], correct_write_longitude[dian]);
+jiaodu[dian] = get_two_points_azimuth(gnss.latitude, gnss.longitude,
+                                      correct_write_latitude[dian], correct_write_longitude[dian]);
+
+// ===== 6. 纯惯导路径记忆（Guandao_Plus.c 节选） =====
+void Distance_Get_Plus(void)     // 按固定里程间隔记录航向
+{
+    if (!road_memery_start_Plus_flag || road_memery_finish_Plus_flag) return;
+    float cur = (float)gd_distance * 100.0f;
+    float delta = cur - last_gd_distance;
+    if (delta <= 0.0f) { last_gd_distance = cur; return; }
+    pending_distance += delta;
+    while (pending_distance >= RECORD_STEP && NUM_L_Plus < MAX_PATH_POINTS - 1)
+    {
+        pending_distance -= RECORD_STEP;
+        NUM_L_Plus++;
+        Yaw_Memory[NUM_L_Plus] = imu.yaw;
+        Dist_Memory[NUM_L_Plus] = cur - memory_start_abs_dist;
+    }
+    last_gd_distance = cur;
+}
+
+// ===== 7. 科目任务主循环（km.c 节选） =====
+void subject_roop(void)
+{
+    if (pid_current_mode != PID_MODE_TRIPLE) return;   // 科目二双环模式
+    if (subject_flag == 1) km1();                     // 科目一：GPS 直线往返
+    else if (subject_flag == 3 || subject_flag == 4) km4();  // 科目三：锥桶绕行
+}
+
+// km4 节选：锥桶段固定角度绕行、GPS 段跟踪目标航向、到达判点
+void km4(void)
+{
+    if (dian != last_dian)
+    {
+        if (dian > 8 && dian <= n - 1)
+            switch_to_triple_pd(500, 60.0f, 20.0f, 1.8f, 0.4f, 0.5f, 0.0f, 1.5f); // 锥桶段
+        else
+            switch_to_triple_pd(1300, 14.0f, 230.0f, 0.7f, 0.05f, 0.85f, 0.1f, 1.3f);
+        last_dian = dian;
+    }
+    if (dian > CONE_START_INDEX && dian < n - 1)
+    {
+        if (!base_recorded) { cone_base_yaw = imu.yaw; base_recorded = 1; }
+        target_jiaodu = normalize_angle(cone_base_yaw + CONE_TURN_ANGLE_LEFT + rotation_angle);
+    }
+    else if (!angle_pending && dian <= n)
+        target_jiaodu = -jiaodu[dian];
+    if (!angle_pending && dian <= n && juli[dian] < KMWAYPOINT_THRESHOLD_NORMAL)
+    {
+        dian = (dian == n) ? n + 1 : dian + 1;        // 到达判点/终点停车
+        buzz_show(100);
+    }
+    if (dian > n) run_sign = 0;
+}
+
+// ===== 8. 无刷驱动串口通讯（small_driver_uart_control.c 节选） =====
+void small_driver_set_duty(int16 left_duty, int16 right_duty)
+{
+    uint8 buffer[7] = {0xA5, 0x01,
+                       (uint8)((left_duty & 0xFF00) >> 8), (uint8)(left_duty & 0x00FF),
+                       (uint8)((right_duty & 0xFF00) >> 8), (uint8)(right_duty & 0x00FF), 0};
+    for (int i = 0; i < 6; i++) buffer[6] += buffer[i];   // 和校验
+    uart_write_buffer(SMALL_DRIVER_UART, buffer, 7);
+}
+
+// 串口接收中断：帧头锁定 + 定长收包 + 和校验 + 解析（细节略）
+void uart_control_callback(void)
+{
+    uint8 rx;
+    while (uart_query_byte(SMALL_DRIVER_UART, &rx))
+    {
+        if (rx == 0xA5) motor_value.receive_data_count = 0;
+        if (motor_value.receive_data_count < sizeof(motor_value.receive_data_buffer))
+            motor_value.receive_data_buffer[motor_value.receive_data_count++] = rx;
+        if (motor_value.receive_data_count >= 2)
+        {
+            uint8 len = (motor_value.receive_data_buffer[1] == 0x05) ? 11 : 7;
+            if (motor_value.receive_data_count >= len)
+            {
+                uint8 sum = 0;
+                for (int i = 0; i < len - 1; i++) sum += motor_value.receive_data_buffer[i];
+                if (sum == motor_value.receive_data_buffer[len - 1])
+                    parse_packet(motor_value.receive_data_buffer[1],
+                                 motor_value.receive_data_buffer, len);
+                motor_value.receive_data_count = 0;
+            }
+        }
+    }
+}
+附录B：电路原理图
+附件给出参赛车队自主设计并焊接调试的无刷驱动板、主控主板与外设扩展板电路设计图，对应正文第四章硬件电路设计章节。
+
+图B-1 CYT2BL3 无刷驱动板电路设计图
+
+图B-2 TC264 主控板电路设计图
+
+图B-3 外设扩展板电路设计图
+
+2、电路板PCB图
+主板正面：
+
+主板背面：
+
+驱动板正面：
+
+
+
+驱动板反面：
+
+
+===== TABLE 1 =====
+符号/缩略词 | 含义说明
+PID | 比例-积分-微分（Proportional-Integral-Derivative）控制
+GPS | 全球定位系统（Global Positioning System）
+IMU | 惯性测量单元（Inertial Measurement Unit）
+PWM | 脉宽调制（Pulse Width Modulation）
+PCB | 印制电路板（Printed Circuit Board）
+UART | 通用异步收发传输器（Universal Asynchronous Receiver/Transmitter）
+SPI | 串行外设接口（Serial Peripheral Interface）
+LDO | 低压差线性稳压器（Low Dropout Regulator）
+FOC | 磁场定向控制（Field-Oriented Control）
+BLDC | 无刷直流电机（Brushless Direct Current Motor）
+TVS | 瞬态电压抑制二极管（Transient Voltage Suppressor）
+PMOS | P 沟道金属氧化物半导体场效应管
+IPS | 平面转换液晶显示屏（In-Plane Switching）
+IDE | 集成开发环境（Integrated Development Environment）
+IO | 输入/输出（Input/Output）
+
+===== TABLE 2 =====
+厂商 | 外设型号 | 核心参数 | 整车功能作用
+逐飞科技 | TAU1201 双频 GPS | 10Hz 刷新率，双频定位 | 长直道、坡道主导航定位
+逐飞科技 | IMU963RA 九轴陀螺仪 | 三轴角速度 / 加速度 / 地磁 | 车身姿态解算、航向角补偿
+逐飞科技 | MENC15A 磁编码器 | 15 位绝对角度输出，SPI 接口 | 速度闭环、纯惯导里程计算
+逐飞科技 | BDS300 舵机 | 高速响应，金属齿轮 | 前轮平衡、路径转向执行
+逐飞开源 | CYT2BL3 无刷驱动 | 支持 FOC / 霍尔六步换相 / 无感电调三模式，串口 + 脉宽双控制接口 | 后轮 BDS3620 无刷电机调速驱动
+逐飞科技 | 2 寸 IPS 液晶 SPI | 高速刷新 | 实时显示 GPS 坐标、PID 参数、姿态角
+电路功耗 | 电容总容量（主控板+驱动板） | 约 1500μF | 
+平衡转向 | 除转向舵机外伺服电机个数 | 0 个（无额外伺服电机） | 
+传感器配置 | 赛道信息检测精度与频率 | GPS 双频定位 10Hz；IMU 姿态解算 1kHz；磁编码器 15 位绝对角度 | 
+
+===== TABLE 3 =====
+参数分类 | 项目 | 规格数值
+整车外形 | 长 × 宽 × 高 | 310mm×185mm×240mm
+整车总重（含电池、电路板） | 整车重量 | 720g
+核心主控 | 单片机型号 | 英飞凌 TC264
+动力系统 | 后轮驱动 | BDS3620 无刷电机 + CYT2BL3 自制驱动
+平衡转向 | 执行机构 | BDS300 高速金属舵机
+供电电源 | 锂电池规格 | 3S 2200mAh 30C XT60 接口
+传感器配置 | 定位模块 | TAU1201 双频 GPS×1
+ | 姿态模块 | IMU963RA 九轴陀螺仪 ×1
+ | 速度采集 | 磁编码器 ×1
+ | 人机交互 | 2 寸 SPI IPS 液晶、无线串口、按键、蜂鸣器
+电路功耗 | 空载静态功耗 | 4.2W
+ | 高速满载功耗 | 9.8W
+控制算法 | 平衡架构 | 三环串级 PID（高速）/ 单环角度 PD（低速）
+ | 速度控制 | 增量式 PID 闭环调速
+ | 导航方案 | 长赛道 GPS + 惯导融合；小场地纯惯导
+赛道适配 | 可完成科目 | 科目一直线往返、科目二八字绕桩、科目三坡道草地综合

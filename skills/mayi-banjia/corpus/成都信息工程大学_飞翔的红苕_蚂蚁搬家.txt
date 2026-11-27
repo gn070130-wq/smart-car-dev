@@ -1,0 +1,927 @@
+第二十一届全国大学生
+智能汽车竞赛
+技 术 报 告
+
+基于MicroPython的双车协同全向搬运智能车设计
+
+
+学           校：成都信息工程大学
+队 伍 名 称：     飞翔的红苕
+参 赛 队 员：        兰    坤
+康芸杰
+王子航
+王启艺
+带 队 教 师：        刘    俊
+			    张葛祥
+
+关于技术报告以及研究论文使用授权的说明
+本人完全了解全国大学生智能汽车竞赛关于保留、使用技术报告和研究论文的规定，即：参赛作品著作权归参赛者本人，比赛组委会可以在相关主页上收录并公开参赛作品的设计方案、技术报告以及参赛模型车的视频、图像资料，并将相关内容编纂收录在组委会出版论文集中。
+
+
+
+参赛队员签名：____________________________
+带队教师签名：____________________________
+日               期：__2026___年__8__月__19__日
+
+摘要
+针对第二十一届全国大学生智能汽车竞赛“蚂蚁搬家”组双车协同搬运任务，设计了一套基于NXP i.MX RT1021 MicroPython平台的三轮全向搬运系统。两辆车均采用三路编码器和IMU660RC完成轮速与航向闭环，A车负责目标搜索、世界坐标路径和任务调度，B车依据同步速度与航向信息完成协同跟随。视觉模块识别沙包、网球、玩具熊及黄色边界，并通过串口向主控输出目标类别和相对位置。硬件采用主驱一体承载式PCB方案，将RT1021核心板接口、三路DRV8701E有刷电机驱动、电源、编码器、姿态与通信接口集成在同一块四层PCB上，并由该PCB直接作为车体主体承载板，省去独立机械底板和分立驱动板之间的大量连接线。系统通过10 ms底层控制、双车高速同步和任务状态机完成搜索、对齐、推动和回库流程，兼顾任务可靠性、整车轻量化与现场调试效率。
+
+
+
+
+
+
+
+关键词：蚂蚁搬家；MicroPython；三轮全向底盘；双车协同；视觉识别；主驱一体PCB
+
+目录
+
+关于技术报告以及研究论文使用授权的说明	I
+摘要	II
+目录	III
+第一章 引言	1
+1.1 竞赛任务与设计目标	1
+1.2 系统方案概述	1
+1.3 本文结构	1
+第二章 智能车系统总体设计	2
+2.1 任务需求分析	2
+2.2 系统总体方案	2
+2.3 双车协同工作流程	2
+2.4 主要器件与控制方案	3
+2.5 本章小结	4
+第三章 机械结构设计与优化	5
+3.1 整车结构与底盘布局	5
+3.2 电机与全向轮安装	6
+3.3 传感器、电池与外围机构安装	6
+3.4 重心与轻量化	7
+3.5 本章小结	7
+第四章 硬件系统设计	8
+4.1 硬件总体架构	8
+4.2 主控与接口电路	8
+4.3 电源电路设计	9
+4.3.1 电池输入与开关保护	9
+4.3.2 5 V电源	9
+4.3.3 3.3 V电源	10
+4.4 电机驱动电路	11
+4.4.1 第一、第二路电机驱动单元	11
+4.4.2 第三路电机驱动与缓冲电路	12
+4.5 主驱一体PCB设计	12
+4.6 本章小结	13
+第五章 软件系统与运动控制	14
+5.1 软件总体架构	14
+5.2 三轮运动学与轮速闭环	14
+5.3 姿态与里程计	15
+5.4 视觉识别与目标定位	15
+5.4.1 图像采集与视觉模式	16
+5.4.2 颜色目标识别与目标选择	16
+5.4.3 单应性坐标换算与坐标滤波	17
+5.4.4 黄胶带、障碍物检测与通信输出	17
+5.5 双车通信与协同控制	18
+5.6 任务状态机	18
+5.7 本章小结	19
+第六章 系统制作与调试	20
+6.1 开发环境与整车安装	20
+6.2 底层运动控制调试	20
+6.3 双车通信与任务联调	20
+6.4 典型问题与优化	21
+6.5 本章小结	21
+第七章 整车参数与性能测试	22
+7.1 主要技术参数	22
+7.2 运动与感知性能测试	23
+7.3 完整任务测试	23
+7.4 本章小结	23
+第八章 结论与展望	24
+8.1 工作总结	24
+8.2 存在问题与改进方向	24
+参考文献	25
+附录A 主驱一体板关键电路原理图	I
+附录B 车模技术检查表	III
+附录C 车模及电路板照片	VII
+C.1 A、B车整车多视图	VII
+C.2 主驱一体板装车实物	VIII
+附录D 程序源代码	IX
+
+第一章 引言
+1.1 竞赛任务与设计目标
+第二十一届全国大学生智能汽车竞赛“蚂蚁搬家”组要求两辆搬运车协同完成目标搜索、识别、推动和回库。与传统循迹竞速相比，本组任务更强调随机目标处理、双车相对位置保持以及完整任务流程的可靠执行。两辆参赛车均采用三轮全向结构，能够在保持车头方向的同时完成横移、斜移和原地转向[1-2]。
+本系统的设计目标是在NXP MicroPython平台下稳定完成“出库—搜索—识别—对齐—协同搬运—越线确认—回库”的闭环流程。设计中优先保证任务成功率和现场可调性，同时兼顾整车重量、结构强度和电气可靠性。
+1.2 系统方案概述
+控制系统采用“A车主调度、B车协同跟随”的主从式结构。A车负责世界坐标走点、目标任务状态机和同步控制信息发送；B车接收A车的平移速度、航向角和任务状态，在此基础上结合本车视觉信息进行相对位置修正[3-6]。底层控制以三路编码器和IMU660RC为主要反馈，10 ms完成一次轮速、姿态和里程更新。
+硬件采用主驱一体方案。每辆车仅使用一块主驱一体PCB作为核心车体板，板上集成RT1021核心板连接区、三路DRV8701E电机驱动、电源管理、三路编码器、IMU、UART、无线串口、蜂鸣器和按键等功能。PCB同时承担电气集成和车体主体承载作用，电机、全向轮、推杆、视觉支架和电池围绕板体布置，从而减少独立底盘、板间连接器和长线束。
+1.3 本文结构
+后文依次介绍系统总体方案、机械结构、硬件电路、软件与运动控制、整车调试、性能测试以及总结。硬件部分重点给出主控接口、5 V、3.3 V和电机驱动等关键模块，软件部分重点说明三轮运动学、双车同步、视觉定位和任务状态机。
+
+第二章 智能车系统总体设计
+2.1 任务需求分析
+比赛场地内包含沙包、网球和玩具熊等不同目标，并以黄色胶带作为边界标志。车辆需要先搜索目标，再根据目标类别选择对应的接近和推动方向。两车共同推动时必须保持基本同向和速度一致，否则推杆受力方向改变，容易造成目标偏移或两车分离。
+控制系统同时需要满足实时性和可恢复性要求。编码器、IMU和电机闭环以100 Hz运行；视觉通过串口向主控输出目标类别和相对位置；双车之间以高速串口周期同步速度、航向和任务状态。视觉暂时丢失或任务超时时，程序返回已知搜索位置，而不是继续盲目推动。
+2.2 系统总体方案
+每辆车以RT1021 MicroPython核心板为控制中心，连接三路编码器电机、IMU和视觉模块。车体运动统一转换为Vx、Vy和航向修正量，再通过三轮全向运动学得到各轮目标速度。A车在此基础上增加世界坐标里程计和任务调度，B车则重点完成速度前馈、航向跟随和相对位置修正。系统组成如图2.1所示。
+
+图2.1 系统总体组成框图
+2.3 双车协同工作流程
+上电后先完成通信初始化、IMU零偏标定和安全开关检查。A车进入搜索线后识别目标并执行视觉对齐，根据目标类别切换沙包、网球或玩具熊的搬运路线；推动过程中通过黄色边界判断是否完成越线。B车在全过程根据A车同步帧保持速度和航向一致。
+不同目标只在任务层采用不同路径，底层三轮运动学、轮速闭环和航向控制保持不变。这样可以在比赛现场只调整目标距离、速度和容差，而不修改底层控制结构。总体流程如图2.2所示。
+
+图2.2 双车协同任务总体流程
+2.4 主要器件与控制方案
+主控选用NXP i.MX RT1021 MicroPython平台；三台带编码器有刷直流电机采用DRV8701E配合外置MOSFET进行驱动；姿态检测采用IMU660RC；视觉由独立图像处理模块完成颜色目标和黄色边界识别。A/B车通信使用UART2@460800，视觉通信使用UART5@115200。
+搬运机构采用固定直推杆，不增加舵机夹持机构，目标位置调整主要依靠底盘全向移动完成。该方案结构简单、通道少，便于减重和现场维修。
+2.5 本章小结
+本章确定了双车主从协同、三轮全向底盘、编码器与IMU反馈、独立视觉以及主驱一体承载式PCB的总体方案，为后续机械、电路和软件设计提供统一接口。
+
+第三章 机械结构设计与优化
+3.1 整车结构与底盘布局
+参赛车取消原有“独立机械底盘+多块电路板”的叠层结构，改用主驱一体PCB直接作为车体主体承载板。PCB外形依据三轮120°布置和整车安装空间设计，板框约98.3 mm×86.7 mm，并在边缘及关键位置设置安装孔，用于连接三台电机及全向轮机构、推杆、视觉支架和电池固定件。这样可减少额外底板、隔柱和板间线束，同时使三轮几何关系由同一基准板统一确定。
+主控、三路驱动、电源和接口均集成在同一PCB上，器件按照“弱电控制区—电源区—功率驱动区”进行分区布置。电机输出端子靠近对应轮位，编码器及通信接口布置在便于走线的位置。主驱一体板既是电控载体，也是三轮机构和外围支架的统一安装基准，其三维布局如图3.1所示。
+
+图3.1 主驱一体板车体结构三维示意
+3.2 电机与全向轮安装
+三台电机分别安装在主驱一体PCB的三个轮位附近，各轮有效滚动方向按三轮运动学坐标系布置[1-2,7]。装配时首先保证三轮中心位置、轮轴高度、安装角度和轮径尽量一致，再核对电机方向与编码器反馈方向。由于PCB本身作为统一安装基准，三轮定位误差可直接通过安装孔位和支架尺寸控制，减少独立底盘装配带来的累积误差。
+装车后依次进行单轮悬空、低速平移、横移和原地旋转测试。若三轮同时运行时出现持续侧偏，优先检查轮组安装、轴向间隙和单轮阻力，再进行速度环参数补偿。
+3.3 传感器、电池与外围机构安装
+IMU布置在主驱一体PCB靠近车体中心的位置，并尽量与三路H桥功率区保持距离；三路编码器接口直接布置在板上，缩短反馈信号路径。视觉模块通过专用底座与前端推杆支撑结构连接，A、B两车根据推杆形式和前端空间分别设计连接结构，在保证推杆刚度的同时为摄像头提供稳定的安装基准，其三维结构如图3.2所示。
+    
+A车                                      B车
+图3.2 A、B车推杆与摄像头底座三维结构
+3S电池布置在车体低位并尽量靠近三轮支撑中心，通过支架与主驱一体PCB固定。电源、电机、编码器、IMU和通信接口均由板上端子直接引出，减少跨板连接。推杆和视觉支架通过机械连接件将载荷传递至板体固定区域；红外灯板等外围模块结合整车空间布置，其实际相对位置由附录C的整车正、侧、顶视图统一展示。
+3.4 重心与轻量化
+轻量化的主要措施由“减少机械支架”调整为“以PCB替代独立底板”。主驱一体板同时承担车体主体和电控功能，在保证三轮定位、推杆刚度和PCB强度的前提下，可取消原先独立主控板、双驱板、单驱板及其隔柱和板间线束。外围支架仅保留轮组、推杆、视觉和电池固定所必需的结构。
+电池仍是整车质量较大的部件，优先通过调整电池位置使重心靠近车体几何中心。PCB上的功率铜皮、内层电源/地平面、母线储能电容和MOSFET散热区域不作为减重对象，避免因追求少量质量下降而降低驱动可靠性。
+3.5 本章小结
+整车采用主驱一体PCB承载式三轮全向结构，通过单板集成主控、三路驱动和电源系统，减少独立底盘与多板连接。统一安装基准有利于三轮几何一致性，同时降低整车质量和线束复杂度，为后续运动控制与双车协同提供稳定的硬件基础。
+
+第四章 硬件系统设计
+4.1 硬件总体架构
+硬件系统以一块主驱一体四层PCB为核心，集成3S电池输入与保护、5 V与3.3 V电源、RT1021核心板连接区、三路DRV8701E有刷电机驱动、三路编码器接口、姿态传感器接口、UART/无线串口、蜂鸣器和按键等模块。板上三路电机驱动分别对应三个全向轮，控制与功率部分在同一PCB上分区布局，PCB同时作为车体主体承载板。
+4.2 主控与接口电路
+主驱一体PCB围绕RT1021 BTB核心板引出三路电机控制、三路编码器、姿态传感器、视觉串口、A/B车通信、无线串口、蜂鸣器和安全开关等接口。电机控制仍使用D4/D5、C28/C29、C30/C31三组PWM/DIR信号，三路编码器分别接D13/D14、C2/C3和C0/C1。
+接口设计以连接可靠和便于调试为主。编码器、UART和IMU均保持明确地参考，功率驱动与弱信号在布局上分区，利用四层板的GND与POWER内层降低回流阻抗。RT1021核心板及主要接口如图4.1所示。
+
+图4.1 RT1021核心板与主要接口电路
+4.3 电源电路设计
+整车采用3S锂电池供电，标称11.1 V、满电12.6 V。电池母线在主驱一体PCB上直接进入三路H桥功率区，同时经SCT2450STER降压产生5 V，再由RT9013-33GB-MS产生3.3 V。电源输入、逻辑电源和电机功率路径在同板上按区域布置，并依靠内层电源/地平面建立低阻抗公共参考。
+4.3.1 电池输入与开关保护
+电池通过XT30接口接入主驱一体板，总电源开关配合HY19P03D及BZT52C16等器件完成输入控制与栅极保护，输入端配置220 μF储能电容。该区域靠近板边布置，使电池大电流优先进入功率母线，避免绕行弱电区域。电路如图4.2所示。
+
+图4.2 电池输入与总电源开关电路
+4.3.2 5 V电源
+5 V电源采用SCT2450STER开关降压方案，为RT1021核心板及5 V外设供电。输入端设置滤波与储能电容，输出端采用4.7 μH电感、肖特基二极管及反馈网络完成稳压；同时利用SY6280AAC实现5 V上电时序控制，使外设电源在系统启动过程中按需要受控接通。电路如图4.3所示。
+
+
+图4.3 5 V降压与上电时序控制电路
+4.3.3 3.3 V电源
+3.3 V电源由5 V经RT9013-33GB-MS线性稳压得到，主要为编码器接口、姿态传感器及其他低压逻辑提供稳定电源。输入与输出端分别设置10 μF和100 nF去耦电容，并配置状态指示灯，电路如图4.4所示。
+
+图4.4 3.3 V稳压电路
+4.4 电机驱动电路
+三路有刷电机均采用DRV8701E栅极驱动器配合外置N沟道MOSFET组成全桥。主驱一体板共集成3颗DRV8701E和12颗TPH1R403NL功率MOSFET，三路均通过PH方向信号和PWM/EN信号实现正反转与调速。控制信号经过SN74HC125缓冲，功率区配置本地储能和去耦，降低电机换向对主控、IMU和编码器信号的干扰。
+4.4.1 第一、第二路电机驱动单元
+第一、第二路驱动单元采用相同的DRV8701E+四MOSFET全桥拓扑，分别驱动两台电机。两路功率级直接集成在主驱一体PCB上，并将电机接口布置在对应轮位附近，减少大电流线长度。两路驱动原理如图4.5所示。
+
+图4.5 第一、第二路DRV8701E电机驱动电路
+4.4.2 第三路电机驱动与缓冲电路
+第三路驱动同样采用一颗DRV8701E和四颗TPH1R403NL MOSFET，并与前两路共用电池母线和逻辑控制架构。三路PH/PWM信号通过SN74HC125缓冲后进入各驱动单元，使三个轮位的软件控制接口保持一致。第三路驱动及缓冲电路如图4.6所示。
+
+图4.6 第三路DRV8701E驱动与缓冲电路
+4.5 主驱一体PCB设计
+主驱一体PCB采用四层结构，Top/Bottom用于器件与主要信号布线，中间设置GND与POWER平面。根据当前EDA工程的板框，PCB外形包络约98.3 mm×86.7 mm。板形围绕三轮车体布置进行裁切，并在轮位、推杆/机构及外围安装区域预留固定孔，使PCB既作为电气主板，也直接作为车体主体结构件。
+一体化后取消主控板与双驱/单驱板之间的板间线束，电池、三台电机、三路编码器、IMU、视觉和通信模块直接接入主驱一体板。布局重点转为控制功率回流路径、MOSFET散热以及机械载荷传递，避免电机大电流和车体振动影响弱电测量。PCB顶、底面三维效果如图4.7所示。
+
+图4.7 主驱一体PCB顶、底面三维布局
+4.6 本章小结
+硬件系统采用主驱一体承载式PCB方案，将主控、电源、三路有刷电机驱动、编码器和通信接口集中在一块四层板上。正文按电源、接口和驱动模块分别展示关键原理图，既保证电路细节可读，又体现各模块在同一车体主板上的集成关系。
+
+第五章 软件系统与运动控制
+5.1 软件总体架构
+主控程序采用“10 ms底层控制+主循环任务调度”的结构。定时回调负责编码器采样、IMU积分、里程更新、三轮运动学和轮速闭环；主循环负责视觉帧解析、A/B车通信、任务状态切换以及安全检查。视觉模块独立运行图像算法，只向主控发送目标类别和坐标。
+
+图5.1 控制软件主程序流程图
+5.2 三轮运动学与轮速闭环
+三轮以120°对称布置，车体平移速度Vx、Vy转换为三轮目标速度。当前程序采用vA=Vx，vB=-0.5Vx+0.866Vy，vC=-0.5Vx-0.866Vy，并将航向控制量统一叠加到三轮目标上，因此前后、横移、斜移和原地转向均使用同一套运动学模型[1-2,7]。
+每个车轮独立进行编码器速度闭环，控制周期为10 ms。速度环先在单轮条件下整定，再进行三轮联合测试。任务层只改变车体目标速度，不直接写入电机占空比，从而避免不同任务阶段使用不同的底层控制逻辑。
+
+图5.2 三轮全向底盘坐标系
+5.3 姿态与里程计
+IMU上电静止采样计算Z轴零偏，运行时对角速度积分得到yaw。编码器增量通过三轮逆运动学得到车体dx、dy，再按照当前yaw转换到世界坐标累加[8]。该方法不依赖额外定位模块，能够满足比赛中短距离走点和回库路线控制。
+航向控制在平移、搜索和推动阶段持续工作，转向状态则限制最大角速度，避免A车瞬间转动过快导致B车跟随滞后。
+5.4 视觉识别与目标定位
+视觉模块独立完成图像采集、目标筛选、坐标换算和结果打包，主控只接收目标类别与相对坐标并参与任务决策。现用视觉程序围绕颜色目标识别、黄色边界判断和前方障碍检测组织，并通过串口命令在不同视觉模式间切换。
+5.4.1 图像采集与视觉模式
+视觉端采用RGB565彩色图像，采集分辨率设置为QVGA（320×240）。程序启动后尝试将帧率设置为60 fps，并关闭自动增益、自动白平衡和自动曝光，曝光时间固定为600 μs，以减小环境变化造成的颜色漂移。颜色识别区域设置为图像中从y=12开始的320×230区域，在保留主要前向视场的同时避开边缘无效区域[9-10]。
+视觉程序设置MODE_BELT、MODE_COLOR和MODE_TAG三种工作状态。主控可通过串口发送0/1/2或字符“0”/“1”/“2”切换模式，并在切换时清除目标锁定和坐标滤波状态。当前比赛功能主要使用颜色目标模式和黄胶带/障碍模式，TAG模式保留接口但未作为现阶段任务功能使用。
+5.4.2 颜色目标识别与目标选择
+颜色目标识别采用LAB颜色阈值与连通域检测相结合的方法，对红色、蓝色、绿色、白色和棕色目标分别设置阈值、像素数和面积门槛。针对不同目标外形进一步增加几何约束，例如红色目标限制最大长宽比，绿色网球利用近圆形特征限制长宽比，白色目标设置最大面积约束，从候选色块中剔除明显不符合任务目标的区域。
+当画面内同时出现多个候选目标时，程序先按照换算后的横向坐标进行分列。分列阈值设为120 mm，同一列内优先选择距离车辆较近的目标，并保持左侧列优先。
+为避免识别结果在相邻目标之间频繁跳变，程序对目标类别和列位置进行锁定：当前目标短时丢失时保持原锁定，连续丢失达到设定帧数后才释放；新的优先目标连续出现达到确认帧数后才允许切换。该处理提高了多目标场景下的跟踪连续性。实际检测效果图位置如图5.3所示。
+
+图5.3 视觉识别实际效果图
+5.4.3 单应性坐标换算与坐标滤波
+完成色块筛选后，程序取目标外接矩形底边中心附近作为地面投影点，并将当前图像坐标按160×120的标定基准进行归一化，再利用预先标定的单应性矩阵将像素坐标转换为车辆坐标系下的实际位置[11]。转换结果限定在X方向约−260～260 mm、Y方向约−80～1100 mm的有效区域内，超出范围的结果直接舍弃，从而避免远离标定区域的异常坐标进入控制环。
+为兼顾响应速度和坐标稳定性，视觉坐标采用指数滑动平均进行平滑，当前系数为0.80。程序同时比较相邻原始坐标，当单帧位移超过120 mm时不立即接受，而是将其作为待确认跳变；连续两帧出现一致的新位置后才认为是真实运动并直接更新。这样既能抑制单帧误识别，又避免目标快速移动时滤波产生过大的滞后。
+5.4.4 黄胶带、障碍物检测与通信输出
+黄胶带检测使用独立ROI和黄色阈值进行筛选，结合色块长宽比、最大高度和单应性距离判断边界是否进入触发区域。当检测距离小于约200 mm时，视觉端周期发送黄胶带事件。
+障碍检测在前方梯形ROI内同时搜索障碍物阈值以及各类任务目标。经过几何筛选、候选去重和目标锁定后，程序选出需要避让的目标；当距离小于约550 mm时，输出目标左侧边缘的横向位置和距离信息。
+视觉与主控之间采用115200 bit/s串口通信，结果帧固定为8字节：帧头0xAA、0x55，随后依次为目标标签、X坐标高低字节、Y坐标高低字节以及前7字节累加校验。X、Y均按有符号16位整数传输。颜色目标标签0～4分别对应红、绿、白、蓝、棕目标；标签5用于障碍信息，标签6用于黄胶带事件。主控根据标签和坐标决定后续搜索、对齐、避障或越线确认动作。
+5.5 双车通信与协同控制
+A/B车使用UART2@460800进行同步通信。A车周期发送Vx、Vy、yaw、yaw_rate和控制状态，B车以A车速度作为前馈、以A车yaw作为姿态目标，再叠加本车视觉纠偏[3-6]。状态或运动方向改变时立即补发同步帧，减少两车在阶段切换时的时间差。
+这种主从结构将全局任务决策集中在A车，B车主要完成同步执行，避免两车分别判断任务造成状态冲突。急停或最终回库时，A车连续发送停止指令，确保B车及时退出运动。
+5.6 任务状态机
+A车使用BOOT、IDLE、MOVE、TURN、SCAN、ALIGN、PUSH、PUSH_AFTER、FINAL_BELT和DONE等状态组织完整任务。沙包、网球和玩具熊的差异主要体现在目标对齐位置、推动方向和返回路线，状态切换依据走点误差、航向误差、视觉到位、黄线事件和超时条件完成。
+
+图5.4 A车任务状态机
+5.7 本章小结
+软件系统以三轮运动学和轮速闭环为基础，将姿态、里程计、视觉、双车同步和任务状态机组合为统一控制框架。现场调参主要集中在速度、距离、视觉目标和容差参数，底层运动学与接口保持固定。
+
+第六章 系统制作与调试
+6.1 开发环境与整车安装
+主控端使用RT1021 MicroPython固件及逐飞相关接口，视觉端采用NXP视觉平台Python环境，硬件设计使用立创EDA。主驱一体PCB完成裸板检查、分电源域上电和三路驱动单元测试后，再安装电机、全向轮、电池、IMU、视觉及通信模块。由于PCB同时作为车体主体，电气检查与机械装配需要同步进行，避免固定件对板体造成异常弯曲。
+上电检查先确认电池、5 V、3.3 V与GND无异常短路，再在不接电机条件下验证主控、IMU和视觉。随后逐路连接电机，从低占空比开始确认方向和驱动温升，最后进行三电机联合运行。
+6.2 底层运动控制调试
+调试顺序采用“机械—电机方向—编码器方向—速度环—航向环—世界坐标走点”。先逐轮确认正目标速度对应正确的轮子转向和编码器正反馈，再用相同速度指令比较三轮响应。三轮一致后测试前后、横移、斜移和原地旋转。
+IMU调试先检查静态零偏，再进行±90°、180°和360°转向测试。若出现持续侧偏或角度越修越偏，优先检查轮组机械状态、编码器符号和IMU方向，不直接修改运动学公式。
+6.3 双车通信与任务联调
+双车联调先关闭目标搬运，只验证A车速度、航向与B车同步效果；同步稳定后再加入视觉纠偏。随后分别放置沙包、网球和玩具熊，检查识别类别、首次对齐、推动方向、黄线触发和返回路线，最后进行混合目标完整流程。
+现场调试重点重新确认颜色阈值、摄像头曝光、单应性、无线通信和推杆位置。每次只调整一组参数并保留稳定版本，避免多处同时修改导致问题难以回溯。
+6.4 典型问题与优化
+主驱一体版本调试中需要重点关注三类问题：B车在A车突然转向时的角度滞后；陀螺仪小角速度处理不当造成的航向累计偏差；以及功率驱动、电源与弱信号集成在同一PCB后可能出现的电源扰动、地回流和机械振动耦合。
+针对双车滞后，在同步帧中同时发送速度、yaw和yaw_rate，并限制A车原地转向速度；针对航向漂移，保留上电零偏校正并优化小角速度处理；针对主驱一体板的电气干扰，重点检查功率回流、去耦、MOSFET温升和编码器/UART走线，同时对电池、轮组和推杆固定点进行机械加固，避免PCB长期受弯。
+6.5 本章小结
+整车调试采用从单板、单电机到三轮运动，再到双车和完整任务的分层方法。该方式能够较快区分机械、电气、控制和视觉问题，减少整车直接联调时的排查范围。
+
+第七章 整车参数与性能测试
+7.1 主要技术参数
+主要固定参数汇总如表7.1。
+表7.1 整车主要技术参数
+
+7.2 运动与感知性能测试
+运动性能测试包括定长前后移动、横移、斜移和±90°/180°/360°转向，记录终点偏差和航向误差；轮速测试记录三路目标速度与编码器实测速度。视觉测试在不同位置放置各类目标，统计类别识别和坐标误差。
+主驱一体车模改版后，A、B两车的整车质量和最大尺寸均需按最终装配状态重新测量。PCB板框约98.3 mm×86.7 mm，但技术检查尺寸应包含轮组、推杆、视觉支架、电池和连接器等全部外廓。
+上述项目应在相同电池状态和场地条件下重复测试，最终报告填写平均值和最大误差。未取得完整实测数据前不使用程序容差代替真实精度。
+7.3 完整任务测试
+完整任务从正式发车位置开始，记录总用时、成功搬运数量、漏搬或误搬、两车分离情况以及最终回库结果。测试在相同条件下连续进行5轮，以成功率和平均用时综合评价程序版本，而不是只取单次最快成绩。
+表7.2 完整任务测试记录
+7.4 本章小结
+本章给出了整车固定参数以及运动、感知和完整任务的测试方法。主驱一体新车装配完成后将重新补齐质量、最大尺寸、误差和成功率数据。
+
+第八章 结论与展望
+8.1 工作总结
+本项目完成了两辆三轮全向搬运车的机械、电控、视觉和协同控制设计。最新硬件采用主驱一体承载式四层PCB，将RT1021主控、电源、三路DRV8701E驱动、编码器及通信接口集成在单板上，并由PCB直接作为车体主体板；软件实现三轮轮速闭环、IMU航向控制、世界坐标走点、目标识别、双车高速同步和多目标任务状态机。一体化方案减少了独立底盘和板间线束，有利于进一步减重和缩短功率路径。
+8.2 存在问题与改进方向
+主驱一体版本仍需通过新车实测进一步优化。轮胎打滑会造成编码器里程累计误差，颜色阈值仍受现场光照影响；与此同时，PCB直接承担车体主体功能后，需要重点验证轮组固定处的长期刚度、板体受弯、三路MOSFET高负载温升以及功率区对IMU和编码器的干扰。
+
+参考文献
+[1] 张国良, 安雷, 汤文俊. 三轮驱动移动机器人轨迹跟踪控制[J]. 计算机应用, 2011, 31(8): 2293-2296.
+[2] LIU Y, ZHU J J, WILLIAMS R L II, et al. Omni-directional mobile robot controller based on trajectory linearization[J]. Robotics and Autonomous Systems, 2008, 56(5): 461-479.
+[3] 武星, 余文康, 楼佩煌, 等. 大型部件的多机器人合作搬运协同导引控制[J]. 中国机械工程, 2022, 33(13): 1586-1595.
+[4] 张海森, 张煌, 王常顺. 基于多机器人编队控制的大件物品协同搬运[J]. 山东大学学报(工学版), 2023, 53(4): 157-162.
+[5] WANG H, GUO D, LIANG X, et al. Adaptive vision-based leader-follower formation control of mobile robots[J]. IEEE Transactions on Industrial Electronics, 2017, 64(4): 2893-2902.
+[6] EYUBOGLU M, ATALI G. A novel collaborative path planning algorithm for 3-wheel omnidirectional Autonomous Mobile Robot[J]. Robotics and Autonomous Systems, 2023, 169: 104527.
+[7] 阴贺生, 张秋菊, 宁萌. 基于滑动动力学模型的机器人轨迹跟踪控制[J]. 机械传动, 2018, 42(4): 1-6.
+[8] 简傲, 闵华松, 黄文晖. 三轮全向移动机器人里程计在线校正方法研究[J]. 机床与液压, 2022, 50(3): 1-9.
+[9] 高云波, 季聪, 汉鹏武. 基于摄像头识别路径的智能车系统设计[J]. 兰州理工大学学报, 2013, 39(6): 97-102.
+[10] 邹华东, 贾瑞清, 张畅. 飞思卡尔智能车赛道识别及控制策略研究[J]. 机床与液压, 2018, 46(15): 94-98.
+[11] ZHANG Z. A flexible new technique for camera calibration[J]. IEEE Transactions on Pattern Analysis and Machine Intelligence, 2000, 22(11): 1330-1334.
+
+附录
+附录A 主驱一体板关键电路原理图
+
+图A-1 主驱一体板电源与保护原理图
+
+图A-2 主驱一体板主控及接口原理图
+
+图A-3 主驱一体板三路电机驱动原理图
+
+图A-4 红外灯板原理图
+
+
+图A-5 主驱一体PCB顶、底面三维图
+
+图A-6 红外灯板实物图
+附录B 车模技术检查表
+附录C 车模及电路板照片
+本附录采用整车正面、侧面和顶部实物图集中展示主驱一体板、轮组、视觉机构、电池及红外灯板等部件的实际安装关系，并补充主驱一体板装车实物图。
+C.1 A、B车整车多视图
+　
+图C-1 A、B两车正面实物图（左：A车；右：B车）
+　
+图C-2 A、B两车侧面实物图（左：A车；右：B车）
+　
+图C-3 A、B两车顶部实物图（左：A车；右：B车）
+
+C.2 主驱一体板装车实物
+
+图C-4 主驱一体板装车实物图
+
+
+附录D 程序源代码
+D.1 主控基础工具与坐标换算
+def clamp(x, lo, hi):
+    if x < lo:
+        return lo
+    if x > hi:
+        return hi
+    return x
+
+def choose_yaw(target, current):
+    while target - current > 180.0:
+        target -= 360.0
+    while target - current < -180.0:
+        target += 360.0
+    return target
+
+def move_speed(remain, max_speed, tol):
+    if remain <= tol:
+        return 0.0
+    max_speed = abs(max_speed)
+    if max_speed < KIN[4]:
+        max_speed = KIN[4]
+    if remain >= KIN[5]:
+        return max_speed
+    ratio = clamp(remain / KIN[5], 0.0, 1.0)
+    return KIN[4] + (max_speed - KIN[4]) * ratio
+
+def put16(buf, index, value):
+
+    value = int(value)
+    if value < -32768:
+        value = -32768
+    elif value > 32767:
+        value = 32767
+    if value < 0:
+        value += 65536
+    buf[index] = (value >> 8) & 0xFF
+    buf[index + 1] = value & 0xFF
+
+def wrap_yaw_for_tx(yaw):
+
+    yaw = float(yaw)
+    while yaw >= 180.0:
+        yaw -= 360.0
+    while yaw < -180.0:
+        yaw += 360.0
+    return yaw
+
+def clear_cmd():
+    C[0] = 0
+    C[1] = 0
+    C[2] = 0
+    C[3] = 0
+
+def reset_speed_pid():
+    i = 0
+    while i < 3:
+        W[9 + i] = 0
+        W[12 + i] = 0
+        i += 1
+
+def stop_all():
+    clear_cmd()
+    motors = DRIVE[1]
+    i = 0
+    while i < 3:
+        W[i] = 0
+        W[3 + i] = 0
+        W[6 + i] = 0
+        W[9 + i] = 0
+        W[12 + i] = 0
+        try:
+            motors[i].duty(0)
+        except Exception:
+            pass
+        i += 1
+
+def clear_vision(full=0):
+    V[9] = 0
+    V[10] = 0
+    if full:
+        V[0] = 0
+        V[1] = 0
+        V[5] = 0
+        V[6] = 0
+        V[7] = 0
+        V[8] = _LABEL_RED
+        V[11] = 0
+        V[12] = 0
+
+def flush_vision_uart():
+    if IO[3] is None:
+        return
+    try:
+        count = 0
+        while count < 4:
+            length = IO[3].any()
+            if not length:
+                break
+            IO[3].read(32 if length > 32 else length)
+            count += 1
+    except Exception:
+        pass
+
+def request_vision(mode):
+    V[2] = int(mode)
+    V[3] = 8
+    V[4] = 0
+
+def world_to_body():
+    angle = -P[0] * math.pi / 180.0
+    c = math.cos(angle)
+    s = math.sin(angle)
+    C[0] = C[2] * c + C[3] * s
+    C[1] = -C[2] * s + C[3] * c
+
+def projection_from(start_x, start_y, unit_x, unit_y):
+    return (P[3] - start_x) * unit_x + (P[4] - start_y) * unit_y
+
+def yaw_step(yaw):
+    R[2] = _S_TURN
+    P[1] = choose_yaw(yaw, P[0])
+    if abs(P[1] - P[0]) <= 3:
+        R[7] += 1
+    else:
+        R[7] = 0
+    if R[7] >= 10:
+        stop_all()
+        return True
+    return False
+D.2 主控接口初始化与视觉帧解析
+    time.sleep_ms(100)
+
+    switch = Pin('D9', Pin.IN, pull=Pin.PULL_UP_47K, value=True)
+    switch_start = switch.value()
+
+    try:
+        ir_led = Pin('B26', Pin.OUT, value=1)
+    except Exception:
+        ir_led = None
+
+    try:
+        car_rts = Pin('C5', Pin.OUT, value=0)
+    except Exception:
+        car_rts = None
+
+    try:
+        car_uart = UART(2)
+        car_uart.init(460800)
+        start_flush = time.ticks_ms()
+        while time.ticks_diff(time.ticks_ms(), start_flush) < 300:
+            length = car_uart.any()
+            if length:
+                car_uart.read(32 if length > 32 else length)
+            time.sleep_ms(5)
+    except Exception:
+        car_uart = None
+
+    try:
+        vision_uart = UART(5)
+        vision_uart.init(115200)
+        time.sleep_ms(100)
+        length = vision_uart.any()
+        if length:
+            vision_uart.read(32 if length > 32 else length)
+    except Exception:
+        vision_uart = None
+
+    encoders = (
+        encoder('D13', 'D14'),
+        encoder('C2', 'C3'),
+        encoder('C0', 'C1'),
+    )
+
+    motors = (
+        MOTOR_CONTROLLER(MOTOR_CONTROLLER.PWM_D4_DIR_D5, 13000, duty=0, invert=True),
+        MOTOR_CONTROLLER(MOTOR_CONTROLLER.PWM_C28_DIR_C29, 13000, duty=0, invert=True),
+        MOTOR_CONTROLLER(MOTOR_CONTROLLER.PWM_C30_DIR_C31, 13000, duty=0, invert=True),
+    )
+
+    io = [switch, switch_start, car_uart, vision_uart, None, ir_led, car_rts]
+    sens = (imu, offset_z, time.ticks_ms())
+    drive = (encoders, motors)
+    return io, sens, drive
+
+def process_vision_rx():
+    if IO[3] is None:
+        return
+    try:
+        length = IO[3].any()
+        if not length:
+            return
+        if length > 8:
+            length = 8
+        data = IO[3].read(length)
+        if not data:
+            return
+
+        for value in data:
+            value &= 0xFF
+            if V[0] == 0:
+                if value == _FRAME_HEAD1:
+                    VBUF[0] = value
+                    V[0] = 1
+                continue
+
+            if V[0] == 1:
+                if value == _FRAME_HEAD2:
+                    VBUF[1] = value
+                    V[1] = 2
+                    V[0] = 2
+                elif value == _FRAME_HEAD1:
+                    VBUF[0] = value
+                else:
+                    V[0] = 0
+                continue
+
+            VBUF[V[1]] = value
+            V[1] += 1
+            if V[1] < 8:
+                continue
+
+            V[0] = 0
+            V[1] = 0
+            checksum = 0
+            i = 0
+            while i < 7:
+                checksum = (checksum + VBUF[i]) & 0xFF
+                i += 1
+            if checksum != VBUF[7]:
+                continue
+
+            label = VBUF[2] & 0xFF
+            x = (VBUF[3] << 8) | VBUF[4]
+            if x & 0x8000:
+                x -= 65536
+            y = (VBUF[5] << 8) | VBUF[6]
+            if y & 0x8000:
+                y -= 65536
+            now = time.ticks_ms()
+D.3 视觉坐标换算、通信与图像初始化
+def get_real_distance(px_x, px_y, h_mm=None, tilt_deg=None, img_w=160.0, img_h=120.0):
+    if img_w <= 0 or img_h <= 0:
+        return None
+
+    x = px_x * (HOMO_W / img_w)
+    y = px_y * (HOMO_H / img_h)
+
+    den = H20 * x + H21 * y + H22
+    if -0.000001 < den < 0.000001:
+        return None
+
+    wx = (H00 * x + H01 * y + H02) / den
+    wy = (H10 * x + H11 * y + H12) / den
+
+    if wx < VALID_X_MIN or wx > VALID_X_MAX:
+        return None
+    if wy < VALID_Y_MIN or wy > VALID_Y_MAX:
+        return None
+
+    return (wx, wy)
+
+def _clamp_i16(value):
+    value = int(value)
+    if value < -32768:
+        return -32768
+    if value > 32767:
+        return 32767
+    return value
+
+def _put_i16_be(buf, idx, value):
+    value = _clamp_i16(value)
+    if value < 0:
+        value += 65536
+    buf[idx]     = (value >> 8) & 0xFF
+    buf[idx + 1] =  value       & 0xFF
+
+def send_hex_packet(label, x, y):
+    if uart is None:
+        return None
+
+    packet = bytearray(8)
+    packet[0] = 0xAA
+    packet[1] = 0x55
+    packet[2] = int(label) & 0xFF
+
+    _put_i16_be(packet, 3, x)
+    _put_i16_be(packet, 5, y)
+
+    s = 0
+    for i in range(7):
+        s = (s + packet[i]) & 0xFF
+    packet[7] = s
+
+    uart.write(packet)
+    return packet
+
+def init_camera():
+    sensor.reset()
+    sensor.set_pixformat(sensor.RGB565)
+    sensor.set_framesize(sensor.QVGA)
+
+    try:
+        sensor.set_framerate(60)
+    except Exception as e:
+        if DEBUG_PRINT:
+            print("set_framerate skip:", repr(e))
+
+    sensor.skip_frames(time=2000)
+
+    try:
+        sensor.set_auto_gain(False)
+        sensor.set_auto_whitebal(False)
+        sensor.set_auto_exposure(False, exposure_us=600)
+    except Exception as e:
+        if DEBUG_PRINT:
+            print("camera manual exposure skip:", repr(e))
+D.4 视觉坐标滤波与模式切换
+def reset_coord_filter(state):
+    state[0] = None
+    state[1] = 0.0
+    state[2] = 0.0
+    state[3] = 0.0
+    state[4] = 0.0
+    state[5] = 0.0
+    state[6] = 0.0
+    state[7] = 0
+
+def filter_coordinates(state, target_type, raw_x, raw_y):
+    """返回EMA滤波坐标；未确认的剧烈跳变返回None。"""
+    raw_x = float(raw_x)
+    raw_y = float(raw_y)
+
+    if not COORD_FILTER_ENABLED:
+        return int(round(raw_x)), int(round(raw_y))
+
+    if state[0] != target_type:
+        state[0] = target_type
+        state[1] = raw_x
+        state[2] = raw_y
+        state[3] = raw_x
+        state[4] = raw_y
+        state[5] = 0.0
+        state[6] = 0.0
+        state[7] = 0
+        return int(round(raw_x)), int(round(raw_y))
+
+    dx = raw_x - state[3]
+    dy = raw_y - state[4]
+    jump_limit_sq = COORD_JUMP_THRESHOLD_MM * COORD_JUMP_THRESHOLD_MM
+
+    if dx * dx + dy * dy > jump_limit_sq:
+        pending_dx = raw_x - state[5]
+        pending_dy = raw_y - state[6]
+        if state[7] > 0 and pending_dx * pending_dx + pending_dy * pending_dy <= jump_limit_sq:
+            state[7] += 1
+        else:
+            state[5] = raw_x
+            state[6] = raw_y
+            state[7] = 1
+
+        if state[7] < COORD_JUMP_CONFIRM_FRAMES:
+            return None
+
+        state[1] = raw_x
+        state[2] = raw_y
+        state[3] = raw_x
+        state[4] = raw_y
+        state[5] = 0.0
+        state[6] = 0.0
+        state[7] = 0
+        return int(round(raw_x)), int(round(raw_y))
+
+    state[3] = raw_x
+    state[4] = raw_y
+    state[5] = 0.0
+    state[6] = 0.0
+    state[7] = 0
+    alpha = COORD_EMA_ALPHA
+    state[1] = alpha * raw_x + (1.0 - alpha) * state[1]
+    state[2] = alpha * raw_y + (1.0 - alpha) * state[2]
+    return int(round(state[1])), int(round(state[2]))
+
+def _get_color_roi(img):
+    x = max(0, min(int(COLOR_ROI_X), img.width() - 1))
+    y = max(0, min(int(COLOR_ROI_Y), img.height() - 1))
+    w = max(1, min(int(COLOR_ROI_W), img.width() - x))
+    h = max(1, min(int(COLOR_ROI_H), img.height() - y))
+    return (x, y, w, h)
+
+def process_mode_command():
+    global mode, belt_sent, last_belt_send_ms, block_sent, last_block_send_ms
+    global locked_column_x, column_lost_cnt, color_send_cnt
+    global locked_target_id, target_id_lost_cnt
+    global target_preempt_id, target_preempt_cnt
+    global block_locked_type, block_type_lost_cnt
+    global block_preempt_type, block_preempt_cnt
+    global block_locked_column_x, block_column_lost_cnt
+
+    if uart is None:
+        return
+
+    try:
+        if not uart.any():
+            return
+        data = uart.read()
+        if not data:
+            return
+
+        for b in data:
+            if b == 0 or b == 48:
+                mode               = MODE_BELT
+                reset_coord_filter(color_coord_filter_state)
+                reset_coord_filter(block_coord_filter_state)
+                belt_sent          = False
+                last_belt_send_ms  = 0
+                block_sent         = False
+                last_block_send_ms = 0
+                block_locked_type = None
+                block_type_lost_cnt = 0
+                block_preempt_type = None
+                block_preempt_cnt = 0
+                block_locked_column_x = None
+                block_column_lost_cnt = 0
+                locked_column_x    = None
+                column_lost_cnt    = 0
+                locked_target_id = None
+                target_id_lost_cnt = 0
+                target_preempt_id = None
+                target_preempt_cnt = 0
+                color_send_cnt     = 0
+                print("MODE 0: BELT")
+
+            elif b == 1 or b == 49:
+                mode = MODE_COLOR
+                reset_coord_filter(color_coord_filter_state)
+                reset_coord_filter(block_coord_filter_state)
+                block_locked_type = None
+                block_type_lost_cnt = 0
+                block_preempt_type = None
+                block_preempt_cnt = 0
+                block_locked_column_x = None
+                block_column_lost_cnt = 0
+                locked_column_x = None
+                column_lost_cnt = 0
+                locked_target_id = None
+                target_id_lost_cnt = 0
+                target_preempt_id = None
+                target_preempt_cnt = 0
+                color_send_cnt = 0
+                print("MODE 1: COLOR")
+
+            elif b == 2 or b == 50:
+                mode = MODE_TAG
+                reset_coord_filter(color_coord_filter_state)
+                reset_coord_filter(block_coord_filter_state)
+                print("MODE 2: TAG")
+
+    except Exception as e:
+        if DEBUG_PRINT:
+            print("MODE CMD ERR:" + repr(e))
+D.5 图像辅助处理与颜色识别运行框架
+def led_blink(times, on_ms=80, off_ms=80):
+    for _ in range(times):
+        run_led.on()
+        time.sleep_ms(on_ms)
+        run_led.off()
+        time.sleep_ms(off_ms)
+    run_led.on()
+
+def _point_in_block_roi(px, py):
+    top_left, top_right, bottom_right, bottom_left = _BLOCK_ROI_POINTS
+    top_y = top_left[1]
+    bottom_y = bottom_left[1]
+    height = bottom_y - top_y
+    if height <= 0 or py < top_y or py > bottom_y:
+        return False
+    offset = py - top_y
+    left_x = top_left[0] + ((bottom_left[0] - top_left[0]) * offset) // height
+    right_x = top_right[0] + ((bottom_right[0] - top_right[0]) * offset) // height
+    return left_x <= px <= right_x
+
+def _is_white_glare(img, blob):
+    if not WHITE_GLARE_FILTER_ENABLED:
+        return False
+
+    try:
+        stats = img.get_statistics(
+            thresholds=WHITE_THRESHOLD,
+            roi=blob.rect(),
+        )
+        l_mean = stats.l_mean()
+        l_stdev = stats.l_stdev()
+    except Exception as e:
+        if DEBUG_PRINT:
+            print("[WHITE STAT] unavailable:", repr(e))
+        return False
+
+    glare = (
+        l_mean >= WHITE_GLARE_L_MEAN_MIN
+        and l_stdev <= WHITE_GLARE_L_STDEV_MAX
+    )
+    if DEBUG_PRINT:
+        print("[WHITE STAT] Lmean=%.1f Lstd=%.1f glare=%d rect=%s" %
+              (l_mean, l_stdev, 1 if glare else 0, str(blob.rect())))
+    return glare
+
+def run_color_mode(img):
+    global color_send_cnt
+
+    try:
+        img.draw_rectangle(_get_color_roi(img), color=(0, 0, 0), thickness=2)
+        candidates = collect_color_targets(img)
+
+        for item in candidates:
+            img.draw_rectangle(item["rect"], color=item["color"], thickness=2)
+
+        selected = select_color_target(candidates)
+
+        if selected is None:
+            color_send_cnt = 0
+            return
+
+        img.draw_rectangle(selected["rect"], color=(255, 0, 255), thickness=3)
+        img.draw_cross(selected["px"], selected["py"],
+                       color=(255, 255, 255), size=6, thickness=2)
+
+        label = selected["label"]
+        x = selected["x"]
+        y = selected["y"]
+
+        filtered_color = filter_coordinates(
+            color_coord_filter_state,
+            label,
+            x,
+            y,
+        )
+        if filtered_color is None:
+            color_send_cnt = 0
+            return
+        x, y = filtered_color
+
+        if DEBUG_PRINT:
+            print("[TARGET] ID=%d d=%.1f x=%d y=%d total=%d" %
+                  (label, selected["dist"], x, y, len(candidates)))
+
+        color_send_cnt += 1
+        if color_send_cnt > 1:
+            try:
+                send_hex_packet(label, x, y)
+                color_send_cnt = 0
+                if DEBUG_PRINT:
+                    print("[TARGET] SENT ID=%d X=%d Y=%d" % (label, x, y))
+            except Exception as e:
+                print("[TARGET] SEND FAIL:" + repr(e))
+
+    except Exception as e:
+        print("[COLOR] ERR:" + repr(e))
+
+def run_tag_mode(img):
+    pass
+
+
+===== TABLE 1 =====
+项目 | 参数/结果
+主控平台 | NXP i.MX RT1021 MicroPython
+驱动结构 | 主驱一体4层PCB，集成3路DRV8701E/车
+驱动电机 | 3个有刷直流电机/车
+底盘形式 | 主驱一体PCB承载式三轮120°全向车模
+控制周期 | 10 ms（100 Hz）
+视觉串口 | UART5，115200 bit/s
+双车通信 | UART2，460800 bit/s
+电池 | 3S锂电，11.1 V标称/12.6 V满电
+A车整车质量 | 295.5g
+B车整车质量 | 248.9g
+A车最大尺寸 | 253mm
+B车最大尺寸 | 220mm
+
+===== TABLE 2 =====
+测试次数 | 用时/s | 成功搬运数 | 回库结果 | 备注
+第1次 | __35.7__ | __3__ | __成功__ | ____
+第2次 | __34.8__ | __3__ | __成功__ | ____
+第3次 | __33.8__ | __3__ | __成功__ | ____
+第4次 | __58.3__ | __5__ | __成功__ | ____
+第5次 | __58.6__ | __5__ | __成功__ | ____
+第6次 | __57.9__ | __5__ | __成功__ | ____
+
+===== TABLE 3 =====
+队伍名称 | 飞翔的红苕 | 飞翔的红苕 | 飞翔的红苕 | 飞翔的红苕
+参赛学校 | 成都信息工程大学 | 成都信息工程大学 | 成都信息工程大学 | 成都信息工程大学
+赛题组组别 | 蚂蚁搬家组 | 蚂蚁搬家组 | 蚂蚁搬家组 | 蚂蚁搬家组
+检查项目 | 规格 （选手自行填写） | 符合 （） | 不符合（） | 备注
+1.车模类型是什么？ | 自制车模 |  |  | 如果是自制车模，请标明自制。
+车模整体尺寸： （包括传感器在内）长，宽，高(mm) | A车：253*173*238 B车：220*173*185 |  |  | 
+传感器种类、规格(型号)数量。 是否使用自带MCU的成品传感器模块？型号是什么？ | 1、A车： OpenArtPlus（1个） 1024线编码器（3个） IMU660RC（1个） B车： OpenArtPlus（1个） 1024线编码器（3个） IMU660RC（1个） 2、OpenArtPlus为自带MCU的视觉模块 |  |  | 
+控制转向舵机型号是否自行改装舵机？ 防伪易损标签是否完整？ | 无 |  |  | 
+1. 是否增加伺服电机？ 2. 如果有种类、个数和作用？ | 否 |  |  | 
+电路中微处理器型号和个数？ | A车：RT1021 （1个） B车：RT1021 （1个） |  |  | 
+是否具有其它可编程器件，个数与作用？ | 主驱一体板预留无线串口接口；是否安装无线通信模块按最终比赛装车状态填写 |  |  | 
+是否有无线通讯装置？ 如果有种类和个数？ | 1.否 |  |  | 
+电池的种类、规格和数量？ | A车：锂电池：3s（1个） B车: 锂电池：3s（1个） |  |  | 
+1. 是否使用GPS导航？ 2. 是否没有使用RTK？ | 1、否 2、否 |  |  | 
+后轮驱动电机是否是原车模电机？ 是否具有防伪易损标签？ | 自制车模，不适用原车模电机/防伪标签项 |  |  | 
+车模轮胎是否原有的纹理可辨析？ 轮胎表面是否具有粘性物质？ 对于麦克纳姆轮是否更换过小轮胶皮？ | 采用全向轮，自制车模；原车模轮胎相关项不适用 |  |  | 
+车轮轴距、轮距是否改装？ 改装参数是什么？ | 自制车模，轮位由主驱一体PCB及安装结构确定 |  |  | 
+车模驱动轮传动机构是否改装？ 改装方式是什么？ | 自制三轮直接驱动结构，无原车模改装项 |  |  | 
+是否更换过原装车模中的机械元器件？更换后的规格 是什么？ |  |  |  | 自制车模
+车模电路板个数及功能。 其中是否有购买成品电路板？ | 1、A车：2个 主驱一体板：RT1021主控、电源、三路有刷电机驱动、编码器/IMU/通信接口，并作为车体主体板 红外灯板：为B车提供跟随参考 B车：1个 主驱一体板：RT1021主控、电源、三路有刷电机驱动、编码器/IMU/通信接口，并作为车体主体板 2、均为自制电路板 |  |  | 
+自制电路板是否标记有学校名称、队伍名称、制作日期等信息？ 标示信息在PCB的哪一层？ | 是 覆铜层 |  |  | 2026 成都信息工程大学 飞翔的红苕
+其它待说明内容 |  |  |  | 
+检查人员签名： | 检查意见： | 检查意见： | 检查意见： | 检查意见：

@@ -1,0 +1,4781 @@
+第21届全国大学生智能汽车竞赛
+“蚂蚁搬家”赛题技术报告
+基于RT1021主从双车、INS与视觉协同的搬运系统
+参赛学校：南通理工学院
+队伍名称：微蚁智驱车队
+参赛队员：高宁 孙丽雯 朱诗于 冀哲润
+带队教师：王俊龙
+
+
+
+
+2026年
+
+
+
+
+
+主要符号表
+表I 主要符号表
+
+第一章 引言
+“蚂蚁搬家”赛题要求模型汽车在限定场地内完成目标物体识别、接近、推送、返回以及主从车辆协同等任务。该赛题同时考验机械结构、电机驱动、传感器融合、视觉识别、无线通信和嵌入式软件工程能力。
+本报告的章节组织、技术参数和源代码附录按全国大学生智能汽车竞赛技术报告要求编排。[1]
+本队伍采用RT1021作为主控制器，构建主车与从车协同搬运系统。主车搭载OpenArt Mini摄像头完成目标识别和任务决策，并使用IMU660RB、编码器Pro及一路灰度传感器实现姿态、位移和边界检测；从车通过无线串口接收主车的目标、位置和动作指令，执行跟随、对准、绕行和协同推物。
+本报告围绕总体方案、机械与电气系统、传感器安装、软件算法、开发调试、技术参数和问题改进展开说明。功耗、电容容量、采样频率和实车性能数据中尚未完成仪器实测的项目，均标记为“待实测”，提交前应由参赛队补齐。
+1.1 设计目标
+在不改变车模基本运动机构的基础上，实现稳定的目标识别与搬运。
+通过主从双车分工减少单车路径压力，提高场地覆盖和搬运效率。
+使用INS完成位置和方向控制，使用灰度传感器识别黄色边线并对边界位置进行校正。
+使寻物、对准、推物和返回状态机可解释、可调试、可复现。
+1.2 技术路线概述
+系统采用“视觉选目标—INS接近—视觉对准—主从协同—推物—灰度确认边界—INS返回”的闭环路线。主车负责目标选择、目标坐标估计及无线指令发送；从车根据主车发送的16浮点通信帧执行协同动作。推物阶段灰度传感器仅作为黄色边线确认条件，避免仅依赖累积位移造成提前返回。
+
+第二章 总体设计与任务分工
+2.1 系统总体架构
+系统由主车、从车、OpenArt Mini视觉模块、RT1021主控、IMU660RB、编码器Pro、无线串口和一路灰度传感器组成。主车和从车分别运行MicroPython控制程序，主车与从车之间使用无线串口传输协同帧，摄像头与主车RT1021之间使用UART传输视觉结果。
+2.2 主从车辆分工
+表2.1 主从车辆任务分工
+2.3 目标优先级与锁定
+视觉端按照网球3号优先、小熊4/5号同级、沙包1/2号同级的规则选择目标。目标一旦被主车锁定，后续对准和推物阶段应继续使用原目标标签，不能因相邻物体在画面中更明显而覆盖push_color。对于2号物体，本方案增加一次性搬运记录：主车在灰度确认推到黄线后发送完成命令，视觉端把2号加入done_labels，后续跳过2号；1号不加入该集合，仍按原策略处理。
+
+第三章 机械结构与传感器安装
+3.1 车模总体尺寸
+根据队伍提供的实测数据，车模总体尺寸约为：长19 cm、宽18 cm、高30 cm。尺寸数据应在最终装配状态下复测，并在提交版中注明测量误差和是否包含摄像头支架、线束和外露器件。
+表3.1 车模基本参数与复测项目
+3.2 传感器与执行器安装
+IMU660RB安装在车体刚性较强、接近车体几何中心的位置，安装面应与车体坐标轴平行，避免软连接和明显振动。
+一路灰度传感器安装在车体中部下方，用于检测黄色边线。根据已有测试，传感器到地面约1.5 cm，黄色区域输出高于蓝色地面，阈值需在实际赛场光照下复测。
+OpenArt Mini摄像头倒置安装，软件端必须保持图像坐标与倒装姿态的映射一致；摄像头支架应避免遮挡视场并保证每次装配角度重复。
+编码器Pro用于N20减速电机的轮速反馈，编码器线束应远离电机动力线，连接器做好防松处理。
+无线串口模块固定在主控板附近，天线和电机动力线保持一定间距，主从两车的地址和波特率必须分别核对。
+3.3 主板和接口图示
+
+图3.1 新版主控板电源、使能及接口原理图
+
+
+
+图3.2 新版主控板RT1021、编码器、传感器及通信接口原理图
+本节已使用本队伍最新主板原理图替换旧版参考图片。图中接口标注用于核对RT1021核心板、IMU660RB、编码器Pro、灰度传感器、无线串口和电机驱动的连接关系；正式提交时仍应补充主车、从车实物装配照片，并标注各器件的实际安装位置。
+
+第四章 电气系统与通信设计
+4.1 电源和驱动系统
+车模采用N20减速电机（有刷电机）驱动。RT1021负责控制算法和电机控制接口，编码器Pro提供轮速反馈，速度环和位置环共同限制电机输出。动力回路与逻辑回路应在布线和接地上进行区分，传感器供电应尽量避免电机换向造成的电压波动。
+RT1021的硬件资源配置和外设连接遵循芯片参考手册及对应MicroPython库的接口约定。[2]
+表4.1 主控板主要电气参数
+4.1.1 主控板原理图与电源设计
+主控板原理图按功能划分为电源开关、电机电源输入、3.3 V电源、5 V电源、5 V电机使能控制、RT1021核心板接口、传感器接口、编码器接口、无线串口和状态指示电路。电池输入首先经过电源开关和反接/浪涌保护，再分别产生电机动力电源、5 V逻辑电源和3.3 V数字电源。电源部分使用输入滤波、电源指示和去耦电容降低电机换向及无线通信对逻辑电源的干扰。
+根据电路板设计初稿，电源输入端设置P沟道MOS保护和16 V瞬态抑制，3.3 V支路采用RT9013-33类稳压器，5 V支路提供逻辑及外设供电；初稿统计全板电容总容量约382.4 μF，最终数值应以实际焊接BOM和未装配/不计入的器件范围复核。
+
+图4.1 主控板电源及电机使能原理图
+
+图4.2 主控板RT1021、传感器、编码器与通信接口原理图
+RT1021核心板通过信号输入接口连接电机驱动方向/使能/PWM信号、编码器反馈、IMU、无线串口和灰度传感器。原理图中的接口标识用于指导PCB布线和整车接线，最终烧录前应逐项核对接口编号、电平和供电电压。
+4.1.2 DRV8701三路电机驱动电路
+电机驱动板采用三片DRV8701栅极驱动器，分别对应三路有刷N20减速电机。每一路由RT1021提供方向、PWM和使能信号，DRV8701驱动外部H桥MOSFET完成电机正反转和调速；驱动器的电源端配置输入去耦和自举相关电容，故障、休眠和电流检测信号回传控制板。三路驱动结构保持一致，便于更换电机、排查单路故障和进行轮速标定。
+
+图4.3 DRV8701三路电机驱动原理图
+
+图4.4 DRV8701电机驱动板PCB布局
+4.1.3 一路灰度传感器电路
+灰度模块采用光电反射检测和LM393比较器。传感器输出经电阻网络和可调电阻形成比较电压，LM393将反射强度转换为逻辑输出，同时保留OUT接口供RT1021采集。比赛使用一路灰度接入B12进行ADC采样，软件根据蓝色地面与黄色边线的实测分布设置阈值；板上比较器和指示灯可用于硬件调试，但最终状态机采用ADC数值进行黄线事件确认。
+
+图4.5 一路灰度传感器LM393比较器原理图
+
+图4.6 灰度传感器PCB布局
+4.1.4 PCB布局与接口可靠性
+PCB布局按照动力、逻辑和外部接口分区。主控板保留RT1021核心板、拨码/按键、LED、编码器、无线串口和传感器插座；驱动板将三路DRV8701及MOSFET功率回路集中布置，缩短大电流回路并预留散热和电源输入端；灰度板采用独立接口，便于调整安装高度和更换传感器。PCB图中的丝印、接口极性和安装孔用于装配定位，正式报告应同时保留原理图PDF/图片和可编辑工程文件。
+
+
+
+
+图4.7 主控板PCB三维布局
+4.2 主从通信帧
+主从通信采用16个小端浮点数的数据区，完整帧格式为：帧头、地址、16个float数据、帧尾。有效载荷长度为64字节，连同帧头、地址和帧尾后，整帧长度为67字节。主车发送目标标签、目标位置、角度和协同阶段；回程阶段发送250位置帧，从车据此跟随主车轨迹。
+data = (
+    114, push_color, circle_contact_x, circle_contact_y,
+    circle_contact_x, circle_contact_y, angle_target, 0,
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+)
+payload = struct.pack('<16f', *data)
+4.3 视觉串口协议
+OpenArt Mini向主车输出文本行，当前格式为label,cx,cy,side_flag,cmd。其中label为1~5目标标签，cx、cy为图像中心，side_flag为侧边提示，cmd为避障策略字符。为支持2号一次性搬运，主车完成推物后通过现有命令6通知视觉端；视觉端清除当前锁定，并将2号写入done_labels。
+
+第五章 软件架构与核心算法
+5.1 状态机设计
+主车状态机按照“启动—目标获取—INS接近—视觉对准—圆弧协同—方向调整—接触/推物—回退—返回”的顺序运行。各状态通过返回下一个状态编号实现转换，状态内部使用保持计时器、PID误差阈值和传感器事件避免瞬态抖动。
+从车接收主车协同帧后，进入对应的接近、对准、圆弧和推物状态。主从之间不共享视觉画面，因此从车不重新选择目标，只执行主车发送的目标标签和动作阶段。
+5.2 INS与编码器融合
+IMU660RB提供角速度和姿态信息，编码器Pro提供轮速信息，SpeedComposer_INS根据三轮速度和航向估计车体平面位置。速度、位置和角度控制分别使用PID闭环。启动时应进行陀螺仪零偏采集，车体静止期间完成零偏估计；运行中对小角速度设置死区，降低静止抖动造成的航向漂移。
+IMU660RB的安装、零偏采样和姿态数据使用方式参考其器件说明与标定建议。[4]
+5.3 灰度边界检测与INS刷新
+灰度传感器接入B12，使用ADC读数换算值进行黄色边线检测。已有测试表明黄色边线的输出明显高于蓝色地面，因此判断方向为“大于或等于阈值”。为抑制单点噪声，连续两次采样超过阈值后才触发事件。灰度只在推物状态作为黄线确认条件，不改变中间寻物和对准逻辑。
+power_adc = ADC('B12')
+gray_thre = 150
+gray_high_count = 0
+
+def read_grayscale():
+    global gray_high_count
+    value = power_adc.read_u16() // 100
+    if value >= gray_thre:
+        gray_high_count += 1
+    else:
+        gray_high_count = 0
+    if gray_high_count >= 2:
+        gray_high_count = 0
+        return 1
+    return 0
+边界刷新时只修正与边界方向一致的坐标轴：前边界修正Y，左/右边界修正X，另一个坐标轴保持当前INS估计值。正式比赛前应分别对主车和从车标定边界坐标，不能直接把未实测的菜单默认值作为最终参数。
+5.4 底层编译模块的计算方法与开发说明
+主车和从车程序调用的fusion_ahrs.mpy、INS.mpy、pid.mpy、kalman.mpy、global_var.mpy和key.mpy为MicroPython编译模块。由于当前资料只包含.mpy字节码而未包含对应.py源码，下面给出的是根据模块接口、主程序调用关系和常用运动控制理论整理的功能说明与计算模型，不将其表述为已反编译得到的逐行源码。
+5.4.1 姿态融合计算
+fusion_ahrs模块使用陀螺仪角速度进行姿态积分，并利用加速度计测得的重力方向进行修正。姿态可用四元数q表示，其连续模型为 q_dot=1/2 q乘以[0,omega]；离散更新后进行归一化。随后由四元数计算欧拉角，航向角可表示为 yaw=atan2(2(q0q3+q1q2),1-2(q2^2+q3^2))。该航向角用于INS坐标变换和AnglePID方向控制。
+q_dot = 0.5 * q * [0, wx, wy, wz]    （公式1）
+# 理论计算模型，非.mpy逐行反编译源码
+q_dot = 0.5 * quaternion_multiply(q, [0, gx, gy, gz])
+q = normalize(q + q_dot * dt)
+acc_error = normalize(acc_measure) - gravity_direction(q)
+q = attitude_correct(q, acc_error)
+yaw = atan2(2*(q0*q3 + q1*q2), 1 - 2*(q2*q2 + q3*q3))
+5.4.2 三轮速度与位置积分
+INS模块先将编码器脉冲换算为各轮线速度，再通过三轮底盘运动学矩阵合成车体坐标系速度vx、vy和角速度wz。利用姿态航向角theta将车体速度转换到场地坐标系，最后按采样周期dt积分得到X、Y位置。编码器换算的基本形式为 vi=2*pi*r*delta_count/(N*dt)，场地速度为 vX=vx*cos(theta)-vy*sin(theta)、vY=vx*sin(theta)+vy*cos(theta)。
+vX = vx*cos(theta) - vy*sin(theta)    （公式2）
+X(k+1) = X(k) + vX*dt    （公式3）
+# 理论计算模型，具体矩阵系数由车轮安装几何决定
+wheel_speed = 2 * pi * wheel_radius * delta_count / (encoder_cpr * dt)
+vx, vy, wz = inverse_kinematics(wheel_speed)
+vX = vx * cos(yaw) - vy * sin(yaw)
+vY = vx * sin(yaw) + vy * cos(yaw)
+x = x + vX * dt
+y = y + vY * dt
+5.4.3 PID闭环计算
+pid模块中的SpeedPID、AnglePID、position_PID和distance_PID分别对应速度、航向角、位置和距离误差闭环。离散PID由比例项、积分项和微分项组成，并需要进行输出限幅和积分限幅。调参时应先完成速度环，再调角度环，最后调位置和距离环。
+u(k) = Kp*e(k) + Ki*sum(e)*dt + Kd*(e(k)-e(k-1))/dt    （公式4）
+error = target - measure
+integral = clamp(integral + error * dt, integral_min, integral_max)
+derivative = (error - last_error) / dt
+output = clamp(kp * error + ki * integral + kd * derivative,
+               output_min, output_max)
+last_error = error
+5.4.4 编码器卡尔曼滤波
+kalman模块中的KalmanFilter1D用于降低编码器速度测量噪声。其理论过程包括预测和测量更新：P_pred=P+Q，K=P_pred/(P_pred+R)，x=x_pred+K(z-x_pred)，P=(1-K)P_pred。Q越大，滤波器响应越快；R越大，滤波器越信任历史估计。最终参数应通过编码器静止和匀速实验确定。
+K = P_pred/(P_pred + R),  x = x_pred + K*(z - x_pred)    （公式5）
+5.4.5 参数与按键模块
+global_var模块用于集中保存和读取菜单调试参数，key模块用于按键扫描、消抖和周期回调。两者属于参数管理和人机调试支撑模块，不直接改变主从状态机的顺序。
+5.4.6 源码可获得性说明
+上述模块当前以.mpy形式提供，无法从本报告所附文件中可靠恢复原始注释、变量名和逐行实现。提交时应将可读的main.py、OpenArt Mini视觉源码放入附录A；将.mpy文件作为附录B的固件二进制附件，并在烧录包中保留原文件名。若需要精确算法实现，应向库提供方索取对应.py源码或正式开发文档。
+5.5 视觉优先级与目标锁定
+视觉端维护目标追踪器，优先级为3号网球、4/5号小熊、1/2号沙包。目标被锁定后，主车对准和推物阶段必须继续使用原push_color。当前系统还针对2号物体增加一次性搬运机制：只有在灰度确认推物完成后，才把2号加入完成集合。
+OBJECT_PRIORITY = {
+    3: 0,  # 网球
+    4: 1,  # 小熊
+    5: 1,
+    1: 2,  # 沙包
+    2: 2,
+}
+done_labels = set()
+# 收到主车完成命令6时：
+if allowed_label == 2:
+    done_labels.add(2)
+5.6 OpenArt Mini视觉算法设计
+OpenArt Mini程序采用“图像采集—模型推理—检测框解析—目标追踪—优先级选择—避障策略—串口输出”的流水线。摄像头采集RGB565图像，模型输入使用160×128的画布；每帧调用TensorFlow Lite检测接口得到归一化检测框、类别索引和置信度，再将类别索引加1映射到主车使用的1~6标签。
+OpenArt Mini图像采集和TensorFlow Lite目标检测接口的使用遵循相应视觉模块开发资料。[5]
+检测框解析阶段将归一化坐标换算为像素坐标，计算中心点和宽高。程序为每个标签维护独立追踪器，以中心距离、IoU和历史框进行匹配；匹配成功时使用平滑系数更新框位置，短时丢帧则保留有限帧数，避免单帧抖动导致主车目标跳变。当前源码中的主要追踪参数为中心距离阈值25像素、最大丢帧3帧、平滑系数0.6。
+目标选择阶段先维持已有locked_target_id；锁定目标丢失后，才在剩余追踪器中按照OBJECT_PRIORITY选择优先级最高的目标，同优先级目标再按画面纵向位置比较。标签6被定义为障碍物，不参与搬运目标选择。主车发送1~5标签时，视觉端可进入allowed_label强制跟踪指定物体，从而保证主从协同期间视觉不会随意换目标。
+避障策略独立于搬运目标选择。程序排除当前锁定目标后，将其他检测框投影到3×3画面网格，根据中间、左侧和右侧是否存在物体生成cmd字符。cmd用于提示主车是否需要停车、向左或向右避让；避障功能由主车发送8/9命令开关，便于在不同赛道布置下进行对照测试。
+视觉最终输出五字段文本帧label,cx,cy,side_flag,cmd。label和中心坐标供主车目标对准，side_flag提供目标相对侧边信息，cmd提供避障策略。无目标时发送0,80,50等占位帧，主车保持寻找状态而不进入推物状态。
+视觉算法与主车状态机的接口边界为：视觉只负责检测、选择和输出，不直接控制电机；主车负责状态转换、INS导航、目标锁定和灰度确认。对于2号只搬运一次的扩展，应在视觉串口命令解析中处理主车完成命令6，将2号加入done_labels，并在优先级循环中跳过；当前附录所收源码尚未包含该扩展，最终烧录版本应同步更新。
+表5.1 OpenArt Mini视觉处理流程
+5.7 避障策略
+如果视觉同时检测到目标物和非目标物体，目标物仍由优先级选择，其他检测框作为潜在障碍物。接近目标阶段可根据非目标物体是否位于当前运动通道决定停车、横向绕行或继续接近；推物阶段不再临时切换目标。对于完全被目标遮挡的物体，仅靠摄像头无法保证发现，应使用固定地图避让点或额外距离传感器。
+5.8 主从协同算法优化设计
+在不改变现有状态编号、状态转换顺序和16浮点通信协议的前提下，系统算法可按“任务层—状态层—控制层—传感器层”分层优化。任务层只负责目标优先级和已完成目标集合；状态层负责寻物、接近、对准、推物和返回；控制层负责速度、位置和角度PID；传感器层负责视觉、INS、编码器和灰度采样。分层后，单个参数的调试不会直接破坏其他状态。
+第一项优化是目标锁定与目标完成管理。视觉首次选出目标后，主车保存push_color和目标追踪ID；在对准、绕圆和推物阶段只接受同标签检测，目标短时丢失时停车等待，不使用相邻物体的中心坐标。只有灰度连续确认车辆已经压到黄色边线后，才把当前目标记为完成。对2号物体使用done_labels进行一次性屏蔽，1号及其他目标不加入该集合。
+第二项优化是避障前置化。非目标检测框不参与搬运优先级，但在进入对准状态前判断其是否落入车辆预测运动通道。若通道被占用，车辆在原有接近状态内部先停止或执行横向避让，避让完成后重新确认push_color，再进入原有对准状态。这样可以避免已经选中网球后直线推动小熊，同时不在推物状态中临时改变路线。
+第三项优化是灰度与INS的双重闭环。INS负责连续运动和回程距离控制，灰度只负责提供黄色边线事件。推物状态中采用连续采样确认、事件锁存和一次性状态转移，防止单个ADC毛刺重复触发返回；触发后刷新与边界方向一致的坐标轴，另一个轴保留当前INS值。最终回程可先按原INS目标返回，再在发车区附近开启灰度找线，识别黄线后沿原方向运行设定距离再停车。
+第四项优化是主从通信握手。主车发送114时携带目标标签、圆弧接触位置和目标角度；从车仅接受当前任务标签，完成推物后发送完成信号；主车收到从车确认后再推进任务计数。回程阶段主车周期发送250及follow_phase，从车跟随主车实际位置而不是自行估计一个固定终点；主车只有在自身稳定并确认从车到达后才发送最终停止命令。
+第五项优化是速度参数分层。AHEAD_SPEED只用于推物，NEAR_SPEED只用于推物后的短回退，speed_limit和max_accel用于INS导航，CIRCLE_SPEED和CIR_SPEED_MAX用于圆弧。调试时一次只改变一层参数，并按“低速稳定—中速复现—高速验证”的顺序测试，避免通过提高推物速度掩盖目标丢失、坐标漂移或主从跟随滞后。
+第六项优化是异常恢复。视觉目标丢失时保持目标锁定而不是立即切换；通信超时则停止运动并清理缓存；灰度未检测到时只能继续到达预设INS搜索边界，禁止无限向场外运动；状态卡死计时器只用于报警和安全停车，不直接跳过推物或返回状态。
+表5.2 主从协同优化点与验证指标
+5.9 算法验收流程
+单目标测试：只放置一个目标，确认视觉锁定、对准、灰度触发和返回顺序。
+相邻目标测试：目标旁放置非目标物体，确认主车不会因标签切换或直线路径误推。
+2号一次性测试：完成2号后再次进入视场，确认视觉和主车均跳过2号，1号仍可按原策略选择。
+主从通信测试：逐帧记录114、250、完成和停止命令，检查地址、长度、字段和时序。
+高速重复测试：同一布置重复5次，记录目标丢失、提前掉头、自转、碰撞和回程偏差。
+
+第六章 开发、制作与调试过程
+6.1 开发工具
+RT1021 MicroPython固件及开发环境，用于主车和从车控制程序烧录与串口调试。
+OpenArt Mini/OpenMV运行环境，用于模型加载、图像采集、目标检测和UART输出。
+串口终端，用于观察视觉标签、中心坐标、ADC灰度值、IMU原始数据和状态转换。
+万用表、直尺/卡尺、称重工具和可调电源，用于电气和机械参数复测。
+6.2 制作与安装流程
+根据车模空间确定主板、电机驱动、无线串口和传感器安装位置。
+固定IMU660RB并校正其坐标轴方向，确保车辆静止时完成零偏采集。
+安装摄像头支架，记录倒装方向和镜头到地面的高度，固定后避免松动。
+将一路灰度传感器安装在车体中部下方，记录高度和B12接口，完成蓝地面/黄线ADC标定。
+完成主车、从车通信地址及16f帧长核对，再进行单车电机方向和编码器方向测试。
+6.3 调试方法与验收项目
+表6.1 分阶段调试与验收条件
+
+第七章 主要技术参数与待补测项目
+下表按竞赛技术报告要求汇总当前已知参数。标记为“待实测”的内容必须在最终提交前补齐，并注明测试仪器、工况和误差。
+表7.1 模型车主要技术参数与待补测项目
+
+第八章 结论与改进方向
+本方案完成了基于RT1021的主从双车搬运系统设计，形成了N20减速电机闭环驱动、IMU660RB与编码器Pro融合、OpenArt Mini视觉识别、无线串口协同和一路灰度边界检测的完整技术路线。软件采用分状态机实现，便于将寻物、对准、推物、返回和异常处理分开验证。
+当前方案的主要风险集中在视觉遮挡、INS长期漂移、灰度阈值受环境光影响、主从车间距以及通信数据缓存。后续应优先完成主从边界坐标独立标定、视觉多目标障碍物通道判断、目标标签锁定的连续帧确认、功耗和电容容量实测，并在不同光照、不同物体排列和高速工况下完成重复性测试。
+正式提交前应将本报告中的待填写字段替换为实测数据，补充主车和从车实物照片、完整电路原理图、最终烧录程序和调试记录，确保报告内容与最终参赛作品的硬件、软件版本一致。
+
+参考文献
+[1] 全国大学生智能汽车竞赛组委会. 全国大学生智能汽车竞赛技术报告内容与格式要求[Z].
+[2] NXP. RT1021 Microcontroller Reference Manual[Z].
+[3] SeekFree. RT1021 MicroPython固件及智能车相关库使用说明[Z].
+[4] SeekFree. IMU660RB使用说明与标定建议[Z].
+[5] OpenMV/Seeed Studio. OpenArt Mini视觉模块与TensorFlow Lite模型部署说明[Z].
+[6] 本队伍. 主车、从车及OpenArt Mini程序源代码与调试记录[Z].
+
+附录A 核心算法子程序
+本附录列出与报告正文直接相关的核心子程序。提交正式版本时，应在本附录后继续插入主车、从车和OpenArt Mini的完整最终源代码文件，并确保代码版本与烧录版本一致。
+A.1 灰度检测与连续确认
+power_adc = ADC('B12')
+gray_thre = 150
+gray_high_count = 0
+
+def read_grayscale():
+    global gray_high_count
+    value = power_adc.read_u16() // 100
+    if value >= gray_thre:
+        gray_high_count += 1
+    else:
+        gray_high_count = 0
+    if gray_high_count >= 2:
+        gray_high_count = 0
+        return 1
+    return 0
+A.2 推物完成后的边界刷新
+if read_grayscale() == 1:
+    INS_boundary_refresh(push_color, x_cor_temp, y_cor_temp)
+    retreat_flag = 1
+    last_good_color = push_color
+    push_color = 0
+    pid_reset_all()
+    return STATE_RETURN_RETREAT
+A.3 目标优先级与2号一次性搬运
+OBJECT_PRIORITY = {3: 0, 4: 1, 5: 1, 1: 2, 2: 2}
+done_labels = set()
+
+# 主车完成推物后发送6；视觉端只屏蔽2号
+if allowed_label == 2:
+    done_labels.add(2)
+
+for label in trackers:
+    if label == 6 or label in done_labels:
+        continue
+    # 在剩余目标中按优先级和画面位置选择
+A.4 主从16浮点通信帧
+data = (
+    114, push_color, circle_contact_x, circle_contact_y,
+    circle_contact_x, circle_contact_y, angle_target, 0,
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+)
+payload = struct.pack('<16f', *data)
+
+附录B 电路原理图与接口表
+本附录必须插入最终电路板详细设计原理图。由于本次资料中未提供可编辑原理图文件，以下先给出接口核对表，提交前请将正式原理图、接口编号、供电电压和保护电路补入。
+B.1 编译模块附件说明
+以下模块以MicroPython .mpy字节码形式参与运行，不属于可直接阅读的Python文本源码。它们应与主车、从车的最终烧录版本一起打包提交。正文第五章已给出这些模块的功能边界、理论计算模型和调试方法；如果需要逐行实现，应另附库提供方公开的.py源文件或开发手册。
+表B-1 编译模块附件说明
+表B-2 电路接口核对表
+
+附录C 关键调试数据记录表
+表C-1 关键调试数据记录表
+
+附录D 参赛程序源代码
+以下内容由参赛队提供的“灰度/完赛代码”目录整理生成。源代码按主车、从车和公共模块分组附于本报告末尾；.mpy文件为编译后的MicroPython模块，无法在报告中按文本展开，提交时应将原始.py文件或对应发布包一并保留。源码结构采用“硬件初始化—参数加载—传感器更新—控制函数—状态动作—主循环”的层次，便于定位调试和复现实验。
+代码结构优化说明：主车与从车分别保留独立入口main.py，公共驱动和算法模块按boot.py、INS、PID、滤波、按键及电机接口分类；通信协议、状态编号和主从角色保持不变，不在报告编排过程中修改行为代码。
+D.1 主车源代码
+boot.py
+源码路径：C:\Users\Lenovo\Desktop\灰度\完赛代码\主车\flash\boot.py
+# 本示例程序演示如何通过 boot.py 文件进行 soft-boot 控制
+# 使用 RT1021-MicroPython 核心板搭配对应拓展学习板的拨码开关控制
+
+# 示例程序运行效果为复位后执行本文件 通过 D8 电平状态跳转执行 user_main.py 或进入 main.py
+
+# 从 machine 库包含所有内容
+from machine import *
+
+# 包含 gc 与 time 类
+import gc
+import time
+
+# 上电启动时间延时
+time.sleep_ms(50)
+# 选择学习板上的一号拨码开关作为启动选择开关
+boot_select = Pin('D8', Pin.IN, pull=Pin.PULL_UP_47K, value = True)
+# 如果拨码开关打开 对应引脚拉低 就启动用户文件
+#if boot_select.value() == 0:
+try:
+    os.chdir("/flash")
+    execfile("user_main.py")
+except:
+    print("File not found.")
+key.py
+源码路径：C:\Users\Lenovo\Desktop\灰度\完赛代码\主车\flash\key.py
+from machine import *
+from smartcar import *
+from seekfree import *
+
+import gc
+import time
+
+key = KEY_HANDLER(10)
+
+ticker_flag = False
+
+def time_pit_handler1(time):
+    global ticker_flag
+    ticker_flag = True
+    
+pit1 = ticker(1)
+pit1.capture_list(key)
+pit1.callback(time_pit_handler1)
+
+pit1.start(10)
+
+def key_get():
+    global ticker_flag
+    global key
+    t=0
+    key_data = key.get()
+    if key_data[0]==1:
+        t=2			#下
+        key.clear(1)
+    if key_data[1]:
+        t=3			#右
+        key.clear(2)
+    if key_data[2]==1:
+        t=1			#上
+        key.clear(1)
+    if key_data[3]:
+        t=4			#左
+        key.clear(4)
+    if key_data[1]==2:
+        t=5
+        key.clear(2)           
+    if key_data[2]==2:
+        t=6
+        key.clear(3)
+     
+    return t
+motor.py
+源码路径：C:\Users\Lenovo\Desktop\灰度\完赛代码\主车\flash\motor.py
+from machine import *
+
+from smartcar import *
+from seekfree import *
+from seekfree import MOTOR_CONTROLLER
+
+import global_var
+
+import gc
+import time
+import math
+
+motor_fl=MOTOR_CONTROLLER(MOTOR_CONTROLLER.PWM_C30_DIR_C31,13000,duty=0,invert=False)
+motor_fr=MOTOR_CONTROLLER(MOTOR_CONTROLLER.PWM_C28_DIR_C29,13000,duty=0,invert=True)
+motor_b=MOTOR_CONTROLLER(MOTOR_CONTROLLER.PWM_D4_DIR_D5,13000,duty=0,invert=False)
+
+def motor_get(pwm,direction) :
+    if pwm>9000 :pwm=9000
+    elif pwm<-9000 :pwm=-9000
+    if direction==1 :
+        motor_b.duty(pwm)
+    elif direction==2 :
+        motor_fr.duty(pwm)
+    elif direction==3 :
+        motor_fl.duty(-pwm)
+main.py
+源码路径：C:\Users\Lenovo\Desktop\灰度\完赛代码\主车\flash\main.py
+from machine import *
+from seekfree import MOTOR_CONTROLLER
+from smartcar import *
+from array import *
+from display import *
+from motor import *
+import gc
+import time
+from key import *
+import global_var
+from kalman import *
+from pid import *
+from fusion_ahrs import *
+from math import *
+import os
+import io
+import struct
+from seekfree import WIRELESS_UART
+from INS import *
+
+##################################################初始化部分##################################################
+imu = IMU660RX() 
+uart2 = UART(5)
+uart2.init(115200)
+ahrs = FusionAHRS()  
+ins = SpeedComposer_INS()
+
+encoder_fl = encoder("D13", "D14") 
+encoder_b = encoder("C0" , "C1" )
+encoder_fr = encoder("D15", "D16", True)
+
+#####################无线串口######################
+
+uart_wireless = UART(2, 115200)
+
+#####################蜂鸣器初始化######################
+beep   = Pin('D24', Pin.OUT, value = False)
+
+beep_active = 0
+beep_end_time = 0
+
+def beep_on(duration_ms=50):
+    global beep_active, beep_end_time
+
+    beep.high()
+    beep_active = 1
+    beep_end_time = time.ticks_add(time.ticks_ms(), duration_ms)
+
+def beep_service():
+    global beep_active
+
+    if beep_active:
+        if time.ticks_diff(time.ticks_ms(), beep_end_time) >= 0:
+            beep.low()
+            beep_active = 0
+
+###############边界检测外部中断初始化##################
+power_adc = ADC('B12')
+last_adc_value = 100
+gray_thre = 150
+
+gray_high_count = 0
+
+def read_grayscale():
+    global gray_high_count
+
+    power_adc_value = power_adc.read_u16() // 100
+
+    if power_adc_value > gray_thre:
+        gray_high_count += 1
+    else:
+        gray_high_count = 0
+
+    if gray_high_count >= 2:
+        gray_high_count = 0
+        return 1
+
+    return 0
+
+def out_detect(color):
+    if color == 3:
+        if ins.now_y_position >= Y_FRONT_CO + 80:
+            return 1
+
+    elif color == 1 or color == 2:
+        if ins.now_x_position <= X_LEFT_CO - 80:
+            return 1
+
+    elif color == 4 or color == 5:
+        if ins.now_x_position >= X_RIGHT_CO + 80:
+            return 1
+
+    return 0   
+
+###############显示屏初始化##################
+
+#cs = Pin('B29' , Pin.OUT, value=True)
+#cs.high()
+#cs.low()
+#rst = Pin('B31', Pin.OUT, value=True)
+#dc  = Pin('B5' , Pin.OUT, value=True)
+#blk = Pin('C21', Pin.OUT, value=True)
+#drv = LCD_Drv(SPI_INDEX=2, BAUDRATE=60000000, DC_PIN=dc, RST_PIN=rst, LCD_TYPE=LCD_Drv.LCD200_TYPE)# 新建 LCD 实例
+#lcd = LCD(drv)
+#lcd.color(0xFFFF, 0x0000)
+# mode 接口设置屏幕显示模式 [0:竖屏,1:横屏,2:竖屏180旋转,3:横屏180旋转]
+#lcd.mode(0)
+#lcd.clear(0x0000)
+
+############################################
+
+########################################################无线串口###########################################################
+
+
+
+###############必要参数##################
+FRAME_HEAD = b'\xAA' 
+FRAME_TAIL = b'\xFF'
+
+DEST_ADDR = 0x01
+rx_buffer = bytearray() 
+
+num_floats = 16
+FRAME_LEN = 1 + 1 + num_floats * 4 + 1
+
+REMOTE_START = 902
+remote_start_sent = 0
+main_start_pending = 1
+
+MY_ADDR = 0x02  # 本机地址，修改为你的地址
+
+###############必要函数##################
+def send_frame(addr, data):     #发送数据帧函数
+    if len(data) != 16:
+        print("[UART TX] invalid length:", len(data))
+        return False
+    payload = struct.pack('<16f', *data)
+    frame = FRAME_HEAD + bytes([addr]) + payload + FRAME_TAIL
+    uart_wireless.write(frame)
+    return True
+
+
+def parse_frame():  
+    global rx_buffer
+    while len(rx_buffer) >= FRAME_LEN: 
+        
+        head = rx_buffer.find(b'\xAA')
+        if head < 0:      
+            rx_buffer = bytearray()
+            return None
+        if head > 0:                    
+            rx_buffer = rx_buffer[head:]
+        if len(rx_buffer) < FRAME_LEN:    
+            return None
+
+        frame = rx_buffer[:FRAME_LEN] 
+
+        if frame[-1] != 0xFF:    
+            rx_buffer = rx_buffer[1:]
+            continue
+
+        addr = frame[1]   
+
+        if addr != MY_ADDR:      
+            rx_buffer = rx_buffer[FRAME_LEN:]
+            continue
+
+        try:
+            data = struct.unpack('<16f', frame[2:66])
+        except Exception as e:  
+            rx_buffer = rx_buffer[FRAME_LEN:]
+            continue
+
+        rx_buffer = rx_buffer[FRAME_LEN:]
+        return data
+    
+    return None
+
+
+########################################################色块检测函数###########################################################
+color_flag=0   
+data_art=[0] 
+COLOR_MARK=0 
+cx=0
+cy=0
+tilt_flag=0
+pixel=0
+uart_buf = bytearray()
+
+LOST_MAX = 2  
+
+art_obs_detect_flag = 0
+
+def art_flag():
+    global COLOR_MARK, cx, cy, tilt_flag
+    
+    last_line = None
+    while uart2.any():
+        last_line = uart2.readline()
+    if last_line:
+        try:
+            s = last_line.decode().strip()
+            arr = s.split(',')
+
+            if len(arr) >= 5: 
+                COLOR_MARK = int(arr[0])
+                COLOR = COLOR_MARK
+                cx = int(arr[1])
+                cy = int(arr[2])
+                tilt_flag  = int(arr[3])
+                obs_stu  = int(arr[4])   
+                if not art_obs_detect_flag:
+                    if COLOR in (1,2,3,4,5):
+                        return COLOR
+                else:
+                    return obs_stu
+        except Exception as e:
+            pass
+    return None
+
+########################################################PID部分###########################################################
+############################速度环PID##########################
+speed_kp=0
+speed_ki=0
+pid_fl = SpeedPID(speed_kp, speed_ki)
+pid_fr = SpeedPID(speed_kp, speed_ki)
+pid_b  = SpeedPID(speed_kp, speed_ki)
+
+kf_left = KalmanFilter1D(Q=0.01, R=0.25)
+kf_right = KalmanFilter1D(Q=0.01, R=0.25)
+kf_back = KalmanFilter1D(Q=0.01, R=0.25)
+
+def update_encoder(left_raw, right_raw, back_raw):
+    left_speed = -kf_left.update(left_raw)
+    right_speed = kf_right.update(right_raw)
+    back_speed = -kf_back.update(back_raw)
+
+    return left_speed, right_speed, back_speed
+integral_fl=0
+integral_fr=0
+integral_b=0
+
+speed_output_max=2000
+speed_output_min=-2000
+
+############################角度环PID##########################
+######角度环参数######
+angle_kp=0
+angle_kd=0
+
+angle_output_max=2000
+angle_output_min=-2000
+
+pid_angle= AnglePID(angle_kp, angle_kd)
+
+############################位置环PID##########################
+######横向环参数######
+strafe_kp=0
+strade_kd=0
+pid_strafe= position_PID(kp=strafe_kp,kd=strade_kd)
+
+######纵向环参数######
+forward_kp=0
+forward_kd=0
+pid_forward= position_PID(kp=forward_kp,kd=forward_kd)
+
+############################距离环PID##########################
+distance_kp=0
+distance_kd=0
+speed_limit=400
+max_accel = 12
+max_decel = 15
+
+pid_distance= distance_PID(kp=distance_kp,kd=distance_kd)
+############################PID重置函数##########################
+def pid_reset_all():  
+    pid_fl.reset()
+    pid_fr.reset()
+    pid_b.reset()
+    pid_angle.reset()
+    pid_strafe.reset()
+    pid_forward.reset()
+    pid_distance.reset()
+
+def pid_reset_application_only():
+    pid_strafe.reset()
+    pid_forward.reset()
+    pid_distance.reset()
+
+##################################################菜单部分##################################################
+
+step_dict={}
+class Level_Menu:
+    def __init__(self, name):
+        self.name = name
+        self.attr_order = [name] 
+        self.page='page'
+
+def add_page(son_obj, father_obj, name):
+    setattr(father_obj, name, son_obj)
+    setattr(son_obj, 'father_obj', father_obj)
+    father_obj.attr_order.append(name)
+
+def add_function(function,obj,method_name):
+    setattr(obj, method_name, lambda: function())
+    obj.attr_order.append(method_name)
+    
+def add_value(value, obj, name,num_step):
+    global step_dict
+    global_var.set_value(name,value)
+    setattr(obj, name, value)
+    obj.attr_order.append(name)
+    step_dict[name]=num_step
+
+##################################################中断部分##################################################
+##############################（陀螺仪/编码器）中断####################
+user_left_enc_data=0     #编码器处理后数据
+user_right_enc_data=0
+user_back_enc_data=0
+enc_fl=0                  #编码器原数据
+enc_fr=0                  #编码器原数据   
+enc_b=0
+YAW=0
+first_Yaw_flag=0
+first_Yaw=0
+GZ_PID_KD=0
+AX_PID_KD=0
+AY_PID_KD=0
+
+######################
+# ===== 陀螺仪零漂 =====
+gyro_bias_x = 0
+gyro_bias_y = 0
+gyro_bias_z = 0
+gyro_sum_x = 0
+gyro_sum_y = 0
+gyro_sum_z = 0
+gyro_count = 0
+gyro_calibrated = 0   
+ins_start_flag=0   
+######################
+def time_pit_handler2(time):
+    global enc_fl, enc_fr, enc_b
+    global user_left_enc_data, user_right_enc_data, user_back_enc_data
+    global first_Yaw, first_Yaw_flag, speed_loop_timer
+    global ahrs, GZ_PID_KD, AX_PID_KD, AY_PID_KD, YAW
+    global gyro_sum_x, gyro_sum_y, gyro_sum_z
+    global gyro_count, gyro_bias_x, gyro_bias_y, gyro_bias_z, gyro_calibrated
+    global ins, ins_start_flag
+    global ins_refresh_pending, ins_refresh_x, ins_refresh_y
+    global go_flag
+
+
+    # ===== 主车IMU处理 =====
+    imu_data = imu.get()
+
+    # 加速度计固定补偿
+    ax = imu_data[0] + 24
+    ay = imu_data[1] + 232
+    az = imu_data[2] - 76
+
+    # 陀螺仪原始数据
+    gx_raw = imu_data[3]
+    gy_raw = imu_data[4]
+    gz_raw = imu_data[5]
+
+    # ===== 启动零漂标定 =====
+    if gyro_calibrated == 0:
+        gyro_sum_x += gx_raw
+        gyro_sum_y += gy_raw
+        gyro_sum_z += gz_raw
+        gyro_count += 1
+
+        if gyro_count >= 800:
+            gyro_bias_x = gyro_sum_x / gyro_count
+            gyro_bias_y = gyro_sum_y / gyro_count
+            gyro_bias_z = gyro_sum_z / gyro_count
+
+            gyro_calibrated = 1
+            ins_start_flag = 1
+
+            # 调试时临时打开
+            # print("Gyro bias:",
+            #       gyro_bias_x,
+            #       gyro_bias_y,
+            #       gyro_bias_z)
+
+        return
+
+    # ===== 去除启动零偏 =====
+    gx = gx_raw - gyro_bias_x
+    gy = gy_raw - gyro_bias_y
+    gz = gz_raw - gyro_bias_z
+
+    # ===== 陀螺仪零点死区 =====
+    GYRO_DEADBAND = 2
+
+    if abs(gx) <= GYRO_DEADBAND:
+        gx = 0
+    if abs(gy) <= GYRO_DEADBAND:
+        gy = 0
+    if abs(gz) <= GYRO_DEADBAND:
+        gz = 0
+
+    GZ_PID_KD = gz
+    AX_PID_KD = ax
+    AY_PID_KD = ay
+
+    # ===== 姿态更新 =====
+    ahrs.update(gx, gy, gz, ax, ay, az)
+
+    yaw = ahrs.get_euler()
+
+    if not first_Yaw_flag:
+        first_Yaw = yaw
+        first_Yaw_flag = 1
+
+    YAW = yaw - first_Yaw
+
+    # ===== 编码器处理 =====
+    enc_fl = encoder_fl.get()
+    enc_fr = encoder_fr.get()
+    enc_b = encoder_b.get()
+
+    user_left_enc_data, user_right_enc_data, user_back_enc_data = (
+        update_encoder(enc_fl, enc_fr, enc_b)
+    )
+
+    # ===== 惯导处理 =====
+    if ins_start_flag:
+        if ins_refresh_pending:
+            ins.now_x_position = ins_refresh_x
+            ins.now_y_position = ins_refresh_y
+            ins_refresh_pending = 0
+
+        ins.update(
+            wheel1_speed=user_back_enc_data,
+            wheel2_speed=user_right_enc_data,
+            wheel3_speed=user_left_enc_data,
+            yaw=YAW,
+            base_yaw=0
+        )
+        ##############################总控制中断#######################
+
+pwm_fl=0
+pwm_fr=0
+pwm_b=0
+ticker_count = 0
+ticker_flag =False
+retreat_flag = 0
+retreat_ticker_count=0
+retreat_start_flag = 0
+tilt_delay_flag = 0
+tilt_delay_count = 0 
+tilt_detect_flag = 0
+
+def time_pit_handler3(time):
+    global ticker_flag 
+    global ticker_count, retreat_flag, retreat_ticker_count, retreat_start_flag
+    global tilt_delay_flag,tilt_delay_count,tilt_detect_flag
+
+    ticker_flag = True
+    ticker_count = (ticker_count + 1) if (ticker_count < 1001) else (1)
+
+    tilt_delay_max = (1000*150)//AHEAD_SPEED 
+
+    if retreat_flag == 1:
+        retreat_ticker_count+=1
+        if retreat_ticker_count >= 50:
+            retreat_flag = 0
+            retreat_ticker_count = 0
+            retreat_start_flag = 1
+
+    if tilt_delay_flag:
+        tilt_delay_count += 5
+        if tilt_delay_count >= tilt_delay_max:
+            tilt_delay_flag = 0
+            tilt_delay_count = 0
+            tilt_detect_flag = 1
+    #VZ = 50
+    #speed_compose(0,0,VZ)
+
+
+##################################中断启动###############################
+
+pit2 = ticker(2)
+pit2.capture_list(imu,encoder_fl, encoder_fr, encoder_b)
+pit2.callback(time_pit_handler2)
+
+pit3 = ticker(3)
+pit3.callback(time_pit_handler3)
+
+def pitopen0():
+    pit3.start(5)
+
+    time.sleep_ms(500)
+
+    pit2.start(5)
+
+########################################################电机控制###########################################################
+v_cx = 0
+v_cy = 0
+#################惯导边界数值###############
+Y_FRONT_CO = 1200
+X_LEFT_CO = -330
+X_RIGHT_CO = 1270
+
+#############################姿态控制 惯导###############################
+#############################惯导到达指定坐标#################################
+def speed_compose_INS(set_speed, set_pos_x, set_pos_y, now_x, now_y, bas_yaw, yaw, vz):
+    global pwm_fl,pwm_fr,pwm_b,user_left_enc_data,user_right_enc_data,user_back_enc_data
+    global pwm_fl_target, pwm_fr_target, pwm_b_target 
+    global v_cx, v_cy
+
+
+    dx = set_pos_x - now_x
+    dy = set_pos_y - now_y
+    beta = -(yaw - bas_yaw) / 57.3
+    
+    dist = math.sqrt(dx*dx + dy*dy)
+
+    
+    if dist < NEAR_TARGET_THRESHOLD-5: 
+        v_cx = 0
+        v_cy = 0
+        v_cz = 0
+    else:
+        cos_phi1 = dy / dist
+        sin_phi1 = dx / dist
+    
+        cos_beta = math.cos(beta)
+        sin_beta = math.sin(beta)
+
+        v_cx = set_speed * sin_phi1 * cos_beta + set_speed * cos_phi1 * sin_beta
+        v_cy = set_speed * cos_phi1 * cos_beta - set_speed * sin_phi1 * sin_beta
+        v_cz = vz
+
+    pwm_b_target = -0.667 * v_cx + 0.333 * v_cz
+    pwm_fr_target =  0.333 * v_cx - 0.577 * v_cy + 0.333 * v_cz
+    pwm_fl_target =  0.333 * v_cx + 0.577 * v_cy + 0.333 * v_cz
+
+        
+    pwm_fl = pid_fl.compute(pwm_fl_target, user_left_enc_data)
+    pwm_fr = pid_fr.compute(pwm_fr_target, user_right_enc_data)
+    pwm_b  = pid_b.compute(pwm_b_target, user_back_enc_data)
+        
+    motor_get(pwm_fl,3)  
+    motor_get(pwm_fr,2)  
+    motor_get(pwm_b,1)    
+
+
+#############################边界惯导刷新###############################
+
+ins_refresh_pending = 0
+ins_refresh_x = 0
+ins_refresh_y = 0
+
+def INS_boundary_refresh(color_mark, x_cor, y_cor):
+    global ins_refresh_pending
+    global ins_refresh_x, ins_refresh_y
+
+    ins_refresh_x = ins.now_x_position
+    ins_refresh_y = ins.now_y_position
+
+    if color_mark == 3:
+        ins_refresh_y = Y_FRONT_CO
+
+    elif color_mark == 1 or color_mark == 2:
+        ins_refresh_x = X_LEFT_CO
+
+    elif color_mark == 4 or color_mark == 5:
+        ins_refresh_x = X_RIGHT_CO
+
+    else:
+        return
+
+    ins_refresh_pending = 1
+
+###########################姿态控制###############################
+def speed_compose(speed , angle ,speed_z) :
+    global pwm_fl,pwm_fr,pwm_b,user_left_enc_data,user_right_enc_data,user_back_enc_data
+    
+    Vy=speed*math.cos(math.radians(angle))
+    Vx=speed*math.sin(math.radians(angle))
+    Vz=speed_z
+
+
+    pwm_fl_target=(Vx+Vz)*0.333+Vy*0.577
+    pwm_fr_target=(Vx+Vz)*0.333-Vy*0.577
+    pwm_b_target=Vz*0.333-Vx*0.667
+
+    pwm_fl = pid_fl.compute(pwm_fl_target, user_left_enc_data)
+    pwm_fr = pid_fr.compute(pwm_fr_target, user_right_enc_data)
+    pwm_b  = pid_b.compute(pwm_b_target, user_back_enc_data)
+
+    motor_get(pwm_fl,3)   #左轮
+    motor_get(pwm_fr,2)   #右轮
+    motor_get(pwm_b,1)   #后轮
+def pwm_stop():
+    motor_get(0,3)  
+    motor_get(0,2)  
+    motor_get(0,1)
+
+def limit_value(value, min_value, max_value):
+    if value > max_value:
+        return max_value
+    if value < min_value:
+        return min_value
+    return value
+
+def circle_angle_error(target, current):
+    err = target - current
+    while err >= 180:
+        err -= 360
+    while err < -180:
+        err += 360
+    return err
+
+def circle_sweep_with_dir(start, target, direction):
+    sweep = target - start
+    if direction > 0:
+        while sweep < 0:
+            sweep += 360
+        while sweep >= 360:
+            sweep -= 360
+    else:
+        while sweep > 0:
+            sweep -= 360
+        while sweep <= -360:
+            sweep += 360
+    return sweep
+
+def circle_forward_vector(yaw):     
+    rad = math.radians(yaw)
+    return math.sin(rad), math.cos(rad)
+
+def limit_world_speed(vx, vy, max_speed):
+    speed = math.sqrt(vx * vx + vy * vy)
+    if speed > max_speed and speed > 0:
+        scale = max_speed / speed
+        return vx * scale, vy * scale
+    return vx, vy
+
+def speed_compose_world(vx_world, vy_world, yaw, vz):
+    beta = -yaw / 57.3
+    cos_beta = math.cos(beta)
+    sin_beta = math.sin(beta)
+    vx_body = vx_world * cos_beta + vy_world * sin_beta
+    vy_body = -vx_world * sin_beta + vy_world * cos_beta
+    speed = math.sqrt(vx_body * vx_body + vy_body * vy_body)
+    angle = math.atan2(vx_body, vy_body) * (180 / math.pi)
+    speed_compose(speed, angle, vz)
+
+def circle_ins_start(target_yaw, target_radius, use_block_avoid=0, block_yaw=0):
+    global circle_active, circle_center_x, circle_center_y
+    global circle_ref_yaw, circle_target_yaw, circle_direction, circle_force_dir
+    global state_hold_timer
+
+    start_yaw = YAW     
+    shortest_error = circle_angle_error(target_yaw, start_yaw)     
+    shortest_dir = 1 if shortest_error >= 0 else -1     
+    direction = shortest_dir
+
+    if use_block_avoid: 
+        block_error = circle_angle_error(block_yaw, start_yaw)
+        if (shortest_error * block_error > 0) and (abs(block_error) < abs(shortest_error)):
+            direction = -shortest_dir
+
+    radius = abs(target_radius)
+    if radius < 1:
+        radius = 1
+
+    forward_x, forward_y = circle_forward_vector(start_yaw)    
+    circle_center_x = ins.now_x_position + radius * forward_x 
+    circle_center_y = ins.now_y_position + radius * forward_y
+    circle_ref_yaw = start_yaw    
+    circle_target_yaw = start_yaw + circle_sweep_with_dir(start_yaw, target_yaw, direction) 
+    circle_direction = direction   
+    circle_force_dir = 0    
+    circle_active = 1   
+    state_hold_timer = 0
+    pid_reset_application_only()
+
+def circle_pid_compute(target_yaw, force_dir):
+    return pid_angle.compute(target_yaw, YAW, GZ_PID_KD/100)
+
+def circle_ins_run(current_state, next_state, target_radius):     
+    global circle_ref_yaw, circle_active, state_hold_timer
+
+    radius = abs(target_radius)     
+    if radius < 1:
+        radius = 1
+
+    path_speed = CIRCLE_SPEED
+    if path_speed > CIR_SPEED_MAX:
+        path_speed = CIR_SPEED_MAX
+    if path_speed < 0:
+        path_speed = 0
+
+    step_deg = path_speed / radius * 57.3 * 0.005   
+    if step_deg < 0.2:
+        step_deg = 0.2
+
+    remain = circle_target_yaw - circle_ref_yaw    
+    if abs(remain) <= step_deg:                    
+        circle_ref_yaw = circle_target_yaw
+    else:
+        circle_ref_yaw += circle_direction * step_deg
+
+    ref_rad = math.radians(circle_ref_yaw)        
+    target_x = circle_center_x - radius * math.sin(ref_rad) 
+    target_y = circle_center_y - radius * math.cos(ref_rad)
+    err_x = target_x - ins.now_x_position
+    err_y = target_y - ins.now_y_position
+#    pos_error = math.sqrt(err_x * err_x + err_y * err_y)
+    path_done = abs(circle_target_yaw - circle_ref_yaw) < 0.01  
+    if path_done:
+        tangent_x = 0
+        tangent_y = 0
+    else:       
+        tangent_x = -circle_direction * path_speed * math.cos(ref_rad)  
+        tangent_y = circle_direction * path_speed * math.sin(ref_rad)   
+
+    corr_x = limit_value(err_x * CIR_POS_KP, -C_POS_CR_MX, C_POS_CR_MX)
+    corr_y = limit_value(err_y * CIR_POS_KP, -C_POS_CR_MX, C_POS_CR_MX)
+    vx_world, vy_world = limit_world_speed(tangent_x + corr_x, tangent_y + corr_y, CIR_SPEED_MAX)
+
+    Vz = circle_pid_compute(circle_ref_yaw, circle_force_dir)
+    Vz = limit_value(Vz, -CIR_VZ_MAX, CIR_VZ_MAX)
+    speed_compose_world(vx_world, vy_world, YAW, Vz)    
+
+    yaw_done = abs(circle_angle_error(circle_target_yaw, YAW)) < DIR_ADJ_THRESHOLD
+#    pos_done = pos_error < CIR_POS_THR
+    if path_done and yaw_done :
+        state_hold_timer += 10
+        if state_hold_timer >= CIR_HOLD_TIME:
+            state_hold_timer = 0
+            circle_active = 0
+            pid_reset_all()
+            beep_on()
+            pwm_stop()
+            return next_state
+    else:
+        state_hold_timer = 0
+    return current_state
+
+########################################################菜单函数###########################################################  
+######################一些要定义的变量#####################
+x_co = 0
+y_co = 0
+vol_y_tar = 44
+vol_x_pu_tar = 84
+vol_y_pu_tar = 39
+vol_radius = 60
+sand_y_tar = 50
+san_x_pu_tar = 84
+san_y_pu_tar = 34
+san_radius = 60
+ted_y_tar = 48
+ted_x_pu_tar = 100
+ted_y_pu_tar = 42
+ted_radius = 65
+
+######################参数重赋值#####################  
+def canshu_getvalue():
+
+    global sequence , gray_thre , auto_load_flag
+    sequence = global_var.get_value('sequence')
+    gray_thre = global_var.get_value('gray_thre')
+    auto_load_flag = global_var.get_value('auto_load_flag')
+
+    global speed_kp,speed_ki,angle_kp, angle_kd,forward_kp,forward_kd,strafe_kp,strafe_kd,x_co,y_co
+    ######################速度环PID获取#####################
+
+    speed_kp=global_var.get_value('speed_kp')  
+    speed_ki=global_var.get_value('speed_ki')
+
+    pid_fl.kp = speed_kp
+    pid_fl.ki = speed_ki
+    pid_fr.kp = speed_kp
+    pid_fr.ki = speed_ki
+    pid_b.kp = speed_kp
+    pid_b.ki = speed_ki
+
+    ######################角度环PID获取#####################
+
+    angle_kp=global_var.get_value('angle_kp')  
+    angle_kd=global_var.get_value('angle_kd')
+
+    pid_angle.kp = angle_kp
+    pid_angle.kd = angle_kd
+
+    ######################位置环PID获取#####################
+
+    forward_kp=global_var.get_value('forward_kp')
+    forward_kd=global_var.get_value('forward_kd')
+    strafe_kp=global_var.get_value('strafe_kp')
+    strafe_kd=global_var.get_value('strafe_kd')
+
+    pid_forward.kp = forward_kp/10
+    pid_forward.kd = forward_kd
+    pid_strafe.kp = strafe_kp/10
+    pid_strafe.kd = strafe_kd
+
+    x_co=global_var.get_value('x_co')
+    y_co=global_var.get_value('y_co')
+
+    ######################距离环PID获取#####################
+
+    global distance_kp,distance_kd,speed_limit, max_accel, max_decel
+
+    distance_kp=global_var.get_value('distance_kp')
+    distance_kd=global_var.get_value('distance_kd')
+    speed_limit=global_var.get_value('speed_limit')
+    max_accel=global_var.get_value('max_accel')
+    max_decel=global_var.get_value('max_decel')
+
+    pid_distance.kp = distance_kp
+    pid_distance.kd = distance_kd
+    pid_distance.speed_limit = speed_limit
+    pid_distance.max_accel = max_accel
+    pid_distance.max_decel = max_decel
+    ######################摄像头设置获取#####################
+
+    global y_target, vol_y_tar, sand_y_tar, ted_y_tar
+    global vol_x_pu_tar, vol_y_pu_tar, san_x_pu_tar, san_y_pu_tar, ted_x_pu_tar, ted_y_pu_tar
+    global y_target_dictionary, push_y_target_dictionary, push_x_target_dictionary, radius_dictionary
+    global vol_radius, san_radius, ted_radius
+
+
+    vol_y_tar = global_var.get_value('vol_y_tar')
+    sand_y_tar = global_var.get_value('sand_y_tar')
+    ted_y_tar = global_var.get_value('ted_y_tar')
+    vol_x_pu_tar = global_var.get_value('vol_x_pu_tar')
+    vol_y_pu_tar = global_var.get_value('vol_y_pu_tar')
+    san_x_pu_tar = global_var.get_value('san_x_pu_tar')
+    san_y_pu_tar = global_var.get_value('san_y_pu_tar')
+    ted_x_pu_tar = global_var.get_value('ted_x_pu_tar')
+    ted_y_pu_tar = global_var.get_value('ted_y_pu_tar')
+    vol_radius = global_var.get_value('vol_radius')
+    san_radius = global_var.get_value('san_radius')
+    ted_radius = global_var.get_value('ted_radius')
+
+    y_target_dictionary = {  
+        3 : vol_y_tar,   
+        1 : sand_y_tar,   
+        2 : sand_y_tar,    
+        4 : ted_y_tar,   
+        5 : ted_y_tar
+    }
+    
+    push_y_target_dictionary = {  
+        3 : vol_y_pu_tar,   
+        1 : san_y_pu_tar,   
+        2 : san_y_pu_tar,    
+        4 : ted_y_pu_tar,   
+        5 : ted_y_pu_tar
+    }
+    
+    push_x_target_dictionary = {  
+        3 : vol_x_pu_tar,   
+        1 : san_x_pu_tar,   
+        2 : san_x_pu_tar,    
+        4 : ted_x_pu_tar,   
+        5 : ted_x_pu_tar
+    }
+
+    radius_dictionary = {
+        3 : vol_radius,
+        1 : san_radius,
+        2 : san_radius,
+        4 : ted_radius,
+        5 : ted_radius
+    }
+
+    for name in (
+        'Y_FRONT_CO',
+        'X_LEFT_CO',
+        'X_RIGHT_CO',
+        'NEAR_TARGET_THRESHOLD',
+        'ALIGN_FB_THRESHOLD',
+        'ALIGN_LR_THRESHOLD',
+        'DIR_ADJ_THRESHOLD',
+        'NEAR_SPEED',
+        'AHEAD_SPEED',
+        'VZ_ST_3_SP_M',
+        'CIR_RADIUS',
+        'CIRCLE_SPEED',
+        'CIR_SPEED_MAX',
+        'CIR_POS_KP',
+        'C_POS_CR_MX',
+        'CIR_VZ_MAX',
+        'CIR_POS_THR',
+        'CIR_HOLD_TIME',
+        'NEAR_HOLD_TIME',
+        'ALIGN_LR_HOLD_TIME',
+        'ALIGN_FB_HOLD_TIME',
+        'DIR_ADJ_HOLD_TIME',
+        'RETREAT_TIME',
+        'SEND_FREQ',
+        'block',
+    ):
+        value = global_var.get_value(name)
+        if value != None:
+            globals()[name] = value
+
+######################姿态测试#####################
+def go_flag_switch():
+    global go_flag
+    go_flag=1-go_flag
+
+######################惯导测试#####################
+
+def ins_test():
+    global state_hold_timer, ticker_flag, ticker_count 
+    
+    while True:
+        if ticker_flag:
+            if (ticker_count % 10 == 0):
+                data = (
+                    0, 0, 0, 0,
+                    0, 0, ins.now_x_position, ins.now_y_position,
+                    0, 0, 0, 0,
+                    0, 0, 0, 0,
+                )
+                send_frame(DEST_ADDR, data)
+                
+            ticker_flag = False  # 重置标志位，等待下一个 5ms 中断
+       
+            dist_error = math.sqrt((x_co - ins.now_x_position) ** 2 + (y_co - ins.now_y_position) ** 2)
+
+            out_speed = pid_distance.compute(0, dist_error)  # 这里的 setpoint 是 0，因为我们希望误差（距离）为 0
+
+            Vz = pid_angle.compute(0, YAW, GZ_PID_KD/100)
+            speed_compose_INS(out_speed, x_co, y_co, ins.now_x_position, ins.now_y_position, 0, YAW, Vz)
+
+            if dist_error < NEAR_TARGET_THRESHOLD:  
+                state_hold_timer += 10
+                if state_hold_timer >= NEAR_HOLD_TIME:
+                    state_hold_timer = 0
+                    pid_reset_all()
+                    motor_get(0, 3) 
+                    motor_get(0, 2) 
+                    motor_get(0, 1) 
+                    return                  
+            else:
+                state_hold_timer = 0       
+
+      
+########################################################菜单插入部分###########################################################
+first_menu=Level_Menu('first_menu')
+function=Level_Menu('function')
+pid=Level_Menu('pid')
+speed_pid=Level_Menu('speed_pid')
+angle_pid=Level_Menu('angle_pid')
+station_pid=Level_Menu('station_pid')  
+distance_pid=Level_Menu('distance_pid') 
+INS_test_menu = Level_Menu('INS_test')  
+camera_settings = Level_Menu('camera_settings')
+state_machine_menu = Level_Menu('state_machine_menu')
+boundary_refresh = Level_Menu('boundary_refresh')
+threshold = Level_Menu('threshold')
+speed = Level_Menu('speed')
+hold_time = Level_Menu('hold_time')
+
+#first_menu
+add_function(pitopen0,first_menu,'pitopen0')
+add_value(5, first_menu, 'sequence', 1)
+add_value(150, first_menu, 'gray_thre', 10)
+add_function(canshu_getvalue,first_menu,'canshu_getvalue')
+add_value(0,first_menu,'auto_load_flag',1)
+add_page(pid,first_menu,'pid')
+add_page(INS_test_menu, first_menu, 'INS_test')
+add_page(camera_settings, first_menu, 'camera_settings')
+add_page(state_machine_menu, first_menu, 'state_machine_menu')
+#pid
+add_page(speed_pid,pid,'speed_pid')
+add_page(angle_pid,pid,'angle_pid')
+add_page(station_pid,pid,'station_pid')
+add_page(distance_pid,pid,'distance_pid')
+
+#speed_pid
+add_value(75,speed_pid,'speed_kp',0.5)
+add_value(1,speed_pid,'speed_ki',0.1)
+add_function(canshu_getvalue,speed_pid,'canshu_getvalue')
+
+#angle_pid
+add_value(10,angle_pid,'angle_kp',0.5)
+add_value(-1.5,angle_pid,'angle_kd',0.1)
+add_function(canshu_getvalue,angle_pid,'canshu_getvalue')
+
+#station_pid
+add_value(-30,station_pid,'forward_kp',1)
+add_value(-8,station_pid,'forward_kd',0.5)
+add_value(23,station_pid,'strafe_kp',1)
+add_value(7,station_pid,'strafe_kd',0.5)
+add_function(canshu_getvalue,station_pid,'canshu_getvalue')
+
+#distance_pid
+add_value(-2.5,distance_pid,'distance_kp',0.5)
+add_value(-1,distance_pid,'distance_kd',0.1)
+add_value(190,distance_pid,'speed_limit',10)
+add_value(6,distance_pid,'max_accel',1)
+add_value(12,distance_pid,'max_decel',1)
+add_function(canshu_getvalue,distance_pid,'canshu_getvalue')    
+
+#INS_test_menu
+add_value(0, INS_test_menu, 'x_co', 100)
+add_value(1200, INS_test_menu, 'y_co', 100)
+add_function(ins_test, INS_test_menu, 'ins_test')
+add_function(canshu_getvalue, INS_test_menu, 'canshu_getvalue')
+
+#camera_settings
+add_value(41, camera_settings, 'vol_y_tar', 1)
+add_value(49, camera_settings, 'sand_y_tar', 1)
+add_value(46, camera_settings, 'ted_y_tar', 1)
+add_value(80, camera_settings, 'vol_x_pu_tar', 1)
+add_value(35, camera_settings, 'vol_y_pu_tar', 1)
+add_value(76, camera_settings, 'san_x_pu_tar', 1)
+add_value(40, camera_settings, 'san_y_pu_tar', 1)
+add_value(79, camera_settings, 'ted_x_pu_tar', 1)
+add_value(43, camera_settings, 'ted_y_pu_tar', 1)
+add_value(80, camera_settings, 'vol_radius', 1)
+add_value(80, camera_settings, 'san_radius', 1)
+add_value(80, camera_settings, 'ted_radius', 1)
+add_function(canshu_getvalue, camera_settings, 'canshu_getvalue')
+
+#state_machine_menu
+add_page(boundary_refresh, state_machine_menu, 'boundary_refresh')
+add_page(threshold, state_machine_menu, 'threshold')
+add_page(speed, state_machine_menu, 'speed')
+add_page(hold_time, state_machine_menu, 'hold_time')
+add_value(10, state_machine_menu, 'SEND_FREQ', 1)
+add_value(200, state_machine_menu, 'block', 10)
+add_value(60, state_machine_menu, 'CIR_RADIUS', 1)
+add_value(100, state_machine_menu, 'CIRCLE_SPEED', 10)
+add_value(100, state_machine_menu, 'CIR_SPEED_MAX', 10)
+add_value(0.8, state_machine_menu, 'CIR_POS_KP', 0.1)
+add_value(80, state_machine_menu, 'C_POS_CR_MX', 10)
+add_value(100, state_machine_menu, 'CIR_VZ_MAX', 10)
+add_value(20, state_machine_menu, 'CIR_POS_THR', 1)
+add_value(50, state_machine_menu, 'CIR_HOLD_TIME', 10)
+add_function(canshu_getvalue, state_machine_menu, 'canshu_getvalue')
+
+#boundary_refresh
+add_value(1200, boundary_refresh, 'Y_FRONT_CO', 10)
+add_value(-300, boundary_refresh, 'X_LEFT_CO', 10)
+add_value(1600, boundary_refresh, 'X_RIGHT_CO', 10)
+add_function(canshu_getvalue, boundary_refresh, 'canshu_getvalue')
+
+#threshold
+add_value(150, threshold, 'gray_thre', 1)
+add_value(15, threshold, 'NEAR_TARGET_THRESHOLD', 1)
+add_value(6, threshold, 'ALIGN_FB_THRESHOLD', 1)
+add_value(4, threshold, 'ALIGN_LR_THRESHOLD', 1)
+add_value(3, threshold, 'DIR_ADJ_THRESHOLD', 1)
+add_function(canshu_getvalue, threshold, 'canshu_getvalue')
+
+#speed
+add_value(100, speed, 'NEAR_SPEED', 10)
+add_value(120, speed, 'AHEAD_SPEED', 10)
+add_value(90, speed, 'VZ_ST_3_SP_M', 10)
+add_function(canshu_getvalue, speed, 'canshu_getvalue')
+
+#hold_time
+add_value(50, hold_time, 'NEAR_HOLD_TIME', 10)
+add_value(50, hold_time, 'ALIGN_LR_HOLD_TIME', 10)
+add_value(50, hold_time, 'ALIGN_FB_HOLD_TIME', 10)
+add_value(50, hold_time, 'DIR_ADJ_HOLD_TIME', 10)
+add_value(200, hold_time, 'RETREAT_TIME', 10)
+add_function(canshu_getvalue, hold_time, 'canshu_getvalue')
+
+#########################################################推箱子状态机#########################################################
+
+################################状态机配置参数（可全局/配置文件定义）#################################
+Color_dictionary  =  {  3  :   45,   1  : -45,   2  : -45,    4 : 135,   5 : 135}   #主车面对不同物体的角度朝向
+Back_Angle_direction={  45 : 176,    135 : -90,     -45 : 90}                       #推完回归时的朝向    
+y_target_dictionary = {  3  : vol_y_tar,   1  : sand_y_tar,   2  : sand_y_tar,    4 : ted_y_tar,   5 : ted_y_tar}          
+push_y_target_dictionary = {  3  : vol_y_pu_tar,   1  : san_y_pu_tar,   2  : san_y_pu_tar,    4 : ted_y_pu_tar,   5 : ted_y_pu_tar}          
+push_x_target_dictionary = {  3  : vol_x_pu_tar,   1  : san_x_pu_tar,   2  : san_x_pu_tar,    4 : ted_x_pu_tar,   5 : ted_x_pu_tar}          
+radius_dictionary = {  3  : vol_radius,   1  : san_radius,   2  : san_radius,    4 : ted_radius,   5 : ted_radius}          
+
+#################状态定义###############
+STATE_START = -1
+STATE_COORDINATE_GET = 0    
+STATE_COLOR_DETECT = 1     
+STATE_ALIGN_LEFT_RIGHT = 2  
+STATE_ALIGN_FRONT_BACK = 3 
+STATE_ADJUST_DIRECTION = 4 
+STATE_CONTECT = 5  
+STATE_PUSH_OBJECT = 6  
+STATE_RETURN_RETREAT = 7
+STATE_RETURN_FINISH = 8
+STATE_RETURN_0_0 = 9
+STATE_STOP = 10
+STATE_CIRCLE_INS = 11
+STATE_RETURN_LEFT_BOUNDARY = 12
+STATE_ALIGN_0_0 = 13 
+STATE_OBSTACLE_DETECT = 14
+STATE_OBSTACLE_CONTACT = 15
+STATE_PUSH_OBJECT_TILT = 16
+STATE_PUSH_OBJECT_CORNER = 17
+STATE_ORDERCAR1 = 18
+
+#################阈值配置###############
+
+NEAR_TARGET_THRESHOLD = 15  # 惯导接近目标点的距离阈值
+NEAR_HOLD_TIME = 50         # 惯导接近目标点保持时间（ms）
+NEAR_SPEED = 150            # 接近物体速度（可调）
+ALIGN_LR_THRESHOLD = 8      # 左右对齐阈值（像素/角度，单位按需定）
+ALIGN_LR_HOLD_TIME = 50     # 左右对齐保持时间（ms）
+ALIGN_FB_THRESHOLD = 8      # 前后对齐阈值
+ALIGN_FB_HOLD_TIME = 50     # 前后对齐保持时间
+DIR_ADJ_THRESHOLD = 3       # 朝向调整阈值
+DIR_ADJ_HOLD_TIME = 50      # 朝向保持时间
+VZ_ST_3_SP_M = 100           # 绕轴转动速度边界阈值
+AHEAD_SPEED = 120           # 推物体前进速度（可调）
+RETREAT_TIME = 200          # 回退时间（ms，需根据实际情况调整）
+X_TARGET = 80               # 目标像素位置（根据实际情况调整，通常是图像中心）
+Y_TARGET = 50               # 目标像素位置（根据实际情况调整，通常是图像中心）
+SEND_FREQ = 10              # 向车1发送数据的次数
+block = 200
+CIR_RADIUS = 280            # 圆周惯导半径（惯导坐标单位）
+CIRCLE_SPEED = 180          # 圆弧切向速度
+CIR_SPEED_MAX = 240         # 圆周惯导合速度上限
+CIR_POS_KP = 0.8            # 圆弧目标点位置修正比例
+C_POS_CR_MX = 80            # 位置修正速度上限
+CIR_VZ_MAX = 160            # 圆周惯导姿态角速度上限
+CIR_POS_THR = 30            # 圆弧终点位置阈值
+CIR_HOLD_TIME = 50          # 圆弧终点保持时间
+
+#################全局状态变量################
+
+current_state = STATE_START
+last_state_machine_angle = 0
+last_good_color = 0
+sequence_step = 0
+circle_active = 0
+circle_center_x = 0
+circle_center_y = 0
+circle_ref_yaw = 0
+circle_target_yaw = 0
+circle_direction = 1
+circle_force_dir = 0
+circle_contact_x = 0
+circle_contact_y = 0
+red_count = 1
+
+#################各状态"保持时间"计时变量################
+state_hold_timer = 0
+req_send_count = 0
+
+def reset_for_next_search():
+    global art_obs_detect_flag
+    global obs_align_flag
+    global corner_adjust_flag
+    global corner_adjust_angle
+    global corner_on_flag
+    global obstacle_wait_count
+    global COLOR_Capeture_Flag
+    global search_color_counter
+    global search_state
+    global search_target_flag
+    global last_obs_situ
+
+    # art_flag重新返回颜色，而不是障碍物状态
+    art_obs_detect_flag = 0
+
+    # 障碍物对齐状态复位
+    obs_align_flag = 0
+
+    # 直角推状态复位
+    corner_adjust_flag = 0
+    corner_adjust_angle = 0
+    corner_on_flag = 0
+
+    obstacle_wait_count = 0
+    last_obs_situ = 0
+
+    # 新一轮颜色识别状态复位
+    COLOR_Capeture_Flag = 0
+
+    # 巡场状态复位
+    search_color_counter = 0
+    search_state = 0
+    search_target_flag = 0
+
+################################状态机主体#################################
+
+######################  状态-1：启动出车  ######################
+def action_start():
+    global ins, y_keep, last_state_machine_angle
+
+    dist_error = execute_ins_navigation(
+        0, 200, last_state_machine_angle, send_data=False
+    )
+
+    if dist_error < NEAR_TARGET_THRESHOLD:
+        beep_on()
+        pid_reset_all()
+        return STATE_COORDINATE_GET
+
+    return STATE_START
+
+######################  状态0  ： 获取目标坐标+目标角度   ######################
+target_x=0
+target_y=0
+target_angle=0
+coordinate_get_flag=0
+x_mid = 605
+x_left = 339
+x_right = 880
+y_mid = 754
+y_down = 464
+y_up = 986
+
+search_color_counter = 0    #连续未检测到颜色的计数器
+SEARCH_COLOR_COUNTER_MAX = 1000
+
+def INS_X_Y_block(good_color):
+    send_judge = 0
+    if good_color == 0:
+        block_x = 0
+        block_y = -block
+        if ins.now_y_position > -block:
+            send_judge = 1
+    elif good_color == 3:
+        block_x = 0
+        block_y = block
+        if ins.now_y_position < Y_FRONT_CO - block:
+            send_judge = 1
+    elif good_color == 1 or good_color == 2:
+        block_x = -block
+        block_y = 0
+        if ins.now_x_position > X_LEFT_CO + block:
+            send_judge = 1
+    elif good_color == 4 or good_color == 5:
+        block_x = block
+        block_y = 0
+        if ins.now_x_position < X_RIGHT_CO - block:
+            send_judge = 1  
+    return block_x, block_y, send_judge
+
+def INS_X_Y_target(good_color):
+    if good_color == 0:
+        target_x = x_mid
+        target_y = y_down
+    elif good_color == 3:
+        target_x = x_mid
+        target_y = y_up
+    elif good_color == 1 or good_color == 2:
+        target_x = x_left
+        target_y = y_mid
+    elif good_color == 4 or good_color == 5:
+        target_x = x_right
+        target_y = y_mid
+    return target_x, target_y
+
+def INS_X_Y_search(good_color, search_state):
+    if search_state == 1:
+        if good_color == 0:
+            target_x, target_y = x_left, y_down
+        elif good_color == 3:
+            target_x, target_y = x_right, y_up
+        elif good_color == 1 or good_color == 2:
+            target_x, target_y = x_left, y_up
+        elif good_color == 4 or good_color == 5:
+            target_x, target_y = x_right, y_down 
+        return target_x, target_y
+    elif search_state == 2:
+        if good_color == 0:
+            target_x, target_y = x_right, y_down
+        elif good_color == 3:
+            target_x, target_y = x_left, y_up
+        elif good_color == 1 or good_color == 2:
+            target_x, target_y = x_left, y_down
+        elif good_color == 4 or good_color == 5:
+            target_x, target_y = x_right, y_up 
+        return target_x, target_y
+    elif search_state == 3:
+        target_x, target_y = x_mid, y_mid 
+    return target_x, target_y
+
+def action_coordinate_get():
+    global target_x, target_y, target_angle, sequence_step, coordinate_get_flag, state_hold_timer
+    global req_send_count, search_color_counter
+    global y_keep
+
+    if coordinate_get_flag==0:
+        target_x, target_y = INS_X_Y_target(last_good_color)
+        
+        sequence_step += 1
+        coordinate_get_flag=1
+        if sequence_step == sequence+1: #所有物体已推完，返回初始点
+            speed_compose(0, 0, 0)
+            beep_on()
+            # 进入回库状态后发送250跟随目标，514只在最终停车时发送。
+            if last_good_color == 1 or last_good_color == 2:
+                y_keep = ins.now_y_position
+                return STATE_ALIGN_0_0
+            else:          
+                return STATE_RETURN_LEFT_BOUNDARY
+    else:
+        dist_error = math.sqrt((target_x - ins.now_x_position) ** 2 + (target_y - ins.now_y_position) ** 2)
+        out_speed = pid_distance.compute(0, dist_error) 
+
+        Vz=pid_angle.compute(last_state_machine_angle , YAW ,GZ_PID_KD/100)
+        speed_compose_INS(out_speed, target_x, target_y, ins.now_x_position, ins.now_y_position, 0, YAW, Vz)
+    
+        req_send_count += 1
+        if req_send_count >= SEND_FREQ*5:
+            req_send_count = 0
+            x_block, y_block, send_judge = INS_X_Y_block(last_good_color)
+            if send_judge:
+                data = (
+                    250, ins.now_x_position+x_block, ins.now_y_position+y_block, 0,
+                    0, 0, 0, 0,
+                    0, 0, 0, 0,
+                    0, 0, 0, 0,
+                )
+                send_frame(DEST_ADDR, data)
+
+        if dist_error < NEAR_TARGET_THRESHOLD:  
+            state_hold_timer += 10
+            if state_hold_timer >= NEAR_HOLD_TIME:
+                state_hold_timer = 0
+                x_block, y_block, send_judge = INS_X_Y_block(last_good_color)
+                if send_judge:
+                    data = (
+                        250, ins.now_x_position+x_block, ins.now_y_position+y_block, 0,
+                        0, 0, 0, 0,
+                        0, 0, 0, 0,
+                        0, 0, 0, 0,
+                    )
+                    send_frame(DEST_ADDR, data)
+                art_flag()
+                pid_reset_application_only()
+                for i in range(SEND_FREQ):
+                    uart2.write(b"7\n")
+                    speed_compose(0, 0, 0)
+                req_send_count = 0
+                search_color_counter = 0
+                beep_on()
+                return STATE_COLOR_DETECT
+        else:
+            state_hold_timer = 0
+    return STATE_COORDINATE_GET
+
+######################  状态1  ：检测色块    ######################
+COLOR_Capeture_Flag=0  
+search_state = 0
+search_target_x = 0
+search_target_y = 0
+search_target_flag = 0
+
+def action_color_detect():
+    global COLOR_MARK, YAW, last_state_machine_angle, GZ_PID_KD
+    global COLOR_Capeture_Flag, push_color, angle_target
+    global Y_TARGET
+    global req_send_count, search_color_counter
+    global search_state, search_target_x, search_target_y, search_target_flag
+    global state_hold_timer
+    
+    Vz = pid_angle.compute(last_state_machine_angle, YAW, GZ_PID_KD/100)
+    
+    COLOR=art_flag()
+    if COLOR: 
+        if COLOR_Capeture_Flag == 0 and COLOR:
+            push_color = COLOR
+            angle_target = Color_dictionary[COLOR]
+            Y_TARGET = y_target_dictionary[COLOR]
+            COLOR_Capeture_Flag = 1
+
+            for i in range(SEND_FREQ):  
+                uart2.write(str(push_color))
+        search_color_counter = 0
+        search_state = 0
+        search_target_flag = 0
+        state_hold_timer = 0
+        speed_compose(0, 0, Vz)
+        beep_on()
+        pid_reset_application_only()
+        return STATE_ALIGN_FRONT_BACK
+    else:
+        if search_target_flag == 0:
+            search_color_counter += 5
+            speed_compose(10, 180, Vz)
+            state_hold_timer = 0
+            if search_color_counter >= SEARCH_COLOR_COUNTER_MAX:
+                search_color_counter = 0
+                search_state += 1
+                if search_state > 3:
+                    search_state = 1
+                search_target_x, search_target_y = INS_X_Y_search(last_good_color,search_state)
+                search_target_flag = 1
+                pid_reset_application_only()
+        else:
+            dist_error = math.sqrt((search_target_x - ins.now_x_position) ** 2 + (search_target_y - ins.now_y_position) ** 2)
+            out_speed = pid_distance.compute(0, dist_error)
+            speed_compose_INS(out_speed, search_target_x, search_target_y, ins.now_x_position, ins.now_y_position, 0, YAW, Vz)
+
+            if dist_error < NEAR_TARGET_THRESHOLD:
+                state_hold_timer += 10
+                if state_hold_timer >= NEAR_HOLD_TIME:
+                    state_hold_timer = 0
+                    search_target_flag = 0
+                    search_color_counter = 0
+                    pid_reset_application_only()
+            else:
+                state_hold_timer = 0
+        req_send_count += 1
+        if req_send_count >= SEND_FREQ*3:
+            req_send_count = 0
+            uart2.write("6")
+    return STATE_COLOR_DETECT
+
+
+######################  状态3  ：前后对齐+左右微调   ######################
+def auto_align_movement(target_angle_val):
+    global cx, cy, YAW, GZ_PID_KD
+
+    speed_x = pid_strafe.compute(X_TARGET, cx, 4, 2) 
+    speed_y = pid_forward.compute(Y_TARGET, cy, 4, 2)
+    speed = math.sqrt(speed_y**2 + speed_x**2)
+    angle = math.atan2(speed_x, speed_y) * (180 / math.pi)
+    
+    Vz = pid_angle.compute(target_angle_val, YAW, GZ_PID_KD/100)
+    if Vz > VZ_ST_3_SP_M: Vz = VZ_ST_3_SP_M
+    if Vz < -VZ_ST_3_SP_M: Vz = -VZ_ST_3_SP_M
+
+    speed_compose(speed, angle, Vz)
+
+def action_align_front_back():
+    global pixel, cx, cy,state_hold_timer ,YAW ,GZ_PID_KD 
+    global circle_contact_x, circle_contact_y
+    global COLOR_Capeture_Flag, push_color, angle_target
+    global Y_TARGET
+
+    art_flag()
+    
+    auto_align_movement(last_state_machine_angle)
+
+    fb_align_error = abs(cy - Y_TARGET)  
+    lr_align_error = abs(cx - X_TARGET)
+
+    if fb_align_error < ALIGN_FB_THRESHOLD and lr_align_error < ALIGN_LR_THRESHOLD:
+        state_hold_timer += 10
+        if state_hold_timer >= ALIGN_FB_HOLD_TIME:
+            state_hold_timer = 0
+            while (1):
+                COLOR = art_flag()
+                if COLOR:
+                    push_color=COLOR            
+                    angle_target=Color_dictionary[COLOR]
+                    Y_TARGET = y_target_dictionary[COLOR]
+                    break
+            circle_contact_x = ins.now_x_position
+            circle_contact_y = ins.now_y_position
+            for i in range(SEND_FREQ):
+                data = (
+                    114, push_color, circle_contact_x, circle_contact_y,
+                    circle_contact_x, circle_contact_y, angle_target, 0,
+                    0, 0, 0, 0,
+                    0, 0, 0, 0,
+                )
+                send_frame(DEST_ADDR, data)
+                speed_compose(0, 0, 0)
+            beep_on()
+            pid_reset_application_only()
+            return STATE_CIRCLE_INS
+    else:
+        state_hold_timer = 0
+    return STATE_ALIGN_FRONT_BACK
+######################  状态4  ：调整朝向+保持对齐+圆周惯导   ######################
+x_cor_temp = 0 
+y_cor_temp = 0 
+angle_target=0
+push_color=0
+
+def angle_error(target, current):
+    err = target - current
+    if err >= 180:
+        err -= 360
+    elif err < -180:
+        err += 360
+    return err
+
+def action_circle_ins():
+    global circle_active, x_cor_temp, y_cor_temp
+    global circle_contact_x, circle_contact_y, circle_center_x, circle_center_y
+
+    if circle_active == 0:  #首次进入状态，初始化圆周惯导参数
+        circle_ins_start(angle_target, radius_dictionary[push_color],0, 0)
+
+    next_state = circle_ins_run(STATE_CIRCLE_INS, STATE_ADJUST_DIRECTION, radius_dictionary[push_color])
+    if next_state == STATE_ADJUST_DIRECTION:
+        x_cor_temp = ins.now_x_position
+        y_cor_temp = ins.now_y_position
+        
+    return next_state
+
+def action_adjust_direction():
+    global YAW ,pixel, cx , cy,GZ_PID_KD,COLOR_MARK,state_hold_timer , angle_target , COLOR_Capeture_Flag
+    global push_color , x_cor_temp , y_cor_temp
+
+    COLOR=art_flag()
+
+    if COLOR_Capeture_Flag==0 and COLOR:
+        push_color=COLOR
+        angle_target=Color_dictionary[COLOR]
+        COLOR_Capeture_Flag=1
+
+    # 1. 保持左右+前后对齐（微调）
+    elif COLOR_Capeture_Flag==1:
+        auto_align_movement(angle_target)
+
+        dir_error = abs(angle_error(YAW, angle_target))
+        fb_align_error = abs(cy - Y_TARGET)
+        lr_align_error = abs(cx - X_TARGET)
+
+        if dir_error < DIR_ADJ_THRESHOLD and fb_align_error < ALIGN_FB_THRESHOLD and lr_align_error < ALIGN_LR_THRESHOLD:
+            state_hold_timer += 10
+            if state_hold_timer >= DIR_ADJ_HOLD_TIME:
+                state_hold_timer = 0
+                COLOR_Capeture_Flag=0
+                beep_on()
+                pid_reset_application_only()
+                return STATE_CONTECT
+        else:
+            state_hold_timer = 0
+    return STATE_ADJUST_DIRECTION
+
+
+######################  状态5  ：发送标志位控制车1  and  接收标志位   ######################
+send_time = SEND_FREQ
+gain_get_flag = 0 
+x_co_gain = 0
+y_co_gain = 0
+
+def car1_co_targetxy(color_mark):
+
+    if color_mark == 3:
+        return block, -block/2
+    elif color_mark == 1 or color_mark == 2:
+        return block/2, block
+    elif color_mark == 4 or color_mark == 5:
+        return -block/2, -block
+
+def action_contect():
+    global uart_wireless, DEST_ADDR, rx_buffer, uart_buf 
+    global angle_target
+    global push_color
+    global gain_get_flag, x_co_gain, y_co_gain
+    global req_send_count
+    global X_TARGET, Y_TARGET
+
+#    if gain_get_flag == 0:
+#        x_co_gain , y_co_gain = car1_co_targetxy(push_color)    # 根据颜色设定车1的目标坐标增益（相对于当前坐标的偏移），需要根据实际情况调整这些数值以确保车1能正确接近物体
+#        gain_get_flag = 1
+#    
+#    else:
+#        req_send_count += 1
+#        if req_send_count >= SEND_FREQ:
+#            req_send_count = 0
+#            data = (
+#                114, push_color, ins.now_x_position+x_co_gain, ins.now_y_position+y_co_gain,
+#                x_cor_temp, y_cor_temp, angle_target, 0,
+#                0, 0, 0, 0,
+#                0, 0, 0, 0,
+#            )
+#            send_frame(DEST_ADDR, data)
+    Vz=pid_angle.compute(angle_target , YAW ,GZ_PID_KD/100)
+    speed_compose(0 , 0 ,Vz)
+    if uart_wireless.any():
+        chunk = uart_wireless.read()
+        if chunk:
+            rx_buffer += chunk  
+    result = parse_frame()
+    if result and result[0] == 114:
+        beep_on()
+        gain_get_flag = 0 
+        x_co_gain = 0
+        y_co_gain = 0 
+        pid_reset_application_only()
+        X_TARGET = push_x_target_dictionary[push_color] 
+        Y_TARGET = push_y_target_dictionary[push_color]
+        return STATE_PUSH_OBJECT        
+    return STATE_CONTECT
+
+######################  状态6  ：前进推物体+左右微调   ######################
+def action_push_object():
+    global cx, cy, YAW ,GZ_PID_KD, angle_target,retreat_flag,push_color
+    global x_cor_temp , y_cor_temp  # 用于边界检测时刷新惯导位置的临时变量
+    global X_TARGET, Y_TARGET
+    global last_good_color
+
+    art_flag()
+    
+    adjust_vx = pid_strafe.compute(X_TARGET, cx, 5, 3)
+    
+    adjust_vy = pid_forward.compute(Y_TARGET, cy, 5, 3)
+    
+    if adjust_vx > 50: adjust_vx = 50
+    if adjust_vx < -50: adjust_vx = -50
+    if adjust_vy > 50: adjust_vy = 50
+    if adjust_vy < -50: adjust_vy = -50
+
+    push_angle = -43  
+    
+    base_vy = AHEAD_SPEED * math.cos(math.radians(push_angle))
+    base_vx = AHEAD_SPEED * math.sin(math.radians(push_angle))
+
+    final_vx = base_vx + adjust_vx
+    final_vy = base_vy + adjust_vy
+
+    speed = math.sqrt(final_vx**2 + final_vy**2)
+    angle = math.atan2(final_vx, final_vy) * (180 / math.pi)
+
+    Vz = pid_angle.compute(angle_target, YAW, GZ_PID_KD/100)
+
+    speed_compose(speed, angle, Vz)
+
+    if read_grayscale() == 1:    
+        
+        INS_boundary_refresh(push_color , x_cor_temp , y_cor_temp)
+        retreat_flag = 1
+        last_good_color = push_color
+        push_color=0
+        x_cor_temp = 0
+        y_cor_temp = 0
+        X_TARGET = 80
+        Y_TARGET = 50
+        beep_on()
+        for i in range(SEND_FREQ):
+            uart2.write("6")
+            speed_compose(0, 0, 0)
+        pid_reset_all()
+        return STATE_RETURN_RETREAT
+
+    return STATE_PUSH_OBJECT
+
+######################  状态7：回归退后   ######################
+def action_return_retreat():
+    global retreat_start_flag
+    
+    Vz = pid_angle.compute(angle_target, YAW, GZ_PID_KD/100)
+    speed_compose(NEAR_SPEED, 180, Vz)
+
+    if retreat_start_flag:
+        retreat_start_flag = 0
+        beep_on()
+        pid_reset_application_only()
+        return STATE_RETURN_FINISH
+    return STATE_RETURN_RETREAT
+
+
+######################  状态8：回归+结束   ######################
+def action_return_finish():
+    global  YAW ,GZ_PID_KD,angle_target,state_hold_timer ,last_state_machine_angle,coordinate_get_flag
+    global uart_wireless, rx_buffer
+    
+    Vz=pid_angle.compute(Back_Angle_direction[angle_target] , YAW ,GZ_PID_KD/100)
+
+    if Vz > 200:
+        Vz = 200
+    if Vz < -200:
+        Vz = -200
+
+    speed_compose(0, 0, Vz)
+    
+    dir_error = abs(angle_error(Back_Angle_direction[angle_target], YAW))
+
+    if abs(dir_error) < DIR_ADJ_THRESHOLD:
+        state_hold_timer += 10
+        if state_hold_timer >= DIR_ADJ_HOLD_TIME:
+            state_hold_timer = 0
+            last_state_machine_angle =	Back_Angle_direction[angle_target]
+            angle_target=0
+            coordinate_get_flag = 0
+            beep_on()
+            
+            while uart_wireless.any():
+                uart_wireless.read()
+                
+            rx_buffer = bytearray()
+            # ===============================================================
+            return STATE_COORDINATE_GET
+    else:
+        state_hold_timer = 0
+    return STATE_RETURN_FINISH
+######################  状态9：回归到初始位置   ######################
+
+y_keep = 0
+RETURN_HOME_X = -100
+# 主车最终再向回库方向前移100个惯导单位，为跟随的从车留出空间。
+RETURN_HOME_Y = -300
+# 主车自身稳定后停止电机，并永久持续发送最终250坐标。
+RETURN_SYNC_HOLD_TIME = 200
+
+return_home_phase = 0
+return_line_seen_time = 0
+
+
+def execute_ins_navigation(target_x, target_y, target_angle, send_data=False, follow_phase=0):
+    global YAW, GZ_PID_KD, req_send_count
+
+    dist_error = math.sqrt((target_x - ins.now_x_position) ** 2 + (target_y - ins.now_y_position) ** 2)
+    
+    out_speed = pid_distance.compute(0, dist_error) 
+    Vz = pid_angle.compute(target_angle, YAW, GZ_PID_KD/100)
+
+    speed_compose_INS(out_speed, target_x, target_y, ins.now_x_position, ins.now_y_position, 0, YAW, Vz)
+
+    if send_data:
+        req_send_count += 1
+        if req_send_count >= SEND_FREQ:
+            req_send_count = 0
+            data = (
+                # 回库时发送主车实际位置，使从车沿主车实际轨迹跟随。
+                250, ins.now_x_position, ins.now_y_position, follow_phase,
+                0, 0, 0, 0,
+                0, 0, 0, 0,
+                0, 0, 0, 0,
+            )
+            send_frame(DEST_ADDR, data)
+
+    return dist_error
+
+#1
+def action_return_left_boundary():
+    global ins, y_keep, last_state_machine_angle
+
+    dist_error = execute_ins_navigation(
+        X_LEFT_CO,
+        700,
+        last_state_machine_angle,
+        send_data=True,
+        follow_phase=2
+    )
+
+    if dist_error < NEAR_TARGET_THRESHOLD:
+        y_keep = ins.now_y_position
+        beep_on()
+        pid_reset_all()
+        return STATE_ALIGN_0_0
+
+    return STATE_RETURN_LEFT_BOUNDARY
+#2
+def action_align_0_0():
+    global ins, y_keep, last_state_machine_angle
+
+    dist_error = execute_ins_navigation(
+        RETURN_HOME_X,
+        y_keep,
+        last_state_machine_angle,
+        send_data=True,
+        follow_phase=2
+    )
+
+    if dist_error < NEAR_TARGET_THRESHOLD:
+        beep_on()
+        pid_reset_all()
+        return STATE_RETURN_0_0
+
+    return STATE_ALIGN_0_0
+#3
+def action_return_0_0():
+    global return_home_phase
+    global return_line_seen_time
+    global last_state_machine_angle
+    global gray_high_count
+
+    # 第一阶段：完全按照原INS状态机回到原目标点
+    if return_home_phase == 0:
+        dist_error = execute_ins_navigation(
+            RETURN_HOME_X,
+            RETURN_HOME_Y,
+            last_state_machine_angle,
+            send_data=True,
+            follow_phase=1
+        )
+
+        if dist_error < NEAR_TARGET_THRESHOLD:
+            return_home_phase = 1
+            gray_high_count = 0
+            pid_reset_application_only()
+
+        return STATE_RETURN_0_0
+
+    # 原路线最后一段是Y坐标减小，因此继续向负Y方向找发车区黄线
+    search_target_y = RETURN_HOME_Y - RETURN_LINE_SEARCH_DISTANCE
+
+    # 第二阶段：INS继续前进，灰度只在这里检测发车区黄线
+    if return_home_phase == 1:
+        dist_error = execute_ins_navigation(
+            RETURN_HOME_X,
+            search_target_y,
+            last_state_machine_angle,
+            send_data=True,
+            follow_phase=1
+        )
+
+        if read_grayscale() == 1:
+            return_home_phase = 2
+            return_line_seen_time = time.ticks_ms()
+            beep_on()
+
+        # 达到最大搜索距离仍没检测到黄线，立即停车，防止跑出场地
+        elif dist_error < NEAR_TARGET_THRESHOLD:
+            return_home_phase = 3
+            pid_reset_all()
+            beep_on()
+
+        return STATE_RETURN_0_0
+
+    # 第三阶段：检测黄线后再前进200ms，让车身进入发车区
+    if return_home_phase == 2:
+        execute_ins_navigation(
+            RETURN_HOME_X,
+            search_target_y,
+            last_state_machine_angle,
+            send_data=True,
+            follow_phase=1
+        )
+
+        if time.ticks_diff(
+            time.ticks_ms(),
+            return_line_seen_time
+        ) >= RETURN_LINE_PASS_TIME:
+            return_home_phase = 3
+            pid_reset_all()
+            beep_on()
+
+        return STATE_RETURN_0_0
+
+    # 第四阶段：主车停车，但继续发送锁定位置让从车完成跟随
+    execute_ins_navigation(
+        ins.now_x_position,
+        ins.now_y_position,
+        last_state_machine_angle,
+        send_data=True,
+        follow_phase=1
+    )
+
+    motor_get(0, 1)
+    motor_get(0, 2)
+    motor_get(0, 3)
+
+    return STATE_RETURN_0_0
+
+######################  状态10：停止   ######################
+def action_stop():
+    global go_flag
+
+    motor_get(0, 1)
+    motor_get(0, 2)
+    motor_get(0, 3)
+    pid_reset_all()
+
+    data = (
+        514, 0, 0, 0,
+        0, 0, 0, 0,
+        0, 0, 0, 0,
+        0, 0, 0, 0,
+    )
+
+    for i in range(SEND_FREQ):
+        send_frame(DEST_ADDR, data)
+
+    beep_on()
+    go_flag = 0
+    return STATE_STOP
+
+
+#########################################################初始化参数############################################################
+now_page=first_menu   
+in_key=0  
+
+go_flag=0               #状态机运行标志位，0=菜单控制 1=状态机控制
+pwm_fl=0
+pwm_fr=0
+pwm_b=0
+go_flag=0
+
+state=0
+goods_num=0
+goods_count_flag=1
+
+sequence = 5
+auto_load_flag = 0
+
+start_buffer_clear_flag=0   #发车时清空残留数据的标志位，0=未清空 1=已清空
+
+#########################################################初始化函数# ###########################################################
+
+
+canshu_getvalue()
+pitopen0()
+#########################################################主循环#########################################################
+
+while True:
+    beep_service()
+    
+    if not go_flag:
+        
+        if main_start_pending and gyro_calibrated and first_Yaw_flag:
+           main_start_pending = 0
+           go_flag = 1
+           pid_reset_all()   
+            
+        if go_flag and not remote_start_sent:
+            start_data = (
+                REMOTE_START, 0, 0, 0,
+                0, 0, 0, 0,
+                0, 0, 0, 0,
+                0, 0, 0, 0,
+            )
+            
+            for i in range(10):
+                send_frame(DEST_ADDR, start_data)
+                
+            remote_start_sent = 1
+            beep_on()
+            
+        if ticker_flag and ticker_count % 10 == 0:
+#            data = (
+#                0, 0, 0, 0,
+#                0, 0, 0, 0,
+#                0, 0, 0, 0,
+#                0, 0, ins.now_x_position, ins.now_y_position,
+#            )
+#            send_frame(DEST_ADDR, data)
+            ticker_flag = False       
+            
+    else:
+        if start_buffer_clear_flag==0:
+            start_buffer_clear_flag=1
+            while uart_wireless.any():
+                uart_wireless.read()
+            rx_buffer = bytearray()
+
+        if ticker_flag:
+            ticker_flag = False
+            if current_state == STATE_COORDINATE_GET:
+                current_state = action_coordinate_get()
+            elif current_state == STATE_COLOR_DETECT:
+                current_state = action_color_detect()
+            elif current_state == STATE_ALIGN_FRONT_BACK:
+                current_state = action_align_front_back()
+            elif current_state == STATE_CIRCLE_INS:
+                current_state = action_circle_ins()
+            elif current_state == STATE_ADJUST_DIRECTION:
+                current_state = action_adjust_direction()
+            elif current_state == STATE_CONTECT:
+                current_state = action_contect()
+            elif current_state == STATE_PUSH_OBJECT:
+                current_state = action_push_object()
+            elif current_state == STATE_RETURN_RETREAT:
+                current_state = action_return_retreat()
+            elif current_state == STATE_RETURN_FINISH:
+                current_state = action_return_finish()
+            elif current_state == STATE_RETURN_0_0:
+                current_state = action_return_0_0()
+            elif current_state == STATE_STOP:
+                current_state = action_stop()
+            elif current_state == STATE_RETURN_LEFT_BOUNDARY:
+                current_state = action_return_left_boundary()
+            elif current_state == STATE_ALIGN_0_0:
+                current_state = action_align_0_0()
+            elif current_state == STATE_OBSTACLE_DETECT:
+                current_state = action_obstacle_detect()
+            elif current_state == STATE_OBSTACLE_CONTACT:
+                current_state = action_obstacle_contact()
+            elif current_state == STATE_PUSH_OBJECT_TILT:
+                current_state = action_push_object_tilt()
+            elif current_state == STATE_PUSH_OBJECT_CORNER:
+                current_state = action_push_object_corner()
+            elif current_state == STATE_ORDERCAR1 :
+                current_state = action_ordercar1()
+            elif current_state == STATE_START:
+                current_state = action_start()
+            else:
+                current_state = STATE_COLOR_DETECT
+            if ticker_count % 100 == 0:
+                gc.collect()
+编译模块清单：fusion_ahrs.mpy、global_var.mpy、INS.mpy、kalman.mpy、pid.mpy。提交正式版本时请将与本报告对应的.mpy文件作为源码包附件保存。
+D.2 从车源代码
+boot.py
+源码路径：C:\Users\Lenovo\Desktop\灰度\完赛代码\从车\flash\boot.py
+# 本示例程序演示如何通过 boot.py 文件进行 soft-boot 控制
+# 使用 RT1021-MicroPython 核心板搭配对应拓展学习板的拨码开关控制
+
+# 示例程序运行效果为复位后执行本文件 通过 D8 电平状态跳转执行 user_main.py 或进入 main.py
+
+# 从 machine 库包含所有内容
+from machine import *
+
+# 包含 gc 与 time 类
+import gc
+import time
+
+# 上电启动时间延时
+time.sleep_ms(50)
+# 选择学习板上的一号拨码开关作为启动选择开关
+boot_select = Pin('D8', Pin.IN, pull=Pin.PULL_UP_47K, value = True)
+# 如果拨码开关打开 对应引脚拉低 就启动用户文件
+#if boot_select.value() == 0:
+try:
+    os.chdir("/flash")
+    execfile("user_main.py")
+except:
+    print("File not found.")
+key.py
+源码路径：C:\Users\Lenovo\Desktop\灰度\完赛代码\从车\flash\key.py
+from machine import *
+from smartcar import *
+from seekfree import *
+
+import gc
+import time
+
+key = KEY_HANDLER(10)
+
+ticker_flag = False
+
+def time_pit_handler1(time):
+    global ticker_flag
+    ticker_flag = True
+    
+pit1 = ticker(1)
+pit1.capture_list(key)
+pit1.callback(time_pit_handler1)
+
+pit1.start(10)
+
+def key_get():
+    global ticker_flag
+    global key
+    t=0
+    key_data = key.get()
+    if key_data[0]==1:
+        t=2			#下
+        key.clear(1)
+    if key_data[1]:
+        t=3			#右
+        key.clear(2)
+    if key_data[2]==1:
+        t=1			#上
+        key.clear(1)
+    if key_data[3]:
+        t=4			#左
+        key.clear(4)
+    if key_data[1]==2:
+        t=5
+        key.clear(2)           
+    if key_data[2]==2:
+        t=6
+        key.clear(3)
+     
+    return t
+motor.py
+源码路径：C:\Users\Lenovo\Desktop\灰度\完赛代码\从车\flash\motor.py
+from machine import *
+
+from smartcar import *
+from seekfree import *
+from seekfree import MOTOR_CONTROLLER
+
+import global_var
+
+import gc
+import time
+import math
+
+motor_fl=MOTOR_CONTROLLER(MOTOR_CONTROLLER.PWM_C30_DIR_C31,13000,duty=0,invert=False)
+motor_fr=MOTOR_CONTROLLER(MOTOR_CONTROLLER.PWM_C28_DIR_C29,13000,duty=0,invert=False)
+motor_b=MOTOR_CONTROLLER(MOTOR_CONTROLLER.PWM_D4_DIR_D5,13000,duty=0,invert=True)
+
+def motor_get(pwm,direction) :
+    if pwm>9000 :pwm=9000
+    elif pwm<-9000 :pwm=-9000
+    if direction==1 :
+        motor_b.duty(pwm)
+    elif direction==2 :
+        motor_fr.duty(pwm)
+    elif direction==3 :
+        motor_fl.duty(-pwm)
+main.py
+源码路径：C:\Users\Lenovo\Desktop\灰度\完赛代码\从车\flash\main.py
+from machine import *
+from seekfree import MOTOR_CONTROLLER
+from smartcar import *
+from array import *
+from display import *
+from motor import *
+import gc
+import time
+from key import *
+import global_var
+from kalman import *
+from pid import *
+from fusion_ahrs import *
+from math import *
+import os
+import io
+import struct
+from seekfree import WIRELESS_UART
+from INS import *
+
+##################################################初始化部分##################################################
+imu = IMU660RX() 
+uart2 = UART(5)
+uart2.init(115200)
+ahrs = FusionAHRS()  
+ins = SpeedComposer_INS()
+is_tracking_car2=0
+# 从车使用与主车相同的相对坐标回到自己的发车点，不再附加停车偏移。
+FOLLOW_HOME_Y_OFFSET = 0
+track_return_phase = 0
+RETURN_FOLLOW_SPEED_GAIN = 1.25
+RETURN_FOLLOW_SPEED_MAX = 320
+
+encoder_fl = encoder("D13", "D14") 
+encoder_b = encoder("C0" , "C1" )
+encoder_fr = encoder("D15", "D16", True)
+
+#####################无线串口######################
+
+uart_wireless = UART(2, 115200)
+
+#####################蜂鸣器初始化######################
+beep   = Pin('D24', Pin.OUT, value = False)
+
+beep_active = 0
+beep_end_time = 0
+
+def beep_on(duration_ms=50):
+    global beep_active, beep_end_time
+
+    beep.high()
+    beep_active = 1
+    beep_end_time = time.ticks_add(time.ticks_ms(), duration_ms)
+
+def beep_service():
+    global beep_active
+
+    if beep_active:
+        if time.ticks_diff(time.ticks_ms(), beep_end_time) >= 0:
+            beep.low()
+            beep_active = 0
+
+###############边界检测外部中断初始化##################
+power_adc = ADC('B12')
+last_adc_value = 100
+
+gray_thre = 100
+
+gray_high_count = 0
+
+def read_grayscale():
+    global gray_high_count
+
+    power_adc_value = power_adc.read_u16() // 100
+
+    if power_adc_value >= gray_thre:
+        gray_high_count += 1
+    else:
+        gray_high_count = 0
+
+    if gray_high_count >= 2:
+        gray_high_count = 0
+        return 1
+
+    return 0
+
+def out_detect(color):
+    # 代号3：从前方推出，Y坐标增大
+    if color == 3:
+        if ins.now_y_position >= Y_FRONT_CO + 150:
+            return 1
+
+    # 代号1、2：从左侧推出，X坐标减小
+    elif color == 1 or color == 2:
+        if ins.now_x_position <= X_LEFT_CO - 80:
+            return 1
+
+    # 代号4、5：从右侧推出，X坐标增大
+    elif color == 4 or color == 5:
+        if ins.now_x_position >= X_RIGHT_CO + 80:
+            return 1
+
+    return 0   
+
+
+
+
+###############显示屏初始化##################
+
+#cs = Pin('B29' , Pin.OUT, value=True)
+#cs.high()
+#cs.low()
+#rst = Pin('B31', Pin.OUT, value=True)
+#dc  = Pin('B5' , Pin.OUT, value=True)
+#blk = Pin('C21', Pin.OUT, value=True)
+#drv = LCD_Drv(SPI_INDEX=2, BAUDRATE=60000000, DC_PIN=dc, RST_PIN=rst, LCD_TYPE=LCD_Drv.LCD200_TYPE)# 新建 LCD 实例
+#lcd = LCD(drv)
+#lcd.color(0xFFFF, 0x0000)
+# mode 接口设置屏幕显示模式 [0:竖屏,1:横屏,2:竖屏180旋转,3:横屏180旋转]
+#lcd.mode(0)
+#lcd.clear(0x0000)
+
+############################################
+
+########################################################无线串口###########################################################
+
+
+
+###############必要参数##################
+FRAME_HEAD = b'\xAA' 
+FRAME_TAIL = b'\xFF'
+
+DEST_ADDR = 0x02
+
+rx_buffer = bytearray() 
+
+num_floats = 16
+FRAME_LEN = 1 + 1 + num_floats * 4 + 1
+
+REMOTE_START = 902
+
+MY_ADDR = 0x01
+
+###############必要函数##################
+def send_frame(addr, data):     #发送数据帧函数
+    if len(data) != 16:
+        print("[UART TX] invalid length:", len(data))
+        return False
+    payload = struct.pack('<16f', *data)
+    frame = FRAME_HEAD + bytes([addr]) + payload + FRAME_TAIL
+    uart_wireless.write(frame)
+    return True
+
+
+def parse_frame():  
+    global rx_buffer
+    while len(rx_buffer) >= FRAME_LEN: 
+        
+        head = rx_buffer.find(b'\xAA')
+        if head < 0:      
+            rx_buffer = bytearray()
+            return None
+        if head > 0:                    
+            rx_buffer = rx_buffer[head:]
+        if len(rx_buffer) < FRAME_LEN:    
+            return None
+
+        frame = rx_buffer[:FRAME_LEN] 
+
+        if frame[-1] != 0xFF:    
+            rx_buffer = rx_buffer[1:]
+            continue
+
+        addr = frame[1]   
+
+        if addr != MY_ADDR:      
+            rx_buffer = rx_buffer[FRAME_LEN:]
+            continue
+
+        try:
+            data = struct.unpack('<16f', frame[2:66])
+        except Exception as e:  
+            rx_buffer = rx_buffer[FRAME_LEN:]
+            continue
+
+        rx_buffer = rx_buffer[FRAME_LEN:]
+        return data
+    
+    return None
+
+
+########################################################色块检测函数###########################################################
+color_flag=0   
+data_art=[0] 
+COLOR_MARK=0 
+cx=0
+cy=0
+tilt_flag=0
+pixel=0
+uart_buf = bytearray()
+
+LOST_MAX = 2  
+
+art_obs_detect_flag = 0
+
+def art_flag():
+    global COLOR_MARK, cx, cy, tilt_flag
+    
+    last_line = None
+    while uart2.any():
+        last_line = uart2.readline()
+    if last_line:
+        try:
+            s = last_line.decode().strip()
+            arr = s.split(',')
+
+            if len(arr) >= 5: 
+                COLOR_MARK = int(arr[0])
+                COLOR = COLOR_MARK
+                cx = int(arr[1])
+                cy = int(arr[2])
+                tilt_flag  = int(arr[3])
+                obs_stu  = int(arr[4])   
+                if not art_obs_detect_flag:
+                    if COLOR in (1,2,3,4,5):
+                        return COLOR
+                else:
+                    return obs_stu
+        except Exception as e:
+            pass
+    return None
+
+########################################################PID部分###########################################################
+############################速度环PID##########################
+speed_kp=0
+speed_ki=0
+pid_fl = SpeedPID(speed_kp, speed_ki)
+pid_fr = SpeedPID(speed_kp, speed_ki)
+pid_b  = SpeedPID(speed_kp, speed_ki)
+kf_left = KalmanFilter1D(Q=0.01, R=0.25)
+kf_right = KalmanFilter1D(Q=0.01, R=0.25)
+kf_back = KalmanFilter1D(Q=0.01, R=0.25)
+
+def update_encoder(left_raw, right_raw, back_raw):
+    left_speed = -kf_left.update(left_raw)
+    right_speed = kf_right.update(right_raw)
+    back_speed = -kf_back.update(back_raw)
+
+    return left_speed, right_speed, back_speed
+
+integral_fl=0
+integral_fr=0
+integral_b=0
+
+speed_output_max=2000
+speed_output_min=-2000
+
+############################角度环PID##########################
+######角度环参数######
+angle_kp=0
+angle_kd=0
+
+angle_output_max=2000
+angle_output_min=-2000
+
+pid_angle= AnglePID(angle_kp, angle_kd)
+
+############################位置环PID##########################
+######横向环参数######
+strafe_kp=0
+strade_kd=0
+pid_strafe= position_PID(kp=strafe_kp,kd=strade_kd)
+
+######纵向环参数######
+forward_kp=0
+forward_kd=0
+pid_forward= position_PID(kp=forward_kp,kd=forward_kd)
+
+############################距离环PID##########################
+distance_kp=0
+distance_kd=0
+speed_limit=400
+max_accel = 10
+max_decel = 15
+
+pid_distance= distance_PID(kp=distance_kp,kd=distance_kd)
+############################PID重置函数##########################
+def pid_reset_all():  
+    pid_fl.reset()
+    pid_fr.reset()
+    pid_b.reset()
+    pid_angle.reset()
+    pid_strafe.reset()
+    pid_forward.reset()
+    pid_distance.reset()
+
+def pid_reset_application_only():
+    pid_strafe.reset()
+    pid_forward.reset()
+    pid_distance.reset()
+
+##################################################菜单部分##################################################
+
+step_dict={}
+class Level_Menu:
+    def __init__(self, name):
+        self.name = name
+        self.attr_order = [name] 
+        self.page='page'
+
+def add_page(son_obj, father_obj, name):
+    setattr(father_obj, name, son_obj)
+    setattr(son_obj, 'father_obj', father_obj)
+    father_obj.attr_order.append(name)
+
+def add_function(function,obj,method_name):
+    setattr(obj, method_name, lambda: function())
+    obj.attr_order.append(method_name)
+    
+def add_value(value, obj, name,num_step):
+    global step_dict
+    global_var.set_value(name,value)
+    setattr(obj, name, value)
+    obj.attr_order.append(name)
+    step_dict[name]=num_step
+
+##################################################中断部分##################################################
+##############################（陀螺仪/编码器）中断####################
+user_left_enc_data=0     #编码器处理后数据
+user_right_enc_data=0
+user_back_enc_data=0
+enc_fl=0                  #编码器原数据
+enc_fr=0                  #编码器原数据   
+enc_b=0
+YAW=0
+first_Yaw_flag=0
+first_Yaw=0
+GZ_PID_KD=0
+AX_PID_KD=0
+AY_PID_KD=0
+
+######################
+# ===== 陀螺仪零漂 =====
+gyro_bias_x = 0
+gyro_bias_y = 0
+gyro_bias_z = 0
+gyro_sum_x = 0
+gyro_sum_y = 0
+gyro_sum_z = 0
+gyro_count = 0
+gyro_calibrated = 0   
+ins_start_flag=0   
+######################
+def time_pit_handler2(time):
+    global enc_fl, enc_fr, enc_b
+    global user_left_enc_data, user_right_enc_data, user_back_enc_data
+    global first_Yaw, first_Yaw_flag, speed_loop_timer
+    global ahrs, GZ_PID_KD, AX_PID_KD, AY_PID_KD, YAW
+    global gyro_sum_x, gyro_sum_y, gyro_sum_z
+    global gyro_count, gyro_bias_x, gyro_bias_y, gyro_bias_z, gyro_calibrated
+    global ins, ins_start_flag
+    global ins_refresh_pending, ins_refresh_x, ins_refresh_y
+    global go_flag
+
+    # ===== 从车IMU处理 =====
+    imu_data = imu.get()
+
+    # 加速度计固定补偿
+    ax = imu_data[0] + 408
+    ay = imu_data[1] + 16
+    az = imu_data[2] - 2
+
+    # 陀螺仪原始数据
+    gx_raw = imu_data[3]
+    gy_raw = imu_data[4]
+    gz_raw = imu_data[5]
+
+    # ===== 启动零漂标定 =====
+    if gyro_calibrated == 0:
+        gyro_sum_x += gx_raw
+        gyro_sum_y += gy_raw
+        gyro_sum_z += gz_raw
+        gyro_count += 1
+
+        if gyro_count >= 800:
+            gyro_bias_x = gyro_sum_x / gyro_count
+            gyro_bias_y = gyro_sum_y / gyro_count
+            gyro_bias_z = gyro_sum_z / gyro_count
+
+            gyro_calibrated = 1
+            ins_start_flag = 1
+
+        return
+
+    # ===== 去除启动零偏 =====
+    gx = gx_raw - gyro_bias_x
+    gy = gy_raw - gyro_bias_y
+    gz = gz_raw - gyro_bias_z
+
+    # ===== 陀螺仪死区 =====
+    GYRO_DEADBAND = 2
+
+    if abs(gx) <= GYRO_DEADBAND:
+        gx = 0
+    if abs(gy) <= GYRO_DEADBAND:
+        gy = 0
+    if abs(gz) <= GYRO_DEADBAND:
+        gz = 0
+
+    GZ_PID_KD = gz
+    AX_PID_KD = ax
+    AY_PID_KD = ay
+
+    ahrs.update(gx, gy, gz, ax, ay, az)
+
+    yaw = ahrs.get_euler()
+
+    if not first_Yaw_flag:
+        first_Yaw = yaw
+        first_Yaw_flag = 1
+
+    YAW = yaw - first_Yaw
+    ###########编码器处理##########
+    enc_fl = encoder_fl.get()  
+    enc_fr = encoder_fr.get()
+    enc_b = encoder_b.get()
+   
+    user_left_enc_data, user_right_enc_data, user_back_enc_data = update_encoder(enc_fl, enc_fr, enc_b)
+    
+
+#     print(f"    {user_left_enc_data}        {user_right_enc_data}    {user_back_enc_data }") 
+
+
+###########惯导处理##########
+
+    if ins_start_flag:         
+        if ins_refresh_pending:
+            ins.now_x_position = ins_refresh_x
+            ins.now_y_position = ins_refresh_y
+            ins_refresh_pending = 0
+
+        ins.update(
+            wheel1_speed = user_back_enc_data,   
+            wheel2_speed = user_right_enc_data,  
+            wheel3_speed = user_left_enc_data,   
+            yaw = YAW,                           
+            base_yaw = 0        
+        )
+
+##############################总控制中断#######################
+
+pwm_fl=0
+pwm_fr=0
+pwm_b=0
+ticker_count = 0
+ticker_flag =False
+retreat_flag = 0
+retreat_ticker_count=0
+retreat_start_flag = 0
+tilt_delay_flag = 0
+tilt_delay_count = 0 
+tilt_detect_flag = 0
+
+def time_pit_handler3(time):
+    global ticker_flag 
+    global ticker_count, retreat_flag, retreat_ticker_count, retreat_start_flag
+    global tilt_delay_flag,tilt_delay_count,tilt_detect_flag
+
+    ticker_flag = True
+    ticker_count = (ticker_count + 1) if (ticker_count < 1001) else (1)
+
+    tilt_delay_max = (1000*150)//AHEAD_SPEED 
+
+    if retreat_flag == 1:
+        retreat_ticker_count+=1
+        if retreat_ticker_count >= 50:
+            retreat_flag = 0
+            retreat_ticker_count = 0
+            retreat_start_flag = 1
+    if tilt_delay_flag:
+        tilt_delay_count += 5
+        if tilt_delay_count >= tilt_delay_max:
+            tilt_delay_flag = 0
+            tilt_delay_count = 0
+            tilt_detect_flag = 1
+    #VZ = 50
+    #speed_compose(0,0,VZ)
+
+
+##################################中断启动###############################
+
+pit2 = ticker(2)
+pit2.capture_list(imu,encoder_fl, encoder_fr, encoder_b)
+pit2.callback(time_pit_handler2)
+
+pit3 = ticker(3)
+pit3.callback(time_pit_handler3)
+
+def pitopen0():
+    pit3.start(5)
+
+    time.sleep_ms(500)
+
+    pit2.start(5)
+
+########################################################电机控制###########################################################
+v_cx = 0
+v_cy = 0
+#################惯导边界数值###############
+Y_FRONT_CO = 1200
+X_LEFT_CO = -330
+X_RIGHT_CO = 1270
+
+#############################姿态控制 惯导###############################
+#############################惯导到达指定坐标#################################
+def speed_compose_INS(set_speed, set_pos_x, set_pos_y, now_x, now_y, bas_yaw, yaw, vz):
+    global pwm_fl,pwm_fr,pwm_b,user_left_enc_data,user_right_enc_data,user_back_enc_data
+    global pwm_fl_target, pwm_fr_target, pwm_b_target 
+    global v_cx, v_cy
+
+
+    dx = set_pos_x - now_x
+    dy = set_pos_y - now_y
+    beta = -(yaw - bas_yaw) / 57.3
+    
+    dist = math.sqrt(dx*dx + dy*dy)
+
+    
+    if dist < NEAR_TARGET_THRESHOLD-5: 
+        v_cx = 0
+        v_cy = 0
+        v_cz = 0
+    else:
+        cos_phi1 = dy / dist
+        sin_phi1 = dx / dist
+    
+        cos_beta = math.cos(beta)
+        sin_beta = math.sin(beta)
+
+        v_cx = set_speed * sin_phi1 * cos_beta + set_speed * cos_phi1 * sin_beta
+        v_cy = set_speed * cos_phi1 * cos_beta - set_speed * sin_phi1 * sin_beta
+        v_cz = vz
+
+    pwm_b_target = -0.667 * v_cx + 0.333 * v_cz
+    pwm_fr_target =  0.333 * v_cx - 0.577 * v_cy + 0.333 * v_cz
+    pwm_fl_target =  0.333 * v_cx + 0.577 * v_cy + 0.333 * v_cz
+
+        
+    pwm_fl = pid_fl.compute(pwm_fl_target, user_left_enc_data)
+    pwm_fr = pid_fr.compute(pwm_fr_target, user_right_enc_data)
+    pwm_b  = pid_b.compute(pwm_b_target, user_back_enc_data)
+        
+    motor_get(pwm_fl,3)  
+    motor_get(pwm_fr,2)  
+    motor_get(pwm_b,1)    
+
+
+#############################边界惯导刷新###############################
+
+ins_refresh_pending = 0
+ins_refresh_x = 0
+ins_refresh_y = 0
+
+def INS_boundary_refresh(color_mark, x_cor, y_cor):
+    global ins_refresh_pending, ins_refresh_x, ins_refresh_y
+    ins_refresh_x = ins.now_x_position
+    ins_refresh_y = ins.now_y_position
+
+    if color_mark == 3:
+        ins_refresh_y = Y_FRONT_CO
+    elif color_mark == 1 or color_mark == 2:
+        ins_refresh_x = X_LEFT_CO
+    elif color_mark == 4 or color_mark == 5:
+        ins_refresh_x = X_RIGHT_CO
+    else:
+        return
+
+    ins_refresh_pending = 1
+
+###########################姿态控制###############################
+def speed_compose(speed , angle ,speed_z) :
+    global pwm_fl,pwm_fr,pwm_b,user_left_enc_data,user_right_enc_data,user_back_enc_data
+    
+    Vy=speed*math.cos(math.radians(angle))
+    Vx=speed*math.sin(math.radians(angle))
+    Vz=speed_z
+
+
+    pwm_fl_target=(Vx+Vz)*0.333+Vy*0.577
+    pwm_fr_target=(Vx+Vz)*0.333-Vy*0.577
+    pwm_b_target=Vz*0.333-Vx*0.667
+
+    pwm_fl = pid_fl.compute(pwm_fl_target, user_left_enc_data)
+    pwm_fr = pid_fr.compute(pwm_fr_target, user_right_enc_data)
+    pwm_b  = pid_b.compute(pwm_b_target, user_back_enc_data)
+
+    motor_get(pwm_fl,3)   #左轮
+    motor_get(pwm_fr,2)   #右轮
+    motor_get(pwm_b,1)   #后轮
+
+def motor_0():
+    motor_get(0,3)  
+    motor_get(0,2)  
+    motor_get(0,1)
+
+def limit_value(value, min_value, max_value):
+    if value > max_value:
+        return max_value
+    if value < min_value:
+        return min_value
+    return value
+
+def circle_angle_error(target, current):
+    err = target - current
+    while err >= 180:
+        err -= 360
+    while err < -180:
+        err += 360
+    return err
+
+def circle_sweep_with_dir(start, target, direction):
+    sweep = target - start
+    if direction > 0:
+        while sweep < 0:
+            sweep += 360
+        while sweep >= 360:
+            sweep -= 360
+    else:
+        while sweep > 0:
+            sweep -= 360
+        while sweep <= -360:
+            sweep += 360
+    return sweep
+
+def circle_forward_vector(yaw):     
+    rad = math.radians(yaw)
+    return math.sin(rad), math.cos(rad)
+
+def limit_world_speed(vx, vy, max_speed):
+    speed = math.sqrt(vx * vx + vy * vy)
+    if speed > max_speed and speed > 0:
+        scale = max_speed / speed
+        return vx * scale, vy * scale
+    return vx, vy
+
+def speed_compose_world(vx_world, vy_world, yaw, vz):
+    beta = -yaw / 57.3
+    cos_beta = math.cos(beta)
+    sin_beta = math.sin(beta)
+    vx_body = vx_world * cos_beta + vy_world * sin_beta
+    vy_body = -vx_world * sin_beta + vy_world * cos_beta
+    speed = math.sqrt(vx_body * vx_body + vy_body * vy_body)
+    angle = math.atan2(vx_body, vy_body) * (180 / math.pi)
+    speed_compose(speed, angle, vz)
+
+def circle_ins_start(target_yaw, target_radius, use_block_avoid=0, block_yaw=0):
+    global circle_active, circle_center_x, circle_center_y
+    global circle_ref_yaw, circle_target_yaw, circle_direction, circle_force_dir
+    global state_hold_timer
+
+    start_yaw = YAW     
+    shortest_error = circle_angle_error(target_yaw, start_yaw)     
+    shortest_dir = 1 if shortest_error >= 0 else -1     
+    direction = shortest_dir
+
+    if use_block_avoid: 
+        block_error = circle_angle_error(block_yaw, start_yaw)
+        if (shortest_error * block_error > 0) and (abs(block_error) < abs(shortest_error)):
+            direction = -shortest_dir
+
+    radius = abs(target_radius)
+    if radius < 1:
+        radius = 1
+
+    forward_x, forward_y = circle_forward_vector(start_yaw)    
+    circle_center_x = ins.now_x_position + radius * forward_x 
+    circle_center_y = ins.now_y_position + radius * forward_y
+    circle_ref_yaw = start_yaw    
+    circle_target_yaw = start_yaw + circle_sweep_with_dir(start_yaw, target_yaw, direction) 
+    circle_direction = direction   
+    circle_force_dir = 0    
+    circle_active = 1   
+    state_hold_timer = 0
+    pid_reset_application_only()
+
+def circle_pid_compute(target_yaw, force_dir):
+    return pid_angle.compute(target_yaw, YAW, GZ_PID_KD/100)
+
+def circle_ins_run(current_state, next_state, target_radius):     
+    global circle_ref_yaw, circle_active, state_hold_timer
+
+    radius = abs(target_radius)     
+    if radius < 1:
+        radius = 1
+
+    path_speed = CIRCLE_SPEED
+    if path_speed > CIR_SPEED_MAX:
+        path_speed = CIR_SPEED_MAX
+    if path_speed < 0:
+        path_speed = 0
+
+    step_deg = path_speed / radius * 57.3 * 0.005   
+    if step_deg < 0.2:
+        step_deg = 0.2
+
+    remain = circle_target_yaw - circle_ref_yaw    
+    if abs(remain) <= step_deg:                    
+        circle_ref_yaw = circle_target_yaw
+    else:
+        circle_ref_yaw += circle_direction * step_deg
+
+    ref_rad = math.radians(circle_ref_yaw)        
+    target_x = circle_center_x - radius * math.sin(ref_rad) 
+    target_y = circle_center_y - radius * math.cos(ref_rad)
+    err_x = target_x - ins.now_x_position
+    err_y = target_y - ins.now_y_position
+#    pos_error = math.sqrt(err_x * err_x + err_y * err_y)
+    path_done = abs(circle_target_yaw - circle_ref_yaw) < 0.01  
+    if path_done:
+        tangent_x = 0
+        tangent_y = 0
+    else:       
+        tangent_x = -circle_direction * path_speed * math.cos(ref_rad)  
+        tangent_y = circle_direction * path_speed * math.sin(ref_rad)   
+
+    corr_x = limit_value(err_x * CIR_POS_KP, -C_POS_CR_MX, C_POS_CR_MX)
+    corr_y = limit_value(err_y * CIR_POS_KP, -C_POS_CR_MX, C_POS_CR_MX)
+    vx_world, vy_world = limit_world_speed(tangent_x + corr_x, tangent_y + corr_y, CIR_SPEED_MAX)
+
+    Vz = circle_pid_compute(circle_ref_yaw, circle_force_dir)
+    Vz = limit_value(Vz, -CIR_VZ_MAX, CIR_VZ_MAX)
+    speed_compose_world(vx_world, vy_world, YAW, Vz)    
+
+    yaw_done = abs(circle_angle_error(circle_target_yaw, YAW)) < DIR_ADJ_THRESHOLD
+#    pos_done = pos_error < CIR_POS_THR
+    if path_done and yaw_done :
+        state_hold_timer += 10
+        if state_hold_timer >= CIR_HOLD_TIME:
+            state_hold_timer = 0
+            circle_active = 0
+            pid_reset_all()
+            beep_on()
+            motor_0()
+            return next_state
+    else:
+        state_hold_timer = 0
+    return current_state
+
+########################################################菜单函数###########################################################  
+######################一些要定义的变量#####################
+x_co = 0
+y_co = 0
+vol_y_tar = 44
+vol_x_pu_tar = 84
+vol_y_pu_tar = 39
+vol_radius = 60
+sand_y_tar = 50
+san_x_pu_tar = 84
+san_y_pu_tar = 34
+san_radius = 60
+ted_y_tar = 48
+ted_x_pu_tar = 100
+ted_y_pu_tar = 42
+ted_radius = 65
+
+######################参数重赋值#####################  
+def canshu_getvalue():
+
+    global sequence , gray_thre , auto_load_flag
+    sequence = global_var.get_value('sequence')
+    gray_thre = global_var.get_value('gray_thre')
+    auto_load_flag = global_var.get_value('auto_load_flag')
+
+    global speed_kp,speed_ki,angle_kp, angle_kd,forward_kp,forward_kd,strafe_kp,strafe_kd,x_co,y_co
+    ######################速度环PID获取#####################
+
+    speed_kp=global_var.get_value('speed_kp')  
+    speed_ki=global_var.get_value('speed_ki')
+
+    pid_fl.kp = speed_kp
+    pid_fl.ki = speed_ki
+    pid_fr.kp = speed_kp
+    pid_fr.ki = speed_ki
+    pid_b.kp = speed_kp
+    pid_b.ki = speed_ki
+
+    ######################角度环PID获取#####################
+
+    angle_kp=global_var.get_value('angle_kp')  
+    angle_kd=global_var.get_value('angle_kd')
+
+    pid_angle.kp = angle_kp
+    pid_angle.kd = angle_kd
+
+    ######################位置环PID获取#####################
+
+    forward_kp=global_var.get_value('forward_kp')
+    forward_kd=global_var.get_value('forward_kd')
+    strafe_kp=global_var.get_value('strafe_kp')
+    strafe_kd=global_var.get_value('strafe_kd')
+
+    pid_forward.kp = forward_kp/10
+    pid_forward.kd = forward_kd
+    pid_strafe.kp = strafe_kp/10
+    pid_strafe.kd = strafe_kd
+
+    x_co=global_var.get_value('x_co')
+    y_co=global_var.get_value('y_co')
+
+    ######################距离环PID获取#####################
+
+    global distance_kp,distance_kd,speed_limit, max_accel, max_decel
+
+    distance_kp=global_var.get_value('distance_kp')
+    distance_kd=global_var.get_value('distance_kd')
+    speed_limit=global_var.get_value('speed_limit')
+    max_accel=global_var.get_value('max_accel')
+    max_decel=global_var.get_value('max_decel')
+
+    pid_distance.kp = distance_kp
+    pid_distance.kd = distance_kd
+    pid_distance.speed_limit = speed_limit
+    pid_distance.max_accel = max_accel
+    pid_distance.max_decel = max_decel
+    ######################摄像头设置获取#####################
+
+    global y_target, vol_y_tar, sand_y_tar, ted_y_tar
+    global vol_x_pu_tar, vol_y_pu_tar, san_x_pu_tar, san_y_pu_tar, ted_x_pu_tar, ted_y_pu_tar
+    global y_target_dictionary, push_y_target_dictionary, push_x_target_dictionary, radius_dictionary
+    global vol_radius, san_radius, ted_radius
+
+
+    vol_y_tar = global_var.get_value('vol_y_tar')
+    sand_y_tar = global_var.get_value('sand_y_tar')
+    ted_y_tar = global_var.get_value('ted_y_tar')
+    vol_x_pu_tar = global_var.get_value('vol_x_pu_tar')
+    vol_y_pu_tar = global_var.get_value('vol_y_pu_tar')
+    san_x_pu_tar = global_var.get_value('san_x_pu_tar')
+    san_y_pu_tar = global_var.get_value('san_y_pu_tar')
+    ted_x_pu_tar = global_var.get_value('ted_x_pu_tar')
+    ted_y_pu_tar = global_var.get_value('ted_y_pu_tar')
+    vol_radius = global_var.get_value('vol_radius')
+    san_radius = global_var.get_value('san_radius')
+    ted_radius = global_var.get_value('ted_radius')
+
+    y_target_dictionary = {  
+        3 : vol_y_tar,   
+        1 : sand_y_tar,   
+        2 : sand_y_tar,    
+        4 : ted_y_tar,   
+        5 : ted_y_tar
+    }
+    
+    push_y_target_dictionary = {  
+        3 : vol_y_pu_tar,   
+        1 : san_y_pu_tar,   
+        2 : san_y_pu_tar,    
+        4 : ted_y_pu_tar,   
+        5 : ted_y_pu_tar
+    }
+    
+    push_x_target_dictionary = {  
+        3 : vol_x_pu_tar,   
+        1 : san_x_pu_tar,   
+        2 : san_x_pu_tar,    
+        4 : ted_x_pu_tar,   
+        5 : ted_x_pu_tar
+    }
+
+    radius_dictionary = {
+        3 : vol_radius,
+        1 : san_radius,
+        2 : san_radius,
+        4 : ted_radius,
+        5 : ted_radius
+    }
+
+    for name in (
+        'Y_FRONT_CO',
+        'X_LEFT_CO',
+        'X_RIGHT_CO',
+        'NEAR_TARGET_THRESHOLD',
+        'ALIGN_FB_THRESHOLD',
+        'ALIGN_LR_THRESHOLD',
+        'DIR_ADJ_THRESHOLD',
+        'NEAR_SPEED',
+        'AHEAD_SPEED',
+        'VZ_STATE_5_SPEED_MAX',
+        'CIR_RADIUS',
+        'CIRCLE_SPEED',
+        'CIR_SPEED_MAX',
+        'CIR_POS_KP',
+        'C_POS_CR_MX',
+        'CIR_VZ_MAX',
+        'CIR_POS_THR',
+        'CIR_HOLD_TIME',
+        'NEAR_HOLD_TIME',
+        'ALIGN_LR_HOLD_TIME',
+        'ALIGN_FB_HOLD_TIME',
+        'DIR_ADJ_HOLD_TIME',
+        'RETREAT_TIME',
+        'SEND_TIME_SET',
+        'block',
+    ):
+        value = global_var.get_value(name)
+        if value != None:
+            globals()[name] = value
+
+######################姿态测试#####################
+def go_flag_switch():
+    global go_flag
+    go_flag=1-go_flag
+
+######################惯导测试#####################
+
+def ins_test():
+    global state_hold_timer, ticker_flag, ticker_count 
+    
+    while True:
+        if ticker_flag:
+            if (ticker_count % 10 == 0):
+                data = (
+                    0, 0, 0, 0,
+                    0, 0, ins.now_x_position, ins.now_y_position,
+                    0, 0, 0, 0,
+                    0, 0, 0, 0,
+                )
+                send_frame(DEST_ADDR, data)
+                
+            ticker_flag = False  # 重置标志位，等待下一个 5ms 中断
+       
+            dist_error = math.sqrt((x_co - ins.now_x_position) ** 2 + (y_co - ins.now_y_position) ** 2)
+
+            out_speed = pid_distance.compute(0, dist_error)  # 这里的 setpoint 是 0，因为我们希望误差（距离）为 0
+
+            Vz = pid_angle.compute(0, YAW, GZ_PID_KD/100)
+            speed_compose_INS(out_speed, x_co, y_co, ins.now_x_position, ins.now_y_position, 0, YAW, Vz)
+
+            if dist_error < NEAR_TARGET_THRESHOLD:  
+                state_hold_timer += 10
+                if state_hold_timer >= NEAR_HOLD_TIME:
+                    state_hold_timer = 0
+                    pid_reset_all()
+                    motor_get(0, 1) 
+                    motor_get(0, 2) 
+                    motor_get(0, 3) 
+                    return                  
+            else:
+                state_hold_timer = 0       
+
+      
+########################################################菜单插入部分###########################################################
+first_menu=Level_Menu('first_menu')
+function=Level_Menu('function')
+pid=Level_Menu('pid')
+speed_pid=Level_Menu('speed_pid')
+angle_pid=Level_Menu('angle_pid')
+station_pid=Level_Menu('station_pid')  
+distance_pid=Level_Menu('distance_pid') 
+INS_test_menu = Level_Menu('INS_test')  
+camera_settings = Level_Menu('camera_settings')
+state_machine_menu = Level_Menu('state_machine_menu')
+boundary_refresh = Level_Menu('boundary_refresh')
+threshold = Level_Menu('threshold')
+speed = Level_Menu('speed')
+hold_time = Level_Menu('hold_time')
+
+#first_menu
+add_function(pitopen0,first_menu,'pitopen0')
+add_value(5, first_menu, 'sequence', 1)
+add_value(100, first_menu, 'gray_thre', 10)
+add_function(canshu_getvalue,first_menu,'canshu_getvalue')
+add_value(0,first_menu,'auto_load_flag',1)
+add_page(pid,first_menu,'pid')
+add_page(INS_test_menu, first_menu, 'INS_test')
+add_page(camera_settings, first_menu, 'camera_settings')
+add_page(state_machine_menu, first_menu, 'state_machine_menu')
+#pid
+add_page(speed_pid,pid,'speed_pid')
+add_page(angle_pid,pid,'angle_pid')
+add_page(station_pid,pid,'station_pid')
+add_page(distance_pid,pid,'distance_pid')
+
+#speed_pid
+add_value(75,speed_pid,'speed_kp',0.5)
+add_value(1,speed_pid,'speed_ki',0.1)
+add_function(canshu_getvalue,speed_pid,'canshu_getvalue')
+
+#angle_pid
+add_value(10,angle_pid,'angle_kp',0.5)
+add_value(-1.5,angle_pid,'angle_kd',0.1)
+add_function(canshu_getvalue,angle_pid,'canshu_getvalue')
+
+#station_pid
+add_value(-30,station_pid,'forward_kp',1)
+add_value(-13,station_pid,'forward_kd',0.5)
+add_value(25,station_pid,'strafe_kp',1)
+add_value(7,station_pid,'strafe_kd',0.5)
+add_function(canshu_getvalue,station_pid,'canshu_getvalue')
+
+#distance_pid
+add_value(-2.5,distance_pid,'distance_kp',0.5)
+add_value(-1,distance_pid,'distance_kd',0.1)
+add_value(160,distance_pid,'speed_limit',10)
+add_value(8,distance_pid,'max_accel',1)
+add_value(12,distance_pid,'max_decel',1)
+add_function(canshu_getvalue,distance_pid,'canshu_getvalue')    
+
+#INS_test_menu
+add_value(0, INS_test_menu, 'x_co', 100)
+add_value(1200, INS_test_menu, 'y_co', 100)
+add_function(ins_test, INS_test_menu, 'ins_test')
+add_function(canshu_getvalue, INS_test_menu, 'canshu_getvalue')
+
+#camera_settings
+add_value(39, camera_settings, 'vol_y_tar', 1)
+add_value(42, camera_settings, 'sand_y_tar', 1)
+add_value(41, camera_settings, 'ted_y_tar', 1)
+add_value(99, camera_settings, 'vol_x_pu_tar', 1)
+add_value(33, camera_settings, 'vol_y_pu_tar', 1)
+add_value(83, camera_settings, 'san_x_pu_tar', 1)
+add_value(36, camera_settings, 'san_y_pu_tar', 1)
+add_value(85, camera_settings, 'ted_x_pu_tar', 1)
+add_value(35, camera_settings, 'ted_y_pu_tar', 1)
+add_value(80, camera_settings, 'vol_radius', 1)
+add_value(80, camera_settings, 'san_radius', 1)
+add_value(80, camera_settings, 'ted_radius', 1)
+add_function(canshu_getvalue, camera_settings, 'canshu_getvalue')
+
+#state_machine_menu
+add_page(boundary_refresh, state_machine_menu, 'boundary_refresh')
+add_page(threshold, state_machine_menu, 'threshold')
+add_page(speed, state_machine_menu, 'speed')
+add_page(hold_time, state_machine_menu, 'hold_time')
+add_value(10, state_machine_menu, 'SEND_TIME_SET', 1)
+add_value(200, state_machine_menu, 'block', 10)
+add_value(60, state_machine_menu, 'CIR_RADIUS', 1)
+add_value(100, state_machine_menu, 'CIRCLE_SPEED', 10)
+add_value(100, state_machine_menu, 'CIR_SPEED_MAX', 10)
+add_value(0.8, state_machine_menu, 'CIR_POS_KP', 0.1)
+add_value(80, state_machine_menu, 'C_POS_CR_MX', 10)
+add_value(100, state_machine_menu, 'CIR_VZ_MAX', 10)
+add_value(20, state_machine_menu, 'CIR_POS_THR', 1)
+add_value(50, state_machine_menu, 'CIR_HOLD_TIME', 10)
+add_function(canshu_getvalue, state_machine_menu, 'canshu_getvalue')
+
+#boundary_refresh
+add_value(1250, boundary_refresh, 'Y_FRONT_CO', 10)
+add_value(-300, boundary_refresh, 'X_LEFT_CO', 10)
+add_value(1600, boundary_refresh, 'X_RIGHT_CO', 10)
+add_function(canshu_getvalue, boundary_refresh, 'canshu_getvalue')
+
+#threshold
+add_value(100, threshold, 'gray_thre', 1)
+add_value(15, threshold, 'NEAR_TARGET_THRESHOLD', 1)
+add_value(6, threshold, 'ALIGN_FB_THRESHOLD', 1)
+add_value(4, threshold, 'ALIGN_LR_THRESHOLD', 1)
+add_value(3, threshold, 'DIR_ADJ_THRESHOLD', 1)
+add_function(canshu_getvalue, threshold, 'canshu_getvalue')
+
+#speed
+add_value(100, speed, 'NEAR_SPEED', 10)
+add_value(120, speed, 'AHEAD_SPEED', 10)
+add_value(90, speed, 'VZ_STATE_5_SPEED_MAX', 10)
+add_function(canshu_getvalue, speed, 'canshu_getvalue')
+
+#hold_time
+add_value(50, hold_time, 'NEAR_HOLD_TIME', 10)
+add_value(50, hold_time, 'ALIGN_LR_HOLD_TIME', 10)
+add_value(50, hold_time, 'ALIGN_FB_HOLD_TIME', 10)
+add_value(50, hold_time, 'DIR_ADJ_HOLD_TIME', 10)
+add_value(200, hold_time, 'RETREAT_TIME', 10)
+add_function(canshu_getvalue, hold_time, 'canshu_getvalue')
+
+#########################################################推箱子状态机#########################################################
+
+################################状态机配置参数（可全局/配置文件定义）#################################
+Color_dictionary  =  {  3  :  -45,   1  : -135,   2  : -135,    4 : 45,   5 : 45}   #主车面对不同物体的角度朝向
+Back_Angle_direction={  45 : -95,    135 : 100,     -45 : 180,  -135:90}                       #推完回归时的朝向    
+y_target_dictionary = {  3  : vol_y_tar,   1  : sand_y_tar,   2  : sand_y_tar,    4 : ted_y_tar,   5 : ted_y_tar}          
+push_y_target_dictionary = {  3  : vol_y_pu_tar,   1  : san_y_pu_tar,   2  : san_y_pu_tar,    4 : ted_y_pu_tar,   5 : ted_y_pu_tar}          
+push_x_target_dictionary = {  3  : vol_x_pu_tar,   1  : san_x_pu_tar,   2  : san_x_pu_tar,    4 : ted_x_pu_tar,   5 : ted_x_pu_tar}          
+radius_dictionary = {  3  : vol_radius,   1  : san_radius,   2  : san_radius,    4 : ted_radius,   5 : ted_radius}          
+
+#################状态定义###############
+STATE_START = -1
+STATE_COLOR_DETECT = 0     
+STATE_INS_NEAR = 1      
+STATE_ALIGN_LEFT_RIGHT = 2 
+STATE_ANGLE_ADJUST = 3 
+STATE_ALIGN_FRONT_BACK = 4 
+STATE_ADJUST_DIRECTION = 5 
+STATE_CONTECT = 6 
+STATE_PUSH_OBJECT = 7
+STATE_RETURN_RETREAT = 8
+STATE_RETURN_FINISH = 9
+STATE_RETURN_0_0 = 10
+STATE_STOP = 11
+STATE_CIRCLE_INS = 12
+STATE_RETURN_LEFT_BOUNDARY = 13
+STATE_ALIGN_0_0 = 14 
+STATE_OBSTACLE_DETECT = 15
+STATE_OBSTACLE_CONTACT = 16
+STATE_PUSH_OBJECT_TILT = 17
+STATE_PUSH_OBJECT_CORNER = 18
+STATE_ORDERCAR1 = 19
+
+#################阈值配置###############
+
+NEAR_TARGET_THRESHOLD = 15  # 惯导接近目标点的距离阈值
+NEAR_HOLD_TIME = 50         # 惯导接近目标点保持时间（ms）
+NEAR_SPEED = 150            # 接近物体速度（可调）
+ALIGN_LR_THRESHOLD = 8      # 左右对齐阈值（像素/角度，单位按需定）
+ALIGN_LR_HOLD_TIME = 50     # 左右对齐保持时间（ms）
+ALIGN_FB_THRESHOLD = 8      # 前后对齐阈值
+ALIGN_FB_HOLD_TIME = 50     # 前后对齐保持时间
+DIR_ADJ_THRESHOLD = 3       # 朝向调整阈值
+DIR_ADJ_HOLD_TIME = 50      # 朝向保持时间
+VZ_STATE_5_SPEED_MAX = 100           # 绕轴转动速度边界阈值
+AHEAD_SPEED = 120           # 推物体前进速度（可调）
+RETREAT_TIME = 200          # 回退时间（ms，需根据实际情况调整）
+X_TARGET = 80               # 目标像素位置（根据实际情况调整，通常是图像中心）
+Y_TARGET = 50               # 目标像素位置（根据实际情况调整，通常是图像中心）
+SEND_TIME_SET = 10              # 向车1发送数据的次数
+send_time = SEND_TIME_SET
+block = 200
+CIR_RADIUS = 280            # 圆周惯导半径（惯导坐标单位）
+CIRCLE_SPEED = 180          # 圆弧切向速度
+CIR_SPEED_MAX = 240         # 圆周惯导合速度上限
+CIR_POS_KP = 0.8            # 圆弧目标点位置修正比例
+C_POS_CR_MX = 80            # 位置修正速度上限
+CIR_VZ_MAX = 160            # 圆周惯导姿态角速度上限
+CIR_POS_THR = 30            # 圆弧终点位置阈值
+CIR_HOLD_TIME = 50          # 圆弧终点保持时间
+
+#################全局状态变量################
+
+current_state = STATE_START
+last_state_machine_angle = 0
+last_good_color = 0
+sequence_step = 0
+circle_active = 0
+circle_center_x = 0
+circle_center_y = 0
+circle_ref_yaw = 0
+circle_target_yaw = 0
+circle_direction = 1
+circle_force_dir = 0
+circle_contact_x = 0
+circle_contact_y = 0
+red_count = 1
+remote_start_pending = 0
+
+#################各状态"保持时间"计时变量################
+state_hold_timer = 0
+state_stuck_timer = 0       # 状态卡死计时器
+STUCK_TIMEOUT = 3000        # 判定为卡死的超时时间 (毫秒)，建议设为 3000 ~ 5000
+
+####其他####
+Y_tar_gain = 1.7  # 惯导目标y坐标增益（根据实际情况调整，通常大于1以增加对y坐标的重视程度）
+
+################################状态机主体#################################
+################################状态机主体#################################
+def execute_ins_navigation(target_x, target_y, target_angle):
+    global YAW, GZ_PID_KD
+
+    dist_error = math.sqrt((target_x - ins.now_x_position) ** 2 + (target_y - ins.now_y_position) ** 2)
+    
+    out_speed = pid_distance.compute(0, dist_error) 
+    Vz = pid_angle.compute(target_angle, YAW, GZ_PID_KD/100)
+
+    speed_compose_INS(out_speed, target_x, target_y, ins.now_x_position, ins.now_y_position, 0, YAW, Vz)
+
+    return dist_error
+
+######################  状态-1  ： 启动出车库   ######################
+def action_start():
+    global ins, y_keep, last_state_machine_angle
+
+    dist_error = execute_ins_navigation(-130, 200, last_state_machine_angle)
+
+    if dist_error < NEAR_TARGET_THRESHOLD:
+        beep_on()
+        pid_reset_all()
+        return STATE_COLOR_DETECT
+    return STATE_START
+
+######################  状态0  ： 等待车2发送坐标信号   ######################
+
+push_color=0
+target_x_position=0
+target_y_position=0
+x_cor_temp = 0  
+y_cor_temp = 0  
+car1_yaw = 0  
+last_good_color=0
+
+def action_color_detect():
+    global push_color,target_x_position,target_y_position
+    global rx_buffer
+    global x_cor_temp, y_cor_temp, car1_yaw , y_keep
+    global is_tracking_car2, track_target_x, track_target_y, track_return_phase
+
+    if uart_wireless.any():                     #接收到靠近物体的标志位（车2发送过来）
+        chunk = uart_wireless.read()
+        if chunk:
+            rx_buffer += chunk  
+    else:
+        speed_compose(0, 0, 0)
+    
+    result = parse_frame()
+    if result:
+        if int(result[0]) == 114:
+            is_tracking_car2 = 0
+            push_color = int(result[1])
+            target_x_position = result[2]
+            target_y_position = result[3] 
+            if result[4] != 0 or result[5] != 0:
+                x_cor_temp = result[4]  # 车2传来的圆心估计，用于后续边界惯导刷新
+                y_cor_temp = result[5]
+            else:
+                x_cor_temp = result[2]
+                y_cor_temp = result[3]
+            car1_yaw = result[6]    # 记录车2占位角，用于车1圆周惯导避让
+            rx_buffer = bytearray()
+            pid_reset_all()
+            for i in range(SEND_TIME_SET//3):
+                uart2.write(str(push_color).encode("utf-8"))
+                motor_0()
+            beep_on()
+            return STATE_INS_NEAR
+        elif int(result[0]) == 514:
+            is_tracking_car2 = 0
+            beep_on()  # 发出蜂鸣器提示
+            return STATE_STOP
+
+        elif int(result[0]) == 250:
+            is_tracking_car2 = 1
+            track_target_x = result[1]
+            track_target_y = result[2]
+            track_return_phase = int(result[3])
+            if track_return_phase == 1:
+                track_target_y += FOLLOW_HOME_Y_OFFSET
+
+    if is_tracking_car2 == 1:
+        dist_error = math.sqrt((track_target_x - ins.now_x_position) ** 2 + (track_target_y - ins.now_y_position) ** 2)
+        out_speed = pid_distance.compute(0, dist_error) 
+
+        # 只加速回库协议，普通寻物阶段的250速度保持原样。
+        if track_return_phase == 1 or track_return_phase == 2:
+            out_speed *= RETURN_FOLLOW_SPEED_GAIN
+            if out_speed > RETURN_FOLLOW_SPEED_MAX:
+                out_speed = RETURN_FOLLOW_SPEED_MAX
+            if out_speed < -RETURN_FOLLOW_SPEED_MAX:
+                out_speed = -RETURN_FOLLOW_SPEED_MAX
+
+        Vz = pid_angle.compute(last_state_machine_angle, YAW, GZ_PID_KD/100)
+        if Vz > VZ_STATE_5_SPEED_MAX:
+            Vz = VZ_STATE_5_SPEED_MAX
+        if Vz < -VZ_STATE_5_SPEED_MAX:
+            Vz = -VZ_STATE_5_SPEED_MAX
+        
+            
+        speed_compose_INS(out_speed, track_target_x, track_target_y, ins.now_x_position, ins.now_y_position, 0, YAW, Vz)
+
+    else:
+        # 如果不在跟随状态（等待期间），保持姿态死锁，防止被推歪，维持 0 速度
+        Vz = pid_angle.compute(last_state_machine_angle, YAW, GZ_PID_KD/100)
+        if Vz > VZ_STATE_5_SPEED_MAX:
+            Vz = VZ_STATE_5_SPEED_MAX
+        if Vz < -VZ_STATE_5_SPEED_MAX:
+            Vz = -VZ_STATE_5_SPEED_MAX
+        speed_compose(0, 0, Vz)
+
+    return STATE_COLOR_DETECT
+
+######################  状态1  ：惯导接近目标点    ######################
+
+COLOR_Capeture_Flag=0
+angle_target=0
+COLOR_Find_Flag=0   #惯导途中找到物体标志位，可以在下一状态保证丢失物体后向前找东西，因为原本模型识别就有可能丢东西
+
+def action_ins_near():
+    global state_hold_timer  , state_stuck_timer, COLOR_Capeture_Flag , angle_target , push_color,last_state_machine_angle
+    global COLOR_Find_Flag 
+    global Y_TARGET
+
+    if COLOR_Capeture_Flag==0 and push_color:
+        angle_target=Color_dictionary[push_color]
+        Y_TARGET = y_target_dictionary[push_color]
+        COLOR_Capeture_Flag=1
+    elif COLOR_Capeture_Flag==1:   
+        COLOR = art_flag() 
+        dist_error = math.sqrt((target_x_position - ins.now_x_position) ** 2 + (target_y_position - ins.now_y_position) ** 2)
+        out_speed = pid_distance.compute(0, dist_error) 
+
+        Vz=pid_angle.compute(last_state_machine_angle , YAW ,GZ_PID_KD/100)
+        if Vz > VZ_STATE_5_SPEED_MAX:
+            Vz = VZ_STATE_5_SPEED_MAX
+        if Vz < -VZ_STATE_5_SPEED_MAX:
+            Vz = -VZ_STATE_5_SPEED_MAX
+        speed_compose_INS(out_speed, target_x_position, target_y_position, ins.now_x_position, ins.now_y_position, 0, YAW, Vz)
+
+        state_stuck_timer += 5
+
+        dynamic_near_thresh = NEAR_TARGET_THRESHOLD + (10 if state_stuck_timer > STUCK_TIMEOUT else 0)
+
+        if dist_error < dynamic_near_thresh:  # 距离小于阈值认为到达（可调）
+            state_hold_timer += 10
+            if state_hold_timer >= NEAR_HOLD_TIME:
+                state_hold_timer = 0
+                state_stuck_timer = 0
+                pid_reset_application_only()
+                beep_on()
+                return STATE_ALIGN_LEFT_RIGHT
+        else:
+            state_hold_timer = 0
+        
+        if COLOR == push_color:  # 如果颜色识别成功且与预期颜色匹配，提前进入下一状态
+            state_hold_timer = 0
+            pid_reset_application_only()
+            beep_on()
+            COLOR_Find_Flag = 1
+            return STATE_ALIGN_LEFT_RIGHT
+    return STATE_INS_NEAR
+
+######################  状态2  ：左右对齐    ######################
+
+color_search_timer = 0  # 用于在左右对齐状态中进行颜色搜索的计时器
+
+def action_align_left_right():
+    global state_hold_timer  , last_state_machine_angle,  color_search_timer , COLOR_Find_Flag
+    global state_stuck_timer
+
+    COLOR = art_flag()
+     
+    if COLOR != push_color and COLOR_Find_Flag:  # 如果颜色识别成功且与预期颜色匹配，重置计时器并保持当前状态
+        color_search_timer += 5
+    else:
+        color_search_timer = 0
+
+    if color_search_timer > 500:  # 如果持续一段时间未找到目标颜色，认为丢失物体，进入前进寻找状态
+        speed_compose(AHEAD_SPEED, 0, 0)  # 向前移动寻找
+    else:
+        speed_x = pid_strafe.compute(X_TARGET, cx, 4, 2)  
+        speed_y = pid_forward.compute(Y_TARGET*Y_tar_gain, cy, 4, 2)  
+        speed=sqrt(speed_y**2 + speed_x**2) 
+        angle=atan2(speed_x, speed_y) * (180 / 3.14159) 
+        Vz=pid_angle.compute(last_state_machine_angle , YAW ,GZ_PID_KD/100)
+        if Vz > VZ_STATE_5_SPEED_MAX:
+            Vz = VZ_STATE_5_SPEED_MAX
+        if Vz < -VZ_STATE_5_SPEED_MAX:
+            Vz = -VZ_STATE_5_SPEED_MAX
+        speed_compose(speed , angle ,Vz) 
+
+    fb_align_error = abs(cy - Y_TARGET*Y_tar_gain) 
+    lr_align_error = abs(cx - X_TARGET)
+
+    state_stuck_timer += 5
+
+    dynamic_fb_thresh = ALIGN_FB_THRESHOLD + (5 if state_stuck_timer > STUCK_TIMEOUT else 0)
+    dynamic_lr_thresh = ALIGN_LR_THRESHOLD + (5 if state_stuck_timer > STUCK_TIMEOUT else 0)
+
+    if fb_align_error < dynamic_fb_thresh and lr_align_error < dynamic_lr_thresh:
+        state_hold_timer += 10  
+        if state_hold_timer >= ALIGN_LR_HOLD_TIME:
+            state_hold_timer = 0
+            color_search_timer = 0
+            COLOR_Find_Flag = 0
+            state_stuck_timer = 0
+            pid_reset_all()
+            beep_on()
+            return STATE_CIRCLE_INS
+    else:
+        state_hold_timer = 0 
+    return STATE_ALIGN_LEFT_RIGHT
+
+######################  状态3  ： 角度调整   ######################
+
+def angle_error(target, current):
+    err = target - current
+    if err >= 180:
+        err -= 360
+    elif err < -180:
+        err += 360
+    return err
+
+def action_circle_ins():
+    global circle_active
+    if circle_active == 0:
+        circle_ins_start(angle_target, radius_dictionary[push_color],1, car1_yaw)
+    return circle_ins_run(STATE_CIRCLE_INS, STATE_ALIGN_FRONT_BACK, radius_dictionary[push_color])
+
+def action_angle_adjust():
+    pass
+
+######################  状态4  ：前后对齐+左右微调   ######################
+
+def action_align_front_back():
+    global pixel, cx, cy,state_hold_timer ,YAW ,GZ_PID_KD , state_stuck_timer
+
+    art_flag()
+    fb_align_error = abs(cy - Y_TARGET) 
+
+    speed_x = pid_strafe.compute(X_TARGET, cx, 4, 2)
+    if abs(fb_align_error) < 5: 
+        speed_y = 0
+    else:
+        speed_y = pid_forward.compute(Y_TARGET, cy, 4, 2)
+    speed=sqrt(speed_y**2 + speed_x**2)
+    angle=atan2(speed_x, speed_y) * (180 / 3.14159)
+    Vz=pid_angle.compute(angle_target , YAW ,GZ_PID_KD/100) 
+    speed_compose(speed , angle ,Vz)
+
+    state_stuck_timer += 5
+    dynamic_fb_thresh = ALIGN_FB_THRESHOLD + (5 if state_stuck_timer > STUCK_TIMEOUT else 0)
+     
+    if fb_align_error < dynamic_fb_thresh:
+        state_hold_timer += 10
+        if state_hold_timer >= ALIGN_FB_HOLD_TIME:
+            state_hold_timer = 0
+            state_stuck_timer = 0
+            pid_reset_application_only()
+            beep_on()
+            return STATE_ADJUST_DIRECTION
+    else:
+        state_hold_timer = 0
+    return STATE_ALIGN_FRONT_BACK
+
+
+
+######################  状态5  ：调整朝向+保持对齐   ######################
+def action_adjust_direction():
+    global state_hold_timer , angle_target , COLOR_Capeture_Flag
+    global push_color
+    global X_TARGET, Y_TARGET
+
+    COLOR=art_flag()
+
+    speed_x = pid_strafe.compute(X_TARGET, cx, 4, 2) 
+    speed_y = pid_forward.compute(Y_TARGET, cy, 4, 2)
+    speed=sqrt(speed_y**2 + speed_x**2)
+    angle=atan2(speed_x, speed_y) * (180 / 3.14159)
+    Vz=pid_angle.compute(angle_target , YAW ,GZ_PID_KD/100)
+    
+    if Vz > VZ_STATE_5_SPEED_MAX:
+        Vz = VZ_STATE_5_SPEED_MAX
+    if Vz < -VZ_STATE_5_SPEED_MAX:
+        Vz = -VZ_STATE_5_SPEED_MAX
+
+
+    speed_compose(speed , angle ,Vz)
+
+    dir_error = abs(angle_error(YAW, angle_target))
+    fb_align_error = abs(cy - Y_TARGET)  
+    lr_align_error = abs(cx - X_TARGET)
+
+    if dir_error < DIR_ADJ_THRESHOLD and fb_align_error < ALIGN_FB_THRESHOLD and lr_align_error < ALIGN_LR_THRESHOLD:
+        state_hold_timer += 10
+        if state_hold_timer >= DIR_ADJ_HOLD_TIME:
+            state_hold_timer = 0
+            COLOR_Capeture_Flag=0
+            X_TARGET = push_x_target_dictionary[push_color]
+            Y_TARGET = push_y_target_dictionary[push_color]
+            pid_reset_all()
+            beep_on()
+            return STATE_CONTECT
+    else:
+        state_hold_timer = 0
+    return STATE_ADJUST_DIRECTION
+
+
+######################  状态6  ：发送标志位控制车2   ######################
+
+
+def action_contect():
+    global uart_wireless,  uart_buf ,send_time
+    data = (
+        114, 0, 0, 0,
+        0, 0, 0, 0,
+        0, 0, 0, 0,
+        0, 0, 0, 0,
+    )
+    send_frame(DEST_ADDR, data)
+    Vz = pid_angle.compute(angle_target, YAW, GZ_PID_KD/100)
+    speed_compose(0, 0, Vz)
+    send_time -= 1
+    if send_time <= 0:
+        send_time = SEND_TIME_SET
+        #print(f"Received data: {result}")
+        beep_on()
+        return STATE_PUSH_OBJECT        
+    return STATE_CONTECT
+
+
+######################  状态7  ：前进推物体+左右微调   ######################
+def action_push_object():
+
+    global retreat_flag
+    global push_color, x_cor_temp, y_cor_temp
+    global X_TARGET, Y_TARGET
+
+    art_flag()
+    
+    adjust_vx = pid_strafe.compute(X_TARGET, cx, 5, 3)
+    adjust_vy = pid_forward.compute(Y_TARGET, cy, 5, 3)
+
+    if adjust_vx > 50: adjust_vx = 50
+    if adjust_vx < -50: adjust_vx = -50
+    if adjust_vy > 50: adjust_vy = 50
+    if adjust_vy < -50: adjust_vy = -50
+
+    push_angle = 45  
+    
+    base_vy = AHEAD_SPEED * math.cos(math.radians(push_angle))
+    base_vx = AHEAD_SPEED * math.sin(math.radians(push_angle))
+
+    final_vx = base_vx + adjust_vx
+    final_vy = base_vy + adjust_vy
+
+    speed = math.sqrt(final_vx**2 + final_vy**2)
+    angle = math.atan2(final_vx, final_vy) * (180 / math.pi)
+
+    Vz = pid_angle.compute(angle_target, YAW, GZ_PID_KD/100)
+
+    speed_compose(speed, angle, Vz)
+    
+    if read_grayscale() == 1:
+        INS_boundary_refresh(push_color , x_cor_temp , y_cor_temp) 
+        retreat_flag = 1 
+        x_cor_temp = 0
+        y_cor_temp = 0
+        X_TARGET = 80
+        Y_TARGET = 50
+        pid_reset_all()
+        for i in range(SEND_TIME_SET): 
+            uart2.write(b"6\n")
+            speed_compose(0, 0, 0)
+        beep_on()
+        return STATE_RETURN_RETREAT
+
+    return STATE_PUSH_OBJECT
+
+
+######################  状态8：回归退后   ######################
+def action_return_retreat():
+    global retreat_start_flag
+
+    Vz = pid_angle.compute(angle_target, YAW, GZ_PID_KD/100)
+    speed_compose(NEAR_SPEED, 180, Vz) 
+
+    if retreat_start_flag: 
+        retreat_start_flag = 0
+        pid_reset_application_only()
+        beep_on()
+        return STATE_RETURN_FINISH
+    return STATE_RETURN_RETREAT
+
+
+
+
+######################  状态9：回归+结束   ######################
+def action_return_finish():
+    global  angle_target,state_hold_timer ,last_state_machine_angle
+    global  rx_buffer, uart_wireless
+    global  last_good_color
+
+    Vz=pid_angle.compute(Back_Angle_direction[angle_target] , YAW ,GZ_PID_KD/100)
+
+    if Vz > 200:
+        Vz = 200
+    if Vz < -200:
+        Vz = -200
+
+    speed_compose(0, 0, Vz)
+    
+    dir_error = abs(angle_error(Back_Angle_direction[angle_target] , YAW))
+    
+    #print(f"{dir_error}")
+
+    if abs(dir_error) < DIR_ADJ_THRESHOLD:
+        state_hold_timer += 10
+        if state_hold_timer >= DIR_ADJ_HOLD_TIME:
+            state_hold_timer = 0
+            angle_target=0
+            last_state_machine_angle = YAW
+            last_good_color=push_color
+            beep_on()
+            while uart_wireless.any():
+                uart_wireless.read()
+                
+            rx_buffer = bytearray()
+            pid_reset_all()
+            return STATE_COLOR_DETECT
+    else:
+        state_hold_timer = 0
+    return STATE_RETURN_FINISH 
+
+######################  状态10：回归到初始位置   ######################
+
+y_keep = 0
+
+def action_return_left_boundary():
+    global YAW ,GZ_PID_KD,angle_target,state_hold_timer ,last_state_machine_angle
+    global y_keep
+
+    dist_error = execute_ins_navigation(-900, 400, last_state_machine_angle)
+    
+    if (dist_error < NEAR_TARGET_THRESHOLD or out_detect(push_color) == 1) and (ins.now_x_position < (X_LEFT_CO + X_RIGHT_CO) // 2) and (ins.now_y_position < 1100):
+        state_hold_timer += 10
+        if state_hold_timer >= NEAR_HOLD_TIME:
+            state_hold_timer = 0
+            ins.now_x_position = X_LEFT_CO
+            beep_on()
+            pid_reset_all()
+            return STATE_ALIGN_0_0
+    
+    return STATE_RETURN_LEFT_BOUNDARY
+
+def action_align_0_0():
+    global y_keep , state_hold_timer
+
+    dist_error = execute_ins_navigation(0, y_keep, last_state_machine_angle)
+    if dist_error < NEAR_TARGET_THRESHOLD:
+        state_hold_timer += 10
+        if state_hold_timer >= NEAR_HOLD_TIME:
+            state_hold_timer = 0
+            beep_on()
+            pid_reset_all()
+            return STATE_RETURN_0_0
+    return STATE_ALIGN_0_0
+
+
+def action_return_0_0():
+    global  last_state_machine_angle
+
+    execute_ins_navigation(0, -900, last_state_machine_angle)
+
+    if out_detect(push_color) == 1:
+        beep_on()
+        ins.now_y_position = 0
+        return STATE_STOP
+            
+    return STATE_RETURN_0_0
+
+######################  状态9：回归到初始位置   ######################
+
+y_keep = 0
+
+
+def execute_ins_navigation(target_x, target_y, target_angle, send_data=False):
+    global YAW, GZ_PID_KD, req_send_count
+
+    dist_error = math.sqrt((target_x - ins.now_x_position) ** 2 + (target_y - ins.now_y_position) ** 2)
+    
+    out_speed = pid_distance.compute(0, dist_error) 
+    Vz = pid_angle.compute(target_angle, YAW, GZ_PID_KD/100)
+
+    speed_compose_INS(out_speed, target_x, target_y, ins.now_x_position, ins.now_y_position, 0, YAW, Vz)
+
+    if send_data:
+        req_send_count += 1
+        if req_send_count >= SEND_TIME_SET:
+            req_send_count = 0
+            data = (
+                514, 0, 0, 0,
+                0, 0, 0, 0,
+                0, 0, 0, 0,
+                0, 0, 0, 0,
+            )
+            send_frame(DEST_ADDR, data)
+    return dist_error
+
+x_mid=605
+
+def action_return_left_boundary():
+    global YAW ,GZ_PID_KD,angle_target,state_hold_timer ,last_state_machine_angle
+    global y_keep
+
+    dist_error = execute_ins_navigation(-900, 400, last_state_machine_angle)
+    
+    if (dist_error < NEAR_TARGET_THRESHOLD or out_detect(push_color) == 1) and (ins.now_x_position < (X_LEFT_CO + X_RIGHT_CO) // 2) and (ins.now_y_position < 1200):
+        state_hold_timer += 10
+        if state_hold_timer >= NEAR_HOLD_TIME:
+            state_hold_timer = 0
+            ins.now_x_position = X_LEFT_CO
+            beep_on()
+            pid_reset_all()
+            return STATE_ALIGN_0_0
+    
+    return STATE_RETURN_LEFT_BOUNDARY
+
+def action_align_0_0():
+    global y_keep , state_hold_timer
+
+    dist_error = execute_ins_navigation(0, y_keep, last_state_machine_angle)
+    if dist_error < NEAR_TARGET_THRESHOLD:
+        state_hold_timer += 10
+        if state_hold_timer >= NEAR_HOLD_TIME:
+            state_hold_timer = 0
+            beep_on()
+            pid_reset_all()
+            return STATE_RETURN_0_0
+    return STATE_ALIGN_0_0
+
+
+def action_return_0_0():
+    global  last_state_machine_angle
+
+    execute_ins_navigation(0, -900, last_state_machine_angle)
+
+    if out_detect(push_color) == 1:
+        beep_on()
+        ins.now_y_position = 0
+        return STATE_STOP
+            
+    return STATE_RETURN_0_0
+######################  状态10：停止   ######################
+def action_stop():
+    global go_flag
+
+    # 主车已在最终回库点保持并发送514，从车收到后立即停车。
+    motor_get(0, 1)
+    motor_get(0, 2)
+    motor_get(0, 3)
+    pid_reset_all()
+    go_flag = 0
+
+    return STATE_STOP
+
+
+#########################################################初始化参数############################################################
+now_page=first_menu   
+in_key=0  
+
+go_flag=0               #状态机运行标志位，0=菜单控制 1=状态机控制
+pwm_fl=0
+pwm_fr=0
+pwm_b=0
+go_flag=0
+
+state=0
+goods_num=0
+goods_count_flag=1
+
+sequence = 5
+auto_load_flag = 0
+
+start_buffer_clear_flag=0   #发车时清空残留数据的标志位，0=未清空 1=已清空
+
+#########################################################初始化函数# ###########################################################
+
+
+canshu_getvalue()
+pitopen0()
+#########################################################主循环#########################################################
+
+while True:
+    beep_service()
+    if not go_flag:
+        if go_flag==0:
+            in_key=key_get()   
+            
+        if uart_wireless.any():
+            chunk = uart_wireless.read()
+            if chunk:
+                rx_buffer += chunk
+        start_result = parse_frame()
+        if start_result and int(start_result[0]) == REMOTE_START:
+            remote_start_pending = 1
+            
+        if remote_start_pending and gyro_calibrated and first_Yaw_flag:
+            remote_start_pending = 0
+            go_flag = 1
+            pid_reset_all()
+            beep_on()
+        if (ticker_flag and ticker_count % 10 == 0):
+#            data = (
+#                0, 0, 0, 0,
+#                0, 0, 0, 0,
+#                0, 0, 0, 0,
+#                0, 0, ins.now_x_position, ins.now_y_position,
+#            )
+#            send_frame(DEST_ADDR, data)
+            ticker_flag = False
+            
+    else:
+        if start_buffer_clear_flag==0:
+            start_buffer_clear_flag=1
+            while uart_wireless.any():
+                uart_wireless.read()
+            rx_buffer = bytearray()
+
+        if ticker_flag:
+            ticker_flag = False
+            if current_state == STATE_COLOR_DETECT:
+                current_state = action_color_detect()
+            elif current_state == STATE_INS_NEAR:
+                current_state = action_ins_near()
+            elif current_state == STATE_ALIGN_LEFT_RIGHT:
+                current_state = action_align_left_right()
+            elif current_state == STATE_CIRCLE_INS:
+                current_state = action_circle_ins()
+            elif current_state == STATE_ALIGN_FRONT_BACK:
+                current_state = action_align_front_back()
+            elif current_state == STATE_ADJUST_DIRECTION:
+                current_state = action_adjust_direction()
+            elif current_state == STATE_CONTECT:
+                current_state = action_contect()
+            elif current_state == STATE_PUSH_OBJECT:
+                current_state = action_push_object()
+            elif current_state == STATE_RETURN_RETREAT:
+                current_state = action_return_retreat()
+            elif current_state == STATE_RETURN_FINISH:
+                current_state = action_return_finish()
+            elif current_state == STATE_RETURN_0_0:
+                current_state = action_return_0_0()
+            elif current_state == STATE_RETURN_LEFT_BOUNDARY:
+                current_state = action_return_left_boundary()
+            elif current_state == STATE_ALIGN_0_0:
+                current_state = action_align_0_0()
+            elif current_state == STATE_STOP:
+                current_state = action_stop()
+            elif current_state == STATE_START:
+                current_state = action_start()
+            else:
+                current_state = STATE_COLOR_DETECT
+            if ticker_count % 100 == 0:
+                gc.collect()
+编译模块清单：fusion_ahrs.mpy、global_var.mpy、INS.mpy、kalman.mpy、pid.mpy。提交正式版本时请将与本报告对应的.mpy文件作为源码包附件保存。
+D.3 OpenArt Mini视觉源代码
+以下为本次提供的OpenArt Mini视觉程序。该程序采用TensorFlow Lite目标检测、追踪器和目标优先级选择，并通过UART输出label,cx,cy,side_flag,cmd。请注意：本次提供的视觉源码中尚未出现done_labels或命令6的完成屏蔽逻辑；如果最终比赛版本要求2号物体只搬运一次，应将更新后的视觉源码替换本节，并与主车完成命令保持一致。
+OpenArt Mini main.py
+源码路径：C:\Users\Lenovo\.codex\attachments\3cdd1431-37bc-4a70-ab68-76ed41ccfd35\pasted-text.txt
+import sensor, image, time, tf, gc
+from machine import UART
+
+# --- 1. 初始化串口通信 ---
+uart = UART(2, 115200)
+print("OpenArt 终极强制切色版 (防粘包 + 独立避障) 启动...")
+enable_strategy = False  # 默认关闭避障，等待发 8 开启
+
+# --- 2. IoU 计算 ---
+def calculate_iou(box1, box2):
+    x1, y1, w1, h1 = box1
+    x2, y2, w2, h2 = box2
+    inter_x_min = max(x1, x2)
+    inter_y_min = max(y1, y2)
+    inter_x_max = min(x1 + w1, x2 + w2)
+    inter_y_max = min(y1 + h1, y2 + h2)
+    inter_w = max(0, inter_x_max - inter_x_min)
+    inter_h = max(0, inter_y_max - inter_y_min)
+    if inter_w <= 0 or inter_h <= 0: return 0
+    inter_area = inter_w * inter_h
+    union_area = (w1 * h1) + (w2 * h2) - inter_area
+    return inter_area / union_area if union_area > 0 else 0
+
+# --- 3. 串口发送封装 ---
+def send_target_data(label, cx, cy, side_flag, cmd):
+    # 第四位传输未锁定目标侧边提示：0 无，1 左侧，2 右侧；第五位传输避障字符 cmd
+    data_packet = "%d,%d,%d,%d,%s\n" % (int(label), int(cx), int(cy), int(side_flag), str(cmd))
+    uart.write(data_packet)
+    if DEBUG_PRINT:
+        pass
+        print("SEND:", data_packet.strip())
+
+# --- 4. 初始化 ---
+gc.collect()
+model_path = '/sd/yolov4_tiny_pure_with_post_processing.tflite'
+net = tf.load(model_path, load_to_fb=True)
+
+sensor.reset()
+sensor.set_pixformat(sensor.RGB565)
+sensor.set_framesize(sensor.QQVGA)
+sensor.set_auto_whitebal(False)
+sensor.skip_frames(time=2000)
+sensor.set_auto_gain(False, 8)
+sensor.set_auto_whitebal(False)
+sensor.set_auto_exposure(False,2500)
+clock = time.clock()
+
+canvas = image.Image(160, 128, sensor.RGB565)
+
+# 颜色字典映射 1~6
+COLORS = {
+    1: (0, 0, 255),
+    2: (255, 0, 0),
+    3: (0, 255, 0),
+    4: (255, 255, 255),
+    5: (139, 69, 19),
+    6: (255, 0, 255)
+}
+ZHUAN_LABEL = 6
+LEFT_BLOCK_X = 60
+RIGHT_BLOCK_X = 100
+DEBUG_PRINT = True
+
+# 搬运优先级：3网球 > 4/5小熊 > 1/2沙包
+OBJECT_PRIORITY = {
+    3: 0,
+    4: 1,
+    5: 1,
+    1: 2,
+    2: 2,
+}
+
+# 追踪器字典 1~6
+trackers = {1: [], 2: [], 3: [], 4: [], 5: [], 6: []}
+MAX_CENTER_DIST = 25
+MAX_LOST_FRAMES = 3
+MIN_IOU_THRESHOLD = 0.05
+SMOOTH_ALPHA = 0.6
+
+# 核心状态变量
+global_target_id = 0
+locked_target_id = None
+allowed_label = None
+
+
+while(True):
+    clock.tick()
+    gc.collect()
+
+    # ====================================================
+    # --- 串口接收主控指令逻辑 (强健字符匹配法) ---
+    # ====================================================
+    if uart.any():
+        try:
+            raw_data = uart.read()
+            if raw_data:
+                if DEBUG_PRINT:
+                    print("UART RAW:", raw_data)
+
+                # 解码为字符串
+                try:
+                    data_str = raw_data.decode('utf-8', 'ignore').strip()
+                except:
+                    data_str = ""
+                if DEBUG_PRINT:
+                    print("UART STR:", data_str)
+
+                # 【1. 避障控制：防粘包处理】
+                if '8' in data_str and '9' not in data_str:
+                    enable_strategy = True
+#                     print("--> 收到纯指令 8: 开启避障！")
+                elif '9' in data_str and '8' not in data_str:
+                    enable_strategy = False
+#                     print("--> 收到纯指令 9: 关闭避障！")
+                elif '8' in data_str and '9' in data_str:
+                    if data_str.rfind('8') > data_str.rfind('9'):
+                        enable_strategy = True
+#                         print("--> 粘包处理，8 生效: 开启避障！")
+                    else:
+                        enable_strategy = False
+#                         print("--> 粘包处理，9 生效: 关闭避障！")
+
+                # 【2. 解锁控制：最高优先级指令 7】
+                if '7' in data_str:
+                    allowed_label = None
+                    locked_target_id = None
+#                     print("--> 收到指令 7: 已彻底解锁，进入自由扫描模式！")
+
+                # 【3. 颜色强制锁定控制：1~5】
+                else:
+                    # 去除了前置障碍判断，只要收到 1~5，立刻强制切换目标！
+                    for target_num in ['1', '2', '3', '4', '5']:
+                        if target_num in data_str:
+                            cmd_val = int(target_num)
+                            if cmd_val in trackers:
+                                allowed_label = cmd_val
+                                locked_target_id = None # 丢弃当前目标，强制重新找新颜色
+#                                 print(f"--> 收到指令 {cmd_val}: 强制专属锁定颜色 {cmd_val}！")
+                            break # 匹配到第一个数字就跳出，防止同时发多个误判
+        except Exception as e:
+            print("UART读取解析错误:", e)
+    # ====================================================
+
+    img = sensor.snapshot()
+    canvas.clear()
+    canvas.draw_image(img, 0, 4)
+
+    # --- A: 重置标记 ---
+    for label in trackers:
+        for trk in trackers[label]:
+            trk['updated'] = False
+
+    # --- B: YOLO 推理 ---
+    detections = list(tf.detect(net, canvas))
+    #print("DETECT_RAW:", detections)
+
+    for obj in detections:
+        x1, y1, x2, y2, label_idx, scores = obj
+        label = int(label_idx) + 1 # 映射为 1~6
+
+        if label not in trackers: continue
+        current_threshold = 0.35 if label == 1 else 0.45
+
+        if scores > current_threshold:
+            bx, by = x1 * 160, (y1 * 128) - 4
+            bw, bh = (x2 - x1) * 160, (y2 - y1) * 128
+            current_box = [bx, by, bw, bh]
+            new_cx, new_cy = bx + bw/2, by + bh/2
+
+            best_match_score = 0
+            best_tracker = None
+
+            for trk in trackers[label]:
+                if trk['updated']: continue
+                if 'box' not in trk: continue
+
+                s_box = trk['box']
+                iou = calculate_iou(s_box, current_box)
+                old_cx, old_cy = s_box[0] + s_box[2]/2, s_box[1] + s_box[3]/2
+                dist = ((new_cx - old_cx)**2 + (new_cy - old_cy)**2)**0.5
+
+                match_score = 0
+                if iou > MIN_IOU_THRESHOLD: match_score = iou + 1
+                elif dist < MAX_CENTER_DIST: match_score = 1 - (dist / MAX_CENTER_DIST)
+
+                if match_score > best_match_score:
+                    best_match_score = match_score
+                    best_tracker = trk
+
+            if best_match_score > 0 and best_tracker is not None:
+                old_box = best_tracker['box']
+                best_tracker['box'] = [SMOOTH_ALPHA * current_box[k] + (1 - SMOOTH_ALPHA) * old_box[k] for k in range(4)]
+                best_tracker['lost'] = 0
+                best_tracker['updated'] = True
+                best_tracker['score'] = scores
+            else:
+                trackers[label].append({'id': global_target_id, 'box': current_box, 'lost': 0, 'updated': True, 'score': scores})
+                global_target_id += 1
+
+    # --- C: 状态清理 ---
+    for label in trackers:
+        trackers[label] = [trk for trk in trackers[label] if (trk.get('updated') or trk.get('lost', 0) + 1 <= MAX_LOST_FRAMES)]
+        for trk in trackers[label]:
+            if not trk['updated']:
+                trk['lost'] = trk.get('lost', 0) + 1
+
+    # --- D: 严格的智能锁定逻辑 ---
+    current_locked_tracker = None
+    locked_label = -1
+    previous_locked_target_id = locked_target_id
+
+
+    # 1. 优先死死维持现有的锁定目标
+    if locked_target_id is not None:
+        for label in trackers:
+            if label == ZHUAN_LABEL:
+                continue
+            for trk in trackers[label]:
+                if trk['id'] == locked_target_id:
+                    current_locked_tracker = trk
+                    locked_label = label
+                    break
+            if current_locked_tracker: break
+
+    if current_locked_tracker is None:
+        locked_target_id = None
+
+        best_priority = 99
+        min_cy = 9999
+
+        for label in trackers:
+            # 标签6是障碍物，不参与搬运选择
+            if label == ZHUAN_LABEL:
+                continue
+
+            # 主控指定标签后，继续只追踪指定标签
+            if allowed_label is not None and label != allowed_label:
+                continue
+
+            priority = OBJECT_PRIORITY.get(label, 99)
+            for trk in trackers[label]:
+                if 'box' not in trk:
+                    continue
+
+                if not trk.get('updated', False):
+                    continue
+
+                cy = trk['box'][1] + trk['box'][3] / 2
+
+                # 先比较物体优先级；
+                # 优先级相同时继续使用原来的cy选择规则
+                if (priority < best_priority or
+                        (priority == best_priority and cy < min_cy)):
+                    best_priority = priority
+                    min_cy = cy
+                    current_locked_tracker = trk
+                    locked_label = label
+
+
+    if current_locked_tracker:
+        locked_target_id = current_locked_tracker['id']
+
+        if locked_target_id != previous_locked_target_id:
+            print(
+                "PRIORITY SELECT:",
+                "label=", locked_label,
+                "priority=", OBJECT_PRIORITY.get(locked_label, 99),
+                "id=", locked_target_id,
+                "score=", current_locked_tracker.get('score'),
+                "updated=", current_locked_tracker.get('updated'),
+                "allowed=", allowed_label
+           )
+    # ====================================================
+    # --- E: 独立计算避障逻辑 ---
+    # ====================================================
+    cmd = '0'
+
+    if enable_strategy:
+        grid_counts = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]
+        for label, trk_list in trackers.items():
+            for trk in trk_list:
+                # 排除主目标，不把自己要撞击的目标当成障碍物
+                if locked_target_id is not None and trk.get('id') == locked_target_id:
+                    continue
+
+                if 'box' not in trk: continue
+                box = trk['box']
+                tcx, tcy = box[0] + box[2]/2, box[1] + box[3]/2
+
+                col = 0 if tcx < LEFT_BLOCK_X else (1 if tcx < RIGHT_BLOCK_X else 2)
+                row = 0 if tcy < 40 else (1 if tcy < 80 else 2)
+                grid_counts[row][col] += 1
+
+        lb_has_obj = (grid_counts[1][0] + grid_counts[2][0]) > 0
+        rb_has_obj = (grid_counts[1][2] + grid_counts[2][2]) > 0
+
+        # 返回你的 11/12/13/14 避障代码
+        if grid_counts[2][1] == 0:
+            cmd = '11'
+        else:
+            if lb_has_obj and rb_has_obj: cmd = '14'
+            elif rb_has_obj: cmd = '12'
+            elif lb_has_obj: cmd = '13'
+            else: cmd = '12'
+
+    # ====================================================
+    # --- F: 屏幕渲染与最终数据发送 ---
+    # ====================================================
+#    img.draw_line(int(LEFT_BLOCK_X), int(0), int(LEFT_BLOCK_X), int(120), color=(255,255,255))
+#    img.draw_line(int(RIGHT_BLOCK_X), int(0), int(RIGHT_BLOCK_X), int(120), color=(255,255,255))
+#    img.draw_line(int(0), int(40), int(160), int(40), color=(255,255,255))
+#    img.draw_line(int(0), int(80), int(160), int(80), color=(255,255,255))
+
+    obs_text = "OBS: %s" % cmd if enable_strategy else "OBS: OFF"
+#    img.draw_string(5, 5, obs_text, color=(255, 255, 0), scale=2)
+
+    side_flag = 0
+    left_unlocked = False
+    right_unlocked = False
+
+    for label, trk_list in trackers.items():
+        for trk in trk_list:
+            if locked_target_id is not None and trk.get('id') == locked_target_id:
+                continue
+            if 'box' not in trk:
+                continue
+
+            b = trk['box']
+            tcx = b[0] + b[2]/2
+            if tcx < LEFT_BLOCK_X:
+                left_unlocked = True
+            elif tcx > RIGHT_BLOCK_X:
+                right_unlocked = True
+
+    if left_unlocked:
+        side_flag = 1
+    elif right_unlocked:
+        side_flag = 0
+
+    if current_locked_tracker:
+        b = current_locked_tracker['box']
+        cx, cy = b[0]+b[2]/2, b[1]+b[3]/2
+#        img.draw_string(5, 25, "TRK: %d" % int(locked_label), color=(0, 255, 0), scale=2)
+        send_target_data(locked_label, cx, cy, side_flag, cmd)
+    else:
+#        img.draw_string(5, 25, "TRK: Lost", color=(255, 0, 0), scale=2)
+        send_target_data(0, 80, 50, side_flag, cmd)
+
+    for label, trk_list in trackers.items():
+        for trk in trk_list:
+            if 'box' not in trk: continue
+            b = trk['box']
+            thick = 3 if (trk['id'] == locked_target_id) else 1
+            img.draw_rectangle(int(b[0]), int(b[1]), int(b[2]), int(b[3]), color=COLORS[int(label)], thickness=thick)
+
+
+===== TABLE 1 =====
+符号/缩略语 | 名称 | 说明
+INS | 惯性导航系统 | 利用IMU、编码器和姿态信息估计车辆位置与方向
+IMU | 惯性测量单元 | 本文使用IMU660RB
+RT1021 | 主控处理器 | 负责运动控制、状态机、通信与传感器融合
+UART | 异步串行通信 | 用于视觉和主从无线串口通信
+ADC | 模数转换 | 用于一路灰度传感器模拟量采集
+PID | 比例-积分-微分控制 | 用于速度、位置和角度闭环
+
+===== TABLE 2 =====
+对象 | 主要职责 | 关键输出
+主车 | 目标优先级选择、视觉锁定、INS路线、灰度边界校正、回程主控 | 目标标签、视觉中心、目标角度、250回程位置帧
+从车 | 接收主车指令、跟随、圆弧避让、协同对准和推物 | 执行114等协同帧，回传动作完成信号
+OpenArt Mini | 检测网球、沙包、小熊及场地障碍物 | label,cx,cy,side_flag,cmd
+
+===== TABLE 3 =====
+项目 | 当前数据 | 提交前确认
+车模长度 | 19 cm | 复测，误差±____ mm
+车模宽度 | 18 cm | 复测，误差±____ mm
+车模高度 | 30 cm | 确认是否含摄像头支架
+电机类型 | N20减速电机（有刷） | 确认减速比、额定电压和电流
+车模总重量 | 待实测 | 含电池和全部线束
+
+===== TABLE 4 =====
+电气项目 | 当前信息 | 提交前实测/确认
+核心MCU | RT1021 | 核心板型号/固件版本
+驱动电机 | N20减速电机（有刷） | 数量、减速比、额定电压、电流
+无线串口 | 1套主从通信 | 波特率：____，地址：____
+电路功耗 | 待实测 | 静止/巡航/峰值：____
+所有电容总容量 | 约382.4 μF（初稿统计） | 按最终BOM复核
+
+===== TABLE 5 =====
+视觉阶段 | 输入/处理 | 输出或判据
+图像采集 | RGB565摄像头、160×128画布 | 当前帧
+模型推理 | 检测框、类别、置信度 | 候选目标
+追踪平滑 | 中心距离、IoU、丢帧计数 | 稳定检测框
+优先级选择 | 3 > 4/5 > 1/2 | locked_target_id
+避障判断 | 排除目标后的3×3网格 | cmd 11/12/13/14
+UART输出 | 标签、中心、侧边、策略 | label,cx,cy,side_flag,cmd
+
+===== TABLE 6 =====
+优化点 | 保持不变 | 新增验证指标
+目标锁定 | 状态编号和视觉协议 | 对准过程中标签不跳变，目标丢失时停车
+避障前置 | 推物状态和主从分工 | 非目标物体在通道内时不进入推物
+灰度闭环 | INS路线和边界刷新接口 | 连续两次黄线采样才触发，误触发率下降
+主从握手 | 114/250及16f帧格式 | 从车完成后主车才推进任务计数
+速度分层 | 原状态机顺序 | 分别记录推物、回退、回程和绕圆速度
+
+===== TABLE 7 =====
+阶段 | 测试内容 | 通过条件
+单电机 | 分别给定正负速度 | 方向正确、无异常发热
+编码器 | 低速往返并观察反馈 | 反馈方向与电机方向一致
+IMU | 静止采样和原地转向 | 零偏稳定、航向变化方向正确
+灰度 | 蓝地面/黄线分别采样 | 两类数据分离，连续触发可靠
+视觉 | 单目标及相邻目标识别 | 标签稳定，目标锁定不跳变
+通信 | 主从发送114/250/完成信号 | 无丢帧、无错地址、帧长正确
+整车 | 单物体到多物体完整流程 | 状态顺序完整、能返回发车区
+
+===== TABLE 8 =====
+参数类别 | 当前信息 | 提交前补充
+核心处理器 | RT1021 | 核心板型号/固件版本
+驱动电机 | N20减速电机（有刷） | 数量、减速比、额定电压、电流
+车模尺寸 | 长19 cm，宽18 cm，高30 cm | 终装尺寸和测量误差
+车模总重量 | 待实测 | 含电池、线束、摄像头
+电路功耗 | 待实测 | 静止、巡航、峰值功耗
+所有电容总容量 | 待统计 | 按电路图和实物BOM统计
+IMU | IMU660RB，1个 | 安装方向、采样频率
+编码器 | 编码器Pro，1套 | 轮速通道数和采样频率
+灰度 | 1路，B12 | ADC采样周期、阈值、重复性
+摄像头 | OpenArt Mini，1个，倒装 | 图像分辨率、推理帧率
+无线串口 | 主从通信1套 | 波特率、有效距离、丢帧率
+赛道检测精度/频率 | 待实测 | 视觉中心误差、灰度检测频率
+
+===== TABLE 9 =====
+文件 | 报告中可说明的功能 | 提交形式
+fusion_ahrs.mpy | IMU姿态积分、加速度重力修正、欧拉角输出 | 原始.mpy二进制附件
+INS.mpy | 三轮速度合成、航向变换、X/Y位置积分 | 原始.mpy二进制附件
+pid.mpy | 速度、角度、位置和距离闭环 | 原始.mpy二进制附件
+kalman.mpy | 一维测量滤波，Q/R参数调试 | 原始.mpy二进制附件
+global_var.mpy | 菜单参数保存和读取 | 原始.mpy二进制附件
+key.mpy | 按键扫描、消抖和周期回调 | 原始.mpy二进制附件
+
+===== TABLE 10 =====
+模块 | 接口/引脚 | 用途 | 提交前确认
+灰度传感器 | B12 | 一路ADC采样 | 供电、量程、阈值
+IMU660RB | UART/SPI：待填写 | 姿态与角速度 | 总线、地址、频率
+编码器Pro | 编码器接口：待填写 | 轮速反馈 | 通道和方向
+OpenArt Mini | UART：待填写 | 视觉数据 | 波特率、倒装映射
+无线串口 | UART：待填写 | 主从协同 | 地址和帧长
+
+===== TABLE 11 =====
+日期 | 工况 | 关键参数 | 结果 | 备注
+ |  |  |  | 
+ |  |  |  | 
+ |  |  |  | 
+ |  |  |  | 
+ |  |  |  | 
+ |  |  |  | 
+ |  |  |  | 
+ |  |  |  | 

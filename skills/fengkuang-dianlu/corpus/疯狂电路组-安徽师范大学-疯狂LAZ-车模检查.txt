@@ -1,0 +1,1158 @@
+
+
+
+第二十一届全国大学生
+智能汽车竞赛
+
+
+技 术 报 告
+
+
+
+2026年8月19日
+
+
+
+关于技术报告和研究论文使用授权的说明
+本人完全了解全国大学生智能汽车竞赛保留、使用技术报告和研究论文的规定，即：参赛作品著作权归参赛者本人，比赛组委会可以在相关主页上收录并公开参赛作品的设计方案、技术报告以及参赛模型车的视频、图像资料，并将相关内容编纂收录在组委会出版论文集中。
+
+
+
+
+目  录
+第一章  引言	1
+1.1  智能汽车制作概述	1
+1.2  相关文献综述	1
+第二章  模型车设计思路与技术方案	2
+2.1  设计主要思路	2
+2.2  实现的技术方案概要	2
+第三章  机械结构与传感器安装	3
+3.1  机械部分安装及改造	3
+3.2  传感器的设计与安装	5
+3.3  系统电路板的固定及连接	5
+第四章  电路设计说明	6
+4.1  电源模块设计	6
+4.2  驱动电路设计	11
+4.3  传感器接口电路	11
+4.4  其他辅助电路	12
+第五章  微处理器控制软件设计	12
+5.1  控制软件总体架构	12
+5.2  主要控制理论与算法说明	12
+第六章  开发工具、制作、安装、调试过程说明	14
+6.1  开发工具介绍	14
+6.2  制作与安装过程	15
+6.3  调试过程说明	15
+第七章  模型车主要技术参数	15
+7.1  车模基本参数	15
+第八章  结论	16
+参考文献	I
+附录A  电路板详细设计原理图	II
+附录B  核心算法子程序	VI
+附录C  程序源代码	XVII
+
+第一章  引言
+1.1  智能汽车制作概述
+全国大学生智能汽车竞赛是一项面向全国大学生的综合性科技创新竞赛，要求参赛队伍在规定时间内完成智能车模型的机械安装、电路设计、软件算法开发与整车调试。本队（安徽师范大学“疯狂LAZ”队）参加第二十一届全国大学生智能汽车竞赛“疯狂电路”组比赛，采用逐飞无刷三轮车模作为平台，自行设计并制作了TC264主控板、CYT2BL3双路无刷FOC驱动板、AI8051无刷电调以及TLE5012磁编码器模块，完成了整车机械安装、硬件电路焊接调试与软件算法的开发联调。
+整车长123 mm、宽107 mm，摄像头镜头距地高度160 mm，符合比赛规则对车模尺寸与摄像头高度的要求。车模搭载130°总钻风摄像头、IMU660RB六轴姿态传感器和两个TLE5012磁编码器，主控采用英飞凌TC264D-40F200N微控制器，由3S锂聚合物电池供电。经过反复场地调试，车模实现了稳定高速循迹、快速差速转向与可靠的加减速控制，整体完成情况良好，达到了预期的设计目标。
+1.2  相关文献综述
+在赛道识别方面，基于摄像头的视觉导航是智能车竞赛的主流方案。相关文献研究了图像灰度化、二值化、透视变换、边缘检测与赛道中线拟合等算法，通过提取赛道边界与元素特征实现路径识别。本车采用130°广角总钻风摄像头，可同时获取近处弯道与远处直道的图像信息，为路径规划提供充足的感知范围。
+在运动控制方面，无刷电机因功率密度高、效率高、寿命长等优点被广泛采用。磁场定向控制（FOC）通过对定子电流的矢量解耦实现转矩的精确控制，配合电流环、速度环等多闭环结构可获得良好的动态性能。三轮无刷车模采用双电机差速转向方式，通过左右后轮转速差实现转向，避免了舵机机构的机械延迟，提高了转向响应速度。
+在状态感知方面，IMU可提供车身姿态角与角速度信息，磁编码器可提供精确的轮速反馈，通过卡尔曼滤波或互补滤波对IMU数据进行姿态解算，并与视觉、轮速信息融合，可提高整车状态估计的精度与抗干扰能力。本车采用TC264完成视觉处理与运动控制，CYT2BL3与AI8051分别完成双路无刷电机的FOC驱动与调速控制，构成感知、决策、执行三层分立的控制系统架构。
+
+第二章  模型车设计思路与技术方案
+2.1  设计主要思路
+根据赛题对车速、稳定性与可靠性的要求，本队确定了“视觉感知＋惯性姿态＋轮速反馈”多传感器融合的整体设计思路。选用逐飞无刷三轮车模为平台，保留原装无刷驱动电机，采用双后轮差速实现转向，省去转向舵机，从而简化机械结构、降低整车重量并提高转向响应速度。
+控制系统采用分层架构：感知层由总钻风摄像头、IMU660RB与TLE5012磁编码器组成，分别提供赛道图像、车身姿态与轮速信息；决策层由TC264D-40F200N主控完成图像处理、路径识别、姿态解算与运动控制指令生成；执行层由CYT2BL3双路FOC驱动板与AI8051无刷电调完成无刷电机的驱动与调速。各层之间通过明确的接口协议通信，便于模块化开发与调试。
+2.2  实现的技术方案概要
+机械方案：采用原装三轮无刷车模底盘，未对底盘进行大面积切割，整车长123 mm、宽107 mm；摄像头通过支架安装于车体前部，镜头距地高度160 mm；3S锂电池固定于底盘中部，保证整车重心稳定。
+硬件方案：自行设计并制作TC264主控板、CYT2BL3双路无刷FOC驱动板和AI8051无刷电调三块电路板，以及两个TLE5012磁编码器模块，全部采用嘉立创EDA完成原理图与PCB设计。电源由3S锂电池经多级降压变换为5 V与3.3 V，为各模块供电。
+软件方案：以TC264为核心，完成摄像头图像采集与赛道识别、IMU姿态解算、磁编码器轮速读取、速度闭环PID控制与差速转向控制；CYT2BL3实现双路无刷电机FOC矢量控制，AI8051实现无刷电机PWM调速。系统总体架构如图2.1所示。
+
+图2.1  系统总体架构示意图
+
+第三章  机械结构与传感器安装
+3.1  机械部分安装及改造
+车模采用逐飞无刷三轮车模原装底盘，未对底盘进行切割或更换机械元器件，保留原装无刷驱动电机与传动机构，符合车模技术检查表中“底盘为原车模底盘、无大面积切割、驱动轮传动机构无改装”的要求。整车长123 mm、宽107 mm，结构紧凑。
+摄像头通过专用支架固定于车体前部，支架角度可微调，镜头距地高度160 mm，满足比赛规则对摄像头高度的限制；电池固定于底盘中部偏后位置，通过扎带与魔术贴紧固，防止高速运行中滑动，同时使整车重心尽量降低。车模三视图如图3.1～图3.3所示。
+
+图3.1.1  车模正视图
+
+图3.1.2  车模俯视图
+
+图3.1.3  车模侧视图
+
+3.2  传感器的设计与安装
+摄像头安装于车体前部，采用FPC排线与主控板连接，130°广角镜头可同时获取近处弯道与远处直道信息；安装时保证镜头光轴与车体前进方向一致，并通过微调俯仰角兼顾近处与远处的成像效果。
+IMU660RB六轴姿态传感器固定于主控板附近、整车重心附近，通过I2C接口与主控通信，提供三轴角速度与三轴加速度数据，用于车身姿态解算与运动状态估计，增强车模在坡道、弯道等场景下的稳定性。
+两个TLE5012磁编码器分别安装于两个后轮驱动电机尾部，磁铁与编码器芯片同轴安装，通过SSC接口输出15位绝对角度数据，实现轮速的高精度测量，为速度闭环与差速转向提供实时反馈。编码器小板通过ZH1.5 6P排线与驱动板相连，信号线采用短走线并远离功率线，降低电磁干扰。
+3.3  系统电路板的固定及连接
+TC264主控板通过铜柱固定于底盘上层，靠近摄像头与IMU，缩短图像与传感器信号走线；CYT2BL3双路FOC驱动板固定于底盘中部，靠近两个后轮驱动电机，功率输出线尽量短接；AI8051无刷电调固定于驱动板附近，接收主控PWM信号。
+各电路板之间通过排线与插头连接，电源采用XT30/T型插头与3S锂电池相连；功率线与信号线分区走线，避免大电流回路对传感器信号的干扰。自制电路板均在PCB顶层铺铜标注学校名称、队伍名称与制作日期，满足车模技术检查要求。
+
+第四章  电路设计说明
+本章对本队自行设计制作的TC264主控板、CYT2BL3双路无刷FOC驱动板、AI8051无刷电调以及TLE5012磁编码器模块的电路设计进行说明。以上电路板均使用嘉立创EDA完成原理图与PCB设计，并由嘉立创完成加工制造。
+4.1  电源模块设计
+整车采用3S锂聚合物电池供电，标称电压12 V，经T型插头接入系统。电源系统采用“电池电压→5 V→3.3 V”多级降压结构，兼顾效率与稳定性：功率级直接由电池电压供电，逻辑与传感器部分由降压后的5 V/3.3 V供电。
+TC264主控板电源：电池电压经防反接与电源开关（P沟道MOSFET HY19P03与滑动开关）后，由SCT2450同步降压转换器（输入3.8~36 V，输出5 A）产生5 V主电源，再经RT9013-33 LDO产生3.3 V数字电源与摄像头电源VCCCAM；数字电源与传感器电源分域供电，并通过磁珠隔离，降低数字噪声干扰。
+CYT2BL3驱动板电源：采用RY9121E同步降压转换器（输入4.5~17 V，输出2 A，开关频率1.2 MHz）将电池电压降压至5 V，再经LDO产生3.3 V供MCU使用；功率级直接由电池电压VBAT供电，母线并联多只22 µF X5R陶瓷电容与电解电容储能滤波。AI8051无刷电调由SE8650X2降压转换器（输入80 V，输出5 V/200 mA）产生控制电源，并经BZT52C15稳压管钳位保护。
+保护设计：电源输入端并联TVS瞬态抑制二极管（SMAJ16CA、SMAJ12A等）抑制浪涌，采用SS54、B5819WS肖特基二极管防反接，BZT52C16稳压管对输入电压钳位；驱动板母线电容容量充足，保证大电流工况下母线电压稳定，提高系统抗干扰能力。
+
+图4.1.1：电源原理图
+
+图4.1.2：主板PCB图（正面）
+
+图4.1.3  驱动板PCB图
+
+图4.1.3  无刷电调PCB图
+4.2  驱动电路设计
+本车采用双无刷电机差速驱动方案，无转向舵机。CYT2BL3驱动板以英飞凌CYT2BL3CAAQ0AZEGST（Cortex-M4与Cortex-M0+双核）为主控，集成两路三相无刷驱动通道：每路由FD6288Q三相栅极驱动芯片驱动6只TPN2R304PL（30 V/80 A，导通电阻2.4 mΩ）N沟道功率MOSFET组成三相全桥，两路共12只MOSFET；通过低阻采样电阻与精密运算放大器实现相电流采样，结合TLE5012磁编码器提供的位置信息，实现无刷电机FOC矢量控制（电流环＋速度环）。
+AI8051无刷电调以STC AI8051U-34K64微控制器为控制核心，采用FD6288Q三相栅极驱动与6只TPN2R304PL MOSFET组成三相全桥，实现无刷电机六步换相与PWM调速；栅极串联4.7 Ω电阻限制开关速率，降低开关振铃与电磁干扰。
+主控TC264通过PWM信号分别控制两路驱动通道，实现左右后轮差速转向；PWM信号线靠近MCU输出引脚短走线，保证时序一致性。功率MOSFET与栅极驱动芯片下方铺设大面积散热铜皮并布置过孔阵列，保证连续大电流运行时的散热性能。
+
+图4.2.1：驱动电路原理图（1）
+
+
+图4.2.2：驱动电路原理图（2）
+
+图4.2.3：驱动电路原理图（3）
+
+图4.2.4：驱动电路原理图（4）
+
+
+图4.2.5：无刷电调原理图
+4.3  传感器接口电路
+摄像头接口：主控板采用FPC05-18（18引脚）FPC连接器与总钻风摄像头连接，提供摄像头电源VCCCAM以及图像数据、控制信号，供电经磁珠与电容滤波，降低电源纹波对图像质量的影响。
+IMU接口：IMU660RB通过排针接口以I2C总线与主控连接，SCL/SDA信号线配置4.7 kΩ上拉电阻，保证I2C时序稳定可靠。
+TLE5012磁编码器接口：磁编码器小板以英飞凌TLE5012B为核心（GMR原理，15位绝对角度，分辨率0.01°，SSC接口最高8 Mbit/s），板载RT9013-33 LDO将5 V转换为3.3 V，通过ZH1.5 6P连接器输出；信号线串联100 Ω电阻并靠近MCU端滤波，提高长线传输的抗干扰能力。
+
+4.4  其他辅助电路
+按键与指示灯：主控板设置5个微动按键（KEY1～KEY5），用于模式选择、参数调整与菜单操作；板载电源指示LED（3.3 V/5 V电源指示灯）与红、蓝、黄三色状态指示灯，便于调试与运行状态观察。
+蜂鸣器与调试接口：采用S8050三极管驱动的蜂鸣器，用于开机提示与异常报警；主控板与驱动板均设有2×5P调试接口，支持SWD/JTAG在线下载与调试；预留蓝牙串口模块接口便于无线调试（比赛过程中未使用无线通信装置）。主控TC264采用20 MHz晶振，CYT2BL3采用16 MHz晶振，配合复位电路保证系统可靠上电复位。
+
+第五章  微处理器控制软件设计
+5.1  控制软件总体架构
+本车以英飞凌TC264双核微控制器为核心，采用前后台+定时中断的软件架构，将图像采集、图像处理、姿态解算、控制决策与电机驱动等任务合理分配，确保系统实时性与稳定性。
+5.2  主要控制理论与算法说明
+5.2.1图像预处理与二值化
+摄像头采集的原始灰度图像首先进行灰度直方图统计，然后采用改进的大津法动态计算全局阈值。为提高远近距离适应性，代码将图像按行划分为近、中、远三个区域，分别采用不同的阈值偏移量，以增强逆光或光照不均下的二值化鲁棒性。二值化后利用八邻域腐蚀消除孤立噪点，得到干净的黑白图像。
+5.2.2赛道边线提取与中线计算
+边线搜索采用由近及远、基于上一行中线位置的动态窗口搜索法。从图像最底行开始，寻找左右边界的跃变点，确定左右边界，然后计算行中线。当某一边丢失时，利用上一行中线和历史趋势进行预测或保持，保证中线连续性。搜索窗口随行变化自适应调整，提高弯道和丢失边线时的鲁棒性。
+5.2.3元素识别与路径规划
+为实现复杂赛道元素的稳定通过，软件设计了基于图像特征的状态机来识别直角、T型路口、环岛等元素。识别方法包括：
+直角/梯形识别：利用图像特定列的黑白跳变行数差判断是否为直角或梯形，并结合前后景判断元素类型。
+T型路口识别：通过检测图像顶部的赛道数量以及两侧垂直边线，判定是否为T型路口。
+元素计数与路径规划：定义一个全局变量作为元素计数值，根据赛道模式和当前元素计数值，查询预设表确定当前元素属于“左转”、“右转”还是“直行”，从而控制转向策略。当检测到相应元素特征时，元素计数值递增，进入下一段路径。
+
+5.2.4姿态解算（四元数梯度下降法）
+利用IMU660RB的陀螺仪和加速度计数据，采用梯度下降法融合更新四元数，解算车体姿态角（横滚、俯仰、偏航）。具体算法流程如下：
+将陀螺仪原始值转换为弧度/秒，加速度计转换为g单位；
+根据静止状态动态调整加速度计滤波系数，静止时加强滤波；
+根据当前四元数计算重力向量在机体坐标系的投影，与加速度计测量值求叉积得到误差；
+对误差进行比例（kp）和积分（ki）校正，补偿陀螺仪漂移；
+利用四元数微分方程更新四元数，并归一化；
+由四元数计算旋转矩阵，进而求得欧拉角（横滚、俯仰、偏航）。
+偏航角yaw_z用于辅助判断转弯角度，实现元素转向的精确控制。
+5.2.5电机控制与差速转向
+采用双无刷电机差速转向方案，无转向舵机。转向控制量根据中线偏差计算：其中包含比例、二次项（弯道补偿）、微分项和速度前馈项。kp1、kp2、kd、GKD为可调参数，z为当前车速。
+速度控制采用增量式PID，对左右轮分别进行速度闭环（若使用编码器），或直接开环给定占空比。在元素通过时，根据元素计数值状态切换目标速度，并启用加速/减速逻辑以平滑加减速。
+5.2.6 PID控制算法
+增量式PID：用于电机速度闭环，输出为占空比增量，具有积分限幅和误差平滑处理，有效抑制超调。
+位置式PID：用于舵机控制。
+PID参数可通过菜单实时调整，便于现场整定。
+
+第六章  开发工具调试过程说明
+6.1开发工具介绍
+硬件设计采用嘉立创EDA完成，包括原理图绘制、PCB布局布线、三维预览与设计规则检查（DRC）。本项目中的TC264主控板、CYT2BL3双路FOC驱动板、AI8051无刷电调以及TLE5012磁编码器模块均使用该软件完成设计，并通过嘉立创平台下单完成PCB打样，元器件统一在立创商城按BOM采购，部分板卡采用嘉立创SMT贴片服务，保证了焊接质量与一致性。
+程序开发采用AURIX™ Development Studio（ADS）集成开发环境，用于英飞凌AURIX TC264D-40F200N主控芯片的工程创建、代码编写、编译与在线调试。ADS基于Eclipse平台，支持C语言开发，配合DAP仿真器通过DAP接口完成程序下载与断点调试。AI8051无刷电调采用STC官方ISP工具通过串口完成程序烧录；CYT2BL3驱动板的FOC固件通过板载2×5P SWD调试接口完成下载与调试。
+调试测量仪器主要包括数字示波器（用于观察PWM波形、电机相电流与通信时序）、数字万用表（用于电压、电阻与通断测量）、可调直流电源（用于限流上电调试）、逻辑分析仪（用于分析SSC、I2C等数字总线时序），以及电烙铁、热风枪等焊接工具。
+6.2制作与安装过程
+元器件按BOM清单从立创商城统一采购，选型时兼顾性能、价格与库存，功率器件（如TPN2R304PL功率MOSFET、FD6288Q栅极驱动芯片）和电源芯片（SCT2450、RY9121E、SE8650X2、RT9013-33）均选用常用封装，便于焊接与后期更换。
+电路板制作流程为：在嘉立创EDA中完成原理图设计与ERC检查，再进行PCB布局布线、DRC检查与三维预览，确认无误后导出Gerber文件并在嘉立创平台下单打样。焊接时采用"先电源后信号、先小件后大件"的顺序：先焊接电源部分并检查有无短路，再焊接MCU与外围电路；SMT贴片部分交由嘉立创完成，个别插件与返修件由手工补焊，焊接完成后逐板检查焊点质量。
+整车安装按照"先机械后电气、先固定后接线"的顺序进行。首先对逐飞无刷三轮车模底盘进行清理检查，安装两个后轮无刷驱动电机与TLE5012磁编码器；然后通过铜柱固定TC264主控板、CYT2BL3驱动板与AI8051无刷电调，安装摄像头支架并将镜头距地高度调整至160 mm；最后固定3S锂电池，完成各电源与信号线的连接，功率线与信号线分区走线，确保整车结构紧凑、走线规范。
+6.3调试过程说明
+硬件调试采用"分板调试、逐级上电"的方法。先用可调直流电源限流为各板卡单独供电，用万用表检查3.3 V、5 V电源输出及各电源域是否正常，用示波器确认晶振起振、复位正常；确认无误后接入电池整车上电，观察有无异常发热、短路与电压跌落现象。
+软件调试在AURIX Development Studio中建立工程并编译，通过DAP仿真器下载程序，先完成LED指示、串口打印等最小系统调试，再逐步调试摄像头图像采集、IMU数据读取、磁编码器角度读取、PWM输出等功能模块；使用示波器与逻辑分析仪验证PWM波形及SSC、I2C时序，确保各模块数据正确。CYT2BL3驱动板先进行单路电机开环调试，再切换至FOC闭环，逐步整定电流环与速度环参数。
+系统联调阶段，先让电机在台架上空载运行，整定速度环与FOC控制参数；随后装车进行场地测试，调试直道加速、弯道减速与差速转向的协调配合，并根据实际表现反复优化控制参数与图像处理阈值。针对调试中出现的问题（如电机启动抖动、母线电压跌落、图像干扰等），通过增大母线电容、优化PWM死区时间、改善布线接地等措施逐一解决。经过反复调试，车模实现了稳定高速循迹与可靠的差速转向，整车性能达到预期目标。
+
+图6.3.1：ADS调试界面
+
+图6.3.2：嘉立创操作界面
+
+第七章  模型车主要技术参数
+7.1  车模基本参数
+表7.1  车模基本参数表
+
+第八章  结论
+整车以英飞凌 TC264作为主控核心，自主完成 TC264 主控板、CYT2BL3 双路无刷 FOC 驱动板、AI8051 无刷电调以及 TLE5012 磁编码器模块的原理图、PCB 设计与实物制作；硬件上搭建了 3S 锂电池多级降压电源系统，实现功率回路与传感器信号回路隔离；软件层面完成摄像头视觉赛道识别、IMU 梯度下降法姿态解算、磁编码器轮速采集、双电机差速转向、多闭环电机控制等算法开发，经过分模块硬件调试、台架测试与场地实车调试，车模能够完成直道高速行驶、大小弯道过弯、直角、T 型路口等复杂赛道元素识别与通行，基本达成赛前设计目标。
+本车设计主要创新与特色如下：
+采用三轮无刷差速转向架构，取消传统机械舵机，依靠双后轮转速差完成转向动作，消除舵机机械间隙与响应延迟，转向响应速度得到提升；构建感知‑决策‑执行分层控制系统，硬件模块化程度高，各单元接口清晰，便于单独调试、故障排查与后期功能迭代。
+视觉算法采用分区自适应大津法完成图像二值化，针对近、中、远图像区域设置差异化阈值偏移量，配合八邻域腐蚀滤波抑制噪点；采用动态窗口边线搜索，当单侧赛道边线丢失时依靠历史中线趋势预测补偿，提升光照不均、边线短暂丢失工况下赛道识别的稳定性；基于状态机完成各类赛道元素识别，通过元素计数值查表实现路径规划。
+融合 IMU 六轴传感器与磁编码器多传感器信息，使用梯度下降四元数算法做姿态解算，利用车身偏航角辅助弯道角度判断，结合双路磁编码器获取高精度轮速反馈，实现电机电流、速度多闭环 FOC 矢量控制，提升电机转矩输出稳定性，改善整车高速运动状态下的抗干扰能力。
+硬件电路充分考虑竞赛车模电磁环境，功率走线与信号走线分区布局，电源输入端增加 TVS、肖特基二极管完成浪涌抑制与防反接保护，数字域与传感器域电源采用磁珠隔离，降低功率器件开关噪声对图像采集、I2C、SSC 等传感器信号的干扰，提高系统运行可靠性。
+在实际场地测试过程中，本车仍然存在部分不足，还有较多可优化改进空间：
+第一，高速过弯工况下，虽然依靠差速实现转向，但受机械轮胎抓地极限限制，车速过高时会出现侧滑，视觉采集画面抖动加剧，容易造成赛道边线识别出错。后续可以引入 IMU 的加速度信息做打滑判定，当检测到车轮打滑时主动降低目标车速，同时对视觉图像做抖动补偿算法，降低车体抖动对图像识别的负面影响。
+第二，当前姿态解算算法中陀螺仪随运行时间存在一定零漂，长时间运行后 yaw 偏航角会产生累计误差，对环岛、连续多弯场景下转向角度控制精度造成影响。后续可以引入视觉得到的赛道走向信息对 IMU 偏航角做观测校正，实现视觉‑IMU 组合姿态估计，抑制陀螺仪积分漂移。
+第三，PID 与差速转向相关控制参数依靠人工场地整定，对不同光照、不同赛道摩擦力适应性有限。后续可以尝试自适应 PID 或者模糊控制算法，根据车速、弯道曲率自动调整控制参数，减少现场调参工作量，提升赛道普适性。
+第四，硬件层面，当前电路板集成度仍有提升空间，部分板间排线较多，高速行驶过程中存在排线松动风险，后续版本可以优化 PCB 布局，尽可能将功能集成至单块主板，减少外部接插件与排线数量，进一步压缩整车体积与重量。
+经过本次智能车竞赛完整开发流程，团队完成了硬件电路设计、嵌入式软件开发、控制算法研究、整车调试等全流程工作，加深了对嵌入式系统、电机矢量控制、机器视觉、多传感器融合等知识的理解，积累了工程调试与团队协作的宝贵经验。后续将针对上述存在的问题继续优化算法与硬件设计，进一步提升智能车行驶速度与运行鲁棒性。
+参考文献
+[1] 卓晴, 黄开胜, 邵贝贝, 等. 学做智能车——挑战“飞思卡尔”杯[M]. 北京: 北京航空航天大学出版社, 2007.
+[2] OTSU N. A threshold selection method from gray-level histograms[J]. IEEE Transactions on Systems, Man, and Cybernetics, 1979, 9(1): 62-66.
+[3] GONZALEZ R C, WOODS R E. 数字图像处理[M]. 3版. 阮秋琦, 阮宇智, 译. 北京: 电子工业出版社, 2011.
+[4] MADGWICK S O H, HARRISON A J L, VAIDYANATHAN R. Estimation of IMU and MARG orientation using a gradient descent algorithm[C]//2011 IEEE International Conference on Rehabilitation Robotics. Zurich: IEEE, 2011: 1-7.
+[5] MAHONY R, HAMEL T, PFLIMLIN J M. Nonlinear complementary filters on the special orthogonal group[J]. IEEE Transactions on Automatic Control, 2008, 53(5): 1203-1218.
+[6] KALMAN R E. A new approach to linear filtering and prediction problems[J]. Journal of Basic Engineering, 1960, 82(1): 35-45.
+[7] ASTRÖM K J, HÄGGLUND T. Advanced PID control[M]. Research Triangle Park, NC: ISA—The Instrumentation, Systems, and Automation Society, 2006.
+[8] 王成元, 夏加宽, 孙宜标. 现代电机控制技术[M]. 2版. 北京: 机械工业出版社, 2014.
+[9] 全国大学生智能汽车竞赛组委会. 全国大学生智能汽车竞赛[EB/OL]. [2026-08-20]. http://www.smartcarrace.com/.
+
+附录A  电路板详细设计原理图
+主板原理图：
+
+
+
+驱动板原理图：
+
+
+
+
+无刷电调原理图：
+
+
+图A-1  主板电路原理图
+
+附录B  核心算法子程序
+本附录给出控制软件中核心算法的子程序代码清单，包括路径识别、PID控制、滤波算法等关键函数。
+B.1  图像预处理与二值化
+摄像头采集的原始灰度图像先统计灰度直方图，采用改进的大津法动态计算全局阈值，再按阈值对图像进行二值化，提高逆光或光照不均环境下的鲁棒性。
+/* ==================== 源码文件：code/new_image.c（大津法求阈值） ==================== */
+uint8 getOSTUThreshold(void)
+{
+    getGrayscaleHistogram();
+    uint32_t sum = 0, valueSum = 0;
+    uint64_t sigma = 0, maxSigma = 0;
+    float w1 = 0, w2 = 0;
+    int32_t u1 = 0, u2 = 0;
+    uint8 min = 0, max = 255;
+
+//    for (min = 0; histogram[min] == 0 && min < 255; ++min)
+//        ;
+//    for (max = 255; histogram[max] == 0 && max > 0; --max)
+//        ;
+
+    min = minGray;
+    max = maxGray;
+    if(max < minThreshold)     return minThreshold;
+    if(min > maxThreshold)     return maxThreshold;
+
+    min = min < minGrayscale ? minGrayscale : min;    //控制全局高曝光或低曝光
+    max = max > maxGrayscale ? maxGrayscale : max;
+
+    uint32_t lowSum[256] = {0};
+    uint32_t lowValueSum[256] = {0};
+    for (uint16_t i = min; i <= max; ++i)
+    {
+        sum += histogram[i];
+        valueSum += histogram[i] * i;
+        lowSum[i] = sum;
+        lowValueSum[i] = valueSum;
+    }
+    for (uint16_t i = min; i < max + 1; ++i)
+    {
+        w1 = (float)lowSum[i] / sum;
+        w2 = 1 - w1;
+        u1 = (int32_t)(lowValueSum[i] / w1);
+        u2 = (int32_t)((valueSum - lowValueSum[i]) / w2);
+        sigma = (uint64_t)(w1 * w2 * (u1 - u2) * (u1 - u2));
+        if (sigma >= maxSigma)
+        {
+            maxSigma = sigma;
+            nowThreshold = i;
+        }
+        else
+        {
+            break;
+        }
+    }
+    nowThreshold = nowThreshold < minThreshold ? minThreshold : nowThreshold;   //控制部分阈值不均匀
+    nowThreshold = nowThreshold > maxThreshold ? maxThreshold : nowThreshold;
+    previousThreshold = nowThreshold;
+
+    return nowThreshold;
+}
+B.2  赛道边线提取与中线计算
+边线搜索采用由近及远、基于上一行中线位置的动态窗口搜索法，从图像最底行开始寻找左右边界跃变点并计算行中线，当某一边丢失时利用历史中线保持连续性。
+/* ==================== 源码文件：code/new_image.c（动态窗口中线搜索） ==================== */
+void new_findmid()
+{
+    spinodal=0;
+    int row=qishidian-1;
+    int searchleft=cut_mid[qishidian]-30;
+    int searchright=cut_mid[qishidian]+30;
+    int leftbijian=searchleft+80;
+    int rightbijian=searchright-80;
+    if(leftbijian>159)
+    {
+        leftbijian=159;
+    }
+    if(rightbijian<0)
+    {
+        rightbijian=0;
+    }
+    if(cut_mid[qishidian]-30<0)
+    {
+        searchleft=0;
+    }
+    if(cut_mid[qishidian]+30>159)
+    {
+        searchright=159;
+    }
+
+    for(;row>=0;row--)
+    {
+        lw1=0;
+        lw2=0;
+        for(int j=searchleft;j<leftbijian;j++)
+        {
+              if(cut_disimage[row][j] == black_pixel && cut_disimage[row][j+1] == white_pixel)
+              {
+                  lw1=1;
+                  cut_left[row]=j;
+                  break;
+              }
+              else
+              {
+                  cut_left[row]=0;
+              }
+        }
+        for(int j=searchright;j>=rightbijian;j--)
+        {
+              if(cut_disimage[row][j] == black_pixel && cut_disimage[row][j-1] == white_pixel)
+              {
+                  lw2=1;
+                  cut_right[row]=j;
+                  break;
+              }
+              else
+              {
+                  cut_right[row]=159;
+              }
+        }
+        if(lw1==1&&lw2==1)       {cut_mid[row]=(cut_left[row]+cut_right[row])/2;}
+        else if(lw1==1&&lw2==0)  {cut_mid[row]=cut_mid[row+1];}
+        else if(lw1==0&&lw2==1)  {cut_mid[row]=cut_mid[row+1];}
+        else                     {cut_mid[row]=cut_mid[row+1];cut_left[row]=cut_left[row+1];cut_right[row]=cut_right[row+1];}
+        if(lw1==0&&lw2==1)
+        {
+            searchleft=0;
+            searchright=159;
+            leftbijian=159;
+            rightbijian=0;
+        }
+        if(lw1==1&&lw2==0)
+        {
+            searchleft=0;
+            searchright=159;
+            leftbijian=159;
+            rightbijian=0;
+        }
+        if(lw1==1&&lw2==1)
+        {
+            searchleft=cut_mid[row]-30;
+            searchright=cut_mid[row]+30;
+            leftbijian=searchleft+80;
+            rightbijian=searchright-80;
+        }
+        if(lw1==0&&lw2==0)
+        {
+            searchleft=0;
+            searchright=159;
+            leftbijian=159;
+            rightbijian=0;
+        }
+      //测试拐点
+        int gd=0;
+        if(!(get_jmn_category(jmn)))
+        {
+            gd=25;
+        }
+        else
+        {
+            gd=15;
+        }
+        if(jmn==30)
+            gd=5;
+        if(cut_left[row+1]-cut_left[row]>=gd)   //判断是否有拐点
+        {
+            spinodal=1;
+            /*spinodal_h=row;
+            spinodal_l=final_mid_line;*/
+        }
+        if(cut_right[row]-cut_right[row+1]>=gd)   //判断是否有拐点
+        {
+            spinodal=1;
+            /*spinodal_h=row;
+            spinodal_l=final_mid_line;*/
+        }
+
+        if(searchleft<0)
+        {
+            searchleft=0;
+        }
+        if(searchright>159)
+        {
+            searchright=159;
+        }
+        if(leftbijian>159)
+        {
+            leftbijian=159;
+        }
+        if(rightbijian<0)
+        {
+            rightbijian=0;
+        }
+    }
+    //j_mid=find_mid_value_weight();
+
+}
+B.3  元素识别与路径规划
+基于图像特征检测直角、T型路口、环岛等赛道元素，并结合元素计数值查询预设转向策略表，控制左转、右转或直行。
+/* ==================== 源码文件：code/new_image.c（元素特征识别） ==================== */
+void find_element()
+{
+    int l_l=0;
+    int r_l=0;
+    int s_h=0;
+    int x_h=0;
+    fr=0;
+    fl=0;
+    fs=0;
+    fx=0;
+    t_audion();
+    if(spinodal==1&&audion_h<=1)
+    {
+        l_l=spinodal_l-35; if(l_l<=0)   l_l=0;
+        r_l=spinodal_l+35; if(r_l>=159) r_l=159;
+        s_h=spinodal_h-25; if(s_h<=0)   s_h=0;
+        x_h=spinodal_h+25; if(s_h>=70)  x_h=70;
+        for(int t=x_h;t>=s_h;t--)
+        {
+            if(cut_disimage[t][l_l] == black_pixel && cut_disimage[t-1][l_l] == white_pixel) {fl++;}
+            if(cut_disimage[t+10][l_l] == white_pixel && cut_disimage[t+9][l_l] == black_pixel) {fl++;}
+            if(cut_disimage[t][r_l] == black_pixel && cut_disimage[t-1][r_l] == white_pixel) {fr++;}
+            if(cut_disimage[t+10][r_l] == white_pixel && cut_disimage[t+9][r_l] == black_pixel) {fr++;}
+        }
+        for(int t=l_l;t<=r_l;t++)
+        {
+            if(cut_disimage[s_h][t] == black_pixel && cut_disimage[s_h][t+1] == white_pixel) {fs++;}
+            if(cut_disimage[s_h][t] == white_pixel && cut_disimage[s_h][t+1] == black_pixel) {fs++;}
+            if(cut_disimage[x_h][t] == black_pixel && cut_disimage[x_h][t+1] == white_pixel) {fx++;}
+            if(cut_disimage[x_h][t] == white_pixel && cut_disimage[x_h][t+1] == black_pixel) {fx++;}
+        }
+        if(fl==2&&fr==0&&fs==0&&fx>=2) {tlp=1;}
+        if(fl==0&&fr==2&&fs==0&&fx>=2) {tlp=2;}
+        if(fl==2&&fr==2&&fs==0&&fx>=2) {tlp=3;}
+        if(fl==2&&fr==0&&fs>=2&&fx>=2) {tlp=4;}
+        if(fl==0&&fr==2&&fs>=2&&fx>=2) {tlp=5;}
+    }
+
+}
+B.4  姿态解算与滤波算法
+利用IMU660RB陀螺仪与加速度计数据，采用四元数梯度下降法融合更新四元数并解算姿态角；加速度计数据先经一阶低通滤波，编码器轮速同样经低通滤波平滑。
+/* ==================== 源码文件：code/balance.c（低通滤波与四元数姿态解算） ==================== */
+static void acc_lowpass_filter(float *raw_x, float *raw_y, float *raw_z, float *filtered_x, float *filtered_y, float *filtered_z, float alpha)
+{
+    *filtered_x = alpha * *filtered_x + (1 - alpha) * *raw_x;  // X 轴滤波计算
+    *filtered_y = alpha * *filtered_y + (1 - alpha) * *raw_y;  // Y 轴滤波计算
+    *filtered_z = alpha * *filtered_z + (1 - alpha) * *raw_z;  // Z 轴滤波计算
+}
+void quaternion_module_calculate(cascade_value_struct *cascade_value)
+{
+    static float first_count_time = 0;  // 首次计算时间计数器（用于快速收敛）
+    float length;                       // 四元数模长（用于归一化）
+    float x, y, z;                      // 陀螺仪角速度（弧度/秒）
+
+    // 陀螺仪数据转换：原始数据 -> (°/s) -> 弧度/秒（先除以 10 再乘 10 做简单滤波）
+    x = (float)(GYRO_DATA_X / 10 * 10) / GYRO_TRANSITION_FACTOR * 0.01745329f;  // 0.01745329 为度转弧度系数 (π/180)
+    y = (float)(GYRO_DATA_Y / 10 * 10) / GYRO_TRANSITION_FACTOR * 0.01745329f;
+    z = (float)(GYRO_DATA_Z / 10 * 10) / GYRO_TRANSITION_FACTOR * 0.01745329f;
+
+    // 加速度计数据转换：原始数据 -> g 为单位（1g ≈ 9.8 m/s2）
+    float ax_g = (float)ACC_DATA_X / ACC_TRANSITION_FACTOR;
+    float ay_g = (float)ACC_DATA_Y / ACC_TRANSITION_FACTOR;
+    float az_g = (float)ACC_DATA_Z / ACC_TRANSITION_FACTOR;
+
+    bool static_state = is_static_state(ax_g, ay_g, az_g);  // 判断设备是否静止
+
+    float acc_alpha = static_state ? 0.8f : 0.5f;  // 静止时滤波系数更大（平滑效果更好）
+
+    // 加速度计数据低通滤波
+    acc_lowpass_filter(&ax_g, &ay_g, &az_g,
+                       &cascade_value->quaternion.pro.acc_filtered[0],
+                       &cascade_value->quaternion.pro.acc_filtered[1],
+                       &cascade_value->quaternion.pro.acc_filtered[2], acc_alpha);
+
+    // 取滤波后的加速度数据
+    float ax = cascade_value->quaternion.pro.acc_filtered[0];
+    float ay = cascade_value->quaternion.pro.acc_filtered[1];
+    float az = cascade_value->quaternion.pro.acc_filtered[2];
+
+    acc_normalize(&ax, &ay, &az);  // 加速度数据归一化
+
+    // 取出当前四元数 (w, x, y, z)
+    float q0 = cascade_value->quaternion.pro.qua[0];
+    float q1 = cascade_value->quaternion.pro.qua[1];
+    float q2 = cascade_value->quaternion.pro.qua[2];
+    float q3 = cascade_value->quaternion.pro.qua[3];
+
+    // 根据当前四元数计算重力向量在机体坐标系中的投影（用于与加速度计数据对比）
+    float gx = 2 * (q1 * q3 - q0 * q2);
+    float gy = 2 * (q0 * q1 + q2 * q3);
+    float gz = q0 * q0 - q1 * q1 - q2 * q2 + q3 * q3;
+
+    // 计算加速度计与重力投影的误差（梯度误差）
+    float ex = ay * gz - az * gy;
+    float ey = az * gx - ax * gz;
+    float ez = ax * gy - ay * gx;
+
+    // 根据静止状态调整校正系数（运动时减弱校正，避免引入噪声） KI不衰减，保证积分校正力度
+    float kp = static_state ? cascade_value->posture_value.correct_kp : cascade_value->posture_value.correct_kp * 0.8f;
+    float ki = cascade_value->posture_value.correct_ki;
+
+    // 首次计算的前 0.1 秒，使用大比例系数加速收敛
+    if(first_count_time < 0.5f)
+    {
+        first_count_time += cascade_value->posture_value.call_cycle;  // 累加时间
+        kp = 100.0f;  // 强比例校正，快速收敛
+    }
+
+    // 动态时积分力度降为1/10
+    float integral_gain = static_state ? 1.0f : 0.1f;
+
+    cascade_value->quaternion.parameter.acc_err[0] += (ex * cascade_value->posture_value.call_cycle) * integral_gain;
+    cascade_value->quaternion.parameter.acc_err[1] += (ey * cascade_value->posture_value.call_cycle) * integral_gain;
+    cascade_value->quaternion.parameter.acc_err[2] += (ez * cascade_value->posture_value.call_cycle) * integral_gain;
+
+    // 积分限幅：防止饱和
+    float acc_err_limit = 1.0f;
+
+    cascade_value->quaternion.parameter.acc_err[0] = (cascade_value->quaternion.parameter.acc_err[0] > acc_err_limit) ? acc_err_limit :
+                                                      (cascade_value->quaternion.parameter.acc_err[0] < -acc_err_limit) ? -acc_err_limit :
+                                                      cascade_value->quaternion.parameter.acc_err[0];
+    cascade_value->quaternion.parameter.acc_err[1] = (cascade_value->quaternion.parameter.acc_err[1] > acc_err_limit) ? acc_err_limit :
+                                                      (cascade_value->quaternion.parameter.acc_err[1] < -acc_err_limit) ? -acc_err_limit :
+                                                      cascade_value->quaternion.parameter.acc_err[1];
+    cascade_value->quaternion.parameter.acc_err[2] = (cascade_value->quaternion.parameter.acc_err[2] > acc_err_limit) ? acc_err_limit :
+                                                      (cascade_value->quaternion.parameter.acc_err[2] < -acc_err_limit) ? -acc_err_limit :
+                                                      cascade_value->quaternion.parameter.acc_err[2];
+
+    // 用误差校正陀螺仪数据（比例+积分校正）
+    x += kp * ex + ki * cascade_value->quaternion.parameter.acc_err[0];
+    y += kp * ey + ki * cascade_value->quaternion.parameter.acc_err[1];
+    z += kp * ez + ki * cascade_value->quaternion.parameter.acc_err[2];
+
+    // 四元数微分方程更新（根据陀螺仪角速度）
+    cascade_value->quaternion.pro.qua[0] += ((-q1 * x - q2 * y - q3 * z) * cascade_value->posture_value.call_cycle / 2.0f);
+    cascade_value->quaternion.pro.qua[1] += (( q0 * x + q2 * z - q3 * y) * cascade_value->posture_value.call_cycle / 2.0f);
+    cascade_value->quaternion.pro.qua[2] += (( q0 * y - q1 * z + q3 * x) * cascade_value->posture_value.call_cycle / 2.0f);
+    cascade_value->quaternion.pro.qua[3] += (( q0 * z + q1 * y - q2 * x) * cascade_value->posture_value.call_cycle / 2.0f);
+
+    // 取出当前四元数 (w, x, y, z)
+    q0 = cascade_value->quaternion.pro.qua[0];
+    q1 = cascade_value->quaternion.pro.qua[1];
+    q2 = cascade_value->quaternion.pro.qua[2];
+    q3 = cascade_value->quaternion.pro.qua[3];
+
+    // 计算四元数各分量平方（减少重复计算）
+    float q0_2 = q0 * q0;
+    float q1_2 = q1 * q1;
+    float q2_2 = q2 * q2;
+    float q3_2 = q3 * q3;
+
+    // 四元数归一化（避免数值漂移）
+    length = sqrt(q0_2 + q1_2 + q2_2 + q3_2);  // 计算模长
+
+    if (length > 0.001f)  // 模长有效时才归一化
+    {
+        cascade_value->quaternion.pro.qua[0] /= length;
+        cascade_value->quaternion.pro.qua[1] /= length;
+        cascade_value->quaternion.pro.qua[2] /= length;
+        cascade_value->quaternion.pro.qua[3] /= length;
+    }
+    // 根据四元数计算旋转矩阵（用于后续姿态角计算）
+    cascade_value->quaternion.data.rot_mat[0][0] = q0_2 + q1_2 - q2_2 - q3_2;
+    cascade_value->quaternion.data.rot_mat[0][1] = 2 * (q1 * q2 + q0 * q3);
+    cascade_value->quaternion.data.rot_mat[0][2] = 2 * (q1 * q3 - q0 * q2);
+    cascade_value->quaternion.data.rot_mat[1][0] = 2 * (q1 * q2 - q0 * q3);
+    cascade_value->quaternion.data.rot_mat[1][1] = q0_2 - q1_2 + q2_2 - q3_2;
+    cascade_value->quaternion.data.rot_mat[1][2] = 2 * (q2 * q3 + q0 * q1);
+    cascade_value->quaternion.data.rot_mat[2][0] = 2 * (q1 * q3 + q0 * q2);
+    cascade_value->quaternion.data.rot_mat[2][1] = 2 * (q2 * q3 - q0 * q1);
+    cascade_value->quaternion.data.rot_mat[2][2] = q0_2 - q1_2 - q2_2 + q3_2;
+
+    // 根据旋转矩阵计算姿态角（横滚角、俯仰角、偏航角）
+    cascade_value->posture_value.rol = arctan2(cascade_value->quaternion.data.rot_mat[2][2], cascade_value->quaternion.data.rot_mat[1][2]);  // 横滚角
+    cascade_value->posture_value.pit = -arcsin(cascade_value->quaternion.data.rot_mat[0][2]);                                             // 俯仰角
+    cascade_value->posture_value.yaw = arctan2(cascade_value->quaternion.data.rot_mat[0][0], cascade_value->quaternion.data.rot_mat[0][1]);   // 偏航角
+
+    float raw_yaw_z = 2.0f * roll_balance_cascade.posture_value.yaw;
+        float delta = raw_yaw_z - last_angle;
+
+        while (delta > 360.0f)
+        {
+            delta -= 720.0f;
+        }
+        while (delta < -360.0f)
+        {
+            delta += 720.0f;
+        }
+
+        last_angle = raw_yaw_z;
+        yaw_z += delta;
+
+        if (yaw_z > 1800.0f)
+        {
+            yaw_z = 1800.0f;
+        }
+        if (yaw_z < -1800.0f)
+        {
+            yaw_z = -1800.0f;
+        }
+}
+/* ==================== 源码文件：code/brushless_motor.c（编码器轮速滤波） ==================== */
+void Magnetic_Encoder_Data_Get(void)
+{
+    motor_l.encoder_raw=motor_value.receive_left_speed_data;
+    motor_l.encoder_speed=motor_l.encoder_raw*0.8+motor_l.encoder_speed*0.2;
+
+    motor_r.encoder_raw=-motor_value.receive_right_speed_data;
+    motor_r.encoder_speed=motor_r.encoder_raw*0.8+motor_r.encoder_speed*0.2;
+}
+B.5  电机控制与差速转向
+采用双无刷电机差速转向方案，转向控制量根据中线偏差计算，包含比例、二次项（弯道补偿）、微分项和车速前馈项，再按左右轮差速输出。
+/* ==================== 源码文件：code/motor.c（差速转向控制） ==================== */
+void turn_motor()
+{
+    if(MID_W>final_mid_line)
+    {
+        turn=kp1*(MID_W-final_mid_line)+(MID_W-final_mid_line)*(MID_W-final_mid_line)*kp2+kd*(MID_W-final_mid_line-last)+z*GKD;
+        last=MID_W-final_mid_line;
+    }
+    if(MID_W<final_mid_line)
+    {
+        turn=kp1*(MID_W-final_mid_line)-(MID_W-final_mid_line)*(MID_W-final_mid_line)*kp2+kd*(MID_W-final_mid_line-last)+z*GKD;
+        last=MID_W-final_mid_line;
+    }
+}
+void Final_Motor_Control(int speed,float k1,float k2,int limit)
+{
+  if(turn>=0)
+  {
+      Brushless_Motor(Limit_int(300,speed-k1*turn,speed+limit),
+                  Limit_int(300,speed+k2*turn,speed+limit));
+  }
+  else
+  {
+      Brushless_Motor(Limit_int(300,speed-k2*turn,speed+limit),
+                  Limit_int(300,speed+k1*turn,speed+limit));
+  }
+}
+B.6  PID控制算法
+实现位置式PID与增量式PID两种控制算法，包含积分限幅、误差平滑与微分低通滤波处理，PID参数可通过菜单实时调整。
+/* ==================== 源码文件：code/pid.c（PID控制算法） ==================== */
+void dynamic_pid_value_set(void)
+{
+    //一次Kp
+    //servo_pid.Kp=Kp_base+my_abs_float(MID_W-final_mid_line)*0.045;  //最大值2.05
+    //二次kp
+    servo_pid.Kp=Kp_base+(MID_W-final_mid_line)*(MID_W-final_mid_line)*0.0015;  //最大值2.05
+    servo_pid.Ki=0;
+    servo_pid.Kd=Kd_base;
+}
+float PID_Normal(PID *PID,float NowData,float Point)
+{
+    PID->Error = Point - NowData;
+    PID->Out_D=(PID->Error - PID->Out_P)*PID->LowPass+PID->Out_D*(1-PID->LowPass);
+    PID->Out_P=PID->Error;
+    return (PID->Kp * PID->Out_P + PID->Kd * PID->Out_D);
+}
+float PID_Increase(PID *PID,float NowData,float Point)
+{
+    PID->Error = Point - NowData;
+    PID->Out_P=(PID->Error - PID->LastError);
+
+    PID->Out_I=Limit_float(-pid_out_I_limit,PID->Error,pid_out_I_limit);  //增量式pid积分项限幅
+
+    PID->Out_D=(PID->Error - 2*PID->LastError + PID->PreError);
+
+    PID->PreError = 0.9*PID->LastError+0.1*PID->PreError;
+    PID->LastError = 0.9*PID->Error+0.1*PID->LastError;
+    PID->LastData=NowData;
+
+    return(PID->Kp*PID->Out_P + PID->Ki*PID->Out_I + PID->Kd*PID->Out_D);
+
+}
+
+附录C  程序源代码
+本附录给出模型车控制程序的重要源程序代码（节选），包括主程序、中断服务程序与核心模块驱动；完整工程源码请参见随队源码（juesai-1工程）。
+文件：user/cpu1_main.c（主程序，省略逐飞许可声明头部）
+#include "zf_common_headfile.h"
+#pragma section all "cpu1_dsram"
+// 将本语句与#pragma section all restore语句之间的全局变量都放在CPU1的RAM中
+
+// **************************** 代码区域 ****************************
+
+// 本例程是开源库空工程 可用作移植或者测试各类内外设
+// 本例程是开源库空工程 可用作移植或者测试各类内外设
+// 本例程是开源库空工程 可用作移植或者测试各类内外设
+
+void core1_main(void)
+{
+    disable_Watchdog();                     // 关闭看门狗
+    interrupt_global_enable(0);             // 打开全局中断
+    // 此处编写用户代码 例如外设初始化代码等
+    imu660rb_init();
+    balance_cascade_init();
+    ips114_init();
+   Flash_Read();
+    menu_init();
+    init();
+    //menu=1;
+    // 此处编写用户代码 例如外设初始化代码等
+    cpu_wait_event_ready();                 // 等待所有核心初始化完毕
+    while(menu==0)
+    {
+        menu_show_All();
+    }
+    for(int i=5;i>=0;i--)
+    {
+        ips114_clear();
+        mt9v03x_set_exposure_time_sccb(mt9v03x_1,exposure);
+        Flash_Access();
+    }
+    while (TRUE)
+    {
+        // 此处编写需要循环执行的代码
+        //system_start();
+        if(jmn==13||jmn==20||jmn==25||jmn==29||jmn==64||jmn==44||(jmn==52&&tlp==0)) balance_cascade_init();
+        /*if(flag==1)
+                       {
+                            time=system_getval_us();
+                       }*/
+       if(jmn<=end_jmn_by_mode[path_mode])   {All_function();}
+       else   {Final_round();}
+
+       if(mt9v03x_finish_flag_1&&start1%2==0)//&&start1%2==0
+       {
+           ips114_displayimage03x(cut_disimage[0], cut_j, cut_i);
+           draw_line();
+           ips114_show_int(0, 90,final_mid_line, 3);
+           ips114_show_int(30,90,tlp,6);
+           ips114_show_int(60,90,jmn,6);
+           ips114_show_float(0,110,yaw_z,6,2);
+           ips114_show_float(60,110,jl,3,2);
+           ips114_show_float(110,110,time,6,2);
+          // ips114_show_float(110,90,motor_r.encoder_raw,6,2);
+           mt9v03x_finish_flag_1=0;
+       }
+        //printf("%d,%d,%d,%d\n",motor_l.encoder_speed,motor_r.encoder_speed,motor_l.target_speed,motor_r.target_speed);
+
+        // 此处编写需要循环执行的代码
+    }
+}
+#pragma section all restore
+// **************************** 代码区域 ****************************
+文件：user/isr.c（中断服务程序，节选PIT定时中断）
+IFX_INTERRUPT(cc60_pit_ch1_isr, 0, CCU6_0_CH1_ISR_PRIORITY)
+{
+    interrupt_global_enable(0);                     // 开启中断嵌套
+    pit_clear_flag(CCU60_CH1);
+    imu660rb_get_gyro();
+    imu660rb_get_acc();
+    if(imu==0)
+    {
+        quaternion_module_calculate(&roll_balance_cascade);
+        imu=1;
+    }
+
+}
+// ……（其余中断服务函数从略）……
+IFX_INTERRUPT(cc61_pit_ch0_isr, 0, CCU6_1_CH0_ISR_PRIORITY)
+{
+    interrupt_global_enable(0);                     // 开启中断嵌套
+    pit_clear_flag(CCU61_CH0);
+    //quaternion_module_calculate(&roll_balance_cascade);
+    if(imu==1)
+    {
+
+        Magnetic_Encoder_Data_Get();
+        if(jmn==55&&tlp!=0)
+        lichengji();
+     //Encoder_Data_Get();
+     z=0.8*imu660rb_gyro_z+0.2*last_z;
+     last_z=z;
+     key_scanner();
+     if(menu==0)
+      get_key_flag();
+     if(protect>=1000)   //保护
+         PRO=1;
+     //Motor_Stall_Protect();
+     if(kai==0&&menu!=0&&PRO==0)
+         brushless_ESC();
+     if(kai==1)
+     {
+         if(soft==0)
+             soft_boot();
+         else
+             start_run();
+         //start_run();
+        // car_start();
+
+     }
+     imu=0;
+    }
+
+}
+文件：code/init.c（系统初始化）
+#include "init.h"
+
+bool flag=1;    //标志位
+int time=0;
+int shijian=0;
+
+void init(void)
+{
+    //摄像头初始化
+    mt9v03x_double_init(mt9v03x_1);
+    //Init_uart();
+    //gpio初始化
+    //gpio_init(GPIO_L,GPO,GPIO_HIGH,GPO_PUSH_PULL);
+   // gpio_init(GPIO_R,GPO,GPIO_HIGH,GPO_PUSH_PULL);
+    //gpio_init(P33_10, GPO, 0, GPO_PUSH_PULL);
+    //PWM初始化
+    //pwm_init(PWM_NEG, 17000, 0);
+    pwm_init(PWM_ESC, FREQ, 0);                                   // PWM无刷 初始化频率50Hz  占空比初始为 0
+    //pwm_init(PWM_L,17000,0);
+    //pwm_init(PWM_R,17000,0);
+    //编码器初始化
+    //Encoder_Init();
+    //陀螺仪初始化
+  // imu660rb_init();
+    //wifi
+  // wifi_spi_init ( "hhhhhhhh", "123456789");
+    //按键初始化
+    key_init(5);
+    small_driver_uart_init();
+    pit_ms_init(CCU60_CH1,1);
+    pit_ms_init(CCU61_CH0,2);
+   // pit_ms_init(CCU60_CH1,5);
+    //pit_ms_init(CCU61_CH1,20);
+}
+文件：code/brushless_motor.c（无刷电机控制）
+/*
+ * brushless_motor.c
+ *
+ *  Created on: 2026年3月4日
+ *      Author: 34653
+ */
+#include "brushless_motor.h"
+
+
+/***********************************************************************************
+函数功能：无刷电机闭环控制
+函数名称：void Brushless_Motor(int Speed_L,int Speed_R)
+输入参数：左右无刷电机目标速度
+输出参数：无
+备注：输入速度会随着定时器中断的时间的改变而改变，注意限幅！！！
+***********************************************************************************/
+void Brushless_Motor(int Speed_L,int Speed_R)
+{
+    motor_l.target_speed=Speed_L;
+    motor_r.target_speed=Speed_R;
+
+    /*motor_l.duty=Limit_int(-pid_limit,PID_Normal(&motor_pid_l,(float)motor_l.encoder_speed,(float)motor_l.target_speed),pid_limit);
+    motor_r.duty=Limit_int(-pid_limit,PID_Normal(&motor_pid_r,(float)motor_r.encoder_speed,(float)motor_r.target_speed),pid_limit);*/
+    motor_l.duty=Limit_int(-pid_limit,motor_l.duty+PID_Increase(&motor_pid_l,(float)motor_l.encoder_speed,(float)motor_l.target_speed),pid_limit);
+    motor_r.duty=Limit_int(-pid_limit,motor_r.duty+PID_Increase(&motor_pid_r,(float)motor_r.encoder_speed,(float)motor_r.target_speed),pid_limit);
+    small_driver_set_duty( motor_l.duty,motor_r.duty);
+}
+
+
+/***********************************************************************************
+函数功能：无刷电机开环控制
+函数名称：void Open_Motor(int Speed_L,int Speed_R)
+输入参数：左右无刷电机目标速度
+输出参数：无
+备注：输入速度会随着定时器中断的时间的改变而改变，注意限幅！！！
+***********************************************************************************/
+void Open_Motor(int Speed_L,int Speed_R)
+{
+    motor_l.target_speed=Speed_L;
+    motor_r.target_speed=Speed_R;
+
+    motor_l.duty=Limit_int(-pid_limit,motor_l.target_speed,pid_limit);
+    motor_r.duty=Limit_int(-pid_limit,motor_r.target_speed,pid_limit);
+
+    small_driver_set_duty( motor_l.duty,motor_r.duty);
+}
+
+/***********************************************************************************
+函数功能：磁编数值获得
+函数名称：void Magnetic_Encoder_Data_Get(void)
+输入参数：无
+输出参数：无
+备注：无
+***********************************************************************************/
+void Magnetic_Encoder_Data_Get(void)
+{
+    motor_l.encoder_raw=motor_value.receive_left_speed_data;
+    motor_l.encoder_speed=motor_l.encoder_raw*0.8+motor_l.encoder_speed*0.2;
+
+    motor_r.encoder_raw=-motor_value.receive_right_speed_data;
+    motor_r.encoder_speed=motor_r.encoder_raw*0.8+motor_r.encoder_speed*0.2;
+}
+/***********************************************************************************
+函数功能：无刷电调
+函数名称：void brushless_ESC()
+输入参数：无
+输出参数：无
+备注：无
+***********************************************************************************/
+float ESC_duty=500;   //500速度为0   //600占空比为20  //700占空比为40 以此类推
+float real_duty=820;
+int pre_start=0;
+void brushless_ESC()
+{
+    if(key_get_state(KEY_2)==KEY_SHORT_PRESS)
+    {
+        start1++;
+
+    }
+    if(start1%2==1)
+    {
+        if(ESC_duty<real_duty)
+        {
+            ESC_duty=ESC_duty+0.3;
+            pwm_set_duty(PWM_ESC, ESC_duty);
+        }
+        if(ESC_duty>=real_duty)
+        {
+            ESC_duty=real_duty;
+            pwm_set_duty(PWM_ESC, ESC_duty);
+            z_speed=z_s*100;                     //速度初始化
+            j_speed=j_s*100;
+            pre_start++;
+            if(pre_start>=550)
+            {
+                kai=1;
+            }
+        }
+
+    }
+    else
+    {
+        pwm_set_duty(PWM_ESC, 500);
+    }
+}
+文件：code/small_driver_uart_control.c（CYT2BL3驱动串口协议）
+#include "small_driver_uart_control.h"
+
+small_device_value_struct motor_value;      // 定义通讯参数结构体
+
+
+//-------------------------------------------------------------------------------------------------------------------
+// 函数简介     无刷驱动 串口接收回调函数
+// 参数说明     void
+// 返回参数     void
+// 使用示例     uart_control_callback(1000, -1000);
+// 备注信息     用于解析接收到的速度数据  该函数需要在对应的串口接收中断中调用
+//-------------------------------------------------------------------------------------------------------------------
+void uart_control_callback(void)
+{
+    uint8 receive_data;                                                                     // 定义临时变量
+
+    if(uart_query_byte(SMALL_DRIVER_UART, &receive_data))                                   // 接收串口数据
+    {
+        if(receive_data == 0xA5 && motor_value.receive_data_buffer[0] != 0xA5)              // 判断是否收到帧头 并且 当前接收内容中是否正确包含帧头
+        {
+            motor_value.receive_data_count = 0;                                             // 未收到帧头或者未正确包含帧头则重新接收
+        }
+
+        motor_value.receive_data_buffer[motor_value.receive_data_count ++] = receive_data;  // 保存串口数据
+
+        if(motor_value.receive_data_count >= 7)                                             // 判断是否接收到指定数量的数据
+        {
+            if(motor_value.receive_data_buffer[0] == 0xA5)                                  // 判断帧头是否正确
+            {
+
+                motor_value.sum_check_data = 0;                                             // 清除校验位数据
+
+                for(int i = 0; i < 6; i ++)
+                {
+                    motor_value.sum_check_data += motor_value.receive_data_buffer[i];       // 重新计算校验位
+                }
+
+                if(motor_value.sum_check_data == motor_value.receive_data_buffer[6])        // 校验数据准确性
+                {
+
+                    if(motor_value.receive_data_buffer[1] == 0x02)                          // 判断是否正确接收到 速度输出 功能字
+                    {
+                        motor_value.receive_left_speed_data  = (((int)motor_value.receive_data_buffer[2] << 8) | (int)motor_value.receive_data_buffer[3]);  // 拟合左侧电机转速数据
+
+                        motor_value.receive_right_speed_data = (((int)motor_value.receive_data_buffer[4] << 8) | (int)motor_value.receive_data_buffer[5]);  // 拟合右侧电机转速数据
+                    }
+
+                    motor_value.receive_data_count = 0;                                     // 清除缓冲区计数值
+
+                    memset(motor_value.receive_data_buffer, 0, 7);                          // 清除缓冲区数据
+                }
+                else
+                {
+                    motor_value.receive_data_count = 0;                                     // 清除缓冲区计数值
+
+                    memset(motor_value.receive_data_buffer, 0, 7);                          // 清除缓冲区数据
+                }
+            }
+            else
+            {
+                motor_value.receive_data_count = 0;                                         // 清除缓冲区计数值
+
+                memset(motor_value.receive_data_buffer, 0, 7);                              // 清除缓冲区数据
+            }
+        }
+    }
+}
+
+//-------------------------------------------------------------------------------------------------------------------
+// 函数简介     无刷驱动 设置电机占空比
+// 参数说明     left_duty       左侧电机占空比  范围 -10000 ~ 10000  负数为反转
+// 参数说明     right_duty      右侧电机占空比  范围 -10000 ~ 10000  负数为反转
+// 返回参数     void
+// 使用示例     small_driver_set_duty(1000, -1000);
+// 备注信息
+//-------------------------------------------------------------------------------------------------------------------
+void small_driver_set_duty(int16 left_duty, int16 right_duty)
+{
+    motor_value.send_data_buffer[0] = 0xA5;                                         // 配置帧头
+
+    motor_value.send_data_buffer[1] = 0X01;                                         // 配置功能字
+
+    motor_value.send_data_buffer[2] = (uint8)((left_duty & 0xFF00) >> 8);           // 拆分 左侧占空比 的高八位
+
+    motor_value.send_data_buffer[3] = (uint8)(left_duty & 0x00FF);                  // 拆分 左侧占空比 的低八位
+
+    motor_value.send_data_buffer[4] = (uint8)((right_duty & 0xFF00) >> 8);          // 拆分 右侧占空比 的高八位
+
+    motor_value.send_data_buffer[5] = (uint8)(right_duty & 0x00FF);                 // 拆分 右侧占空比 的低八位
+
+    motor_value.send_data_buffer[6] = 0;                                            // 和校验清除
+
+    for(int i = 0; i < 6; i ++)
+    {
+        motor_value.send_data_buffer[6] += motor_value.send_data_buffer[i];         // 计算校验位
+    }
+
+    uart_write_buffer(SMALL_DRIVER_UART, motor_value.send_data_buffer, 7);                     // 发送设置占空比的 字节包 数据
+}
+
+//-------------------------------------------------------------------------------------------------------------------
+// 函数简介     无刷驱动 获取速度信息
+// 参数说明     void
+// 返回参数     void
+// 使用示例     small_driver_get_speed();
+// 备注信息     仅需发送一次 驱动将周期发出速度信息(默认10ms)
+//-------------------------------------------------------------------------------------------------------------------
+void small_driver_get_speed(void)
+{
+    motor_value.send_data_buffer[0] = 0xA5;                                         // 配置帧头
+
+    motor_value.send_data_buffer[1] = 0X02;                                         // 配置功能字
+
+    motor_value.send_data_buffer[2] = 0x00;                                         // 数据位清空
+
+    motor_value.send_data_buffer[3] = 0x00;                                         // 数据位清空
+
+    motor_value.send_data_buffer[4] = 0x00;                                         // 数据位清空
+
+    motor_value.send_data_buffer[5] = 0x00;                                         // 数据位清空
+
+    motor_value.send_data_buffer[6] = 0xA7;                                         // 配置校验位
+
+    uart_write_buffer(SMALL_DRIVER_UART, motor_value.send_data_buffer, 7);                     // 发送获取转速数据的 字节包 数据
+}
+
+
+//-------------------------------------------------------------------------------------------------------------------
+// 函数简介     无刷驱动 参数初始化
+// 参数说明     void
+// 返回参数     void
+// 使用示例     small_driver_init();
+// 备注信息
+//-------------------------------------------------------------------------------------------------------------------
+void small_driver_init(void)
+{
+    memset(motor_value.send_data_buffer, 0, 7);                             // 清除缓冲区数据
+
+    memset(motor_value.receive_data_buffer, 0, 7);                          // 清除缓冲区数据
+
+    motor_value.receive_data_count          = 0;
+
+    motor_value.sum_check_data              = 0;
+
+    motor_value.receive_right_speed_data    = 0;
+
+    motor_value.receive_left_speed_data     = 0;
+}
+
+
+//-------------------------------------------------------------------------------------------------------------------
+// 函数简介     无刷驱动 串口通讯初始化
+// 参数说明     void
+// 返回参数     void
+// 使用示例     small_driver_uart_init();
+// 备注信息
+//-------------------------------------------------------------------------------------------------------------------
+void small_driver_uart_init(void)
+{
+    uart_init(SMALL_DRIVER_UART, SMALL_DRIVER_BAUDRATE, SMALL_DRIVER_RX, SMALL_DRIVER_TX);      // 串口初始化
+
+    uart_rx_interrupt(SMALL_DRIVER_UART, 1);                                                    // 使能串口接收中断
+
+    small_driver_init();                                                                        // 结构体参数初始化
+
+    small_driver_set_duty(0, 0);                                                                // 设置0占空比
+
+    small_driver_get_speed();                                                                   // 获取实时速度数据
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+===== TABLE 1 =====
+学校名称： | 安徽师范大学
+队伍名称： | 疯狂LAZ
+参赛队员： | 骆世强 张旭 周德宇
+带队教师： | 蔺玉柱
+
+===== TABLE 2 =====
+参赛队员签名： | 骆世强 张旭 周德宇
+带队教师签名： | 蔺玉柱
+日期： | 2026年8月19日
+
+===== TABLE 3 =====
+参数 | 数值
+总重量 | 146g
+长度 | 12.3cm
+宽度 | 10.7cm
+高度 | 16.0cm

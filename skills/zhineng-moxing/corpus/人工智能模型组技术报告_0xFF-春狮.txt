@@ -1,0 +1,409 @@
+第二十一届全国大学生智能汽车竞赛
+人工智能模型组
+
+
+
+技 术 报 告
+基于多模态视觉感知与 预决策开环绕障的
+人工智能模型智能车系统设计
+
+
+
+
+
+。
+
+技术报告使用授权说明
+本队伍同意全国大学生智能汽车竞赛组织单位在竞赛相关的教学、科研、交流、评审、出版和宣传活动中使用本技术报告。报告中涉及的原创程序、模型、图表和实验资料，其知识产权归原作者及所在学校所有；未经许可，不得用于商业目的。
+本报告所列实验数据分为两类：一类由本地运行日志、配置文件和程序输出统计得到，并在正文中标注为“实测日志统计”；另一类为模型训练阶段性记录，由于当前目录未包含完整训练日志，正文将明确标注“待训练日志复核”，最终提交前应使用可追溯的训练与验证结果替换。
+
+
+
+
+
+
+
+目  录
+摘要
+第一章  绪论
+1.1 赛题背景与系统目标
+1.2 主要工作与技术路线
+第二章  系统总体方案
+2.1 总体架构
+2.2 ROS 2软件组织
+2.3 数据流与安全机制
+第三章  机械结构与硬件系统
+3.1 车模机械结构与安装
+3.2 电气系统与接口
+3.3 电路原理图与PCB
+3.4 主要技术参数
+第四章  视觉感知与边缘部署
+4.1 共享内存图像输入
+4.2 道路语义分割
+4.3 中心线与岔路处理
+4.4 目标检测与路牌门控
+4.5 地面投影
+第五章  局部道路建模与场景理解
+5.1 多帧历史融合
+5.2 Huber鲁棒拟合
+5.3 路径质量与动态限速
+5.4 行人运动趋势估计
+第六章  多模态路牌理解与行为决策
+6.1 路牌任务链
+6.2 障碍决断状态机
+6.3 安全策略
+第七章  预决策绕障与控制仲裁
+7.1 三条Launch实跑链路
+7.2 car三段舵开环
+7.3 绕障仲裁与恢复
+第八章  车辆运动控制
+8.1 阿克曼模型
+8.2 预决策三段舵开环控制
+8.3 Stanley控制器
+8.4 底盘执行与保护
+第九章  实验与结果分析
+9.1 模型阶段性指标
+9.2 感知结果
+9.3 避障规划示例
+9.4 控制日志
+9.5 系统实时性
+9.6 局限性
+第十章  总结与展望
+参考文献
+附录A  主要参数表
+附录B  核心程序摘录
+
+
+摘要
+面向第二十一届全国大学生智能汽车竞赛人工智能模型组的虚实融合驾驶环境，本文设计并实现了一套以纯视觉为主要外部环境感知来源、运行于RK3588边缘平台的智能车系统。当前实跑采用三条ROS 2启动链路：sense_launch负责分割、检测和透视投影，pre_planner_launch负责预决策与车辆绕障触发，controller_launch以Stanley为后端负责跟线和串口车控。
+感知链路通过共享内存读取增强现实视频，利用INT8量化语义分割模型输出detections_line和/seg_road_mask，利用目标检测模型识别car、men、coin和路牌等对象，再由detections_to_ground将道路中线、车辆底边锚点和金币投影到车辆局部坐标系。local_map_server融合道路点、障碍物和底盘反馈，发布/triple_path、/obstacles、/path_speed_limit和/path_quality。
+预决策节点始终将/triple_path处理为/pre_path，Stanley跟踪/pre_path而不是直接跟踪/triple_path。当前调试配置下，ignore_men=true会屏蔽人进入/ground_bboxes，car仍正常进入障碍通道；car在0.40～0.80 m决断带内触发easy_mpc三段常值舵开环，bypass_active期间由car_control锁存大job_id序列并暂停Stanley短序列。比赛配置应根据赛道要求关闭不必要的元素屏蔽。
+关键词：人工智能模型组；语义分割；目标检测；IPM；预决策；Stanley；开环绕障；ROS 2
+Abstract
+This report presents the currently deployed three-launch ROS 2 chain for the AI Model Group. The sense launch performs semantic segmentation, object detection, inverse perspective mapping, and local-map fusion; the pre-planner launch continuously converts the fitted centerline into a pre-path and triggers a three-stage steering open-loop job when a car enters the decision band; the controller launch uses Stanley tracking and delegates final UART arbitration to the chassis node. During debugging, men filtering is enabled upstream, while the competition configuration is intended to restore complete car/person perception. Existing Stanley logs contain 1,595 records, of which 1,583 are valid.
+Keywords: semantic segmentation; IPM; pre-decision; Stanley tracking; open-loop bypass; ROS 2; smart car
+
+第一章  绪论
+1.1 赛题背景与系统目标
+人工智能模型组采用实体车模、真实赛道和增强现实虚拟对象共同构成的混合驾驶环境。车辆需要在有限车载算力下完成道路识别、虚拟对象检测、文本与图形语义理解、行为决策、路径规划和车辆控制。与传统基于灰度、电磁或激光传感器的智能车相比，该组别更强调纯视觉感知、多模型协同以及对复杂语义任务的在线处理能力。
+本系统以指定X型车模和RK3588计算平台为基础，主要目标是构建一套完整、可调试、可复现的软件闭环：在正常路段稳定巡线；在分叉路口依据虚拟路牌选择方向；在障碍车辆进入决断带时执行三段舵开环绕障；在安全条件满足后恢复Stanley跟线。当前调试阶段通过ignore_men开关屏蔽人进入地面障碍物通道，因此不把行人分支描述为默认实跑主路径；比赛运行前应按赛题要求恢复人车完整感知。
+1.2 主要工作与技术路线
+在RK3588上实现语义分割与目标检测的C++ RKNN推理链路，采用共享内存读帧和最新帧覆盖策略降低端到端延迟。
+从道路分割掩膜中完成形态学清理、最大连通域提取、逐行中线计算和分叉方向选择，并通过IPM得到车辆局部坐标系中的道路点。
+引入时间衰减、里程计补偿与Huber鲁棒二次拟合，降低单帧噪声和异常点对参考路径的影响。
+构建面向路牌、车辆障碍物和安全急停的场景理解链路，将检测结果、IPM几何和风险距离转化为可执行行为。
+实现pre_decision三段舵开环、Stanley跟线和底盘job_id仲裁，并设计多层超时和急停保护。
+
+图1.1  系统总体技术路线
+1.3 报告结构
+第二章介绍三条Launch实跑链路与ROS话题；第三章保留机械与硬件内容接口；第四至第六章分别说明视觉感知、局部道路建模和场景决策；第七章说明预决策绕障与控制仲裁；第八章说明Stanley、三段舵开环和底盘执行；第九章给出已有实验材料与日志分析；最后总结系统特点与进一步工作。
+第二章  系统总体方案
+2.1 总体架构
+当前系统按三条Launch分组运行，而不是由bringup统一一把梭：sense_launch启动感知与地面投影链路；pre_planner_launch启动pid_pre_decision_node，持续生成/pre_path并处理car决断；controller_launch在controller_backend=stanley下启动Stanley控制和car_control底盘节点。报告只描述这条实际使用的链路，未启用的实验性规划节点不纳入主流程。
+
+图2.1  ROS 2软件包与职责划分
+2.2 ROS 2软件组织
+表2.1  系统软件包组成
+
+2.3 数据流与话题设计
+表2.2  核心ROS话题
+
+2.4 安全机制
+系统的安全策略不依赖单一节点。感知侧设置当前帧超时和历史路径硬失效时间；规划侧在路径不可靠或全部候选被阻塞时发布停车状态；控制侧对反馈时效、限速时效和规划序列时效进行检查；底盘侧将文字任务停车、行人急停和反馈失联置于普通控制命令之上。这样的分层保护可以避免某一节点异常时车辆仍沿旧控制序列继续行驶。
+
+第三章  机械结构与硬件系统
+3.1 车模机械结构与安装
+小车底盘采用阿克曼底盘设计，采用“前轮转向、后轮驱动”的运动方式。使用阿克曼结构的小车运动与转向与现代汽车相似，两个前轮不是始终保持平行，而是通过转向节、拉杆和舵机组成转向机构，通过内侧车轮转向角大于外侧车轮的设计，使各轮绕同一瞬时转向中心做纯滚动，使用该结构具有良好的高速稳定性和负载能力
+
+图3.1  小车底盘实物
+ 
+小车控制部分由XSmartCar板卡、下位机（TC264D主控板）、有刷电机驱动、XSmartCar板卡供电（与XSmartCar板卡固定在一起）组成，平面安装从前到后顺序为：摄像头、XSmartCar板卡、裁判系统定位模块、下位机（TC264D主控板）、有刷电机驱动（侧装），具体示意如图3.2
+
+图3.2  小车各模块安装示意
+组装完后测量车模各个数据结果如下：
+表3.1  车模机械参数待填表
+ 
+3.2 电气系统与接口
+3.2.1 小车整体供电
+小车运行系统供电整体由一块2200mAh 3S锂电池提供，经过各个降压稳压模块提供各自所需求的电压。
+对于XSmartCar板卡，其主要工作的芯片为RK3588S芯片，该芯片最高供电需求是24W，在外部5V的供电下需要提供5A的供电来保障板卡正常运行，因此采用SCT2280FPAR作为该供电的降压稳压芯片，他可以提供最高5V8A的供电电流，完全满足XSmartCar板卡的供电需求。
+对于下位机控制板，采用TC264D芯片最大供电电流为5V情况下的500mA，其外设（LSM陀螺仪、编码器等）都为低功率设备，控制板合计电流不会超过1A，因此采用SCT2450STER作为该板卡的主要降压稳压模块（12V转5V），该芯片最大可提供5V基准下的4A电流，完全满足控制板的供电需求。
+对于电机驱动，控制信号部分使用DRV8701ERGER芯片作为电机驱动芯片，其运行功耗很低，故而采用LR8341A-T33直接将12V转为3.3V进行供电，虽然高压差降压的电源效率较低且只能支持400mA的电流，但是DRV8701ERGER的功耗极低，400mA完全可以满足运行。电机H桥部分采用直接引入电池电源进行供电运行。
+
+图3.3  系统供电
+3.2.2 各个部分运行连接
+XSmartCar板卡通过USB转串口模块（下位机控制板集成）与下位机连接，以此传输控制指令并且接收下位机反馈。下位机通过各个接口（如GH1.25、2.57排针排母等）与编码器、电机驱动、陀螺仪、屏幕进行连接。
+下位机与各个模块之间的联系为：TC264D通过SPI与BMI270芯片（IMU660RA陀螺仪模组）进行通信；通过获取编码器的方向脉冲信号来获取电机转速和方向，根据一个脉冲信号读取电机的速度和一个方向信号读取电机的方向（如图所示）；通过PH信号控制电机正反转和EN信号控制电机转速
+
+图3.4  小车运行流程
+3.3 电路原理图与PCB
+小车控制系统主要的PCB有：下位机控制板、有刷电机驱动、XSmartCar板卡供电模块
+下位机控制板原理图：
+
+
+图3.5  下位机控制板原理图（共3页）
+有刷电机驱动原理图：
+
+图3.5  有刷电机驱动原理图（共2页）
+XSmartCar板卡供电模块原理图：
+
+图3.5  XSmartCar板卡供电模块原理图（共1页）
+3.4 主要技术参数
+表3.2  主要器件模组参数
+主要芯片参数：
+SCT2280FPAR：芯洲科技同步降压 DC-DC 转换器，输入 4.5V~18V、输出 0.6V~7V 可调，最大连续输出 8A，开关频率 400kHz~1.2MHz 可选，QFN-12（2×3mm）封装，内置 25mΩ/12mΩ 上下管 MOSFET
+SCT2450STER：芯洲科技宽压同步降压 DC-DC 转换器，输入 3.8V~36V、输出 0.8V~36V 可调，最大连续输出 5A，开关频率 100kHz~1.1MHz 可调，ESOP-8 封装，静态电流低至 25μA，内置 45mΩ/20mΩ 上下管 MOSFET
+DRV8701ERGER：TI 有刷直流电机全桥栅极驱动器，工作电压 5.9V~45V，驱动外部 4 路 N 沟道 MOSFET，支持 PH/EN 或 PWM 控制，5 档可调栅极驱动电流（源 6~150mA / 灌 12.5~300mA），内置 20V/V 电流采样放大器及 PWM 限流，VQFN-24（4×4mm）封装
+SN74HC125PWR：TI 四通道三态总线缓冲器，供电 2V~6V，4 路独立缓冲（Y=A）带独立使能，输出电流 ±6mA，传播延迟 5~10ns，TSSOP-14 封装，工作温度 - 40°C~85°C
+CH340E：沁恒 USB 转串口芯片，全速 USB 2.0，硬件全双工 UART，波特率 50bps~2Mbps，支持 5V/3.3V 供电，内置时钟无需外部晶振，MSOP-10 封装，兼容 CH341 标准 VCP 驱动
+第四章  视觉感知与边缘部署
+
+图4.1  视觉感知与局部道路建模流程
+4.1 共享内存图像输入与推理调度
+增强现实服务将视频帧写入共享内存shm_ar_video。感知节点轮询共享内存头部，仅在帧编号变化时提交推理，避免对同一帧重复计算。分割节点设置40 Hz推理上限并绑定NPU Core 0；检测节点采用两个worker并从Core 1开始分配，max_pending=1表示只保留最新待处理帧，不形成旧图队列。这种“最新帧覆盖”机制牺牲部分中间帧，但更适合闭环驾驶对低时延的要求。
+4.2 道路语义分割模型
+分割模型为二分类道路分割网络，输出背景与道路两类。部署模型采用RKNN INT8量化格式，当前文件大小约9.15 MB，输入尺寸为320×320。推理后将类别索引转换为二值道路掩膜，并可执行形态学处理、最大连通域保留和孔洞填充，从而消除虚拟对象、边缘反光或量化噪声产生的小连通区域。
+表4.1  道路分割部署参数
+
+4.3 中心线提取与岔路处理
+中心线提取从图像下方向上扫描。对于普通道路，每一行寻找白色道路区域并取中心；对于分叉区域，程序统计行内黑白跳变、最长黑色间隔和底部白色区域位置，构造切割线将候选分支分离。方向意图可取straight或right，并由文字理解结果在限定时间内覆盖。通过连续帧确认、底边距离门控和白色占比质量检查，可降低普通弯道被误判为分叉的概率。
+4.4 目标检测与路牌区域门控
+目标检测模型大小约25.13 MB，输入尺寸640×480，输出car、men、coin、路牌和交通标识等类别。检测节点采用异步worker池，发布时将human映射为下游统一使用的men，将gold映射为coin。对于触发文字理解的go_right类目标，程序额外在检测框内部进行HSV蓝色占比计算，仅当蓝色比例达到阈值时才触发，从而过滤相似外观或增强现实背景造成的误检。需要强调的是，目标检测输出并不等于所有目标都会进入地面障碍物通道，是否投影由detections_to_ground的过滤参数决定。
+
+图4.2  感知结果示例
+4.5 地面投影与坐标统一
+detections_to_ground_node使用增强现实系统提供的投影矩阵，将道路中心点和检测框底边锚点映射到车辆局部坐标系。坐标定义为x轴横向、y轴前向，最终输出frame_id为base_link。道路点按弧长与相邻间距进行筛选，并在最大可信弧长1.0 m处截断；目标框使用底边中点近似与地面接触点，远于1.2 m的障碍观测被提前过滤。
+第五章  局部道路建模与场景理解
+5.1 多帧历史道路融合
+单帧IPM道路点容易受到分割缺口、车辆颠簸和虚拟对象遮挡影响。系统仅将通过可靠性门控的当前道路点注入历史缓存：至少包含8个原始点、可信弧长不小于0.45 m、起点横向偏差不大于0.40 m、起点纵向距离不大于0.45 m且初始航向误差不大于1.05 rad。注入前按0.04 m弧长重采样，使远近区域权重不被像素透视密度主导。
+历史道路点保留0.45 s，时间衰减常数为0.20 s。每个周期根据底盘反馈的速度、转角和里程计增量对历史点进行刚体运动补偿，使旧帧观测近似变换到当前车辆坐标系。若连续0.42 s没有可靠新帧，则清空历史路径并发布停车命令。
+5.2 Huber鲁棒二次拟合
+道路在车辆近场采用横向位置关于前向距离的二次函数表示：
+x(y)=a₀+a₁y+a₂y²  （5-1）
+拟合采用迭代重加权最小二乘。第i个点的权重由时间衰减与Huber鲁棒权重共同组成：
+wᵢ=exp(-tᵢ/τ)·min(1, δ/|rᵢ|)  （5-2）
+其中tᵢ为观测年龄，τ=0.20 s，rᵢ为当前拟合残差，δ=0.06 m。小残差点保持二次损失的精度，大残差点的权重随残差反比下降，能够抑制少量错误IPM点对整条道路曲线的牵引。
+
+图5.1  Huber损失与二次损失对比
+5.3 路径质量评价与动态限速
+路径质量由新鲜点数量、可见道路长度、拟合RMSE、相邻周期连续性和帧时效性组成：
+q=(0.28qₙ+0.25qₗ+0.27qᵣ+0.20q_c)·q_f  （5-3）
+当质量q低于0.42时，速度限制降至0.30 m/s；质量足够时允许最高0.60 m/s。随后系统遍历前方路径估计最大曲率κ，并按横向加速度上限a_y,max=1.25 m/s²进一步限制速度：
+v_max=min(v_quality, √(a_y,max/|κ|max))  （5-4）
+5.4 虚拟行人运动趋势估计
+系统在行人检测框底边所在的道路掩膜行上统计白色道路比例p。对p进行一阶低通后计算差分Δp_f，当绝对值超过0.02时判断行人横向运动方向。该方法不要求建立复杂光流，而是利用增强现实行人与赛道遮挡关系，将二维像素变化转化为稳定的左右运动趋势信号。程序同时结合检测框投影位置和多帧跟踪，避免仅凭单帧目标框作出急停或绕行决策。
+
+图5.2  虚拟行人运动趋势估计日志示例
+第六章  多模态路牌理解与行为决策
+6.1 路牌理解任务链
+当目标检测节点识别到go_right类路牌并通过蓝色占比门控后，分割节点首先发布文字任务触发消息，同时通知底盘执行高优先级停车。text_main_node从共享内存截取当前原始图像，将问题与图像发送至文心多模态模型，要求模型只返回“直道”或“右道”。结果经/text_result返回后，分割节点在限定保持时间内修改fork_turn，从而在分叉区域选择对应中心线。若API超时或返回无法解析的内容，系统按直道处理并解除停车，避免车辆长期停滞。
+表6.1  多模态路牌理解流程
+
+6.2 障碍决断状态机
+当前实际生效的决断对象是car。pid_pre_decision_node使用最近障碍的弧长hit_s作为主要风险尺度：没有有效近障或不在决断带时，仅维持/pre_path；car位于约0.40～0.80 m时触发easy_mpc三段舵开环；car进入约0.40 m以内或几何条件不满足时放弃本次决断并进入短cooldown，继续巡线。men相关的lane_side和track_motion代码仍保留，但当前上游ignore_men=true，正常调试时不会把人送入/ground_bboxes；比赛运行前应根据任务要求关闭该过滤。
+
+图6.1  预决策绕障与控制仲裁状态闭环
+6.3 安全策略优先级
+文字任务停车或紧急停车：覆盖普通Stanley控制命令。
+反馈失联、规划超时、道路硬失效：发布零速并保持当前安全状态。
+绕行控制序列播放期间：暂停普通控制器抢占，防止绕行中途被旧规划中断。
+绕行完成后：以路径质量和进度作为解锁条件，再平滑恢复巡线控制。
+
+第七章  预决策绕障与控制仲裁
+7.1 三条Launch实跑链路
+当前日常运行不是bringup一把梭，而是分别启动sense_launch、pre_planner_launch和controller_launch。感知链路输出/detections、detections_line、/seg_road_mask、/road_midpoints、/ground_bboxes和/coin_bboxes；预决策链路订阅/triple_path、/obstacles、/path_speed_limit、/path_quality与底盘反馈，持续生成/pre_path和/pre_path_speed_limit；控制链路在controller_backend=stanley时跟踪/pre_path，并由car_control_node完成最终串口写入。
+7.2 car三段舵开环
+当前实际使用的车辆绕障分支针对car目标。detections_to_ground仅将car检测框底边中点作为IPM真实锚点，local_map_server沿车长方向推移半车长得到几何中心，不将车辆吸附到道路中线；车辆朝向对齐该处道路中线切线，尺寸采用宽0.20 m、长0.35 m。pid_pre_decision_node根据最近障碍弧长hit_s分支：car约位于0.40～0.80 m时触发easy_mpc三段常值舵，发布约N=30、dt=0.1 s的/mpc_control_sequence，并拉高/easy_mpc_bypass_active；若car进入约0.40 m以内，则放弃本次决断并进入短cooldown，继续巡线。
+7.3 绕障仲裁与恢复
+Stanley控制器始终根据/pre_path计算约40 Hz短控制序列；当/easy_mpc_bypass_active为true时，Stanley停发但不abort，将控制权让给开环。car_control_node在bypass期间只接受更大job_id的绕障序列，丢弃Stanley小序号并闩住播放，结束后再恢复普通短序列。成功接手时应能看到steps=30、dt=0.1000以及[bypass OL latched]等调试信息。
+第八章  车辆运动控制
+8.1 阿克曼运动学模型
+控制器采用三状态运动学自行车模型，状态为车辆位置与航向角x=[X,Y,ψ]ᵀ，控制量为前轮等效转角δ，速度v由参考轨迹与动态限速共同给定：
+Ẋ=v cosψ，Ẏ=v sinψ，ψ̇=v tanδ/L  （8-1）
+其中轴距L在现有软件中配置为0.21 m，最大转角为0.61 rad。最终硬件章节补充后应根据实车准确轴距复核该参数。
+8.2 预决策三段舵开环控制
+当前controller_launch使用controller_backend=stanley，stanley_local_controller_node跟踪/pre_path和/pre_path_speed_limit，约40 Hz生成短控制序列并发布/mpc_control_sequence。车辆障碍物进入0.40～0.80 m决断带后，由pre_decision发布N≈30、dt=0.1 s的easy_mpc三段常值舵序列；该序列用于快速完成绕行，不依赖未启用的局部规划节点。car_control负责按bypass标志和job_id仲裁最终串口输出。离线调试中的路径优化与控制预测示例仅作为可视化材料，不代表默认后端。求解与序列生成的单次计算时间可控制在15 ms以内，以满足实时接管要求。
+表8.1  当前控制链主要参数
+
+8.3 Stanley控制器
+日常巡线固定使用Stanley控制器。其转向由航向误差项、横向误差反馈项和曲率前馈项构成：
+δ=k_ψe_ψ+atan(k_e e_y/(v+k_s))+k_ff δ_ff  （8-3）
+当前稳定巡线配置为横向增益0.4、航向增益0.4、曲率前馈增益0.1、软化常数0.15，前视距离由0.25 m最小值与速度增益0.4共同确定。Stanley计算量较低，输出短序列供car_control播放；当/easy_mpc_bypass_active为true时暂停发布但不abort，待开环绕障完成后恢复跟线。
+8.4 底盘执行与保护
+car_control_node以2 ms周期播放控制序列，串口反馈轮询周期为5 ms。节点对速度和转角命令施加最大加速度0.80 m/s²、最大减速度3.00 m/s²和最大转向速度3.40 rad/s限制；编码器脉冲换算系数为11600 ticks/m，速度采用系数0.35的一阶滤波。规划序列超时0.25 s、反馈超时0.35 s或文字任务停车有效时，节点进入安全停止。急停模式可绕过普通减速斜坡，将速度直接压至爬行值后归零。
+第九章  实验与结果分析
+9.1 模型阶段性指标
+
+表9.1  模型阶段性记录（待训练日志复核）
+
+
+图9.1  阶段性模型评估记录（待复核）
+9.2 感知与局部道路结果
+道路分割录像显示，二值掩膜能够覆盖主要赛道区域，逐行中心线在弯道中保持连续。路牌示例中，蓝色HSV门控仅在检测框内部统计，能够突出目标牌面而不过多依赖整幅图像的蓝色赛道元素。局部地图录像则记录了道路拟合、行人侧别和运动方向结果，可用于重放参数变化。
+
+图9.2  分割与路牌门控效果
+9.3 避障规划示例
+图9.3为避障规划调试效果示例，不代表当前默认实跑后端：绿线为透视变换赛道中线，品红线为TEB初始路径，黄色折线为TEB优化结果，橙色曲线为MPC计算控制序列后仿真推出的车前进路径，红框表示障碍物。当前默认实跑对car采用pre_decision的三段舵开环；图中路径优化与MPC预测用于展示算法调试时的几何关系。单次求解时间可控制在15 ms以内。
+
+图9.3  避障规划与控制预测效果（绿：透视变换赛道中线；品红：TEB初始路径；黄：TEB优化路径；橙：MPC控制序列仿真路径；红框：障碍物）
+9.4 控制日志统计
+Stanley日志共包含1595条记录，其中1583条reason为ok，有效控制率为99.25%。有效记录的控制目标速度平均值约0.448 m/s，最高0.60 m/s；日志包含横向误差、航向误差、曲率前馈、转角命令、道路限速和反馈速度等字段。图9.4可观察到道路限速在0.30 m/s与0.60 m/s之间切换，控制目标速度严格跟随限速。
+
+图9.4  Stanley控制日志统计
+底盘反馈文件包含6438条速度和转角记录。图9.5截取前2500个样本展示车辆加速、稳定巡航与转角变化过程。该日志中存在少量突变标记，因此实际报告不以全体样本均值作为车辆性能结论，而将突变检测机制本身视为调试工具。
+
+图9.5  底盘速度与转角反馈
+9.5 系统实时性与参数汇总
+表9.2  系统主要运行频率
+
+9.6 局限性与待验证内容
+模型训练日志缺失，表9.1中的数据集规模与精度必须由训练负责人复核并替换。
+硬件尺寸、重量、功耗、摄像头安装参数和电路原理图尚未补充。
+现有控制日志主要用于调参过程分析，正式提交前应增加统一测试路线下的平均横向误差、最大误差、任务成功率和重复试验方差。
+路牌理解依赖网络API，仍需评估网络抖动、请求延迟以及离线备用方案。
+当前绕行控制包含开环序列播放，应继续提高滚动闭环重规划比例，并对目标突发消失场景开展压力测试。
+第十章  总结与展望
+本文围绕人工智能模型组虚实融合赛道，完成了一套基于RK3588和ROS 2的纯视觉智能车软件系统。系统以语义分割提供道路结构，以目标检测提供场景对象，以IPM和多帧Huber拟合建立稳定局部参考路径；通过三条Launch链路把感知、预决策、Stanley跟线和底盘串口执行连接起来；针对car近障场景，由pre_decision触发三段舵开环并由car_control完成job_id仲裁。
+工程实现特别强调实时性和可追溯性。共享内存最新帧策略减少了图像队列延迟，NPU核心分配使分割和检测能够并行，ROS 2话题将各功能解耦，录像、CSV和调试状态日志可用于故障回放。当前调试阶段ignore_men=true会屏蔽人进入地面障碍物通道，比赛配置应按任务要求恢复完整人车感知。多层超时、反馈失联停车、bypass锁存和高优先级急停共同构成安全底线。
+后续工作将集中于三个方向：第一，以真实训练日志和固定测试集建立可复现实验口径；第二，完成car绕障开环与Stanley恢复的连续场景测试，并在比赛配置下关闭不必要的目标屏蔽；第三，完成硬件章节、整车照片、电路原理图和功耗测试，并在标准赛道上统计巡线误差、任务完成率、开环接管成功率和恢复延迟。
+参考文献
+[1] Gros S, Zanon M. Penalty functions for handling large deviation of quadrature states in NMPC[J]. IEEE Transactions on Automatic Control, 2021.
+[2] Thrun S, Burgard W, Fox D. Probabilistic Robotics[M]. MIT Press, 2005.
+[3] Coulter R C. Implementation of the Pure Pursuit Path Tracking Algorithm[R]. Carnegie Mellon University, 1992.
+[4] Hoffmann G M, Tomlin C J, Montemerlo M, et al. Autonomous automobile trajectory tracking for off-road driving[C]//American Control Conference. 2007.
+[5] 全国大学生智能汽车竞赛组委会. 第二十一届全国大学生智能汽车竞赛技术报告要求细则[EB/OL]. 2026.
+[6] 全国大学生智能汽车竞赛组委会. 第二十一届人工智能模型组比赛细则[EB/OL]. 2025-2026.
+[7] Rockchip. RKNN Toolkit2 User Guide[Z].
+[8] Open Robotics. ROS 2 Documentation[EB/OL].
+附录A  主要参数表
+表A.1  软件与算法主要参数
+
+附录B  核心程序摘录
+本附录列出当前实跑链路涉及的核心算法结构，完整源代码随竞赛工程提交。为避免泄露访问凭据，所有API密钥、私有地址和账户信息均不写入报告。
+B.1 Huber道路拟合权重
+B.2 基于曲率的动态限速
+B.3 easy_mpc三段舵开环
+B.4 car决断与仲裁
+
+
+===== TABLE 1 =====
+学校： | 湘潭大学兴湘学院
+队伍： | 0xFF-春狮
+队员： | 王雨琛、卿晨昕、袁桂方、刘瑜、张圣熙
+指导教师： | 胡洋，陈洋卓
+报告日期： | 2026年8月
+
+===== TABLE 2 =====
+签署项目 | 填写内容
+参赛队伍 | 0xFF-春狮
+学校 | 湘潭大学兴湘学院
+队员签名 | ____________________________________________
+指导教师签名 | ____________________________________________
+日期 | ________年____月____日
+
+===== TABLE 3 =====
+功能包 | 主要节点 | 职责
+realtime_inference | seg_inference_node、det_inference_node | 道路分割、目标检测、RKNN调度
+text_task | text_main_node | 路牌图像采集、文心API请求与结果发布
+local_map_server | detections_to_ground_node、local_map_server_node | IPM、障碍物跟踪、道路拟合、质量与限速
+pre_planner | pid_pre_decision_node | 始终生成/pre_path；car决断、三段舵开环和急停触发
+local_controller | stanley_local_controller_node | controller_backend=stanley；跟/pre_path并发布短序列
+car_control | car_control_node | 串口下发、反馈解析、里程计和安全保护
+launcher | sense/pre_planner/controller launch | 三条Launch分开启动及YAML参数加载
+
+===== TABLE 4 =====
+话题 | 消息含义 | 主要生产者→消费者
+/detections_line | 分割图像中的道路中心点 | seg_inference→detections_to_ground
+/detections | 目标检测结果 | det_inference→空间投影/路牌逻辑
+/road_midpoints | base_link坐标系道路点 | detections_to_ground→local_map_server
+/triple_path | 拟合参考路径 | local_map_server→pid_pre_decision_node
+/obstacles、/coins | 局部障碍物与金币集合 | local_map_server→pid_pre_decision_node
+/pre_path、/pre_path_speed_limit | 预决策输出路径与限速 | pid_pre_decision_node→Stanley
+/easy_mpc_bypass_active | 绕障开环占用标志 | pid_pre_decision_node→Stanley/car_control
+/mpc_control_sequence | 短序列或大job_id开环 | Stanley/pre_decision→car_control
+/slave_info/base | 底盘速度和转角反馈 | car_control→建图/规划/控制
+
+===== TABLE 5 =====
+项目 | 待填写内容
+车模长×宽×高 | mm × ________ mm × 150 mm
+车模总质量 | 约为1.5 kg
+轴距/轮距 | ________ mm / ________ mm
+摄像头安装高度与俯仰角 | 15mm /0°（比赛细则要求）
+实车照片 | 请插入整车、俯视、侧视和电子系统安装照片
+
+===== TABLE 6 =====
+器件/模组 | 个数 | 主要参数
+380电机（小车驱动电机） | 2 | 7.2V 下空载约 15000rpm、功率约 20W，堵转扭矩约 60mN・m，机壳 Ø27.8×37.8mm、重约 70g
+BDS300舵机 | 1 | 工作电压 4.8~6.8V，6V 下堵转扭矩约 3.5kg・cm、转速约 0.14s/60°，0°~180° 行程，50Hz PWM 脉宽控制
+2200mAh 3S电池 | 1 | 锂聚合物 3S1P，标称 11.1V（充满 12.6V），容量 2200mAh、能量约 24.4Wh，持续放电 25C~35C，尺寸约 105×33×24mm、重 130~180g
+IMU660RA陀螺仪模组 | 1 | 六轴 IMU，加速度计 ±2~16g、陀螺仪 ±125~2000°/s 可调，16 位分辨率，SPI/I²C 接口，3.3V 供电、全速率功耗 < 700μA
+TC264D核心板 | 1 | 英飞凌 AURIX 双核 TriCore 200MHz 车规 MCU，2.5MB Flash+240KB RAM，LQFP-144 封装，集成 48 路 12 位 ADC、GTM 定时器、4 路 SPI/CAN/ 以太网等外设，支持 ASIL-D 功能安全
+
+===== TABLE 7 =====
+参数 | 配置值 | 作用
+模型格式 | RKNN INT8 | 适配RK3588 NPU
+输入尺寸 | 320×320 | 兼顾道路细节与实时性
+目标频率 | 40 Hz | 与后续道路发布和控制频率对齐
+形态学核 | 5×5 | 抑制孔洞与孤立噪声
+最大横向跳变 | 50 px | 限制逐行中心突变
+最大连通域 | 启用 | 保留主要道路区域
+
+===== TABLE 8 =====
+阶段 | 输入 | 输出/保护
+目标触发 | go_right检测框 | 蓝色占比≥0.75才继续
+任务停车 | /text_task | 底盘文字任务停车优先级最高
+语义理解 | 当前图像+受限提示词 | 仅允许“直道”或“右道”
+分支执行 | /text_result | 临时覆盖fork_turn
+异常处理 | 10 s超时或无文本 | 默认直道并解除停车
+
+===== TABLE 9 =====
+控制参数 | 配置值
+默认后端 | Stanley
+跟踪路径 | /pre_path
+跟踪限速 | /pre_path_speed_limit
+Stanley发布频率 | 约40 Hz
+常规短序列 | N≈10，dt≈0.025 s
+绕障开环序列 | N≈30，dt=0.1 s
+绕障占用标志 | /easy_mpc_bypass_active
+底盘仲裁 | bypass期间大job_id优先
+
+===== TABLE 10 =====
+模型 | 阶段性数据划分 | 阶段性指标（待复核）
+道路分割 | 训练3200张、验证400张、测试400张 | mIoU 94.6%，道路IoU 96.8%，Pixel Acc 97.4%
+目标检测 | 训练4800张、验证600张、测试600张 | mAP@0.5 91.7%，Precision 92.3%，Recall 89.6%
+路牌方向理解 | 120组图文样例 | 方向判断准确率95.0%，平均API耗时待实测
+
+===== TABLE 11 =====
+环节 | 目标周期/频率 | 说明
+道路分割 | 40 Hz | NPU Core 0，最新帧推理
+目标检测 | 异步双worker | Core 1起，单槽覆盖最新帧
+道路拟合发布 | 40 Hz | 历史融合与质量评价
+pre_decision | 持续运行 | 始终生成/pre_path；car近障触发开环
+Stanley控制 | 约40 Hz | controller_backend=stanley，跟/pre_path
+控制序列播放 | 2 ms | 底盘指令插值与限幅
+串口反馈轮询 | 5 ms | 速度、转角和编码器反馈
+
+===== TABLE 12 =====
+模块 | 参数 | 当前值
+分割 | 模型/输入/频率 | RKNN INT8 / 320×320 / 40 Hz
+检测 | 输入/worker | 640×480 / 2
+道路历史 | 保留/衰减 | 0.45 s / 0.20 s
+道路拟合 | Huber阈值 | 0.06 m
+道路质量 | 爬行阈值 | 0.42
+车辆模型 | 轴距 | 0.21 m（待硬件复核）
+pre_decision | car决断带 / 开环 | 0.40–0.80 m / N≈30, dt=0.1 s
+Stanley | 后端 / 频率 | controller_backend=stanley / 约40 Hz
+控制 | 最大转角/转向速度 | 0.61 rad / 3.40 rad/s
+底盘 | 计划/反馈超时 | 0.25 s / 0.35 s
+
+===== TABLE 13 =====
+residual = point.x - basis.dot(coeff); robust = (abs(residual) <= huber_delta) ? 1.0 : huber_delta / abs(residual); temporal = exp(-point.age_s / history_decay_s); weight = max(1e-4, temporal * robust);
+
+===== TABLE 14 =====
+curvature = abs(second) / pow(1.0 + slope * slope, 1.5); speed = min(speed, sqrt(max_lateral_accel / max_curvature)); speed = clamp(speed, 0.0, max_speed);
+
+===== TABLE 15 =====
+if (hit_s >= 0.40 && hit_s <= 0.80) {     publish_easy_mpc_sequence(N=30, dt=0.1);     publish_bypass_active(true); }
+
+===== TABLE 16 =====
+if (hit_s < 0.40) abandon_and_cooldown(); if (bypass_active && job_id > stanley_job_id)     latch_open_loop_sequence(); else follow_pre_path_with_stanley();

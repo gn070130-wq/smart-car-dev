@@ -1,0 +1,721 @@
+第21届全国大学生智能汽车竞赛
+模型汽车制作技术报告
+——基于TC264与香橙派的视觉智能车系统设计
+学
+        
+校：
+湖北工程学院
+队伍名称：
+春晖逐梦
+参赛队员：
+李优、刘云偌、孟雅萱、潘启宇、唐增炜
+带队老师：
+李畅、郭海如
+二〇二六年八月
+ 
+关于技术报告和研究论文使用授权的说明
+本人完全了解全国大学生智能汽车竞赛并保留、使用技术报告和研究论文的规定，即：参赛作品著作权归参赛者本人，比赛组委会可以在相关主页上收录并公开参赛作品的设计方案、技术报告以及参赛模型车的视频、图像资料，并将相关内容编辑收录在组委会出版论文集中。
+参赛队员签名：
+_
+___
+__
+__
+_
+_
+_
+_
+带队教师签名：______
+____
+__
+日      期：___
+_____
+____
+<w:pgSz w:w="11906" w:h="16838" w:orient="portrait"/><w:pgMar w:top="1417" w:right="1417" w:bottom="1417" w:left="1587" w:header="850" w:footer="850" w:gutter="0"/><w:pgNumType w:fmt="upperRoman"/><w:cols w:space="720" w:num="1"></w:cols><w:docGrid w:linePitch="360" w:charSpace="0"/></w:sectPr></w:pPr></w:p><w:p w14:paraId="4CB3C4AB"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="0" w:after="0" w:lineRule="auto" w:line="240"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Times New Roman" w:eastAsia="宋体" w:hAnsi="Times New Roman"/><w:color w:val="ffffff"/><w:sz w:val="2"/></w:rPr><w:t> 
+目  录
+<w:tab w:val="right" w:leader="dot" w:pos="8787"/></w:tabs><w:spacing w:after="0" w:lineRule="exact" w:line="280"/><w:ind w:left="0"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="24"/></w:rPr><w:t>第一章 引言
+</w:r><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="24"/></w:rPr><w:t>1
+<w:tab w:val="right" w:leader="dot" w:pos="8787"/></w:tabs><w:spacing w:after="0" w:lineRule="exact" w:line="280"/><w:ind w:left="320"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="24"/></w:rPr><w:t>1.1 赛项背景与任务特点
+</w:r><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="24"/></w:rPr><w:t>1
+<w:tab w:val="right" w:leader="dot" w:pos="8787"/></w:tabs><w:spacing w:after="0" w:lineRule="exact" w:line="280"/><w:ind w:left="320"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="24"/></w:rPr><w:t>1.2 模型车设计目标
+</w:r><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="24"/></w:rPr><w:t>1
+<w:tab w:val="right" w:leader="dot" w:pos="8787"/></w:tabs><w:spacing w:after="0" w:lineRule="exact" w:line="280"/><w:ind w:left="320"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="24"/></w:rPr><w:t>1.3 技术路线与报告结构
+</w:r><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="24"/></w:rPr><w:t>1
+<w:tab w:val="right" w:leader="dot" w:pos="8787"/></w:tabs><w:spacing w:after="0" w:lineRule="exact" w:line="280"/><w:ind w:left="0"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="24"/></w:rPr><w:t>第二章 系统总体方案设计
+</w:r><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="24"/></w:rPr><w:t>3
+<w:tab w:val="right" w:leader="dot" w:pos="8787"/></w:tabs><w:spacing w:after="0" w:lineRule="exact" w:line="280"/><w:ind w:left="320"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="24"/></w:rPr><w:t>2.1 总体架构
+</w:r><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="24"/></w:rPr><w:t>3
+<w:tab w:val="right" w:leader="dot" w:pos="8787"/></w:tabs><w:spacing w:after="0" w:lineRule="exact" w:line="280"/><w:ind w:left="320"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="24"/></w:rPr><w:t>2.2 感知—决策—执行信息链
+</w:r><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="24"/></w:rPr><w:t>3
+<w:tab w:val="right" w:leader="dot" w:pos="8787"/></w:tabs><w:spacing w:after="0" w:lineRule="exact" w:line="280"/><w:ind w:left="320"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="24"/></w:rPr><w:t>2.3 视觉任务感知与定位状态反馈边界
+</w:r><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="24"/></w:rPr><w:t>4
+<w:tab w:val="right" w:leader="dot" w:pos="8787"/></w:tabs><w:spacing w:after="0" w:lineRule="exact" w:line="280"/><w:ind w:left="320"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="24"/></w:rPr><w:t>2.4 系统安全与模块化设计
+</w:r><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="24"/></w:rPr><w:t>4
+<w:tab w:val="right" w:leader="dot" w:pos="8787"/></w:tabs><w:spacing w:after="0" w:lineRule="exact" w:line="280"/><w:ind w:left="0"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="24"/></w:rPr><w:t>第三章 机械系统设计与安装
+</w:r><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="24"/></w:rPr><w:t>5
+<w:tab w:val="right" w:leader="dot" w:pos="8787"/></w:tabs><w:spacing w:after="0" w:lineRule="exact" w:line="280"/><w:ind w:left="320"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="24"/></w:rPr><w:t>3.1 车模平台与总体尺寸
+</w:r><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="24"/></w:rPr><w:t>5
+<w:tab w:val="right" w:leader="dot" w:pos="8787"/></w:tabs><w:spacing w:after="0" w:lineRule="exact" w:line="280"/><w:ind w:left="320"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="24"/></w:rPr><w:t>3.2 底盘轻量化与低重心设计
+</w:r><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="24"/></w:rPr><w:t>5
+<w:tab w:val="right" w:leader="dot" w:pos="8787"/></w:tabs><w:spacing w:after="0" w:lineRule="exact" w:line="280"/><w:ind w:left="320"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="24"/></w:rPr><w:t>3.3 双电机驱动与阿克曼转向
+</w:r><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="24"/></w:rPr><w:t>6
+<w:tab w:val="right" w:leader="dot" w:pos="8787"/></w:tabs><w:spacing w:after="0" w:lineRule="exact" w:line="280"/><w:ind w:left="320"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="24"/></w:rPr><w:t>3.4 三层模块化布置
+</w:r><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="24"/></w:rPr><w:t>7
+<w:tab w:val="right" w:leader="dot" w:pos="8787"/></w:tabs><w:spacing w:after="0" w:lineRule="exact" w:line="280"/><w:ind w:left="320"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="24"/></w:rPr><w:t>3.5 摄像头、雷达及定位模块与线束固定
+</w:r><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="24"/></w:rPr><w:t>8
+<w:tab w:val="right" w:leader="dot" w:pos="8787"/></w:tabs><w:spacing w:after="0" w:lineRule="exact" w:line="280"/><w:ind w:left="0"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="24"/></w:rPr><w:t>第四章 电路与硬件系统设计
+</w:r><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="24"/></w:rPr><w:t>9
+<w:tab w:val="right" w:leader="dot" w:pos="8787"/></w:tabs><w:spacing w:after="0" w:lineRule="exact" w:line="280"/><w:ind w:left="320"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="24"/></w:rPr><w:t>4.1 TC264下位机接口设计
+</w:r><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="24"/></w:rPr><w:t>9
+<w:tab w:val="right" w:leader="dot" w:pos="8787"/></w:tabs><w:spacing w:after="0" w:lineRule="exact" w:line="280"/><w:ind w:left="320"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="24"/></w:rPr><w:t>4.2 电源与供电架构
+</w:r><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="24"/></w:rPr><w:t>9
+<w:tab w:val="right" w:leader="dot" w:pos="8787"/></w:tabs><w:spacing w:after="0" w:lineRule="exact" w:line="280"/><w:ind w:left="320"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="24"/></w:rPr><w:t>4.3 DRV8701双路电机驱动
+</w:r><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="24"/></w:rPr><w:t>9
+<w:tab w:val="right" w:leader="dot" w:pos="8787"/></w:tabs><w:spacing w:after="0" w:lineRule="exact" w:line="280"/><w:ind w:left="320"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="24"/></w:rPr><w:t>4.4 编码器、陀螺仪与舵机接口
+</w:r><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="24"/></w:rPr><w:t>10
+<w:tab w:val="right" w:leader="dot" w:pos="8787"/></w:tabs><w:spacing w:after="0" w:lineRule="exact" w:line="280"/><w:ind w:left="320"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="24"/></w:rPr><w:t>4.5 上下位机通信及抗干扰设计
+</w:r><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="24"/></w:rPr><w:t>11
+<w:tab w:val="right" w:leader="dot" w:pos="8787"/></w:tabs><w:spacing w:after="0" w:lineRule="exact" w:line="280"/><w:ind w:left="0"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="24"/></w:rPr><w:t>第五章 软件系统与核心算法
+</w:r><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="24"/></w:rPr><w:t>13
+<w:tab w:val="right" w:leader="dot" w:pos="8787"/></w:tabs><w:spacing w:after="0" w:lineRule="exact" w:line="280"/><w:ind w:left="320"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="24"/></w:rPr><w:t>5.1 软件架构与开发环境
+</w:r><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="24"/></w:rPr><w:t>13
+<w:tab w:val="right" w:leader="dot" w:pos="8787"/></w:tabs><w:spacing w:after="0" w:lineRule="exact" w:line="280"/><w:ind w:left="320"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="24"/></w:rPr><w:t>5.2 基于检测箭头的车道中线拟合与循迹
+</w:r><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="24"/></w:rPr><w:t>13
+<w:tab w:val="right" w:leader="dot" w:pos="8787"/></w:tabs><w:spacing w:after="0" w:lineRule="exact" w:line="280"/><w:ind w:left="320"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="24"/></w:rPr><w:t>5.3 目标检测与视觉语义理解
+</w:r><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="24"/></w:rPr><w:t>14
+<w:tab w:val="right" w:leader="dot" w:pos="8787"/></w:tabs><w:spacing w:after="0" w:lineRule="exact" w:line="280"/><w:ind w:left="320"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="24"/></w:rPr><w:t>5.4 任务状态机与智能体决策
+</w:r><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="24"/></w:rPr><w:t>15
+<w:tab w:val="right" w:leader="dot" w:pos="8787"/></w:tabs><w:spacing w:after="0" w:lineRule="exact" w:line="280"/><w:ind w:left="320"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="24"/></w:rPr><w:t>5.5 速度闭环与转向控制
+</w:r><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="24"/></w:rPr><w:t>15
+<w:tab w:val="right" w:leader="dot" w:pos="8787"/></w:tabs><w:spacing w:after="0" w:lineRule="exact" w:line="280"/><w:ind w:left="320"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="24"/></w:rPr><w:t>5.6 全程避障、岔路导航与金币策略
+</w:r><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="24"/></w:rPr><w:t>16
+<w:tab w:val="right" w:leader="dot" w:pos="8787"/></w:tabs><w:spacing w:after="0" w:lineRule="exact" w:line="280"/><w:ind w:left="320"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="24"/></w:rPr><w:t>5.7 实时调度与故障降级
+</w:r><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="24"/></w:rPr><w:t>16
+<w:tab w:val="right" w:leader="dot" w:pos="8787"/></w:tabs><w:spacing w:after="0" w:lineRule="exact" w:line="280"/><w:ind w:left="0"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="24"/></w:rPr><w:t>第六章 制作、安装与调试过程
+</w:r><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="24"/></w:rPr><w:t>17
+<w:tab w:val="right" w:leader="dot" w:pos="8787"/></w:tabs><w:spacing w:after="0" w:lineRule="exact" w:line="280"/><w:ind w:left="320"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="24"/></w:rPr><w:t>6.1 机械装配与配重
+</w:r><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="24"/></w:rPr><w:t>17
+<w:tab w:val="right" w:leader="dot" w:pos="8787"/></w:tabs><w:spacing w:after="0" w:lineRule="exact" w:line="280"/><w:ind w:left="320"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="24"/></w:rPr><w:t>6.2 电气联调
+</w:r><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="24"/></w:rPr><w:t>17
+<w:tab w:val="right" w:leader="dot" w:pos="8787"/></w:tabs><w:spacing w:after="0" w:lineRule="exact" w:line="280"/><w:ind w:left="320"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="24"/></w:rPr><w:t>6.3 控制参数整定
+</w:r><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="24"/></w:rPr><w:t>17
+<w:tab w:val="right" w:leader="dot" w:pos="8787"/></w:tabs><w:spacing w:after="0" w:lineRule="exact" w:line="280"/><w:ind w:left="320"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="24"/></w:rPr><w:t>6.4 视觉与任务联调
+</w:r><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="24"/></w:rPr><w:t>17
+<w:tab w:val="right" w:leader="dot" w:pos="8787"/></w:tabs><w:spacing w:after="0" w:lineRule="exact" w:line="280"/><w:ind w:left="320"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="24"/></w:rPr><w:t>6.5 典型问题及改进
+</w:r><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="24"/></w:rPr><w:t>17
+<w:tab w:val="right" w:leader="dot" w:pos="8787"/></w:tabs><w:spacing w:after="0" w:lineRule="exact" w:line="280"/><w:ind w:left="0"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="24"/></w:rPr><w:t>第七章 模型车主要技术参数
+</w:r><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="24"/></w:rPr><w:t>19
+<w:tab w:val="right" w:leader="dot" w:pos="8787"/></w:tabs><w:spacing w:after="0" w:lineRule="exact" w:line="280"/><w:ind w:left="320"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:sz w:val="24"/><w:szCs w:val="24"/></w:rPr><w:t>7.1 功耗与电容容量的实测方法
+</w:r><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:sz w:val="24"/><w:szCs w:val="24"/></w:rPr><w:t>20
+<w:tab w:val="right" w:leader="dot" w:pos="8787"/></w:tabs><w:spacing w:after="0" w:lineRule="exact" w:line="280"/><w:ind w:left="320"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:sz w:val="24"/><w:szCs w:val="24"/></w:rPr><w:t>7.2 赛道信息检测精度与频率的实测方法
+</w:r><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:sz w:val="24"/><w:szCs w:val="24"/></w:rPr><w:t>21
+<w:tab w:val="right" w:leader="dot" w:pos="8787"/></w:tabs><w:spacing w:after="0" w:lineRule="exact" w:line="280"/><w:ind w:left="0"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="24"/></w:rPr><w:t>第八章 结论与进一步改进方向
+</w:r><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="24"/></w:rPr><w:t>23
+<w:tab w:val="right" w:leader="dot" w:pos="8787"/></w:tabs><w:spacing w:after="0" w:lineRule="exact" w:line="280"/><w:ind w:left="0"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="24"/></w:rPr><w:t>附录A 电路原理图与连接说明
+</w:r><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="24"/></w:rPr><w:t>I
+<w:tab w:val="right" w:leader="dot" w:pos="8787"/></w:tabs><w:spacing w:after="0" w:lineRule="exact" w:line="280"/><w:ind w:left="0"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="24"/></w:rPr><w:t>附录B 核心算法与源程序
+</w:r><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="24"/></w:rPr><w:t>IX
+<w:pgSz w:w="11906" w:h="16838" w:orient="portrait"/><w:pgMar w:top="1417" w:right="1417" w:bottom="1417" w:left="1587" w:header="850" w:footer="850" w:gutter="0"/><w:pgNumType w:fmt="upperRoman"/><w:cols w:space="720" w:num="1"></w:cols><w:docGrid w:linePitch="360" w:charSpace="0"/></w:sectPr></w:pPr></w:p><w:p w14:paraId="43694360"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="0" w:after="0" w:lineRule="auto" w:line="240"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Times New Roman" w:eastAsia="宋体" w:hAnsi="Times New Roman"/><w:color w:val="ffffff"/><w:sz w:val="2"/></w:rPr><w:t> 
+第一章  引言
+1.1 赛项背景与任务特点
+全国大学生智能汽车竞赛面向智能感知、自动控制、嵌入式系统与人工智能等技术方向，要求参赛队围绕统一或指定车模完成从机械结构、电子系统到算法软件的完整工程实现。本届人工智能模型相关赛项采用虚实融合驾驶环境：车辆在真实物理赛道内运动，增强现实画面中叠加虚拟行人、车辆、道路标志、金币及其他任务对象，车辆需要完成感知、理解、决策和执行。
+从赛道任务设置看，比赛不仅考查车辆能否稳定沿赛道行驶，还要求车辆在三圈全赛道范围内持续识别并避让随机出现的行人与车辆；第二圈和第三圈还会出现包含文字、箭头或图标信息的路牌，车辆需要识别路牌含义，并据此判断是否进入岔路口以及应选择的行驶分支。系统因此必须同时具备基础循迹的实时性、动态障碍物识别与避让的鲁棒性、路牌语义理解的正确性以及底层运动控制的确定性。
+本队模型车采用C型车模作为机械基础平台，以TC264核心板作为下位机实时控制核心，使用香橙派边缘计算板作为上位机，负责图像处理、人工智能模型推理和高层任务决策；左右后轮采用双RS380直流电机独立驱动，电机驱动采用基于DRV8701的双路驱动板，转向采用BDS300舵机与阿克曼转向机构。系统通过摄像头获取外界赛道信息，通过编码器和陀螺仪获取车辆自身运动状态，形成“视觉感知—任务决策—实时控制—状态反馈”的闭环架构。
+1.2 模型车设计目标
+围绕竞赛任务和工程可靠性要求，整车设计确定了以下目标：首先，在机械方面通过碳纤维平板底盘、纵向中轴对称布局和三层立体结构降低重心并提高模块维护效率；其次，在电子方面采用上下位机分工结构，将计算量较大的视觉与语义任务交由香橙派处理，将高实时性的PWM输出、轮速闭环和舵机控制交由TC264执行；再次，在算法方面坚持安全任务优先，将行人与车辆避让置于普通循迹、岔路导航和收益型任务之前；最后，通过模块化软件和强弱电分离布线提高整车调试效率和赛场运行稳定性。
+1.3 技术路线与报告结构
+本报告首先给出整车系统总体架构和信息流；随后分别介绍机械结构、电路硬件和软件算法；之后对制作、安装和调试过程进行总结，并集中列出模型车主要技术参数；最后给出结论、现存问题以及后续改进方向。附录部分给出硬件连接原理说明以及核心算法源代码。
+<w:pgSz w:w="11906" w:h="16838" w:orient="portrait"/><w:pgMar w:top="1417" w:right="1417" w:bottom="1417" w:left="1587" w:header="850" w:footer="850" w:gutter="0"/><w:pgNumType w:fmt="decimal" w:start="1"/><w:cols w:space="720" w:num="1"></w:cols><w:titlePg/><w:docGrid w:linePitch="360" w:charSpace="0"/></w:sectPr></w:pPr></w:p><w:p w14:paraId="1EEBD1A7"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="0" w:after="0" w:lineRule="auto" w:line="240"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Times New Roman" w:eastAsia="宋体" w:hAnsi="Times New Roman"/><w:color w:val="ffffff"/><w:sz w:val="2"/></w:rPr><w:t> 
+<w:docGrid w:linePitch="360" w:charSpace="0"/></w:sectPr></w:pPr></w:p><w:p w14:paraId="08A2CE11"><w:pPr><w:pStyle w:val="style4126"/><w:spacing w:before="120" w:after="400" w:lineRule="exact" w:line="400"/><w:ind w:firstLine="0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="黑体" w:eastAsia="黑体" w:hAnsi="黑体"/><w:b w:val="false"/><w:sz w:val="36"/></w:rPr><w:t>第二章  系统总体方案设计
+2.1 总体架构
+整车采用“上位机智能计算 + 下位机实时控制”的分层架构。香橙派上位机直接接收车载摄像头图像，完成赛道基础特征提取、目标检测、OCR、视觉语义理解和任务状态机决策，并将期望车速、转向目标、制动指令及任务状态通过串口发送至TC264。TC264根据上位机目标以及编码器、陀螺仪等自身状态反馈，完成左右电机独立速度闭环、舵机PWM输出和故障保护。双驱系统尚未加入转弯电子差速，左右轮转弯时仍以统一基准目标速度为主。
+图2.1  智能车系统总体架构
+2.2 感知—决策—执行信息链
+系统控制链按照“数据采集、特征提取、任务识别、策略规划、指令下发、底层执行、状态反馈”的顺序运行。上位机视觉线程保持连续图像输入，并在每帧内更新车道、目标物和交通语义；高层决策模块结合当前圈次、赛道状态和安全约束选择目标速度与路线；下位机以更高频率运行速度控制与转向控制，避免由于大模型或视觉推理时延直接影响电机控制稳定性。
+图2.2  软件感知—决策—执行闭环
+2.3 视觉任务感知与定位状态反馈边界
+按照赛项视觉任务要求，车载摄像头承担虚拟行人、车辆、路牌、金币及赛道视觉信息的识别。左右编码器用于测量车轮转速，陀螺仪用于获取车辆自身姿态变化，两者属于车辆内部状态反馈。车上同时安装圆柱形雷达与赛事定位模块，用于车辆定位、赛场交互或辅助状态信息获取；上述模块不替代摄像头完成行人、车辆和路牌的语义识别。
+2.4 系统安全与模块化设计
+软件将安全相关任务设置为最高优先级：当全赛道范围内检测到行人或车辆存在碰撞风险时，避让或制动指令覆盖普通循迹、岔路导航和金币收集等指令；第二圈和第三圈检测到路牌时，系统在进入路口前完成语义解析，并根据结果判断是否进入岔路以及选择对应分支。当上位机与下位机通信超时、摄像头数据异常或任务识别置信度不足时，TC264进入降速或停车状态。硬件上采用模块化接插件、强弱电分离和关键插头防脱处理，使单个模块能够快速更换并降低赛场维护时间。
+<w:pgSz w:w="11906" w:h="16838" w:orient="portrait"/><w:pgMar w:top="1417" w:right="1417" w:bottom="1417" w:left="1587" w:header="850" w:footer="850" w:gutter="0"/><w:pgNumType w:fmt="decimal"/><w:cols w:space="720" w:num="1"></w:cols><w:titlePg/><w:docGrid w:linePitch="360" w:charSpace="0"/></w:sectPr></w:pPr></w:p><w:p w14:paraId="583B6EF0"><w:pPr><w:pStyle w:val="style4126"/><w:spacing w:before="120" w:after="400" w:lineRule="exact" w:line="400"/><w:ind w:firstLine="0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="黑体" w:eastAsia="黑体" w:hAnsi="黑体"/><w:b w:val="false"/><w:sz w:val="36"/></w:rPr><w:t>第三章  机械系统设计与安装
+3.1 车模平台与总体尺寸
+模型车以C型车模为基础进行改造。原始车模标称尺寸为长280 mm、宽180 mm、高80 mm，轮胎直径约64 mm、轮宽约27 mm。完成板卡、摄像头、散热与定位模块安装后，实车外形尺寸为长280 mm、宽180 mm、高104.14 mm。
+图3.1  C1型车模基础尺寸参数
+表3.1  车模基础与改造后尺寸
+<w:tblPr><w:tblStyle w:val="style105"/><w:tblW w:w="0" w:type="auto"/><w:jc w:val="center"/><w:tblBorders><w:top w:val="single" w:sz="6" w:space="0" w:color="808080"/><w:left w:val="single" w:sz="6" w:space="0" w:color="808080"/><w:bottom w:val="single" w:sz="6" w:space="0" w:color="808080"/><w:right w:val="single" w:sz="6" w:space="0" w:color="808080"/><w:insideH w:val="single" w:sz="6" w:space="0" w:color="808080"/><w:insideV w:val="single" w:sz="6" w:space="0" w:color="808080"/></w:tblBorders><w:tblLayout w:type="fixed"/><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPr><w:tblGrid><w:gridCol w:w="2967"/><w:gridCol w:w="2967"/><w:gridCol w:w="2967"/></w:tblGrid><w:tr w14:paraId="5C5CFD98"><w:trPr><w:tblHeader/><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders><w:shd w:val="clear" w:color="auto" w:fill="d9eaf7"/><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="536B36AF"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b/><w:sz w:val="21"/></w:rPr><w:t>项目
+<w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders><w:shd w:val="clear" w:color="auto" w:fill="d9eaf7"/><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="373EECDF"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b/><w:sz w:val="21"/></w:rPr><w:t>基础车模参数
+<w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders><w:shd w:val="clear" w:color="auto" w:fill="d9eaf7"/><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="41B8C900"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b/><w:sz w:val="21"/></w:rPr><w:t>改造后参数
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="28C16176"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:sz w:val="21"/></w:rPr><w:t>长度/mm
+<w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="1D344427"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="left"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:sz w:val="21"/></w:rPr><w:t>280
+<w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="7AE3E768"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="left"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:sz w:val="21"/></w:rPr><w:t>280
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="31B27AF8"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:sz w:val="21"/></w:rPr><w:t>宽度/mm
+<w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="7E511AF3"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="left"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:sz w:val="21"/></w:rPr><w:t>180
+<w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="6B20DF73"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="left"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:sz w:val="21"/></w:rPr><w:t>180
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="444E7D4A"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:sz w:val="21"/></w:rPr><w:t>高度/mm
+<w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="10CB7088"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="left"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:sz w:val="21"/></w:rPr><w:t>80
+<w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="5DAE68CF"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="left"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="21"/></w:rPr><w:t>104.14
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="0103069E"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:sz w:val="21"/></w:rPr><w:t>轮胎直径/mm
+<w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="147494C3"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="left"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:sz w:val="21"/></w:rPr><w:t>64
+<w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="3E0DAD15"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="left"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:sz w:val="21"/></w:rPr><w:t>64（沿用原车轮）
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="4B3CF674"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:sz w:val="21"/></w:rPr><w:t>轮胎宽度/mm
+<w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="3B70E0D8"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="left"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:sz w:val="21"/></w:rPr><w:t>27
+<w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="0C35AD15"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="left"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:sz w:val="21"/></w:rPr><w:t>27（沿用原车轮）
+3.2 底盘轻量化与低重心设计
+底盘采用平板式结构，主体使用碳纤维材料。在保证扭转刚度和板卡安装强度的前提下，碳纤维底盘能够减小非必要结构质量，使整车在加速、制动和快速转向时具有更小的惯性。整车布局遵循纵向中轴对称原则，电池、驱动板等大质量部件尽可能贴近底盘安装，以降低整车重心，减小高速过弯时的侧倾趋势和轮胎载荷变化。
+3.3 双电机驱动与阿克曼转向
+动力系统采用双电机后轮独立驱动，左右后轮分别由一台RS380直流电机驱动。双电机结构使左右驱动通道能够分别完成轮速闭环和输出补偿，便于修正两台电机、轮胎负载及机械阻力之间的不一致。程序尚未加入基于转弯曲率的电子差速控制，转弯时左右轮主要使用统一的基准目标速度，差速转弯作为后续可优化的方向。
+前轮转向机构按照阿克曼转向几何布置，由BDS300舵机驱动转向拉杆。理想低速转向时，内外侧车轮应绕同一瞬时转向中心运动，可用下式表示：
+<w:tblPr><w:tblStyle w:val="style105"/><w:tblW w:w="0" w:type="auto"/><w:jc w:val="center"/><w:tblBorders><w:top w:val="none" w:sz="0" w:space="0" w:color="auto"/><w:left w:val="none" w:sz="0" w:space="0" w:color="auto"/><w:bottom w:val="none" w:sz="0" w:space="0" w:color="auto"/><w:right w:val="none" w:sz="0" w:space="0" w:color="auto"/><w:insideH w:val="none" w:sz="0" w:space="0" w:color="auto"/><w:insideV w:val="none" w:sz="0" w:space="0" w:color="auto"/></w:tblBorders><w:tblLayout w:type="fixed"/><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPr><w:tblGrid><w:gridCol w:w="2967"/><w:gridCol w:w="2967"/><w:gridCol w:w="2967"/></w:tblGrid><w:tr w14:paraId="0088C0E0"><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders></w:tcPr><w:p w14:paraId="02A95968"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:rPr></w:rPr></w:pPr></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders></w:tcPr><w:p w14:paraId="04F9BAC7"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:i/><w:sz w:val="21"/></w:rPr><w:t>cot(δo) − cot(δi) = B / L
+<w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders></w:tcPr><w:p w14:paraId="7F2F93E3"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="right"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:sz w:val="21"/></w:rPr><w:t>（公式1）
+式中，δi、δo分别为内侧与外侧前轮转角，B为轮距，L为轴距。通过舵机中位、拉杆长度及舵机臂行程标定，使实际转向关系尽量接近阿克曼几何，减少轮胎侧滑和转向阻力。
+图3.2  RS380电机与BDS300舵机参数
+表3.2  驱动与转向执行器主要参数
+<w:tblPr><w:tblStyle w:val="style105"/><w:tblW w:w="0" w:type="auto"/><w:jc w:val="center"/><w:tblBorders><w:top w:val="single" w:sz="6" w:space="0" w:color="808080"/><w:left w:val="single" w:sz="6" w:space="0" w:color="808080"/><w:bottom w:val="single" w:sz="6" w:space="0" w:color="808080"/><w:right w:val="single" w:sz="6" w:space="0" w:color="808080"/><w:insideH w:val="single" w:sz="6" w:space="0" w:color="808080"/><w:insideV w:val="single" w:sz="6" w:space="0" w:color="808080"/></w:tblBorders><w:tblLayout w:type="fixed"/><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPr><w:tblGrid><w:gridCol w:w="4451"/><w:gridCol w:w="4451"/></w:tblGrid><w:tr w14:paraId="171CB844"><w:trPr><w:tblHeader/><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="4451" w:type="dxa"/><w:tcBorders></w:tcBorders><w:shd w:val="clear" w:color="auto" w:fill="d9eaf7"/><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="22475012"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b/><w:sz w:val="21"/></w:rPr><w:t>部件
+<w:tcPr><w:tcW w:w="4451" w:type="dxa"/><w:tcBorders></w:tcBorders><w:shd w:val="clear" w:color="auto" w:fill="d9eaf7"/><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="5CB4B69D"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b/><w:sz w:val="21"/></w:rPr><w:t>主要参数
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="4451" w:type="dxa"/><w:tcBorders></w:tcBorders><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="2A1BF2EB"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:sz w:val="21"/></w:rPr><w:t>RS380直流电机
+<w:tcPr><w:tcW w:w="4451" w:type="dxa"/><w:tcBorders></w:tcBorders><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="59B6E19D"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="left"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:sz w:val="21"/></w:rPr><w:t>额定电压7.2 V；空载电流&lt;630 mA；最大功率&gt;20 W；空载转速15000±3000 r
+p
+m
+<w:tblPrEx></w:tblPrEx><w:trPr><w:trHeight w:val="1385" w:hRule="atLeast"/><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="4451" w:type="dxa"/><w:tcBorders></w:tcBorders><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="5EC81D0D"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:sz w:val="21"/></w:rPr><w:t>BDS300舵机
+<w:tcPr><w:tcW w:w="4451" w:type="dxa"/><w:tcBorders></w:tcBorders><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="3E4BA371"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="left"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:sz w:val="21"/></w:rPr><w:t>工作电压7.4 V；速度/60°
+ 0.15s/
+6.0 V、0.14 s/6.6 V、0.13 s/
+7
+.4 V；堵转扭矩约10 kg·cm；质量约55 g
+3.4 三层模块化布置
+传感器与控制模块采用“板卡+主板+定位模块”的三层立体结构。下层布置驱动板卡和电池，利用大质量部件稳定配重并降低重心；中层安装TC264主板、陀螺仪和散热风扇，风扇形成主动散热风道，陀螺仪与主板刚性固定以减小相对振动；上层用于圆柱形雷达与赛事定位模块安装，设置限位卡槽与锁紧结构，兼顾无遮挡、快速拆装和赛前检修需求。
+图3.3(a)  三层模块化布置结构示意图
+图3.3(b)  模型车模块安装示例图
+注：图(a)为模块层级与安装关系示意，图(b)为实车安装示例；模块位置与线束走向以实际参赛车辆为准。
+3.5 摄像头、雷达及定位模块与线束固定
+摄像头固定于车辆纵向中心轴，采用平视安装方式，并保留俯仰角微调能力。中心轴安装能够使左右视野近似对称，便于图像坐标与车辆横向偏差建立稳定映射。圆柱形雷达与赛事定位模块安装于上层卡槽，通过限位与锁紧结构固定，避免高速运行时发生平移或旋转，并保证定位与辅助状态获取所需的安装视野。
+整车线束沿底盘两侧分别布置：动力线集中在一侧，摄像头、编码器、陀螺仪及串口等信号线布置在另一侧，尽量减小大电流开关对弱信号的电磁耦合。所有板卡接插件使用热熔胶或机械卡扣辅助防脱，舵机线缆预留转向运动余量并增加耐磨保护，避免反复弯折造成内部断芯。
+<w:pgSz w:w="11906" w:h="16838" w:orient="portrait"/><w:pgMar w:top="1417" w:right="1417" w:bottom="1417" w:left="1587" w:header="850" w:footer="850" w:gutter="0"/><w:pgNumType w:fmt="decimal"/><w:cols w:space="720" w:num="1"></w:cols><w:titlePg/><w:docGrid w:linePitch="360" w:charSpace="0"/></w:sectPr></w:pPr></w:p><w:p w14:paraId="6FEE5771"><w:pPr><w:pStyle w:val="style4126"/><w:spacing w:before="120" w:after="400" w:lineRule="exact" w:line="400"/><w:ind w:firstLine="0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="黑体" w:eastAsia="黑体" w:hAnsi="黑体"/><w:b w:val="false"/><w:sz w:val="36"/></w:rPr><w:t>第四章  电路与硬件系统设计
+4.1 TC264下位机接口设计
+下位机采用TC264核心板及自制接口主板。根据主板原理图，主板围绕TC264核心板引出了电机控制、编码器、姿态传感器、屏幕、蜂鸣器、无线/串口及扩展IO等接口，并集成电池输入、5 V、3.3 V、舵机电源和板卡电源等供电支路。TC264主要承担实时性要求较高的舵机PWM、电机驱动控制、编码器采样、姿态数据读取和上下位机串口通信。核心板本体采用标准TC264模块，报告重点说明本队自制接口主板与外围电路。
+4.2 电源与供电架构
+主板电源由VCCBAT输入后分为多路供电。原理图中采用SP1N28STER开关稳压器构成5 V支路、舵机电源支路和板卡供电支路，并通过TPRT9013-25GB进一步得到3.3 V逻辑电源；各稳压支路布置SS54肖特基二极管、电感及输入/输出滤波电容。电机功率地PGND与逻辑地GND通过0 Ω电阻在指定位置汇接，既保证共同参考电位，又尽量避免大电流回流直接耦合到弱信号地。
+依据TC264接口主板与DRV8701双驱板原理图，可对两块自制PCB的电容标称值进行统计：TC264主板约为1189.9141 μF，DRV8701双驱板约为247.4 μF，两块自制PCB合计约1437.3141 μF（约1.437 mF）。该数值按原理图中已标注并装配的电容求和，未包含香橙派、摄像头等商业模块内部不可见电容。整车正常运行电路功耗采用完整比赛工况下的电池端实测值。
+4.3 DRV8701双路电机驱动
+左右RS380电机由自制DRV8701双路直流电机驱动板独立控制。驱动板原理图中左右两路分别采用DRV8701E（U6、U29）作为栅极驱动核心，并各配合四只外置N沟道MOSFET构成全桥功率级。两路电机通过XT30接口独立输出，主电源同样采用XT30接口输入。控制侧以PH/EN信号实现方向与PWM调速，并通过SN74HC125DBR四路缓冲器对PH_1、EN_1、PH_2、EN_2进行缓冲；板上LR8341A-T44为逻辑部分提供3.3 V电源，NSLEEP用于统一使能。
+图4.1  DRV8701单路电机驱动功能原理图
+双路驱动使左右轮能够分别进行速度闭环，可补偿两台电机与机械传动之间的不一致。控制程序尚未启用基于转向曲率的电子差速，弯道中左右轮主要沿用统一基准目标速度。驱动板直接布置在电机附近以缩短大电流功率线路，降低压降与电磁辐射。DRV8701双驱板与TC264接口主板的完整EDA原理图见附录A。
+4.4 编码器、陀螺仪与舵机接口
+左右驱动轮分别配置1024线迷你编码器。编码器工作电压为3.3～5 V，工作电流约13.6 mA，高电平输出约3.3 V。正交编码器A/B相可以用于判定旋转方向并统计脉冲；若采用4倍频解码，理论上每转可获得更高的计数分辨率，实际计数规则以程序配置为准。
+图4.2  1024线迷你编码器基础参数
+陀螺仪安装在中层主板附近，主要用于获取车辆横摆角速度或姿态变化，为高速转向稳定性判断提供辅助信息。BDS300舵机由TC264输出周期PWM控制，程序中分别标定机械中位、左极限和右极限，避免舵机指令超出机械行程。
+4.5 上下位机通信及抗干扰设计
+香橙派与TC264采用串口通信。上位机周期发送期望速度、舵机目标/转向量、任务状态和控制标志；下位机回传左右轮实际速度、故障状态及必要的姿态数据。通信协议采用固定帧头、长度、数据区和校验字段，接收端在校验失败时丢弃该帧，并维护通信超时计数。
+抗干扰方面，串口线、编码器线与摄像头信号线避开电机功率线，长线采用绞合或屏蔽方式；各模块供电端就近去耦，连接器进行应力释放与防脱固定；软件中对异常脉冲、突变速度和通信丢包进行限幅或滤波，避免单次干扰直接转化为大幅控制输出。
+<w:pgSz w:w="11906" w:h="16838" w:orient="portrait"/><w:pgMar w:top="1417" w:right="1417" w:bottom="1417" w:left="1587" w:header="850" w:footer="850" w:gutter="0"/><w:pgNumType w:fmt="decimal"/><w:cols w:space="720" w:num="1"></w:cols><w:titlePg/><w:docGrid w:linePitch="360" w:charSpace="0"/></w:sectPr></w:pPr></w:p><w:p w14:paraId="1BF6D30C"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="0" w:after="0" w:lineRule="auto" w:line="240"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Times New Roman" w:eastAsia="宋体" w:hAnsi="Times New Roman"/><w:color w:val="ffffff"/><w:sz w:val="2"/></w:rPr><w:t> 
+<w:docGrid w:linePitch="360" w:charSpace="0"/></w:sectPr></w:pPr></w:p><w:p w14:paraId="5CDFC95B"><w:pPr><w:pStyle w:val="style4126"/><w:spacing w:before="120" w:after="400" w:lineRule="exact" w:line="400"/><w:ind w:firstLine="0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="黑体" w:eastAsia="黑体" w:hAnsi="黑体"/><w:b w:val="false"/><w:sz w:val="36"/></w:rPr><w:t>第五章  软件系统与核心算法
+5.1 软件架构与开发环境
+软件采用上下位机分层架构。香橙派端核心程序以C++和OpenCV为基础，结合POSIX多线程、互斥量、原子变量及RKNN API组织运行。上位机通过共享内存读取X-Guardian/AR引擎输出的视频帧，将最新画面送入NPU目标检测线程，并在主线程中完成检测结果同步、道路中线计算、偏差平滑、画面显示和串口发送。TC264下位机负责电机、舵机及状态反馈等实时控制。
+表5.1  软件模块划分
+<w:tblPr><w:tblStyle w:val="style105"/><w:tblW w:w="0" w:type="auto"/><w:jc w:val="center"/><w:tblBorders><w:top w:val="single" w:sz="6" w:space="0" w:color="808080"/><w:left w:val="single" w:sz="6" w:space="0" w:color="808080"/><w:bottom w:val="single" w:sz="6" w:space="0" w:color="808080"/><w:right w:val="single" w:sz="6" w:space="0" w:color="808080"/><w:insideH w:val="single" w:sz="6" w:space="0" w:color="808080"/><w:insideV w:val="single" w:sz="6" w:space="0" w:color="808080"/></w:tblBorders><w:tblLayout w:type="fixed"/><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPr><w:tblGrid><w:gridCol w:w="2967"/><w:gridCol w:w="2967"/><w:gridCol w:w="2967"/></w:tblGrid><w:tr w14:paraId="0498546A"><w:trPr><w:tblHeader/><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders><w:shd w:val="clear" w:color="auto" w:fill="d9eaf7"/><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="3471B45F"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b/><w:sz w:val="21"/></w:rPr><w:t>层级
+<w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders><w:shd w:val="clear" w:color="auto" w:fill="d9eaf7"/><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="4BF4478B"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b/><w:sz w:val="21"/></w:rPr><w:t>主要模块
+<w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders><w:shd w:val="clear" w:color="auto" w:fill="d9eaf7"/><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="3E493FF1"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b/><w:sz w:val="21"/></w:rPr><w:t>主要功能
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="0BDA7C05"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:sz w:val="21"/></w:rPr><w:t>香橙派上位机
+<w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="77DFDEDF"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:sz w:val="21"/></w:rPr><w:t>已实现：图像采集、箭头循线、目标检测、串口通信
+任务扩展：VLM、Agent
+<w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="2410266B"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:sz w:val="21"/></w:rPr><w:t>实现AR取帧、NPU检测、循线、显示与串口输出；VLM、Agent在正式比赛工程中按任务要求扩展。
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="0FD9DA6B"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:sz w:val="21"/></w:rPr><w:t>TC264下位机
+<w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="631A4F11"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="left"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:sz w:val="21"/></w:rPr><w:t>Init / Encoder / IMU / Motor / Servo / PID / Comm / Safety
+<w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="564C7B93"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="left"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:sz w:val="21"/></w:rPr><w:t>外设初始化、状态采样、左右轮速度闭环、转向控制、串口解析、实时保护
+5.2 基于检测箭头的车道中线拟合与循迹
+上位机基础循迹不直接依赖固定灰度阈值，而是从目标检测线程输出的“arrow”类别检测框中提取道路引导箭头中心点。程序首先过滤置信度低于0.30的检测框，并跳过画面最下方、车辆已经压近的最近箭头；随后在画面宽度50%、高度90%处设置固定车头锚点，使拟合曲线的近端始终与车辆当前位置一致。
+为抑制岔路口或离群箭头造成的错误转向，程序采用“带车头锚点约束的RANSAC”筛选主路点集：候选直线必须同时经过或接近车头锚点，箭头中心点相对候选直线的横向偏差小于图像宽度的12%时视为内点。筛选后，若仅有1个有效箭头，则用“箭头+锚点”进行一次曲线拟合；有效箭头达到3个及以上时优先采用二次多项式x=f(y)拟合，失败则退化为一次拟合。
+拟合得到的中线从画面中部/最远有效点开始，以4像素行步长向车辆近端采样，并将最后一个中线点强制固定到车头锚点。对有效中线区间（图像高度50%～90%）采用带峰值偏移的Hann窗进行加权，峰值向远场方向偏移0.25，使中远场趋势获得更高权重。由加权中心得到平均横向偏差后，再在图像高度约62%处取前视点计算航向偏差，并按0.75（横向）与0.90（航向）的权重融合，用于增强大弯道的提前转向能力。
+主循环对融合偏差进行两级平滑：先将单帧偏差变化限制在±0.15以内，再使用系数α=0.25的指数滑动平均（EMA）抑制单帧抖动。发送到TC264前设置0.03的小死区，并以1.80倍增益放大有效转向量，最终限制在[-1,1]范围。识别短时失效时不立即保持最后一次大舵量，而是将历史偏差按0.92系数逐步衰减回中，从而提高检测瞬时丢失时的安全性。
+表5.2  上位机循线算法主要参数
+<w:tblPr><w:tblStyle w:val="style154"/><w:tblW w:w="0" w:type="auto"/><w:jc w:val="center"/><w:tblBorders><w:top w:val="single" w:sz="4" w:space="0" w:color="auto"/><w:left w:val="single" w:sz="4" w:space="0" w:color="auto"/><w:bottom w:val="single" w:sz="4" w:space="0" w:color="auto"/><w:right w:val="single" w:sz="4" w:space="0" w:color="auto"/><w:insideH w:val="single" w:sz="4" w:space="0" w:color="auto"/><w:insideV w:val="single" w:sz="4" w:space="0" w:color="auto"/></w:tblBorders><w:tblLayout w:type="fixed"/><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPr><w:tblGrid><w:gridCol w:w="2967"/><w:gridCol w:w="2967"/><w:gridCol w:w="2967"/></w:tblGrid><w:tr w14:paraId="60E322D4"><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders><w:shd w:val="clear" w:color="auto" w:fill="d9eaf7"/><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="0A068785"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b/><w:sz w:val="21"/></w:rPr><w:t>参数
+<w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders><w:shd w:val="clear" w:color="auto" w:fill="d9eaf7"/><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="530CD46F"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b/><w:sz w:val="21"/></w:rPr><w:t>程序取值
+<w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders><w:shd w:val="clear" w:color="auto" w:fill="d9eaf7"/><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="45070EBB"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b/><w:sz w:val="21"/></w:rPr><w:t>作用
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="5E48BEB7"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="21"/></w:rPr><w:t>箭头最低置信度
+<w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="0E6A85F4"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="21"/></w:rPr><w:t>0.30
+<w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="1F9177A1"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="21"/></w:rPr><w:t>过滤低置信度检测框
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="490C49CD"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="21"/></w:rPr><w:t>车头锚点
+<w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="6FE60DCF"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="21"/></w:rPr><w:t>x=0.50W，y=0.90H
+<w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="2A142DA2"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="21"/></w:rPr><w:t>固定中线近端并约束主路拟合
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="5DE71D25"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="21"/></w:rPr><w:t>RANSAC内点阈值
+<w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="379A9339"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="21"/></w:rPr><w:t>0.12W
+<w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="79AE5632"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="21"/></w:rPr><w:t>排除岔路/离群箭头
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="1BC7790D"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="21"/></w:rPr><w:t>中线采样步长
+<w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="46922475"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="21"/></w:rPr><w:t>4 px
+<w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="1CEAE76A"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="21"/></w:rPr><w:t>沿y方向离散采样拟合曲线
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="0D89DBF8"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="21"/></w:rPr><w:t>加权有效区
+<w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="67FEE8A5"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="21"/></w:rPr><w:t>0.50H～0.90H
+<w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="2A976AEC"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="21"/></w:rPr><w:t>排除过远和车身近端无效区域
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="58041CA3"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="21"/></w:rPr><w:t>Hann峰值偏移
+<w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="0948C4B2"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="21"/></w:rPr><w:t>0.25
+<w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="73054ACF"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="21"/></w:rPr><w:t>提高中远场权重
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="567974FC"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="21"/></w:rPr><w:t>前视点高度
+<w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="20D858A7"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="21"/></w:rPr><w:t>0.62H
+<w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="2BBB2558"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="21"/></w:rPr><w:t>提取大弯航向趋势
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="51BA4ADC"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="21"/></w:rPr><w:t>横向/航向融合权重
+<w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="6D01350F"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="21"/></w:rPr><w:t>0.75 / 0.90
+<w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="37DD0494"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="21"/></w:rPr><w:t>形成综合循线偏差
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="780633C5"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="21"/></w:rPr><w:t>单帧偏差变化限幅
+<w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="2F7F6682"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="21"/></w:rPr><w:t>±0.15
+<w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="3800A9C9"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="21"/></w:rPr><w:t>抑制岔路口突变
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="0CA0A3BE"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="21"/></w:rPr><w:t>EMA系数α
+<w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="514DBAD6"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="21"/></w:rPr><w:t>0.25
+<w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="3F30F2AF"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="21"/></w:rPr><w:t>平滑连续帧偏差
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="45518682"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="21"/></w:rPr><w:t>发送死区/增益
+<w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="3EEDDE22"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="21"/></w:rPr><w:t>0.03 / 1.80
+<w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="05A432F2"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="21"/></w:rPr><w:t>直道抗抖与大弯增益
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="4EC46D77"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="21"/></w:rPr><w:t>舵机映射
+<w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="09E808E5"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="21"/></w:rPr><w:t>中心1500，增益400，限幅700～2300
+<w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="17882491"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="21"/></w:rPr><w:t>将归一化偏差换算为PWM参考值
+5.3 目标检测与视觉语义理解
+上位机程序通过独立NPU线程执行目标检测，并将检测对象以类别、置信度和目标框形式写入共享结果缓冲区。工程加载的模型文件为X_SmartV2.0.rknn，使用RKNN接口在NPU核心上运行；主线程只读取最新检测结果，检测结果超过150 ms未更新即判定为过期并清除，避免旧检测框持续影响控制。比赛任务中的行人、车辆、路牌与金币等对象均可沿用相同的检测结果接口进入任务层。
+视觉大模型与语义导航属于国赛任务层的重要组成部分。工程在检测与循线链路之上，将图标/箭头检测和文心大模型返回结果规整为LEFT、RIGHT、STRAIGHT、STOP等有限动作，再由安全约束层下发到底层。
+5.4 任务状态机与智能体决策
+高层任务采用状态机与智能体策略结合的方式。状态机维护当前圈次、行人/车辆避让状态、路牌识别结果、岔路口决策、已收集金币、通信状态等离散信息；Agent根据感知结果、比赛规则和当前状态选择行为，但所有行为必须通过安全约束层。任务优先级设计为：紧急避障 &gt; 路牌与岔路决策 &gt; 正常循迹 &gt; 金币收益优化。
+全程安全避让：三圈全赛道持续检测行人和车辆，结合目标位置、尺度变化与车辆自身速度评估碰撞风险，必要时提前减速、制动或在可行空间内平滑绕行。
+第二圈路牌与岔路决策：识别路牌中的文字、箭头和图标，通过语义理解得到导航含义，并在接近路口前判断是否需要进入岔路；若需要进入，则进一步确定正确分支方向并锁定决策。
+第三圈路牌与岔路决策：继续处理随机变化的路牌信息，根据识别结果判断是否进入岔路口以及对应的分支方向，并与全程行人/车辆避让同时运行，避免临近路口因重复识别造成指令抖动。
+全域金币任务：仅在不破坏行人/车辆安全避让、岔路导航和有效圈路径的前提下评估绕行收益。
+5.5 速度闭环与转向控制
+左右轮速度控制采用位置式PID。对于任一驱动轮，速度误差定义为目标速度与编码器测得实际速度之差，控制输出为比例、积分和微分项之和：
+<w:tblPr><w:tblStyle w:val="style105"/><w:tblW w:w="0" w:type="auto"/><w:jc w:val="center"/><w:tblBorders><w:top w:val="none" w:sz="0" w:space="0" w:color="auto"/><w:left w:val="none" w:sz="0" w:space="0" w:color="auto"/><w:bottom w:val="none" w:sz="0" w:space="0" w:color="auto"/><w:right w:val="none" w:sz="0" w:space="0" w:color="auto"/><w:insideH w:val="none" w:sz="0" w:space="0" w:color="auto"/><w:insideV w:val="none" w:sz="0" w:space="0" w:color="auto"/></w:tblBorders><w:tblLayout w:type="fixed"/><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPr><w:tblGrid><w:gridCol w:w="2967"/><w:gridCol w:w="2967"/><w:gridCol w:w="2967"/></w:tblGrid><w:tr w14:paraId="42DA0741"><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders></w:tcPr><w:p w14:paraId="2257D356"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:rPr></w:rPr></w:pPr></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders></w:tcPr><w:p w14:paraId="4AE2DE19"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:i/><w:sz w:val="21"/></w:rPr><w:t>u(k) = Kp·e(k) + Ki·Σe(k) + Kd·[e(k) − e(k−1)]
+<w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders></w:tcPr><w:p w14:paraId="15C0D72C"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="right"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:sz w:val="21"/></w:rPr><w:t>（公式2）
+为了避免积分饱和，程序对积分项和PWM输出均设置限幅，并在停车、急停或方向切换时根据状态清除或冻结积分。左右轮分别使用独立PID，可补偿电机个体差异、轮胎负载及机械阻力差异。双驱硬件具备左右通道独立调速能力，但转弯时尚未叠加电子差速量。
+转向控制以视觉中线横向误差为主，结合中远场趋势或横摆角速度进行阻尼。舵机指令在中位附近采用较高分辨率，在大误差时限制变化率，减少高速情况下的舵机突变。
+5.6 全程避障、岔路导航与金币策略
+行人和车辆避让采用“风险先于路径”的判断方式。对目标检测得到的行人/车辆区域结合车辆自身速度、目标在图像中的位置和尺度变化估计接近趋势，可使用简化的碰撞时间TTC作为风险量：
+<w:tblPr><w:tblStyle w:val="style105"/><w:tblW w:w="0" w:type="auto"/><w:jc w:val="center"/><w:tblBorders><w:top w:val="none" w:sz="0" w:space="0" w:color="auto"/><w:left w:val="none" w:sz="0" w:space="0" w:color="auto"/><w:bottom w:val="none" w:sz="0" w:space="0" w:color="auto"/><w:right w:val="none" w:sz="0" w:space="0" w:color="auto"/><w:insideH w:val="none" w:sz="0" w:space="0" w:color="auto"/><w:insideV w:val="none" w:sz="0" w:space="0" w:color="auto"/></w:tblBorders><w:tblLayout w:type="fixed"/><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPr><w:tblGrid><w:gridCol w:w="2967"/><w:gridCol w:w="2967"/><w:gridCol w:w="2967"/></w:tblGrid><w:tr w14:paraId="4E3D48E3"><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders></w:tcPr><w:p w14:paraId="02E2F400"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:rPr></w:rPr></w:pPr></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders></w:tcPr><w:p w14:paraId="2B8787FF"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:i/><w:sz w:val="21"/></w:rPr><w:t>TTC = d / max(vrel, ε)
+<w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders></w:tcPr><w:p w14:paraId="2147398E"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="right"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:sz w:val="21"/></w:rPr><w:t>（公式3）
+其中d为估计相对距离，vrel为接近速度，ε用于防止除零。当TTC低于设定阈值，或行人/车辆目标侵入本车主要行驶走廊时，系统提前降低目标速度；若风险继续升高，则执行制动或在可行空间内绕行。该判断在三圈全赛道持续运行，实际阈值通过赛道多次试验确定。
+第二圈和第三圈的路牌识别采用“先识别、后锁定”的决策方式：系统在进入岔路口前对路牌文字、箭头或图标进行识别与语义解析，将结果转换为“保持主路/进入岔路”及具体分支方向；当结果达到可信阈值后锁定本次路口决策，车辆通过路口后再解除锁定，避免同一路牌连续多帧识别造成左右反复切换。
+金币收集以净胜时间为评价量。若绕行预计增加时间Δt、可新增收集金币Nc，每枚金币奖励5 s，则可构造简单收益代价：
+<w:tblPr><w:tblStyle w:val="style105"/><w:tblW w:w="0" w:type="auto"/><w:jc w:val="center"/><w:tblBorders><w:top w:val="none" w:sz="0" w:space="0" w:color="auto"/><w:left w:val="none" w:sz="0" w:space="0" w:color="auto"/><w:bottom w:val="none" w:sz="0" w:space="0" w:color="auto"/><w:right w:val="none" w:sz="0" w:space="0" w:color="auto"/><w:insideH w:val="none" w:sz="0" w:space="0" w:color="auto"/><w:insideV w:val="none" w:sz="0" w:space="0" w:color="auto"/></w:tblBorders><w:tblLayout w:type="fixed"/><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPr><w:tblGrid><w:gridCol w:w="2967"/><w:gridCol w:w="2967"/><w:gridCol w:w="2967"/></w:tblGrid><w:tr w14:paraId="181947F0"><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders></w:tcPr><w:p w14:paraId="47A0D15C"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:rPr></w:rPr></w:pPr></w:p></w:tc><w:tc><w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders></w:tcPr><w:p w14:paraId="3F37F659"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:i/><w:sz w:val="21"/></w:rPr><w:t>J = Δt − 5·Nc
+<w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders></w:tcPr><w:p w14:paraId="0C0CB5CA"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="right"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:sz w:val="21"/></w:rPr><w:t>（公式4）
+当J&lt;0且不增加碰撞、违规或无效圈风险时，绕行才有收益。为降低估计误差，实际策略还设置最小收益裕量，并在接近关门时间或车辆状态异常时关闭金币绕行。
+5.7 实时调度与故障降级
+上位机采用异步数据流避免模型推理阻塞视频采集：AR画面由共享内存shm_ar_video读取，双缓冲帧队列通过frame_counter和条件变量通知NPU线程；目标检测结果通过互斥锁保护的DisplayBuffer异步返回。程序支持有显示/无显示两种模式，并计算画面刷新FPS。串口默认设备为/dev/ttyACM1，也可由命令行覆盖；当检测短时失效时，循线偏差逐步回中而不是保持旧的大转向量。TC264端设置独立通信超时与停车保护，避免上位机异常传播到功率执行层。
+当通信在规定时间内未更新、摄像头图像无效、模型置信度持续过低或编码器反馈异常时，系统进入降级策略：首先降低速度并保持最近可信车道方向；若异常持续，则逐步制动停车。该机制使高层AI模块即使出现瞬时延迟，也不会直接造成底层电机输出失控。
+<w:pgSz w:w="11906" w:h="16838" w:orient="portrait"/><w:pgMar w:top="1417" w:right="1417" w:bottom="1417" w:left="1587" w:header="850" w:footer="850" w:gutter="0"/><w:pgNumType w:fmt="decimal"/><w:cols w:space="720" w:num="1"></w:cols><w:titlePg/><w:docGrid w:linePitch="360" w:charSpace="0"/></w:sectPr></w:pPr></w:p><w:p w14:paraId="0983B41A"><w:pPr><w:pStyle w:val="style4126"/><w:spacing w:before="120" w:after="400" w:lineRule="exact" w:line="400"/><w:ind w:firstLine="0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="黑体" w:eastAsia="黑体" w:hAnsi="黑体"/><w:b w:val="false"/><w:sz w:val="36"/></w:rPr><w:t>第六章  制作、安装与调试过程
+6.1 机械装配与配重
+整车制作首先完成碳纤维底盘开孔和各层支柱定位，再依次安装转向机构、双电机、驱动板、电池、TC264主板、散热风扇、香橙派、摄像头、圆柱形雷达和赛事定位模块。装配过程中重点保证前轮转向无明显机械卡滞、左右拉杆长度一致、舵机中位对应前轮直行，并通过移动电池和板卡位置使整车左右配重尽量对称。
+6.2 电气联调
+电气调试遵循“先低压逻辑、后功率驱动；先单模块、后整车联动”的顺序。首先独立验证TC264供电、串口、编码器和舵机；其次在车轮架空条件下测试左右DRV8701驱动通道、电机方向和编码器符号；最后接入香橙派和摄像头进行整车联调。任何发现的电机方向与编码器符号不一致问题，优先通过统一软件方向定义解决，避免后续PID出现正反馈。
+6.3 控制参数整定
+控制参数整定主要分为速度环和转向环两个阶段。速度环首先关闭转向影响，在直线架空和低速落地条件下分别调节左右轮Kp、Ki、Kd，使阶跃响应不过度振荡且稳态误差较小；随后在直线赛道上标定舵机中位和中线误差比例，再进入弯道，通过降低基准速度、增加前视信息和限制舵机变化率观察车身轨迹。系统尚未加入差速转弯，因此不进行电子差速增益整定。
+6.4 视觉与任务联调
+视觉调试首先固定摄像头安装姿态，并验证AR共享内存视频流、目标检测线程和循线主线程之间的时间同步。基础循迹阶段重点检查arrow检测置信度、最近箭头剔除、车头锚点位置及RANSAC主路筛选效果；随后通过直道、连续弯道和岔路场景逐步整定相关循迹参数。任务联调阶段重点在三圈全赛道验证行人和车辆检测/避让的连续性，并在第二圈、第三圈反复测试随机路牌识别、语义解析以及“是否进入岔路口”的决策稳定性。目标检测结果在实际叠加场景中检查漏检、误检和延迟，并验证150 ms结果TTL是否能够及时清除陈旧检测。
+6.5 典型问题及改进
+整车联调中重点关注左右电机输出不一致、编码器方向定义错误、转向机构机械虚位、箭头漏检/岔路误入、单帧偏差突变、串口偶发丢帧以及上位机推理延迟波动。机械与底层控制问题分别采用独立轮速闭环、统一方向符号和转向拉杆消隙处理；视觉循线则通过最低置信度筛选、跳过最近箭头、带锚点RANSAC排除支路、单帧±0.15限幅和EMA平滑降低误转向；检测结果设置TTL并采用异步NPU线程，通信侧配合帧校验、超时及TC264安全降级，避免陈旧视觉结果或上位机卡顿持续驱动车辆。
+此外，竞赛任务具有随机性，单次成功不能代表算法可靠。调试后期应使用完整三圈连续运行作为主要验收方式，记录每圈耗时、任务成功率、速度波动和异常日志，并以“连续完成率”而非单圈最快速度作为优先优化指标。
+<w:pgSz w:w="11906" w:h="16838" w:orient="portrait"/><w:pgMar w:top="1417" w:right="1417" w:bottom="1417" w:left="1587" w:header="850" w:footer="850" w:gutter="0"/><w:pgNumType w:fmt="decimal"/><w:cols w:space="720" w:num="1"></w:cols><w:titlePg/><w:docGrid w:linePitch="360" w:charSpace="0"/></w:sectPr></w:pPr></w:p><w:p w14:paraId="3CEE1D10"><w:pPr><w:pStyle w:val="style4126"/><w:spacing w:before="120" w:after="400" w:lineRule="exact" w:line="400"/><w:ind w:firstLine="0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="黑体" w:eastAsia="黑体" w:hAnsi="黑体"/><w:b w:val="false"/><w:sz w:val="36"/></w:rPr><w:t>第七章  模型车主要技术参数
+本章汇总整车机械、电气、传感与赛道信息检测参数。改造后整车重量为1281 g，目标检测频率为30 FPS，两块自制PCB电容总容量为1437.3141 μF（约1.437 mF）。整车正常运行电路功耗采用典型比赛工况下的实测值。
+表7.1  模型车主要技术参数汇总
+<w:tblPr><w:tblStyle w:val="style105"/><w:tblW w:w="0" w:type="auto"/><w:jc w:val="center"/><w:tblBorders><w:top w:val="single" w:sz="6" w:space="0" w:color="808080"/><w:left w:val="single" w:sz="6" w:space="0" w:color="808080"/><w:bottom w:val="single" w:sz="6" w:space="0" w:color="808080"/><w:right w:val="single" w:sz="6" w:space="0" w:color="808080"/><w:insideH w:val="single" w:sz="6" w:space="0" w:color="808080"/><w:insideV w:val="single" w:sz="6" w:space="0" w:color="808080"/></w:tblBorders><w:tblLayout w:type="fixed"/><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPr><w:tblGrid><w:gridCol w:w="4451"/><w:gridCol w:w="4451"/></w:tblGrid><w:tr w14:paraId="5A645071"><w:trPr><w:cantSplit/><w:tblHeader/><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="4451" w:type="dxa"/><w:tcBorders></w:tcBorders><w:shd w:val="clear" w:color="auto" w:fill="d9eaf7"/><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="268465B0"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b/><w:sz w:val="21"/></w:rPr><w:t>参数项目
+<w:tcPr><w:tcW w:w="4451" w:type="dxa"/><w:tcBorders></w:tcBorders><w:shd w:val="clear" w:color="auto" w:fill="d9eaf7"/><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="34F8AF3C"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b/><w:sz w:val="21"/></w:rPr><w:t>参数/说明
+<w:tblPrEx></w:tblPrEx><w:trPr><w:cantSplit/><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="4451" w:type="dxa"/><w:tcBorders></w:tcBorders><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="2DE5B29C"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:sz w:val="21"/></w:rPr><w:t>车模基础平台
+<w:tcPr><w:tcW w:w="4451" w:type="dxa"/><w:tcBorders></w:tcBorders><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="0BC01258"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="left"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:sz w:val="21"/></w:rPr><w:t>C型/C1型车模
+<w:tblPrEx></w:tblPrEx><w:trPr><w:cantSplit/><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="4451" w:type="dxa"/><w:tcBorders></w:tcBorders><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="5BFBF4D5"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:sz w:val="21"/></w:rPr><w:t>改造后外形尺寸
+<w:tcPr><w:tcW w:w="4451" w:type="dxa"/><w:tcBorders></w:tcBorders><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="15C8BACF"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="left"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:sz w:val="21"/></w:rPr><w:t>280 mm × 180 mm × 104.14 mm
+<w:tblPrEx></w:tblPrEx><w:trPr><w:cantSplit/><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="4451" w:type="dxa"/><w:tcBorders></w:tcBorders><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="368E23D5"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:sz w:val="21"/></w:rPr><w:t>改造后整车重量
+<w:tcPr><w:tcW w:w="4451" w:type="dxa"/><w:tcBorders></w:tcBorders><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="643DC91D"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="left"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:sz w:val="21"/></w:rPr><w:t>1281 g（1.281 kg）
+<w:tblPrEx></w:tblPrEx><w:trPr><w:cantSplit/><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="4451" w:type="dxa"/><w:tcBorders></w:tcBorders><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="5197B714"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:sz w:val="21"/></w:rPr><w:t>底盘材料
+<w:tcPr><w:tcW w:w="4451" w:type="dxa"/><w:tcBorders></w:tcBorders><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="3F240ACC"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="left"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:sz w:val="21"/></w:rPr><w:t>碳纤维平板结构
+<w:tblPrEx></w:tblPrEx><w:trPr><w:cantSplit/><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="4451" w:type="dxa"/><w:tcBorders></w:tcBorders><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="2B7DE50A"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:sz w:val="21"/></w:rPr><w:t>下位机主控
+<w:tcPr><w:tcW w:w="4451" w:type="dxa"/><w:tcBorders></w:tcBorders><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="434EF46E"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="left"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:sz w:val="21"/></w:rPr><w:t>TC264核心板
+<w:tblPrEx></w:tblPrEx><w:trPr><w:cantSplit/><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="4451" w:type="dxa"/><w:tcBorders></w:tcBorders><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="658508FC"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:sz w:val="21"/></w:rPr><w:t>上位机
+<w:tcPr><w:tcW w:w="4451" w:type="dxa"/><w:tcBorders></w:tcBorders><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="51F8308C"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="left"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:sz w:val="21"/></w:rPr><w:t>香橙派边缘计算板
+<w:tblPrEx></w:tblPrEx><w:trPr><w:cantSplit/><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="4451" w:type="dxa"/><w:tcBorders></w:tcBorders><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="59864904"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:sz w:val="21"/></w:rPr><w:t>电机驱动
+<w:tcPr><w:tcW w:w="4451" w:type="dxa"/><w:tcBorders></w:tcBorders><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="777350FF"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="left"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:sz w:val="21"/></w:rPr><w:t>基于DRV8701的双路直流电机驱动板
+<w:tblPrEx></w:tblPrEx><w:trPr><w:cantSplit/><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="4451" w:type="dxa"/><w:tcBorders></w:tcBorders><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="26CE297E"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:sz w:val="21"/></w:rPr><w:t>驱动电机
+<w:tcPr><w:tcW w:w="4451" w:type="dxa"/><w:tcBorders></w:tcBorders><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="54C612EB"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="left"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:sz w:val="21"/></w:rPr><w:t>RS380 × 2，额定7.2 V，最大功率标称&gt;20 W/台
+<w:tblPrEx></w:tblPrEx><w:trPr><w:cantSplit/><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="4451" w:type="dxa"/><w:tcBorders></w:tcBorders><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="1DF3A1BA"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:sz w:val="21"/></w:rPr><w:t>转向舵机
+<w:tcPr><w:tcW w:w="4451" w:type="dxa"/><w:tcBorders></w:tcBorders><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="03573A13"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="left"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:sz w:val="21"/></w:rPr><w:t>BDS300 × 1，工作电压7.4 V，堵转扭矩约10 kg·cm
+<w:tblPrEx></w:tblPrEx><w:trPr><w:cantSplit/><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="4451" w:type="dxa"/><w:tcBorders></w:tcBorders><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="7BFCEFE1"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:sz w:val="21"/></w:rPr><w:t>除车模原有驱动电机/舵机外伺服电机数量
+<w:tcPr><w:tcW w:w="4451" w:type="dxa"/><w:tcBorders></w:tcBorders><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="66987D2F"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="left"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:sz w:val="21"/></w:rPr><w:t>0
+<w:tblPrEx></w:tblPrEx><w:trPr><w:cantSplit/><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="4451" w:type="dxa"/><w:tcBorders></w:tcBorders><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="5AB44776"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:sz w:val="21"/></w:rPr><w:t>摄像头
+<w:tcPr><w:tcW w:w="4451" w:type="dxa"/><w:tcBorders></w:tcBorders><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="0158CD39"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="left"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:sz w:val="21"/></w:rPr><w:t>1个，车辆纵向中心轴平视安装，负责赛道视觉、行人、车辆、路牌与金币等视觉任务识别
+<w:tblPrEx></w:tblPrEx><w:trPr><w:cantSplit/><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="4451" w:type="dxa"/><w:tcBorders></w:tcBorders><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="03D4DBED"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:sz w:val="21"/></w:rPr><w:t>编码器
+<w:tcPr><w:tcW w:w="4451" w:type="dxa"/><w:tcBorders></w:tcBorders><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="51261A00"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="left"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:sz w:val="21"/></w:rPr><w:t>1024线迷你编码器 × 2，3.3～5 V，约13.6 mA/个
+<w:tblPrEx></w:tblPrEx><w:trPr><w:cantSplit/><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="4451" w:type="dxa"/><w:tcBorders></w:tcBorders><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="3EE2291E"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:sz w:val="21"/></w:rPr><w:t>陀螺仪
+<w:tcPr><w:tcW w:w="4451" w:type="dxa"/><w:tcBorders></w:tcBorders><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="30D89632"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="left"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:sz w:val="21"/></w:rPr><w:t>1个，用于车辆自身姿态/横摆状态反馈
+<w:tblPrEx></w:tblPrEx><w:trPr><w:cantSplit/><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="4451" w:type="dxa"/><w:tcBorders></w:tcBorders><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="0AE6F0BE"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:sz w:val="21"/></w:rPr><w:t>雷达与赛事定位模块
+<w:tcPr><w:tcW w:w="4451" w:type="dxa"/><w:tcBorders></w:tcBorders><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="226819DD"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="left"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:sz w:val="21"/></w:rPr><w:t>圆柱形雷达1个、赛事定位模块1套；用于车辆定位、赛场交互或辅助状态获取，不替代摄像头完成行人/车辆/路牌语义识别
+<w:tblPrEx></w:tblPrEx><w:trPr><w:cantSplit/><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="4451" w:type="dxa"/><w:tcBorders></w:tcBorders><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="766EC6D1"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:sz w:val="21"/></w:rPr><w:t>赛道信息检测精度
+<w:tcPr><w:tcW w:w="4451" w:type="dxa"/><w:tcBorders></w:tcBorders><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="5D92D4D6"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="left"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:sz w:val="21"/></w:rPr><w:t>目标检测mAP/准确率52.3%
+<w:tblPrEx></w:tblPrEx><w:trPr><w:cantSplit/><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="4451" w:type="dxa"/><w:tcBorders></w:tcBorders><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="089B8442"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:sz w:val="21"/></w:rPr><w:t>赛道信息检测频率
+<w:tcPr><w:tcW w:w="4451" w:type="dxa"/><w:tcBorders></w:tcBorders><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="73A111EF"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="left"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:sz w:val="21"/></w:rPr><w:t>30 FPS
+<w:tblPrEx></w:tblPrEx><w:trPr><w:cantSplit/><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="4451" w:type="dxa"/><w:tcBorders></w:tcBorders><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="68DCE9F1"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:sz w:val="21"/></w:rPr><w:t>整车正常运行电路功耗
+<w:tcPr><w:tcW w:w="4451" w:type="dxa"/><w:tcBorders></w:tcBorders><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="4E728D47"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="left"/><w:rPr><w:rFonts w:eastAsia="宋体" w:hint="default"/><w:lang w:val="en-US" w:eastAsia="zh-CN"/></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体" w:hint="eastAsia"/><w:sz w:val="21"/><w:lang w:val="en-US" w:eastAsia="zh-CN"/></w:rPr><w:t>24
+W
+-27W(板卡20W+车
+4—7W)
+<w:tblPrEx></w:tblPrEx><w:trPr><w:cantSplit/><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="4451" w:type="dxa"/><w:tcBorders></w:tcBorders><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="2D2C2524"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:sz w:val="21"/></w:rPr><w:t>所有电容总容量
+<w:tcPr><w:tcW w:w="4451" w:type="dxa"/><w:tcBorders></w:tcBorders><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="0DDA4AA1"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="left"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:sz w:val="21"/></w:rPr><w:t>TC264接口主板1189.9141 μF + DRV8701双驱板247.4 μF = 1437.3141 μF（约1.437 mF）。
+不含香橙派、摄像头等商业模块内部电容。
+7.1 功耗与电容容量的实测方法
+电路功耗以完整比赛典型工况下的正常运行功耗表征。测量时在电池端记录输入电压U与电流I，并按P=U×I计算功率，取正常循迹、转弯及任务处理期间稳定运行数据的平均值。
+根据电路原理图逐项统计自制板电容：DRV8701双驱板共计约247.4 μF，TC264接口主板共计约1189.9141 μF，两块自制板合计1437.3141 μF。统计中将100 nF、4.7 nF等小容量去耦/补偿电容统一换算为μF后累加。由于香橙派、摄像头等商业模块的内部BOM未提供，上述数值限定为自制PCB可核算的电容总容量。
+表7.2  自制电路板电容容量统计
+<w:tblPr><w:tblStyle w:val="style154"/><w:tblW w:w="0" w:type="auto"/><w:jc w:val="center"/><w:tblBorders><w:top w:val="single" w:sz="4" w:space="0" w:color="auto"/><w:left w:val="single" w:sz="4" w:space="0" w:color="auto"/><w:bottom w:val="single" w:sz="4" w:space="0" w:color="auto"/><w:right w:val="single" w:sz="4" w:space="0" w:color="auto"/><w:insideH w:val="single" w:sz="4" w:space="0" w:color="auto"/><w:insideV w:val="single" w:sz="4" w:space="0" w:color="auto"/></w:tblBorders><w:tblLayout w:type="fixed"/><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPr><w:tblGrid><w:gridCol w:w="2967"/><w:gridCol w:w="2967"/><w:gridCol w:w="2967"/></w:tblGrid><w:tr w14:paraId="45E23B7E"><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders><w:shd w:val="clear" w:color="auto" w:fill="d9eaf7"/><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="7DBB093A"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b/><w:sz w:val="21"/></w:rPr><w:t>电路板
+<w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders><w:shd w:val="clear" w:color="auto" w:fill="d9eaf7"/><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="0BAB4E60"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b/><w:sz w:val="21"/></w:rPr><w:t>统计电容总容量/μF
+<w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders><w:shd w:val="clear" w:color="auto" w:fill="d9eaf7"/><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="750D3871"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b/><w:sz w:val="21"/></w:rPr><w:t>备注
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="72D697A5"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="21"/></w:rPr><w:t>TC264接口主板
+<w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="6C2526A4"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="21"/></w:rPr><w:t>1189.9141
+<w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="427833B0"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="21"/></w:rPr><w:t>按主板原理图标称值求和
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="6FB29CC4"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="21"/></w:rPr><w:t>DRV8701双驱板
+<w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="0FF57DD3"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="21"/></w:rPr><w:t>247.4
+<w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="0BA23675"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="21"/></w:rPr><w:t>按双驱板原理图标称值求和
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="52B7CE29"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="21"/></w:rPr><w:t>合计
+<w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="23B69D0C"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="21"/></w:rPr><w:t>1437.3141
+<w:tcPr><w:tcW w:w="2967" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="1D982667"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b w:val="false"/><w:sz w:val="21"/></w:rPr><w:t>约1.437 mF；不含商业模块内部电容
+7.2 赛道信息检测精度与频率的实测方法
+检测频率以实际跑车分辨率、所用模型和推理设备下的运行结果为准，不使用摄像头标称帧率代替。本车目标检测频率为30 FPS，目标检测精度为52.3%，对应报告所述模型、分辨率与推理配置。
+<w:pgSz w:w="11906" w:h="16838" w:orient="portrait"/><w:pgMar w:top="1417" w:right="1417" w:bottom="1417" w:left="1587" w:header="850" w:footer="850" w:gutter="0"/><w:pgNumType w:fmt="decimal"/><w:cols w:space="720" w:num="1"></w:cols><w:titlePg/><w:docGrid w:linePitch="360" w:charSpace="0"/></w:sectPr></w:pPr></w:p><w:p w14:paraId="3A015FF9"><w:pPr><w:pStyle w:val="style4126"/><w:spacing w:before="120" w:after="400" w:lineRule="exact" w:line="400"/><w:ind w:firstLine="0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="黑体" w:eastAsia="黑体" w:hAnsi="黑体"/><w:b w:val="false"/><w:sz w:val="36"/></w:rPr><w:t>第八章  结论与进一步改进方向
+本模型车围绕全国大学生智能汽车竞赛的智能驾驶任务完成了从机械结构、电子硬件到视觉感知和运动控制的软件架构设计。机械方面以C型车模为基础，采用碳纤维底盘、低重心配重和三层模块化结构；驱动方面采用双RS380电机独立后轮驱动与阿克曼前轮转向，通过DRV8701双路驱动和左右轮独立速度闭环提高驱动一致性。双驱控制尚未加入转弯电子差速，弯道主要依靠舵机转向与统一基准轮速完成；控制系统采用香橙派与TC264分层架构，使复杂视觉/AI推理与高实时性电机控制相互解耦。
+在已完成并随报告提供的基础循迹算法中，上位机从目标检测结果提取arrow中心点，采用车头锚点约束的RANSAC筛选主路点集，并通过一次/二次多项式拟合、Hann加权横向偏差、前视航向补偿及EMA平滑生成转向偏差；检测模型在香橙派NPU侧以RKNN形式异步部署。底层由TC264执行电机、舵机及安全控制，形成上位机感知与下位机实时执行的闭环。
+后续优化将重点围绕三方面展开：第一，在保证稳定循迹的基础上进一步优化双驱控制，并根据实车弯道表现评估是否加入电子差速转弯；第二，对行人、车辆与路牌识别结果建立置信度融合和时间连续性判断，降低单帧误识别，并重点提升第二、第三圈岔路决策的稳定性；第三，将强化学习或策略优化限定在安全约束之上，用于路线和金币收益决策，而全程行人/车辆避让与底层急停保护保持确定性控制。通过上述改进，可进一步提升模型车在复杂虚实融合赛道中的连续完赛能力和综合成绩。
+<w:pgSz w:w="11906" w:h="16838" w:orient="portrait"/><w:pgMar w:top="1417" w:right="1417" w:bottom="1417" w:left="1587" w:header="850" w:footer="850" w:gutter="0"/><w:pgNumType w:fmt="decimal"/><w:cols w:space="720" w:num="1"></w:cols><w:titlePg/><w:docGrid w:linePitch="360" w:charSpace="0"/></w:sectPr></w:pPr></w:p><w:p w14:paraId="7168664E"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="0" w:after="0" w:lineRule="auto" w:line="240"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="Times New Roman" w:eastAsia="宋体" w:hAnsi="Times New Roman"/><w:color w:val="ffffff"/><w:sz w:val="2"/></w:rPr><w:t> 
+<w:docGrid w:linePitch="360" w:charSpace="0"/></w:sectPr></w:pPr></w:p><w:p w14:paraId="6E5E90D8"><w:pPr><w:pStyle w:val="style4126"/><w:spacing w:before="120" w:after="400" w:lineRule="exact" w:line="400"/><w:ind w:firstLine="0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="黑体" w:eastAsia="黑体" w:hAnsi="黑体"/><w:b w:val="false"/><w:sz w:val="36"/></w:rPr><w:t>附录A  电路原理图与连接说明
+A.1 系统硬件连接关系
+图A-1  整车硬件连接与信息流
+A.2 DRV8701电机驱动功能原理
+图A-2  DRV8701单路驱动功能原理
+附录给出DRV8701双路电机驱动板和TC264接口主板的完整EDA原理图。图A-3为DRV8701双路电机驱动板完整原理图，图A-4为TC264接口主板完整原理图，器件编号、网络名称、电源支路与主要接口均保持原理图导出内容。
+图A-3  DRV8701双路电机驱动板详细原理图
+图A-4  TC264接口主板详细原理图
+图A-3(a)  DRV8701双驱板详细原理图（左半部）
+图A-3(b)  DRV8701双驱板详细原理图（右半部）
+图A-4(a)  TC264接口主板详细原理图（左半部）
+图A-4(b)  TC264接口主板详细原理图（右半部）
+A.3 主要接口连接表
+表A-1  主要电气连接关系
+<w:tblPr><w:tblStyle w:val="style105"/><w:tblW w:w="0" w:type="auto"/><w:jc w:val="center"/><w:tblBorders><w:top w:val="single" w:sz="6" w:space="0" w:color="808080"/><w:left w:val="single" w:sz="6" w:space="0" w:color="808080"/><w:bottom w:val="single" w:sz="6" w:space="0" w:color="808080"/><w:right w:val="single" w:sz="6" w:space="0" w:color="808080"/><w:insideH w:val="single" w:sz="6" w:space="0" w:color="808080"/><w:insideV w:val="single" w:sz="6" w:space="0" w:color="808080"/></w:tblBorders><w:tblLayout w:type="fixed"/><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPr><w:tblGrid><w:gridCol w:w="4451"/><w:gridCol w:w="4451"/></w:tblGrid><w:tr w14:paraId="387A0083"><w:trPr><w:tblHeader/><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="4451" w:type="dxa"/><w:tcBorders></w:tcBorders><w:shd w:val="clear" w:color="auto" w:fill="d9eaf7"/><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="74398977"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b/><w:sz w:val="21"/></w:rPr><w:t>连接对象
+<w:tcPr><w:tcW w:w="4451" w:type="dxa"/><w:tcBorders></w:tcBorders><w:shd w:val="clear" w:color="auto" w:fill="d9eaf7"/><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="3E21D19F"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:b/><w:sz w:val="21"/></w:rPr><w:t>连接内容
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="4451" w:type="dxa"/><w:tcBorders></w:tcBorders><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="2AB2657F"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:sz w:val="21"/></w:rPr><w:t>香橙派 ↔ TC264
+<w:tcPr><w:tcW w:w="4451" w:type="dxa"/><w:tcBorders></w:tcBorders><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="6F60EFCC"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="left"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:sz w:val="21"/></w:rPr><w:t>串口TX/RX/GND；建议带帧头、长度、序号和校验字段
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="4451" w:type="dxa"/><w:tcBorders></w:tcBorders><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="31960F75"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:sz w:val="21"/></w:rPr><w:t>TC264 → DRV8701双路驱动
+<w:tcPr><w:tcW w:w="4451" w:type="dxa"/><w:tcBorders></w:tcBorders><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="0A12BA69"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="left"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:sz w:val="21"/></w:rPr><w:t>左右通道PWM、方向/使能、故障状态输入
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="4451" w:type="dxa"/><w:tcBorders></w:tcBorders><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="4D26D2D9"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:sz w:val="21"/></w:rPr><w:t>DRV8701 → RS380电机
+<w:tcPr><w:tcW w:w="4451" w:type="dxa"/><w:tcBorders></w:tcBorders><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="4A82EF93"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="left"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:sz w:val="21"/></w:rPr><w:t>左右电机功率输出，功率线尽量短
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="4451" w:type="dxa"/><w:tcBorders></w:tcBorders><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="5DC9C4AA"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:sz w:val="21"/></w:rPr><w:t>编码器 → TC264
+<w:tcPr><w:tcW w:w="4451" w:type="dxa"/><w:tcBorders></w:tcBorders><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="0275D3E1"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="left"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:sz w:val="21"/></w:rPr><w:t>左右A/B相或方向/脉冲信号，3.3 V逻辑兼容
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="4451" w:type="dxa"/><w:tcBorders></w:tcBorders><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="77533AF1"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:sz w:val="21"/></w:rPr><w:t>陀螺仪 → TC264
+<w:tcPr><w:tcW w:w="4451" w:type="dxa"/><w:tcBorders></w:tcBorders><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="7525930D"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="left"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:sz w:val="21"/></w:rPr><w:t>SPI/I²C等串行接口，以实车连接为准
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="4451" w:type="dxa"/><w:tcBorders></w:tcBorders><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="3DA54676"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:sz w:val="21"/></w:rPr><w:t>TC264 → BDS300舵机
+<w:tcPr><w:tcW w:w="4451" w:type="dxa"/><w:tcBorders></w:tcBorders><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="141800FE"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="left"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:sz w:val="21"/></w:rPr><w:t>PWM信号、独立稳定供电与公共地
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="4451" w:type="dxa"/><w:tcBorders></w:tcBorders><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="30DF0D9D"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:sz w:val="21"/></w:rPr><w:t>摄像头 → 香橙派
+<w:tcPr><w:tcW w:w="4451" w:type="dxa"/><w:tcBorders></w:tcBorders><w:tcMar><w:top w:w="80" w:type="dxa"/><w:left w:w="80" w:type="dxa"/><w:bottom w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="288F6CA2"><w:pPr><w:pStyle w:val="style0"/><w:spacing w:before="60" w:after="60" w:lineRule="exact" w:line="340"/><w:ind w:firstLine="0"/><w:jc w:val="left"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:eastAsia="宋体" w:hAnsi="宋体"/><w:sz w:val="21"/></w:rPr><w:t>视频接口与供电，摄像头位于车辆纵向中心轴
+<w:pgSz w:w="11906" w:h="16838" w:orient="portrait"/><w:pgMar w:top="1417" w:right="1417" w:bottom="1417" w:left="1587" w:header="850" w:footer="850" w:gutter="0"/><w:pgNumType w:fmt="upperRoman" w:start="1"/><w:cols w:space="720" w:num="1"></w:cols><w:titlePg/><w:docGrid w:linePitch="360" w:charSpace="0"/></w:sectPr></w:pPr></w:p><w:p w14:paraId="13616F45"><w:pPr><w:pStyle w:val="style4126"/><w:spacing w:before="120" w:after="400" w:lineRule="exact" w:line="400"/><w:ind w:firstLine="0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:ascii="黑体" w:eastAsia="黑体" w:hAnsi="黑体"/><w:b w:val="false"/><w:sz w:val="36"/></w:rPr><w:t>附录B  核心算法与源程序
+本附录选取上位机循迹控制的核心程序片段，代码来自main.cc与lane_follow.cc，主要包括循迹偏差处理、异步检测结果接入、道路中线拟合、偏差平滑及串口下发等基础流程。行人/车辆避让与路牌任务逻辑未在本附录展开。
+B.1 main.cc 循迹控制主干（节选）
+以下节选包括转向偏差发送增益、主循环中的循迹结果更新、单帧变化限幅、EMA平滑以及串口下发流程。
+static float make_control_offset(float smooth_offset) {
+    // 小死区：直道附近的微小抖动不驱动舵机。
+    static const float OFFSET_SEND_DEADZONE = 0.03f;
+    // 大弯增益：视觉平均偏差偏小，发送前放大，让舵机更敢打。
+    static const float OFFSET_SEND_GAIN = 1.80f;
+ 
+    if (std::abs(smooth_offset) &lt; OFFSET_SEND_DEADZONE) {
+        return 0.0f;
+    }
+ 
+    float control = smooth_offset * OFFSET_SEND_GAIN;
+    return std::max(-1.0f, std::min(1.0f, control));
+}
+    static const float OFFSET_SMOOTH_ALPHA  = 0.25f;
+    // 单帧 offset 最大允许变化量，超过则截断（限制突变速率）
+    static const float OFFSET_MAX_DELTA     = 0.15f;
+    static float g_smooth_offset = 0.0f;
+    static bool  g_smooth_init   = false;
+ 
+    // ==========================================================
+    // 主循环：最新 SHM 帧做底图，检测/分割结果只做异步叠加
+    // ==========================================================
+    printf(&quot;[Main] Entering main loop. Waiting for SHM frames...\n&quot;);
+ 
+    while (g_main_running.load() &amp;&amp; !stop_flag.load()) {
+        cv::Mat frame;
+        if (!stream.read(frame)) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            continue;
+        }
+ 
+        if (debug_frame_count % 100 == 0) {
+            printf(&quot;[Main] Heartbeat: SHM Read OK, Frame ID: %lu\n&quot;, stream.last_fid);
+        }
+ 
+        // 写入共享帧缓冲区：模型线程通过 frame_counter 判断新帧，避免 read_idx 0/1 绕回导致漏帧。
+        uint64_t frame_ts_us = now_us();
+        {
+            std::lock_guard&lt;std::mutex&gt; lk(frame_buf.cv_mutex);
+            frame.copyTo(frame_buf.frames[write_idx]);
+            frame_buf.read_idx.store(write_idx);
+            frame_buf.frame_timestamp_us.store(frame_ts_us);
+            frame_buf.frame_counter.fetch_add(1);
+            frame_buf.has_new_frame.store(true);
+        }
+        frame_buf.cv_new_frame.notify_all();
+ 
+        if (debug_frame_count % 100 == 0) {
+            printf(&quot;[Main] Signal Sent: notify_all() called\n&quot;);
+        }
+ 
+        write_idx = 1 - write_idx;
+        debug_frame_count++;
+ 
+        // 1) 拉取最近一次 YOLO 检测结果，并同步计算循线偏差。
+        if (disp_buf.yolo_updated.exchange(false)) {
+            std::lock_guard&lt;std::mutex&gt; lk(disp_buf.yolo_res.mtx);
+            last_yolo_objects = disp_buf.yolo_res.objects;
+            last_yolo_ts_us = disp_buf.yolo_res.timestamp_us;
+ 
+            // 每50帧打印一次检测到的目标标签，用于确认 arrow 是否被检测到
+            static int det_print_cnt = 0;
+            if (++det_print_cnt % 50 == 0) {
+                printf(&quot;[Det] objects=%d: &quot;, (int)last_yolo_objects.size());
+                for (const auto&amp; o : last_yolo_objects)
+                    printf(&quot;%s(%.2f) &quot;, o.label.c_str(), o.prob);
+                printf(&quot;\n&quot;);
+            }
+ 
+            // 用最新 arrow 框计算道路中线和偏差
+            last_lane_result = compute_lane_follow(last_yolo_objects, frame.cols, frame.rows);
+            if (det_print_cnt % 50 == 0) {
+                printf(&quot;[Lane] valid=%d arrows=%d mean=%.3f head=%.3f offset=%.3f send=%.3f\n&quot;,
+                       last_lane_result.valid,
+                       last_lane_result.num_arrows,
+                       last_lane_result.lateral_mean_offset,
+                       last_lane_result.heading_offset,
+                       last_lane_result.lateral_offset,
+                       make_control_offset(last_lane_result.lateral_offset));
+            }
+ 
+            if (last_lane_result.valid) {
+                float raw = last_lane_result.lateral_offset;
+ 
+                // 速率限制：单帧变化超过阈值则截断，防止岔路口突变
+                if (g_smooth_init) {
+                    float delta = raw - g_smooth_offset;
+                    if (delta &gt;  OFFSET_MAX_DELTA) raw = g_smooth_offset + OFFSET_MAX_DELTA;
+                    if (delta &lt; -OFFSET_MAX_DELTA) raw = g_smooth_offset - OFFSET_MAX_DELTA;
+                }
+ 
+                // EMA 低通滤波
+                g_smooth_offset = g_smooth_init
+                    ? OFFSET_SMOOTH_ALPHA * raw + (1.0f - OFFSET_SMOOTH_ALPHA) * g_smooth_offset
+                    : raw;
+                g_smooth_init = true;
+ 
+                float control_offset = make_control_offset(g_smooth_offset);
+ 
+                // 可视化保留平滑值；串口发送使用放大后的控制值。
+                last_lane_result.lateral_offset = g_smooth_offset;
+                float clamped = std::max(-1.0f, std::min(1.0f, control_offset));
+                last_lane_result.servo_pwm = SERVO_CENTER_PWM + (int)(clamped * SERVO_STEER_GAIN);
+                last_lane_result.servo_pwm = std::max(SERVO_MIN_PWM,
+                                             std::min(SERVO_MAX_PWM, last_lane_result.servo_pwm));
+ 
+                g_shared_lane_offset.store(control_offset);
+                g_offset_valid.store(true);
+ 
+                // 串口发送给下位机
+                if (uart_ok)
+                    lane_uart.sendOffset(control_offset);
+            } else if (g_smooth_init) {
+                // 无检测时缓慢向中心衰减，不立即归零
+                g_smooth_offset *= 0.92f;
+                if (std::abs(g_smooth_offset) &lt; 0.01f) {
+                    g_smooth_offset = 0.0f;
+                }
+ 
+                float control_offset = make_control_offset(g_smooth_offset);
+                last_lane_result.lateral_offset = g_smooth_offset;
+                float clamped = std::max(-1.0f, std::min(1.0f, control_offset));
+                last_lane_result.servo_pwm = SERVO_CENTER_PWM + (int)(clamped * SERVO_STEER_GAIN);
+                last_lane_result.servo_pwm = std::max(SERVO_MIN_PWM,
+                                             std::min(SERVO_MAX_PWM, last_lane_result.servo_pwm));
+ 
+                g_shared_lane_offset.store(control_offset);
+                g_offset_valid.store(false);
+ 
+                // 识别短暂失效时也继续发送回中值，避免下位机保持最后一次大转向。
+                if (uart_ok)
+                    lane_uart.sendOffset(control_offset);
+B.2 lane_follow.cc 道路中线计算主干（节选）
+以下节选为道路中线计算主函数，包含arrow中心点提取、车头锚点约束、RANSAC筛选、多项式拟合、Hann加权以及前视航向融合等稳定循迹主干。
+LaneFollowResult compute_lane_follow(
+    const std::vector&lt;YoloObject&gt;&amp; objects,
+    int frame_w, int frame_h)
+{
+    LaneFollowResult result;
+ 
+    // Step 1：提取全部 arrow 中心点
+    std::vector&lt;cv::Point2f&gt; centers;
+    centers.reserve(objects.size());
+ 
+    for (const auto&amp; obj : objects) {
+        if (label_lower(obj.label) != ARROW_LABEL) continue;
+        if (obj.prob &lt; ARROW_MIN_CONF) continue;
+        float cx = obj.rect.x + obj.rect.width  * 0.5f;
+        float cy = obj.rect.y + obj.rect.height * 0.5f;
+        centers.push_back(cv::Point2f(cx, cy));
+    }
+ 
+    result.num_arrows = (int)centers.size();
+    if (centers.empty()) return result;
+ 
+    // Step 2：跳过最下面那个（y 最大 = 车正压着的位置，无方向参考价值）
+    auto max_it = std::max_element(centers.begin(), centers.end(),
+                                   [](const cv::Point2f&amp; a, const cv::Point2f&amp; b){
+                                       return a.y &lt; b.y;
+                                   });
+    result.skipped_pt  = *max_it;
+    result.has_skipped = true;
+    centers.erase(max_it);
+ 
+    // 有效区上下边界
+    float y_wb_f = frame_h * (1.0f - ROW_EXCLUDE_BOTTOM);
+    int   y_wb_i = (int)y_wb_f;
+ 
+    // Step 3：锚点固定在车头附近。
+    // 它既用于 RANSAC 过滤岔路，也参与多项式拟合，防止中线近端起点漂移。
+    cv::Point2f anchor(frame_w * LANE_ANCHOR_X_RATIO,
+                       frame_h * LANE_ANCHOR_Y_RATIO);
+    result.anchor_pt = anchor;
+ 
+    // Step 4：带锚点约束的 RANSAC（过滤岔路箭头）
+    float threshold = frame_w * RANSAC_INLIER_RATIO;
+    std::vector&lt;cv::Point2f&gt; inliers = ransac_with_anchor(anchor, centers, threshold);
+ 
+    for (const auto&amp; c : centers) {
+        bool found = false;
+        for (const auto&amp; p : inliers) {
+            if (std::abs(c.x - p.x) &lt; 0.5f &amp;&amp; std::abs(c.y - p.y) &lt; 0.5f) {
+                found = true; break;
+            }
+        }
+        if (!found) result.excluded_pts.push_back(c);
+    }
+ 
+    // Step 5：分离箭头点和锚点
+    std::sort(inliers.begin(), inliers.end(),
+              [](const cv::Point2f&amp; a, const cv::Point2f&amp; b){ return a.y &lt; b.y; });
+    result.fit_pts = inliers;
+ 
+    std::vector&lt;cv::Point2f&gt; arrow_pts;
+    for (const auto&amp; p : inliers) {
+        bool is_anchor = (std::abs(p.x - anchor.x) &lt; 1.0f &amp;&amp;
+                          std::abs(p.y - anchor.y) &lt; 1.0f);
+        if (!is_anchor) arrow_pts.push_back(p);
+    }
+    if (arrow_pts.empty()) return result;
+ 
+    // Step 6：多项式拟合 —— 箭头点 + 固定锚点
+    std::vector&lt;cv::Point2f&gt; fit_set = arrow_pts;
+    for (int k = 0; k &lt; LANE_ANCHOR_FIT_WEIGHT; ++k) {
+        fit_set.push_back(anchor);
+    }
+    std::sort(fit_set.begin(), fit_set.end(),
+              [](const cv::Point2f&amp; a, const cv::Point2f&amp; b){ return a.y &lt; b.y; });
+ 
+    int n_arrow_fit = (int)arrow_pts.size();
+    if (n_arrow_fit == 1) {
+        // 只有一个箭头时，用“箭头 + 固定车头点”拟合直线，比常数 x 更适合弯道。
+        result.poly_degree = 1;
+        result.poly_coeff = poly_fit(fit_set, 1);
+        if (result.poly_coeff.empty()) return result;
+    } else {
+        int degree = (n_arrow_fit &gt;= 3) ? 2 : 1;
+        result.poly_coeff = poly_fit(fit_set, degree);
+        if (result.poly_coeff.empty() &amp;&amp; degree == 2) {
+            degree = 1;
+            result.poly_coeff = poly_fit(fit_set, degree);
+        }
+        if (result.poly_coeff.empty()) return result;
+        result.poly_degree = degree;
+    }
+ 
+    // Step 7：从最远箭头（或画面中部）到有效区底边按行采样中线
+    //   不再延伸到画面最底部，避免锚点以下的无约束外推
+    int y_start = std::max(frame_h / 2, (int)fit_set.front().y);
+    result.centerline_pts.reserve((y_wb_i - y_start) / LANE_ROW_STEP + 2);
+ 
+    for (int y = y_start; y &lt;= y_wb_i; y += LANE_ROW_STEP) {
+        double x = (result.poly_degree == 0)
+                   ? result.poly_coeff[0]
+                   : poly_eval(result.poly_coeff, (double)y);
+        if (x &lt; 0 || x &gt;= frame_w) continue;
+        result.centerline_pts.push_back(cv::Point2f((float)x, (float)y));
+    }
+ 
+    // 强制中线近端固定在车头锚点，画面上最后一段不会再左右漂。
+    if (!result.centerline_pts.empty()) {
+        result.centerline_pts.back() = anchor;
+    }
+ 
+    if (result.centerline_pts.size() &lt; 2) return result;
+ 
+    // Step 8：Hann 窗加权求中线平均 x
+    //   有效区：[y_weight_top, y_weight_bottom]，两端排除
+    //   权重：w(y) = 0.5*(1+cos(π*t))，t∈[-1,1]，中间最大两端为 0
+    static const double PI = 3.14159265358979323846;
+    float y_wt = frame_h * ROW_EXCLUDE_TOP;
+    float y_wb = frame_h * (1.0f - ROW_EXCLUDE_BOTTOM);
+    float y_mid      = (y_wt + y_wb) * 0.5f;
+    float half_range = (y_wb - y_wt) * 0.5f;
+ 
+    result.y_weight_top    = y_wt;
+    result.y_weight_bottom = y_wb;
+ 
+    double sum_wx = 0.0, sum_w = 0.0;
+    for (const auto&amp; pt : result.centerline_pts) {
+        float y = pt.y;
+        if (y &lt; y_wt || y &gt; y_wb) continue;
+ 
+        double t = (double)(y - y_mid) / half_range;          // t ∈ [-1, 1]
+        double t_biased = t + (double)WEIGHT_PEAK_BIAS;        // 峰往上移（上部权值略高）
+        if (t_biased &lt; -1.0 || t_biased &gt; 1.0) continue;      // 偏移后超出有效区则跳过
+ 
+        double w = 0.5 * (1.0 + std::cos(PI * t_biased));     // 偏移 Hann 窗
+ 
+        sum_wx += w * pt.x;
+        sum_w  += w;
+    }
+    if (sum_w &lt; 1e-9) return result;
+ 
+    result.weighted_cx    = (float)(sum_wx / sum_w);
+    float center_x        = frame_w * 0.5f;
+    result.lateral_mean_offset = (result.weighted_cx - center_x) / center_x;
+ 
+    // Step 8.5：大弯前视方向补偿
+    // 平均横向偏差只表示“中线整体偏左/右”，在大弯上经常偏小；
+    // 前视方向表示“从车头看过去，中线往哪边拐”，用于提前加舵。
+    float lookahead_y = frame_h * LANE_HEADING_LOOKAHEAD_Y_RATIO;
+    lookahead_y = std::max((float)y_start, std::min(lookahead_y, y_wb_f));
+ 
+    double lookahead_x = (result.poly_degree == 0)
+                         ? result.poly_coeff[0]
+                         : poly_eval(result.poly_coeff, (double)lookahead_y);
+    if (lookahead_x &lt; 0.0) lookahead_x = 0.0;
+    if (lookahead_x &gt; frame_w - 1.0) lookahead_x = frame_w - 1.0;
+ 
+    result.heading_offset = (float)((lookahead_x - anchor.x) / center_x);
+ 
+    float combined_offset =
+        result.lateral_mean_offset * LANE_LATERAL_WEIGHT +
+        result.heading_offset      * LANE_HEADING_WEIGHT;
+ 
+    result.lateral_offset = std::max(-1.0f, std::min(1.0f, combined_offset));
+ 
+ 
+    // Step 9：舵机 PWM
+    float clamped = std::max(-1.0f, std::min(1.0f, result.lateral_offset));
+    result.servo_pwm = SERVO_CENTER_PWM + (int)(clamped * SERVO_STEER_GAIN);
+    result.servo_pwm = std::max(SERVO_MIN_PWM, std::min(SERVO_MAX_PWM, result.servo_pwm));
+ 
+    result.valid = true;
+    return result;
+}
+ 
+// ============================================================
+// 可视化叠加
+// ============================================================

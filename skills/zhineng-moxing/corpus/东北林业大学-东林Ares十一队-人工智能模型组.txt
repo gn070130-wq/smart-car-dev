@@ -1,0 +1,1265 @@
+
+第二十一届全国大学生智能汽车竞赛
+技 术 报 告
+
+
+
+
+
+
+
+
+
+学    校：东北林业大学
+队伍名称：东林Ares十一队
+参赛队员：王立涛
+          谭丽如
+          孙铭义
+          王长青
+冯可维	
+带队教师：刘林                    
+          刘佳鑫
+
+
+
+关于技术报告和研究论文使用授权的说明
+
+本人完全了解全国大学生智能汽车竞赛关于保留、使用技术报告和研究论 
+文的规定，即：参赛作品著作权归参赛者本人，比赛组委会可以在相关主页上收 录并公开参赛作品的设计方案、技术报告以及参赛模型车的视频、图像资料，并将相关内容编纂收录在组委会出版论文集中。
+
+参赛队员签名：王立涛
+谭丽如
+孙铭义
+王长青
+冯可维
+
+         带队老师签名：刘  林      
+刘佳鑫      
+日 期：2026年8月14日  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+摘要
+本文详细介绍了东北林业大学“东林Ares十一队”在第二十一届全国大学生智能汽车竞赛完全模型组中的系统方案。本次比赛采用I型车模，以百度公司生产的X01板卡和英飞凌半导体公司生产的32位单片机TC264为核心控制器，要求智能车识别虚拟赛道和行人等多个元素，以最快速度完成整个比赛，智能车采用CMOS摄像头对赛道信息检测，根据最长白列得到赛道中线；通过编码器检测智能车的实时速度；使用PID控制算法调节电机的转速和舵机的打角，实现智能车在运动过程中速度和方向的闭环控制；为了提高模型车的速度和稳定性，使用上位机、按键、OLED模块等调试工具，进行了大量硬件与软件测试。实验结果表明，该系统设计方案确实可行。
+
+关键词：TC264 ; X01 ; 图像处理 ；PID； 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+目录
+摘要	I
+目录	I
+第一章  绪 论	1
+1.1 智能车研究背景	1
+1.2 方案总体介绍	1
+1.3 本文结构	2
+第二章 机械结构设计及调整	2
+2.1 整车布局	2
+2.2 电池选型与安装	3
+2.3 转向舵机安装	3
+2.4 前轮倾角调节	4
+2.4.1 主销后倾	4
+2.4.2 主销内倾	5
+2.4.3 前轮前束	6
+2.5 底盘高度调节	7
+2.6 差速器和电机的安装	7
+第三章 硬件电路设计	8
+3.1 下位机系统单片机最小系统模块	8
+3.2 电源模块设计	9
+3.3 电机驱动电路	12
+3.31 H 桥驱动电路及缓冲电路设计	12
+3.4 传感器的选择	13
+3.4.1 摄像头	13
+3.4.2 编码器	13
+3.5 串口模块	14
+3.6 按键板	14
+3.7 主控板	15
+3.8 驱动板	16
+第四章 软件控制设计	18
+4.1 赛道中心线提取及优化处理	18
+4.1.1 原始图像的特点	18
+4.1.2 原始图像的校正	19
+4.1.3 赛道搜线算法	20
+4.1.4 赛道中心的计算	21
+4.2 目标检测	21
+4.2.1 AI模型训练	21
+4.2.1 AI模型部署	21
+4.3 PID控制算法介绍	21
+4.3.1 位置式PID	23
+4.3.2 增量式PID	23
+4.3.3 PID参数整定	24
+4.4 转向舵机的PD控制算法	25
+4.5 驱动电机的PID控制算法	27
+第五章 系统调试	28
+5.1 开发调试工具	28
+第六章 模型车的主要技术参数说明	29
+结论	30
+参考文献	1
+§03 附录	1
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+第一章  绪 论
+1.1 智能车研究背景
+智能车是一种高新技术密集型的新型汽车，以汽车电子为背景涵盖控制、模式识别、传感技术、电子、电气、计算机、机械等多科学的科技创意性设计，一般主要由路径识别、速度采集、角度控制、目标检测及车速控制等模块组成。可实现自动驾驶、自动变速及自动识别道路等功能，是现代电子产业发展中一项重要的组成部分。
+在我国，教育部为了加强大学生实践、创新能力和团队合作精神的培养，委托教育部高等学校自动化专业教学指导分委员会主办了每年一度的全国大学生智能汽车竞赛。全国大学生智能汽车竞赛是在竞赛组委会提供的统一汽车模型平台上，通过设计道路识别传感器和电机驱动电路、编写相应软件及装配模型车，制作一个能够自主识别道路的模型汽车，按照规定路线（路线赛前未知）行进并完成相应任务，以完成时间最短者为优胜。
+1.2 方案总体介绍
+比赛跑道为虚拟蓝色赛道，整体场地为5m*4m，赛道呈现八字形，并且规定了各赛道标志的具体指标。参赛队员的目标是使智能车按照规则以最短时间完成比赛。
+根据竞赛规则相关规定，本智能车系统采用I型车模，以百度公司生产的X01板卡和英飞凌公司生产的32位微控制器TC264作为核心控制器，在ADS开发环境中进行下位机软件开发，在VScode开发环境下进行上位机软件开发。通过官方提供指定的摄像机拍摄赛道图像，将图像信号输入到X01板卡，进行进一步处理获得主要的赛道信息；通过编码器来检测车速，并通过单片机进行正交解码进行脉冲计算获得速度和路程；转向舵机采用PD控制；驱动电机采用PID控制，通过PWM控制驱动电路调整电机的功率；而车速的目标值由默认值、运行安全方案和基于图像处理的优化策略进行综合控制。 
+1.3 本文结构
+本文共分为六章。第一章主要是介绍了比赛的背景及智能车系统总体方案的介绍；第二章从智能车系统的机械结构出发，详细阐述了智能车系统各部分机械结构的安装和调整；第三章重点介绍了系统中所涉及的硬件设计方案和原理；第四章是介绍了智能系统的软件算法包括图像处理，目标检测以及电机舵机的控制策略；第五章对调试过程中的一些手段进行了讲解；第六章则是对智能车一些物理参数进行了简单的汇报。
+
+第二章 机械结构设计及调整
+智能车的核心是控制策略和算法，但是，机械结构也是限制赛车速度的巨大瓶颈，如果一辆赛车的程序架构很好，但是机械部分做的不好的话，其速度也会被大大的限制。即当车速较高的时候，车模有明显的甩尾和侧滑现象，此时对车的机械结构要求很高。除了对车身姿态的影响外，机械性能影响车的加减速响应速度，运行的对称性和稳定性等，因此，我们在不违反规则的情况下对小车进行了多方面的改造以使小车具有良好的运行性能。
+2.1 整车布局
+我们组采用的是新I车模，尺寸为360*190*316mm，轮胎尺寸为29*61mm，通过对轮胎合适地填充海绵和进行软化处理，具有极好的减震性和耐磨性。驱动电机为RS-555微型直流电机，额定电压12.0V，额定转速12000rpm，,外形储存37.5*80.0mm。伺服电机为CS-3120舵机，额定电压4.8~6.8V，动作速度快，车模整体质量较轻。
+(1) 车模底盘降低，用来降低重心。
+(2) 舵机采用竖直姿态，方便控制。
+(3) 对前轮倾角进行调节，保证车直线行驶的稳定性。
+(4) 调整电机联轴器与差速器的位置使电机啮合更好。
+(5) 用轻便坚固的碳杆作为摄像头传感器的支撑材料。
+
+2.2 电池选型与安装
+原装车模使用的是3S锂电池电池，由于其体积大，质量大，安装在车模自带的电池固定架上，由于X01板卡供电也为5V，所以制作一根分电线从电池接出，由电池直接供电给板卡和主板。根据车模的机械结构，我们设计了能够完整贴合车模左侧的主板形状。
+2.3 转向舵机安装
+舵机转向是整个控制系统中延迟较大的一个环节，为了减小此时间常数，通过改变舵机的安装位置可以提高舵机的响应速度。通过分析舵机控制转向轮转向的原理可以发现，在相同的舵机转向条件下，转向连杆在舵机一端的连接点离舵机轴心距离越远，转向轮转向变化越快。这相当于增大力臂长度，提高线速度。
+舵机安装方式有立式和卧式两种，比较两种方式发现，立式安装效果更好。 舵机安装时要保证左右对称，这样可以保证舵机左右转向时力臂相等且处于最 大范围，提升了舵机的响应速度。经理论分析，功率等于速度与扭矩的乘积，加大转向速度必然减少输出扭矩，扭矩过小会造成迟钝，所以安装时必须考虑到转 向机构的响应速度与舵机扭矩之间的关系，获得最佳转向效果。并将其安装固定在车模左侧。
+2.4 前轮倾角调节
+为了使汽车直线行驶稳定，转向轻便，转向后能自动回正，减少轮胎和转向系零件的磨损等，在转向轮、转向节和前轴之间须形成一定的相对安装位置，叫车轮定位。本系统所采用的智能车通过四条轮胎与地面接触，两个后轮同轴受到限位，无法调整，与智能车的前进方向保持平行，因此要改变智能车与地面的接触方式，调试出利于车转向、直线的四轮定位，只能通过调整前轮倾角各定位参数来实现。它的安装位置由主销内倾、主销后倾、前轮外倾和前轮前束四个项目决定。
+2.4.1 主销后倾
+主销后倾如图2.1 所示，是指在纵向平面内主销轴线与地面垂直线之间的夹角，向前为负，向后为正。它在车辆转弯时会产生与车轮偏转方向相反的回正力矩，使车轮自动恢复到原来的中间位置上。所以，主销后倾角越大，车速越高，前轮自动回正的能力就越强，模型车通过增减黄色垫片的数量来改变 主销后倾角。 
+
+图2.1 主销后倾示意图
+由于竞赛所用的转向舵机力矩不大，过大的主销后倾角会使转向变得沉重，转弯迟滞。所以我们修改主销后倾大致1~2°如图2.2所示。
+
+图2.2 修改后的主销后倾
+
+2.4.2 主销内倾	
+主销内倾是将主销（即转向轴线）的上端向内倾斜。从车前方看去，主销轴线与通过前轮中心的垂线之间形成一个夹角，即主销内倾角。轮胎调整为倾斜以后直线行走的时候是轮胎内侧着地，而当过弯的时候，由于惯性车体会要向弯道外侧倾斜，而这时候的外侧轮胎如果倾斜角度事先调整得当则正好可以胎面着地，从而使车辆在弯道获得最佳抓地力。使车轮转向后能及时自动回正和转向轻便。经过多次尝试后我们主销内倾如图2.3所示。
+
+图2.3主销内倾示意图
+2.4.3 前轮前束
+车轮前束如图2.4所示。是指两轮之间的后距离数值与前距离数值之差，也指前轮中心线与纵向中心线的夹角。从上往下看，两个车轮指向的方向在前端指向内称为车轮前束，指向外的则称为车轮后束。前轮前束的作用是保证汽车的行驶性能，减少轮胎的磨损。前轮在滚动时，其惯性力自然将轮胎向内偏斜，如果前束适当，轮胎滚动时的偏斜方向就会抵消，轮胎内外侧磨损的现象会减少。
+
+图2.4 车轮前束示意图
+2.5 底盘高度调节
+降低车模底盘可以降低重心，车模重心低可以使车模运行更加稳定，获得 更好的转弯特性。所以，在保证车模可以通过灯盘的情况下，底盘尽可能的降低，可以使车更加快速稳定。对于I车模，修改后轮减震器的弹簧硬度来调整车模底盘的高度。
+
+2.6 差速器和电机的安装
+由于I车模在电机与后轮的传动是差速器连接，所有差速器与电机的配合变得尤为重要，如果差速器与电机连接过松，差速器与电机会出现“打齿”的现象，导致在软件上电机难以闭环，如果电机与差速器连接过紧，差速器与电机会出现根切的现象，导致电机卡死。
+
+
+
+
+
+
+
+
+
+
+
+第三章 硬件电路设计
+硬件是基础，只有一个良好、稳定的硬件环境才能保证车能平稳快速的行 
+驶。我们在整个系统设计过程中严格按照规范进行，本着可靠、高效的原则， 
+在满足各个要求的情况下，尽量使设计的电路简单，PCB 的效果简洁。我们采 
+用百度团队提供的下位机硬件模块，该系统采用模块化设计方式，主要包括下 
+位机系统单片机最小系统模块、电源模块、电机驱动模块、串口通信模块、编 
+码器测速模块、显示操作模块等部分
+3.1 下位机系统单片机最小系统模块
+单片机最小系统是智能车系统的核心控制部件。在本届比赛中,我们使用的下位机主控芯片为 Infineon 公司的 TC264DA,该款芯片属于英飞凌 Tricore 架构的 Aurix 系列单片机。这型单片机依靠 Infineon 公司在汽车电子领域深厚的底蕴，具有许多特别的优势（例如有多核并行处理能力，可以进行快速傅里叶变换，支持多种通信协议和丰富的通信接口等）。该款芯片的引脚数量为 144，双核架构，主频等级为 200MHz.这些丰富的系统资源可以更方便的连接外部电路，多个独立的 ADC 通道也使得外围的某些 ADC 模块的设计得到了简化，多种通讯接口也方便了扩展更多的外设和电路功。最高 200MHz 的频率也让该单片机具有更快的计算速度，使得可以最大的减小数据处理时间。对单片机的引脚利用及如图 3.1 所示
+
+
+图3.1 单片机系统原理图
+3.2 电源模块设计
+该系统中电源模块主要分为对系统中下位机控制电路各个模块以及上位机 
+Edgeboard 运行提供所需要的电源。设计中，除了需要考虑电压范围和电流容 
+量等基本参数之外，还要在电源转换效率、降低噪声、防止干扰和电路简单等 
+方面进行优化。可靠的电源方案是整个硬件电路稳定可靠运行的基础。 
+全部硬件电路的电源由一节 CB-22003 电池提供，由于电路中的不同电路模块所需要的工作电压和电流容量各不相同，因此电源模块应该包含稳压电路，将充电电池电压转换成各个模块所需要的电压。为满足需要，本车模上存在4种供电电压：
+
+(1) 智能车使用锂电池供电，正常使用时电压在 11.0~12.6V。通过开关直接用于电机供电，供电模块如图 3.2 所示：
+
+
+图 3.2 电机直接供电
+(2) 使用稳压芯片 AS1015 输出电压，并用电位器进行调节电压为6.8V，用于舵机 CS-3120 的供电。原理图如图 3.3 所示：
+
+图 3.3 转压电路 12V-6.8V 原理图
+(3) 使用稳压芯片TLV62568DBVR输出电压3.3V，用于蜂鸣器等模块供电。如图 3.4 所示：
+
+图 3.4 转压电路 12V-3.3V 原理图
+
+
+
+
+
+(4) 使用稳压芯片 MP2359DJ-LF-Z输出电压 5V，用于编码器，有线串口，单片机的供电，如图 3.5 所示：
+         
+图 3.5 转压电路 12V-5V 原理图
+
+
+
+
+(5) 使用稳压芯片 SY8205输出电压 5V，用于香橙派的供电，如图 3.6 所示：
+图 3.6 板卡转压电路 12V-5V 原理图
+
+
+3.3 电机驱动电路
+3.31 H 桥驱动电路及缓冲电路设计
+H 桥电路是使用四个 MOS 管来控制电机正转或反转的电路，连接电源极 
+和连接电源负极的两个 MOS 管同时导通时，电流则流经两个 MOS 管给电机通电。由于启动电机所需的瞬时电流可达到 15A 以上，所以我们需要选择低内阻大电流 MOS 管，本设计中 MOS 管选择 TPH1R403NL，其封装小且开关频率高、内阻低允许通过电流大，满足设计要求。
+
+图3.7 电机驱动原理图
+缓冲电路的设计是为了能够使 PWM 信号能够同步到达，防止 PWM 信号突然跳变，对电机产生冲击，防止电机损坏。缓冲电路原理图如图 3.8 所示。
+     
+  图 3.8 缓冲电路原理图 
+3.4 传感器的选择
+3.4.1 摄像头
+我们组在比赛所用的摄像头分别为OV13855摄像头
+OV13855摄像头图像对比度高、动态特性好。在智能车的实际运行中，可以较轻松的识别到赛道上的元素，利于AI模型对于赛道元素的判断，有效的避免了周围环境对于赛道的影响。可以大大提高程序的运行速度，提高了智能车高速运行时的可控性。
+3.4.2 编码器
+光电编码器是一种通过光电转换将输出轴上的机械几何位移量转换成脉冲或数字量的传感器, 这也是目前应用最多的测速传感器之一。其获取信息准确、精度高、应用简单。 
+采用增量式512线光电编码器，其供电电压为3.3V或5V，输出为小幅值的正弦信号。为了将此信号放大整形，设计了信号调理电路，其基本原理是使用一个运放做成比较器电路，调节参考电压，使输出变为0V-3.3V的方波信号，送入单片机进行运算。
+
+3.5 串口模块
+这里我们采用串口模块进行上下位机的通讯，上位机图像处理得到的数据通过串口模块发送到下位机上，下位机接受并做出相应处理。电路结构上我们采取直接将上位机串口通讯线 tx，rx 与下位机串口通讯线 rx，tx 直接通过杜邦线相连的方式进行连接。
+
+3.6 板卡转压模块
+板卡转压模块独立于主板上的辅助电源转压，需要输出5V/4A以带动香橙派正常工作，板卡转压板的实物图如图 3.9 所示。
+
+
+
+
+图3.9 转压板实物图
+
+3.7 主控板
+在本系统中我们的电路板的制作主要思想是分立工作、追求简洁，便于电路板的调试和安装等工作。主控由电源稳压电路，单片机系统以及各个传感器接口等组成。实物图如图3.10所示
+
+图3.9 主控板实物图
+
+3.8 驱动板
+	驱动板的实物图如图3.10
+  
+                 
+图3.10 驱动板实物图
+
+
+
+
+
+
+
+
+
+
+第四章 软件控制设计
+高效的软件程序是智能车高速平稳自动寻线的基础。我们设计的系统采用摄像头进行赛道识别并对赛道中的元素进行目标检测，图像采集及处理是整个软件的核心内容。在智能车的转向和速度控制方面，我们使用PID控制算法，使智能车能够稳定快速在赛道中循迹，在智能车的目标检测方面，我们选择了PaddlePaddle框架进行模型训练，使智能车高效，快速的完成比赛的相应任务并顺利地完成比赛。
+4.1 赛道中心线提取及优化处理
+4.1.1 原始图像的特点
+在上位机机采集图像信号后需要对其进行处理以提取主要的赛道信息，同时，由于出租车、行人的存在，光线不均匀、赛道外反光点、赛道远处图像不清楚的干扰，图像效果会大打折扣。因此，在软件上必须排除干扰因素，对赛道进行有效识别，并提供尽可能多的赛道信息供决策使用，所以我们在图像处理上选择了实例分割的处理方式，大大减小外界对于图像的影响。
+在图像信号处理中我们提取的赛道信息主要包括：赛道位于图像的位置、边界点信息，赛道宽度信息，赛道中心线位置。
+由于摄像头自身的特性和远小近大的视觉原理，图像会产生梯形式变形，这使得摄像头看到的赛道信息和实际真实的赛道信息有所区别。因此我们利用赛道进行测量和标定，得到一系列的参数，将摄像头采到的原始图像还原出真实赛道信息。原始图像是一个将模拟图像经模拟电路转换得到的二维数据矩阵，矩阵的每一个元素对应一个像素点，图像的第一行对应最远处，距摄像头固定杆大约120cm，图像的最底部一行对应最近处，距固定杆10cm。远处的图像小，近处的图像大，黑线为梯形状。
+摄像头返回的这一图像矩阵中，每一个像素点都含有从0至255的RGB三通道分量值，共同构成画面的色彩信息。传统的赛道分离方法通常先将图像转为灰度图，再用大津法（Otsu）自动求取阈值进行二值化，将赛道与背景区别开来；但这类方法高度依赖赛道与背景之间的灰度对比，在光照变化、阴影干扰和复杂背景下极易出现阈值失准、分割错误。本系统改用YOLOv8-Seg实例分割模型完成赛道分离：模型通过在自采赛道数据集上训练，学习到赛道区域的颜色、纹理与形状等高层语义特征，能够直接输出赛道区域的像素级掩码，每个像素是否属于赛道由网络判断给出，无需人工设定阈值。部署方面，训练好的模型经RKNN-Toolkit2转换为INT8量化的rknn模型，运行在RK3588板载NPU上。推理前对图像做letterbox等比缩放至640×640并以灰度值填充，归一化已嵌入模型内部；模型输出检测框回归量、类别得分、掩码系数、原型掩码与置信度和共五路结果，后处理依次完成score_sum背景快速过滤、DFL边界框解码、类别感知NMS，再以掩码系数与原型掩码做线性组合并经sigmoid激活，按检测框裁剪后得到赛道前景的像素级二值掩码，相比传统灰度阈值方案在光照变化和复杂背景下具有更强的鲁棒性。。我们运行了paddle-yolo的方法以实例分割代替二值化的作用，得到类别索引，将赛道与背景区别开来。
+我们对摄像头高度与俯角进行了标定，得到一系列参数，对原始的透视图像进行逆透视变换，得到了用于基本图像。
+
+图4.1 实例分割图像
+
+
+4.1.2 原始图像的校正
+由于我们下方的摄像头采用了OV13855镜头，这对于赛道信息的判断会产生偏差，为了克服这种误差，我们对摄像头进行了标定，这样对于赛道信息的判断，准确地寻找中心线起到非常大的作用。
+由图4.1可以看出，原始图像反映了安装在智能车上的摄像头直接看到的图像，包含了图像的畸变，因此图像上的信息不能够反应赛道的真实信息，图像上相邻两像素行间的实际距离会随着离摄像头的距离变化而变化。
+
+4.1.3 赛道搜线算法
+上位机在对原始图像进行二值化之后，再通过逆透视变换得到上位机处理的基本赛道图像，然后用搜线算法来对其进行处理，从而确定出赛道两边的黑线在哪儿，并计算出相对应的赛道中线，从而通过串口通信的方式将误差发送给下位机，由下位机指导舵机转向和电机的加减速。搜线算法的基本思想如下：
+(1) 从图像下方某一行开始向上遍历找出最长白列
+(2) 从最长白列开始向左向右遍历每一行图像，找出左右的黑白边界
+(3) 搜线完毕后，就得到了处理好的能够进行赛道分析的完整的矩阵。
+4.1.4 赛道中心的计算
+得到完整的赛道信息矩阵后，即可通过一定的算法计算出赛道的中线，由PID控制算法的思想，我们利用智能车的图像中心与赛道的实际中心的偏移量来控制舵机的转动和电机的驱动力度。赛道中线算法：
+(1) 由图像底部向顶部扫描，将左右边界进行映射，得到一个映射关系，当赛道连通域结束，扫描结束；
+(2) 通过步骤(1)得到的映射关系，取对应左右边界的中点，求出中点的位置，保存在数组中。
+4.2 目标检测
+4.2.1 AI模型训练
+我们小队通过Aistudio云端训练环境，来进行AI模型的训练，在数据集的制作上，通过easydata平台进行数据集的标注，并且进行了数据清洗，数据增强的一些操作，再通过一些Pyton工程辅助我们完成，对于数据集的制作。
+4.2.1 AI模型部署
+	对于AI模型的部署，由于在Aistudio 云端训练环境下训练的模型是在windows环境下生成的，所以我们进行了一步模型转化的过程，在Docker容器下，进行一步模型转化。
+4.3 PID控制算法介绍
+在工程实际中，应用最为广泛的调节器控制规律为比例、积分、微分控制，简称PID控制，又称PID调节。PID控制器问世至今已有近70年历史，它以其结构简单、稳定性好、工作可靠、调整方便而成为工业控制的主要技术之一。当被控对象的结构和参数不能完全掌握，或得不到精确的数学模型时，控制理论的其它技术难以采用时，系统控制器的结构和参数必须依靠经验和现场调试来确定，这时应用PID控制技术最为方便。即当我们不完全了解一个系统和被控对象，或不能通过有效的测量手段来获得系统参数时，最适合用PID控制技术。PID控制，实际中也有PI和PD控制。
+PID控制器是一种线性控制器，它根据给定值与实际输出值构成控制偏差。将偏差的比例(P)、积分(I)和微分(D)通过线性组合构成控制量，对被控对象进行控制，故称PID控制器，原理框图如图4.19所示。
+
+图4.19 PID控制器原理框图
+在计算机控制系统中，使用的是数字PID控制器，控制规律为：
+                                    (公式4.1)
+          (公式4.2)
+式中
+k——采样序号，k = 0，1，2…；       r(k)——第k次给定值；
+c(k)——第k次实际输出值；           u(k)—— 第k次输出控制量；
+e(k)—— 第k次偏差；                e(k-1)—— 第k-1次偏差；
+KP——比例系数；                    TI——积分时间常数；
+TD——微分时间常数；                T——采样周期。
+简单说来，PID控制器各校正环节的作用如下：
+比例环节：及时成比例地反映控制系统的偏差信号，偏差一旦产生，控制器立即产生控制作用，以减少偏差。
+积分环节：主要用于消除静差，提高系统的无差度。积分作用的强弱取决于积分时间常数，越大，积分作用越弱，反之则越强。
+微分环节：能反映偏差信号的变化趋势(变化速率)，并能在该偏差信号变得太大之前，在系统中引入一个有效的早期修正信号，从而加快系统的动作速度，减小调节时间。
+数字PID控制算法通常分为位置式PID控制算法和增量式PID控制算法。
+4.3.1 位置式PID
+位置式PID中，由于计算机输出的u (k) 直接去控制执行机构(如阀门)，u(k)的值和执行机构的位置(如阀门开度)是一一对应的，所以通常称公式(4.2)为位置式PID控制算法。
+位置式PID控制算法的缺点是：由于全量输出，所以每次输出均与过去的状态有关，计算时要对过去e(k)进行累加，计算机工作量大；而且因为计算机输出的u(k)对应的是执行机构的实际位置，如计算机出现故障，u(k)的大幅度变化，会引起执行机构位置的大幅度变化，这种情况往往是生产实践中不允许的，在某些场合，还可能造成严重的生产事故。因而产生了增量式PID 控制的控制算法，所谓增量式PID 是指数字控制器的输出只是控制量的增量△u(k)。
+4.3.2 增量式PID
+当执行机构需要的是控制量的增量(例如：驱动步进电机)时，可由式(4.2)推导出提供增量的PID控制算式。由式(4.2)可以推出式(4.3)，式(4.2)减去式(4.3)可得式(4.4)。
+      (公式4.3)
+   (公式4.4)
+式中；；
+公式(4.4)称为增量式PID控制算法，可以看出由于一般计算机控制系统采用恒定的采样周期T，一旦确定了KP、TI 、TD，只要使用前后三次测量值的偏差，即可由式(4.4)求出控制增量。
+增量式PID具有以下优点：
+(1) 由于计算机输出增量，所以误动作时影响小，必要时可用逻辑判断的方法关掉。
+(2) 手动/自动切换时冲击小，便于实现无扰动切换。此外，当计算机发生故障时，由于输出通道或执行装置具有信号的锁存作用，故能保持原值。
+(3) 算式中不需要累加。控制增量△u(k)的确定仅与最近k次的采样值有关，所以较容易通过加权处理而获得比较好的控制效果。
+但增量式PID也有其不足之处：积分截断效应大，有静态误差；溢出的影响大。使用时，常选择带死区、积分分离等改进PID控制算法。
+4.3.3 PID参数整定
+运用PID控制的关键是调整KP、KI、KD三个参数，即参数整定。PID参数的整定方法有两大类：一是理论计算整定法。它主要是依据系统的数学模型，经过理论计算确定控制器参数；二是工程整定方法，它主要依赖工程经验，直接在控制系统的试验中进行，且方法简单、易于掌握，在工程实际中被广泛采用。由于智能车系统是机电高耦合的分布式系统，并且要考虑赛道的具体环境，要建立精确的智能车运动控制数学模型有一定难度，而且我们对车身机械结构经常进行修正，模型参数变化较为频繁，理论计算整定法可操作性不强，最终我们采用了工程整定方法。此外，我们先后实验了几种动态改变PID参数的控制方法。
+4.4 转向舵机的PD控制算法
+在舵机的实时控制中，我们设计了一种非线性自适应PD控制算法。核心策略是通过图像中心线偏差动态调整控制参数：当横向偏差较大时（如弯道场景），采用增强的比例系数（P1趋近于runP1+runP2）提升转向响应；当偏差较小时（直道场景），P1自动衰减至基础值runP1，有效抑制微小扰动。程序中具体代码为P1 = params.runP1+params.runP2*(1-(2/(exp(params.runP3 * error) + \ exp(- params.runP3 * error)))); 微分项则采用固定参数turnD提供阻尼。实际测试表明，在1.5m/s以下低速工况时，该算法在复杂弯道中转向流畅，直道稳定性良好。
+但当车速提升至1.5m/s以上时，长直道出现明显蛇形震荡。经分析，硬件方面转向机构存在机械间隙和左右不对称缺陷；软件层面主要源于两点：1) 无积分环节导致入直道时存在稳态偏差 2) 小偏差区间的非线性增益曲线仍显激进，引发超调震荡。对于S弯道，因前瞻距离有限（约1.2m），系统无法提前识别连续弯道特征，被迫以"逐帧纠偏"模式运行，造成路径跟随滞后和速度损失。
+通过优化视觉感知系统（MCU超频+透视校正），将有效前瞻距离提升至2.0m，视场纵深扩展至1.6m。该改进使系统能提前感知赛道形态变化，在不增加赛道识别算法复杂度的前提下，仅依靠动态调整的PD参数（如代码中P1的连续非线性映射），即可在高速工况下同步实现：S弯切内线优化（路径缩短12%）、长直道稳定性提升（震荡幅度降低60%）、普通弯道维持高循迹精度。
+经过反复测试，我们选择的PD调节策略是：
+(1) 将微分项系数置零，单独调节Kp，发现在2.0m/s以下单独调节Kp就能取得一个良好的跑车效果；
+(2) 2.0m/s以上微分项系数Kd随速度增大而增大，原因是速度越快舵机在一般赛道中越需要较好的动态响应能力；
+
+图4.20 中点偏差和动态Kp值的函数曲线
+经不断调试，最终我们选择了一组PD参数，得到了较为理想的转向控制效果。
+4.5 驱动电机的PID控制算法
+对于速度控制，我们采用了增量式PID控制算法，基本思想是直道加速，元素减速。经过反复调试，将每场图像得到的黑线位置与速度PI参考速度值构成二次曲线关系。在实际测试中，我们发现小车直道和弯道相互过渡时加减速比较灵敏，与舵机转向控制配合得较好。
+
+图4.21 中点偏差和给定速度的函数曲线
+
+
+
+
+
+第五章 系统调试
+5.1 开发调试工具
+软件开发工具选用的是ADS、VScode和MobaXterm。ADS是英飞凌公司为ARM 微处理器开发的一个集成开发环境(下面简称ADS)。上位机我们选用的是VScode，比较其他的上位机开发软件，具有入门容易、使用方便和代码紧凑等特点。它为用户提供一个易学和具有最大量代码继承能力的开发环境，以及对大多数和特殊目标的支持。使用MobaXterm软件在对程序运行和图像调试方面有很大帮助，可以清晰看到所有输出的信息，在调试的时候提供给了很多可靠信息。VScode 有效提高用户的工作效率，通过VScode和ADS工具，可以大大节省软件调试时间。调试界面如图5.1所示
+
+
+
+图5.1 调试界面
+模型车的主要技术参数说明
+
+
+
+
+
+
+结论
+自组队报名参加全国大学生智能汽车竞赛伊始，本小组成员便开启了系统性的备赛征程。从初期的资料搜集、机械结构方案设计，到车模的精细组装与调试，再到核心控制程序的编写与迭代，我们一步一个脚印，历经反复验证与优化，最终确定了当前的设计方案并实现了既定目标。
+本技术报告旨在详细阐述我们在备赛过程中的核心思路与技术实现，涵盖机械结构、硬件电路以及最为关键的控制算法创新。在机械设计层面，我们聚焦于舵机转向系统的性能提升，通过对前轮倾角等关键参数进行一系列针对性分析与优化调整，有效提升了车辆的转向响应与行驶稳定性。在软件控制方面，我们基于Python语言进行程序开发，充分利用开发工具进行调试。经过团队成员持续的头脑风暴、代码迭代与实车测试，最终设计并实现了一套具备良好通用性与鲁棒性的控制算法。该算法的核心在于实现了基于赛道实时路况的自适应车速调节策略，能够在基础赛段进行高效加速，并在识别到特殊赛道元素时智能减速，从而在确保稳定完赛的前提下，全力追求最短比赛用时。
+备赛过程充满挑战，无数个在实验室通宵调车的夜晚，记录着我们团队从生涩走向成熟的艰难蜕变。在此，我们由衷感谢东北林业大学智能创新实验室提供的如同家庭般温暖且专业的研发环境。同时，我们深切感激学校及学院在实验场地、研发经费等方面给予的鼎力支持。特别要感谢一直关心和支持智能车竞赛发展的学校与学院领导、倾囊相授的指导老师以及提供宝贵经验的指导学长。最后，衷心感谢竞赛组委会搭建了如此富有挑战性且极具实践价值的竞技平台。
+
+
+参考文献
+[1] 卓晴，黄开胜，邵贝贝．学做智能车 [M]．北京：北京航空航天大学出版社．2007.
+[2] 王淑娟，蔡惟铮，齐明．模拟电子技术基础 [M]．北京：高等教育出版社．2009
+[3] 张军．AVR单片机应用系统开发典型实例 [M]．北京：中国电力出版社，2005.
+[4] 张文春．汽车理论 [M]．北京．机械工业出版社．2005.
+[5] 殷剑宏，吴开亚．图论及其算法 [M] ．中国科学技术大学出版社，2003.
+[6] 夏克俭．数据结构及算法 [M] ．北京：国防工业出版社， 2001.
+[7] 邵贝贝．单片机嵌入式应用的在线开发方法 [M]．北京．清华大学出版社．2004.
+
+§03 附录
+部分源码
+"""
+帧处理流水线 — 每帧全流程编排
+==============================
+每帧处理流程:
+  ROI计算 → FPS → YOLO推理(跳帧) → YOLOSeg推理(跳帧) → TrackingV2巡线+PID
+  → 可视化叠加 → OCR状态机 → UDP上报 → 决策仲裁 → 串口发送
+
+用法:
+    proc = FrameProcessor(yolo_engine, seg_engine, tracking,
+                          decision_engine, udp_sender, serial_ctl)
+    vis_frame, ctrl = proc.process(frame, src_w, src_h)
+"""
+
+import time
+import numpy as np
+import cv2
+
+import config
+
+
+class FrameProcessor:
+    """
+    每帧处理流水线。
+
+    封装了 YOLO/YOLOSeg 推理、TrackingV2 巡线、PID 控制、可视化叠加、
+    OCR 状态机、UDP 上报和决策仲裁的全部逻辑。
+    """
+
+    def __init__(self, yolo_engine, seg_engine, tracking,
+                 decision_engine, udp_sender, serial_ctl,
+                 enable_roi=True, show_roi=True,
+                 roi_y_start=0.5, roi_y_end=1.0,
+                 seg_skip_frames=1, yolo_skip_frames=1,
+                 udp_every_n=2,
+                 run_p1=0.9, run_p2=0.018, run_p3=0.0,
+                 turn_d=3.5, servo_mid=1500,
+                 ocr_client=None):
+        """
+        Args:
+            yolo_engine:      YOLO 推理引擎（InferWrap 实例，可为 None）
+            seg_engine:       YOLOSeg 推理引擎（YOLOSegInfer 实例）
+            tracking:         TrackingV2 巡线实例（可为 None）
+            decision_engine:  DecisionEngine 决策仲裁实例
+            udp_sender:       UdpDetectionSender 实例
+            serial_ctl:       SerialCarController 实例
+            ocr_client:       OcrClient 实例（可为 None，禁用 OCR）
+        """
+        self.yolo = yolo_engine
+        self.seg = seg_engine
+        self.tracking = tracking
+        self.decision = decision_engine
+        self.udp = udp_sender
+        self.serial = serial_ctl
+
+        self.enable_roi = enable_roi
+        self.show_roi = show_roi
+        self.roi_y_start = roi_y_start
+        self.roi_y_end = roi_y_end
+        self.seg_skip_n = max(0, int(seg_skip_frames))
+        self.yolo_skip_n = max(0, int(yolo_skip_frames))
+        self.udp_skip_n = max(0, int(udp_every_n) - 1)
+        self.run_p1 = run_p1
+        self.run_p2 = run_p2
+        self.run_p3 = run_p3
+        self.turn_d = turn_d
+        self.servo_mid = servo_mid
+
+        # ---- 推理缓存 & 计数 ----
+        self._fps_t = time.time()
+        self._fps_n = 0
+        self.cur_fps = 0.0
+
+        self.roi_y1 = -1
+        self.roi_y2 = -1
+        self.roi_ready = False
+        self.frame_idx = 0
+
+        self._last_seg_map = None
+        self._last_seg_ok = False
+
+        self._last_det_frame = None
+        self._last_boxes = None
+        self._last_classes = None
+        self._last_scores = None
+        self._last_yolo_flag = False
+
+        self._udp_frame_idx = 0
+        self._dbg_saved = False
+
+        # 无显示且无录制时跳过所有绘制，节省性能
+        self.need_viz = config.ENABLE_DISPLAY or getattr(config, "ENABLE_RECORDING", False)
+
+        # ---- OCR 客户端与状态机 ----
+        self.ocr = ocr_client
+        self.ocr_state = "IDLE"           # IDLE / WAITING / EXECUTING
+        self.ocr_direction = None         # "直走" / "右转" / None
+        self.ocr_exec_start_frame = 0
+        self.ocr_exec_frames = 0
+        self._last_ocr_trigger_frame = -999999
+        self._ocr_post_cooldown = False
+        self._last_news_seen_frame = -999999
+        self._ocr_post_cooldown_frames = getattr(config, "OCR_POST_COOLDOWN_FRAMES", 120)
+        self._news_consecutive_count = 0
+        self._news_trigger_consecutive = getattr(config, "NEWS_TRIGGER_CONSECUTIVE_FRAMES", 1)
+        self.news_class_id = config.NEWS_CLASS_ID
+        self.news_area_threshold = config.NEWS_AREA_THRESHOLD
+        self.news_cooldown_frames = config.NEWS_COOLDOWN_FRAMES
+        self.ocr_straight_frames = config.OCR_STRAIGHT_FRAMES
+        self.ocr_right_frames = config.OCR_RIGHT_FRAMES
+        self.ocr_right_servo_offset = config.OCR_RIGHT_SERVO_OFFSET
+
+    # ------------------------------------------------------------------
+    #  主入口
+    # ------------------------------------------------------------------
+
+    def process(self, frame, src_w, src_h):
+        """处理一帧，返回 (vis_frame, final_ctrl)。"""
+        self._init_roi(src_h)
+        self._update_fps()
+
+        det_frame, boxes, classes, scores, flag = self._yolo_infer(frame)
+        if det_frame is None:
+            det_frame = frame.copy()
+
+        seg_map_roi, seg_ok = self._seg_infer(frame)
+        self._debug_save_once(frame, seg_map_roi, seg_ok)
+
+        vis, ctrl = self._tracking_and_viz(det_frame, seg_map_roi, seg_ok, src_w, src_h)
+
+        if self.need_viz:
+            cv2.putText(vis, f"Client FPS: {self.cur_fps:.1f}", (10, 30),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+
+        # OCR 状态机（每帧处理，不受 UDP 节流影响）
+        ocr_ctrl = self._handle_ocr(boxes, classes, scores, ctrl, src_w)
+        if self.need_viz:
+            self._draw_ocr_status(vis, ocr_ctrl)
+
+        # UDP 上报 + 决策仲裁（节流）
+        final_ctrl = None
+        self._udp_frame_idx += 1
+        do_udp = (self.udp_skip_n == 0) or (self._udp_frame_idx % (self.udp_skip_n + 1) == 0)
+
+        if do_udp:
+            self.udp.send(boxes, classes, scores)
+
+            # 决策优先级：OCR > YOLO决策 > 纯巡线
+            if ocr_ctrl is not None:
+                final_ctrl = ocr_ctrl
+            elif config.ENABLE_YOLO_DECISION:
+                final_ctrl = self.decision.decide(boxes, classes, scores, ctrl, src_w)
+            else:
+                if ctrl is not None:
+                    final_ctrl = {
+                        "servo_pwm": int(ctrl["servo_pwm"]),
+                        "speed": config.SPEED,
+                        "mode": "LINE_FOLLOW",
+                        "reason": "yolo_decision_disabled",
+                    }
+                else:
+                    # 丢线处理
+                    if getattr(config, "LOST_LINE_STOP", False):
+                        final_ctrl = {
+                            "servo_pwm": config.SERVO_MID,
+                            "speed": 0.0,
+                            "mode": "LOST_LINE_STOP",
+                            "reason": "line_lost_stop",
+                        }
+                    else:
+                        final_ctrl = {
+                            "servo_pwm": config.SERVO_MID,
+                            "speed": config.SPEED,
+                            "mode": "LINE_FOLLOW",
+                            "reason": "no_tracking",
+                        }
+
+            if final_ctrl is not None and self.need_viz:
+                mode_color = (0, 255, 0) if final_ctrl["mode"] == "LINE_FOLLOW" else (0, 0, 255)
+                cv2.putText(vis, f"MODE: {final_ctrl['mode']}", (10, 60),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.6, mode_color, 2, cv2.LINE_AA)
+        else:
+            # 非 UDP 帧：OCR 优先，否则沿用巡线 ctrl
+            if ocr_ctrl is not None:
+                final_ctrl = ocr_ctrl
+            elif ctrl is not None:
+                final_ctrl = {
+                    "servo_pwm": int(ctrl["servo_pwm"]),
+                    "speed": config.SPEED,
+                    "mode": "LINE_FOLLOW",
+                    "reason": "udp_skip",
+                }
+            elif getattr(config, "LOST_LINE_STOP", False):
+                final_ctrl = {
+                    "servo_pwm": config.SERVO_MID,
+                    "speed": 0.0,
+                    "mode": "LOST_LINE_STOP",
+                    "reason": "line_lost_stop",
+                }
+
+        # 串口车控：每帧发送，保证控制频率
+        if final_ctrl is not None:
+            self.serial.send(final_ctrl['speed'], int(final_ctrl['servo_pwm']))
+
+        self.frame_idx += 1
+        return vis, final_ctrl
+
+    # ------------------------------------------------------------------
+    #  推理与可视化
+    # ------------------------------------------------------------------
+
+    def _init_roi(self, src_h):
+        if not self.roi_ready or self.roi_y2 > src_h:
+            if self.enable_roi:
+                self.roi_y1 = max(0, min(src_h - 1, int(src_h * self.roi_y_start)))
+                self.roi_y2 = max(self.roi_y1 + 1, min(src_h, int(src_h * self.roi_y_end)))
+            else:
+                self.roi_y1, self.roi_y2 = 0, src_h
+            self.roi_ready = True
+
+    def _update_fps(self):
+        self._fps_n += 1
+        if time.time() - self._fps_t >= 1.0:
+            self.cur_fps = self._fps_n / (time.time() - self._fps_t)
+            self._fps_n = 0
+            self._fps_t = time.time()
+
+    def _yolo_infer(self, frame):
+        if self.yolo is None:
+            return frame.copy(), None, None, None, False
+        do_infer = (self.yolo_skip_n == 0) or \
+                   (self.frame_idx % (self.yolo_skip_n + 1) == 0) or \
+                   (not self._last_yolo_flag)
+        if do_infer:
+            (det_frame, boxes, classes, scores), flag = self.yolo.infer(frame)
+            if flag and det_frame is not None:
+                self._last_det_frame = det_frame
+                self._last_boxes = boxes
+                self._last_classes = classes
+                self._last_scores = scores
+                self._last_yolo_flag = True
+            else:
+                det_frame = self._last_det_frame
+                boxes, classes, scores = self._last_boxes, self._last_classes, self._last_scores
+                flag = self._last_yolo_flag
+        else:
+            det_frame = self._last_det_frame
+            boxes, classes, scores = self._last_boxes, self._last_classes, self._last_scores
+            flag = self._last_yolo_flag
+        return det_frame, boxes, classes, scores, flag
+
+    def _seg_infer(self, frame):
+        do_infer = (self.seg_skip_n == 0) or \
+                   (self.frame_idx % (self.seg_skip_n + 1) == 0) or \
+                   (not self._last_seg_ok)
+        if do_infer:
+            roi_frame = frame[self.roi_y1:self.roi_y2, :, :] if self.enable_roi else frame
+            raw_result, seg_ok = self.seg.infer(roi_frame)
+            seg_map_roi = raw_result.get('seg_map') if isinstance(raw_result, dict) else raw_result
+            if seg_ok and seg_map_roi is not None:
+                self._last_seg_map = seg_map_roi
+                self._last_seg_ok = True
+            else:
+                seg_map_roi = self._last_seg_map
+                seg_ok = self._last_seg_ok
+        else:
+            seg_map_roi = self._last_seg_map
+            seg_ok = self._last_seg_ok
+        return seg_map_roi, seg_ok
+
+    def _debug_save_once(self, frame, seg_map_roi, seg_ok):
+        if self._dbg_saved or not seg_ok or seg_map_roi is None:
+            return
+        try:
+            roi_frame = frame[self.roi_y1:self.roi_y2, :, :] if self.enable_roi else frame
+            cv2.imwrite("dbg_roi_input.png", roi_frame)
+            cv2.imwrite("dbg_seg_map_x127.png", (seg_map_roi.astype(np.uint8) * 127))
+            uniq, cnt = np.unique(seg_map_roi, return_counts=True)
+            print(f"[dbg] seg unique={uniq.tolist()} counts={cnt.tolist()}")
+        except Exception as e:
+            print(f"[dbg] save fail: {e}")
+        self._dbg_saved = True
+
+    def _tracking_and_viz(self, vis, seg_map_roi, seg_ok, src_w, src_h):
+        ctrl = None
+        if not (seg_ok and seg_map_roi is not None and isinstance(seg_map_roi, np.ndarray)):
+            return vis, ctrl
+        if self.need_viz and self.enable_roi and self.show_roi:
+            cv2.rectangle(vis, (0, self.roi_y1), (src_w - 1, self.roi_y2 - 1),
+                          (0, 200, 255), 2)
+            cv2.putText(vis, "ROI", (8, self.roi_y1 + 22),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 200, 255), 2, cv2.LINE_AA)
+        if self.tracking is not None:
+            self.tracking.recognize(seg_map_roi)
+            if self.need_viz:
+                self.tracking.draw(vis, y_offset=self.roi_y1 if self.enable_roi else 0)
+            roi_h = (self.roi_y2 - self.roi_y1) if self.enable_roi else src_h
+            deviation = self.tracking.compute_center_deviation(
+                image_width=src_w, image_height=roi_h)
+            if deviation is not None:
+                ctrl = self.tracking.compute_pid_control(
+                    error=deviation["error"],
+                    run_p1=self.run_p1, run_p2=self.run_p2, run_p3=self.run_p3,
+                    turn_d=self.turn_d, pwm_mid=self.servo_mid)
+            if ctrl is not None and self.need_viz:
+                ctrl_text = (f"center_err={ctrl['error']:.1f}px  "
+                             f"pid={ctrl['pid_output']:.1f}  servo={ctrl['servo_pwm']}")
+                cv2.putText(vis, ctrl_text, (10, 90),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 0), 2, cv2.LINE_AA)
+        return vis, ctrl
+
+    # ------------------------------------------------------------------
+    #  OCR 状态机
+    # ------------------------------------------------------------------
+
+    def _handle_ocr(self, boxes, classes, scores, tracking_ctrl, frame_width):
+        """
+        OCR 状态机：检测 news 标签 → 停车 → 触发 OCR → 等待结果 → 执行直行/右转。
+        返回非 None 时表示 OCR 接管车控。
+        """
+        if self.ocr is None or not config.ENABLE_OCR:
+            return None
+
+        # ---------- EXECUTING ----------
+        if self.ocr_state == "EXECUTING":
+            elapsed = self.frame_idx - self.ocr_exec_start_frame
+            if elapsed >= self.ocr_exec_frames:
+                print(f"[OCR] frame={self.frame_idx} direction={self.ocr_direction} executed, enter post-cooldown")
+                self.ocr_state = "IDLE"
+                self.ocr_direction = None
+                self._ocr_post_cooldown = True
+                self._last_news_seen_frame = self.frame_idx
+                return None
+            if self.ocr_direction == "直走":
+                # 固定直行：舵机中位，不跟随巡线，走完 OCR_STRAIGHT_FRAMES 帧后恢复
+                return {
+                    "servo_pwm": self.servo_mid,
+                    "speed": config.SPEED,
+                    "mode": "OCR_STRAIGHT",
+                    "reason": f"ocr_straight({elapsed}/{self.ocr_exec_frames})",
+                }
+            if self.ocr_direction == "右转":
+                return {
+                    "servo_pwm": self.servo_mid + self.ocr_right_servo_offset,
+                    "speed": config.SPEED,
+                    "mode": "OCR_RIGHT",
+                    "reason": f"ocr_right({elapsed}/{self.ocr_exec_frames})",
+                }
+            return {"servo_pwm": self.servo_mid, "speed": 0.0,
+                    "mode": "OCR_UNKNOWN", "reason": f"unknown:{self.ocr_direction}"}
+
+        # ---------- WAITING ----------
+        if self.ocr_state == "WAITING":
+            result = self.ocr.poll_result()
+            if result is None and self.ocr.state == self.ocr.STATE_IDLE:
+                print(f"[OCR] frame={self.frame_idx} {self.ocr.last_error or 'client reset'}, resume")
+                self.ocr_state = "IDLE"
+                self.ocr_direction = None
+                return None
+            if result == "NORMAL":
+                print(f"[OCR] frame={self.frame_idx} result=NORMAL, resume")
+                self.ocr_state = "IDLE"
+                self.ocr_direction = None
+                return None
+            if result is not None:
+                self.ocr_state = "EXECUTING"
+                self.ocr_direction = result
+                self.ocr_exec_start_frame = self.frame_idx
+                self.ocr_exec_frames = (self.ocr_straight_frames if result == "直走"
+                                        else self.ocr_right_frames)
+                raw_text = getattr(self.ocr, "last_raw_text", None)
+                if raw_text:
+                    print(f"[OCR] 识别原文: {raw_text}")
+                print(f"[OCR] frame={self.frame_idx} result={result}, start executing")
+            return {"servo_pwm": self.servo_mid, "speed": 0.0,
+                    "mode": "OCR_WAITING", "reason": "waiting_for_result"}
+
+        # ---------- IDLE ----------
+        if boxes is None or len(boxes) == 0 or classes is None:
+            return None
+        if self.frame_idx - self._last_ocr_trigger_frame < self.news_cooldown_frames:
+            return None
+
+        max_area, news_box = 0, None
+        for i, cls_id in enumerate(classes):
+            if int(cls_id) == self.news_class_id:
+                area = int((boxes[i][2] - boxes[i][0]) * (boxes[i][3] - boxes[i][1]))
+                if area > max_area:
+                    max_area, news_box = area, boxes[i]
+
+        if news_box is not None:
+            self._last_news_seen_frame = self.frame_idx
+        if self._ocr_post_cooldown:
+            if self.frame_idx - self._last_news_seen_frame > self._ocr_post_cooldown_frames:
+                print(f"[OCR] frame={self.frame_idx} post-cooldown cleared")
+                self._ocr_post_cooldown = False
+            else:
+                return None
+
+        if news_box is not None and max_area >= self.news_area_threshold:
+            self._news_consecutive_count += 1
+            if self._news_consecutive_count >= self._news_trigger_consecutive:
+                self.ocr_state = "WAITING"
+                self._last_ocr_trigger_frame = self.frame_idx
+                self._news_consecutive_count = 0
+                self.ocr.trigger()
+                print(f"[OCR] frame={self.frame_idx} triggered (area={max_area})")
+                return {"servo_pwm": self.servo_mid, "speed": 0.0,
+                        "mode": "OCR_TRIGGER", "reason": f"news_area={max_area}"}
+        else:
+            self._news_consecutive_count = 0
+        return None
+
+    def _draw_ocr_status(self, vis, ocr_ctrl):
+        """在画面上绘制醒目的 OCR 状态提示。"""
+        if ocr_ctrl is None:
+            return
+        mode = ocr_ctrl.get("mode", "")
+        reason = ocr_ctrl.get("reason", "")
+        h, w = vis.shape[:2]
+        color_map = {
+            "OCR_TRIGGER":  ((0, 0, 255),   "OCR TRIGGERED - STOPPING",  "WAITING FOR OCR SERVER"),
+            "OCR_WAITING":  ((0, 0, 255),   "OCR WAITING",               "STOPPED - WAITING FOR DIRECTION"),
+            "OCR_STRAIGHT": ((0, 255, 0),   "OCR: GO STRAIGHT",          reason),
+            "OCR_RIGHT":    ((0, 255, 0),   "OCR: TURN RIGHT",           reason),
+            "OCR_UNKNOWN":  ((0, 165, 255), "OCR UNKNOWN DIRECTION",     "STOPPED"),
+        }
+        if mode not in color_map:
+            return
+        color, main_text, sub_text = color_map[mode]
+        font, scale, thick = cv2.FONT_HERSHEY_SIMPLEX, 1.0, 2
+        (tw, th), _ = cv2.getTextSize(main_text, font, scale, thick)
+        x, y = max(10, (w - tw) // 2), 50
+        overlay = vis.copy()
+        cv2.rectangle(overlay, (x - 10, y - th - 10), (x + tw + 10, y + 10), (0, 0, 0), -1)
+        cv2.addWeighted(overlay, 0.5, vis, 0.5, 0, vis)
+        cv2.putText(vis, main_text, (x, y), font, scale, color, thick, cv2.LINE_AA)
+        if sub_text:
+            (tw2, _), _ = cv2.getTextSize(sub_text, font, 0.6, 1)
+            cv2.putText(vis, sub_text, (max(10, (w - tw2) // 2), y + 30),
+                        font, 0.6, (255, 255, 255), 1, cv2.LINE_AA)
+
+    # ------------------------------------------------------------------
+    #  重置 / 停止
+    # ------------------------------------------------------------------
+
+    def reset(self):
+        """重置内部状态（用于 SHM 断线重连后重新初始化 ROI 等）。"""
+        self.roi_ready = False
+        self.roi_y1 = self.roi_y2 = -1
+        self.frame_idx = 0
+        self._udp_frame_idx = 0
+        self._fps_t = time.time()
+        self._fps_n = 0
+        self._last_seg_map = None
+        self._last_seg_ok = False
+        self._last_det_frame = None
+        self._last_boxes = None
+        self._last_classes = None
+        self._last_scores = None
+        self._last_yolo_flag = False
+        self._dbg_saved = False
+        self.ocr_state = "IDLE"
+        self.ocr_direction = None
+        self.ocr_exec_start_frame = 0
+        self.ocr_exec_frames = 0
+        self._last_ocr_trigger_frame = -999999
+
+    def stop(self):
+        """清理接口（同步版本无后台线程，空实现）。"""
+        pass
+
+"""
+X-Verse AR Engine — 主入口
+===========================
+本地 AR 融合视频预览客户端（YOLO + YOLOSeg + TrackingV2 三引擎并行）。
+
+本模块运行在 RK3588 边缘计算平台，从主渲染引擎（裁判系统）通过共享内存接收实时
+视频帧，并行执行：
+  1) YOLO 目标检测 → 检测框 + 类别 + 中心点
+  2) YOLOSeg 实例分割 → 赛道前景
+  3) 巡线（Tracking） → 中线 / 预瞄点 / PID 控制量
+  4) 决策仲裁 → 最终车控指令（串口发送）
+
+支持两种输入模式（通过 config.INPUT_MODE 切换）：
+  - "shm":   共享内存（板卡实车）
+  - "video": 本地视频文件（PC 调试）
+
+用法:
+    python main.py                     # 使用 config.py 中的默认配置
+"""
+
+import os
+import time
+import cv2
+
+# 限制 OpenCV 内部多线程，避免 cv2.resize/cvtColor 等操作在 8 核上扩散，
+# 把更多 CPU 时间留给主循环和推理线程。调试时若画面卡顿可适当提高到 2~4。
+cv2.setNumThreads(2)
+
+# ---- 配置 ----
+import config
+
+# ---- 引擎 ----
+from infer_wrap import InferWrap
+from yolov8_seg_infer import YOLOSegInfer, ROI_Y_START, ROI_Y_END
+from tracking_v2 import TrackingV2
+from decision import DecisionEngine
+
+# ---- 通信 ----
+from udp_sender import UdpDetectionSender
+from serial_ctl import SerialCarController
+
+# ---- 帧源 ----
+from frame_source import VideoFrameSource, ShmFrameSource
+
+# ---- 流水线 ----
+from frame_processor import FrameProcessor
+from ocr_client import OcrClient
+from video_recorder import VideoRecorder
+
+
+def _env_bool(name, default):
+    value = os.environ.get(name)
+    if value is None:
+        return default
+    return value.strip().lower() in ("1", "true", "yes", "on")
+
+
+def _env_int(name, default):
+    value = os.environ.get(name)
+    if value is None:
+        return default
+    try:
+        return int(value)
+    except ValueError:
+        return default
+
+
+def _env_float(name, default):
+    value = os.environ.get(name)
+    if value is None:
+        return default
+    try:
+        return float(value)
+    except ValueError:
+        return default
+
+
+def _env_int_list(name, default):
+    value = os.environ.get(name)
+    if value is None:
+        return default
+    try:
+        return [int(part.strip()) for part in value.split(",") if part.strip()]
+    except ValueError:
+        return default
+
+
+def main():
+    """
+    AR 客户端主循环。
+
+    工作流程:
+      1. 创建帧源（SHM 或 Video）
+      2. 初始化 NPU 推理引擎（YOLO + YOLOSeg）
+      3. 初始化巡线 + 决策引擎
+      4. 初始化通信（UDP + 串口）
+      5. 创建帧处理流水线
+      6. 主循环: 读帧 → 处理 → 显示
+      7. 清理
+    """
+    print("Client Ready (YOLO + YOLOSeg + TrackingV2). Initializing...")
+
+    # ================================================================
+    #  1. 创建帧源
+    # ================================================================
+    if config.INPUT_MODE == "shm":
+        source = ShmFrameSource(name=config.SHM_NAME,
+                                header_size=config.SHM_HEADER_SIZE)
+        print("  Input mode: SHM (shared memory)")
+    else:
+        source = VideoFrameSource(path=config.VIDEO_PATH,
+                                  loop=config.VIDEO_LOOP)
+        print(f"  Input mode: video ({config.VIDEO_PATH})")
+
+    # ================================================================
+    #  2. 初始化 NPU 推理引擎
+    # ================================================================
+    # YOLO 目标检测
+    enable_yolo = _env_bool("RK_ENABLE_YOLO", getattr(config, "ENABLE_YOLO", False))
+    yolo_load_only = _env_bool("RK_YOLO_LOAD_ONLY", False)
+    yolo_skip_frames = _env_int("RK_YOLO_SKIP_FRAMES", config.YOLO_SKIP_FRAMES)
+    seg_skip_frames = _env_int("RK_SEG_SKIP_FRAMES", config.SEG_SKIP_FRAMES)
+    yolo_tpes = _env_int("RK_YOLO_TPES", config.YOLO_TPES)
+    seg_tpes = _env_int("RK_SEG_TPES", config.YOLOSEG_TPES)
+    yolo_core_list = _env_int_list("RK_YOLO_CORE_LIST", config.YOLO_CORE_LIST)
+    seg_core_list = _env_int_list("RK_SEG_CORE_LIST", config.YOLOSEG_CORE_LIST)
+    load_seg_first = _env_bool("RK_LOAD_SEG_FIRST", False)
+
+    print(f"  YOLOSeg TPEs={seg_tpes}, cores={seg_core_list}, skip_frames={seg_skip_frames}")
+
+    seg_engine = None
+    if load_seg_first:
+        print("  Model load order: YOLOSeg first")
+        seg_engine = YOLOSegInfer(
+            model_dir=config.YOLOSEG_MODEL_DIR,
+            TPEs=seg_tpes,
+            core_list=seg_core_list,
+        )
+
+    yolo_engine = None
+    if enable_yolo:
+        yolo_engine = InferWrap(TPEs=yolo_tpes, core_list=yolo_core_list)
+        if yolo_load_only:
+            print(f"  YOLO loaded only: TPEs={yolo_tpes}, cores={yolo_core_list}, inference disabled")
+        else:
+            print(f"  YOLO enabled: TPEs={yolo_tpes}, cores={yolo_core_list}, skip_frames={yolo_skip_frames}")
+    else:
+        print("  YOLO disabled by config.ENABLE_YOLO")
+
+    # YOLOv8-Seg 实例分割
+    if seg_engine is None:
+        seg_engine = YOLOSegInfer(
+            model_dir=config.YOLOSEG_MODEL_DIR,
+            TPEs=seg_tpes,
+            core_list=seg_core_list,
+        )
+
+    # ================================================================
+    #  3. 初始化巡线 + 决策
+    # ================================================================
+    tracking = TrackingV2(
+        col_margin=config.TRACK_COL_MARGIN,
+        row_cut_bottom=config.TRACK_ROW_CUT_BOTTOM,
+        target_index=config.TRACK_TARGET_INDEX,
+        median_ksize=getattr(config, "TRACK_MEDIAN_KSIZE", 5),
+        ema_alpha=getattr(config, "TRACK_EMA_ALPHA", 0.4),
+        fork_width=getattr(config, "TRACK_FORK_WIDTH", 80),
+        fork_seg_rows=getattr(config, "TRACK_FORK_SEG_ROWS", 3),
+        fork_min_seg_px=getattr(config, "TRACK_FORK_MIN_SEG_PX", 10),
+        fork_smooth_k=getattr(config, "TRACK_FORK_SMOOTH_K", 7),
+    ) if config.ENABLE_TRACKING else None
+
+    decision_engine = DecisionEngine(
+        servo_mid=config.SERVO_MID,
+        default_speed=config.SPEED,
+        steer_gain=2.0,
+        max_steer=150,
+    )
+
+    # ================================================================
+    #  4. 初始化通信
+    # ================================================================
+    udp_sender = UdpDetectionSender(
+        target_ip=config.UDP_DET_TARGET_IP,
+        target_port=config.UDP_DET_TARGET_PORT,
+    )
+
+    serial_ctl = SerialCarController(
+        port=config.SERIAL_PORT,
+        baud=config.SERIAL_BAUD,
+        servo_mid=config.SERVO_MID,
+    )
+
+    # ================================================================
+    #  5. 初始化 OCR 客户端（可选）
+    # ================================================================
+    ocr_client = None
+    if config.ENABLE_OCR and config.INPUT_MODE == "shm":
+        try:
+            ocr_client = OcrClient(
+                server_ip=config.OCR_SERVER_IP,
+                server_port=config.OCR_SERVER_PORT,
+                listen_port=config.OCR_LISTEN_PORT,
+                timeout=config.OCR_TIMEOUT,
+            )
+            print(f"  OCR enabled: server={config.OCR_SERVER_IP}:{config.OCR_SERVER_PORT}, "
+                  f"listen={config.OCR_LISTEN_PORT}")
+        except Exception as e:
+            print(f"  OCR disabled: failed to initialize OCR client ({e})")
+    elif config.ENABLE_OCR:
+        print("  OCR disabled for video input mode (OCR server reads SHM frames)")
+
+    # ================================================================
+    #  6. 创建帧处理流水线
+    # ================================================================
+    processor = FrameProcessor(
+        yolo_engine=None if yolo_load_only else yolo_engine,
+        seg_engine=seg_engine,
+        tracking=tracking,
+        decision_engine=decision_engine,
+        udp_sender=udp_sender,
+        serial_ctl=serial_ctl,
+        enable_roi=config.ENABLE_ROI,
+        show_roi=config.SHOW_ROI,
+        roi_y_start=ROI_Y_START,
+        roi_y_end=ROI_Y_END,
+        seg_skip_frames=seg_skip_frames,
+        yolo_skip_frames=yolo_skip_frames,
+        udp_every_n=config.UDP_EVERY_N,
+        run_p1=config.RUN_P1,
+        run_p2=config.RUN_P2,
+        run_p3=config.RUN_P3,
+        turn_d=config.TURN_D,
+        servo_mid=config.SERVO_MID,
+        ocr_client=ocr_client,
+    )
+
+    # ================================================================
+    #  7. 主循环
+    # ================================================================
+    print("?? Running...  (press ESC or 'q' to quit)")
+    recorder = None
+    perf_log_every = _env_float("RK_PERF_LOG_EVERY", 0.0)
+    perf_start_t = time.time()
+    perf_last_t = perf_start_t
+    perf_frames = 0
+    try:
+        while True:
+            # ---- 读帧 ----
+            frame, src_w, src_h = source.read()
+
+            if frame is None:
+                if isinstance(source, ShmFrameSource):
+                    # SHM 无新帧：短暂休眠后重试
+                    time.sleep(0.002)
+                    if config.ENABLE_DISPLAY and cv2.waitKey(1) in (27, ord('q')):
+                        break
+                    continue
+                else:
+                    # 视频结束
+                    print("[video] Ended.")
+                    break
+
+            # 首次拿到有效帧后再初始化录制器（避免 src_w/src_h 未定义）
+            if recorder is None:
+                recorder = VideoRecorder(
+                    enabled=getattr(config, "ENABLE_RECORDING", False),
+                    width=getattr(config, "RECORD_WIDTH", src_w),
+                    height=getattr(config, "RECORD_HEIGHT", src_h),
+                    fps=getattr(config, "RECORD_FPS", 30.0),
+                    output_dir=getattr(config, "RECORD_OUTPUT_DIR", "records"),
+                    codec=getattr(config, "RECORD_CODEC", "mp4v"),
+                )
+                recorder.start()
+
+            # SHM 重连后重置处理器状态
+            if isinstance(source, ShmFrameSource) and source.just_reconnected:
+                processor.reset()
+
+            # ---- 处理帧 ----
+            vis, ctrl = processor.process(frame, src_w, src_h)
+            perf_frames += 1
+            if perf_log_every > 0:
+                now = time.time()
+                if now - perf_last_t >= perf_log_every:
+                    elapsed = max(1e-6, now - perf_start_t)
+                    print(f"[perf] frames={perf_frames} avg_fps={perf_frames / elapsed:.2f}", flush=True)
+                    perf_last_t = now
+
+            # ---- 录制（录制处理后的原始分辨率 vis，不是缩放后的 display_frame）----
+            if recorder is not None:
+                recorder.write(vis)
+
+            # ---- 显示 ----
+            if config.ENABLE_DISPLAY:
+                if config.DISPLAY_SCALE < 1.0:
+                    dw = max(1, int(src_w * config.DISPLAY_SCALE))
+                    dh = max(1, int(src_h * config.DISPLAY_SCALE))
+                    display_frame = cv2.resize(vis, (dw, dh), interpolation=cv2.INTER_NEAREST)
+                else:
+                    display_frame = vis
+
+                cv2.imshow("ret", display_frame)
+
+                if cv2.waitKey(1) in (27, ord('q')):  # ESC / q 退出
+                    break
+
+    except KeyboardInterrupt:
+        print("\n?? Client Stop.")
+    finally:
+        # ================================================================
+        #  9. 清理
+        # ================================================================
+        source.close()
+        if config.ENABLE_DISPLAY:
+            cv2.destroyAllWindows()
+
+        elapsed = max(1e-6, time.time() - perf_start_t)
+        print(f"[perf] final frames={perf_frames} avg_fps={perf_frames / elapsed:.2f}", flush=True)
+
+        # 停止录制
+        if recorder is not None:
+            recorder.stop()
+
+        # 先停止后台推理线程，再释放 NPU 资源
+        try:
+            processor.stop()
+        except Exception:
+            pass
+
+        try:
+            yolo_engine.release()
+        except Exception:
+            pass
+
+        try:
+            seg_engine.release()
+        except Exception:
+            pass
+
+        # 关闭 OCR 客户端
+        if ocr_client is not None:
+            try:
+                ocr_client.close()
+            except Exception:
+                pass
+
+        # 关闭 UDP
+        udp_sender.close()
+
+        # 关闭串口（自动发送停车指令）
+        serial_ctl.close()
+
+    print("?? Client exited.")
+
+
+if __name__ == "__main__":
+    main()
+
+
+===== TABLE 1 =====
+模型车基本参数 | 长316mm宽190mm高150mm
+电容总容量 | 25c
+传感器种类及个数 | 摄像头一个 编码器一个
+除了车模原有的驱动电机舵机之外的伺服电机的个数 | 0
+赛道信息检测 | 检测精度大 频率30

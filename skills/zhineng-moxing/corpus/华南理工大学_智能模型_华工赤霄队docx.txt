@@ -1,0 +1,763 @@
+第二十一届全国大学生智能汽车竞赛
+技术报告
+
+
+
+
+
+学校：华南理工大学
+队伍名称：华工赤霄队
+参赛队员：陈培朗 黄浩轩 张成成 梁泽邦 谷永祺
+带队老师：陈安 邓晓燕
+
+
+
+
+
+
+
+关于技术报告和研究论文使用授权的说明
+本人完全了解全国大学生智能汽车竞赛有关保留、使用技术报告和研究论文的规定，即：参赛作品著作权归参赛者本人，比赛组委会可以在相关主页上收录并公开参赛作品的设计方案、技术报告以及参赛模型车的视频、图像资料，并将相关内容编纂收录在组委会出版论文集中。
+  参赛队员签名：            
+
+
+
+带队教师签名：           
+
+日        期：           
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+摘要
+十一届全国大学生智能汽车竞赛人工智能模型组，设计了一套基于 RK3588 与 TC264 双处理器的智能车系统。上位机运行嵌入式 Linux，采用飞桨 PaddleDetection 和 PaddleOCR 实现虚拟行人、金币、路牌的检测识别，结合传统循迹算法与有限状态机完成任务决策；下位机通过 PID/PD 实现电机与舵机闭环控制。系统采用多进程多线程架构，经共享内存与串口通信形成感知 - 决策 - 执行闭环，可稳定完成行人避让、分叉决策与金币收集任务。
+
+关键词： 智能车竞赛；人工智能模型组；RK3588；目标检测；PID 控制；有限状态机
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+第一章：引言
+
+1.1 智能车大赛介绍
+  全国大学生智能车竞赛受教育部高等教育司委托，由教育部高等自动化专业教学指导分委员会（以下简称自动化分教指委）主办全国大学生智能汽车竞赛。该竞赛以智能汽车为研究对象的创意性科技竞赛，是面向全国大学生的一种具有探索性工程实践活动，是教育部倡导的大学生科技竞赛之一，为加强大学生实践、创新能力和团队精神的培养，促进高等教育教学改革。该竞赛以“立足培养，重在参与，鼓励探索，追求卓越”为指导思想，旨在促进高等学校素质教育，培养大学生的综合知识运用能力、基本工程实践能力和创新意识，激发大学生从事科学研究与探索的兴趣和潜能，倡导理论联系实际、求真务实的学风和团队协作的人文精神，为优秀人才的脱颖而出创造条件。该竞赛由竞赛秘书处为各参赛队提供/购置规定范围内的标准硬软件技术平台，竞赛过程包括理论设计、实际制作、整车调试、现场比赛等环节，要求学生组成团队，协同工作，初步体会一个工程性的研究开发项目从设计到实现的全过程。该竞赛融科学性、趣味性和观赏性为一体，是以迅猛发展、前景广阔的汽车电子为背景，涵盖自动控制、模式识别、传感技术、电子、电气、计算机、机械与汽车等多学科专业的创意性比赛。该竞赛规则透明，评价标准客观，坚持公开、公平、公正的原则，保证竞赛向健康、普及、持续的方向发展。
+
+
+1.2 第二十一届人工智能模型组规则介绍
+1.2.1 赛道环境与任务构成
+（1）虚拟行人安全避让（"鬼探头"场景）：系统在指定区间内随机生成虚拟行人，行人自路边障碍物后方突然横向步入车道，出现时间和出现点均具有随机性。车辆必须实时识别虚拟行人位置与运动趋势，根据风险程度合理采取提前减速绕行或紧急制动策略，禁止发生任何形式的碰撞，且不得采用固定时序、固定位置触发的规则硬编码方式进行规避。
+（2）分叉路口路牌识别与决策：车辆在进入分叉路段前，会看到系统叠加的虚拟路牌，内容包含文字、图标、符号或多模态混合形式。选手须基于OCR模型和视觉大模型进行识别并作出决策，根据解析结果选择正确的道路分支。
+（3）虚拟金币收集与全局巡航：车辆需在完整路段中进行自主巡航，赛道中分布若干虚拟金币，车辆需在不影响安全的前提下尽可能多地收集。该任务体现车辆的全局策略优化能力，要求对金币位置进行感知与路径规划，不得为收集金币而做出与安全冲突的行为。
+1.2.2 技术规范与约束
+本届赛事对参赛车辆提出了明确的技术规范：第一，感知方案必须为纯视觉，禁止使用激光雷达、超声波、红外等其他外部环境传感器；第二，AI算法框架指定使用百度飞桨（PaddlePaddle）进行目标检测与字符识别，视觉理解与智能体决策可使用文心大模型；第三，边缘部署平台为RK3588；第四，不得依赖固定位置或固定时刻触发的规则化控制，所有任务响应必须基于实时视觉感知；第五，禁止使用外接高算力设备，所有推理必须在指定边缘平台上运行。
+
+1.3 系统总体设计方案
+针对人工智能模型组的任务特点和技术约束，本队设计了"边缘AI感知+嵌入式运动控制"的双处理器分层架构，系统总体方案如图1.1所示。
+
+图1.1  系统总体架构框图
+
+上位机采用百度RK3588赛事定制版（基于Orangepi5的AI加速卡）作为核心感知与决策单元，运行嵌入式Linux系统，负责以下任务：USB摄像头图像采集与预处理、基于飞桨PaddleDetection的虚拟目标检测（行人、金币、路牌）、基于PaddleOCR的路牌字符识别、传统循迹算法（赛道边线提取、路径规划）、任务状态机决策与控制指令生成。上位机通过UART串口向下位机发送转向偏差、期望速度和任务状态指令。
+下位机采用英飞凌TC264微控制器作为运动控制单元，负责：电机闭环速度控制（PID）、舵机转向控制（PD）、编码器速度反馈采集、陀螺仪姿态数据采集、安全保护逻辑。下位机接收上位机指令后，通过PWM输出直接驱动电机和舵机执行动作，并将车辆状态信息回传上位机。
+感知层采用单一USB全局快门摄像头，分辨率320×640，帧率100fps，安装于车模中部支架上，与地面呈平视视角。摄像头服务于AI目标检测流水线。
+算法层采用深度学习的混合方案：通过深度学习从而识别虚拟行人、金币、路牌等AR元素的检测与识别，为任务决策提供感知输入；决策层采用有限状态机（FSM）架构，根据当前任务类型和感知结果切换控制策略，实现安全避让、路径选择和金币收集等行为。
+控制层采用串级控制结构：上位机输出期望速度和转向偏差，下位机通过速度PID环和舵机PD环实现精确跟踪。针对不同赛道元素和任务状态，采用参数自适应的控制策略，在直道、弯道、避让区、分叉口等场景下自动调整PID参数，兼顾行驶速度与稳定性。
+第二章  机械结构设计
+
+2.1  车模选型与说明
+本队选用赛曙科技I型车模作为机械基础平台。I型车模是经过多届赛事验证的成熟平台，其主要机械参数如下：车体尺寸约308mm（长）×190mm（宽）×148mm（高），底盘采用高强度碳纤维板材；前轮采用单舵机+连杆机构的阿克曼转向结构，转向舵机为CS-3120数字舵机，6.8V工作电压下扭矩可达21.5kg·cm，转向速度0.14s/60°；后轮采用单电机驱动+行星齿轮差速器结构，驱动电机为RS-555型微型直流电机，12V额定电压下最大转速12000rpm；轮胎规格为直径62mm、宽度26mm的海绵内胆软质轮胎。
+选用I型车模的主要考量包括：第一，I型车模机械结构成熟稳定，零部件供应充足，便于快速迭代和故障替换；第二，车队在上届赛事中已积累了丰富的I型车模调校经验，能够将更多精力投入到AI算法研发中；第三，I型车模的前后布局为上位机板卡、电池和摄像头提供了充足的安装空间，便于实现合理的重心分布；第四，I型车模的后轮驱动特性与人工智能模型组的任务需求匹配度高，能够满足避障、转向和巡航等动态行为的动力要求。
+在车模改装方面，严格遵守竞赛规则：未改动车底盘结构、轮距、轮径及轮胎；未改动驱动电机的传动比；未改造车模运动传动结构；未改动舵机模块本身；未增加车模地面支撑装置。仅在底盘上打孔安装辅助支架，用于固定电路板、摄像头和电池等组件。
+
+图2.1 车模运行图
+
+2.2  车体参数与重心分布
+车模的重心分布对行驶稳定性、转向灵敏度和抓地性能具有决定性影响。在整体布局中，遵循以下原则进行重心优化：
+第一，重心必须位于车身中轴线上，以保证左右转向对称和直行稳定性。所有较重部件（电池、上位机板卡、驱动板）均沿中轴线对称布置或通过配平调整使合力中心落在中轴线上。
+第二，重心尽量靠后。对于后驱车辆，重心靠后可以增大后轮正压力，从而提高驱动轮的抓地力，减少加速和出弯时的打滑现象；同时重心靠后使前轮负荷减小，舵机转向更加灵敏，打角响应更快。通过将电池布置在车模后部、上位机板卡中置、驱动板前置的布局方案，将整车重心控制在后轮轴前方约15mm处。
+第三，重心尽量降低。低重心可以减小车辆过弯时的侧倾力矩，提高侧向稳定性，减少翻车风险。本队将所有电路板尽量贴近底盘安装，电池采用低位卧式固定，摄像头支架采用轻量化碳素杆以减小上部重量，最终整车重心高度控制在40mm以内。
+整车改装后的基本参数为：总重量约1239g（含电池），长308mm，宽190mm，高148mm（含摄像头支架），轴距194mm，轮距168mm。
+
+2.3  传感器安装与布局
+2.3.1  摄像头安装
+摄像头是本车唯一的环境感知传感器，其安装位置和角度直接影响循迹精度和目标检测效果。本队选用USB全局快门摄像头，分辨率320×640，帧率100fps，镜头视角约240°。
+摄像头通过3D打印固定座安装在车模前部底盘上。固定件能够有效减少行驶振动对摄像头的影响。摄像头安装高度约14.5mm（距地面），平视视角。
+为防止碰撞后摄像头角度偏移，支架底部采用阻尼减震设计，摄像头与支架之间通过四个对称锁紧点固定。
+2.3.2  其他传感器安装
+编码器：I型车模原厂配备AB相光栅编码器，通过焊盘直接焊接在电机电极上，遮光片紧定在电机轴上，实现对后轮转速的实时测量。编码器分辨率为1024线，配合四倍频技术可实现4096脉冲/圈的测速精度。
+陀螺仪：采用MPU6050六轴姿态传感器，安装在车模中轴线、重心附近的底盘位置，用于采集车辆横摆角速度（Z轴）和俯仰角，辅助转向阻尼控制和坡道检测。安装时确保传感器芯片水平，以避免轴向耦合误差。
+
+2.4  差速机构与传动优化
+I型车模采用行星齿轮差速器，属于锥齿轮啮合结构。差速器的调校直接影响动力传递效率和转向特性。理想的差速状态为：用手转动一侧轮胎时，另一侧轮胎可按反方向同速转动；电机启动后固定两侧轮胎时，电机齿轮不发生转动，此时差速效果最优。
+本队在差速器调校中采取了以下措施：第一，参考赛曙科技官方差速器安装指南，采用斜打自攻螺钉的方式微调电机安装位置，使电机输出伞齿与差速器齿轮达到最佳啮合间隙，减少啮合阻力和传动噪音；第二，使用顶丝加螺纹胶的方式固定电机轴齿轮，防止轴向窜动导致的打齿现象。
+齿轮传动质量的判断依据为：电机带动后轮空转时，若声音刺耳则为齿轮撞齿（间隙过大），若声音沉闷则为负载过重（间隙过小），正常状态应为均匀顺滑的低频运转声。经多次调校，本队的传动系统在全油门状态下运行平稳，无明显异响和卡顿。
+
+图2.2 差速器结构示意图
+
+2.5  轮胎处理
+轮胎是车辆与地面唯一的接触部件，其抓地性能直接决定了车辆的加速、制动和过弯极限。I型车模原厂配备软质海绵内胆轮胎，本队在规则允许范围内对轮胎进行了以下处理：
+第一，胎面打磨。使用细砂纸将原厂胎纹打磨至接近光头胎状态，增大轮胎与赛道地面的实际接触面积。打磨过程中注意保持胎面均匀，避免出现局部厚度不均。
+第二，软化处理。使用专用轮胎软化剂涂抹胎面，静置渗透后使橡胶表层软化，进一步提升抓地力。软化剂的用量和渗透时间经过实验确定，以胎面不发粘、不脱落为标准。
+第三，密封处理。使用硅橡胶将胎皮与轮毂之间的接缝封死，防止海绵内胆在行驶中移位，同时保持轮胎内部气压稳定。密封后的轮胎减震性能更加一致。
+
+图2.3 车轮图片
+2.6  车模尾翼设计
+为了让车模外形更加炫酷，我们对车模加装了自己设计的车模尾翼，整体呈红黑配色，将尾翼喷涂成纯黑色并绘制代表队伍名称的CX字母和火焰纹饰，经过计算，该尾翼可以为车模提供理想的抓地力以及平衡车模。
+
+图2.4 车模尾翼图片
+
+第三章  电路系统设计
+3.1  硬件总体架构
+本车电路系统采用"上位机AI计算板+下位机主控驱动板"的双层架构，整体硬件布局如图3.1所示。上位机采用百度RK3588赛事定制版，负责图像采集、AI推理和高层决策，由12V电池直接供电；下位机采用英飞凌TC264微控制器为核心的主控驱动一体板，负责电机驱动、舵机控制、传感器采集和安全保护，通过UART串口与上位机通信。
+
+图3.1  硬件系统总体框图
+整套电路系统集成在两块PCB上：一块为RK3588上位机板（官方提供，不需自行设计），另一块为自主设计的主控驱动一体板。主控驱动板集成了电源管理、电机驱动、舵机接口、编码器接口、陀螺仪接口、USB转串口、调试接口等全部功能，尺寸适配I型车模底盘安装空间。两块板之间通过6Pin排线连接，包含UART通信线和电源线。
+PCB设计中遵循以下原则：动力区与信号区分区布局，大电流通路采用宽铜箔+过孔上锡设计；关键信号线进行包地处理，减少电磁干扰；电源输入端增加防反接保护和大容量滤波电容；所有IC电源引脚就近放置0.1μF去耦电容。
+
+3.2  电源管理与分配
+车模使用3S 11.1V 2200mAh锂电池作为唯一动力与供电来源，放电倍率40C。电源输入串联T型接口，并并联680μF电解电容用于滤除电压波动和提供瞬时大电流。电源管理系统将12V输入转换为多路稳定电压，为各模块供电。
+3.2.1  电源树结构
+系统电源分配方案如下：
+（1）12V直供：RK3588上位机、电机驱动H桥。RK3588工作电压范围7-15V，可直接由12V电池供电；电机驱动直接使用电池电压以保证最大输出功率。
+（2）6.5V输出：采用TPS5430降压芯片将12V降至6.5V，专为舵机供电。TPS5430是一款3A输出电流的同步降压转换器，输入电压范围5.5V-36V，内置过流保护和热关断功能。输出电压通过反馈电阻分压设定，计算公式为：
+Vout = 1.221 × (1 + R1/R2)
+其中1.221V为芯片内部参考电压。通过选取R1=43.2kΩ、R2=10kΩ，可获得约6.5V输出。舵机采用独立供电支路，避免电机启动时的电压跌落影响转向控制精度。
+
+
+
+
+
+
+图3.2 TSP5430降压模块
+（3）5V输出：采用第二路TPS5430将12V降至5V，为TC264核心板、编码器信号调理电路、USB转串口芯片和OLED屏幕供电。5V支路串联2A自恢复保险丝，防止短路故障扩大。
+（4）3.3V输出：采用AMS1117-3.3线性稳压器将5V降至3.3V，为陀螺仪MPU6050、编码器反相器和TC264部分外设供电。线性稳压器的低噪声特性适合为模拟传感器供电。
+
+
+
+
+
+
+图3.3 AMS1117-3.3降压模块
+
+3.2.2  电源保护设计
+电源输入端采用P沟道MOS管（AO3400）构成防反接保护电路。当电源正接时，MOS管体二极管先导通，随后栅极被拉低使MOS管完全导通，压降极小；当电源反接时，MOS管截止，切断后级电路，防止元件损坏。
+此外，在12V输入和各降压输出端均并联大容量电解电容（100-470μF）和0.1μF陶瓷电容，构成高低频组合滤波网络，有效抑制电机PWM驱动产生的纹波噪声。舵机供电支路增加独立LC滤波，进一步隔离舵机瞬态电流对主控电路的干扰。
+
+3.3  主控与驱动电路
+3.3.1  主控电路
+下位机主控采用英飞凌TC264D微控制器，该芯片为三核架构（两个TriCore核+一个PSoC核），主频200MHz，内置4MB Flash和2.7MB RAM，具备丰富的外设接口（多路PWM、ADC、UART、SPI、I2C、编码器接口），能够满足智能车运动控制的实时性要求。
+主控电路的核心功能包括：通过UART接收上位机的控制指令（转向偏差、期望速度、任务状态）；通过GPIO捕获编码器AB相脉冲，计算车辆实际速度；通过I2C读取MPU6050陀螺仪数据；通过PWM输出控制舵机角度和电机转速；通过ADC采集电池电压，实现欠压保护。
+为提高系统可靠性，主控板设计了独立的复位电路和电源监控电路。当电源电压低于设定阈值时，电源监控芯片自动复位MCU，防止低电压下的程序跑飞。舵机电源串联独立开关，比赛结束后可单独关闭舵机电源，防止舵机长时间堵转损坏。
+3.3.2  电机驱动电路
+电机驱动采用德州仪器DRV8701E栅极驱动芯片，配合四个N沟道MOS管组成H桥电路。DRV8701E是一款专为 brushed DC 电机设计的单通道栅极驱动器，支持PH/EN和PWM两种控制接口，内置过流保护、欠压锁定、过温保护和故障诊断输出功能。
+H桥的四个MOS管选用低导通电阻（Rds(on)<10mΩ）的型号，以减小导通损耗和发热。PCB设计中，大电流通路（电池正极→H桥→电机→电池负极）采用4mm以上宽铜箔，并在过孔处上锡增强导电能力。栅极驱动电阻选取10Ω，在开关速度和EMI之间取得平衡。
+DRV8701E的工作模式配置为PH/EN模式：PH引脚控制电机转向，EN引脚输入PWM信号控制转速。PWM频率设定为20kHz，处于人耳听觉范围之外，避免高频啸叫。电机驱动的最大电流限制通过DRV8701E的VREF引脚设定为约15A，防止堵转时过流损坏电机和MOS管。
+
+图3.4 电机驱动电路
+3.3.3  舵机驱动电路
+舵机控制信号由TC264的PWM模块直接输出，PWM频率设定为300Hz（高于标准50Hz以提高舵机响应速度），占空比范围对应舵机转角-45°至+45°。舵机信号线串联33Ω电阻，用于抑制信号反射和过冲。舵机电源来自独立的6.5V降压支路，与主控5V电源隔离。
+3.3.4  编码器接口电路
+后轮电机轴端的AB相光栅编码器输出信号为3.3V电平，经过74HC14施密特反相器整形后，输入至TC264的GPT12编码器接口。施密特触发器的滞回特性可以有效消除信号抖动和噪声干扰。TC264硬件编码器模块支持四倍频计数，在1024线编码器下可实现4096脉冲/圈的分辨率，配合5ms采样周期，速度测量精度可达0.1%。
+
+图3.5 主控板原理图
+
+3.4  上下位机通信接口
+上位机RK3588与下位机TC264之间通过UART串口通信，波特率设定为921600bps以降低通信延迟。电平转换采用CH340N芯片（SOP-8封装），实现USB转TTL功能。CH340N无需外部晶振，外围电路简单，采用差分布线提高通信质量。通信线两端增加瞬态抑制二极管（TVS），防止静电和浪涌损坏芯片。
+
+
+第四章  系统软件架构与算法设计
+4.1  软件总体架构
+4.1.1  上位机软件架构
+本车上位机采用香橙派（OrangePi）嵌入式开发板作为核心计算平台，运行基于Linux内核的嵌入式操作系统。上位机软件采用C++17开发，基于CMake构建系统管理编译，整体采用多进程+多线程的混合并发架构，以充分利用多核CPU的计算能力并保证各子系统的实时性。
+软件系统在进程层面划分为两个独立进程：AI检测进程负责摄像头图像采集和YOLOv5目标检测推理，主控制进程负责传统视觉处理、路径规划、决策控制和通信。两个进程之间通过POSIX共享内存（Shared Memory）传递检测结果，避免了进程间大量图像数据的拷贝开销，同时实现了AI推理与控制逻辑的解耦——即使检测进程出现短暂阻塞，主控制进程仍可基于历史检测结果继续运行，保证了系统的鲁棒性。
+主控制进程以Car类为核心，采用多线程并行架构，主要包含以下线程模块：
+（1）图像处理线程：系统的核心线程，负责从共享内存读取AI检测结果，结合传统图像处理结果执行路径规划、任务决策和控制指令生成。该线程集成了边界跟踪、箭头引导、分叉路径选择、速度规划等全部决策逻辑，是系统的"大脑"。
+（2）共享内存检测读取线程：负责从共享内存区域读取AI检测进程写入的检测结果，包括目标类别、边界框坐标和置信度，经过时间戳同步后存入线程安全的阻塞队列，供图像处理线程消费。
+（3）串口通信线程：基于LibSerial库实现与下位机的UART串口通信，负责向下位机发送转向和速度控制指令，同时接收下位机回传的车辆状态信息（速度、舵机角度、电池电压、陀螺仪yaw角等）。
+（4）视频保存线程：在调试模式下将摄像头原始图像和处理后的可视化结果编码为视频文件保存，便于赛后分析和问题排查。
+（5）定位桥接线程：通过UDP套接字接收外部定位系统发送的JSON格式定位数据，包括车辆全局坐标、航向角和速度，用于全局路径规划和任务状态判断。
+各线程之间通过线程安全的阻塞队列和共享变量进行数据交换，配合互斥锁和条件变量实现同步。系统参数通过nlohmann/json库从JSON配置文件加载，支持在不重新编译的情况下调整全部算法参数。
+
+图4.1  上位机软件总体架构图 
+
+4.1.2  下位机软件架构
+下位机采用英飞凌TC264微控制器，运行基于前后台架构的实时控制程序，主循环周期5ms。下位机软件主要功能包括：串口接收与解析上位机控制指令、基于编码器反馈的电机速度闭环控制、基于转向偏差的舵机控制、传感器数据采集（编码器、陀螺仪、电池电压）、安全保护逻辑（通信超时停车、电池欠压保护、看门狗）。下位机通过UART串口以921600bps波特率与上位机通信，接收转向偏差和期望速度指令，并回传车辆状态。
+4.1.3  进程间通信与数据流向
+系统的数据流向如下：摄像头图像由AI检测进程采集并推理，检测结果通过共享内存传递给主控制进程的检测读取线程；图像处理线程消费检测结果，结合传统视觉处理和定位数据进行路径规划和决策，生成控制指令；控制指令通过串口线程发送给下位机执行；下位机执行控制并回传状态信息，状态信息经串口线程接收后供图像处理线程进行闭环修正。整个数据流形成完整的感知-决策-执行闭环，端到端延迟控制在100ms以内。
+
+4.2  图像采集的逆透视变换（IPM）
+摄像头安装在车模上，采集到的图像存在透视效应：近处的物体显得大，远处的物体显得小，平行的赛道边线在图像中汇聚于消失点。这种透视畸变使得基于图像坐标的赛道曲率计算和目标距离估计产生较大误差。逆透视变换（IPM）通过建立图像平面与地面平面之间的投影映射关系，将图像从摄像头视角转换为俯视（鸟瞰）视角，从而消除透视畸变。
+逆透视变换的数学基础是单应性矩阵。设图像平面上的点为齐次坐标p=[u, v, 1]^T，地面平面上的对应点为P=[X, Y, 1]^T，则两者之间满足：
+P = H · p
+其中H为3×3的单应性矩阵，具有8个自由度（尺度任意）。单应性矩阵可通过至少4对已知对应点求解。本队在赛道地面上选取4个已知物理坐标的标定点，测量其在图像中的像素坐标，使用OpenCV的getPerspectiveTransform函数计算得到单应性矩阵H。
+逆透视变换的完整推导如下：设摄像头坐标系为C，地面坐标系为W，摄像头相对于地面的外参为旋转矩阵R和平移向量t。则空间点在两个坐标系下的关系为P_C = R·P_W + t。投影到图像平面的关系为p = K·P_C（归一化后）。联立可得：
+p = K·[R|t]·P_W
+对于地面平面（Z=0），可简化为p = K·[r1, r2, t]·[X, Y, 1]^T，其中r1、r2为旋转矩阵的前两列。因此单应性矩阵H = K·[r1, r2, t]。
+在实际应用中，为降低计算量，本队并未对整幅图像进行逆透视变换（全图耗时约10-15ms），而是仅对提取到的边线像素点和目标点进行坐标映射，通过H矩阵直接计算其俯视坐标。这种点级映射方式将IPM耗时控制在1ms以内，同时保证了几何精度。
+逆透视变换后，赛道的平行边线在俯视图中保持平行，弯道曲率与真实世界一致，目标的纵向距离和横向偏移可直接从俯视坐标中读取，为后续的路径规划和控制提供了准确的几何基础。
+
+图4.2 逆透视变换原理图
+
+4.3  基于YOLOv5的目标检测算法
+4.3.1  目标检测算法概述
+目标检测是计算机视觉的核心任务之一，旨在从图像中定位出感兴趣目标的位置并识别其类别。传统的目标检测方法（如HOG+SVM、DPM等）依赖手工设计的特征，在复杂场景下的鲁棒性和精度有限。近年来，基于深度学习的目标检测算法取得了突破性进展，主要分为两阶段和单阶段两大类。
+两阶段算法（如R-CNN、Fast R-CNN、Faster R-CNN）先生成候选区域，再对每个候选区域进行分类和位置回归，精度较高但速度较慢。单阶段算法（如YOLO系列、SSD、RetinaNet）将目标检测转化为回归问题，直接在整幅图像上预测目标的类别和位置，速度更快，适合实时应用。
+本队选用YOLOv5作为目标检测算法，主要基于以下考量：第一，YOLOv5在保持高精度的同时具有极快的推理速度，适合边缘部署；第二，YOLOv5提供了从n到x的多种尺寸模型，可根据硬件算力灵活选择；第三，YOLOv5的训练和部署工具链完善，支持导出为ONNX、RKNN等多种格式，与香橙派的RKNN推理引擎无缝衔接。
+4.3.2  YOLOv5网络结构
+YOLOv5的网络结构由三部分组成：骨干网络、颈部网络和检测头。
+骨干网络采用CSPDarknet53，其核心是CSP结构。CSP结构将特征图在通道维度上分为两部分，一部分经过残差块提取特征，另一部分直接跳跃连接，最后在通道维度上拼接。CSP结构在减少计算量的同时增强了梯度传播，缓解了深层网络的梯度消失问题。骨干网络还包含Focus模块和SPPF模块。
+颈部网络采用FPN+ PAN结构。FPN通过自顶向下的路径将高层语义特征传递到低层，增强小目标检测能力；PAN通过自底向上的路径将低层定位特征传递到高层，增强大目标的定位精度。FPN+PAN的双向特征融合使得不同尺度的特征图都同时具备丰富的语义信息和精确的定位信息。
+检测头在三个不同尺度的特征图上进行预测，分别对应大、中、小目标。每个特征图上的每个单元格预测3个锚框，每个锚框预测5个值（x, y, w, h, confidence）加上类别概率。锚框的尺寸通过K-means聚类在训练数据集上统计得到，以适应特定目标的尺寸分布。
+损失函数由三部分组成：边界框回归损失（考虑了重叠面积、中心点距离和宽高比）、置信度损失和分类损失。总损失为三者的加权和。
+4.3.3  模型训练
+模型训练采用迁移学习策略，加载YOLOv5在COCO数据集上的预训练权重，在自建数据集上进行微调。训练参数包括：输入尺寸640×640，初始学习率0.01，采用余弦退火学习率调度，batch size=16，训练轮次300epoch，数据增强包括Mosaic、MixUp、随机翻转、随机裁剪、颜色抖动等。训练完成后，模型在验证集上的mAP@0.5达到92%以上。
+4.3.4  RKNN部署与共享内存通信
+训练完成的YOLOv5模型导出为ONNX格式，然后通过瑞芯微的RKNN-Toolkit2工具转换为RKNN格式，在转换过程中执行INT8量化以减小模型体积和加速推理。量化使用校准数据集（约200张图像）统计激活值分布，将32位浮点数量化为8位整数，模型体积减小约75%，推理速度提升约2-3倍，精度损失控制在1%以内。
+AI检测进程在香橙派上独立运行，初始化RKNN推理引擎后循环执行：从摄像头读取图像→预处理（resize、归一化）→RKNN推理→后处理（置信度过滤、NMS非极大值抑制）→将检测结果写入共享内存。后处理中的NMS用于去除重叠的冗余检测框：对于同一类别的检测框，按置信度排序，依次保留置信度最高的框，并删除与其IoU（交并比）大于阈值的其他框。
+共享内存采用POSIX shm_open机制创建，大小固定为可容纳最多N个检测结果的结构体数组。AI检测进程写入时附带时间戳和帧序号，主控制进程通过SharedMemoryReader读取最新的检测结果。这种进程间通信方式避免了网络传输延迟和数据拷贝开销，检测结果从AI进程到主进程的延迟小于1ms。
+
+4.4  基于卡尔曼滤波的目标跟踪
+4.4.1  目标跟踪的必要性
+单帧目标检测只能提供当前时刻的目标位置，无法获取目标的运动速度和方向。然而，在行人避让等任务中，准确预测行人的运动趋势（是否会进入车道、何时进入车道）至关重要。此外，单帧检测可能存在漏检（目标被遮挡或模糊时未检测到）和误检（背景被误判为目标），通过多帧跟踪可以有效过滤这些异常。因此，本队在目标检测的基础上引入了多目标跟踪算法。
+4.4.2  卡尔曼滤波原理
+卡尔曼滤波（Kalman Filter）是一种线性最优状态估计算法，由Rudolf Kalman于1960年提出，广泛应用于导航、跟踪、信号处理等领域。卡尔曼滤波通过对系统状态的预测和观测更新，在存在噪声的情况下获得系统状态的最优估计。
+卡尔曼滤波假设系统是线性的，状态方程和观测方程分别为：
+x_k = A·x_{k-1} + B·u_k + w_k
+z_k = H·x_k + v_k
+其中x_k为k时刻的系统状态向量，A为状态转移矩阵，B为控制输入矩阵，u_k为控制输入，w_k为过程噪声（假设为零均值高斯白噪声，协方差为Q）；z_k为观测向量，H为观测矩阵，v_k为观测噪声（假设为零均值高斯白噪声，协方差为R）。
+卡尔曼滤波分为两个步骤：预测（Predict）和更新（Update）。
+预测步骤：根据上一时刻的状态估计和状态转移矩阵，预测当前时刻的状态和误差协方差：
+x̂_k⁻ = A·x̂_{k-1} + B·u_k
+P_k⁻ = A·P_{k-1}·A^T + Q
+其中x̂表示状态估计，上标"-"表示先验估计（预测值），P为误差协方差矩阵。
+更新步骤：根据当前时刻的观测值，修正预测值，得到后验估计：
+K_k = P_k⁻·H^T·(H·P_k⁻·H^T + R)⁻¹
+x̂_k = x̂_k⁻ + K_k·(z_k - H·x̂_k⁻)
+P_k = (I - K_k·H)·P_k⁻
+其中K_k为卡尔曼增益，决定了预测值和观测值在最终估计中的权重。当观测噪声R较大时，K_k较小，更信任预测值；当观测噪声R较小时，K_k较大，更信任观测值。
+
+图4.3 卡尔曼滤波流程图
+
+
+4.5 运动控制算法
+4.5.1  PID控制原理
+PID（Proportional-Integral-Derivative）控制是工业控制中应用最广泛的反馈控制算法，其结构简单、鲁棒性强、不依赖精确的系统模型。PID控制器根据系统误差e(t) = r(t) - y(t)（设定值与实际值之差），通过比例、积分、微分三个环节的组合计算控制量u(t)：
+u(t) = Kp·e(t) + Ki·∫₀ᵗ e(τ)dτ + Kd·de(t)/dt
+其中Kp为比例系数，Ki为积分系数，Kd为微分系数。
+比例环节（P）：与误差成正比，误差越大控制量越大，能够快速减小误差。但纯比例控制存在稳态误差（静差），且Kp过大会导致系统振荡。
+积分环节（I）：与误差的积分成正比，能够消除稳态误差。但积分作用具有滞后性，Ki过大会导致超调和振荡。
+微分环节（D）：与误差的变化率成正比，能够预测误差的变化趋势，提前施加控制作用，抑制超调和振荡，提高系统的动态响应速度。
+在数字控制系统中，连续PID需要离散化。设采样周期为T，第k时刻的误差为e(k)，则位置式离散PID为：
+u(k) = Kp·e(k) + Ki·T·Σ_{i=0}^{k} e(i) + (Kd/T)·[e(k) - e(k-1)]
+位置式PID的输出为控制量的绝对值，需要累加历史误差，计算量较大且容易产生积分饱和。增量式PID输出控制量的增量Δu(k)：
+Δu(k) = Kp·[e(k)-e(k-1)] + Ki·T·e(k) + (Kd/T)·[e(k)-2e(k-1)+e(k-2)]
+u(k) = u(k-1) + Δu(k)
+增量式PID无需累加历史误差，计算量小，误动作时影响小，手动/自动切换冲击小，因此在本车的速度控制中采用增量式PID。
+为提高PID控制性能，本队采用了以下改进措施：第一，积分分离——当误差绝对值大于阈值时取消积分作用，避免积分饱和导致的超调；第二，变速积分——积分项系数随误差大小自适应调整，误差大时积分作用弱，误差小时积分作用强；第三，微分滤波——对微分项加入一阶低通滤波，抑制测量噪声的放大；第四，输出限幅——将控制量限制在执行器的有效范围内，防止饱和。
+
+图4.5 PID控制原理图
+4.5.2  速度PID控制
+电机速度控制采用增量式PID算法。编码器实时测量后轮转速，作为速度反馈。PID控制器的输入为期望速度与实际速度之差，输出为电机PWM占空比。速度PID参数根据赛道元素和任务状态自适应调整：直道采用较大的Kp和Ki以快速加速；弯道采用较小的Kp以避免速度波动影响转向稳定性；避让区域采用较大的Kd以实现快速制动。
+4.5.3  纯跟踪算法原理
+纯跟踪（Pure Pursuit）算法是一种基于几何关系的路径跟踪算法，广泛应用于移动机器人和自动驾驶车辆的路径跟踪。其核心思想是：在目标路径上选取一个距离车辆前视距离l_d的点作为目标点，计算使车辆沿圆弧行驶到达该目标点所需的前轮转角。
+纯跟踪算法的几何推导如下：设车辆后轴中心为坐标原点，车辆航向为x轴正方向，目标点在车辆坐标系下的坐标为(l_x, l_y)。车辆沿半径为R的圆弧行驶到达目标点，根据几何关系有：
+l_x² + (l_y - R)² = R²
+展开并整理得：
+R = (l_x² + l_y²) / (2·l_y)
+设车辆轴距为L，根据自行车模型，前轮转角δ与转弯半径R的关系为：
+δ = arctan(L / R) = arctan(2·L·l_y / (l_x² + l_y²))
+令α为车辆航向与目标点方向之间的夹角，则l_y = l_d·sin(α)，l_x = l_d·cos(α)，代入得：
+δ = arctan(2·L·sin(α) / l_d)
+这就是纯跟踪算法的经典公式。前视距离l_d是纯跟踪算法的关键参数：l_d过小，车辆对路径变化敏感，容易振荡；l_d过大，车辆跟踪平滑但精度降低，弯道容易切弯。本队采用动态前视距离，根据车速自适应调整：
+l_d = k_v·v + l_d_min
+其中k_v为速度比例系数，l_d_min为最小前视距离。车速越高，前视距离越大，以保证转向的平顺性和预见性；车速越低，前视距离越小，以提高跟踪精度。
+
+图4.6 纯追踪算法原理图
+
+
+
+
+4.6  上下位机通信协议
+上位机与下位机之间通过UART串口通信，波特率921600bps，数据帧周期5ms。通信协议采用自定义二进制帧格式，包含帧头、数据长度、命令字、数据域、校验和五个部分。上位机向下位机发送转向偏差和期望速度控制指令，下位机向上位机回传实际速度、舵机PWM、电池电压和陀螺仪yaw角等状态信息。
+为保证通信可靠性，采取以下措施：每帧数据包含异或校验和，接收端验证不通过则丢弃该帧；下位机设置通信超时检测，若超过200ms未收到有效控制帧则自动停车；串口接收采用DMA+中断方式，避免数据丢失；通信线两端增加瞬态抑制二极管，防止静电和浪涌损坏芯片。
+此外，上位机还通过UDP套接字接收外部定位系统发送的JSON格式定位数据，用于全局路径规划和任务状态判断。UDP通信采用非阻塞模式，定位数据的到达不影响主控制循环的实时性。
+
+
+
+
+
+
+
+第五章  开发工具与调试过程
+5.1  软件开发环境
+5.1.1  上位机开发环境
+上位机RK3588运行嵌入式Linux系统（Ubuntu 18.04衍生版），开发工具链如下：
+（1）操作系统：RK3588官方Linux镜像，内核版本4.19，预装PaddlePaddle 2.5、OpenCV 4.5、Python 3.7。
+（2）编程语言：核心算法采用C++17开发，利用CMake构建系统管理编译；数据处理和脚本工具采用Python 3.7。
+（3）IDE与编辑器：本地开发使用Visual Studio Code，通过Remote-SSH插件远程连接Edgeboard进行代码编辑和编译调试。
+（4）版本控制：Git进行代码版本管理，远程仓库托管于Gitee，团队成员通过分支开发+Pull Request的方式协作。
+（5）调试工具：gdbserver进行远程调试，Valgrind进行内存泄漏检测，perf进行性能分析。
+5.1.2  下位机开发环境
+下位机TC264开发工具链如下：
+（1）IDE：英飞凌Aurix Development Studio（ADS），基于Eclipse的集成开发环境，支持TC264的编译、烧录和在线调试。
+（2）编译器：GNU C Compiler for TriCore（tricore-gcc），支持C语言和汇编。
+（3）烧录器：英飞凌DAP Mini调试器，通过JTAG接口连接TC264，支持程序下载和断点调试。
+（4）串口工具：SecureCRT或Xshell，通过USB转串口查看下位机日志和参数。
+
+5.2  模型训练与部署流程
+5.2.1  数据采集与标注
+数据采集流程：在车模上运行专门的采集程序，以30fps的频率保存原始图像，同时记录车辆速度和位置信息。在不同赛道、不同光照、不同车速下采集，确保数据多样性。采集完成后，使用Python脚本进行数据清洗（去除模糊、重复图像）和数据集划分。
+数据标注使用labelImg工具，支持VOC和YOLO格式。标注时遵循以下规范：边界框紧贴目标边缘；小目标（小于10×10像素）也必须标注；遮挡超过50%的目标不标注；标注类别严格按照预定义的类别列表（行人、金币、路牌）。
+5.2.2  模型训练
+模型训练在本地GPU工作站（NVIDIA RTX 3090）上完成，使用AI Studio作为备选训练平台。训练流程如下：
+（1）数据准备：将标注好的数据集转换为PaddleDetection要求的COCO格式，生成train.json和val.json。
+（2）配置文件：基于PaddleDetection的configs目录下的yolov3_mobilenet_v1_270e_coco.yml进行修改，调整类别数、输入尺寸、学习率、batch size等参数。
+（3）开始训练：执行python tools/train.py -c configs/yolov3_custom.yml，训练过程中通过VisualDL实时查看loss和mAP曲线。
+（4）模型评估：训练完成后，使用tools/eval.py在验证集上评估mAP、Precision、Recall等指标。
+（5）模型导出：使用tools/export_model.py将训练好的模型导出为推理格式，包含model.pdmodel和model.pdiparams文件。
+5.2.3  模型量化与部署
+导出的模型进一步使用PaddleSlim进行INT8量化，以减小体积和加速推理。量化流程：准备校准数据集（约200张图像），执行量化脚本生成量化模型，验证量化后精度下降在可接受范围内（<2% mAP）。
+量化后的模型通过SCP或SFTP上传至Edgeboard，放置在指定目录。上位机C++程序通过PaddleInference C++ API加载模型，创建Predictor，在AI检测线程中循环执行推理。
+
+5.3  车模调试过程
+软件调试采用"模块单独调试→系统联调→赛道测试"的递进方式：
+（1）模块单独调试：各功能模块（图像采集、二值化、边线提取、电机PID、舵机PD、AI推理、OCR）先在PC上或单独测试程序中验证正确性。
+（2）上下位机联调：先验证串口通信是否稳定，然后测试上位机发送指令后下位机是否正确响应（舵机转动、电机调速）。
+（3）循迹调试：在空赛道上调试传统循迹算法，从低速开始逐步提速，调整纯跟踪前视距离和舵机PD参数，直到车辆能稳定跑完一圈。
+（4）AI功能调试：与AR系统联调，分别测试行人检测、金币检测、路牌检测和OCR识别的准确率和实时性。
+（5）任务联调：逐项调试三个核心任务（行人避让、分叉选择、金币收集），调整各任务的阈值和参数。
+（6）全流程测试：在完整赛道上进行多轮全流程测试，记录成功率和完赛时间，根据测试结果持续优化参数。
+
+
+
+
+
+第六章  结论
+本文针对第二十一届全国大学生智能汽车竞赛完全模型组比赛要求，通过多方面的精心设计与调试，成功构建了一套能够自主识别路线、稳定高效运行的智能车系统。​
+在机械结构设计上，我们对车体参数进行了细致优化，合理分布重心以提升行驶稳定性和转向灵敏度，通过处理轮胎增强抓地力，改进差速机构确保传动效果，并重新设计车壳以适配整体方案，为智能车的稳定运行奠定了坚实的机械基础。​
+电路系统设计中，电源驱动板采用合适的降压方案，为各模块提供稳定的工作电压，同时合理引出调试接口，方便系统调试；主控板集成了多种必要接口，并增设舵机电源开关以保护设备，保障了系统的电力供应和信号传输。​
+软件开发方面，构建了完善的软件功能框架，实现了各部分初始化、图像采集与处理、车模运行控制等核心功能。采用经典 PID 算法进行速度和方向控制，通过参数整定优化控制效果，确保智能车快速响应且稳定行驶。
+综上所述，该智能车系统在机械结构、电路系统和软件算法等方面的设计均能满足比赛要求，具备准确稳定提取赛道信息以及快速控制方向和速度的能力，有望在竞赛中取得良好成绩。同时，通过本次比赛，我们能将多学科知识融会贯通，实践能力和创新思维得到有效提升，为今后相关领域的研究和应用积累了宝贵经验。
+
+
+
+
+
+
+附录
+1.程序源代码
+void Car::imageProcessor()  // path planning thread
+{
+    std::cout << "[imageProcessor] thread started, waiting init gate..." << std::endl;
+    while (!loadSuccess || !initSuccess) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(2));
+    }
+    std::cout << "[imageProcessor] init gate passed." << std::endl;
+
+    // ========== fixed planning dimensions ==========
+    const int PLAN_WIDTH = 640;
+    const int PLAN_HEIGHT = 480;
+    const float DISPLAY_SCALE_X = 1.0f;
+    const float DISPLAY_SCALE_Y = 1.0f;
+
+    int frame_idx = 0;
+    const float speed_decision_clear_mps =
+        std::max(0.0f, params.speedDecision.clearSpeedMps);
+    const float speed_decision_obstacle_mps =
+        std::max(0.0f, params.speedDecision.obstacleVisibleSpeedMps);
+    const int speed_decision_clear_frames =
+        std::max(0, params.speedDecision.clearFrames);
+    int speed_decision_clear_count = speed_decision_clear_frames;
+    float speed_decision_cruise_mps = speed_decision_clear_mps;
+
+    // Physical-plane pure pursuit control. The path is still searched in image
+    // coordinates, then transformed by the calibrated image-to-ground matrix.
+    const float base_pure_ahead_distance =
+        std::max(0.05f, params.worldPurePursuitParams.aheadDistance);
+    const float pure_wheel_base =
+        std::max(0.01f, params.worldPurePursuitParams.wheelBase);
+    const float servo_output_limit =
+        std::fabs(params.worldPurePursuitParams.servoLimit);
+
+    float steering_angle = 0.0f;
+    float last_planner_steering_angle_deg = 0.0f;
+    bool last_planner_steering_angle_valid = false;
+    float servo_output = 0.0f;
+    float target_distance = 0.0f;
+    cv::Point2f pursuit_target(0.0f, 0.0f);
+    bool has_pursuit_target = false;
+    int world_invalid_points = 0;
+    VirtualLookaheadState virtual_lookahead_state;
+    const int virtual_low_arrow_max_count =
+        std::max(0, params.virtualLookahead.lowArrowMaxCount);
+    const int virtual_recover_arrow_min_count =
+        std::max(virtual_low_arrow_max_count + 1,
+                 params.virtualLookahead.recoverArrowMinCount);
+    const float virtual_activate_distance_m =
+        std::max(0.0f, params.virtualLookahead.activateDistanceM);
+    const float virtual_fixed_servo_output_abs =
+        std::fabs(params.virtualLookahead.fixedServoOutput);
+    const float virtual_speed_mps =
+        std::max(0.0f, params.speedDecision.virtualLookaheadSpeedMps);
+    const float gold_terminal_path_tolerance_m =
+        std::max(0.0f,
+                 params.goldPathPlanning.terminalPosePathToleranceM);
+    const float gold_terminal_activation_distance_m =
+        std::max(0.0f,
+                 params.goldPathPlanning.terminalPoseActivationDistanceM);
+    const float gold_terminal_lookahead_margin_m =
+        std::max(0.0f,
+                 params.goldPathPlanning.terminalPoseLookaheadMarginM);
+    const float gold_terminal_derivative_alpha = std::clamp(
+        params.goldPathPlanning.terminalPoseDerivativeFilterAlpha,
+        0.0f,
+        1.0f);
+    const float gold_terminal_derivative_limit_deg =
+        std::max(0.0f,
+                 params.goldPathPlanning.terminalPoseDerivativeLimitDeg);
+    const float gold_terminal_target_jump_reset_m =
+        std::max(0.0f,
+                 params.goldPathPlanning.terminalPoseTargetJumpResetM);
+    const float gold_terminal_servo_limit = std::min(
+        std::fabs(params.goldPathPlanning.terminalPoseServoAbs),
+        servo_output_limit);
+    const float pedestrian_gold_danger_strip_half_width_m =
+        std::max(
+            0.0f,
+            params.goldPathPlanning.pedestrianGoldDangerStripHalfWidthM);
+    const int pedestrian_gold_danger_strip_hold_frames =
+        std::max(
+            0,
+            params.goldPathPlanning.pedestrianGoldDangerStripHoldFrames);
+    bool gold_terminal_pd_initialized = false;
+    float gold_terminal_last_error_deg = 0.0f;
+    float gold_terminal_filtered_derivative_deg = 0.0f;
+    cv::Point2f gold_terminal_previous_target_world(0.0f, 0.0f);
+    bool gold_terminal_previous_target_valid = false;
+    bool gold_terminal_applied_previous_frame = false;
+
+    // ==========  ==========
+
+    std::ofstream servo_log_file;
+    size_t servo_log_pending_lines = 0;
+    if (params.servoDebugLogEnable) {
+        servo_log_file.open(params.servoDebugLogPath, std::ios::out | std::ios::trunc);
+        if (!servo_log_file.is_open()) {
+            std::cerr << "[]  " << params.servoDebugLogPath << std::endl;
+        } else {
+            servo_log_file << "========================================" << std::endl;
+            servo_log_file << "[World Pure Pursuit Debug]" << std::endl;
+            servo_log_file << "- Record transformed path target, steering angle and servo output." << std::endl;
+            servo_log_file << "========================================" << std::endl;
+            servo_log_file << "Frame,target_x,target_y,target_distance,steering_angle,servo_output,speed,world_pts,invalid_pts,path_size,has_target" << std::endl;
+            servo_log_file.flush();
+        }
+    }
+
+    std::ofstream local_planner_log_file;
+    size_t local_planner_log_pending_lines = 0;
+    if (params.localPlannerLogEnable) {
+        ensureParentDirectory(params.localPlannerLogPath);
+        local_planner_log_file.open(
+            params.localPlannerLogPath, std::ios::out | std::ios::trunc);
+        if (!local_planner_log_file.is_open()) {
+            std::cerr << "[LocalPlannerLog] failed to open: "
+                      << params.localPlannerLogPath << std::endl;
+        }
+    }
+    if (local_planner_log_file.is_open()) {
+        local_planner_log_file << "proc_frame,packet_frame,mode,obstacle_state,avoid_scenario,"
+                               << "target_speed,ego_speed,path_points,"
+                               << "gold_bias_reason,gold_visible_count,gold_projectable_count,"
+                               << "gold_best_near_capture_count,gold_best_capture_count,"
+                               << "gold_best_capture_along_s_sum,gold_late_start_rejected,"
+                               << "gold_late_start_s_m,gold_late_start_delta_m,"
+                               << "gold_best_bias_m,gold_target_bias_m,gold_applied_bias_m,"
+                               << "gold_effective_bias_m,gold_pending_bias_m,"
+                               << "gold_pending_confirm_count,gold_side_lock,gold_selection_frozen,"
+                               << "traffic_target_speed,final_target_speed,applied_speed,"
+                               << "ped_emergency_stop,ped_emergency_brake_active,"
+                               << "ped_emergency_brake_frames_remaining,"
+                               << "start_delay_active,speed_override_mode,route_side,"
+                               << "avoid_side,vehicle_avoid_side_locked,"
+                               << "vehicle_locked_avoid_side,"
+                               << "vehicle_curve_metric,vehicle_curve_direction,vehicle_curve_avoid_boost_active,"
+                               << "vehicle_opposite_steer_active,vehicle_curve_avoid_hold_remaining,"
+                               << "vehicle_recover_hold_active,vehicle_recover_hold_remaining,"
+                               << "obstacle_target_x,obstacle_target_y,"
+                               << "base_path_x,final_path_x,path_y,"
+                               << "route_hold_active,speed_risk_level,speed_limit_reason,"
+                               << "reason,speed_reason,obstacle_count,obstacle_active_count,"
+                               << "obstacle_id,obstacle_type,obstacle_distance_m,"
+                               << "obstacle_point_distance_m,obstacle_lateral_m,"
+                               << "avoid_offset_current_m,avoid_offset_target_m,"
+                               << "ped_center_delta_px,ped_safe_to_pass,"
+                               << "ped_episode_active,ped_barrier_active,"
+                               << "ped_episode_position_delta_m,"
+                               << "final_applied_path_offset_m,realized_offset_m,"
+                               << "ego_center_lateral_m,ego_offset_state,ego_offset_state_reason,"
+                               << "pedestrian_avoid_side_lock_source,"
+                               << "raw_person_count,ped_emergency_hold_remaining,"
+                               << "ped_episode_hold_remaining,ped_raw_velocity_valid,"
+                               << "startup_launch_protect_remaining,startup_launch_release_event,"
+                               << "startup_release_blocked,"
+                               << "startup_launch_used_in_episode,ped_emergency_suppressed_by_launch,"
+                               << "launch_protect_speed_applied,startup_speed_hold_remaining,"
+                               << "startup_shrink_grace_remaining,"
+                               << "pedestrian_stop_state,slow_candidate,emergency_candidate,"
+                               << "emergency_hold_remaining,lost_hold_remaining,"
+                               << "velocity_warmup_active,velocity_required_observations,"
+                               << "velocity_observation_count,pedestrian_observed_this_frame,"
+                               << "pedestrian_velocity_valid,pedestrian_velocity_x,"
+                               << "pedestrian_final_path_projection_valid,"
+                               << "pedestrian_final_path_lateral_m,"
+                               << "pedestrian_final_path_lateral_speed_mps,"
+                               << "pedestrian_approaching_final_path,"
+                               << "startup_clearance_evaluated,startup_raw_person_clear,"
+                               << "path_usable,blocked_by_path,launch_remaining,"
+                               << "launch_paused_by_path,planner_speed_source,"
+                               << "final_speed_source,active_block_reasons,"
+                               << "state_transition_reason,pedestrian_avoid_side_locked,"
+                               << "pedestrian_avoid_side_lock,pedestrian_avoid_side_lock_reason,"
+                               << "pedestrian_avoid_side_lock_frame,"
+                               << "ped_emergency_id,ped_foot_x_m,ped_foot_y_m,"
+                               << "ped_emergency_hit_lateral,ped_emergency_hit_forward,"
+                               << "ped_emergency_hit_moving_semicircle,ped_emergency_hit,"
+                               << "ped_emergency_top_width_m,"
+                               << "ped_emergency_bottom_width_m,ped_emergency_height_m,"
+                               << "ped_moving_emergency_radius_m,"
+                               << "ped_moving_emergency_region_active,"
+                               << "ped_emergency_allowed_width_m,"
+                               << "cluster_active,avoid_lookahead_active,recommended_lookahead_m,"
+                               << "steering_angle,servo_output,"
+                               << "gold_terminal_candidate_valid,gold_terminal_active,"
+                               << "gold_terminal_applied,gold_terminal_entered,gold_terminal_exited,"
+                               << "gold_terminal_derivative_reset,gold_terminal_reason,"
+                               << "gold_terminal_x,gold_terminal_y,gold_terminal_distance_m,"
+                               << "gold_terminal_path_distance_m,gold_terminal_s_m,"
+                               << "gold_terminal_lookahead_s_m,gold_terminal_heading_error_deg,"
+                               << "gold_terminal_filtered_derivative_deg,gold_terminal_servo_output,"
+                               << "ped_gold_danger_strip_count,ped_gold_ignored_count,"
+                               << "ped_gold_danger_half_width_m,"
+                               << "ped_gold_danger_live,ped_gold_danger_hold_active,"
+                               << "ped_gold_danger_hold_elapsed_frames,"
+                               << "ped_gold_danger_hold_remaining_frames,"
+                               << "ped_gold_danger_hold_config_frames,ped_gold_danger_source,"
+                               << "line_arrow_object_count,line_raw_guide_count,"
+                               << "line_valid_world_guide_count,"
+                               << "line_single_anchor_count,line_single_root_count,"
+                               << "line_credible_single_count,line_best_single_guide_count,"
+                               << "line_best_single_forward_span,"
+                                << "line_visible_branch_count,line_selected_branch_label,"
+                                << "line_selected_branch_guide_count,"
+                                << "line_selected_branch_centerline_size,"
+                                << "line_candidate_size,line_candidate_usable,"
+                                << "line_local_route_size,line_local_waypoints_size,"
+                                << "line_local_usable,line_used_candidate_fallback,"
+                                << "line_local_reject_reason,"
+                                << "line_final_plan_path_size,line_final_plan_path_usable,"
+                                << "line_world_path_size,line_positive_world_y_count,"
+                                << "line_pure_pursuit_target_valid,"
+                                << "line_servo_source,line_empty_reason"
+                                << std::endl;
+        local_planner_log_file.flush();
+    }
+
+    std::ofstream dynamic_path_planner_log_file;
+    size_t dynamic_path_planner_log_pending_lines = 0;
+    if (params.dynamicPathPlannerLogEnable) {
+        ensureParentDirectory(params.dynamicPathPlannerLogPath);
+        dynamic_path_planner_log_file.open(
+            params.dynamicPathPlannerLogPath, std::ios::out | std::ios::trunc);
+        if (dynamic_path_planner_log_file.is_open()) {
+            dynamic_path_planner_log_file
+                << "proc_frame,packet_frame,mode,reason,target_speed,ego_speed,"
+                << "path_points,speed_risk_level,speed_limit_reason,speed_reason\n";
+            dynamic_path_planner_log_file.flush();
+        } else {
+            std::cerr << "[DynamicPathPlannerLog] failed to open: "
+                      << params.dynamicPathPlannerLogPath << std::endl;
+        }
+    }
+
+    auto logServoDebug = [&](int frame_id,
+                             const cv::Point2f& target,
+                             float lookahead,
+                             float steer_angle,
+                             float servo_out,
+                             float speed,
+                             int world_pts,
+                             int invalid_pts,
+                             int path_size,
+                             bool has_target) {
+        if (!servo_log_file.is_open()) return;
+
+        servo_log_file << frame_id << "," << target.x << "," << target.y << "," << lookahead
+                       << "," << steer_angle << "," << servo_out
+                       << "," << speed << "," << world_pts << "," << invalid_pts
+                       << "," << path_size << "," << (has_target ? 1 : 0) << '\n';
+        if (++servo_log_pending_lines >= kDebugLogFlushEveryLines) {
+            servo_log_file.flush();
+            servo_log_pending_lines = 0;
+        }
+    };
+
+    auto draw_results_on_frame = [this, DISPLAY_SCALE_X, DISPLAY_SCALE_Y](cv::Mat& img, const std::vector<PredictResult>& results) {
+        if (img.empty()) {
+            return;
+        }
+
+        for (const auto& result : results) {
+            if (result.width <= 0 || result.height <= 0) {
+                continue;
+            }
+
+            // Map detection boxes from planning coordinates to display coordinates.
+            const int sx = static_cast<int>(std::round(result.x * DISPLAY_SCALE_X));
+            const int sy = static_cast<int>(std::round(result.y * DISPLAY_SCALE_Y));
+            const int sw = std::max(1, static_cast<int>(std::round(result.width * DISPLAY_SCALE_X)));
+            const int sh = std::max(1, static_cast<int>(std::round(result.height * DISPLAY_SCALE_Y)));
+
+            cv::Rect box(sx, sy, sw, sh);
+            cv::rectangle(img, box, detection.getCvcolor(result.type), 2);
+
+            std::string score = std::to_string(result.score);
+            std::string label_name = result.label + " [" + score.substr(0, score.find(".") + 3) + "]";
+            int text_y = std::max(0, sy - 4);
+            cv::putText(img, label_name, cv::Point(sx, text_y), cv::FONT_HERSHEY_PLAIN, 1,
+                        cv::Scalar(0, 0, 254), 1);
+        }
+    };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+2.车模技术检查表
+
+
+
+
+
+
+
+
+
+
+
+
+3.车模外观照片
+
+图 附-3.1 俯视图
+
+
+图 附-3.2 前视图
+
+
+图 附-3.3 侧视图
+
+
+
+
+
+
+4.电路板PCB图
+
+图 附-4.1 驱动板正面
+
+图 附-4.2 驱动板反面
+
+图 附-4.3 主控板正面
+
+图 附-4.4主控板反面
+
+图 附-4.5 串口模块正面
+
+图 附-4.6 串口模块反面
+如果在覆铜层的参赛队伍信息被黑色的阻焊层遮挡，请将相应位置的阻焊层使用刀片刮开，以备检查查看。
+
+
+
+
+
+
+
+
+
+5.电路板原理图
+ 
+
+图 附-5.1 主控板原理图
+
+图 附-5.2 驱动板原理图
+
+
+===== TABLE 1 =====
+队伍名称 | 华工赤霄队 | 华工赤霄队 | 华工赤霄队 | 华工赤霄队
+参赛学校 | 华南理工大学 | 华南理工大学 | 华南理工大学 | 华南理工大学
+赛题组组别 | 人工智能模型组 | 人工智能模型组 | 人工智能模型组 | 人工智能模型组
+检查项目 | 规格 （选手自行填写） | 符合 （） | 不符合（） | 备注
+1.车模类型是什么？ | 赛曙科技I车模 |  |  | 如果是自制车模，请标明自制。
+车模整体尺寸： （包括传感器在内）长，宽，高(mm) | 长：308mm 宽：190mm 高：148mm 摄像头离地高度145mm： |  |  | 今年比赛车模尺寸没有限制
+传感器种类、规格(型号)数量。 是否使用自带MCU的成品传感器模块？型号是什么？ | USB彩色摄像头，锐尔威视全局快门摄像头 否 |  |  | 
+控制转向舵机型号是否自行改装舵机？ 防伪易损标签是否完整？ | I车模舵机CS-3120 ，否 是 |  |  | 
+1. 是否增加伺服电机？ 2. 如果有种类、个数和作用？ | 1.否 |  |  | 
+电路中微处理器型号和个数？ | TC264核心板、RK3588赛事专用卡 |  |  | 
+是否具有其它可编程器件，个数与作用？ | 否 |  |  | 
+是否有无线通讯装置？ 如果有种类和个数？ | 是 RK3588板卡wifi、路由器 |  |  | 
+电池的种类、规格和数量？ | GS22003S45 |  |  | 
+1. 是否使用GPS导航？ 2. 是否没有使用RTK？ | 1.否 2.是 |  |  | 
+后轮驱动电机是否是原车模电机？ 是否具有防伪易损标签？ | 是   是 |  |  | 
+轮胎是否是原车同款轮胎？ 轮胎的尺寸（直径和宽度）是否小于等于原车膜尺寸？ | 是   是 |  |  | 
+车轮轴距、轮距是否改装？ 改装参数是什么？ | 1.否 |  |  | 
+车模驱动轮传动机构是否改装？ 改装方式是什么？ | 否 |  |  | 
+是否更换过原装车模中的机械元器件？更换后的规格 是什么？ | 否 |  |  | 。
+车模电路板个数及功能。 其中是否有购买成品电路板？ | 三个：主控板和驱动板还有串口通讯模块 串口通讯模块为成品电路板 |  |  | 
+自制电路板是否标记有学校名称、队伍名称、制作日期等信息？ 标示信息在PCB的哪一层？ | 是，华南理工大学，华工赤霄队，2025/06/20 （主控板），2025/03/06（驱动板） 顶层和顶层阻焊层 |  |  | 请在表格中注明电路板队伍信息的内容。
+其它待说明内容 |  |  |  | 
+检查人员签名： | 检查意见： | 检查意见： | 检查意见： | 检查意见：

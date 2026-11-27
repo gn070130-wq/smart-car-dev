@@ -1,0 +1,607 @@
+第二十一届全国大学生
+智能汽车竞赛
+
+技 术 报 告
+
+
+
+
+
+	学    校：    南京信息工程大学
+队伍名称：      智驭未来++
+参赛队员：  周熠航，高瑞，孙敬承
+
+
+带队教师：     赵兴强 孙玉宝                 
+
+二零二六年八月
+
+
+
+关于技术报告和研究论文使用授权的说明
+
+	 本人完全了解全国大学生智能汽车竞赛关于保留、使用技术报告和研究论文的规定，即：参赛作品著作权归参赛者本人，比赛组委会可以在相关主页上收录并公开参赛作品的设计方案、技术报告以及参赛模型车的视频、图像资料，并将相关内容编纂收录在组委会出版论文集中。
+
+                                参赛队员签名：周熠航 高瑞 孙敬承
+带队教师签名：赵兴强 孙玉宝
+日   期：2026年8月19日
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+引言
+全国大学生智能汽车竞赛是一项以“立足培养、重在参与、鼓励探索、追求卓越”为指导思想，面向全国大学生开展的具有探索性的工程实践活动。它以设计制作在特定赛道上能自主行驶且具有优越性能的智能模型汽车这类复杂工程问题为任务，鼓励大学生组成团队，综合运用多学科知识，提出、分析、设计、开发并研究智能汽车的机械结构、电子线路、运动控制和开发与调试工具等问题，激发大学生从事工程技术开发和科学研究探索的兴趣和潜能，倡导理论联系实际、求真务实的学风和团队协作的人文精神。
+根据全国大学生智能汽车竞赛比赛规则要求，各参加全国总决赛队伍需在比赛前提交竞赛模型汽车制作技术报告，该技术报告作为参赛队伍作品的重要组成部分。技术报告是参赛队员在带队老师指导下，由参赛队队员合作完成，对参赛的智能汽车制作技术方案、设计思路、制作调试过程以及相关技术研究内容形成的总结性报告。撰写技术报告不仅有助于提高参赛队员的综合素质，也有助于评委对参赛作品进行全面了解和综合评价。组委会将在比赛后出版智能汽车赛事论文集，各参赛队伍提交的技术报告内容将作为论文集的一部分。
+本报告围绕我们组所设计制作的独轮智能车，从总体设计思路、机械结构改造、硬件电路设计、软件控制算法以及系统调试等几个方面进行了系统阐述，详尽描述了我们的设计思路、技术方案和创新实践。报告内容涵盖模型车设计制作的主要技术方案、机械安装与改造、电路设计说明、微处理器控制软件的主要理论与算法、开发工具与调试过程、模型车主要技术参数等基本内容，并附带了电路板详细设计原理图与核心算法子程序。这份报告凝聚了我们全组队员的努力与智慧，是我们团队协作、共同奋斗的成果。
+
+
+
+
+
+
+
+
+
+
+
+智能车系统总体设计概述
+1.1机械设计概述
+本组车模选用四轮微缩车模方案，以碳纤维底板为整车骨架，兼顾轻量化与结构强度。疯狂电路组别要求车模在复杂电路图赛道上完成巡线任务，且重量与比赛成绩直接相关，因此机械设计的核心思路是在保证结构可靠性的前提下实现极致轻量化，同时提升弯道通过性与寻迹稳定性。
+转向系统采用双电机差速方案，通过控制左右轮速度差实现转向。两侧分别安装电机及编码器，编码器实时反馈轮速用于闭环控制。整车重心通过对称布局与电池低位安装进行优化，降低侧倾风险。
+摄像头通过专用支架固定于车头前端中央位置，确保视野开阔且不受遮挡，便于识别2cm宽的白色引导线。电路板通过尼龙柱支撑固定在底板之上，既保证了电气绝缘，又便于拆卸调试。所有线缆均进行合理绑扎，避免运动过程中产生干扰。整车结构紧凑，为后续硬件调试与控制算法实现提供了可靠的机械平台。
+
+1.2硬件电路设计概述
+硬件电路是智能车稳定运行和各项功能实现的基础。本项目采用四层PCB设计，通过合理划分电源层、地层与信号层，优化电源回流路径和关键器件布局，在有限板面内提高布线密度与电磁兼容性，为主控、摄像头及各类传感器提供稳定可靠的硬件平台。
+针对有刷电机和无刷电机工作时产生的电源波动与开关噪声，系统在电机驱动电路与MCU、摄像头等敏感电路之间加入隔离芯片，降低动力部分对控制与感知部分的干扰。同时采用集成式降压电路完成各路电源转换，在保证供电效率与稳定性的同时减少外围元件数量和占板面积，使整板结构更加紧凑，满足车模轻量化、小型化的设计需求。
+1.3软件设计概述
+本项目是基于英飞凌 AURIX TC264D 双核单片机的智能车摄像头循迹控制系统。系统以 MT9V03X 摄像头为感知核心,每帧图像经压缩、自适应分区 OTSU 二值化、边界扫描、中线提取与元素识别(十字/直角)后,结合编码器里程与 IMU 姿态,驱动双电机实现高速循迹与路口决策。软件采用双核架构:Core0 负责图像处理与实时控制,Core1 负责调试画面刷新。控制由 2ms PIT 中断驱动,转向采用双PD环,速度采用双路 PI 环,并配合分段速度规划状态机实现直道加速与弯道减速。系统内置多节点的赛道地图动作序列,通过状态机完成各路口的直行、左右转与特殊元器件处理;针对关键节点设有专用滤波与误判修正逻辑。此外还集成惯导轨迹录制/回放、卡尔曼滤波视觉-导航融合、丢线保护、多参数 EEPROM 菜单系统等模块,保障整车在复杂赛道上稳定完赛。
+
+
+智能车系统总体设计详述
+本章主要描述了智能车系统总体的设计方案，在后文中主要分为总体思路，机械设计，电路设计，软件控制这几个部分来进行描述。
+
+2.1 总体思路
+本组参赛方案紧密围绕第二十一届全国大学生智能汽车竞赛“疯狂电路”组别的赛题要求展开设计。该组别要求制作缩微轻量车模，能够沿着电路图赛道自主运行，尽量通过电路中所有的电路回路及元器件。与往届不同，本届车模重量与成绩强相关，同时赛道采用电路图形式，包含串联、并联、串并联等多种回路结构，对车模的轻量化设计、导航精度与系统鲁棒性均提出了较高要求。总体设计思路分为以下三个层面：
+硬件层面，主控芯片选用组委会指定的Infineon AURIX™系列MCU。车模采用四轮差速转向方案，以碳纤维底板为骨架，两侧分别安装电机及编码器用于速度闭环反馈，摄像头通过专用支架固定于车头前端用于白色引导线识别。电源管理、电机驱动、传感器接口等电路均自主设计并制板。整车在保证结构强度的前提下追求极致轻量化，以提升操控响应速度与动态性能。
+软件层面，以摄像头图像处理为核心感知手段，通过采集赛道图像并提取引导线信息，获取车模相对于赛道的横向偏差与航向偏差。控制算法采用PID闭环策略，方向环根据摄像头反馈的偏差信息调节左右轮差速量以实现循迹转向，速度环根据编码器反馈实现车速的平稳控制。针对赛道中的直角等特殊元素，引入陀螺仪辅助进行姿态干预。同时设计多状态机调度机制，使车模能够根据不同赛道段落自动切换控制模式，提升系统的适应性与鲁棒性。
+整体而言，本方案以“硬件轻量可靠、软件精准高效”为设计原则，力求在极致的轻量化与强劲的性能之间寻求最佳平衡，实现车模在复杂电路图赛道上的稳定、快速运行。
+
+2.2 机械结构
+本组车模选用四轮微缩方案，以碳纤维底板为骨架，兼顾轻量化与结构强度。整体布局遵循对称原则，电池低位居中安装以降低重心，减小过弯侧倾。两侧分别固定驱动电机及编码器，通过尼龙柱将电路板支撑于底板上方，既保证电气绝缘又便于调试。摄像头通过专用支架架设于车头前端中央，视野开阔无遮挡。各模块连接紧凑，线缆合理绑扎，确保运动过程中无松动干扰。转向采用双电机差速方案，精简了机械传动结构，提升了响应灵敏度与可控性。
+2.3 硬件电路设计
+硬件系统采用立创 EDA 完成原理图与四层 PCB 设计，主要包括主控最小系统、电源管理、人机交互、传感器接口和电机驱动等模块。设计中重点考虑板级小型化、供电稳定性以及动力电路与敏感电路之间的抗干扰问题，通过集成式电源器件、分区布局和信号隔离减少噪声耦合，为图像采集、姿态测量及电机闭环控制提供可靠的硬件基础。下文结合各模块原理图说明其主要设计思路与注意事项。
+2.3.1 最小系统板模块
+本组智能车以 Infineon AURIX TC264D 为核心构建最小系统。外围电路包括 20 MHz 晶振、复位电路、核心电源及去耦网络，并引出调试、下载和各功能模块所需接口。对 MCU 各电源引脚就近布置去耦电容，缩短高频回流路径；时钟与复位相关器件靠近主控放置，以降低噪声对系统启动和高速运行的影响。PWM、编码器、摄像头、按键及通信信号按照功能分区连接，为后续软件控制与调试提供统一的硬件基础。
+2.3.2 降压稳压模块
+整车使用 3S 电池供电，输入电压较高，且电机工作时会引起电源波动。电源模块采用 TPS82130SILR 集成电感降压器生成 5 V 电源，再由后级稳压支路分别获得主控域和传感器域所需的 3.3 V 电源。集成电感方案能够减少外围器件数量和走线面积，有利于压缩 PCB 尺寸；同时通过输入、输出电容就近布置，不同电源网络分区以及回流路径规划，降低开关纹波和动力负载突变对 MCU、摄像头及传感器的影响。
+2.3.3 五向按键及按键模块
+五向按键提供上、下、左、右和确认五路独立输入，用于菜单切换、参数选择与数值调整，使控制参数能够在现场快速完成标定。各按键信号通过 4.7 kΩ 电阻上拉至 3.3 V，按下时产生稳定的低电平，便于 MCU 可靠识别。系统同时设置独立复位按键和蜂鸣器驱动电路，分别用于快速重启、操作反馈和运行状态提示，提升整车调试效率。
+2.3.4 传感器和人机交互模块
+传感器与人机交互接口主要包括编码器、陀螺仪以及外接显示和调试接口。编码器为车轮速度闭环提供脉冲反馈，陀螺仪通过通信接口输出姿态信息，用于弯道控制和特殊赛道元素判断。各连接器均对电源、地和信号进行明确分配，并在接口附近设置必要的去耦与接地路径，以减小线束和外接模块引入的干扰，同时便于模块更换、故障定位和整车联调。
+2.3.5 电机驱动模块
+左右两路有刷电机分别采用 DRV8701E 栅极驱动器，配合外置 MOSFET 构成全桥驱动电路，通过 PWM 与方向信号实现调速和正反转控制。驱动器具备故障检测、休眠和使能等功能，可为状态管理与异常保护提供硬件支持。为避免大电流开关噪声经电源或控制线耦合至 MCU、摄像头等敏感电路，电机控制信号通过隔离芯片跨越控制域与动力域，电机侧采用独立的 3.3 V 供电网络和功率地回流。功率器件、去耦电容及电机接口采用紧凑布局，以缩短大电流回路并降低干扰；无刷电机控制通道同样采用隔离策略，使两类动力电路对控制与感知部分的影响尽可能减小。
+2.4 软件设计
+本系统软件采用双核架构:Core0 负责图像处理与实时控制,Core1 负责调试画面刷新。主循环由摄像头帧驱动,每帧完成自适应分区二值化、赛道边界扫描、中线提取与十字/直角元素识别,再结合编码器里程与 IMU 姿态计算偏差。控制部分由 2ms 中断调度,转向采用双 PD 环(误差+非线性项+微分+陀螺仪阻尼),速度采用双路 PI 环,并配合分段速度规划实现直道加速、弯道减速。系统内置多节点赛道地图状态机,统一决策各路口直行、左右转与特殊元器件处理,针对关键节点设专用误判修正。另集成惯导轨迹录制/回放、卡尔曼滤波融合、丢线保护及多参数菜单系统,保障整车稳定完赛。
+2.4.1 双PD控制
+双PD控制应用于差速驱动的微缩车模时，其优势首先体现在对左右两侧驱动单元独立且实时的高频调节能力上，这种解耦控制能有效克服两侧执行器及轮胎路面附着条件的不一致性，从根本上消除直行轨迹偏航现象，同时由于比例项提供即时纠偏力矩而微分项对速度变化率敏感，系统可在弯道或变道工况下依据预设轨迹偏差动态调整两侧输出，实现精准的路径跟踪而无需依赖任何机械联动机构。其次，双PD结构的微分通道能主动预测偏差变化趋势并施加阻尼作用，从而显著抑制由纯比例控制引发的低频振荡和高频抖振，使车体运动姿态更平滑，尤其在高速或曲率突变场景下，微分增益的提前校正作用大幅降低了超调和稳态误差，提升了控制系统的相位裕度，确保车模在复杂轨迹中仍保持稳定。此外，该控制方案无需复杂的状态观测或模型辨识，仅依赖角度或位置偏差及其变化率即可实现高效调节，便于现场调试和自适应调整，同时其线性控制特性便于与上层速度规划或轨迹生成算法无缝衔接，为后续引入自适应增益、前馈补偿或模糊逻辑等智能增强策略提供了稳定的基础框架。总体而言，双PD控制凭借其简单高效、响应迅速、抗干扰性强以及参数柔性可调等特性，在保证动态性能的同时极大简化了控制系统设计，是差速类车模实现精准运动控制的可靠选择。
+2.4.2 大津法图像处理
+该部分实现了一种针对嵌入式平台优化的自适应大津阈值算法，旨在从灰度图像中快速、鲁棒地提取二值化阈值，用于后续的图像分割或路径识别。其核心设计思路是结合全局统计与局部细节，并引入多重校验与历史值平滑，以应对光照不均、噪声干扰及极端场景下的阈值失效问题。函数首先清零全局直方图，然后按网格将图像划分为多个局部区域，在每个区域内采样像素，统计局部直方图并计算两个关键特征：局部提升值和局部暗峰。对于位于中间列范围的局部直方图，累加到全局直方图中，以构成全局灰度分布。随后遍历全局直方图统计总像素数和总灰度，同时记录首个和末个非零bin，若总数为零或只有单一灰度级，则直接恢复历史阈值并返回上一帧阈值，防止算法发散。接着计算全局背景灰度作为基准参考，再对每一个可能的阈值位置执行经典Otsu类间方差计算，记录使方差最大的阈值及其对应的背景计数和灰度累加和，但此标准Otsu结果并非直接采纳，而是进一步验证：计算最佳阈值下前景与背景的类均值差，仅当其大于预设最小间隔时才认为Otsu结果可靠，并同时利用函数在最佳阈值附近寻找全局峰值，以增强后续局部校正的参照稳健性。在完成全局可靠性判定后，函数遍历每个局部网格，对每个有效局部区域计算其局部参考值与全局参考值的差值，若差值超出局部最大允许增量则判定该局部无效并置零，否则保留该差值作为局部提升量，并标记有效性。之后调用修复函数对无效局部值进行插值修复，以保持空间连续性。最终，若Otsu结果不可靠，则直接返回上一帧阈值，避免引入错误阈值；若可靠，则对当前最佳阈值与上一帧阈值进行加权平均并进行钳位，实现时域平滑，抑制阈值跳变带来的图像分割抖动。整个算法融合了局部自适应、全局统计、峰值检测、置信度评判、异常容错及历史记忆机制，且通过编译器优化指令启用了高等级优化，兼顾了执行速度与鲁棒性，适用于实时性要求较高的微缩车模视觉处理场景。总体而言，该阈值选取策略在保障分割精度的同时，显著增强了算法对动态光照和不同路面纹理的适应性，为后续赛道边缘提取和路径跟踪提供了稳定可靠的二值化依据。
+开发工具安装及其调试过程
+3.1 软件开发工具
+3.1.1开发工具的选择 
+我们选择使用AURIX作为软件开发环境，AURIX 是一款专为英飞凌 AURIX 系列微控制器开发而设计的强大集成开发环境。它提供了丰富且直观的工具和功能，方便开发者进行软件开发和调试。AURIX 涵盖了从代码编写、编译到下载和调试的整个开发流程。其界面友好，易于上手，同时支持多种编程语言，如 C 和 C++。它还具备强大的代码分析和优化功能，帮助开发者提高代码质量和效率。在调试方面，提供了诸如断点设置、变量监视、内存查看等实用功能，方便开发者快速定位和解决问题。此外，AURIX 能够与其他相关工具和插件无缝集成，进一步扩展了其功能和适用性。无论是初学者还是经验丰富的开发者，AURIX 都为他们在 AURIX 微控制器的开发工作中提供了高效、便捷和可靠的支持。
+3.1.2 开发工具的安装与配置
+1.访问Infineon官方网站并注册一个账号。这是为了获得对AURIX软件和工具的访问权限。下载需要的AURIX软件开发套件（例如DAS，TriCore Compiler，Debugger等）。确保选择适合使用的AURIX芯片型号和开发环境的软件版本。安装所需的软件开发工具，如编译器、调试器和集成开发环境（IDE）。根据操作系统（Windows或Linux），按照官方提供的安装指南进行安装。配置开发环境。这可能包括设置路径、环境变量和连接硬件调试器等创建一个新的AURIX项目或导入现有的项目。在IDE中，可以设置项目属性、编写和调试代码。
+2.首次启动AURIX 时，系统会提示选择工作文件夹（workspace） 。选择一个你指定的用于保存项目文件等内容的文件夹路径，建议专门创建一个新文件夹来作为工作空间并记录位置。如果要新建项目，在软件界面中选择新建项目选项，为项目选择名称、芯片型号等相关参数进行创建。若要导入已有的项目，右键点击项目显示区域的空白处，找到导入（import）选项 ，浏览找到项目所在文件夹，选中项目文件进行导入，注意如果有“copy projects into workspace”（复制项目到工作空间）选项建议选中 。对于编译，在项目上右键选择“build project”（编译项目），查看控制台（console）界面显示的编译结果，如果成功会生成相应的如 “.elf”文件，如果要进行调试，需要连接开发板与计算机，然后打开调试选项，比如点击相关的调试图标（可能在某个菜单下或工具栏中） ，选择调试器（如果有多个调试器选项的话），并设置好调试配置文件等相关参数，配置好后开始进行调试工作，在调试过程中可以利用一些调试工具和功能如断点设置、变量查看等。
+3.2 硬件开发工具
+3.2.1开发工具的选择
+对于原理图和PCB的设计我们选择了常用的立创EDA。立创 EDA 是一款专注于集成电路设计（ICD）和印刷电路板设计（PCB）的专业电子设计自动化（EDA）软件。它为广大工程师和设计团队打造了一套完备的工具体系，涵盖了从初始概念到最终制造的完整电子产品设计流程。以下是立创 EDA 的主要特点和功能：
+综合设计环境：立创 EDA 构建了一个高度整合的设计环境，让工程师能够在同一操作界面中开展电路设计、PCB 布局、电路仿真以及制造前的准备等工作。
+原理图设计：您能够借助立创 EDA 绘制电路原理图，便捷地添加各类元件、进行连线以及运用相关符号。而且，所绘制的原理图能够与 PCB 设计实现完美衔接，极大地简化了整个设计流程。
+3.2.2 开发工具的安装与配置
+从立创eda官方网站或合法的软件分发渠道下载适用于操作系统的安装文件。根据提示选择希望安装的组件、语言选项等。选择是否安装示例项目、文档和其他附加内容。
+
+车辆基本参数和总结
+4.1模型车主要技术参数
+
+4.2总结
+在本次比赛中我们还有很多的不足需要去完善，改进，并且在对智能车的研究中还有许多改进和探索的地方，但是，通过对智能车制作，我们学到了很多实践能力，从方案选择、更改、重新设计到实施方案，细调参数，机械和硬件制作，软件编写，各方面都有深刻的体会，每一个细致的工作都会为小车这个系统的稳定性带来正面的影响，而每个疏漏，都会导致整个系统的不协调。在制作智能车的过程中，我们苦恼过，也因为小车跑的好而开心的笑过，我相信所有的智能车爱好者在制作小车以及智能控制小车的过程中，体会到的不仅仅是制作小车的乐趣，还有在制作小车的过程中队友们的齐心协力为了小车跑的好，我们熬过无数夜，翻阅各种资料，也曾在睡梦中无数次做梦梦到小车完美的直道加速、完美压弯等等。如今回头看，欣喜地发现，在这个过程中，我们收获的不是一点两点说的完的，不论是学知识，还是学做人，都是一次非常值得的经历。我们感谢主办方提供了如此一个好的平台来让我们展现自我，小车在赛道上的驰骋，无疑也是我们那颗年轻的心的驰骋!
+
+第五章 电路板详细设计原理图与核心算法子程序
+5.1 核心算法子程序
+5.1.1双PD控制
+void double_pd_control(void)
+{
+  static float last_error = 0;
+  static float diff = 0;
+  static int d_cnt = 0;
+  int current_acc_step = go_step;
+  int current_dec_step = stop_step;
+
+  error = oriimg_error - PID.aim_error;
+  diff = error - last_error;
+
+  if (speed_plan_en &&
+      PID.base_speed > (int)PID_KEY.base_speed &&
+      PID.normal_speed >= (int)PID_KEY.base_speed)
+  {
+    current_acc_step = (int)speed_plan_acc_step;
+  }
+
+  if (speed_plan_en && PID.normal_speed > PID.base_speed)
+  {
+    current_dec_step = (int)speed_plan_dec_step;
+  }
+
+  if (current_acc_step <= 0) current_acc_step = 1;
+  if (current_dec_step <= 0) current_dec_step = 1;
+
+  if (!PID.stop_flag)
+  {
+    if (PID.bldc_flag && d_cnt < BLDC_CONTROL_WAIT_TICKS)
+    {
+      d_cnt++;
+      PID.normal_speed = 0;
+      last_error = 0;
+    }
+    else if (PID.normal_speed < PID.base_speed - current_acc_step)
+    {
+      PID.normal_speed += current_acc_step;
+    }
+    else if (PID.normal_speed > PID.base_speed + current_dec_step)
+    {
+      PID.normal_speed -= current_dec_step;
+    }
+    else
+    {
+      PID.normal_speed = PID.base_speed;
+    }
+  }
+
+  if (PID.normal_speed <= 0)
+  {
+    PID.l_speed = 0;
+    PID.r_speed = 0;
+    last_error = 0;
+  }
+  else
+  {
+    PID.l_speed =
+      (int16)(PID.normal_speed +
+        (PID.double_kp1 * error + PID.double_kp2 * error * abs_pid(error) + PID.double_kd * diff)
+        - PID.double_gkd * tranced_gyro_z);
+
+    PID.r_speed =
+      (int16)(PID.normal_speed -
+        (PID.double_kp1 * error + PID.double_kp2 * error * abs_pid(error) + PID.double_kd * diff)
+        + PID.double_gkd * tranced_gyro_z);
+
+    last_error = error;
+  }
+
+  if (PID.stop_flag)
+  {
+    d_cnt = 0;
+    PID.normal_speed = 0;
+    last_error = 0;
+    oriimg_error = 0;
+    PID.l_speed = 0;
+    PID.r_speed = 0;
+    road_status = normal;
+  }
+
+  if (PID.bldc_flag)
+  {
+    bldc_soft_start();
+  }
+}
+
+5.1.2图像处理
+static uint8 otsuThreshold_fast(void)
+{
+    uint32 total_count = 0U;
+    uint32 total_gray = 0U;
+    uint8 first_global_bin = LOCAL_INVALID_VALUE;
+    uint8 last_global_bin = 0U;
+    uint8 global_background;
+    uint8 global_peak = 0U;
+    uint8 global_peak_valid = 0U;
+    uint8 otsu_reliable = 0U;
+    uint8 final_threshold = previous_threshold;
+    uint32 background_count = 0U;
+    uint32 background_sum = 0U;
+    uint32 best_background_count = 0U;
+    uint32 best_background_sum = 0U;
+    uint8 best_threshold = previous_threshold;
+    float max_variance = 0.0f;
+    int tile_y;
+    int tile_x;
+    int bin;
+
+    for (bin = 0; bin < LOCAL_HIST_BINS; bin++)
+    {
+        global_histogram[bin] = 0U;
+    }
+
+    for (tile_y = 0; tile_y < LOCAL_GRID_ROWS; tile_y++)
+    {
+        int y_start = tile_y * image_h / LOCAL_GRID_ROWS;
+        int y_end = (tile_y + 1) * image_h / LOCAL_GRID_ROWS;
+
+        for (tile_x = 0; tile_x < LOCAL_GRID_COLS; tile_x++)
+        {
+            int x_start = tile_x * image_w / LOCAL_GRID_COLS;
+            int x_end = (tile_x + 1) * image_w / LOCAL_GRID_COLS;
+            uint32 local_count = 0U;
+            int y;
+
+            for (bin = 0; bin < LOCAL_HIST_BINS; bin++)
+            {
+                local_histogram[bin] = 0U;
+            }
+
+            for (y = y_start; y < y_end; y += LOCAL_SAMPLE_STEP_Y)
+            {
+                uint8 *row = proc_image[y];
+                int x;
+
+                for (x = x_start; x < x_end; x += LOCAL_SAMPLE_STEP_X)
+                {
+                    uint8 value = row[x];
+
+                    local_histogram[value >> LOCAL_HIST_SHIFT]++;
+                    local_count++;
+                }
+            }
+
+            if (local_count == 0U)
+            {
+                local_raise[tile_y][tile_x] = LOCAL_INVALID_VALUE;
+                local_dark_peak[tile_y][tile_x] = LOCAL_INVALID_VALUE;
+            }
+            else
+            {
+                local_raise[tile_y][tile_x] =
+                    histogram_percentile_32(local_histogram, local_count);
+                local_dark_peak[tile_y][tile_x] =
+                    find_first_supported_peak_32(
+                        local_histogram,
+                        local_count);
+            }
+
+            if (tile_x >= GLOBAL_TILE_COL_FIRST
+                && tile_x <= GLOBAL_TILE_COL_LAST)
+            {
+                for (bin = 0; bin < LOCAL_HIST_BINS; bin++)
+                {
+                    global_histogram[bin] = (uint16)(
+                        global_histogram[bin] + local_histogram[bin]);
+                }
+            }
+        }
+    }
+
+    for (bin = 0; bin < LOCAL_HIST_BINS; bin++)
+    {
+        uint16 count = global_histogram[bin];
+
+        if (count != 0U)
+        {
+            uint8 center = (uint8)((bin << LOCAL_HIST_SHIFT)
+                                 + (1U << (LOCAL_HIST_SHIFT - 1)));
+
+            if (first_global_bin == LOCAL_INVALID_VALUE)
+            {
+                first_global_bin = (uint8)bin;
+            }
+            last_global_bin = (uint8)bin;
+            total_count += count;
+            total_gray += (uint32)center * count;
+        }
+    }
+
+    if (total_count == 0U || first_global_bin == last_global_bin)
+    {
+        restore_local_raise_history();
+        previous_threshold = clamp_otsu_threshold(previous_threshold);
+        return previous_threshold;
+    }
+
+    global_background = histogram_percentile_32(
+        global_histogram,
+        total_count);
+
+    for (bin = 0; bin < LOCAL_HIST_BINS; bin++)
+    {
+        uint8 center = (uint8)((bin << LOCAL_HIST_SHIFT)
+                             + (1U << (LOCAL_HIST_SHIFT - 1)));
+        uint32 foreground_count;
+        uint32 foreground_sum;
+        float background_mean;
+        float foreground_mean;
+        float difference;
+        float variance;
+
+        background_count += global_histogram[bin];
+        background_sum += (uint32)center * global_histogram[bin];
+
+        if (background_count == 0U || background_count >= total_count)
+        {
+            continue;
+        }
+
+        foreground_count = total_count - background_count;
+        foreground_sum = total_gray - background_sum;
+        background_mean = (float)background_sum / background_count;
+        foreground_mean = (float)foreground_sum / foreground_count;
+        difference = foreground_mean - background_mean;
+        variance = (float)background_count
+                 * (float)foreground_count
+                 * difference
+                 * difference;
+
+        if (variance > max_variance)
+        {
+            max_variance = variance;
+            best_threshold = (uint8)((bin << LOCAL_HIST_SHIFT) + 7);
+            best_background_count = background_count;
+            best_background_sum = background_sum;
+        }
+    }
+
+    if (best_background_count > 0U
+        && best_background_count < total_count)
+    {
+        uint32 foreground_count = total_count - best_background_count;
+        uint32 foreground_sum = total_gray - best_background_sum;
+        float background_mean =
+            (float)best_background_sum / best_background_count;
+        float foreground_mean =
+            (float)foreground_sum / foreground_count;
+        float class_gap = foreground_mean - background_mean;
+
+        if (class_gap >= OTSU_MIN_CLASS_GAP)
+        {
+            otsu_reliable = 1U;
+            final_threshold = best_threshold;
+            global_peak_valid =
+                find_global_peak_32(best_threshold, &global_peak);
+        }
+    }
+
+    for (tile_y = 0; tile_y < LOCAL_GRID_ROWS; tile_y++)
+    {
+        for (tile_x = 0; tile_x < LOCAL_GRID_COLS; tile_x++)
+        {
+            uint8 local_reference;
+            uint8 global_reference;
+            int difference;
+
+            if (local_raise[tile_y][tile_x] == LOCAL_INVALID_VALUE)
+            {
+                local_valid[tile_y][tile_x] = 0U;
+                local_raise[tile_y][tile_x] = 0U;
+                continue;
+            }
+
+            if (global_peak_valid != 0U
+                && local_dark_peak[tile_y][tile_x]
+                    != LOCAL_INVALID_VALUE)
+            {
+                local_reference = local_dark_peak[tile_y][tile_x];
+                global_reference = global_peak;
+            }
+            else
+            {
+                local_reference = local_raise[tile_y][tile_x];
+                global_reference = global_background;
+            }
+
+            difference = (int)local_reference - (int)global_reference;
+            if (difference > LOCAL_MAX_RAISE)
+            {
+                local_valid[tile_y][tile_x] = 0U;
+                local_raise[tile_y][tile_x] = 0U;
+            }
+            else
+            {
+                local_valid[tile_y][tile_x] = 1U;
+                local_raise[tile_y][tile_x] =
+                    (difference > 0) ? (uint8)difference : 0U;
+            }
+        }
+    }
+
+    repair_invalid_local_raise();
+
+    if (otsu_reliable == 0U)
+    {
+        previous_threshold = clamp_otsu_threshold(previous_threshold);
+        return previous_threshold;
+    }
+
+    final_threshold =
+        (uint8)(((uint16)previous_threshold * 3U + final_threshold) / 4U);
+    final_threshold = clamp_otsu_threshold(final_threshold);
+    previous_threshold = final_threshold;
+    return final_threshold;
+}
+
+5.2 电路板详细设计原理图
+
+
+
+
+附录A 源代码及其推理公式
+int core0_main(void)
+{
+
+   
+    clock_init(); // 获取时钟频率<务必保留>11
+    speed_pid_init();//防止疯转
+    debug_init(); // 初始化默认调试串口
+    // 此处编写用户代码 例如外设初始化代码等
+    wireless_uart_init();
+    ips114_init();                           // 摄像头初始化
+    gpio_init(BEE, GPO, 0, GPO_PUSH_PULL); 
+    gpio_init(IMU660RC_CS_PIN, GPO, GPIO_HIGH, GPO_PUSH_PULL);
+
+    // 【修复新增】：给摄像头和单片机一点上电稳定的时间，防止冷启动或热复位时总线冲突跑飞
+    system_delay_ms(500); 
+    
+    // 你的代码只尝试了 1 次！如果这1次恰好此时摄像头没睡醒（被供电波动影响），它就永远卡死了！
+    while(mt9v03x_init() != 0) 
+    {
+        // 返回非0说明初始化失败，我们给它时间缓一缓，不断重试，直到它初始化成功
+        system_delay_ms(500); 
+    }
+    
+    imu_param_init();
+    uint8 imu_retry = 0;
+    while(imu660rc_init(IMU660RC_QUARTERNION_240HZ) != 0)
+    {
+        imu_retry++;
+        ips114_show_string(0, 0, "IMU INIT ERR");
+        ips114_show_uint(0, 16, imu_retry, 2);
+        gpio_toggle_level(BEE);
+        system_delay_ms(200);
+
+        if(imu_retry >= 10)
+        {
+            gpio_set_level(BEE, 0);
+            while(1)
+            {
+                ips114_show_string(0, 0, "IMU POWER RESET");
+                gpio_toggle_level(BEE);
+                system_delay_ms(500);
+            }
+        }
+    }
+    gpio_set_level(BEE, 0);
+
+    yaw_zero_init();
+
+    KEY_Init();
+    speed_pid_init();  // 在进入菜单前先初始化电机硬件并锁定
+
+    Init_Nag();
+    PID_KEY_INIT();
+    kalaman_nav_key_init();
+    MainMenu_Set();
+    speed_pid_init(); 
+    kalaman_nav_init();
+    
+    // 强制初始化蜂鸣器引脚为0(关闭)，防止引脚悬空导通发声
+
+    // 【修复新增】：退出菜单后、重新下发曝光给摄像头前，也要稍微缓一下，确保通信100%成功
+    system_delay_ms(50);
+    mt9v03x_set_exposure_time(exposure); 
+    if (camera_fps != MT9V03X_FPS_DEF)
+    {
+        mt9v03x_set_fps((uint16)camera_fps);
+    }
+    system_delay_ms(10);
+    
+
+    
+    if (PID.bldc_flag) // 开启负压
+    {
+        pwm_init(ATOM1_CH3_P21_5,50,BLDC_START_DUTY);//无刷
+    }
+    pit_ms_init(CCU60_CH0, 2);
+    seekfree_assistant_interface_init(SEEKFREE_ASSISTANT_WIRELESS_UART);
+    seekfree_assistant_camera_information_config(SEEKFREE_ASSISTANT_MT9V03X, mt9v03x_image[0], MT9V03X_W, MT9V03X_H);
+    // 此处编写用户代码 例如外设初始化代码等
+    SpeedPlan_Init(); // 速度规划初始化
+    cpu_wait_event_ready(); // 等待所有核心初始化完毕
+    while (TRUE)
+    {
+     
+        // 此处编写需要循环执行的代码
+        if (mt9v03x_finish_flag)
+        {
+            if (flagdebug == SPEED_TEST_DEBUG_FLAG)
+            {
+                static uint8 speed_test_print_div = 0;
+
+                if (++speed_test_print_div >= 2)
+                {
+                    speed_test_print_div = 0;
+                    printf("%d,%d,%d,%d,%d,%d,%d\r\n",
+                           (int)encoder.sum,
+                           (int)PID.l_speed,
+                           (int)encoder.l_speed,
+                           (int)PID.r_speed,
+                           (int)encoder.r_speed,
+                           (int)PID.l_motor_pid_out,
+                           (int)PID.r_motor_pid_out);
+                }
+
+                mt9v03x_finish_flag = 0;
+                continue;
+            }
+
+            if (flagdebug == 5)
+            {
+                system_start();
+            }
+
+            
+            if (flagdebug == 12)
+            {
+                image_debug_ready = 1;
+            }
+            else
+            {
+                image_process(); // 图像处理
+            }
+
+            if (flagdebug == 5)
+            {
+                static uint8 fps_print_div = 0;
+                uint32 cost_us = system_getval_us();
+
+                if (cost_us && ++fps_print_div >= 10)
+                {
+                    fps_print_div = 0;
+                    printf("T:%d FPS:%d\r\n", (int)cost_us, (int)(1000000U / cost_us));
+                }
+            }
+
+            mt9v03x_finish_flag = 0;
+        }
+        // 此处编写需要循环执行的代码
+    }
+}
+
+
+
+
+===== TABLE 1 =====
+车模重量及长宽高 | 133.5g 135*70*170（mm）
+电路功耗 | 60w
+电容总容量 | 300uf
+传感器种类及个数 | 陀螺仪 摄像头 编码器 4个
+伺服电机个数 | 1个
+赛道信息检测频率 | 250赫兹

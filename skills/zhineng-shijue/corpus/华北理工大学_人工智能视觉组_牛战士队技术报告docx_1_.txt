@@ -1,0 +1,1020 @@
+第二十一届全国大学生
+智能汽车竞赛
+技
+ 
+术
+ 
+报
+ 
+告
+学
+    
+校：
+华北理工大学
+队伍名称：
+牛战士
+参赛队员：
+张增岐
+  
+田依泽
+  
+高双杰
+  
+崔伟昊
+带队教师：
+刘振东
+参赛组别：
+人工智能视觉组
+关于技术报告和研究论文使用授权的说明
+本人完全了解全国大学生智能汽车竞赛有关保留、使用技术报告和研究论文的规定，即：参赛作品著作权归参赛者本人，比赛组委会可以在相关主页上收录并公开参赛作品的设计方案、技术报告以及参赛模型车的视频、图像资料，并将相关内容编纂收录在组委会出版论文集中。
+参赛队员签名：
+________________________________________
+带队教师签名：
+________________________________________
+日
+        
+期：
+2026
+年
+    
+月
+    
+日
+摘
+  
+要
+本文介绍华北理工大学
+“
+牛战士
+”
+队参加第二十一届全国大学生智能汽车竞赛人工智能视觉组所设计的智能车系统。整车采用
+M
+型四轮麦克纳姆轮车模，以恩智浦
+i.MX RT1064
+微控制器为运动控制核心，主控板与四路电机驱动板均由队伍自主设计，驱动部分采用
+DRV8701
+栅极驱动器配合外置
+N
+沟道
+MOSFET
+组成
+H
+桥。四轮麦克纳姆结构能够实现前后运动、横向平移、斜向运动和原地旋转，为地图环境中的路径跟踪与精确对位提供了良好的机械基础。
+视觉系统由两块逐飞科技
+OpenArt Plus
+组成。地图视觉节点采用俯视安装方式，以
+QVGA 320×240
+分辨率采集场地地图，完成透视校正、颜色分割、形态学滤波、栅格地图构建以及
+A*
+路径规划；第一人称视觉节点面向车辆前方，完成目标区域提取、近距离环境判断和任务信息识别。两路视觉结果分别通过
+UART2
+和
+UART3
+发送至
+RT1064
+。通信统一采用
+115200 bit/s
+、
+8-N-1
+格式，数据帧由双字节帧头、命令字、数据长度、有效载荷、序号、
+CRC-8/MAXIM
+校验和帧尾组成。
+RT1064
+根据规划路径和第一人称视觉结果运行任务状态机，完成路径点跟踪、四轮麦克纳姆运动学解算以及串级
+PID
+控制。位置与航向控制构成外环，四个车轮的速度控制构成内环，结合速度前馈、输出限幅和积分分离提高低速平移与原地转向时的稳定性。系统程序使用
+Keil MDK
+开发，底层驱动基于逐飞科技
+RT1064
+库，两块
+OpenArt Plus
+使用
+OpenMV IDE
+完成图像算法编程。整车方案具有感知与控制分工明确、路径规划计算独立、通信可靠和维护方便等特点。
+关键词：智能汽车；
+RT1064
+；
+OpenArt Plus
+；麦克纳姆轮；
+A*
+路径规划；串级
+PID
+目
+  
+录
+<w:tab w:val="right" w:leader="dot" w:pos="9000"/></w:tabs><w:spacing w:after="30"/><w:rPr><w:lang w:eastAsia="zh-CN"/></w:rPr></w:pPr><w:r><w:rPr><w:b/><w:sz w:val="22"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t>第一章
+  
+车模设计及总体技术方案
+</w:r><w:r><w:rPr><w:sz w:val="22"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t>6
+<w:tab w:val="right" w:leader="dot" w:pos="9000"/></w:tabs><w:spacing w:after="30"/><w:ind w:left="420"/><w:rPr><w:lang w:eastAsia="zh-CN"/></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="22"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t xml:space="preserve">1.1 
+赛题任务与设计目标
+</w:r><w:r><w:rPr><w:sz w:val="22"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t>6
+<w:tab w:val="right" w:leader="dot" w:pos="9000"/></w:tabs><w:spacing w:after="30"/><w:ind w:left="420"/><w:rPr><w:lang w:eastAsia="zh-CN"/></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="22"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t xml:space="preserve">1.2 
+车模选型
+</w:r><w:r><w:rPr><w:sz w:val="22"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t>6
+<w:tab w:val="right" w:leader="dot" w:pos="9000"/></w:tabs><w:spacing w:after="30"/><w:ind w:left="420"/><w:rPr><w:lang w:eastAsia="zh-CN"/></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="22"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t xml:space="preserve">1.3 
+系统总体架构
+</w:r><w:r><w:rPr><w:sz w:val="22"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t>7
+<w:tab w:val="right" w:leader="dot" w:pos="9000"/></w:tabs><w:spacing w:after="30"/><w:ind w:left="420"/><w:rPr><w:lang w:eastAsia="zh-CN"/></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="22"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t xml:space="preserve">1.4 
+主要技术特点
+</w:r><w:r><w:rPr><w:sz w:val="22"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t>8
+<w:tab w:val="right" w:leader="dot" w:pos="9000"/></w:tabs><w:spacing w:after="30"/><w:rPr><w:lang w:eastAsia="zh-CN"/></w:rPr></w:pPr><w:r><w:rPr><w:b/><w:sz w:val="22"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t>第二章
+  
+机械系统设计与实现
+</w:r><w:r><w:rPr><w:sz w:val="22"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t>9
+<w:tab w:val="right" w:leader="dot" w:pos="9000"/></w:tabs><w:spacing w:after="30"/><w:ind w:left="420"/><w:rPr><w:lang w:eastAsia="zh-CN"/></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="22"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t xml:space="preserve">2.1 
+整车布局原则
+</w:r><w:r><w:rPr><w:sz w:val="22"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t>9
+<w:tab w:val="right" w:leader="dot" w:pos="9000"/></w:tabs><w:spacing w:after="30"/><w:ind w:left="420"/><w:rPr><w:lang w:eastAsia="zh-CN"/></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="22"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t xml:space="preserve">2.2 
+摄像头支架设计
+</w:r><w:r><w:rPr><w:sz w:val="22"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t>9
+<w:tab w:val="right" w:leader="dot" w:pos="9000"/></w:tabs><w:spacing w:after="30"/><w:ind w:left="420"/><w:rPr><w:lang w:eastAsia="zh-CN"/></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="22"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t xml:space="preserve">2.3 
+电路板与线束布置
+</w:r><w:r><w:rPr><w:sz w:val="22"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t>10
+<w:tab w:val="right" w:leader="dot" w:pos="9000"/></w:tabs><w:spacing w:after="30"/><w:ind w:left="420"/><w:rPr><w:lang w:eastAsia="zh-CN"/></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="22"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t xml:space="preserve">2.4 
+麦克纳姆轮安装与编号
+</w:r><w:r><w:rPr><w:sz w:val="22"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t>11
+<w:tab w:val="right" w:leader="dot" w:pos="9000"/></w:tabs><w:spacing w:after="30"/><w:rPr><w:lang w:eastAsia="zh-CN"/></w:rPr></w:pPr><w:r><w:rPr><w:b/><w:sz w:val="22"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t>第三章
+  
+硬件系统设计与实现
+</w:r><w:r><w:rPr><w:sz w:val="22"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t>12
+<w:tab w:val="right" w:leader="dot" w:pos="9000"/></w:tabs><w:spacing w:after="30"/><w:ind w:left="420"/><w:rPr><w:lang w:eastAsia="zh-CN"/></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="22"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t xml:space="preserve">3.1 
+硬件总体构成
+</w:r><w:r><w:rPr><w:sz w:val="22"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t>12
+<w:tab w:val="right" w:leader="dot" w:pos="9000"/></w:tabs><w:spacing w:after="30"/><w:ind w:left="420"/><w:rPr><w:lang w:eastAsia="zh-CN"/></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="22"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t>3.2 RT1064
+主控板
+</w:r><w:r><w:rPr><w:sz w:val="22"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t>12
+<w:tab w:val="right" w:leader="dot" w:pos="9000"/></w:tabs><w:spacing w:after="30"/><w:ind w:left="420"/><w:rPr><w:lang w:eastAsia="zh-CN"/></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="22"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t xml:space="preserve">3.3 
+电机驱动板
+</w:r><w:r><w:rPr><w:sz w:val="22"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t>14
+<w:tab w:val="right" w:leader="dot" w:pos="9000"/></w:tabs><w:spacing w:after="30"/><w:ind w:left="420"/><w:rPr><w:lang w:eastAsia="zh-CN"/></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="22"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t xml:space="preserve">3.4 
+电源系统
+</w:r><w:r><w:rPr><w:sz w:val="22"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t>15
+<w:tab w:val="right" w:leader="dot" w:pos="9000"/></w:tabs><w:spacing w:after="30"/><w:ind w:left="420"/><w:rPr><w:lang w:eastAsia="zh-CN"/></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="22"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t xml:space="preserve">3.5 
+接口分配
+</w:r><w:r><w:rPr><w:sz w:val="22"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t>16
+<w:tab w:val="right" w:leader="dot" w:pos="9000"/></w:tabs><w:spacing w:after="30"/><w:rPr><w:lang w:eastAsia="zh-CN"/></w:rPr></w:pPr><w:r><w:rPr><w:b/><w:sz w:val="22"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t>第四章
+  
+软件系统设计及实现
+</w:r><w:r><w:rPr><w:sz w:val="22"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t>17
+<w:tab w:val="right" w:leader="dot" w:pos="9000"/></w:tabs><w:spacing w:after="30"/><w:ind w:left="420"/><w:rPr><w:lang w:eastAsia="zh-CN"/></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="22"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t xml:space="preserve">4.1 
+软件总体架构
+</w:r><w:r><w:rPr><w:sz w:val="22"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t>17
+<w:tab w:val="right" w:leader="dot" w:pos="9000"/></w:tabs><w:spacing w:after="30"/><w:ind w:left="420"/><w:rPr><w:lang w:eastAsia="zh-CN"/></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="22"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t xml:space="preserve">4.2 
+四轮麦克纳姆轮运动学
+</w:r><w:r><w:rPr><w:sz w:val="22"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t>17
+<w:tab w:val="right" w:leader="dot" w:pos="9000"/></w:tabs><w:spacing w:after="30"/><w:ind w:left="420"/><w:rPr><w:lang w:eastAsia="zh-CN"/></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="22"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t xml:space="preserve">4.3 
+串级
+PID
+控制
+</w:r><w:r><w:rPr><w:sz w:val="22"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t>18
+<w:tab w:val="right" w:leader="dot" w:pos="9000"/></w:tabs><w:spacing w:after="30"/><w:ind w:left="420"/><w:rPr><w:lang w:eastAsia="zh-CN"/></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="22"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t xml:space="preserve">4.4 
+地图图像处理
+</w:r><w:r><w:rPr><w:sz w:val="22"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t>18
+<w:tab w:val="right" w:leader="dot" w:pos="9000"/></w:tabs><w:spacing w:after="30"/><w:ind w:left="420"/><w:rPr><w:lang w:eastAsia="zh-CN"/></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="22"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t>4.5 A*
+路径规划与路径简化
+</w:r><w:r><w:rPr><w:sz w:val="22"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t>19
+<w:tab w:val="right" w:leader="dot" w:pos="9000"/></w:tabs><w:spacing w:after="30"/><w:ind w:left="420"/><w:rPr><w:lang w:eastAsia="zh-CN"/></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="22"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t xml:space="preserve">4.6 
+第一人称视觉处理
+</w:r><w:r><w:rPr><w:sz w:val="22"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t>19
+<w:tab w:val="right" w:leader="dot" w:pos="9000"/></w:tabs><w:spacing w:after="30"/><w:ind w:left="420"/><w:rPr><w:lang w:eastAsia="zh-CN"/></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="22"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t xml:space="preserve">4.7 
+串口通信协议
+</w:r><w:r><w:rPr><w:sz w:val="22"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t>20
+<w:tab w:val="right" w:leader="dot" w:pos="9000"/></w:tabs><w:spacing w:after="30"/><w:ind w:left="420"/><w:rPr><w:lang w:eastAsia="zh-CN"/></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="22"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t xml:space="preserve">4.8 
+任务状态机
+</w:r><w:r><w:rPr><w:sz w:val="22"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t>21
+<w:tab w:val="right" w:leader="dot" w:pos="9000"/></w:tabs><w:spacing w:after="30"/><w:rPr><w:lang w:eastAsia="zh-CN"/></w:rPr></w:pPr><w:r><w:rPr><w:b/><w:sz w:val="22"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t>第五章
+  
+系统开发与调试
+</w:r><w:r><w:rPr><w:sz w:val="22"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t>21
+<w:tab w:val="right" w:leader="dot" w:pos="9000"/></w:tabs><w:spacing w:after="30"/><w:rPr><w:lang w:eastAsia="zh-CN"/></w:rPr></w:pPr><w:r><w:rPr><w:b/><w:sz w:val="22"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t>第六章
+  
+车模主要技术参数
+</w:r><w:r><w:rPr><w:sz w:val="22"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t>23
+<w:tab w:val="right" w:leader="dot" w:pos="9000"/></w:tabs><w:spacing w:after="30"/><w:rPr><w:lang w:eastAsia="zh-CN"/></w:rPr></w:pPr><w:r><w:rPr><w:b/><w:sz w:val="22"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t>第七章
+  
+总结
+</w:r><w:r><w:rPr><w:sz w:val="22"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t>24
+<w:tab w:val="right" w:leader="dot" w:pos="9000"/></w:tabs><w:spacing w:after="30"/><w:rPr><w:lang w:eastAsia="zh-CN"/></w:rPr></w:pPr><w:r><w:rPr><w:b/><w:sz w:val="22"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t>参考文献
+</w:r><w:r><w:rPr><w:sz w:val="22"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t>24
+<w:tab w:val="right" w:leader="dot" w:pos="9000"/></w:tabs><w:spacing w:after="30"/><w:rPr><w:lang w:eastAsia="zh-CN"/></w:rPr></w:pPr><w:r><w:rPr><w:b/><w:sz w:val="22"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t>附录
+A  
+通信命令字定义
+</w:r><w:r><w:rPr><w:sz w:val="22"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t>25
+<w:tab w:val="right" w:leader="dot" w:pos="9000"/></w:tabs><w:spacing w:after="30"/><w:rPr><w:lang w:eastAsia="zh-CN"/></w:rPr></w:pPr><w:r><w:rPr><w:b/><w:sz w:val="22"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t>附录
+B  
+主要程序结构
+</w:r><w:r><w:rPr><w:sz w:val="22"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t>25
+第一章
+  
+车模设计及总体技术方案
+1.1 
+赛题任务与设计目标
+人工智能视觉组要求智能车在给定场地内自主获取环境信息、完成路径规划并按照任务要求运动。针对场地面积有限、车辆需要频繁横向调整以及视觉处理任务较重的特点，我队将系统划分为地图感知与规划、第一人称视觉、底盘控制和电机执行四个层级。总体设计目标是：地图处理与实时识别互不阻塞；路径数据能够稳定传输；底盘能够准确实现二维平移和旋转；各模块可独立调试并在赛场快速更换。
+1.2 
+车模选型
+整车选用竞赛
+M
+型四轮麦克纳姆轮车模，保留原车底盘结构，不重新设计承力底盘。四个麦克纳姆轮由四台直流电机独立驱动。轮缘滚子与轮轴成
+45°
+布置，各轮的驱动力经矢量分解后可合成为车体坐标系下的纵向速度、横向速度和角速度。与普通差速底盘相比，该结构无需改变车头方向即可横向修正位置，能够缩短转弯路径并提高目标对位效率。
+图
+1.1  M
+型四轮麦克纳姆轮智能车俯视结构
+图
+1.2  M
+型四轮麦克纳姆轮智能车正面结构
+1.3 
+系统总体架构
+系统采用分布式处理架构。地图
+OpenArt Plus
+完成地图图像采集、地图坐标标定、障碍区域提取、栅格化和
+A*
+路径规划；第一人称
+OpenArt Plus
+完成前方图像采集、目标区域提取以及任务标志识别；
+RT1064
+负责两路串口数据解析、任务状态管理、路径跟踪、姿态控制、麦克纳姆轮正逆运动学和四路电机闭环控制。各模块通过明确的数据接口连接，视觉节点只输出与控制相关的结构化数据，主控不直接处理完整图像。
+图
+1.3  
+整车硬件供电与功能分配框图
+1.4 
+主要技术特点
+<w:tblPr><w:tblStyle w:val="style154"/><w:tblW w:w="0" w:type="auto"/><w:jc w:val="center"/><w:tblLook w:val="04A0" w:firstRow="1" w:lastRow="0" w:firstColumn="1" w:lastColumn="0" w:noHBand="0" w:noVBand="1"/></w:tblPr><w:tblGrid><w:gridCol w:w="2268"/><w:gridCol w:w="6236"/></w:tblGrid><w:tr w14:paraId="2C064B07"><w:trPr><w:tblHeader/><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2268" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="6E37BB5E"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:eastAsia="黑体"/><w:b/><w:sz w:val="21"/></w:rPr><w:t>技术点
+<w:tcPr><w:tcW w:w="6236" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="6B1BFEAE"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:eastAsia="黑体"/><w:b/><w:sz w:val="21"/></w:rPr><w:t>实现方式
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2268" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="08792217"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>双视觉节点
+<w:tcPr><w:tcW w:w="6236" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="2A1D77F7"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr><w:lang w:eastAsia="zh-CN"/></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t>地图规划与第一人称识别分别运行，避免单节点任务互相抢占
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2268" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="7C67BD97"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>全向底盘
+<w:tcPr><w:tcW w:w="6236" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="32E13D79"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr><w:lang w:eastAsia="zh-CN"/></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t>四轮麦克纳姆轮实现纵向、横向和旋转三自由度运动
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2268" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="4A6327E4"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>自主硬件
+<w:tcPr><w:tcW w:w="6236" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="58FE2DB8"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr><w:lang w:eastAsia="zh-CN"/></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t>主控板与
+DRV8701
+四路电机驱动板均由队伍自主设计
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2268" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="130777FB"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>分层控制
+<w:tcPr><w:tcW w:w="6236" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="20929CAC"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr><w:lang w:eastAsia="zh-CN"/></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t>位置
+/
+航向外环与四轮速度内环构成串级
+PID
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2268" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="6286DEBE"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>可靠通信
+<w:tcPr><w:tcW w:w="6236" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="6B1C1BED"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>UART2
+、
+UART3
+采用统一数据帧、序号和
+CRC-8
+校验
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2268" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="2C22B060"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>路径规划
+<w:tcPr><w:tcW w:w="6236" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="49D51E8D"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr><w:lang w:eastAsia="zh-CN"/></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t>地图端建立占据栅格并采用八邻域
+A*
+搜索与折线简化
+第二章
+  
+机械系统设计与实现
+2.1 
+整车布局原则
+整车机械布局遵循低重心、短走线、无遮挡和易维护原则。电池、主控板及驱动板布置在底盘中部区域，使整车质心尽量接近几何中心，减小横向平移和原地旋转时的惯性偏差。电机驱动板靠近电机接口，降低大电流线束长度；视觉模块和信号线与电机电源线分开布置，以减小电磁干扰。
+图
+2.1  
+车模顶部电池及结构件布置
+2.2 
+摄像头支架设计
+两块
+OpenArt Plus
+分别采用俯视与第一人称安装。地图摄像头镜头中心距车模安装平面约
+10 cm
+，镜头光轴尽量垂直于目标地图平面；第一人称摄像头安装在车体前部，光轴略向下倾斜，使近距离地面区域与前方目标同时位于视场内。支架采用
+3D
+打印结构与螺钉固定，既保证刚度，又允许通过长孔或垫片微调俯仰角。
+地图摄像头的机械稳定性直接影响透视矩阵。完成安装后固定支架位置，不在程序运行过程中改变高度和角度。第一人称摄像头与车体坐标系保持固定关系，检测到的目标中心坐标可直接换算为横向偏差与距离等级。
+图
+2.2  
+视觉模块前部支架结构
+2.3 
+电路板与线束布置
+主控板采用水平安装，串口、编码器和调试接口朝向车体外侧，便于接线和排查。驱动板与主控板分层固定，功率器件一侧保持通风。所有插接件均设置防呆方向，电机、编码器和摄像头线束使用扎带固定，预留车轮转动和支架调节空间，避免线束与麦克纳姆轮接触。
+图
+2.3  
+车模侧面线束与电源接口布置
+2.4 
+麦克纳姆轮安装与编号
+四个车轮按左前、右前、左后、右后的顺序编号为
+1
+至
+4
+。车轮滚子采用
+X
+型布置，即从车体上方观察，四个车轮滚子轴线的延长方向构成
+“X”
+形。安装后依次执行单轮正转测试，并统一规定编码器正计数方向。程序中的电机方向修正系数集中定义，确保运动学模型与实际安装一致。
+为保证四轮同时接地，装配时检查底盘平面度、轮毂轴向间隙和滚子转动阻力。轮胎滚子出现卡滞会导致横向速度显著下降，因此调试前逐个检查滚子自由转动情况，并保持四轮紧固程度一致。
+第三章
+  
+硬件系统设计与实现
+3.1 
+硬件总体构成
+硬件系统由
+RT1064
+核心板、自制主控板、自制四路电机驱动板、两块
+OpenArt Plus
+、四路电机及编码器、电源模块、蜂鸣器、按键和调试接口组成。主控板承担电源分配、核心板扩展、串口连接和外设接口管理；驱动板承担四台直流电机的双向驱动。
+3.2 RT1064
+主控板
+主控制器采用恩智浦
+i.MX RT1064
+。
+该芯片基于
+Arm Cortex-M7
+内核，能够满足四路高速编码器采集、四路
+PWM
+输出、双视觉串口通信和控制算法计算需求。自制主控板将核心板、稳压模块、串口接口、编码器接口、蜂鸣器、按键和调试接口集成在同一
+PCB
+上。
+主控板布局时将电源部分、核心板部分和外设接口部分分区放置。电源入口配置反接保护和大容量滤波电容；
+RT1064
+核心板周围保留调试及复位空间；
+UART2
+与
+UART3
+接口分别连接地图
+OpenArt Plus
+和第一人称
+OpenArt Plus
+。编码器输入线远离电机输出端，并通过地线相邻布置减小串扰。
+图
+3.1  
+自制主控板完整原理图
+图
+3.2  
+自制
+RT1064
+主控板
+PCB
+三维图
+3.3 
+电机驱动板
+电机驱动采用
+DRV8701
+栅极驱动器配合外置
+N
+沟道
+MOSFET
+组成全桥。
+RT1064
+输出
+PWM
+和方向控制信号，
+DRV8701
+完成高低侧
+MOSFET
+栅极驱动。外置
+MOSFET
+方案可根据电机堵转电流选择低导通电阻器件，并通过扩大铜箔面积提高散热能力。
+每路驱动均设置电源旁路、栅极电阻和下拉电阻。大电流路径采用宽铜皮和多过孔连接，驱动芯片靠近
+MOSFET
+布置，减少栅极回路寄生电感。逻辑地与功率地在电源入口附近单点汇接，编码器和串口信号不跨越电机开关节点。
+图
+3.3  
+四路
+DRV8701
+电机驱动板原理图
+图
+3.4  
+四路电机驱动板
+PCB
+三维图
+3.4 
+电源系统
+整车使用
+1
+2
+V
+动力电池作为输入。电机驱动板直接使用动力电压；主控板通过同步降压模块生成
+5 V
+，为
+RT1064
+核心板、
+OpenArt Plus
+和编码器供电，再由低压差稳压器生成
+3.3 V
+供屏幕、逻辑和辅助传感器使用。视觉模块采用独立
+5 V
+支路，并在接口附近配置低
+ESR
+电容，避免电机启停造成供电瞬态下降。
+<w:tblPr><w:tblStyle w:val="style154"/><w:tblW w:w="0" w:type="auto"/><w:jc w:val="center"/><w:tblLook w:val="04A0" w:firstRow="1" w:lastRow="0" w:firstColumn="1" w:lastColumn="0" w:noHBand="0" w:noVBand="1"/></w:tblPr><w:tblGrid><w:gridCol w:w="1701"/><w:gridCol w:w="3969"/><w:gridCol w:w="2835"/></w:tblGrid><w:tr w14:paraId="5034D6CB"><w:trPr><w:tblHeader/><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="1701" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="5C1E753A"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:eastAsia="黑体"/><w:b/><w:sz w:val="21"/></w:rPr><w:t>电源轨
+<w:tcPr><w:tcW w:w="3969" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="1784228A"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:eastAsia="黑体"/><w:b/><w:sz w:val="21"/></w:rPr><w:t>供电对象
+<w:tcPr><w:tcW w:w="2835" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="432DD443"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:eastAsia="黑体"/><w:b/><w:sz w:val="21"/></w:rPr><w:t>设计要求
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="1701" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="16211C64"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>1
+2
+V
+<w:tcPr><w:tcW w:w="3969" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="0F4AD85C"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>四路电机驱动功率级
+<w:tcPr><w:tcW w:w="2835" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="455B0575"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr><w:lang w:eastAsia="zh-CN"/></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t>大电流短走线，入口配置保险与滤波
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="1701" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="59700D4C"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>5 V
+<w:tcPr><w:tcW w:w="3969" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="3ABAF0E8"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>RT1064
+核心板、两块
+OpenArt Plus
+、编码器
+<w:tcPr><w:tcW w:w="2835" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="30B8B505"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr><w:lang w:eastAsia="zh-CN"/></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t>独立视觉支路，保证瞬态电流
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="1701" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="1D17B4D8"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>3.3 V
+<w:tcPr><w:tcW w:w="3969" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="31818648"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr><w:lang w:eastAsia="zh-CN"/></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t>逻辑接口、按键、蜂鸣器及辅助外设
+<w:tcPr><w:tcW w:w="2835" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="51093A64"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr><w:lang w:eastAsia="zh-CN"/></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t>低纹波，靠近负载去耦
+3.5 
+接口分配
+<w:tblPr><w:tblStyle w:val="style154"/><w:tblW w:w="0" w:type="auto"/><w:jc w:val="center"/><w:tblLook w:val="04A0" w:firstRow="1" w:lastRow="0" w:firstColumn="1" w:lastColumn="0" w:noHBand="0" w:noVBand="1"/></w:tblPr><w:tblGrid><w:gridCol w:w="1701"/><w:gridCol w:w="3402"/><w:gridCol w:w="3402"/></w:tblGrid><w:tr w14:paraId="034DC97F"><w:trPr><w:tblHeader/><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="1701" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="2DB15DB6"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:eastAsia="黑体"/><w:b/><w:sz w:val="21"/></w:rPr><w:t>接口
+<w:tcPr><w:tcW w:w="3402" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="0864D7A7"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:eastAsia="黑体"/><w:b/><w:sz w:val="21"/></w:rPr><w:t>连接对象
+<w:tcPr><w:tcW w:w="3402" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="1FB1CE8D"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:eastAsia="黑体"/><w:b/><w:sz w:val="21"/></w:rPr><w:t>用途
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="1701" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="5A37D18C"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>UART2
+<w:tcPr><w:tcW w:w="3402" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="2A6EBB7C"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>地图
+OpenArt Plus
+<w:tcPr><w:tcW w:w="3402" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="751B436F"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr><w:lang w:eastAsia="zh-CN"/></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t>地图状态、规划路径和心跳
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="1701" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="68E6D7C6"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>UART3
+<w:tcPr><w:tcW w:w="3402" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="7AF0B153"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>第一人称
+OpenArt Plus
+<w:tcPr><w:tcW w:w="3402" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="7ECFBAA7"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr><w:lang w:eastAsia="zh-CN"/></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t>目标类别、中心坐标和状态
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="1701" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="51BD6434"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>PWM×4
+<w:tcPr><w:tcW w:w="3402" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="69BA08D7"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>四路
+DRV8701
+<w:tcPr><w:tcW w:w="3402" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="20F20ACE"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>电机转速控制
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="1701" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="7ACA8747"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>DIR×4
+<w:tcPr><w:tcW w:w="3402" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="46B4AAF3"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>四路
+DRV8701
+<w:tcPr><w:tcW w:w="3402" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="1C0F10E9"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>电机方向控制
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="1701" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="232210B0"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>ENC×4
+<w:tcPr><w:tcW w:w="3402" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="6CE6E762"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>四路正交编码器
+<w:tcPr><w:tcW w:w="3402" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="71478453"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>车轮速度反馈
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="1701" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="6F87F75C"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>SWD
+<w:tcPr><w:tcW w:w="3402" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="4E297E8E"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>调试器
+<w:tcPr><w:tcW w:w="3402" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="28E8EA6C"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>程序下载和在线调试
+第四章
+  
+软件系统设计及实现
+4.1 
+软件总体架构
+整车软件划分为地图视觉程序、第一人称视觉程序和
+RT1064
+控制程序。地图视觉程序完成一次地图采集与规划，并在运行过程中根据需要更新局部状态；第一人称视觉程序连续输出车辆前方目标信息；
+RT1064
+控制程序采用周期任务和中断相结合的结构。编码器采集和电机控制在固定周期中断中执行，串口接收使用中断加环形缓冲区，路径跟踪与状态机在主循环中执行。
+4.2 
+四轮麦克纳姆轮运动学
+建立车体坐标系：车头方向为
+x
+轴正方向，车体左侧为
+y
+轴正方向，逆时针旋转为角速度
+ω
+的正方向。设车轮半径为
+r
+，车体中心到前后轮轴的距离为
+Lx
+，到左右轮中心线的距离为
+Ly
+，
+k=Lx+Ly
+。对于
+X
+型轮组，车体速度到车轮角速度的逆解算为：
+ω1 = (vx - vy - kω) / r
+ω2 = (vx + vy + kω) / r
+ω3 = (vx + vy - kω) / r
+ω4 = (vx - vy + kω) / r
+其中
+1
+、
+2
+、
+3
+、
+4
+分别代表左前、右前、左后、右后车轮。正运动学用于根据四轮实测速度估计车体速度：
+vx = r(ω1 + ω2 + ω3 + ω4) / 4
+vy = r(-ω1 + ω2 + ω3 - ω4) / 4
+ω
+ = r(-
+ω
+1 + 
+ω
+2 - 
+ω
+3 + 
+ω
+4) / (4k)
+程序首先将路径跟踪器输出的
+vx
+、
+vy
+和
+ω
+进行限幅，再完成逆解算。若任一车轮目标转速超过允许值，则按同一比例缩放四轮目标速度，保持合成运动方向不变。
+4.3 
+串级
+PID
+控制
+底盘控制采用位置与航向外环、车轮速度内环的串级结构。位置外环根据当前路径点与估计位置之间的误差输出车体坐标系速度；航向外环根据目标航向与当前航向误差输出角速度；四个速度内环分别根据目标轮速和编码器反馈计算
+PWM
+。
+速度环使用增量式
+PI
+控制，并加入速度前馈、积分限幅和死区补偿。位置环使用比例
+-
+微分控制，距离目标点较远时以最大允许速度运行，接近目标点后按距离线性减速。航向误差采用
+−
+π
+至
+π
+归一化，避免跨越
+±180°
+时产生错误的大角度控制。
+<w:tblPr><w:tblStyle w:val="style154"/><w:tblW w:w="0" w:type="auto"/><w:jc w:val="center"/><w:tblLook w:val="04A0" w:firstRow="1" w:lastRow="0" w:firstColumn="1" w:lastColumn="0" w:noHBand="0" w:noVBand="1"/></w:tblPr><w:tblGrid><w:gridCol w:w="1701"/><w:gridCol w:w="2268"/><w:gridCol w:w="1701"/><w:gridCol w:w="2835"/></w:tblGrid><w:tr w14:paraId="5E945275"><w:trPr><w:tblHeader/><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="1701" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="0B688242"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:eastAsia="黑体"/><w:b/><w:sz w:val="21"/></w:rPr><w:t>控制层
+<w:tcPr><w:tcW w:w="2268" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="4359D14D"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:eastAsia="黑体"/><w:b/><w:sz w:val="21"/></w:rPr><w:t>输入
+<w:tcPr><w:tcW w:w="1701" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="67BF6112"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:eastAsia="黑体"/><w:b/><w:sz w:val="21"/></w:rPr><w:t>输出
+<w:tcPr><w:tcW w:w="2835" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="33FBD12C"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:eastAsia="黑体"/><w:b/><w:sz w:val="21"/></w:rPr><w:t>主要处理
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="1701" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="7B2C4BA9"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>位置外环
+<w:tcPr><w:tcW w:w="2268" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="6D5F8794"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>路径点位置误差
+<w:tcPr><w:tcW w:w="1701" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="04E13C45"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>vx
+、
+vy
+<w:tcPr><w:tcW w:w="2835" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="4FD1CE26"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr><w:lang w:eastAsia="zh-CN"/></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t>距离限速、到点判定、速度平滑
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="1701" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="76E14B41"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>航向外环
+<w:tcPr><w:tcW w:w="2268" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="3C10ED9B"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr><w:lang w:eastAsia="zh-CN"/></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t>目标航向与当前航向误差
+<w:tcPr><w:tcW w:w="1701" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="707829D9"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>ω
+<w:tcPr><w:tcW w:w="2835" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="4CEA622B"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr><w:lang w:eastAsia="zh-CN"/></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t>角度归一化、角速度限幅
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="1701" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="5905C429"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>四轮速度内环
+<w:tcPr><w:tcW w:w="2268" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="4D434444"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr><w:lang w:eastAsia="zh-CN"/></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t>目标轮速与实测轮速误差
+<w:tcPr><w:tcW w:w="1701" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="289EC9B5"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>PWM
+<w:tcPr><w:tcW w:w="2835" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="6EACF8E5"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr><w:lang w:eastAsia="zh-CN"/></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t>PI
+、前馈、积分限幅、死区补偿
+4.4 
+地图图像处理
+地图
+OpenArt Plus
+以
+QVGA 320×240
+分辨率采集图像。启动后锁定自动增益和自动白平衡，避免连续帧阈值漂移。根据固定安装高度和标定板计算透视变换矩阵，将原始图像转换为俯视平面。处理流程如下：
+（
+1
+）裁剪支架和车体遮挡区域，仅保留有效地图区域；
+（
+2
+）将
+RGB
+图像转换至
+LAB
+颜色空间，利用亮度与色度阈值分离可通行区、边界和障碍物；
+（
+3
+）进行开运算去除小噪点、闭运算填补区域空洞；
+（
+4
+）提取最大有效地图轮廓并执行透视校正；
+（
+5
+）将校正后的地图缩放为
+80×60
+占据栅格，
+0
+表示可通行，
+1
+表示障碍；
+（
+6
+）按照车模外接圆半径对障碍区域进行膨胀，保证规划路径留有安全边界。
+4.5 A*
+路径规划与路径简化
+路径规划采用八邻域
+A*
+算法。直线相邻栅格的移动代价取
+10
+，对角相邻栅格的移动代价取
+14
+，启发函数采用八方向距离。搜索过程中使用开放列表保存待扩展节点，关闭列表保存已访问节点，并禁止路径穿越障碍物膨胀区。
+得到原始栅格路径后依次执行共线点删除、视线检测和转角平滑。共线点删除用于减少连续直线上的冗余点；视线检测从当前保留点直接连接更远路径点，只要连线不穿越障碍即可删除中间点；转角处使用有限长度圆弧或速度渐变，避免底盘在单个路径点处突然改变横向速度。最终路径以车体可执行的二维坐标点序列发送至
+RT1064
+。
+图
+4.1  
+地图采集、规划结果与调试界面
+图
+4.2  
+实际场地地图与车模运行环境
+4.6 
+第一人称视觉处理
+第一人称
+OpenArt Plus
+以
+QVGA 320×240
+分辨率连续采集车辆前方图像。程序首先限定下半部分有效区域，减少远处背景干扰；随后依据任务目标使用
+LAB
+阈值分割和连通域分析提取目标候选区域。对于多个候选区域，按照面积、中心位置和形状比例综合评分，选择得分最高的目标。
+视觉节点输出目标类别、中心坐标、区域宽高、置信度和帧序号。
+RT1064
+根据目标中心横坐标计算横向修正量，根据目标区域面积划分远、中、近三个距离等级。当连续三帧识别结果一致时更新任务状态；短时丢失目标时保持上一帧结果并降低车速，超过设定丢失计数后进入重新搜索状态。
+4.7 
+串口通信协议
+两块
+OpenArt Plus
+分别通过
+UART2
+和
+UART3
+与
+RT1064
+通信，统一采用
+115200 bit/s
+、
+8
+个数据位、
+1
+个停止位、无奇偶校验。
+为提高抗干扰能力，协议采用双字节帧头、长度字段、序号和
+CRC-8/MAXIM
+校验。
+<w:tblPr><w:tblStyle w:val="style154"/><w:tblW w:w="0" w:type="auto"/><w:jc w:val="center"/><w:tblLook w:val="04A0" w:firstRow="1" w:lastRow="0" w:firstColumn="1" w:lastColumn="0" w:noHBand="0" w:noVBand="1"/></w:tblPr><w:tblGrid><w:gridCol w:w="1134"/><w:gridCol w:w="1701"/><w:gridCol w:w="1701"/><w:gridCol w:w="3969"/></w:tblGrid><w:tr w14:paraId="67DC2891"><w:trPr><w:tblHeader/><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="1134" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="390570D5"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:eastAsia="黑体"/><w:b/><w:sz w:val="21"/></w:rPr><w:t>偏移
+<w:tcPr><w:tcW w:w="1701" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="20C66A6E"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:eastAsia="黑体"/><w:b/><w:sz w:val="21"/></w:rPr><w:t>字段
+<w:tcPr><w:tcW w:w="1701" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="76EDC9A3"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:eastAsia="黑体"/><w:b/><w:sz w:val="21"/></w:rPr><w:t>长度
+/
+字节
+<w:tcPr><w:tcW w:w="3969" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="1B5D5D97"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:eastAsia="黑体"/><w:b/><w:sz w:val="21"/></w:rPr><w:t>说明
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="1134" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="040D4428"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>0
+<w:tcPr><w:tcW w:w="1701" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="0BFC6137"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>帧头
+1
+<w:tcPr><w:tcW w:w="1701" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="6C2A34AC"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>1
+<w:tcPr><w:tcW w:w="3969" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="2A33A572"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>固定
+0xA5
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="1134" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="3F7B6C96"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>1
+<w:tcPr><w:tcW w:w="1701" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="7D018CBB"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>帧头
+2
+<w:tcPr><w:tcW w:w="1701" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="3F80E4C2"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>1
+<w:tcPr><w:tcW w:w="3969" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="4ED4C602"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>固定
+0x5A
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="1134" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="1B31C92A"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>2
+<w:tcPr><w:tcW w:w="1701" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="5FFF1497"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>命令字
+<w:tcPr><w:tcW w:w="1701" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="57C5D7DF"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>1
+<w:tcPr><w:tcW w:w="3969" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="5BF758E2"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr><w:lang w:eastAsia="zh-CN"/></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t>区分地图、路径、识别结果、心跳和应答
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="1134" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="62E44934"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>3
+<w:tcPr><w:tcW w:w="1701" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="6AD94800"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>数据长度
+<w:tcPr><w:tcW w:w="1701" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="2CAC085C"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>1
+<w:tcPr><w:tcW w:w="3969" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="5EC97BAD"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr><w:lang w:eastAsia="zh-CN"/></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t>有效载荷字节数，最大
+240
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="1134" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="2AAA5239"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>4
+<w:tcPr><w:tcW w:w="1701" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="632121CE"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>帧序号
+<w:tcPr><w:tcW w:w="1701" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="091AD885"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>1
+<w:tcPr><w:tcW w:w="3969" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="65F12362"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr><w:lang w:eastAsia="zh-CN"/></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t>循环递增，用于丢帧判断
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="1134" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="38D69E44"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>5…
+<w:tcPr><w:tcW w:w="1701" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="1C826E99"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>有效载荷
+<w:tcPr><w:tcW w:w="1701" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="52D99988"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>N
+<w:tcPr><w:tcW w:w="3969" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="00E3C7DC"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>按命令字定义
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="1134" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="14A43D97"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>5+N
+<w:tcPr><w:tcW w:w="1701" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="7BDB7995"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>CRC-8
+<w:tcPr><w:tcW w:w="1701" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="2DD43E05"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>1
+<w:tcPr><w:tcW w:w="3969" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="425C0714"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr><w:lang w:eastAsia="zh-CN"/></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t>多项式
+0x31
+，初值
+0x00
+，反射输入输出
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="1134" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="0FA8C3A5"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>6+N
+<w:tcPr><w:tcW w:w="1701" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="5866575F"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>帧尾
+<w:tcPr><w:tcW w:w="1701" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="6932CDD2"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>1
+<w:tcPr><w:tcW w:w="3969" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="5D0EEA39"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>固定
+0x0D
+地图路径采用分包传输。开始包包含路径编号和路径点总数，数据包每包携带不超过
+20
+个路径点，每个路径点使用两个
+16
+位有符号整数表示毫米坐标；结束包包含整条路径的
+CRC
+校验。
+RT1064
+收到完整路径后返回确认帧，若超时未收到确认，
+OpenArt Plus
+重新发送当前分包。第一人称识别结果采用固定长度帧，保证低延迟。
+4.8 
+任务状态机
+<w:tblPr><w:tblStyle w:val="style154"/><w:tblW w:w="0" w:type="auto"/><w:jc w:val="center"/><w:tblLook w:val="04A0" w:firstRow="1" w:lastRow="0" w:firstColumn="1" w:lastColumn="0" w:noHBand="0" w:noVBand="1"/></w:tblPr><w:tblGrid><w:gridCol w:w="2268"/><w:gridCol w:w="6236"/></w:tblGrid><w:tr w14:paraId="22182E92"><w:trPr><w:tblHeader/><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2268" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="587F8DC5"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:eastAsia="黑体"/><w:b/><w:sz w:val="21"/></w:rPr><w:t>状态
+<w:tcPr><w:tcW w:w="6236" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="306EB4BB"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:eastAsia="黑体"/><w:b/><w:sz w:val="21"/></w:rPr><w:t>主要功能
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2268" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="14BF5934"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>INIT
+<w:tcPr><w:tcW w:w="6236" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="0BCDE248"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr><w:lang w:eastAsia="zh-CN"/></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t>初始化外设、清零控制量并检测两路视觉心跳
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2268" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="515A37EB"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>MAP_WAIT
+<w:tcPr><w:tcW w:w="6236" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="0D2024CA"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr><w:lang w:eastAsia="zh-CN"/></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t>等待地图节点完成图像处理与路径规划
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2268" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="4183AD69"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>PATH_RX
+<w:tcPr><w:tcW w:w="6236" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="73A06B29"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>接收并校验完整路径
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2268" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="52B8A462"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>PATH_RUN
+<w:tcPr><w:tcW w:w="6236" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="10872C21"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr><w:lang w:eastAsia="zh-CN"/></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t>依次跟踪路径点并持续接收第一人称视觉结果
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2268" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="2ADF2A2B"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>TARGET_ALIGN
+<w:tcPr><w:tcW w:w="6236" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="4E617E8D"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr><w:lang w:eastAsia="zh-CN"/></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t>根据目标中心误差进行低速横移和航向调整
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2268" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="062A6C49"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>TASK_EXEC
+<w:tcPr><w:tcW w:w="6236" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="2488D68E"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr><w:lang w:eastAsia="zh-CN"/></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t>执行赛题规定的目标操作
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2268" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="664490DD"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>FINISH
+<w:tcPr><w:tcW w:w="6236" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="6F765A08"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr><w:lang w:eastAsia="zh-CN"/></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t>停止电机、记录结果并给出蜂鸣提示
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2268" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="108FA9F2"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>FAULT
+<w:tcPr><w:tcW w:w="6236" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="7277648E"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr><w:lang w:eastAsia="zh-CN"/></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t>通信超时、路径非法或控制异常时立即停车
+第五章
+  
+系统开发与调试
+5.1 
+开发环境
+<w:tblPr><w:tblStyle w:val="style154"/><w:tblW w:w="0" w:type="auto"/><w:jc w:val="center"/><w:tblLook w:val="04A0" w:firstRow="1" w:lastRow="0" w:firstColumn="1" w:lastColumn="0" w:noHBand="0" w:noVBand="1"/></w:tblPr><w:tblGrid><w:gridCol w:w="1701"/><w:gridCol w:w="3402"/><w:gridCol w:w="3402"/></w:tblGrid><w:tr w14:paraId="3676D795"><w:trPr><w:tblHeader/><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="1701" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="0484BA97"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:eastAsia="黑体"/><w:b/><w:sz w:val="21"/></w:rPr><w:t>模块
+<w:tcPr><w:tcW w:w="3402" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="72F6F637"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:eastAsia="黑体"/><w:b/><w:sz w:val="21"/></w:rPr><w:t>开发环境
+<w:tcPr><w:tcW w:w="3402" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="07508123"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:eastAsia="黑体"/><w:b/><w:sz w:val="21"/></w:rPr><w:t>用途
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="1701" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="08394DFE"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>RT1064
+<w:tcPr><w:tcW w:w="3402" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="1971BB1A"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t xml:space="preserve">Keil MDK + 
+逐飞科技
+RT1064
+库
+<w:tcPr><w:tcW w:w="3402" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="3B23A645"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr><w:lang w:eastAsia="zh-CN"/></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t>底层驱动、控制算法、任务状态机和通信
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="1701" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="7A8D06E3"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>OpenArt Plus
+<w:tcPr><w:tcW w:w="3402" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="0F4E2555"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>OpenMV IDE
+<w:tcPr><w:tcW w:w="3402" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="43FAF2E3"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr><w:lang w:eastAsia="zh-CN"/></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t>图像采集、地图处理、路径规划和目标识别
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="1701" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="247176BD"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>PCB
+<w:tcPr><w:tcW w:w="3402" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="2FE509D3"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>嘉立创
+EDA
+<w:tcPr><w:tcW w:w="3402" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="00B6C357"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr><w:lang w:eastAsia="zh-CN"/></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t>主控板和驱动板原理图、
+PCB
+设计
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="1701" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="3FAB9E47"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>机械结构
+<w:tcPr><w:tcW w:w="3402" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="35E3DA7E"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>三维建模与
+3D
+打印
+<w:tcPr><w:tcW w:w="3402" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="0141DF4E"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr><w:lang w:eastAsia="zh-CN"/></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t>摄像头支架、电池固定和模块安装
+5.2 
+硬件调试流程
+硬件调试按电源、主控、通信、驱动和整车顺序进行。首先断开核心板与
+OpenArt Plus
+，检查
+1
+2
+V
+、
+5 V
+和
+3.3 V
+电源轨及静态电流；随后连接
+RT1064
+，验证下载、复位、按键和蜂鸣器；再分别测试
+UART2
+、
+UART3
+收发；最后接入
+DRV8701
+驱动板，以限流电源完成单路电机正反转和堵转保护检查。四路驱动均正常后再使用动力电池进行整车测试。
+5.3 
+运动控制调试
+运动控制调试从单轮速度环开始。将车体架空，分别给定阶跃轮速并观察编码器反馈，先调节比例系数使响应快速，再增加积分消除稳态误差；确认四轮响应一致后，将车模放置在地面测试纯前进、纯横移和原地旋转。
+外环调试时先关闭路径规划，仅发送固定目标位移。位置环从低速开始，逐步提高最大速度和减速度限制。调试中重点观察横移时的航向漂移、原地旋转时的轮间不同步以及接近目标点时的振荡。通过速度前馈、积分分离和到点速度衰减抑制上述问题。
+5.4 
+视觉调试
+地图视觉调试使用固定标定板确定透视矩阵，确保同一地图点在多次采集中的坐标保持一致。随后依次检查颜色阈值、形态学核大小、障碍膨胀半径和
+A*
+搜索结果。第一人称视觉调试在不同距离和照明条件下采集图像，调整
+LAB
+阈值和候选区域评分权重，使目标中心输出稳定。
+5.5 
+通信与联调
+通信调试使用固定测试帧验证帧头同步、长度检查、
+CRC
+校验、序号检测和超时处理。联调时先由地图
+OpenArt Plus
+发送一条短路径，
+RT1064
+完成接收和确认；再启动底盘低速
+跟踪，检查坐标方向与车体运动方向是否一致；最后加入第一人称视觉状态切换，验证路径运行、目标对位和异常停车逻辑。
+图
+4.1
+所示调试界面用于同时观察地图图像、规划路径、第一人称画面和运行时间。实际场地测试中保持摄像头曝光参数固定，车辆每次启动前完成编码器和航向零点初始化。
+第六章
+  
+车模主要技术参数
+<w:tblPr><w:tblStyle w:val="style154"/><w:tblW w:w="0" w:type="auto"/><w:jc w:val="center"/><w:tblLook w:val="04A0" w:firstRow="1" w:lastRow="0" w:firstColumn="1" w:lastColumn="0" w:noHBand="0" w:noVBand="1"/></w:tblPr><w:tblGrid><w:gridCol w:w="3402"/><w:gridCol w:w="5102"/></w:tblGrid><w:tr w14:paraId="498C478A"><w:trPr><w:tblHeader/><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="3402" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="2EAF62A5"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:eastAsia="黑体"/><w:b/><w:sz w:val="21"/></w:rPr><w:t>项目
+<w:tcPr><w:tcW w:w="5102" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="196818CE"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:eastAsia="黑体"/><w:b/><w:sz w:val="21"/></w:rPr><w:t>参数
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="3402" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="25A15585"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>学校
+/
+队伍
+<w:tcPr><w:tcW w:w="5102" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="395AA7BC"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>华北理工大学
+ / 
+牛战士
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="3402" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="1A84095C"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>参赛组别
+<w:tcPr><w:tcW w:w="5102" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="5667D587"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr><w:lang w:eastAsia="zh-CN"/></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t>第二十一届全国大学生智能汽车竞赛人工智能视觉组
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="3402" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="4C1CF7D0"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>车模
+<w:tcPr><w:tcW w:w="5102" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="0E5BCA38"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr><w:lang w:eastAsia="zh-CN"/></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t>M
+型四轮麦克纳姆轮车模
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="3402" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="56CBD86C"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>主控制器
+<w:tcPr><w:tcW w:w="5102" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="653A802C"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>NXP i.MX RT1064
+核心板
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="3402" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="02EEF51C"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>主控板
+<w:tcPr><w:tcW w:w="5102" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="243DD68A"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>队伍自主设计
+PCB
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="3402" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="346E5BB9"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>电机驱动
+<w:tcPr><w:tcW w:w="5102" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="08C189A0"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr><w:lang w:eastAsia="zh-CN"/></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t>DRV8701
+栅极驱动器
+ + 
+外置
+N
+沟道
+MOSFET
+，四路
+H
+桥
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="3402" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="5FC8CBF0"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>动力电源
+<w:tcPr><w:tcW w:w="5102" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="3544A3BC"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>1
+2V3S
+电池
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="3402" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="298E969E"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>逻辑电源
+<w:tcPr><w:tcW w:w="5102" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="5E34E910"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>5 V
+、
+3.3 V
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="3402" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="146B2BE2"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>视觉处理器
+<w:tcPr><w:tcW w:w="5102" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="6E7F318D"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>逐飞科技
+OpenArt Plus ×2
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="3402" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="3A8E55BB"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>图像分辨率
+<w:tcPr><w:tcW w:w="5102" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="017BC100"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>QVGA 320×240
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="3402" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="59DE5402"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>地图摄像头安装高度
+<w:tcPr><w:tcW w:w="5102" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="4149AB93"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>约
+10 cm
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="3402" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="5C9A9A96"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>地图表达
+<w:tcPr><w:tcW w:w="5102" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="32294F40"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>80×60
+占据栅格
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="3402" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="164FBF9B"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>路径规划
+<w:tcPr><w:tcW w:w="5102" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="0C764B65"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr><w:lang w:eastAsia="zh-CN"/></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t>八邻域
+A* + 
+共线点删除
+ + 
+视线简化
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="3402" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="27879790"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>运动控制
+<w:tcPr><w:tcW w:w="5102" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="17CE48EE"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr><w:lang w:eastAsia="zh-CN"/></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/><w:lang w:eastAsia="zh-CN"/></w:rPr><w:t>位置
+/
+航向外环
+ + 
+四轮速度内环串级
+PID
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="3402" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="5F1389D2"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>视觉通信
+<w:tcPr><w:tcW w:w="5102" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="0B9B30C2"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>UART2
+、
+UART3
+，
+115200 bit/s
+，
+8-N-1
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="3402" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="2B5D8964"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>校验
+<w:tcPr><w:tcW w:w="5102" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="3E6C9C97"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>CRC-8/MAXIM
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="3402" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="52F7FC8F"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>RT1064
+开发环境
+<w:tcPr><w:tcW w:w="5102" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="0EA0CF4C"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>Keil MDK
+，逐飞科技
+RT1064
+库
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="3402" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="2BAC270A"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>OpenArt
+开发环境
+<w:tcPr><w:tcW w:w="5102" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="06626262"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>OpenMV IDE
+第七章
+  
+总结
+本报告完成了华北理工大学
+“
+牛战士
+”
+队人工智能视觉智能车的总体设计。整车以
+M
+型四轮麦克纳姆轮车模为基础，采用
+RT1064
+作为运动控制核心，主控板和
+DRV8701
+四路电机驱动板均由队伍自主设计。双
+OpenArt Plus
+分别承担地图视觉与第一人称视觉任务，实现了感知、规划和控制的功能解耦。
+地图视觉节点通过透视校正、颜色分割和形态学处理建立
+80×60
+占据栅格，并采用八邻域
+A*
+算法完成路径搜索和简化；第一人称视觉节点输出目标类别与位置；
+RT1064
+通过
+UART2
+、
+UART3
+接收结构化数据，运行任务状态机、麦克纳姆轮运动学和串级
+PID
+控制。统一的数据帧、帧序号和
+CRC-8
+校验提高了多处理器通信的可靠性。
+该方案充分利用四轮麦克纳姆底盘的全向运动能力，将计算量较大的地图处理与路径规划放在视觉端，将实时性要求较高的运动控制放在
+RT1064
+端，系统层次清晰、接口明确，便于分模块调试和赛场维护。
+参考文献
+[1] 
+全国大学生智能汽车竞赛组委会
+. 
+第二十一届全国大学生智能汽车竞赛人工智能视觉组竞赛规则
+[Z].
+[2] NXP Semiconductors. i.MX RT1064 Crossover Processors Reference Manual[Z].
+[3] Texas Instruments. DRV8701 Brushed DC Motor Full-Bridge Gate Driver Datasheet[Z].
+[4] 
+逐飞科技
+. i.MX RT1064
+开源库使用说明
+[Z].
+[5] 
+逐飞科技
+. OpenArt Plus
+开发资料与例程
+[Z].
+[6] 
+胡寿松
+. 
+自动控制原理
+[M]. 
+北京
+: 
+科学出版社
+.
+[7] SIEGWART R, NOURBAKHSH I R, SCARAMUZZA D. Introduction to Autonomous Mobile Robots[M]. MIT Press.
+[8] HART P E, NILSSON N J, RAPHAEL B. A Formal Basis for the Heuristic Determination of Minimum Cost Paths[J]. IEEE Transactions on Systems Science and Cybernetics.
+附录
+A  
+通信命令字定义
+<w:tblPr><w:tblStyle w:val="style154"/><w:tblW w:w="0" w:type="auto"/><w:jc w:val="center"/><w:tblLook w:val="04A0" w:firstRow="1" w:lastRow="0" w:firstColumn="1" w:lastColumn="0" w:noHBand="0" w:noVBand="1"/></w:tblPr><w:tblGrid><w:gridCol w:w="1701"/><w:gridCol w:w="2835"/><w:gridCol w:w="3969"/></w:tblGrid><w:tr w14:paraId="2D7C866D"><w:trPr><w:tblHeader/><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="1701" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="04E68B66"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:eastAsia="黑体"/><w:b/><w:sz w:val="21"/></w:rPr><w:t>命令字
+<w:tcPr><w:tcW w:w="2835" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="1B7E7FCE"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:eastAsia="黑体"/><w:b/><w:sz w:val="21"/></w:rPr><w:t>方向
+<w:tcPr><w:tcW w:w="3969" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="5EF9BAB4"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:rFonts w:eastAsia="黑体"/><w:b/><w:sz w:val="21"/></w:rPr><w:t>含义
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="1701" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="1D3DC0D1"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>0x01
+<w:tcPr><w:tcW w:w="2835" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="651AD4C3"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>地图端
+→RT1064
+<w:tcPr><w:tcW w:w="3969" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="51611794"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>地图处理完成
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="1701" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="65ECC82D"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>0x10
+<w:tcPr><w:tcW w:w="2835" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="47C85F6E"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>地图端
+→RT1064
+<w:tcPr><w:tcW w:w="3969" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="6D01ED2E"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>路径开始包
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="1701" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="361AA13E"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>0x11
+<w:tcPr><w:tcW w:w="2835" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="36A89693"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>地图端
+→RT1064
+<w:tcPr><w:tcW w:w="3969" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="7CA55114"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>路径数据包
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="1701" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="2642ED4C"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>0x12
+<w:tcPr><w:tcW w:w="2835" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="7096316E"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>地图端
+→RT1064
+<w:tcPr><w:tcW w:w="3969" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="4CF34B56"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>路径结束包
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="1701" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="442CFFAE"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>0x20
+<w:tcPr><w:tcW w:w="2835" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="0D598F4E"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>第一人称端
+→RT1064
+<w:tcPr><w:tcW w:w="3969" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="3FDB55B0"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>目标识别结果
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="1701" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="473311D4"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>0x30
+<w:tcPr><w:tcW w:w="2835" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="0D3FBAA0"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>双向
+<w:tcPr><w:tcW w:w="3969" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="60E73FF9"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>心跳
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="1701" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="42A0403E"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>0x80
+<w:tcPr><w:tcW w:w="2835" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="18CD5AA0"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>RT1064→
+视觉端
+<w:tcPr><w:tcW w:w="3969" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="191A6646"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>确认
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="1701" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="307F1F0F"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>0x81
+<w:tcPr><w:tcW w:w="2835" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="17D74BA8"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>RT1064→
+视觉端
+<w:tcPr><w:tcW w:w="3969" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="397E3144"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>重发请求
+<w:tblPrEx></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="1701" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="3A4C4C08"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>0xFF
+<w:tcPr><w:tcW w:w="2835" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="1C0DA933"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>双向
+<w:tcPr><w:tcW w:w="3969" w:type="dxa"/><w:tcBorders></w:tcBorders><w:vAlign w:val="center"/></w:tcPr><w:p w14:paraId="5320B848"><w:pPr><w:pStyle w:val="style0"/><w:jc w:val="center"/><w:rPr></w:rPr></w:pPr><w:r><w:rPr><w:sz w:val="21"/></w:rPr><w:t>故障状态
+附录
+B  
+主要程序结构
+RT1064
+工程按照
+BSP
+、
+Driver
+、
+Algorithm
+、
+Control
+、
+Communication
+和
+Application
+分层组织。
+BSP
+负责时钟、
+GPIO
+、
+PWM
+、编码器和串口初始化；
+Driver
+负责电机、蜂鸣器和按键；
+Algorithm
+包含麦克纳姆轮运动学、
+PID
+和坐标变换；
+Control
+包含路径跟踪和姿态控制；
+Communication
+实现双串口协议解析；
+Application
+实现整车任务状态机。
+OpenArt Plus
+工程分别包含
+camera_init.py
+、
+map_process.py
+、
+astar.py
+、
+protocol.py
+和
+main.py
+。地图节点在
+main.py
+中依次调用地图处理、
+A*
+搜索、路径简化和协议发送；第一人称节点循环执行图像采集、目标提取、结果滤波和协议发送。

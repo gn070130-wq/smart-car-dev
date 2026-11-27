@@ -1,0 +1,1163 @@
+第二十一届全国大学生
+智能汽车竞赛
+技 术 报 告
+学 校：乐山职业技术学院
+队伍名称：乐职院卡丁快跑一队
+参赛队员：张茂林
+汪成航
+肖卫宇
+何青宇
+杨鸿钧
+带队教师：刘 磊、陈景琪
+关于技术报告和研究论文使用授权的说明
+本人完全了解全国大学生智能汽车竞赛关于保留、使用技术报告和研究论
+文的规定，即：参赛作品著作权归参赛者本人，比赛组委会可以在相关主页上
+收录并公开参赛作品的设计方案、技术报告以及参赛模型车的视频、图像资
+料，并将相关内容编录在组委会出版论文集中。
+参赛作品中的技术报告和研究论文版权归参赛者本人所有，比赛组委会拥
+有在非商业性教育、科研活动中使用该作品的权利。
+参赛队员签名：
+带队教师签名：
+日 期：2026 年8 月19 日
+
+摘 要
+本作品面向第二十一届全国大学生智能汽车竞赛“卡丁快跑组别”，设计并
+实现了一款基于英飞凌 TC264D（AURIX TriCore 双核）微控制器的智能车系
+统。通过遥控驾驶录制行驶路径（惯导寻迹和摄像头跟随），再由车辆闭环自
+主复现；并在此基础上集成了语音识别控制、穿门洞、动作区任务、灯光与喇
+叭控制等功能，形成一套按“科目式”组织的运动控制与摄像头跟随。
+硬件方面，采用“主控板 + 电机驱动模块 + 灯板 + 硅麦模块”的模块化架
+构：主控板以TC264D 最小系统为核心，集成多路电源与摄像头、屏幕、姿态
+传感器、舵机、编码器、遥控器、WiFi 等外设接口；电机驱动采用单通道/ 双
+通道驱动模块实现双有刷电机功率驱动；灯光系统基于 TLD7002 十六通道
+LED 驱动；语音采用英飞凌 IM68A130A 芯片比较放大后送主控ADC 采样。
+软件方面，科目一实现遥控惯导寻迹与全闭环回放，回放采用航向PID 闭
+环控制转向、速度前馈与积分控制车速、差速辅助转弯，并引入陀螺与编码器
+差速的互补融合抑制航向漂移；科目二采用本地 VAD 语音唤醒与讯飞在线语
+音识别，实现灯光、喇叭、行驶的语音控制以及门洞穿越与动作区任务；科目
+三采用SCC8660 摄像头视觉跟随引导员（颜色识别+ 单目测距），跟随同时记
+录路径，倒序闭环回放实现自动返回。
+经整机联调与测试，系统各科目功能稳定，路径复现精度与语音识别响应
+满足竞赛要求，验证了方案的有效性。
+目 录
+第一章 绪论.................................................................................................................................
+1.1 竞赛背景与任务.......................................................................................................
+1.2 主要研究内容............................................................................................................
+1.3 章节安排.....................................................................................................................
+第二章 系统总体方案...............................................................................................................
+2.1 需求分析.....................................................................................................................
+2.2 系统总体架构............................................................................................................
+2.3 核心器件选型............................................................................................................
+第三章 机械结构设计...............................................................................................................
+3.1 车模总体布局............................................................................................................
+3.2 底盘与驱动结构.......................................................................................................
+3.3 机械结构特点............................................................................................................
+3.4 传感器安装与电路板固定.....................................................................................
+第四章 硬件电路设计...............................................................................................................
+4.1 主控板设计................................................................................................................
+4.2 电机驱动设计............................................................................................................
+4.3 灯光与语音模块.......................................................................................................
+4.4 引脚分配与中断配置..............................................................................................
+第五章 软件系统设计...............................................................................................................
+5.1 软件总体架构............................................................................................................
+5.2 驱动统一管理器.......................................................................................................
+5.3 科目一：全闭环路径寻迹与回放.......................................................................
+5.4 科目二：语音控制..................................................................................................
+5.5 科目三：如影随形（视觉跟随与自动返回）................................................
+5.6 菜单与参数系统.......................................................................................................
+5.7 关键数据结构与存储布局.....................................................................................
+第六章 主要技术参数...............................................................................................................
+6.1 整车基本参数............................................................................................................
+6.2 电气参数.....................................................................................................................
+6.3 传感器配置................................................................................................................
+6.4 执行器配置................................................................................................................
+6.5 检测精度与频率.......................................................................................................
+第七章 系统调试与测试..........................................................................................................
+7.1 开发工具与制作安装..............................................................................................
+7.2 硬件测试.....................................................................................................................
+7.3 整机联调.....................................................................................................................
+附录 A 核心算法子程序..........................................................................................................
+第一章 绪论
+1.1 竞赛背景与任务
+全国大学生智能汽车竞赛是一项以“立足培养、重在参与、鼓励探索、追求
+卓越”为宗旨的全国性学科竞赛，要求参赛队伍以给定的车模平台为基础，自主
+设计软硬件，使车辆在特定场地内完成自主行驶任务。竞赛内容综合考查嵌入
+式系统、传感器技术、自动控制、机电一体化与软件工程等多学科知识的综合
+运用能力。
+本组别比赛车模需完成多项任务：在遥控驾驶阶段录制行驶路径，随后由
+车辆自主复现该路径；通过语音指令控制灯光、喇叭与行驶动作；完成门洞穿
+越与动作区规定动作；最终实现路径的精准追踪。上述任务对车模的运动控制
+精度、航向感知能力、语音交互可靠性以及软硬件协同设计均提出了较高要
+求。
+1.2 主要研究内容
+围绕比赛任务，本作品重点开展以下四个方面的工作：
+• 高精度路径记忆：以编码器脉冲+IMU 陀螺仪航向+ 舵机角度为路径特
+征，遥控录制行驶轨迹，回放时采用航向 PID 闭环与速度前馈 / 积分复合
+控制实现高精度复现；
+• 语音人机交互：本地VAD 语音活动检测实现低功耗唤醒，讯飞在线语音
+识别实现灯光、喇叭、门洞、动作命令的解析与执行；
+• 模块化硬件设计：自主设计主控板、电机驱动模块、灯板与硅麦模块，
+实现功率驱动、灯光控制与音频采集；
+• 分层软件架构：驱动统一管理器 + 应用层按科目组织，配合菜单系统与
+参数在线调优，保证系统的可维护性与可扩展性。
+第二章 系统总体方案
+2.1 需求分析
+结合比赛任务，系统需满足以下功能与非功能需求：
+• 运动控制：前轮转向 + 后轮双电机驱动，需舵机高精度定位控制与左右
+轮差速；
+• 路径记忆：录制阶段实时记录轨迹特征，回放阶段闭环复现，需里程与
+航向感知；
+• 语音交互：语音唤醒+ 在线识别，需音频采集、网络通信与命令执行；
+• 灯光控制：远近光、转向、雾灯、双闪等多路灯光，需多通道 LED 驱
+动；
+• 实时性与可靠性：控制周期短、中断响应及时、外设掉线与失控保护完
+备。
+2.2 系统总体架构
+系统采用“主控板 + 电机驱动模块 + 灯板 + 硅麦模块+姿态传感器”的硬件
+架构，以及“底层驱动+ 应用层”的软件架构。主控板完成运算控制与外围接口
+管理；单通道 / 双通道驱动模块完成双电机功率驱动；灯板实现多路灯光；硅
+麦模块完成语音采集。软件层通过驱动统一管理器集中初始化与启停各硬件，
+应用层按科目组织任务逻辑。
+2.3 核心器件选型
+表 2.1 核心器件选型
+类别 选型 选型理由
+主控MCU 英飞凌TC264D AURIXTriCore 双核、外设丰富、 实时性强
+姿态传感器 IMU963RA 6 轴、SPI 接口、陀螺仪航向积分
+电机编码器 1024 线增量编码器 ×4 倍频后 4096 脉冲 / 转，测距精 度高
+灯光驱动 TLD7002 16 通道 LED 恒流驱动，UART 控 制
+语音方案 im68A130A+ 讯飞IAT 低功耗唤醒+ 高精度在线识别
+遥控 SBUS 接收机 数字协议、抗干扰、解析简单
+显示 IPS200LCD 240×320 竖屏，菜单与状态显示
+摄像头 逐飞凌瞳摄像头（SC8660） 科目三视觉跟随（颜色识别引导 员）
+第三章 机械结构设计
+3.1 车模总体布局
+车模采用前轮转向、后轮驱动（后置双直流电机）的四轮布局，转向由舵
+机带动前轮实现。整车采用模块化分区安装：主控板与电机驱动模块分层固定
+于车身中部，灯板布置于车头方向，硅麦模块靠近车头前部以利于拾音，电池
+布置于车身后部并尽量压低重心。
+3.2 底盘与驱动结构
+后轮由两台有刷直流电机分别驱动，通过左右轮差速配合前轮转向实现灵
+活转弯；每台电机同轴安装增量编码器，用于测速与里程累计。舵机内部集成
+绝对值编码器，可实时反馈前轮角度。
+3.3 机械结构特点
+• 模块化安装，便于硬件拆装与维护；
+• 编码器与电机同轴刚性连接，减小测量误差；
+• 舵机连杆机构简单可靠，转向回中一致性好。
+3.4 传感器安装与电路板固定
+各传感器按功能就近布置：IMU 安装于车尾的几何中心附近，保证航向积
+分与车体一致；左右增量编码器与电机输出轴同轴刚性连接，避免传动间隙引
+入测量误差；舵机绝对值编码器集成于舵机内部；硅麦安装于车头前部并朝向
+前方，减小风噪并利于拾音；摄像头（SC8660）安装于车尾处用摄像头支架增
+高保证视野，用于科目三视觉跟随。
+电路板通过铜柱与尼龙螺柱分层固定于车身上，主控板与电机驱动模块上
+下叠放并用排线连接，动力线（电机、电池）与控制线（信号、传感器）分开
+走线，减小功率回路对控制信号的干扰。各接插件采用防反插设计，便于现场
+拆装与维护。
+整车三视图如下所示。
+第三章 机械结构设计
+图 3.1 整车俯视图
+图 3.2 整车前视图
+第二十一届全国大学生智能汽车竞赛
+图 3.3 整车左视图
+第四章 硬件电路设计
+4.1 主控板设计
+主控板以TC264D 最小系统为核心，承担全部运算控制与外围接口管理，
+分为核心电路、接口电路与电源电路三部分。
+4.1.1 接口电路
+接口电路覆盖系统全部外设连接需求，具体包括：摄像头接口（逐飞凌瞳
+SC8660，用于科目三视觉跟随）、GPS 接口、屏幕接口、按键与拨码开关、姿
+态传感器（IMU）接口、电压测量接口、TLD7002 灯板接口（UART2）、舵机
+接口、有刷电机接口、硅麦接口、方向编码器接口、遥控器串口（UART2）以
+及 WiFi 模块 SPI 接口。各接口按信号类型就近布置，模拟信号（硅麦、电压
+测量）与数字信号（串口、SPI）分区走线，减小相互干扰。
+4.1.2 电源电路
+电源电路提供多路供电：外部电池输入24V 主电源，再经 LDO 产生3.3V
+供 MCU 与外设；电机电源独立输出以隔离功率噪声，避免大功率负载对控制
+电路的干扰。
+图 4.1 主控板核心电路
+第二十一届全国大学生智能汽车竞赛
+图 4.2 主控板接口电路
+图 4.3 主控板电源电路
+第四章 硬件电路设计
+图 4.4 主控板 PCB
+4.2 电机驱动设计
+电机驱动采用单通道(舵机)与双通道(电机)两种驱动模块，通过PWM 实现
+有刷电机的闭环正反转与调速。
+4.2.1 单通道驱动电路
+单通道驱动模块驱动一路有刷电机，板载MOSFET 功率器件与电源接口，
+接收PWM 与方向信号，实现单路电机的正反转与调速。
+
+第二十一届全国大学生智能汽车竞赛
+图 4.5 单通道驱动电路
+图 4.6 单通道驱动 PCB
+4.2.2 双通道驱动电路
+双通道驱动模块集成两路驱动，可同时驱动左右两个电机，简化了电机驱
+动部分的接线与调试，便于整车双电机差速控制。
+第四章 硬件电路设计
+图 4.7 双通道驱动电路
+图 4.8 双通道驱动 PCB
+4.3 灯光与语音模块
+灯光系统基于 TLD7002 十六通道 LED 恒流驱动，通过 UART2 与主控通
+信，实现远光灯、近光灯、左右转向灯、雾灯、双闪灯与车内灯等多种灯光控
+制 ， 并 配 合 点 阵 屏 显 示 相 应 灯 光 图 标 。 语 音 采 集 采 用 英 飞 凌 硅 麦
+第二十一届全国大学生智能汽车竞赛
+（IM68A130A），为本地VAD 语音唤醒与讯飞在线语音识别提供音频信号。
+4.4 引脚分配与中断配置
+表 4.1 主要引脚分配
+分类 信号 引脚 说明
+电机 MOTOR_PWM_L / DIR_L ATOM0_CH3_P21_5/P21_4 左电机PWM 与方向
+电机 MOTOR_PWM_R / DIR_R ATOM0_CH1_P21_3/P21_2 右电机PWM 与方向
+编码器 ENCODER_L_A/B TIM5_CH1_P10_3 / CH2_P10_1 左编码器
+编码器 ENCODER_R_A/B TIM2_CH1_P33_7 / CH2_P33_6 右编码器
+舵机 SERVO_PWM/DIR ATOM0_CH7_P02_7/P02_6 舵机PWM 与方向
+按键 KEY1~KEY4 P20_7/P20_6/P20_0/P32_4 上/ 下/ 确认/ 返回
+拨码 DIP1/DIP2 P33_12/P33_11 模式选择
+LED LED1~LED3 P00_8/P00_9/P00_12 运行/ 错误/ 语音
+喇叭 SPEAKER ATOM3_CH0_P33_10 PWM 鸣笛
+遥控 SBUS_RX UART2 接收机
+灯光 TLD7002/ 点阵屏 UART2/ 外部中断 LED 驱动/ 灯光图标
+语音 ASR 硅麦ADC ADC1_CH0_A16 语音采集
+表 4.2 中断配置
+中断 说明
+CCU60_CH0 音频8kHz 采样（VAD）
+CCU60_CH1 2ms 舵机PID+20ms 编码器/ 科目一节拍
+EXTI_CH0_CH4 IMU963RAINT
+EXTI_CH3_CH7 摄像头 / 点阵屏扫描
+UART2_RX 遥控接收机/TLD7002 回调
+第五章 软件系统设计
+5.1 软件总体架构
+软件采用“底层驱动层 + 应用层”的分层架构。底层驱动层基于逐飞科技
+TC264 开源库，封装电机、舵机、编码器、IMU、WiFi、语音等设备驱动；应
+用层通过驱动统一管理器集中管理硬件初始化与启停，并按科目组织任务逻
+辑。
+5.2 驱动统一管理器
+驱动统一管理器提供 drv_basic_init（基础硬件）与 drv_all_init（全部比赛
+硬件）两级初始化，以及各模块独立的 init/start /stop 接口，避免各科目重复
+初始化代码；同时提供 drv_emergency_stop 紧急停车接口，实现电机停转与舵
+机回中，保证异常情况下的安全性。
+5.3 科目一：全闭环路径寻迹与回放
+5.3.1 路径录制
+录制阶段遥控驾驶，系统以 20ms 为周期记录一个路径点，每个点 6 字
+节，包含编码器脉冲增量、IMU 航向角（度×10）与舵机绝对角度。航向由陀
+螺仪积分与编码器差速互补融合得到（陀螺 98%+ 编码器差速 2%），以抑制
+陀螺漂移。单次最多记录2730 点，约54.6 秒。
+5.3.2 回放控制算法
+回放采用“航向闭环+ 速度前馈+ 差速”的复合控制：
+• 航向闭环：航向 PID（Kp=1.5、Ki=0.05、Kd=0.5）输出叠加到录制舵机
+角度（限幅±200），修正转向偏差；
+• 速度控制：以录制里程增量乘以速度前馈系数得到基础占空比，再对里
+程误差积分，形成对目标距离的跟踪；
+• 差速转弯：按舵机偏离中位的比例对左右轮施加差速，缩小转弯半径；
+• 直行防漂移：当舵角接近中位时，若检测到航向偏差则极慢修正陀螺零
+点并小幅拉回航向；
+• 遥控接管：回放过程中油门或转向偏离寻迹路线防止发生安全问题即切
+换为遥控直连，停止巡线。
+科目一回放核心控制代码如下：
+// 航向互补融合：陀螺 98% + 编码器差速 2%
+float gyro_delta = gyro_dps * 0.020f;
+yaw += gyro_delta * 0.98f + encoder_yaw_delta() * 0.02f;
+yaw = yaw_norm_s1(yaw);
+// 直行检测防漂移：舵角近中位时慢修陀螺零点
+第二十一届全国大学生智能汽车竞赛
+if(abs(tg->servo - servo_mid_angle) < 50){
+float yaw_err = (float)tg->yaw - yaw;
+if(yaw_err > 1800.0f) yaw_err -= 3600.0f;
+if(yaw_err < -1800.0f) yaw_err += 3600.0f;
+gyro_bias += yaw_err * 0.00005f; // 极慢修正零点
+yaw += yaw_err * 0.005f; // 小幅拉回
+}
+// 航向 PID 闭环修正舵机（叠加限幅 ±200）
+PID_SetTarget(&yaw_pid, (float)tg->yaw);
+PID_Calc_Inc(&yaw_pid, yaw);
+int adj = tg->servo + (int)yaw_pid.out;
+if(adj > tg->servo + 200) adj = tg->servo + 200;
+if(adj < tg->servo - 200) adj = tg->servo - 200;
+servo_target = adj;
+// 速度前馈 + 里程积分
+int ff = (int)(tg->dist * g_s1_spd_ff_k);
+spd_integral += (float)(rec_total - total_dist) * g_s1_spd_int_ki;
+cur_duty = ff + (int)spd_integral;
+// 差速转弯：按舵角比例分配左右轮
+int diff_duty = (int)(cur_duty * diff_norm * g_s1_diff_gain);
+motor_set_duty(cur_duty - diff_duty, cur_duty + diff_duty);
+5.3.3 参数在线调优
+提供 Tune Speed 调参菜单，可实时调整速度前馈、速度积分、航向 KP /
+KI/KD、差速增益与陀螺刻度系数，长按保存至Flash，便于现场快速整定。
+5.4 科目二：语音控制
+5.4.1 语音唤醒
+基于短时能量阈值法：以 8kHz 采样、128 样本为一帧（16ms），能量连
+续超过阈值多帧判定为语音开始，持续低于阈值多帧判定结束。麦克风直流偏
+置上电自动校准，能量阈值、最短语音帧数、静默超时等参数可调。
+5.4.2 在线语音识别
+经 WiFi（2.4GHz）联网，通过 HMAC-SHA256 鉴权连接讯飞 WebSocket
+实时语音转写（IAT）接口，返回识别文本。语音状态机依次为空闲、唤醒、
+连接、识别、执行、出错六个状态。
+5.4.3 命令执行与任务
+识别文本解析为三类命令：灯光类（远光灯、近光灯、左转灯、右转灯、
+雾灯、双闪灯、雨刮、车内灯，点阵屏显示对应灯光图标）、喇叭类（鸣笛
+1~3 秒、两声/ 三声/ 四声、急促、警报、长短等多模式鸣笛）与行驶类（穿越
+第五章 软件系统设计
+门洞）、动作类（前进、后退、左转、右转、蛇形、顺 / 逆时针转圈等规定动
+作）。
+5.5 科目三：如影随形（视觉跟随与自动返回）
+科目三为“如影随形”科目：第一阶段车跟随引导员完成绕行，第二阶段从
+停车区自动返回，成绩为两阶段用时之和。按竞赛规则要求，第一阶段采用机
+器视觉跟随引导员，本车选用逐飞凌瞳SCC8660 摄像头实现视觉跟随：引导员
+衣服粘贴 蓝色图案，摄像头以160×120 分辨率实时采集图像，CPU1 完成颜色
+识别与单目测距——按KEY1 学习画面中心颜色作为目标色（HSV 环形色距加
+权匹配），种子搜索结合腐蚀外扩确定目标色块，利用80cm 标定距离对 蓝色
+正方形进行单点标定求取相机内参（fx、fy、cx、cy），由目标像素宽高反算
+目 标 距 离 、 横 向 偏 移 与 偏 航 角 ； 跟 随 控 制 保 持 100cm 安 全 距 离 （ 死 区
+±3cm），偏航角按增益映射舵机转角（限幅±30°），丢目标时减速直行1 秒、
+超时停车，跟随期间继续以 20ms 为周期记录编码器脉冲增量与航向角。回放
+默认采用倒序（终点 → 起点），目标航向为录制航向加 180°；采用航向 PID
+闭环（Kp=1.2、Ki=0.02、Kd=0.3、死区0.5°）控制转向，输出叠加到舵机中位
+并限幅±600，电机以恒定占空比驱动（正 / 反向±2500），回放点距离仅作为
+回放结束与换点判据。
+科目三回放核心控制代码如下：
+// 倒序目标航向（反向加 180°）
+uint16 idx = g_reverse ? (g_n - 1 - g_i) : g_i;
+float target_yaw = g_reverse
+? yaw_norm((float)g_path[idx].yaw + 1800.0f)
+: (float)g_path[idx].yaw;
+// 航向 PID 闭环，输出叠加到舵机中位（限幅 ±600）
+PID_SetTarget(&yaw_pid, target_yaw);
+PID_Calc_Inc(&yaw_pid, yaw);
+int servo_target = SERVO_MID_ANGLE + (int)yaw_pid.out;
+if(servo_target > SERVO_MID_ANGLE + 600) servo_target =
+SERVO_MID_ANGLE + 600;
+if(servo_target < SERVO_MID_ANGLE - 600) servo_target =
+SERVO_MID_ANGLE - 600;
+servo_pid_control(servo_target);
+// 恒定速度 + 编码器距离反馈
+int motor_speed = g_reverse ? S3_REV_SPEED : S3_SPEED;
+motor_set_duty(motor_speed, motor_speed);
+5.6 菜单与参数系统
+LCD 滚动菜单支持行高16 像素、一屏最多12 项，具备按键消抖与长按判
+定。系统参数（VAD 阈值、自动速度、舵机标定值等）存储于Flash 页26，上
+电加载并进行取值范围合法性校验，实现参数持久化。
+第二十一届全国大学生智能汽车竞赛
+5.7 关键数据结构与存储布局
+表 5.1 各科目记录点结构
+结构体 字段 类型 用途
+s1rc_t dist/yaw/servo int16×3 科目一：编码器增量 + 航向 ×10+ 舵机角度
+gate_rc_t dist/yaw/servo int16×3 门洞
+path_pt_t dist/yaw int16×2 科目三：编码器增量 + 航向 ×10
+第六章 主要技术参数
+6.1 整车基本参数
+表 6.1 整车基本参数
+参数 数值 说明
+总体重量 21.5kg 含电池与全部硬 件
+外形尺寸（长×宽×高） 130×67×90cm 整车外廓
+轮距 180mm 左右轮中心距
+轮胎直径/ 周长 255mm/ 约801mm 用于里程换算
+减速比 0.50 电机→ 车轮
+6.2 电气参数
+表 6.2 电气参数
+参数 数值 说明
+系统供电 24V/5V/3.3V 电池输入 / 主电 源/ 逻辑电源
+待机电流 200mA 待 机 状 态 （ 约 2.4W）
+运行电流 2A 正 常 运 行 状 态 （约24W）
+储能电容总容量 2000μF 电源去耦与储能 电容之和
+电机PWM 频率 17kHz 驱动电机
+6.3 传感器配置
+表 6.3 传感器种类与数量
+传感器 型号 数量 用途
+姿态传感器 IMU963RA 1 陀螺仪 / 加速度计，航向积 分
+正交编码器 1024 线 2 左右电机速度与里程
+角度值编码器 360°角度传感器 1 前轮转向角度反馈
+硅麦 IM68A130A 1 语音采集
+摄像头 SCC8660(逐飞凌瞳) 1 科目三视觉跟随
+第二十一届全国大学生智能汽车竞赛
+6.4 执行器配置
+驱动电机2 个（车模原有，后轮左右各一），转向舵机1 个（车模原有，
+前轮转向）；除上述驱动电机与舵机外，未使用其他电机或舵机（0 个）。
+6.5 检测精度与频率
+表 6.4 路径信息检测精度与频率
+项目 数值 说明
+路径记录频率 50Hz（20ms/ 点） 科目一/ 科目三
+编码器分辨率 4096 脉冲/ 转
+1024 线 ×4 倍
+频，约0.196mm
+/ 脉冲
+航向分辨率 0.1° IMU 航向记录单 位
+舵机角度分辨率 0.1° 舵机目标 / 记录 单位
+舵机控制周期 2ms（500Hz） 增量式PID
+主循环/ 编码器周期 20ms（50Hz） 编码器采样与科 目节拍
+第七章 系统调试与测试
+7.1 开发工具与制作安装
+系统开发采用 AURIX 集成开发环境与编译器，底层基于逐飞科技 TC264
+开源库。电路板采用嘉立创 EDA 设计并打样，主控板、电机驱动模块、灯板
+与硅麦模块分别设计、独立焊接，再通过排线与接插件和主控连接。整车按“先
+单模块、后整机”的顺序装配，完成机械安装、电路板固定与传感器布置后，逐
+项开展软硬件联调。
+7.2 硬件测试
+系统提供完整的硬件自检入口，可逐项验证电机正反转与调速、舵机角度
+扫描与PID 响应、遥控器各通道值、IMU 数据、语音识别、灯光顺序点亮、喇
+叭不同频率鸣叫、编码器推车测距与 LCD 显示等，确保装机后各模块正常工
+作。
+7.3 整机联调
+在完成单模块测试后开展整机联调：先以遥控模式验证车辆行驶与转向基
+本功能，再依次验证科目一、科目三摄像头标定与跟随、倒序回放的一致性，
+最后验证科目二语音命令的识别与执行。经反复整定，各科目功能稳定，路径
+复现偏差与语音响应时间满足竞赛要求。
+附录 A 核心算法子程序
+cpu0_main.c
+/*********************************************************************
+************************************************
+* TC264 开源库
+* 版权所有 (c) 2022 SEEKFREE
+*
+* 文件：cpu0_main.c
+* 文件编码：UTF-8
+* 智能车路径记录与高精度回放系统 V3.1
+*
+* 基于原始文件修改，实现：
+* - 模式 00：带后轮差速的纯遥控模式
+* - 模式 01：路径录制和回放
+* - 模式 10：科目二讯飞云端语音控制
+* - 模式 11：硬件测试（IMU 姿态测试）
+**********************************************************************
+**********************************************/
+#include "my_header.h"
+#pragma section all "cpu0_dsram"
+/* ======================== 全局状态 ======================== */
+volatile int system_mode = 0;
+volatile int mode01_state = STATE01_MENU;
+volatile int mode11_state = STATE11_IMU_MENU;
+uint32 system_tick = 0;
+volatile uint8 cpu0_init_done = 0; /* CPU0 启动初始化完成标志, CPU1 的模
+式 01 摄像头等待此标志 */
+/* 保留旧版全局变量用于向后兼容 */
+int mode = 0;
+int servo_real_angle;
+PID_TypeDef servo_pid;
+MedianFilter_Typedef servo_mf;
+/* encoder_data 定义在 motor_ctrl.c 中，在 motor_ctrl.h 中声明为 extern
+*/
+/* ======================== 前向声明 ======================== */
+void handle_button_events(void);
+void handle_mode01_buttons(button_event_t evt);
+void handle_mode11_buttons(button_event_t evt);
+void refresh_lcd(void);
+static void finish_recording(void);
+static uint8 calibrate_imu_for_motion_start(void);
+/* ======================== DIP 开关 ======================== */
+void dip_switch_init(void)
+{
+gpio_init(DIP1_PIN, GPI, GPIO_HIGH, GPI_PULL_UP);
+gpio_init(DIP2_PIN, GPI, GPIO_HIGH, GPI_PULL_UP);
+附录
+}
+uint8 dip_switch_read(void)
+{
+uint8 bit0 = (gpio_get_level(DIP1_PIN) == 0) ? 1 : 0;
+uint8 bit1 = (gpio_get_level(DIP2_PIN) == 0) ? 1 : 0;
+return (bit1 << 1) | bit0;
+}
+/* ======================== 编 码 器 / 速 度 / 回 放 诊 断 打 印
+======================== */
+#if (DEBUG_MOTOR_DIAG || DEBUG_REPLAY_DIAG)
+void debug_print_diag(void)
+{
+#if DEBUG_MOTOR_DIAG
+/* 模式 00 遥控: 验证编码器方向/量程 + 速度 PID 跟随质量
+* T=目标速度(遥控映射) C=实际速度(PID 反馈) P=5ms 增量 D=累积里程 S=舵
+机目标/实际 */
+if (system_mode == SYSTEM_MODE_PURE_RC) {
+printf("DIAG T:%d,%d C:%d,%d P:%d,%d D:%ld,%ld S:%d/%d\r\n",
+motor_ctrl_get_target_left(),
+motor_ctrl_get_target_right(),
+motor_ctrl_get_speed_left(),
+motor_ctrl_get_speed_right(),
+encoder_data.pulse_l, encoder_data.pulse_r,
+(long)encoder_data.dist_l, (long)encoder_data.dist_r,
+servo_ctrl_get_target(),
+servo_ctrl_get_current_angle());
+return;
+}
+#endif
+#if DEBUG_REPLAY_DIAG
+/* 回放中: PRE=轴距预对齐进度/目标, PS=正式回放单调轮迹进度/帧边界。 */
+if (system_mode == SYSTEM_MODE_RECORD_REPLAY &&
+(mode01_state == STATE01_REPLAYING || mode01_state ==
+STATE01_REVERSE_REPLAYING)) {
+int32 tdl, tdr;
+int32 line_error_before, line_error_after;
+int16 target_speed_l, target_speed_r;
+replayer_get_cur_dist(&tdl, &tdr);
+replayer_get_last_speed(&target_speed_l, &target_speed_r);
+replayer_get_line_errors(&line_error_before,
+&line_error_after);
+printf("RPL F:%lu/%lu SRC:%d DIR:%d PRE:%d:%lu/%lu YE:%d YI:%d
+AL:%d RC:%d WF:%d WK:%.3f GS:%.4f LC:%d LE:%ld/%ld ST:%u FA:%u
+PS:%lu/%lu TD:%ld,%ld CD:%ld,%ld T:%d,%d S:%d,%d A:%d/%d Y:%d/%d G:%d
+GX:%lu EX:%lu\r\n",
+(unsigned long)replayer_get_current_frame(),
+(unsigned long)replayer_get_total_frames(),
+(int)replayer_is_using_ram(),
+(int)replayer_get_direction(),
+(int)replayer_is_start_compensating(),
+(unsigned long)replayer_get_start_comp_progress(),
+第二十一届全国大学生智能汽车竞赛
+(unsigned long)replayer_get_start_comp_target(),
+replayer_get_last_yaw_error(),
+replayer_get_heading_integral_correction(),
+replayer_get_start_heading_offset(),
+replayer_get_record_yaw_correction(),
+(int)replayer_is_wheel_yaw_fusion_valid(),
+(double)replayer_get_wheel_yaw_k(),
+(double)replayer_get_gyro_scale(),
+replayer_get_line_yaw_correction(),
+(long)line_error_before, (long)line_error_after,
+(unsigned int)replayer_get_stall_tick(),
+(unsigned int)replayer_get_stall_force_count(),
+(unsigned long)replayer_get_path_progress(),
+(unsigned long)replayer_get_path_target(),
+(long)tdl, (long)tdr,
+(long)encoder_data.dist_l, (long)encoder_data.dist_r,
+target_speed_l, target_speed_r,
+motor_ctrl_get_speed_left(),
+motor_ctrl_get_speed_right(),
+servo_ctrl_get_target(), servo_ctrl_get_current_angle(),
+replayer_get_cur_target_yaw(),
+(int)(replayer_get_cur_yaw() * 100.0f),
+read_imu_gyro_z(), (unsigned long)imu_get_spike_count(),
+(unsigned long)motor_ctrl_get_encoder_spike_count());
+}
+#endif
+}
+#endif
+/* ======================== 主程序 ======================== */
+int core0_main(void)
+{
+clock_init();
+debug_init();
+//初始化扬声器为低电平，防止扬声器杯烧毁（扬声器功能为开发）
+pwm_init(SPEAKER, SPEAKER_FREQ, 0);
+cpu_wait_event_ready();
+/* 1. 读取 DIP 开关并锁定模式 */
+dip_switch_init();
+system_mode = dip_switch_read();
+mode = system_mode; /* 用于向后兼容 */
+/* 2. 初始化基础硬件 */
+button_mgr_init();
+led_init();
+ui_init();
+/* 3. 初始化显示屏并显示模式信息 */
+ips200_set_color(RGB565_WHITE, RGB565_BLACK);
+ips200_clear();
+ips200_full(RGB565_BLACK);
+ips200_show_string(0, 16 * 3, "System Booting...");
+/* 4. 初始化传感器和执行器 */
+servo_ctrl_init();
+附录
+/* ======================== 按键事件处理器 ======================== */
+void handle_button_events(void)
+{
+button_event_t evt = button_mgr_get_event();
+if (evt == BTN_NONE) return;
+switch (system_mode) {
+case SYSTEM_MODE_PURE_RC:
+/* 纯遥控模式下无按键交互 */
+break;
+case SYSTEM_MODE_RECORD_REPLAY:
+handle_mode01_buttons(evt);
+break;
+case SYSTEM_MODE_VOICE_CONTROL:
+/* 无交互 */
+break;
+case SYSTEM_MODE_HW_TEST:
+handle_mode11_buttons(evt);
+break;
+}
+}
+static void finish_recording(void)
+{
+int32 record_dist_l;
+int32 record_dist_r;
+int32 stop_begin_dist_l;
+int32 stop_begin_dist_r;
+uint32 record_distance;
+uint16 stable_ticks = 0;
+uint16 wait_ticks = 0;
+/* 先切安全状态并直接关断执行器, 再进行可能阻塞的 Flash 擦写 */
+mode01_state = STATE01_RECORD_DONE;
+motor_ctrl_set_speed(0, 0);
+motor_ctrl_reset_pid();
+motor_set_duty(0, 0);
+servo_ctrl_set_target(0);
+servo_ctrl_set_output(0);
+/* 车辆较重，关断 PWM 后仍可能惯性滑行。PIT 保持运行以继续累计编码器，
+* 直到双轮连续静止，再把真实停车位置写入最后一个路径锚帧。 */
+stop_begin_dist_l = encoder_data.dist_l;
+stop_begin_dist_r = encoder_data.dist_r;
+while (wait_ticks < RECORD_STOP_TIMEOUT_TICKS) {
+system_delay_ms(CONTROL_PERIOD_MS);
+wait_ticks++;
+if (encoder_data.pulse_l == 0 && encoder_data.pulse_r == 0) {
+if (stable_ticks < RECORD_STOP_STABLE_TICKS)
+stable_ticks++;
+if (stable_ticks >= RECORD_STOP_STABLE_TICKS) break;
+} else {
+stable_ticks = 0;
+第二十一届全国大学生智能汽车竞赛
+}
+}
+recorder_stop_result_t result = recorder_stop();
+record_dist_l = encoder_data.dist_l;
+record_dist_r = encoder_data.dist_r;
+if (record_dist_l < 0) record_dist_l = -record_dist_l;
+if (record_dist_r < 0) record_dist_r = -record_dist_r;
+record_distance = (uint32)((record_dist_l + record_dist_r) / 2);
+#if DEBUG_REPLAY_DIAG
+printf("REC STOP:%d FRAME:%lu STATE:%d SET:%u COAST:%ld,%ld\r\n",
+} else if (evt == BTN_DOWN) {
+if (menu_selected < 2) menu_selected++;
+ui_draw_menu(menu_selected);
+} else if (evt == BTN_OK) {
+if (menu_selected == 0) {
+/* 进入录制待机 */
+mode01_state = STATE01_RECORD_STANDBY;
+ui_draw_record_standby(recorder_get_free_frames());
+} else if (menu_selected == 1) {
+/* 进入回放待机 */
+path_header_t hdr;
+if (flash_mgr_load_path_header(&hdr) == 0) {
+mode01_state = STATE01_REPLAY_STANDBY;
+ui_draw_replay_standby(&hdr);
+} else {
+mode01_state = STATE01_REPLAY_STANDBY;
+ui_draw_replay_no_path();
+}
+} else {
+/* 进入返回速度设置 */
+mode01_state = STATE01_REVERSE_SPEED_SETTING;
+ui_draw_reverse_speed_setting(reverse_replay_speed);
+}
+}
+break;
+case STATE01_REVERSE_SPEED_SETTING:
+if (evt == BTN_UP) {
+if (reverse_replay_speed < 20) reverse_replay_speed++;
+ui_draw_reverse_speed_setting(reverse_replay_speed);
+} else if (evt == BTN_DOWN) {
+if (reverse_replay_speed > 1) reverse_replay_speed--;
+ui_draw_reverse_speed_setting(reverse_replay_speed);
+} else if (evt == BTN_OK || evt == BTN_BACK) {
+mode01_state = STATE01_MENU;
+ui_draw_menu(menu_selected);
+}
+break;
+case STATE01_RECORD_STANDBY:
+附录
+if (evt == BTN_OK) {
+uint8 imu_ok = calibrate_imu_for_motion_start();
+if (imu_ok) {
+recorder_start();
+mode01_state = STATE01_RECORDING;
+}
+pit_ms_init(CCU60_CH0, CONTROL_PERIOD_MS);
+if (!imu_ok) {
+ui_draw_imu_calib_failed();
+}
+} else if (evt == BTN_BACK) {
+mode01_state = STATE01_MENU;
+ui_draw_menu(menu_selected);
+}
+break;
+case STATE01_RECORDING:
+if (evt == BTN_OK) {
+/* KEY3: 摄像头已标定则启动颜色跟随 */
+if (camera_calibration.calibrated) {
+/* 首次真正起步前再次采用本次标定零偏建立严格零点。
+* 若是中途暂停后继续, 已有路径帧保持不变。 */
+if (recorder_get_frame_count() <= 1U) {
+pit_disable(CCU60_CH0);
+motor_ctrl_set_speed(0, 0);
+motor_ctrl_reset_pid();
+motor_set_duty(0, 0);
+imu_reset_yaw();
+recorder_rebase_before_motion();
+}
+mode01_state = STATE01_FOLLOWING;
+if (recorder_get_frame_count() <= 1U)
+pit_ms_init(CCU60_CH0, CONTROL_PERIOD_MS);
+}
+/* 未标定时忽略, CPU1 界面显示 NOT CAL 提示 */
+} else if (evt == BTN_BACK) {
+/* KEY4: 停止录制, 安全停车后由主循环写 Flash */
+finish_recording();
+}
+break;
+case STATE01_FOLLOWING:
+if (evt == BTN_OK) {
+/* KEY3: 退出颜色跟随, 恢复遥控驾驶 */
+mode01_state = STATE01_RECORDING;
+} else if (evt == BTN_BACK) {
+/* KEY4: 停止跟随并安全保存路径 */
+finish_recording();
+}
+break;
+case STATE01_RECORD_DONE:
+if (evt == BTN_OK) {
+/* KEY3(OK): 车头人工转 180 度后, 正向倒序循迹回起点 */
+第二十一届全国大学生智能汽车竞赛
+replayer_capture_reverse_alignment();
+uint8 imu_ok = calibrate_imu_for_motion_start();
+uint8 replay_ok = (imu_ok && replayer_start_reverse()
+== 0) ? 1 : 0;
+if (replay_ok) {
+mode01_state = STATE01_REVERSE_REPLAYING;
+}
+pit_ms_init(CCU60_CH0, CONTROL_PERIOD_MS);
+if (!replay_ok) {
+ui_draw_imu_calib_failed();
+}
+} else if (evt == BTN_BACK) {
+mode01_state = STATE01_MENU;
+ui_draw_menu(menu_selected);
+}
+break;
+case STATE01_REVERSE_REPLAYING:
+if (evt == BTN_OK || evt == BTN_BACK) {
+replayer_stop();
+mode01_state = STATE01_RECORD_DONE;
+ui_draw_record_done(recorder_get_frame_count(),
+recorder_get_frame_count());
+}
+break;
+case STATE01_REPLAY_STANDBY:
+if (evt == BTN_OK) {
+/* 检查路径是否存在 */
+path_header_t hdr;
+if (flash_mgr_load_path_header(&hdr) == 0) {
+if (replayer_load() == 0) {
+uint8 imu_ok =
+calibrate_imu_for_motion_start();
+if (imu_ok) {
+replayer_start();
+mode01_state = STATE01_REPLAYING;
+}
+pit_ms_init(CCU60_CH0, CONTROL_PERIOD_MS);
+if (!imu_ok) {
+ui_draw_imu_calib_failed();
+}
+}
+}
+} else if (evt == BTN_BACK) {
+mode01_state = STATE01_MENU;
+ui_draw_menu(menu_selected);
+}
+break;
+case STATE01_REPLAYING:
+if (evt == BTN_OK) {
+replayer_stop();
+mode01_state = STATE01_MENU;
+附录
+ui_draw_menu(menu_selected);
+}
+break;
+case STATE01_REPLAY_DONE:
+if (evt == BTN_BACK) {
+mode01_state = STATE01_MENU;
+ui_draw_menu(menu_selected);
+}
+break;
+}
+}
+/* ======================== 模 式 11 按 键 处 理 器 ========================
+*/
+static uint8 imu_menu_selected = 0;
+void handle_mode11_buttons(button_event_t evt)
+{
+switch (mode11_state) {
+case STATE11_IMU_MENU:
+if (evt == BTN_UP || evt == BTN_DOWN) {
+imu_menu_selected = (imu_menu_selected == 0) ? 1 : 0;
+ui_draw_imu_menu(imu_menu_selected);
+} else if (evt == BTN_OK) {
+if (imu_menu_selected == 0) {
+/* 进入 IMU 测试 */
+mode11_state = STATE11_IMU_TEST;
+}
+} else if (evt == BTN_BACK) {
+/* 返回在菜单界面无效（没有其他测试选项） */
+}
+break;
+case STATE11_IMU_TEST:
+if (evt == BTN_OK) {
+/* 复用运动入口标定流程，避免硬件测试留下不同的 IMU 基准。
+*/
+mode11_state = STATE11_IMU_CALIBRATING;
+uint8 imu_ok = calibrate_imu_for_motion_start();
+mode11_state = STATE11_IMU_TEST;
+pit_ms_init(CCU60_CH0, CONTROL_PERIOD_MS);
+if (!imu_ok) ui_draw_imu_calib_failed();
+} else if (evt == BTN_BACK) {
+motor_set_duty(0, 0);
+servo_ctrl_set_output(0);
+mode11_state = STATE11_IMU_MENU;
+ui_draw_imu_menu(imu_menu_selected);
+}
+break;
+case STATE11_IMU_CALIBRATING:
+/* 校准期间按键禁用 */
+break;
+}
+}
+第二十一届全国大学生智能汽车竞赛
+/* ======================== LCD 刷新 ======================== */
+void refresh_lcd(void)
+{
+switch (system_mode) {
+case SYSTEM_MODE_PURE_RC:
+#if DEBUG_MOTOR_DIAG
+/* 诊 断 模 式 : 屏 上 直 接 看 编 码 器 / 速 度 PID 数 据 ( 测 完 将
+DEBUG_MOTOR_DIAG 改 0 恢复) */
+ui_draw_diag();
+#else
+ui_draw_remote_control(
+servo_ctrl_get_current_angle(),
+servo_ctrl_get_target(),
+receiver_data.speed,
+motor_ctrl_get_speed_left(),
+motor_ctrl_get_speed_right(),
+read_imu_yaw());
+#endif
+break;
+case SYSTEM_MODE_RECORD_REPLAY:
+switch (mode01_state) {
+case STATE01_MENU:
+/* 菜单已绘制, 跳过 */
+break;
+case STATE01_REVERSE_SPEED_SETTING:
+ui_draw_reverse_speed_setting(reverse_replay_speed);
+break;
+case STATE01_RECORD_STANDBY:
+ui_draw_record_standby(recorder_get_free_frames());
+break;
+case STATE01_RECORDING:
+case STATE01_FOLLOWING:
+/* 录制/跟随状态下屏幕由 CPU1 摄像头界面接管, CPU0 不重
+绘 */
+break;
+case STATE01_RECORD_DONE:
+/* 静态界面，跳过 */
+break;
+case STATE01_REPLAY_STANDBY:
+{
+path_header_t hdr;
+if (flash_mgr_load_path_header(&hdr) == 0)
+ui_draw_replay_standby(&hdr);
+else
+ui_draw_replay_no_path();
+}
+break;
+case STATE01_REPLAYING:
+ui_draw_replaying(replayer_get_current_frame(),
+replayer_get_total_frames(),
+附录
+replayer_get_progress_percent(),
+0);
+break;
+case STATE01_REVERSE_REPLAYING:
+ui_draw_replaying(replayer_get_current_frame(),
+replayer_get_total_frames(),
+replayer_get_progress_percent(),
+0);
+break;
+case STATE01_REPLAY_DONE:
+if (replayer_get_state() == REPLAY_STATE_DONE) {
+ui_draw_replay_done();
+}
+break;
+}
+break;
+case SYSTEM_MODE_VOICE_CONTROL:
+subject2_refresh_ui();
+break;
+case SYSTEM_MODE_HW_TEST:
+switch (mode11_state) {
+case STATE11_IMU_MENU:
+ui_draw_imu_menu(0);
+break;
+case STATE11_IMU_TEST:
+ui_draw_imu_test(read_imu_yaw(),
+imu660ra_gyro_x, imu660ra_gyro_y,
+read_imu_gyro_z(),
+imu_get_gyro_bias(),
+(imu_get_calib_status() !=
+IMU_CALIB_NONE &&
+imu_get_calib_status() !=
+IMU_CALIB_FAILED) ? 1 : 0);
+break;
+case STATE11_IMU_CALIBRATING:
+/* 静态界面 */
+break;
+}
+break;
+}
+}
+#pragma section all restore
+cpu1_main.c
+#include "my_header.h"
+#pragma section all "cpu1_dsram"
+// 将本语句与#pragma section all restore 语句之间的全局变量都放在 CPU1 的
+RAM 中
+// **************************** 代码区域 ****************************
+第二十一届全国大学生智能汽车竞赛
+// ======================== 摄像头界面说明 ========================
+// 仅在模式 01(录制回放)的"录制中/跟随中"状态下激活:
+// KEY1(P20_7): 学习画面中心颜色(蓝板对准画面中心小区域短按)
+// KEY2(P20_6): 按固定 CAL 距离(80cm)标定摄像头, 采集 10 帧取平均
+// KEY3/KEY4 由 CPU0 的 button_mgr 处理: KEY3 启动/退出跟随, KEY4 停止录制
+// 识别与测距算法在 code/color_tracer.c 中, 与 E01_20 工程一致
+// ======================== 内部状态 ========================
+static uint16 calibration_pending = 0;
+static uint8 calibration_samples = 0;
+static uint32 calibration_width_sum = 0;
+static uint32 calibration_height_sum = 0;
+static uint32 calibration_x_sum = 0;
+static uint32 calibration_y_sum = 0;
+static uint32 frame_count = 0; /* 已处理帧计数(诊断用) */
+/* CPU0 启动初始化完成标志, 在 cpu0_main.c 中定义, 启动画面绘制完成后置 1
+*/
+extern volatile uint8 cpu0_init_done;
+static uint16 clamp_image_x(int32 x)
+{
+if(x < 0) return 0;
+if(x >= SCC8660_W) return SCC8660_W - 1;
+return (uint16)x;
+}
+static uint16 clamp_image_y(int32 y)
+{
+if(y < 0) return 0;
+if(y >= SCC8660_H) return SCC8660_H - 1;
+return (uint16)y;
+}
+static void draw_target_box(const result_struct* target)
+{
+uint16 left = clamp_image_x((int32)target->x - (int32)target->w /
+2);
+uint16 right = clamp_image_x((int32)target->x + (int32)target->w /
+2);
+uint16 top = clamp_image_y((int32)target->y - (int32)target->h /
+2);
+uint16 bottom = clamp_image_y((int32)target->y + (int32)target->h
+/ 2);
+ips200_draw_line(left, top, right, top, RGB565_WHITE);
+ips200_draw_line(left, top, left, bottom, RGB565_WHITE);
+ips200_draw_line(left, bottom, right, bottom, RGB565_WHITE);
+ips200_draw_line(right, top, right, bottom, RGB565_WHITE);
+}
+附录
+static void show_target_location(uint8 following)
+{
+float angle_abs;
+ips200_set_font(IPS200_6X8_FONT);
+ips200_set_color(RGB565_WHITE, RGB565_BLACK);
+/* 文字全部绘制在图像(y=0~119)下方, 每帧推图不会覆盖文字, 不闪烁 */
+if(calibration_pending)
+{
+ips200_show_string(0, 122, "CAL ");
+ips200_show_uint(24, 122, calibration_samples, 2);
+ips200_show_string(36, 122, "/10 ");
+}
+else if(!camera_calibration.calibrated)
+{
+ips200_show_string(0, 122, "NOT CAL: K2");
+}
+else if(!target_location.valid)
+{
+ips200_show_string(0, 122, "NO TARGET");
+}
+else
+{
+angle_abs = (target_location.angle_deg < 0.0f) ? -
+target_location.angle_deg : target_location.angle_deg;
+ips200_show_string(0, 122, "D:");
+ips200_show_float(12, 122, target_location.distance_cm, 3, 1);
+ips200_show_string(54, 122, "cm ");
+ips200_show_string(78, 122, (target_location.angle_deg <
+0.0f) ? "L:" : "R:");
+ips200_show_float(90, 122, angle_abs, 2, 1);
+ips200_show_string(126, 122, "deg ");
+ips200_show_string(0, 130, "X:");
+ips200_show_float(12, 130, target_location.lateral_cm, 3, 1);
+ips200_show_string(54, 130, " Z:");
+ips200_show_float(72, 130, target_location.forward_cm, 3, 1);
+ips200_show_string(114, 130, "cm ");
+}
+/* 状态行: 跟随/录制 + 已录帧数 */
+ips200_show_string(0, 138, following ? "FOLLOW " : "REC ");
+ips200_show_uint(54, 138, recorder_get_frame_count(), 5);
+/* 诊断行: 已处理帧计数 + 画面中心像素 RGB(判断图像数据是否正常, 定位后
+可删除) */
+ips200_show_string(0, 146, "FC:");
+ips200_show_uint(18, 146, frame_count, 6);
+{
+第二十一届全国大学生智能汽车竞赛
+uint16 c16 = scc8660_image[SCC8660_H / 2][SCC8660_W / 2];
+c16 = (uint16)(((c16 << 8) & 0xFF00) | (c16 >> 8));
+ips200_show_string(66, 146, "C:");
+ips200_show_uint(78, 146, (uint32)((c16 & 0xf800) >> 8), 3);
+ips200_show_uint(96, 146, (uint32)((c16 & 0x07e0) >> 3), 3);
+ips200_show_uint(114, 146, (uint32)((c16 & 0x001f) << 3), 3);
+}
+/* 底部按键提示 */
+ips200_show_string(0, 154, following ?
+"K1:C K2:CAL K3:EXIT K4:STOP" :
+"K1:C K2:CAL K3:GO K4:STOP");
+}
+// ======================== core1_main ========================
+void core1_main(void)
+{
+disable_Watchdog(); // 关闭看门狗
+interrupt_global_enable(0); // 打开全局中断
+cpu_wait_event_ready(); // 等待所有核心初始化完毕
+/* 等待 CPU0 完成屏幕/IMU 初始化(避免双核并发操作显示屏与 SPI 外设) */
+while(0 == cpu0_init_done) { }
+if(SYSTEM_MODE_RECORD_REPLAY != system_mode)
+{
+/* 仅模式 01 使用摄像头界面, 其他模式 CPU1 保持空闲 */
+while(TRUE) { }
+}
+/* ---- 模式 01: 在录制/跟随状态下运行摄像头界面 ---- */
+uint8 ui_active = 0; /* 摄像头界面是否已接管屏幕
+*/
+uint8 camera_hw_init = 0; /* 摄像头硬件是否已初始化 */
+uint8 key1_last = GPIO_HIGH;
+uint8 key2_last = GPIO_HIGH;
+uint8 key1_now;
+uint8 key2_now;
+uint8 cam_active;
+while(TRUE)
+{
+cam_active = ((STATE01_RECORDING == mode01_state) ||
+(STATE01_FOLLOWING == mode01_state)) ? 1 : 0;
+if(cam_active && !ui_active)
+{
+/* 进入录制/跟随: 首次进入时初始化摄像头, 然后清屏接管 */
+if(!camera_hw_init)
+附录
+{
+uint8 retry = 0;
+while(scc8660_init())
+{
+retry++;
+if(retry >= 10)
+{
+ips200_clear();
+ips200_set_color(RGB565_RED, RGB565_BLACK);
+ips200_show_string(0, 16 * 5, "Camera init
+FAILED!");
+while(TRUE) { }
+}
+system_delay_ms(100);
+}
+gpio_init(KEY1, GPI, GPIO_HIGH, GPI_PULL_UP);
+gpio_init(KEY2, GPI, GPIO_HIGH, GPI_PULL_UP);
+camera_hw_init = 1;
+}
+ips200_clear();
+ui_active = 1;
+}
+else if(!cam_active && ui_active)
+{
+/* 退出录制/跟随: 停止绘制, 屏幕交还 CPU0 */
+ui_active = 0;
+}
+if(ui_active && scc8660_finish_flag)
+{
+/* 显示图像(CPU0 侧 DMA 采满一帧后置标志并暂停采集, 处理完清标志)
+*/
+ips200_displayimage8660((const uint16 *)scc8660_image,
+SCC8660_W, SCC8660_H);
+/* 颜色识别 */
+uint8 target_found =
+(uint8)color_trace(&target_color_condi, &target_pos_out);
+if(target_found)
+{
+draw_target_box(&target_pos_out);
+if(!target_location_update(&target_pos_out))
+{
+target_location_miss();
+}
+}
+else
+{
+target_location_miss();
+}
+第二十一届全国大学生智能汽车竞赛
+/* KEY1: 学习画面中心颜色 */
+key1_now = gpio_get_level(KEY1);
+if((GPIO_LOW == key1_now) && (GPIO_HIGH == key1_last))
+{
+set_color_target_condi_region(SCC8660_W / 2, SCC8660_H
+/ 2, 2, &target_color_condi);
+}
+key1_last = key1_now;
+/* KEY2: 按固定 CAL 距离标定 */
+key2_now = gpio_get_level(KEY2);
+if((GPIO_LOW == key2_now) && (GPIO_HIGH == key2_last))
+{
+calibration_pending = 1;
+calibration_samples = 0;
+calibration_width_sum = 0;
+calibration_height_sum = 0;
+calibration_x_sum = 0;
+calibration_y_sum = 0;
+}
+key2_last = key2_now;
+if(calibration_pending && target_found)
+{
+calibration_width_sum += target_pos_out.w;
+calibration_height_sum += target_pos_out.h;
+calibration_x_sum += target_pos_out.x;
+calibration_y_sum += target_pos_out.y;
+calibration_samples++;
+if(calibration_samples >= 10U)
+{
+result_struct average_target;
+average_target.w = calibration_width_sum / 10U;
+average_target.h = calibration_height_sum / 10U;
+average_target.x = calibration_x_sum / 10U;
+average_target.y = calibration_y_sum / 10U;
+if(target_calibrate(&average_target,
+(float)CALIBRATION_DISTANCE_CM))
+{
+target_location_update(&target_pos_out);
+calibration_pending = 0;
+}
+else
+{
+calibration_samples = 0;
+calibration_width_sum = 0;
+calibration_height_sum = 0;
+calibration_x_sum = 0;
+calibration_y_sum = 0;
+}
+附录
+}
+}
+show_target_location(STATE01_FOLLOWING == mode01_state ?
+1 : 0);
+/* 本帧处理完毕, 允许 CPU0 的 vsync 中断重启下一帧采集 */
+frame_count++;
+scc8660_finish_flag = 0;
+}
+if(!ui_active)
+{
+system_delay_ms(20); /* 非激活时降低 CPU1 对总线的
+占用 */
+}
+else if(!scc8660_finish_flag)
+{
+system_delay_us(50); /* 等帧期间让出 DSPR 访问, 避
+免与 DMA 写图像竞争 */
+}
+}
+}
+#pragma section all restore
+// **************************** 代码区域 ****************************

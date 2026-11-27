@@ -1,0 +1,265 @@
+第二十一届全国大学生智能汽车竞赛
+技 术 报 告
+
+
+
+学    校：  辽宁工程技术大学  
+队伍名称：     开阳-炽离星    
+参赛队员：       周诗淇       
+       朱相东       
+       张志宇       
+       荣若涵       
+       闫志博       
+指导老师：       李  斌       
+       王  巍          
+
+目录
+引言	4
+第二章 方案设计	5
+第三章 机械结构设计及调整	5
+第四章 硬件电路设计	6
+4.1电源设计	6
+4.2 驱动设计	8
+4.3其他功能板设计	11
+4.3.1 LED灯板	11
+4.3.2 按钮屏幕模块	11
+4.4主板	12
+第五章 软件设计	14
+5.1指针菜单	14
+5.2 INS惯导模块	17
+5.3语音识别	20
+5.4 IMU963RA解算	21
+5.5 PID算法	23
+第六章 开发工具及调试过程	25
+6.1开发工具AURIX简介	25
+6.2程序烧录工具Infineon Memtool简介	26
+
+
+引言
+全国大学生智能汽车竞赛秉持“立足培养、重在参与、鼓励探索、追求卓越”的宗旨，是一项以激励创新为核心的科技竞赛活动。该竞赛要求参与者在指定的汽车模型平台上，以英飞凌公司的微控制器作为核心控制模块，通过增设道路传感器、电机驱动模块、舵机驱动模块，并编写配套控制程序，最终完成具备自主道路识别能力的模型汽车制作。我队将参加于今年八月举办的第二十一届全国大学生智能汽车竞赛。针对本次赛事的具体要求与场景，我们构建了赛车、赛道及自主控制系统的基础模型，提出了涵盖理论分析、仿真计算与在线调试的完整开发方法。通过对各类算法的性能特点进行对比分析，我们确定了最终实施方案，并已完成智能车的制作与调试工作。
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+第一章 方案设计
+在此次比赛中，本组使用北京科宇有限公司提供的卡丁车T车模，采用英飞凌公司推出的一款高性能汽车微控制器TC387作为核心的控制单元，自主设计系统的控制方案。
+在这份报告中，我们将阐述整车系统的整体方案、机械结构、硬件设计、以及软件算法等方面，详细说明我们设计过程。
+
+图2.1 整体技术框架图
+
+第二章 机械结构设计及调整
+本车采用T型卡丁车车模，整体机械结构未作改动，拆除了原车的控制线路，仅保留原车的后面两个电机和前面的转向电机，在后轮电机处加装了编码器支架和齿轮，方便安装正交编码器，舵机电机处也安装了编码器支架和齿轮，方便安装角度传感器，车辆的四个轮胎做了更换，换了科宇的充气轮胎，使其更加耐磨耐用，抓地力可以得到明显改善。以下是科宇官方给出的车模规格：
+车模尺寸：130*67cm
+驱动电机：定制KY4845电机(额定电压DC24V)*2
+转向电机：定制加长轴RS380电机(电压DC24V)*1
+车轮：高强度耐磨EVA材料，后轮直径10时、前轮直径8吋简介:本定制车辆载重不低于80公斤，可坐人用方向盘手动操控，可遥控，或手机蓝牙连接操控。整车重量约22公斤(含电池)，整车底盘车架采用高强度钢管钢架结构，可伸缩，最长可达130cm，宽约70cm；车身外壳采用超强ABS材料，坚固耐撞:前端安装金属保险杠，避免高速时损坏车身。耐磨EVA轮胎，摩擦力大。车辆操控方便，反应迅速，前转向齿轮箱无虚位，转向电机和方向盘完美同步。车辆配置2个定制工业级24V150W直流马达同时驱动后轮:配置1个24V15W定制直流电机控制转向(转向马达后轴已加长，方便加装方向编码器):车辆最高时速不低于25公里/小时。
+
+第三章 硬件电路设计
+3.1电源设计
+由于是第一年引进的大车组别，考虑车的电池和原来的小车组别电池规格和型号大不相同，故把电源模块独立出来但是主要还是24V降5V，降3.3V，降11V。
+该稳压方案采用两级稳压架构实现多电压输出，满足不同传感器及传感器的供电需求。5V稳压电路采用SCT2450支持3.8-36V宽电压输入，该芯片支持100kHz到1.1MHz可调节开关频率，转换效率可达95%以上。
+
+图4.1 5V DC-DC电路设计图
+5V DC-DC电路设计上，输入端输入电容采用100μF电解电容并联4.7μF和100nF 陶瓷电容组合，滤除高频噪声；稳压部分储能电感选用 5A 4.7μH 功率电感，确保大电流稳定输出；输出端反馈电路通过分压电阻网络（R10=51kΩ, R12=10kΩ）精确设定输出电压。舵机电路也在该5V电路上修改滑动变阻器器而来。
+
+图4.2 3.3V DC-DC电路设计图
+3.3V DC-DC稳压电路设计上，输入电容采用100μF 钽电容并联100nF陶瓷电容组合，抑制输入噪声；输出电容使用10μF 钽电容并联100nF陶瓷电容，保证负载响应速度。
+还有专门为灯板供电设计的电源电路，其实大致与上方的5V降压电路差不多，用的芯片也是SCT2450，只是修改了两个反馈电阻，达到输入电压24V，输出电压为11V左右。
+
+图4.3 11V DC-DC电路设计图
+
+3.2 驱动设计
+本电机驱动板主要由电源管理、信号输入与缓冲、核心电机驱动桥以及外围接口四个功能模块组成。系统采用四片半桥驱动芯片组合成双路全桥（H桥）结构，实现对两个直流电机的正反转及调速控制。
+1.核心电机驱动电路(H桥驱动模块)
+这是整个驱动板的核心部分。电路使用了四片BTN7971B大电流半桥驱动芯片。
+拓扑结构：每两片BTN7971B组成一个完整的H桥，用于驱动一路电机。图中的U4和U8负责左侧电机（PWM_LEFT_OUT），U5和U9负责右侧电机（PWM_RIGHT_OUT）。
+工作原理：BTN7971B内部集成了P沟道高边MOSFET和N沟道低边MOSFET，以及相关的驱动控制和保护电路（如过温、过流、欠压保护）。
+IN引脚接收来自控制器的PWM信号，决定半桥输出高电平还是低电平。
+INH(Inhibit)引脚为使能端，通常置高电平以激活芯片。
+外围配置：每个芯片的电源引脚附近都配置了10uF和100nF的去耦电容（如C4,C5），用于滤除电源线上的高频噪声，保证大电流切换时芯片电源的稳定。引脚处串联的电阻（如R7,R10）用于限流和调节开关速度（Slew Rate），有助于改善EMC（电磁兼容性）性能。
+2.PWM信号隔离与缓冲模块(74HC244)
+逻辑缓冲：虽然图中命名为“PWM信号隔离”，但其核心器件U3是一颗74HC244八路缓冲器/线驱动器，而非光耦隔离器件。
+作用：它的主要作用是增强主控 MCU 信号的驱动能力（推挽输出），并起到一定的电气隔离缓冲作用。当电机驱动部分发生轻微的电压回馈或毛刺时，缓冲器可以保护主控芯片的IO口不被直接击穿。
+信号流向：来自主控的微弱控制信号（如PWM_LEFT_IN1）经过74HC244增强后，输出为PWM_LEFT_OUT1，再送入BTN7971B的控制端。
+3.电源输入与使能控制
+电源接口：电源输入端并联了一个220uF的大容量电解电容(C3)，用于储能和吸收电机启动、制动时产生的纹波电流，防止母线电压剧烈波动。同时配备了LED1作为电源指示灯。
+使能开关：电路设计了一个独立的拨动开关(SW-SPDT)，用于整体控制驱动部分的使能信号，配合LED2指示其工作状态。这在物理调试时提供了一个安全的硬件切断手段。
+4.接口定义
+信号输入接口：采用6-Pin的XH2.54端子，引出四路PWM信号（左右各两路）和共地引脚。
+电机输出接口：使用2-Pin端子分别连接左右两个电机的正负极。
+
+图4.6 双驱原理图
+
+图4.7 单驱原理图
+
+3.3其他功能板设计
+3.3.1 LED灯板
+灯板主控采用英飞凌TLD7002芯片，集成了板子内降压，采用MOS管阵列驱动。
+
+图4.10 灯板实物图
+3.3.2 按钮屏幕模块
+由于是新的大车组别，考虑到设计的主板位置不易操作，我们将按钮和屏幕印出来。
+
+图4.11 操作版PCB图
+
+图4.12 操作版实物图
+3.4主板
+
+图4.13 主板原理图（a）
+
+图4.13 主板原理图（b）
+我们的主板采用模块化设计，主板上不走电源，只留插口，这样对于室外组别来说，更容易更换易损PCB，而且主板基本上也不会坏。
+
+图4.14 主板实物图
+第四章 软件设计
+4.1指针菜单
+1.核心数据结构设计
+菜单系统基于树状拓扑结构设计，核心由MenuItem（菜单项）和MenuPage（菜单页）两个结构体构成。MenuItem通过嵌套函数指针（void (*function)(void)）来执行具体的任务模块，并利用指向MenuPage的结构体指针（sub_page）实现向子菜单的跳转。MenuPage封装了当前页面的菜单项数组、父节点指针（parent）以及当前选中的索引，这种纯指针链接的方式将UI展示与底层业务逻辑有效解耦。
+2.页面流转与控制逻辑
+系统在menu_task主任务中集中处理按键调度与页面流转。底层通过非阻塞式的按键状态机（key_scanner_internal）实现了按键防抖及长短按状态检测。导航逻辑清晰：KEY_1与KEY_2修改当前索引，KEY_3（确认）触发函数指针或下探至子节点，KEY_4（返回）通过当前页面的parent指针回退到上一级菜单，此外还具备一个全局暂停标志以挂起菜单响应（KEY_5）。
+3.增量渲染与性能优化
+为了降低TFT屏幕（IPS200）的刷新开销并避免闪烁，代码设计了增量渲染机制。借助menu_full_redraw与menu_needs_update两个状态标志，系统仅在进入新页面时执行全屏重绘，而在光标上下移动时，仅局部翻转“上一项”与“当前项”的背景色与字体颜色。此外，利用动态区域回调（menu_dynamic_draw_t），菜单支持在指定的矩形坐标内高频局部刷新传感器实时数据。
+4.业务模块的可扩展性
+得益于函数指针的灵活运用，系统将众多复杂的调试功能高度模块化。例如GPS地图、IMU欧拉角查看、电机PID调参（func_motor_pid_tune）、编码器以及INS惯导回放（func_ins_replay）等任务，均以独立函数或子页面的形式静态挂载于main_items数组中。开发者扩展新功能时，只需在数组中追加相应的结构体项即可，具备极高的代码复用性。
+
+图5.1 指针菜单图
+
+4.2 INS惯导模块
+回放阶段由INS_replay_task接管。系统读取当前脉冲值，并寻找对应的轨迹段。当车辆位于两个轨迹点之间时，通过线性插值计算出平滑的目标控制量。
+这一机制允许回放速度与录制速度解耦，车辆甚至可以中途暂停或改变速度，而不影响轨迹还原。
+3.纯磁力计闭环追踪模式
+为了解决开环复现舵机角度容易累积漂移的问题，系统引入了INS_MAG_ONLY_MODE。
+在此模式下，录制时point.steer_angle存储的不再是遥控器的舵机输入角度，而是当前时刻车辆的绝对磁力计航向（0~360°）。
+在回放时，系统将插值得到的期望航向与当前实测的绝对航向进行比较，并通过PD控制器直接生成舵机控制量。
+这种闭环策略让车辆像追踪虚拟磁场线一样运行，极大增强了抗干扰能力，且不再需要对齐起跑线角度。
+4. 多重里程与航向误差修正
+除了基础的回放控制，系统还集成了多个纠偏模块，以应对轮胎打滑、侧滑（tire scrub）及传感器漂移带来的累积误差。
+打滑检测(IMU Slip)：对比加速度计积分出的速度与编码器推算的速度，若编码器速度异常偏大，则按比例缩减计入里程的脉冲数。
+转向侧滑补偿(Steer Odom Scrub):根据经验模型，转角越大，侧滑导致的里程多记越严重。系统通过 INS_STEER_ODOM_SCRUB_K 计算补偿系数动态缩小脉冲增量。
+弯道里程补偿(Gyro Curve)：在弯道时，通过陀螺仪角速度和轴距推算理论行驶距离，将其与编码器读数加权融合。
+GPS距离融合：若检测到 GPS 速度有效，利用gps_calc_distance_m算出真实地理距离，以此动态校准编码器的全局缩放系数odometry_scale。
+4.3语音识别
+1 数据帧协议解析
+CI1302 的通信协议固定为 8 字节长，包含帧头、命令类型、传输方向、标签 ID（即具体命令）以及校验和：
+帧头: 0x6B (字节0)
+命令标识: 0x79 (MCU接收) 或 0x6A (ACK) (字节1)
+方向: 0x81 (发送) (字节3)
+校验和: 前 6 字节累加和的低 8 位 (字节6)
+帧尾: 0xFB (字节7)
+在 ci1302_parse_packet 函数中，通过滑动窗口法遍历缓冲区，一旦找到 0x6B 且第 8 字节为 0xFB，则提取校验和进行对比：
+解析成功后，会使用 memmove 将已处理的帧移出缓冲区。解析过程全程加了中断锁（IfxCpu_disableInterrupts），保证了多任务环境下缓冲区读取的原子性。
+2.指令映射与任务分发
+驱动中定义了 CI1302_CommandID_t 枚举类型，包含了从基础的车灯控制到高级的惯导动作（如 "通过门洞一"、"蛇形前进十米"）共 39 条指令。同时，ci1302_command_desc 数组提供了这些指令对应的中文描述，便于调试输出。
+在应用层 CI1302_task() 中，模块获取到合法指令后，通过 switch 结构执行动作，并调用 INS_dispatch_voice_cmd(cmdID) 将高级轨迹指令（如 0x15-0x26）转发给惯导 (INS) 模块执行：
+3.双向交互 (ACK 机制)
+为了保证语音指令被 MCU 成功接收，该驱动支持向语音模块发送 ACK 应答。ci1302_process_with_ack 在解析成功后会自动调用 ci1302_send_ack(cmdID)。
+ACK 帧格式为：6B 6A 00 82 ID 00 CheckSum FB。此外，系统初始化时通过 ci1302_send_handshake() 发送握手包以确认链路。
+4.4 IMU963RA解算
+姿态解算核心位于 ICM_AHRSupdate 函数。该函数采用互补滤波算法，结合了陀螺仪的高频动态响应与加速度计的低频静态基准，通过四元数更新机体姿态。算法核心步骤如下：重力向量估算：利用当前一拍的四元数 ($q_0, q_1, q_2, q_3$)，推算出理论上机体坐标系下的重力向量方向 ($v_x, v_y, v_z$)。误差计算：将归一化后的实际加速度计测量值 ($a_x, a_y, a_z$) 与估算的重力向量 ($v_x, v_y, v_z$) 进行叉积运算，得到姿态误差向量 ($e_x, e_y, e_z$)。Cex = ay * vz - az * vy;
+ey = az * vx - ax * vz;
+ez = ax * vy - ay * vx;
+PI 调节补偿陀螺仪：利用误差向量通过 PI 控制器（param_Kp = 0.17, param_Ki = 0.004）去补偿修正当前的陀螺仪角速度读取值 ($g_x, g_y, g_z$)。这一步有效抑制了陀螺仪的低频漂移。
+
+四元数微分方程更新：将修正后的角速度代入一阶龙格-库塔公式，更新四元数，最后对四元数重新进行归一化。得到更新后的四元数后，在 ICM_getEulerianAngles() 中将其转换为直观的欧拉角（Pitch, Roll, Yaw）。3. 磁力计航向角计算与硬铁校准地磁计处理逻辑集中在 mag_get_heading() 等函数中。它通过测量地球磁场分量来确定绝对航向（0~360度）。3.1 硬铁误差补偿磁力计极易受到车体金属或周围磁场的“硬铁干扰”，导致测量圆心发生偏移。代码中定义了硬铁偏移量 mag_offset_x 和 mag_offset_y，在计算前进行扣除：
+
+3.2 真实航向对齐与滤波计算出原始角度 mag_heading_raw 后，需要减去一个标定好的 mag_angle_offset (默认 102.0度)，使模块输出与真实地理正北对齐。同时包含了一个东西向的镜像翻转修正逻辑：
+
+为防止数值跳变，在最终输出 mag_heading_deg 时，应用了低通滤波器，并特别处理了 0/360 度跨界时的最短路径问题：
+
+此外，模块提供了 mag_offset_save 和 mag_offset_load 函数，可将校准后的硬铁参数和角度偏差存储到 Flash 扇区中持久化，避免每次重启都需要重新校准。
+4.5 PID算法
+比例积分微分控制（proportional-integral-derivative control），简称PID控制，是最早发展起来的控制策略之一，由于其算法简单、鲁棒性好和可靠性高，被广泛应用于工业过程控制，仍有90%左右的控制回路具有PID结构。
+简单的说，根据给定值和实际输出值构成控制偏差，将偏差按比例、积分和微分通过线性组合构成控制量，对被控对象进行控制。常规PID控制器作为一种线性控制器。
+
+图5.2 PID算法示意
+
+舵机采用位置式PD算法，该算法是在PID控制算法的基础上将积分项置0，只通过比例项和微分项对系统进行闭环控制。公式如下：
+    
+将PD算法用于舵机转向的闭环控制，经过调试，能够起到不错的效果，最后敲定将该算法用于我们组的转向控制算法。
+速度环使用位置式PI进行闭环。该算法是在PID控制算法的基础上将微分项置0。
+
+第五章 开发工具及调试过程
+5.1开发工具AURIX简介
+AURIX™ Development Studio（以下简称ADS）是英飞凌公司于2019年底推出的免费*的集成开发环境，支持英飞凌TriCore™内核AURIX™ 系列MCU；ADS是一个完整的开发环境，包含了Eclipse IDE、C编译器、Multi-core调试器、英飞凌底层驱动库（low-level driver,iLLD),同时对于编辑、编译及调试应用代码没有时间及代码大小的限制。
+ADS软件由以下组成：
+1.AURIX™ Development Studio 1.1.8
+2.DAS 7.1.9:英飞凌AURIX™驱动
+3.iLLD 1.0.1.11.0:英飞凌底层驱动库
+4.Oracle JRE11: Java Runtime Environment
+5.TASKING Debugger v1.1r2–仅能使用于非商业目的
+6.TASKING Compiler v1.1r1–仅能使用于非商业目的
+7.CMake 3.14.0
+8.GNU Make 4.2.1
+9.GNU Coreutils 5.3.0
+
+图6.1 AURIX开发界面
+同时在程序的编译和运行过程中，遇到的大部分问题都能够通过ADCS的Debug模式解决。在这个模式下，用户可以单步运行程序,在设置断点处停止或复位程序，还可以将变量添加到“Variables”列表中，方便跟踪其变化。
+5.2程序烧录工具Infineon Memtool简介
+英飞凌的MEMTOOL软件支持英飞凌的XC800, XC16x, XC2000, XMC4000 和TriCore系列FLASH和OTP MCU的编程烧录。 MEMTOOL软件通过一个标准串口连接待编程目标MCU。对于XC2000, XMC4000 和 TriCore 系列MCU, 也支持JTAG 和英飞凌自己的DAS(Devices Access Server)，是非常好用的编程烧录软件。
+
+图6.2 lnfineon使用界面
+
+
+
+
+
+
+
+
+
+
+===== TABLE 1 =====
+ | 
+图3.1 车模官方图片 | 图3.2 车模原装电机
+
+===== TABLE 2 =====
+ | 
+图4.4 24V降5V模块实物图 | 图4.5 灯板电源实物图
+
+===== TABLE 3 =====
+ | 
+图4.8 单驱实物图 | 图4.9 双驱实物图
+
+===== TABLE 4 =====
+01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73 74 75 76 77 78 79 80 81 82 | // INS 子菜单定义，挂载了三个具体的执行函数 MenuItem ins_items[] = {     {"1. Record Track", func_ins_record, NULL},     {"2. Replay Track", func_ins_replay, NULL},     {"3. Sim Map", func_ins_sim_map, NULL}, }; MenuPage ins_menu = {     "INS",     ins_items,     sizeof(ins_items) / sizeof(MenuItem),     NULL, 0 };   // 主菜单定义，将各个子菜单（如 object_menu, imu_menu, ins_menu 等）汇聚到根节点 MenuItem main_items[] = {     {"1. Object Select", NULL, &object_menu},     {"2. imu963ra", NULL, &imu_menu},     // ... 省略部分代码 ...     {"7. INS", NULL, &ins_menu},     {"8. Voice", NULL, &voice_menu}, };   MenuPage main_menu = {     "Smartcar Team",     main_items,     sizeof(main_items) / sizeof(MenuItem),     NULL, 0 };   C // 确认键 (KEY_3) 逻辑：执行函数或进入子菜单 if (key_get_state_internal(KEY_3) == KEY_SHORT_PRESS) {      key_clear_state_internal(KEY_3);     item_ptr = &current_page->items[current_selection];       if (item_ptr->function) {         item_ptr->function();      // 存在绑定的函数则直接执行         menu_full_redraw = 1;      // 从功能函数退出后触发全屏重绘     } else if (item_ptr->sub_page) {         item_ptr->sub_page->parent = current_page; // 记录当前的返回路径         current_page = item_ptr->sub_page;         // 指针切换，下探到子菜单         current_selection = 0;         menu_needs_update = 1;         menu_full_redraw = 1;     } }   // 返回键 (KEY_4) 逻辑：通过 parent 指针回退 if (key_get_state_internal(KEY_4) == KEY_SHORT_PRESS) {      key_clear_state_internal(KEY_4);     if (current_page->parent) {         current_page = current_page->parent;       // 指针回退到父菜单         current_selection = 0;         menu_needs_update = 1;         menu_full_redraw = 1;     } }   C } else if (menu_needs_update) {     prev = last_selection;     curr = current_selection;           // 抹除上一项的高亮背景，恢复默认的黑底和字体颜色     if (prev >= 0 && prev < current_page->num_items) {         y_prev = 40 + prev * 20;         ips200_fill_rect(5, y_prev - 2, ips200_width_max - 5, y_prev + 16, RGB565_BLACK);         ips200_set_color(current_font_color, RGB565_BLACK);         ips200_show_string(10, y_prev, current_page->items[prev].name);     }           // 为当前选中项绘制高亮背景块，并反转字体颜色     if (curr >= 0 && curr < current_page->num_items) {         y_curr = 40 + curr * 20;         ips200_fill_rect(5, y_curr - 2, ips200_width_max - 5, y_curr + 16, current_font_color);         ips200_set_color(RGB565_BLACK, current_font_color);         ips200_show_string(10, y_curr, current_page->items[curr].name);     }           last_selection = current_selection;     menu_needs_update = 0; }
+
+===== TABLE 5 =====
+01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 | C // 寻找包含 current_pulse 的轨迹区间 while ((ins_status.replay_index + 1) < ins_status.point_count) {     if (!INS_read_point(ins_status.replay_index + 1, &p1)) return;           // 判断前进或倒车，直到找到正确的点     if ((p1.flag & 1u) == 0u) {         if (ins_status.current_pulse < p1.pulse) break; // 前进     } else {         if (ins_status.current_pulse > p1.pulse) break; // 倒车     }     ins_status.replay_index++; }   // 提取前后两个点，计算当前进度比例 (ratio) ratio = (float)(ins_status.current_pulse - p0.pulse) / (float)(p1.pulse - p0.pulse); // 线性插值计算目标角度 target = p0.steer_angle + (p1.steer_angle - p0.steer_angle) * ratio;
+
+===== TABLE 6 =====
+01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 | C #if INS_MAG_ONLY_MODE {     float current_heading = mag_heading_deg;           // 计算航向误差（归一化到 ±180°）     float heading_error = INS_normalize_heading_diff(target - current_heading);           // PD 控制器输出     float p_term = INS_MAG_ONLY_KP * heading_error;     float d_term = INS_MAG_ONLY_KD * (heading_error - mag_only_last_error);     mag_only_last_error = heading_error;           // 输出直接作为目标舵角     float steer_output = INS_limit_f(-(p_term + d_term), INS_MAG_ONLY_OUTPUT_MAX);     ins_status.target_angle = steer_output;     servo_set_target_angle(ins_status.target_angle); } #endif
+
+===== TABLE 7 =====
+01 02 03 04 05 06 07 08 09 10 11 12 13 14 | C // 计算前6字节的和，并取低8位 uint32_t sum = CI1302Data.lastFrameBytes[0] + CI1302Data.lastFrameBytes[1] +                CI1302Data.lastFrameBytes[2] + CI1302Data.lastFrameBytes[3] +                CI1302Data.lastFrameBytes[4] + CI1302Data.lastFrameBytes[5]; uint8_t calcChecksum = (uint8_t)(sum & 0xFF);   if (calcChecksum == checksum) {     // 验证命令ID是否在合法范围内 [0x01, 0x26]     if (tagID >= 0x01 && tagID <= CI1302_MAX_CMD_ID - 1) {         CI1302Data.isConnected = 1;  // 更新连接状态         return tagID;                // 返回解析成功的命令ID     } }
+
+===== TABLE 8 =====
+01 02 03 04 05 06 07 08 09 10 11 12 | C if (ci1302_process_with_ack()) {     uint8_t cmdID = ci1302_get_command_id();     // 打印调试信息     printf("[CI1302] Command: 0x%02X -> %s\\r\\n", cmdID, ci1302_get_command_desc(cmdID));           // ... 执行一些基础命令输出 ...       // 将控制指令分发给 INS (惯性导航) 模块执行相应的轨迹任务     INS_dispatch_voice_cmd(cmdID);     ci1302_clear_command(); // 处理完毕后清除标志位 }
+
+===== TABLE 9 =====
+1 2 | CI_ex += halfT * ex; gx = gx + param_Kp * ex + param_Ki * I_ex;
+
+===== TABLE 10 =====
+1 2 3 4 | Cmx = (float)imu963ra_mag_x - mag_offset_x; my = (float)imu963ra_mag_y - mag_offset_y; // 利用反正切函数计算原始航向角（弧度转角度） heading_rad = atan2f(-my, mx);
+
+===== TABLE 11 =====
+1 2 3 | C// 东西镜像翻转修正 corrected = 360.0f - corrected; if (corrected >= 360.0f) corrected -= 360.0f;
+
+===== TABLE 12 =====
+1 2 3 4 | Cfloat diff = corrected - mag_heading_deg; if (diff > 180.0f)       diff -= 360.0f; else if (diff < -180.0f) diff += 360.0f; mag_heading_deg += diff * 0.3f; // 0.3为滤波系数
+
+===== TABLE 13 =====
+01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 | 1.float PidLocCtrl(pid_param * pid, float error)   2.{   3.    /*  4.     * 比例系数  5.     */   6.    last_err_k=1-err_k;   7.   8.    /* 累积误差 */   9.   10.    pid->integrator += error;   11.   12.    /* 误差限幅 */   13.    constrain_float(pid->integrator, -pid->imax, pid->imax);   14.   15.   16.    pid->out_p = pid->kp * error*err_k+pid->last_error*last_err_k;   17.      18. pid->out_i = pid->ki * pid->integrator;   19.      20. pid->out_d = pid->kd * (error - pid->last_error);   21.   22.    pid->last_error = error;   23.   24.    pid->out = pid->out_p + pid->out_i + pid->out_d;   25.   26.    return pid->out;   27.}
+
+===== TABLE 14 =====
+01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 3 | 1.float PidLocCtrl_speed_turn(pid_param * pid, float error,float max,float min)   2.{   3. //------------------------------误差的处理 包含err和i--------------------------------   4.   5.    static float error_processing=0;//处理后的误差   6.    /*  7.     * 比例系数  8.     */   9.   10.    last_err_k=1-err_k;   11.   12.    if(fabs(error)>Straight_line_error||fabs(eulerAngle.roll)>5)//判断不是直线开始累加   13.    {   14.        error_processing=err_k*error+last_err_k* pid->last_error ;   15.   16.        speed_turn_P_new=speed_linear_variable(error_processing,max,min); //-动态P的变更-   17.   18.            forward_change();//保存更新   19.    }   20.    else if(System_DataStruct.Element_Flag == LEFT_CIRCLE_IN || RIGHT_CIRCLE_IN)   21.    {   22.        error_processing=err_k*error+last_err_k* pid->last_error ;   23.        speed_turn_P_new=speed_linear_variable(error_processing,max,min); //-动态P的变更-   24.   25.        forward_change();//保存更新   26.    }   27.    else   28.    {   29.        error_processing=0;   30.        /* 累积误差 */   31.        pid->integrator=0;//i清零   32.    }   33.    /* 累积误差 */   34.    pid->integrator += error_processing;   35.   36.    if((error_processing > 0 && pid->last_error <0) || (error_processing < 0 && pid->last_error >0))//左右摇摆清零   37.    {   38.        pid->integrator=0;//i清零   39.    }   40.   41.   42.   43.    /* 误差限幅 */   44.    constrain_float(pid->integrator, -pid->imax, pid->imax);   45.   46.   47.   48.       49.pid->out_p = pid->kp * error_processing;   50.     51.  pid->out_i = pid->ki * pid->integrator;   52.      53. pid->out_d = pid->kd * (error - pid->last_error);   54.   55.    pid->last_error = error;   56.   57.    pid->out = pid->out_p + pid->out_i + pid->out_d;   58.   59.    return pid->out;   60.}

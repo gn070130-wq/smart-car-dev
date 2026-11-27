@@ -1,0 +1,749 @@
+
+第二十一届全国大学生智能汽车竞赛
+
+
+技 术 报 告
+
+
+
+
+
+
+学    校：厦门大学嘉庚学院
+队伍名称：南鸿奇异果
+参赛队员：马锐杰、王英卓、陈淼淼、卢乐乐、林沛忻
+带队老师：刘萍  康恺  
+
+
+
+
+关于技术报告和研究论文使用授权的说明
+
+本人完全了解全国大学生智能汽车竞赛关保留、使用技术报告和研究论文的规定，即：参赛作品著作权归参赛者本人，比赛组委会可以在相关主页上收录并公开参赛作品的设计方案、技术报告以及参赛模型车的视频、图像资料，并将相关内容编纂收录在组委会出版论文集中
+
+
+
+
+
+
+
+
+							  参赛队员签名：____________________
+
+							  带队老师签名：______________ ______
+								  日        期：     2026.8.10      
+
+
+
+
+
+
+
+人工智能模型_南鸿奇异果_技术实现方案
+
+摘要：全国大学生智能汽车竞赛作为一项面向高校学生的创新性科技赛事，旨在培养参赛者在智能控制、机器视觉、嵌入式系统等领域的综合实践能力。本文详细介绍了厦门大学嘉庚学院“南鸿奇异果”团队在第二十一届竞赛人工智能模型组中的技术方案，涵盖硬件设计、机械结构优化、控制算法及图像处理等核心内容。团队通过模块化设计、低重心布局及高效的算法实现，显著提升了车辆的稳定性和赛道适应性。报告重点阐述了基于TC264单片机的控制系统、逆透视变换与纯追踪算法的视觉导航方案，以及轻量化机械结构的设计思路，为智能车竞赛的技术发展提供了可借鉴的实践经验。
+
+
+
+
+
+关键词：Rk3588、TC264、机器视觉、目标检测、语义分割
+
+
+
+
+
+
+
+
+
+
+
+第一章 电路部分
+人工智能模型组硬件与机械结构成员 2023级自动化专业 陈淼淼
+1 方案设计概述
+本方案根据2026年第二十一届全国大学生智能车竞赛人工智能模型相关要求进行设计，通过2次大迭代与数次小迭代设计，使得方案更加稳定。整体设计思路参考往年模型组的技术报告、与逐飞科技的方案综合评价后进行设计。考虑到整车重心问题，设计电池仓，主驱一体电路，定位模块固定件。
+所需的模块分析
+整车需要12V供电，有两个RS380电机驱动，一个BDS300舵机负责车辆转向，需要预留编码器接口PZ254V-12-6P，采用英飞凌的芯片TC264作为下位机主控，上位机为百度公司香橙派赛事专用板卡，上下位机通过串口进行通信，下位机主板含5V给上位机供电。车辆的电路板连接接口需要预留。
+ 整车模块选型
+电池采用3S锂电池，额定电压11.1V，满电12.6V，电源稳压部分采用德州仪器公司TPS5450DDAR，为整车提供了5V电源和舵机电源。对于3.3V电源，采用了RT9013-33型LDO稳压芯片。电机驱动部分采用DRV8701电机控制芯片和TPN2R703NL型MOS管进行设计。
+
+2 比赛使用的电路板原理图
+2.1. 主驱一体板（装于车辆尾部）
+
+图 1 下位机原理图（1）
+图 2 下位机原理图（2）
+
+图 3 下位机原理图（3）
+
+图 4 PCB设计文件
+
+
+图 5 主板实物
+3 设计剖析
+3.1. 主驱一体板
+3.1.1．电源输入部分
+电源由12V供电，于是我们选择3S电池作为供电源，自作了一个焊盘作为焊接口，采用单刀双掷小开关，用来减少PCB板所需要的面积。
+    
+图 6 电源输入部分原理图
+3.1.2．上位机电源供电部分
+根据百度公司给出的相关技术文件，2026年人工智能模型组使用的上位机（板卡）为“香橙派5竞赛专用型”，该设备需要5V/4A的供电，故采用TPS5450芯片将电池输入的12V降压到5V用于上位机供电。板卡的电源输入接口为TYPEC接口。故在设计的时候，将主板上的TYPEC和板卡TYPEC相连为上位机进行供电。
+在备赛过程中，经常出现需要长时间使用新板卡的情况，为防止电池过放所产生的不良影响，我们在主板增加了显示电压的数码管。 
+
+图 7上位机电源供电部分
+3.1.3. 舵机的供电部分
+我们使用的的舵机型号为BDS300，是数字舵机，推荐的工作电压为7.4V。对于舵机的供电，通过DC-DC降压将12V的电池供电转换成舵机所需要的7.4V工作电压。我们选用德州仪器TPS5450型DC-DC稳压芯片。对于电源的外围电路设计参考TI公司的WEBENCH® Power Designer电源设计工具，大幅度降低电源的设计成本。
+
+图 8舵机的供电部分原理图
+3.1.4. 电机驱动部分
+电机驱动部分采用德州仪器公司DRV8701ERGER型全桥栅极驱动芯片。以及贴片安装的东芝TPN2R703NL型MOS管。DRV8701E芯片支持满占空比的信号输入,且无需升压电路,大幅度降低了设计难度并且节约PCB上的空间,东芝TPN2R703NL型MOS管内阻仅有3.3mΩ,在大电流的情况下发热更低。且该型号MOS管封装体积较小,提高了整个主板的空间利用率。电机接口选择了XT30接口. 
+
+图 9电机驱动部分原理图
+3.1.5 12V降压5V方案
+电路中需要部分5V供电，且用5V稳压到3.3V，总体所需电流不大，综合考虑外围电路复杂程度和pcb空间，选用RY9121E芯片，可输出2A电流，足够满足电路所需电流。
+
+图10 12V降压5V方案原理图
+3.1.6. 5V稳压3.3V方案
+车上有很多的部分需要3.3V供电，但累计的电流不会很大，通过节约成本等诸多因素考量，选择了RT9013-33型号LDO线性稳压芯片。外围电路简单，能输出500mA的电流，足够车模的电源需求。
+       
+图 11 5V稳压3.3V方案原理图
+3.1.7. 串口部分设计
+此部分设计通过CH340进行转换。采用Type-C接口连接上下位机。在实际焊接过程中，选用含有内置晶振的CH340N型芯片。
+
+图 12 串口部分原理图
+第二章  机械结构部分
+2.1设计思路
+百度官方规定车模转向为阿克曼转向结构，我们选用C车模为主体，进行部分改造，作为小型车模，为了追求高速行驶，不能和真实车辆相比，经过多次实验，我们发现低重心的车相较于原车模较高的重心有更好的转弯性能同时又兼顾了不错的直道加速能力，所以整车设计思路为低重心，设法提升弯道性能。
+2.2底盘改造部分
+原厂C车模的轴距较大，为了提升转弯性能，我们将车模底盘进行改造，缩短了轴距，转弯前桥和驱动后桥保持不变。方框1框选部分为转向前桥，方框2框选部分为摄像头支架安装孔，方框3框选部分为定位模块和板卡固定架的安装孔，方框4框选部分为后桥安装孔，相比与原厂车模轴距缩短了五分之一
+
+图 13 底盘改造实物图
+2.3定位模块和板卡固定架
+图中右边部分为上位机固定，通过四周的四个固定孔将上位机竖直固定起来，左下部分为电池放置位置，左上为比赛官方给的定位模块固定孔，图14为安装完成后的实物图。
+
+图 14 固定架图片
+
+图 15 安装效果图
+2.4摄像头固定支架
+百度官方指定摄像头型号，且高度不超过15cm，为了适配我们的软件代码，取10cm的高度，下图为打印出来的碳纤维实物。
+
+图 16 摄像头固定支架实物图
+
+图 17 摄像头固定支架安装效果图
+2.5车尾架
+我们把主板放在了车尾，为了方便安装主板并将其固定，用sw进行建模并打印了一个尾架，并用螺丝进行固定
+
+图 18 车尾架图
+
+图 18 车尾架安装效果图
+
+
+
+
+
+本论文中车模具体参数如下表
+车模系统参数指标
+
+
+第三章 控制部分
+人工智能模型组软件成员 2024级自动化专业 王英卓
+整车控制系统以英飞凌（Infineon）高性能AURIX™系列的TC264单片机作为核心控制器，充分发挥其强大的实时处理能力、丰富的外设资源以及高可靠性，确保系统在复杂工况下的稳定运行。
+3.1 串口数据处理
+主控系统通过UART串行通信接口与Rk3588人工智能开发板进行数据交互，实时接收由Rk3588输出的目标控制指令或环境感知信息（如目标位置、运动状态、路径规划结果等）。接收到的数据经过校验和解析后，由TC264单片机进行逻辑判断与算法处理，进而生成相应的控制信号，精确驱动舵机执行转向或姿态调整动作，实现对车辆方向的精准控制。
+为此，我们自定义了传数据传输格式：
+帧头和帧尾用于标识数据包的起始与结束位置，有效区分连续数据流中的各个独立信息单元，确保接收端能够准确识别和解析完整的数据帧。功能帧地址用于指明该帧的具体功能或指令类型，便于系统对不同类别的数据进行针对性处理，提升通信的灵活性与准确性。帧长字段用于指示数据包中有效数据的长度，有助于接收方预先分配缓冲区并校验数据完整性。其后的数据域则承载实际的传输内容，当数值较大时，可采用高位与低位拆分的方式进行存储与传输，以提高数据表达的精度与兼容性。
+例如，0x42 0x08 0x06 0x00 0x22 0xFF为一个自定义数据包，其中0x42为帧头，表示帧的开始；0x08为功能帧地址，说明该帧包含的信息是陀螺仪读取到的偏航角；0x06为帧长，此帧长度为6；0x00与0x22为有效数据帧的高低位，经过换算可得当前偏航角为16°；0xFF表示帧尾，表示帧的结束。
+以下是所有功能帧列举：
+
+3.2 电机PID闭环控制
+在电机速度控制方面，系统采用经典的位置式PID控制算法构建闭环反馈系统。通过编码器等传感器实时采集电机的实际转速与位置信息，与设定的目标值进行比较，计算出偏差并代入PID控制律，动态调节PWM输出占空比，从而实现对电机转速的精确、平稳控制。
+增量式PID控制算法的表达式如下：
+
+位置式PID算法结构清晰、响应迅速，结合TC264强大的浮点运算能力和定时控制模块，有效提升了系统的动态响应性能和抗干扰能力，保证了整车在不同负载和路况下的稳定行驶。
+
+第四章 图像处理与智能决策算法部分
+人工智能模型组软件成员 2024级计算机科学专业 马锐杰
+人工智能模型组软件成员 2024级软件工程专业  卢乐乐
+在图像处理方面，我们采用了深度学习感知与经典视觉处理相结合的技术路线。一方面，通过目标检测与语义分割模型识别赛道中的关键要素与可行驶区域，为环境理解提供语义级别的场景信息；另一方面，我们采用逆透视变换，将摄像头采集的前视图像转换为俯视图，有效消除透视畸变，获得道路场景的鸟瞰视角。基于俯视图，进一步进行赛道边线的提取与等距采样。通过对采样点的几何特征分析，识别赛道中的各类元素，实现环境感知与路径理解。在此基础上，结合纯追踪算法，动态计算车辆当前应跟踪的预瞄点，并生成相应的转向控制指令，引导智能车准确、平稳地沿赛道行驶。
+4.1基于多线程RKNN-NPU双模型并行处理设计
+为兼顾赛道全局语义理解与动态微小障碍物的超视距感知，系统在 RK3588 平台上部署了双深度学习感知流水线，基于多线程线程池实现双模型全异步并发推理:
+4.1.1 目标检测模型
+目标检测任务采用PP-YOLOE+网络，基于百度飞桨PaddleDetection框架训练，输入图像分辨率为640×480，用于识别赛道中的车辆、门、金币、行人、路牌、限速标志六类目标要素。
+训练数据全部来源于实际赛道场景的现场采集，使用labelme工具进行矩形框标注，并转换为VOC格式标注文件用于训练。在数据集构建过程中，我们发现部分类别存在标注质量问题（如路牌类别与地面圆形标识物存在混淆标注），通过人工逐类核查与标注修正，显著提升了对应类别的检出精度。针对行人与金币、车辆邻近或部分遮挡场景下的漏标问题，我们坚持按目标可见轮廓分别标注，避免同一视觉特征在数据集中获得前后矛盾的监督信号。此外，针对部署环境中实际出现的背景误报问题（如实物蓝色幕布被误判为路牌），我们采集该场景并以空标注形式作为负样本加入训练集，有效抑制了该类误报。
+    
+目标检测效果图
+模型训练完成后，依次完成动态图推理验证、静态图导出、ONNX格式转换及输入输出维度固定化处理，再进行最终部署。
+4.1.2 语义分割模型
+为获取更精细的可行驶区域信息，我们同时训练了基于PP-LiteSeg网络的语义分割模型（PaddleSeg框架），输入分辨率为320×256，用于对赛道图像进行背景与可行驶道路区域的二分类像素级分割。
+训练数据同样通过labelme多边形标注工具对道路区域进行标注，标注结果经脚本转换为单通道PNG标签图（像素值0代表背景、1代表道路区域）后用于训练。新增数据集在保留已有模型权重的基础上采用增量训练方式并入，加快了模型收敛速度、节省了训练时间。
+   
+语义分割效果图（彩色可视化结果）
+4.1.3 部署与集成
+两套模型训练完成后均导出为ONNX格式，经维度固定化处理后转换为RKNN格式，部署于Rk3588硬件平台。
+4.2 图像巡线算法
+4.2.1 中线生成算法
+我们采用的是中心扫线法，中心扫线法指每行图像的起始扫线从上一行图像的中线位置开始，从白点向左和向右扫到黑点，以找到所需的边界线，并拟合出赛道的中心线。
+优点：对环境光线依赖较小。光线不均匀造成的反光仅会影响反光存在的几行，而不会对整幅图像之后的边界线提取造成干扰。
+缺点：消耗时序较多。需要遍历图像中大多数像素点才能找到赛道的边界线
+4.2.2 扫线起始点选择
+“根据不同的赛道元素类型，指定每行的扫线起始点”是指在每行扫线过程中，对当前赛道类型进行区分，并根据预先确定的赛道元素类型明确扫线的方向及起始点。在扫线过程中，如果判断已经扫到了赛道外部，则停止扫线，体现了“可行性剪枝”的思想。这种方法不仅提高了处理效率，还增强了对复杂赛道元素的识别能力。
+4.2.3 赛道中线拟合
+在双边黑线赛道的环境下，我们首先精确地提取了赛道的黑线信息。然后，通过将赛道中心的拟合函数模块与这些信息结合，我们以数学的精确性计算了左右边线的中值，从而得出了赛道的精确中线。下图为图传系统上的处理效果图。
+
+左右中线的效果展示（彩色可视化结果，其中蓝色为左线，绿色为中线，红线为右线）
+4.3 小车和行人的避障方案及ocr路牌判断
+4.3.1 避障方案
+我们采用状态机分成多个场景(例如遇车、遇人、先车后人、先人后车、正常路段)，多个状态交替切换，实现所需的任务场景。
+部分场景展示：
+       
+遇车往相反方向转向
+   
+遇人往相反方向转向
+
+4.3.2 路牌判断
+我们通过使用目标检测模型获取路牌位置信息，并使用ocr获取路牌中的文字内容，并交给文心一言大模型进行路牌内容指引判断走左路还是走右路。          
+获取路牌情况，进行左右巡线的场景 
+
+第五章  ar虚拟场景定位系统设计部分
+人工智能模型组软件成员 2024级机械设计制造及其自动化专业 林沛忻
+5.1 高精度小车定位
+系统基于AprilTag视觉基准码进行绝对位姿测算。为平衡高分辨率（如 1600×1200）下的计算开销与运动工况下的边缘退化问题，系统引入了多层级自适应视觉解算架构。
+
+5.1.1 图像预处理与对比度自适应增强方案
+为解决移动载体在运动过程中由于曝光变化或运动模糊导致的边缘退化问题，系统在灰度化后引入了对比度受限自适应直方图均衡化（CLAHE）机制。
+局部网格直方图均衡：将图像划分为8x8的非重叠网格分别计算直方图，避免全局均衡化对暗区或亮区的过曝影响。
+对比度裁剪：将裁剪系数设为 3.0，对超出阈值的直方图柱进行均匀重分配，抑制背景噪声放大。
+双线性插值消除块效应：在网格交界处采用双线性插值平滑像素灰度，锐化AprilTag的黑白跳变边缘，显著提升角点检测的鲁棒性。
+5.1.2 双检测器分级检测方案
+系统针对场地大范围标定码与载体运动码的不同需求，并行配置了两个参数差异化的AprilTag解算器：
+快速粗扫器（Fast Detector）：配置图像降采样与无高斯平滑，以极低耗时在大视场中快速定位场地静态标定码集合。
+深度精扫器（Deep Detector）：配置全分辨率与 轻量高斯模糊抑制高频噪点，用于高精度提取载体标定码的亚像素角点。
+5.1.3 单目空间几何变换与坐标系映射方案
+视觉定位的核心是将图像像素平面的二维角点映射为物理世界中的连续三维位姿。
+相机外参解算：利用场地四周已知绝对物理坐标的静态标定码，解算出相机在世界坐标系下的旋转四元数与空间位置。
+物理几何修正与高度补偿：在解算小车物理坐标时，引入安装物理高度补偿项 tag_height，结合物理尺度系数以及物理偏置，完成从透视投影到场地二维平面运动学坐标(x,y,yaw)的解算。
+
+ar定位场景效果展示
+
+
+ar定位实地场景展示
+结论
+在第二十一届全国大学生智能汽车竞赛中，厦门大学嘉庚学院“南鸿奇异果”团队针对人工智能模型组的竞赛要求，从硬件设计、机械结构优化、控制算法及视觉导航等多个方面进行了系统性研究与创新实践。通过模块化电路设计、低重心布局和高效的算法实现，团队成功提升了智能车的稳定性、响应速度和赛道适应性。
+在硬件方面，团队采用德州仪器TPS5450和DRV8701等高性能芯片，优化了电源管理和电机驱动模块，确保了系统的稳定供电与高效动力输出。机械结构上，通过3D打印轻量化套件和合理的重心调整，显著提升了车辆的弯道性能。在控制算法方面，基于TC264单片机的PID闭环控制和自定义串口通信协议，实现了精准的电机调速和舵机控制。视觉导航部分，通过边线提取和中线拟合，有效提升了路径规划的准确性和实时性。
+本方案在多次测试和实际比赛中表现出色，验证了其可行性和竞争力。未来，团队将进一步优化算法效率，并研究深度学习在路径规划中的应用，以推动智能车技术的持续发展。本报告为相关竞赛和研究提供了可借鉴的技术思路和实践经验。
+
+
+
+
+
+
+
+
+
+参考文献
+KOFF G A,BOLDRI N B.Automated guided vehicles[J].Materials Handling Handbook,1985:273-314.
+SANDER A,WOLFGANG M.The rise of robotics[J/OL].BCG Perspectives,2014.(2014-08-27)[2024-09-01]. https://www.bcg.com/publications/2014/business-unit-strategy-innovation-rise-of-robotics.
+Dalal N,Triggs B.Histograms of oriented gradients for humandetection[C]//2005 IEEE computer society conference oncomputer vision and pattern recognition (CVPR'05).Ieee,2005,1:886-893.
+Ren S,He K,Girshick R,et al.Faster R-CNN:Towards real-timeobject detection with region proposal networks[J].IEEE transactions on pattern analysis and machine intelligence,2016,39(6):1 137-1 149.
+Kang C H,Kim S Y.Real-time object detection and segmentationtechnology:an analysis of the YOLO algorithm[J].JMST Advances,2023,5(2):69-76
+Redmon J, Divvala S, Girshick R, et al. You only look once: Unified, real-time object detection[C].Proceedings of the IEEE conference on computer vision and pattern recognition. 2016: 779-788.
+王茹,刘大明,张健.Wear⁃YOLO:变电站电力人员安全装备检测方法研究[J].计算机工程与应用,2024,60(9):1 1 1-121.
+陆毅,由诚,杨孜萱,等.汽车视觉感知与自主导航设计系统设计[J].长江信息通信,2024,37(10):9-12.
+
+
+
+
+
+
+
+
+
+
+附录1：第二十一届全国大学生智能汽车竞赛
+车模技术检查表
+
+一、车模技术检查表
+附录2：车模照片
+1、车模外观照片
+车模平放时，俯视照片，前视图，左或右（任选）视图照片. 
+
+
+2、电路板PCB图
+pcb正面
+
+pcb反面
+
+
+3、电路板原理图
+ 
+
+附录3 源代码
+1.icar.cpp
+
+#include "headfile.h"
+#include "threadPool.h"
+#include "roadline.h"
+#include "uart.h"
+#include "Control_car.h"
+#include "MemoryCapture.h"
+#include "draw.h"
+#include "ElementList.h"
+#include "Element.h"
+#include "SteeringLADRC.h"
+#include "searchLine.h"
+#include "QianfanAPI.h"
+#include "FSM.h"
+#include "Scene.h"
+
+#include <sched.h>
+#include "Math_utils.h"
+#include "ww_timerThread.h"
+#include "ww_camera_server.h"
+#include "ww_tcp_client.h"
+
+double get_time_sec() {
+    using namespace std::chrono;
+    auto now = steady_clock::now().time_since_epoch();
+    return duration<double>(now).count();
+}
+
+int main() 
+{  
+    cpu_set_t cpuset;
+    CPU_ZERO(&cpuset);
+    CPU_SET(4, &cpuset);  // 绑定到 core4，可尝试 4~7
+    pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+
+    Config& config = Config::getInstance();
+    if (!config.loadFromFile("config.json")) {
+        std::cerr << "config.json 加载失败" << std::endl;
+        
+    }
+
+    //=================== 初始化部分========================
+    loadLabels(config.MODULE_LABLE_PATH.c_str(), labels, 9);
+    
+    MyRknnThreadPool Trknpu(2, config.MODULE_PATH.c_str(), config.MODULE_SEG_PATH.c_str());
+
+    std::atomic<uint64_t> frame_id{0};
+    std::atomic<bool> running{true};
+
+    
+    roadline roadPoint;
+    Sline::Tracking tracker;
+    ElementList elementList(config.ELEMENT_MATCH_DIST, config.ELEMENT_MAX_LOST, config.ELEMENT_MIN_HITS);
+    
+    double avgPointPosition;
+    double lastAvgPointPosition;
+    int Oweith;
+    bool flagWaitKey = true;
+
+    CameraStreamServer server;
+    server.start_server();
+
+    SmartCarController driver;
+    SteeringLADRC ladrc;
+
+    Uart uart("/dev/ttyUSB0");
+    uart.startReceive();
+    //uart.sendTestCommand(); //串口测试
+
+    //**********状态标志**********/
+    //非线程安全，仅限主循环，引用传递
+    int rolmark = 0;
+    int ocrflag = 2; //2
+    int ocrWatPage = 180;
+    int FSMFrameFlag = 0;
+    int nextDir = -1;
+    static bool rushReady = true;
+    /*****************FSM*******************/
+    FSM::state FSMStateFlag = FSM::state::normal;
+    FSM::InnerStateContext innerStateContext{0,0,0,0.0,0.0,0.0,0.0,0.0,0.0,direction::center,0,0,NormalSpeed,0,0};
+    FSM::StateFunctionContext stateFxContext{avgPointPosition, uart, elementList, innerStateContext, FSM::state::normal, 0.0, tracker};
+
+    /**************************************/
+    
+
+    
+   //*****************************内存**********************************
+    MemoryCapture mem_cap;
+    while (!mem_cap.open("/shm_ar_video") && server.is_running()) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        std::cout << "Waiting for shared memory server..." << std::endl;
+    }
+    //=========================================================================
+    
+    
+    
+    /***************************** 
+    @brief 帧获取线程 内存读取版本
+    
+    */
+    std::thread getFramesT([&]()->void {
+        cv::Mat img;
+        uint64_t shm_frame_id = 0;
+        while (server.is_running() && running) {
+            if (mem_cap.read(img, shm_frame_id)) {
+                Trknpu.submitTask(img, shm_frame_id);
+            } else {
+                std::this_thread::sleep_for(std::chrono::milliseconds(10));
+                if (!mem_cap.isOpened()) {
+                    mem_cap.open("/shm_ar_video");
+                }
+            }
+        }
+    });
+
+    if(config.NORMAL_DEBUG)
+    {   
+        printf("--------------[向下传入部分参数!]-------------------\n");
+        //uart.sendParams(6.5f,0.15f,0);
+        printf("--------------[等待按键发车!]-------------------\n");
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+        std::cin.get();  
+
+        // while(!uart.keypress.load() &&  server.is_running()){
+        //     std::this_thread::sleep_for(std::chrono::milliseconds(50)); 
+        // }
+        uart.keypress = false;
+        uart.sendMileTarget(0,40000);
+        uart.sendMileTarget(1,10);
+        uart.sendMileTarget(2,10);
+        uart.sendMileTarget(3,10);
+
+        uart.buzzerSound(); // 祖传提示音效
+
+        uart.carControl(5530, NormalSpeed);
+
+        printf("[发车!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!]\n");
+    }
+
+    while(server.is_running()) 
+    {
+        uint64_t nextId = 0;
+        detect_result_group_t detections;
+        segmentation_result_t segResult;
+        uint64_t latest_id_y = 0;
+        uint64_t latest_id_s = 0;
+        cv::Mat resImg;
+        cv::Mat resImgSeg;
+        while (running&&server.is_running()) {
+
+            detections.count = 0;
+            if (Trknpu.getLatestResult(resImg, latest_id_y, detections, segResult)) {
+
+                //auto start = std::chrono::steady_clock::now();
+                cv::Mat purl;
+                if(ocrflag == 1) purl = resImg.clone();
+                
+                // 成功取到最新完成帧
+                //DrawDetections(resImg, detections, roadPoint, sort_tracker, point_tracker, flow_tracker, elementList, avgPointPosition, Oweith);
+                //std::cout<<"avgPoint:"<<avgPointPosition<<"  weith:"<<Oweith<<"\n";
+                DrawDetections(resImg, detections, segResult, tracker, elementList, avgPointPosition, Oweith);
+                // if(!(elementList.getClosest(3) == nullptr ))
+                // {
+                //     std::cout<<"type:"<<elementList.getClosest(3)->elementType<<"\n" ;
+                // }else{
+                    
+                // }
+
+                /**********************************************OCR*******************************************/
+
+                if(!elementList.getByType(4).empty()  && ocrflag > 0 )
+                {
+                    Element sig = elementList.getByType(4)[0];
+                    if( ocrflag == 2){
+
+                        LOG("distance:"<<sig.distance);
+                        int h = sig.distance - sig.position.y;
+                        if(h >= 22 && std::abs(sig.position.x - MID) < 170 && nextDir == -1)//25
+                        {
+                            LOG("in distance:"<<sig.distance);
+                            LOG("OCR prep");
+                            
+                            //unable OCR
+                            // uart.buzzerSound(Uart::BUZZER_START);
+                            // uart.carMotor(0);
+                            // std::this_thread::sleep_for(std::chrono::milliseconds(120));
+
+
+                            ocrflag = 1;
+                        }else if(nextDir != -1)
+                        {
+                            ocrflag = 1;
+                        }
+                        
+                    }else if( ocrflag ==1){
+                        if(nextDir == -1)
+                        {
+                            LOG("OCR in");
+                            ocrflag = -1;
+                            int saftyWidth = 630 - sig.position.x;
+                            if(640 - sig.position.x > 210) saftyWidth = 210 ; //可能有问题 改200
+                            cv::Rect roiRect(sig.position.x - 100, sig.position.y - 40, saftyWidth, 80);
+                            cv::Rect imgBounds(0, 0, purl.cols, purl.rows);
+                            roiRect = roiRect & imgBounds;
+                            cv::Mat roi = purl(roiRect);
+                            
+                            if( !roi.empty() ) {cv::imwrite("ocrimgcut.jpg",roi) ;} else {LOG("OCR roi img is empty");}
+                
+                            //std::string cross = recognizeRoadSignDirection(roi);
+                             std::string cross = "right";
+                            if(cross.empty())
+                            {
+                                LOG("ocr return empty");
+                            } 
+                            else{
+                                if(cross[0] == 'r' || cross[0] == 'R')
+                                {
+                                    rolmark = 1;
+                                    nextDir = 0;
+                                }
+                                else{
+                                    rolmark = 0;
+                                    nextDir = 1;
+                                }
+
+                            }
+                        }else{
+                            ocrflag = -1;
+                            LOG("sec loop");
+                            rolmark = nextDir;
+                            nextDir = -1;
+                            ocrWatPage = 180;
+                        }
+                        uart.setCarEnable(1);
+                        if( rolmark == 0)
+                        {
+                            //uart.buzzerSound(Uart::BUZZER_START);
+                            LOG("100 100 100");
+                            uart.carMotor(87);
+                            stateFxContext.iCTX.normalSpeed = 85;
+                        }
+                        else{
+                            //uart.buzzerSound();
+                            LOG("51 51 51");
+                            uart.carMotor(0);
+                            fuzzy.dedt_max = 1.2f;
+                            uart.carMotor(56);
+                            stateFxContext.iCTX.normalSpeed = 51;
+                        }
+                        uart.sendMileTarget(0,60000);
+
+                    }
+                
+                }
+                else if(ocrWatPage < 0 && ocrWatPage >= -2 && ocrflag != 2){
+                    rolmark = 0;
+                    ocrflag = 2; 
+                    ocrWatPage = 140;
+                    ocrWatPage--;
+                    LOG("ocrWat:"<<ocrWatPage);
+                    fuzzy.dedt_max = 3.1f;
+                    uart.carMotor(87);
+                    stateFxContext.iCTX.normalSpeed = 90;
+                }else if(ocrWatPage >= 0 && ocrflag != 2)
+                {
+                    ocrWatPage--;
+                    LOG("ocrWat:"<<ocrWatPage);
+                }
+
+                /**************************************OCREND*******************************************/
+
+                /********************************** 瞄点 ************************************/
+                if(tracker.trackRoad.branchLeft.point.empty() || tracker.trackRoad.branchRight.point.empty())
+                {
+                    avgPointPosition = tracker.trackRoad.center.weighting(segResult.binaryMask.rows);
+                    //LOG("->Center");
+                }
+                else
+                {
+                    if(rolmark == 0)
+                    {
+                        avgPointPosition = tracker.trackRoad.branchLeft.weighting(segResult.binaryMask.rows);
+                    }else
+                    {
+                        avgPointPosition = tracker.trackRoad.branchRight.weighting(segResult.binaryMask.rows);
+                    }
+                }
+                /********************************** 瞄点END*********************************/
+
+               
+                /***************************************小小状态机*************************************/
+                //LOG("stateFlag:"<<static_cast<int>(FSMStateFlag)<<"FrameFlag:"<<FSMFrameFlag);
+                
+                FSMFrameFlag = FSM::decideFrameFlag(elementList, uart, avgPointPosition);
+                FSM::tickStateFunctionContext(stateFxContext, elementList);
+                FSM::MatrixSwitch(FSMFrameFlag, FSMStateFlag, stateFxContext);
+
+                /**************************************************************************************/
+
+
+
+
+
+
+
+
+
+                          
+                LOGFSM("                                             final avgPoints: "<<avgPointPosition);
+                LOGSL("avgpoint:"<<avgPointPosition);
+                if(avgPointPosition < 0)
+                {
+                    avgPointPosition = Oweith/2 + 265 ;
+                }
+
+                double nowAvgPointPosition = 0.8 * avgPointPosition + 0.2 * lastAvgPointPosition;
+                // if(elementList.getClosest(CAR) != nullptr) LOGFSM("cardis:"<<elementList.getClosest(CAR)->distance);
+                // if(elementList.getClosest(PEOPLE) != nullptr) LOGFSM("peopleV:"<<elementList.getClosest(PEOPLE)->velocity.x);
+
+                /************************************加速**************************************/
+                static int delayFrame = 5;
+                
+                // if(uart.mile_arrived[0].load() && elementList.getClosest(1) != nullptr )
+                // {
+                //     LOGFSM("doordis:"<<elementList.getClosest(1)->distance);
+                    
+                //     if((elementList.getClosest()->elementType == 1 || (elementList.getClosest()->elementType != CAR && elementList.getClosest()->elementType != PEOPLE)) && elementList.getClosest(1)->distance >248) //&& elementList.getClosest(1)->distance >285
+                //     {
+                //         rushReady = true;
+                //     }                    
+                // }
+                if(rushReady && delayFrame != 0)
+                {
+                    delayFrame--;
+                    LOGFSM("真在--");
+                }else if(rushReady){
+                    if(rushReady)
+                    {
+                        uart.sendMileTarget(0,40000);
+                        uart.carMotor(87);
+
+                        uart.buzzerSound();
+                        fuzzy.dedt_max = 3.1f;
+                        fuzzy.kp_fuzzy = 12.5f;
+                        fuzzy.kd_fuzzy = 171.0f;
+                        fuzzy.kp_base = 4.8f;
+                        fuzzy.kd_base = 9.0f;
+                        stateFxContext.iCTX.normalSpeed = 85;
+                        LOGFSM("speed 100 !!!!!!!!!!!!!!!!!!!!!");
+                        rushReady = false;
+
+                    }
+                }
+                LOG("kd_f:"<<fuzzy.kd_fuzzy);
+
+
+                //控制器
+                int servo_pwm1 = driver.run(nowAvgPointPosition,Oweith);
+                lastAvgPointPosition = nowAvgPointPosition;
+                uart.carServo(servo_pwm1);
+
+
+                cv::Mat img_intBinary;
+                segResult.binaryMask.convertTo(img_intBinary, CV_8U);
+
+
+                Mat src = resImg;
+                Mat mask = img_intBinary;
+                cv::Size Msize(640,480);
+                cv::resize(img_intBinary, mask, Msize, 0, 0, cv::INTER_NEAREST);
+                threshold(mask, mask, 127, 255, THRESH_BINARY); // 保证二值
+
+                // 1. 创建彩色掩码层（颜色、透明度均可调）
+                Mat colorLayer = Mat::zeros(src.size(), src.type());
+                colorLayer.setTo(Scalar(0, 0, 255), mask);      // 红色，想换颜色改这里
+                // colorLayer.setTo(Scalar(0, 255, 0), mask);   // 绿色
+
+                // 2. 半透明叠加：alpha 为原图权重，beta 为彩色层权重
+                Mat result2;
+                double alpha = 0.6;   // 原图保留比例（明度）
+                double beta  = 0.4;   // 彩色层强度（色偏程度）
+                addWeighted(src, alpha, colorLayer, beta, 0.0, result2);
+
+                server.update_frame(result2);
+
+                // auto end = std::chrono::steady_clock::now();
+                // auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+                // std::cout << "运行时间: " << duration.count() << " 微秒\n";
+                
+
+            } else {
+                // 无可用结果，稍作等待
+                std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            }
+        }
+ 
+    }
+
+
+    //uart.carMotor(0);
+    running = false;
+    flagWaitKey = false;
+    Trknpu.stop();
+    getFramesT.join();
+    // getResultDispaly.join();
+    // cap.release();
+    deinitPostProcess();
+    return 0;
+}
+
+
+
+
+
+
+===== TABLE 1 =====
+参数名称 | 技术指标
+整车尺寸 | 220mm*180mm*120mm
+轴距 | 150mm
+转向类型 | 阿克曼转向
+供电方案 | 3s 2700mAh动力型锂电池
+主控 | 英飞凌TC264
+视觉计算平台 | 百度香橙派5
+摄像头角度 | 0度
+整机功率 | 100W
+最大速度（平坦路面） | 3.5m/s
+传感器种类 | 摄像头、陀螺仪
+舵机控制频率 | 300hz
+ | 
+
+===== TABLE 2 =====
+帧头 | 功能帧地址 | 帧长 | 数据帧(高位) | 数据帧(低位) | 帧尾
+
+===== TABLE 3 =====
+功能帧地址 | 作用
+0x01 | 智能车控制
+0x02 | 速控模式
+0x03 | 舵机阈值
+0x04 | 蜂鸣器音效
+0x05 | LED灯效
+0x06 | 按键输入
+0x07 | 电池信息
+0x08 | 实时姿态信息
+
+===== TABLE 4 =====
+队伍名称 | 南鸿奇异果 | 南鸿奇异果 | 南鸿奇异果 | 南鸿奇异果
+参赛学校 | 厦门大学嘉庚学院 | 厦门大学嘉庚学院 | 厦门大学嘉庚学院 | 厦门大学嘉庚学院
+赛题组组别 | 人工智能模型组 | 人工智能模型组 | 人工智能模型组 | 人工智能模型组
+检查项目 | 规格 （选手自行填写） | 符合 （） | 不符合（） | 备注
+1.车模类型是什么？ | 自制车模 |  |  | 如果是自制车模，请标明自制。
+车模整体尺寸： （包括传感器在内）长，宽，高(mm) | 长：220mm 宽：180mm 高：12mm |  |  | 
+传感器种类、规格(型号)数量。 是否使用自带MCU的成品传感器模块？型号是什么？ | 1.摄像头1个 普地1024线编码器 陀螺仪IMU660rb 2.否 |  |  | 
+控制转向舵机型号是否自行改装舵机？ 防伪易损标签是否完整？ |  |  |  | 舵机型号无要求，只要求阿克曼转向结构
+1. 是否增加伺服电机？ 2. 如果有种类、个数和作用？ | 1. 否 2. 否 |  |  | 
+电路中微处理器型号和个数？ | TC264  1个 |  |  | 
+是否具有其它可编程器件，个数与作用？ | 否 |  |  | 
+是否有无线通讯装置？ 如果有种类和个数？ | 1.是 2.香橙派5无线网桥 1个 |  |  | 
+电池的种类、规格和数量？ | 3s电池 11.1V电池 数量：1块 |  |  | 
+1. 是否使用GPS导航？ 2. 是否没有使用RTK？ | 1. 否 2. 否 |  |  | 
+后轮驱动电机是否是原车模电机？ 是否具有防伪易损标签？ | 1.是 2.是 |  |  | 驱动电机无要求
+轮胎是否是原车同款轮胎？ 轮胎的尺寸（直径和宽度）是否小于等于原车膜尺寸？ | 1.是，纹理清晰可辨  2.是 |  |  | 轮胎无要求
+车轮轴距、轮距是否改装？ 改装参数是什么？ | 是 |  |  | 轴距与轮距无要求
+车模驱动轮传动机构是否改装？ 改装方式是什么？ | 否 |  |  | 
+是否更换过原装车模中的机械元器件？更换后的规格 是什么？ | 否 |  |  | 。
+车模电路板个数及功能。 其中是否有购买成品电路板？ | 总数：3个 摄像头1个：官方购买成品自带 香橙派5：官方购买成品自带 主驱一体板：自制 |  |  | 
+自制电路板是否标记有学校名称、队伍名称、制作日期等信息？ 标示信息在PCB的哪一层？ | 有标记  内容： 厦门大学嘉庚学院 南鸿奇异果 2026.7.22                                                                                              顶层覆铜层 |  |  | 请在表格中注明电路板队伍信息的内容。
+其它待说明内容 | 无 |  |  | 
+检查人员签名： | 检查意见： | 检查意见： | 检查意见： | 检查意见：

@@ -1,0 +1,3978 @@
+第二十一届全国大学生智能汽车竞赛技术报告
+
+
+
+
+
+
+
+
+
+
+参赛学校：青岛理工大学
+队伍名称：拆弹大师
+参赛队员：肖林翰 盖瑞琪 李欣恒 陈思源 赵修博
+带队老师：马琳琳
+竞赛组别：飞跃雷区
+提交日期：2026年8月18日
+
+
+
+使用授权说明
+本人（本队）郑重声明：所呈交的技术报告及研究论文，是在带队老师指导下，由参赛队员合作完成的研究成果。除文中已经注明引用的内容外，本报告不包含任何其他个人或集体已经发表或撰写过的研究成果。
+本人（本队）授权全国大学生智能汽车竞赛组委会可以将本技术报告及研究论文的全部或部分内容编入有关论文集进行出版，可以采用影印、缩印或扫描等复制手段保存、汇编本报告。
+
+参赛队员签字：肖林翰 盖瑞琪 李欣恒 陈思源 赵修博  
+日期：2026年8月18日
+带队老师签字：马琳琳  日期：2026年8月18日
+
+
+
+
+
+
+
+
+
+
+
+
+目录
+第一章 系统总体方案设计
+第二章 机械结构设计与安装
+第三章 硬件电路设计
+第四章 控制软件与算法设计
+第五章 开发与调试过程
+第六章 模型车主要技术参数
+参考文献
+附录A 电路板原理图与核心算法子程序
+附录B 程序源代码
+
+
+
+
+
+
+
+
+
+
+
+
+第一章 系统总体方案设计
+1.1 设计思路
+无人机采用F330机架，小车采用逐飞的M车模麦克纳姆轮车模，无人机负责采集信标坐标，通过摄像头采集小车与信标的位置距离，将坐标信息通过串口线发送给小车，小车处理完成信息之后，去灭信标灯，灭灯过程，飞机跟随小车。
+1.2 技术方案概要
+无人机概要：
+陀螺仪采用imu660ra,光流传感器采用upflow3901，摄像头采用mt9v03x，激光测距传感器采用两个dl1b。
+姿态控制：陀螺仪采用 IMU660RA，基于四元数及互补滤波进行姿态解算，并计算将初始姿态旋转至单位四元数（0，0，0，1）的旋转矩阵，以实现机体坐标系到世界坐标系的转换。系统实时采样无人机相对于世界坐标系的姿态，采用串级 PID（角度环 + 角速度环）确保姿态控制的实时性与准确性。
+高度控制：采用双 DL1B 激光测距传感器冗余配置，以规避电源线对传感器视场的遮挡导致的测距失效。对双路测距数据实施双侧 EKF 滤波，并引入高度惩罚机制：当测量值偏离预期范围时，自适应增大观测噪声协方差矩阵 R。高度控制器采用三阶 ADRC，其中扩张状态观测器（ESO）的 z3 通道自动估计电源线扰动、电池电压跌落等外界干扰，同时 ADRC 内部嵌入速度-高度串级 PID 结构，将 ESO 估计的 z2 作为速度反馈量，以抑制系统震荡。
+水平位置控制：调大 MT9V03X 摄像头焦距，以提升远距离信号灯的可探测性。对采集图像进行双路并行处理：第一路采用高阈值二值化，专门提取小车上的信号灯目标；第二路对图像外围区域进行 Sobel 梯度运算及形态学开运算，在保留高梯度像素点的同时形成连通域。两路结果分别进行连通域分析，作为定位传感器的输入。水平速度估计融合 IMU660RA 在世界坐标系下的水平加速度与光流传感器 UPFLOW3901 解耦角速度后的数据，经互补滤波获得平滑可靠的水平速度。水平位置控制采用外环 PID、内环二阶 ESO 的串级架构，最终通过角度控制回路实现位置闭环。
+小车概要：
+本系统以 CYT2BL3 嵌入式芯片为控制核心，搭建麦轮全向移动小车运动平台。小车本体仅搭载IMU660RA 六轴惯性传感器与普地正交编码器两类感知设备。系统采用无人机 - 小车分体式感知与控制架构，由无人机端完成全场 LED 信标识别与全局定位解算，通过有线串口向下位小车实时传输世界坐标信息，小车基于接收坐标完成姿态闭环、位置闭环与全向运动控制，实现蓝膜离散信标场地高精度定点行驶。
+姿态控制方面：小车依托 IMU660RA 惯性单元 采集车体角速度与加速度原始数据，基于四元数算法与互补滤波完成高精度姿态解算。通过求解车体初始姿态至单位四元数的旋转矩阵，实现机体坐标系至世界坐标系的实时转换。系统采用角度环、角速度环串级 PID 控制，实时校正车体偏航姿态，有效抑制全向移动过程中的航向漂移与车体抖动，保证小车行进过程姿态稳定可控。
+速度检测方面：小车四轮搭载普地正交编码器，依托 CYT2BL3 硬件正交解码外设采集车轮脉冲数据，采用 M/T 测速算法实时解算四轮实际转速，为电机速度闭环提供高频、高精度反馈量，实现四轮独立速度精准调控。
+定位与位置控制方面：全场定位功能由无人机机载视觉系统完成，通过对场地频闪 LED 信标进行亮度二值化、噪声剔除与连通域分析，解算得到小车全局世界坐标，并通过串口有线通信实时下发至小车主控。小车基于接收的世界坐标构建位置闭环控制系统，结合车体姿态数据完成世界坐标系与机体坐标系的速度转换，配合远近分区自适应速度调节策略，实现远距离快速趋近、近距离精准收敛的定点运动效果。
+运动控制与驱动方面：系统基于麦轮全向运动学模型，将期望平移、横移、旋转速度分解为四轮目标转速。针对蓝膜场地存在轻微坡度、易抬轮打滑的工况，设计坡道防抬轮约束逻辑与轮速卡死检测 Boost 脱困算法，提升复杂地面工况适应性。电机采用独立位置式速度 PID 结合前馈补偿控制，由 CYT2BL3 的 GTM 定时器输出 PWM 驱动信号，并设置输出限幅，避免控制饱和与电机过载，保障小车全向行驶平稳、定点精度高。
+软件系统采用中断驱动实时架构，基于 PIT 定时器分层调度传感器采集、姿态解算、闭环计算、运动学解算与电机输出任务，最终实现小车在离散信标场地内自主定点巡航、坡道自适应行驶与精准驻停功能。
+
+
+
+
+1.3 系统总体框图
+
+图1-1 系统总体结构框图
+第二章 机械结构设计与安装
+2.1 车模机械改造
+将原有的逐飞的M车模麦克纳姆轮车模的底盘纵向缩短了5cm，减小轴距，避免小车卡在在信标灯上，将电池等重物放在小车中心，使小车在运行过程中保持平稳。
+2.2 传感器安装设计
+TOF dl1b:采用是双TOF设计，分别放在无人机的前后两侧，热熔胶固定，水平放置
+光流 优象 UP-FLOW-302-3C ：放在无人机的正下方，热熔胶固定，水平放置
+陀螺仪 imu660ra ：放在无人机的正中间，热熔胶固定，水平放置
+摄像头 总钻风 MT9V034：放在飞机的正前风方，支架固定，水平放置
+2.3 电路板固定与连接
+无人机和车模的电路板均放置在中央，用螺丝和打印的3d固定板和绑带固定，主板与各模块之间均用杜邦线连接，摄像头用FFC线连接。
+【说明系统电路板的安装位置、固定方式、各模块之间的接线布局及抗干扰措施。】
+
+
+
+
+
+
+
+
+
+
+2.4 机械结构实物图
+
+图2-1 车模整体结构图
+
+图2-2 无人机整体结构图
+
+第三章 硬件电路设计
+3.1 电源管理电路
+用1个5200mAh的3s锂电池为无人机和小车供电。无人机电源部分采用12 V输入、5 V降压、3.3 V稳压的分级供电方案。12 V输入端设置TVS管和滤波电容，用于抑制浪涌及电压波动；通过TPS5430将12 V降压至5 V，再利用RT9013 LDO将5 V转换为两路3.3 V，为主控及外围电路供电。同时设置SY6280电源开关，实现5 V支路的使能控制和过流保护。各级电源均配置滤波与去耦电容，以减小纹波和干扰，提高系统供电稳定性。小车电源部分采用VBAT输入、5 V降压、3.3 V稳压的分级供电方案。输入端设置470 μF滤波电容及SMAJ15CA TVS管，用于抑制电源波动和瞬态浪涌，同时配置LED指示电源工作状态。随后采用TPS5430降压芯片将输入电压转换为稳定的5 V，并通过电感、电容构成输出滤波网络以降低纹波；5 V电源再经RT9013-33GB低压差稳压器转换为3.3 V，为主控及低压外围电路供电，从而保证系统供电的稳定性与可靠性。
+3.2 传感器信号调理电路
+无
+3.3 电机驱动电路
+小车驱动芯片采用DRV8701ERGET，电机驱动部分采用四路独立H桥驱动方案，分别控制左上、右上、左下和右下四个直流电机。每路由专用电机驱动芯片配合四只功率MOSFET构成全桥电路，通过主控输出的DIR方向信号和PWM调速信号实现电机正反转及转速调节。控制信号前端设置缓冲电路，提高驱动能力并减小主控与功率电路之间的相互干扰；驱动芯片外围配置去耦、滤波及相关保护器件，可抑制电机启停产生的电压尖峰和电源波动。同时设置使能及状态指示电路，便于统一控制电机驱动模块的启停状态，从而提高四轮电机驱动系统的稳定性与可靠性。
+无人机驱动芯片采用STC32G12K128-35I-LQFP48，电机驱动部分采用三相无刷直流电机驱动方案，由单片机、MOS预驱芯片及六只功率MOSFET组成三相全桥电路。单片机输出PWM及换相信号，经MOS预驱电路提高栅极驱动能力后控制上下桥臂MOS管导通，实现电机三相换相、启停及转速调节。电路同时设置换向检测、母线电压检测、故障检测及5 V稳压电路，用于实时监测电机运行及供电状态；输入端配置滤波、去耦及限流等保护措施，可抑制开关噪声和瞬态冲击，提高电机驱动系统的稳定性与可靠性。
+3.4 舵机控制电路
+无
+3.5 其他功能电路
+无
+3.6 电路原理图
+
+
+
+图3-1 电源管理电路原理图
+第四章 控制软件与算法设计
+4.1 软件总体架构
+4.1.1无人机架构
+ 本系统基于逐飞科技 CYT4BB7 核心板（Traveo II 双 Cortex-M7F @ 250MHz），采用前后台 + PIT 定时器中断驱动架构，无 RTOS。软件分为四层：数据交互层、传感器采集层、控制算法层、电机驱动层。
+主程序流程：上电 system_init() 完成外设初始化及 IMU 静态校准，while(1) 后台仅处理指示灯、调试打印等低优先级任务；所有实时任务由 PIT 中断触发执行。
+任务划分：
+PIT_CH0（5ms，最高优先级）：IMU660RA 数据读取与四元数互补滤波姿态解算，输出姿态角及世界系加速度，为各级控制提供姿态基准。
+PIT_CH1（10ms，次高优先级）：双路 DL1B 激光测距 EKF 融合（含自适应高度惩罚）；三阶 ADRC 高度控制，ESO 的 z3 估计电源线/电池电压等扰动，z2 作为速度反馈抑制震荡，输出油门指令。
+PIT_CH2（20ms，中等优先级）：MT9V03X 图像双路并行处理（二值化提取信号灯 + Sobel 梯度与开运算提取连通域）作为定位输入；融合 IMU 加速度与 UPFLOW3901 解耦光流数据获得水平速度；执行外环 PID + 内环二阶 ESO 的串级水平位置控制。
+PIT_CH10（50ms，最低优先级）：串口 DMA 接收上位机视觉坐标，更新定位数据。
+4.1.2小车架构
+本系统硬件平台采用逐飞科技 CYT2BL3 核心板，基于英飞凌 Traveo II 系列 MCU，软件依托逐飞 CYT2BL3 开源库开发，采用前后台 + 定时器中断驱动架构，不搭载实时操作系统，依靠片内 PIT 定时器划分任务优先级，保证运动控制时序稳定。软件自上而下分为四层：数据交互层、传感器采集层、控制算法层、电机驱动层。
+主程序流程：上电调用system_init()完成系统时钟、GPIO、UART、PIT 定时器、正交解码、PWM 外设初始化；完成六轴 IMU 上电静态校准；随后进入while(1)后台主循环，仅执行状态指示灯、调试串口打印等低优先级任务；所有运动控制、传感器采集等高实时性任务全部由 PIT 定时器中断触发执行，避免后台循环延时干扰控制周期。
+任务划分（基于 CYT2BL3 片内 PIT 定时器）：
+PIT_CH1（10ms 周期中断，最高优先级）：四轮编码器读取、位置闭环、姿态双环 PID、速度决策、麦轮运动学解算、四轮独立速度环 PID、PWM 输出；
+PIT_CH10 周期中断：串口 FIFO 轮询，接收上位机视觉定位坐标，解析更新车体x_data、y_data；
+PIT_CH0 通道中断：定时采集 IMU 加速度、陀螺仪原始数据，运行姿态解算；
+4.2 传感器数据采集与处理
+4.2.1无人机采集
+IMU660RA 数据采集与预处理：PIT_CH0 以 5ms 周期触发 SPI 读取加速度计与陀螺仪原始数据。采集后扣除上电静态校准获取的零偏值，经滑动窗口均值滤波抑制高频噪声。滤波后的数据送入四元数互补滤波姿态解算，并计算将初始姿态旋转至单位四元数（0，0，0，1）的旋转矩阵，实现机体坐标系到世界坐标系的转换，输出姿态角（横滚角、俯仰角、偏航角）及世界坐标系水平加速度，供姿态闭环及位置控制使用。
+双路 DL1B 激光测距数据融合：PIT_CH1 以 10ms 周期触发两路 DL1B 同步采集。采用双路冗余配置规避电源线对传感器视场遮挡导致的测距失效，对双路数据实施双侧 EKF 滤波，并引入高度惩罚机制：当测量值偏离预期范围时，自适应增大观测噪声协方差矩阵 R，降低异常数据融合权重，输出高度估计值供 ADRC 控制器使用。
+UPFLOW3901 光流数据采集与预处理：PIT_CH2 以 20ms 周期通过 I2C 接口读取光流传感器输出的像素位移增量及质量因子。原始光流数据扣除机体角速度引起的虚假运动分量，结合 IMU 提供的偏航角速度予以补偿，得到真实平移光流。补偿后的光流数据与 IMU 世界坐标系水平加速度经互补滤波融合，获得平滑可靠的水平速度估计。
+MT9V03X 灰度图像采集与处理：摄像头以硬件时序输出灰度图像，通过 DCMI 接口 DMA 传输至 MCU 内存。调大摄像头焦距以提升远距离信号灯的可探测性。图像处理采用双路并行流水线：第一路采用高阈值二值化，专门提取小车上的信号灯目标；第二路对图像外围区域进行 3×3 Sobel 梯度运算及形态学开运算（先腐蚀后膨胀），在保留高梯度像素点的同时形成连通域。两路结果分别进行连通域标记与几何特征提取，作为定位传感器的输入。
+
+ 
+4.2.2小车采集
+系统传感器包含正交编码器、六轴 IMU、上位机视觉定位模块。
+正交编码器采集 依托 CYT2BL3 定时器硬件正交解码捕获四轮编码器脉冲，在 10ms 控制中断读取脉冲计数值，采用 M/T 测速法计算四轮实时轮速encoder_data_quad[]，作为电机速度环反馈。测速数据增加滑动平均滤波，抑制脉冲噪声。
+IMU 惯性数据采集 定时采集加速度计、陀螺仪原始数据，采用互补滤波完成姿态解算，输出车体偏航角yaw与 Z 轴角速度gyro_z。软件实现陀螺仪零偏自动补偿，静态阶段估算零偏并实时修正，降低角度漂移；原始数据增加均值滤波去除高频噪声。
+视觉定位数据预处理 上位机通过串口下发车体世界坐标x_data、y_data，数据存入串口 FIFO 缓冲区，由 PIT_CH10 中断轮询读取。对定位坐标设置变化率阈值滤波，剔除跳变野值；过滤超出赛道范围的异常坐标，防止定位突变造成车体剧烈震荡。
+4.3 路径识别算法
+4.3.1无人机算法
+ 本系统图像处理对象为 MT9V03X 灰度摄像头采集的图像（焦距调大以提升远距离信号灯可探测性），所有处理均在 PIT_CH2 中断内完成，采用双路并行流水线架构，两路结果分别经连通域分析后作为定位传感器输入。
+第一路：信号灯目标提取
+该路采用高阈值二值化处理，设定较高的灰度阈值将图像二值化，仅保留亮度显著高于背景的信号灯目标像素。由于信号灯主动发光且亮度远高于环境，高阈值可有效滤除地面反光、车体自身等干扰源。二值化后对前景像素进行连通域标记，根据信号灯的先验几何特征（面积、长宽比、占空比）筛选有效连通域，输出信号灯在图像坐标系下的质心位置，供水平位置控制的期望航向计算使用。
+第二路：外围环境边缘与连通域提取
+该路针对图像外围区域（扣除信号灯可能出现的中心区域），以提取环境中的边缘特征为目标。首先采用 3×3 Sobel 算子计算梯度幅值，提取高梯度像素点（对应图像中灰度剧烈变化的边缘），而非进行二值化处理。随后对梯度幅值图执行形态学开运算（先腐蚀后膨胀），断开因噪声引起的细小连接，同时保留真实障碍物边缘形成完整的连通域。开运算可有效消除孤立噪点，使同一物体的边缘像素聚合为连通区域，便于后续定位。
+两路融合与定位应用
+两路处理结果分别进行连通域标记，提取各连通域的几何特征（质心、面积、外接矩形）。信号灯连通域提供目标方位信息，外围环境连通域提供障碍物分布信息，二者共同作为水平位置控制的传感器输入，实现基于视觉的目标跟踪与避障功能。
+
+4.3.2小车算法
+图像识别流程：摄像头采集画面 → 根据像素亮度阈值完成二值化分割 → 滤除蓝膜反光噪声 → 提取高亮光斑轮廓 → 计算光斑中心像素坐标。 结合场地预先标定的信标世界坐标，通过多信标几何关系求解小车全局坐标。上位机将车体坐标x_data、y_data通过串口下发至 CYT2BL3。 小车工作模式为点位巡航：接收目标点位指令，在多个信标点位之间定点移动，依次抵达指定坐标完成任务。下位机利用当前坐标与目标坐标生成定位误差，构建位置闭环。
+
+4.4 转向控制算法
+
+4.4.1无人机算法
+ 本系统姿态控制采用串级PID（角度环+角速度环），高度控制采用三阶ADRC，水平位置控制采用外环PID+内环二阶ESO的串级架构。三种控制结构分述如下：
+一、串级PID（姿态控制）
+姿态控制采用角度环与角速度环串联的结构：角度环为外环，以期望姿态角（由水平位置控制器或遥控器给定）与当前姿态角的偏差作为输入，经PID运算输出期望角速度；角速度环为内环，以期望角速度与实际角速度的偏差作为输入，经PID运算输出控制量（陀螺力矩），最终映射为电机转速指令。内环响应速度高于外环，角速度环先于角度环完成调节，实现对姿态的精准跟踪。
+二、三阶ADRC（高度控制）
+三阶ADRC由跟踪微分器（TD）、扩张状态观测器（ESO）和非线性状态误差反馈控制律（NLSEF）三部分组成。TD为参考高度信号安排过渡过程，避免阶跃突变引起超调。三阶ESO将高度（z1）、速度（z2）以及包含电源线扰动、电池电压跌落等所有外界干扰的总和（z3）作为状态量进行实时估计，其中z3为扩张状态（即总扰动）。控制律以z1与期望高度的误差、z2与期望速度的误差为输入，输出控制量经z3补偿后作用于被控对象，实现扰动抑制。其内部嵌入速度-高度串级PID结构，将ESO估计的z2作为速度反馈量，进一步抑制系统震荡，而非采用传统非线性组合。
+三、外环PID+内环二阶ESO（水平位置控制）
+水平位置控制采用串级结构：外环为位置环，采用标准PID控制器，以期望位置与当前位置（来自视觉定位或光流积分）的偏差为输入，输出期望水平速度。内环为速度环，采用二阶ESO替代传统PID速度环：二阶ESO同时估计水平速度（z1）和总扰动（z2），扰动包含空气阻力、地面摩擦、光流噪声等未建模动态，控制律根据速度误差计算控制量并补偿扰动后输出期望加速度，通过角度控制回路（将期望加速度映射为期望横滚角/俯仰角）最终实现对水平位置的闭环控制。
+
+4.4.2小车算法
+小车采用麦轮全向运动结构，采用角度环 + 角速度环双级 PID 闭环控制。 外环角度 PID：以车体偏航角误差为输入，输出期望角速度； 内环角速度 PID：陀螺仪实测角速度作为反馈，输出车体旋转控制量。
+PID 控制公式：
+参数整定流程：先整定内环角速度环 PID，保证角速度响应平稳无震荡；再整定外环角度环 PID，实现车体姿态快速收敛；软件增加积分限幅，抑制积分饱和，防止转向超调。姿态角速度最终送入麦轮运动学解算，分配至四个车轮。
+4.5 速度控制算法
+4.5.1无人机算法
+本系统水平速度估计融合 IMU660RA 与 UPFLOW3901 光流数据，经互补滤波获得平滑可靠的速度反馈量，速度控制嵌入水平位置串级控制的内环。
+速度估计（数据融合）
+光流传感器输出原始像素位移增量，需首先扣除机体角速度引起的虚假运动分量——结合 IMU 提供的偏航角速度予以补偿，得到真实平移光流。该光流数据反映的是像素级别的相对运动，存在低频漂移和瞬时噪声。与此同时，IMU 在世界坐标系下的水平加速度经积分可得到速度估计，其高频响应快但低频积分漂移严重。互补滤波将二者在频域上取长补短：光流数据经低通滤波保留低频可信分量，IMU 加速度积分值经高通滤波保留高频响应分量，二者叠加获得全局平滑可靠的水平速度估计。
+速度环控制律
+速度环采用二阶 ESO（扩张状态观测器）进行控制，二阶 ESO 同时估计当前速度（z1）和系统总扰动（z2），扰动包含空气阻力、地面摩擦、光流噪声等所有未建模动态。控制律为：
+u = (v_des - z1) · Kp - z2
+即依据速度误差计算比例控制量，再由 z2 对扰动进行前馈补偿，得到期望加速度指令。该期望加速度通过角度控制回路（将水平加速度映射为期望横滚角/俯仰角）输出至姿态控制器，最终驱动电机实现速度闭环跟踪。
+速度环的输入来自外环位置 PID 输出的期望速度指令。当位置偏差较大时，外环输出较大的期望速度，速度环快速跟踪该指令实现大行程运动；接近目标位置时，期望速度逐渐归零，速度环随之减速直至停稳，形成完整的位置-速度-姿态三级串级控制链路。
+
+4.5.2小车算法
+一、整体控制架构
+采用双层闭环控制架构，运行周期 10ms（PIT_CH1 中断）
+外层：位置环（世界坐标系定位闭环） 
+内层：四轮独立速度环（电机转速闭环） 
+姿态：偏航角双环（角度 PID → 角速度 PID），同步输出车体旋转角速度 
+数据流： 上位机视觉坐标 x_data,y_data → 世界坐标系位置环 PID → 车体期望速度 → 近距离自适应倍率 + 轨迹约束逻辑 → 麦轮运动学解算 → 四轮目标转速 → 电机速度环 PID → PWM 输出驱动电机。
+二、层级详细说明
+1. 外层闭环：世界坐标系位置控制器
+vx_world = pid_calculate_positional(&pid_x,0,-x_data);
+vy_world = pid_calculate_positional(&pid_y,0,y_data);
+目标：世界坐标原点 (0,0)；
+输出：世界坐标系下期望平移速度 Vx_world、Vy_world；
+坐标变换：利用 IMU 解算的 yaw 偏航角，将世界速度转换为车体坐标系vx_body、vy_body。
+2. 偏航姿态双闭环（保证车体朝向）
+w_target= angel_pid_calculate(&yaw_angle_pid, 0, yaw , 0.2);
+w_out    = pid_calculate_positional(&yaw_gyro_pid, w_target, gyro_z);
+角度环：yaw 角度误差，输出期望角速度 w_target；
+角速度环：陀螺仪gyro_z反馈，输出车体旋转角速度（°/s）；
+单位转换：w_out * PI / 180 转为 rad/s，送入麦轮运动学。
+3. 速度自适应决策
+以误差阈值 25划分两种运行模式：
+远距离区域：|x_data|≥25 || |y_data|≥25 近距离区域：|x_data|<25 && |y_data|<25（且非目标原点）
+（1）远距离模式（高速巡航 / 远距离趋近）
+直接使用原始车体速度：vx_body、vy_body
+不施加倍率放大，无横向强制补偿；
+位置环原始输出直接参与运动学解算；
+适用场景：远距离直线行驶、赛道长距离移动。
+（2）近距离模式（目标附近收敛、坡道定点）
+启用自适应速度放大系数 α，生成VX_low、VY_low
+规则：误差25 → α=1；误差5 → α=MAX_ALPHA(5.0f)
+if(fabsf(x_data) < 25.0f){
+    if(fabsf(x_data) <= 5.0f) alpha_x = 5.0f;
+    else alpha_x = 1.0f + (25 - fabsf(x_data))/5.0f;}
+逻辑目的： 靠近目标时，位置误差变小，位置环输出速度偏低，放大期望速度提升收敛能力，防止低速蠕行、上坡动力不足。
+近距离附加约束：防抬轮坡道策略
+if(fabsf(x_data) > 6.0f)
+    VY_low = 0.0f;                // X方向误差大：锁死横向运动，优先前进冲坡else
+    VY_low += sign_y * 8.0f;     // X足够靠近：叠加横向补偿，完成横向对齐
+赛道场景适配：上坡容易前后抬轮、横向打滑；先消除前后方向误差，再进行左右微调，避免斜向受力抬轮。
+4. 坡道脱困策略 Boost 机制
+调用count()函数判定卡死条件：
+1.连续多帧位置几乎不变；
+2.任意编码器轮速极低；
+3.不在目标原点附近（排除正常定点静止）。 满足条件后 extra_enable=1，启动boost()： 根据位置误差象限，向四轮目标转速叠加定向助力；脱离卡死之后助力缓慢衰减至 0。定位：只在坡道打滑场景短时生效，不参与正常轨迹控制。
+5. 麦轮运动学解算
+wheel_speed_target[0] = Vx - Vy - WHEEL_KW * W;
+wheel_speed_target[1] = Vx + Vy + WHEEL_KW * W;
+wheel_speed_target[2] = Vx + Vy - WHEEL_KW * W;
+wheel_speed_target[3] = Vx - Vy + WHEEL_KW * W;
+将车体期望速度（前进 / 横移 / 旋转）分解为四个轮子独立目标转速； 叠加 boost 助力后执行limit(CAR_MAX)，限制单轮最大目标转速，防止速度环饱和。
+6. 内层闭环：四轮独立速度环
+pwm_out[i] = pid_calculate_positional_MOTOR(&speed_pid[i], wheel_speed_target[i],encoder_data_quad[i],ff[i]);
+反馈：编码器实时轮速 encoder_data_quad[i]
+控制方式：位置式 PID + 前馈 ff
+输出：PWM 指令，硬限幅 ±7000 优势：四个轮子独立调速，自动补偿麦轮摩擦不一致、负载差异；
+注意点：位置式速度 PID 必须做好积分限幅，长时间饱和容易出现积分堆积。
+4.6 核心算法子程序
+【核心算法的子程序说明，完整代码见附录A和附录B。】
+4.6.1 无人机核心算法子程序说明
+本系统核心算法子程序涵盖姿态解算、坐标变换、数据融合及控制律执行，均在PIT定时器中断内周期性调用，各子程序间通过全局结构体传递数据。
+4.6.1.1 姿态解算子程序
+输入为IMU660RA原始加速度（ax， ay， az）与角速度（gx， gy， gz），输出为四元数（q0， q1， q2， q3）及姿态角。程序首先通过四元数互补滤波将加速度计测量的重力向量与陀螺仪积分姿态进行融合，修正陀螺仪漂移。随后调用四元数转欧拉角函数，输出横滚角、俯仰角、偏航角。同时计算将当前姿态旋转至单位四元数（0，0，0，1）的旋转矩阵，实现机体坐标系与世界坐标系的相互转换。
+4.6.1.2 坐标变换子程序
+输入为机体坐标系下的三轴加速度及当前姿态四元数，输出为世界坐标系下的水平加速度（ax_world， ay_world）。程序执行旋转矩阵乘法：将机体加速度向量左乘旋转矩阵的逆矩阵（即转置），得到世界系下的加速度分量，再提取水平方向（X、Y轴）分量供位置与速度估计使用。
+4.6.1.3 数据融合子程序
+包含两个独立模块：高度融合与速度融合。
+高度融合子程序：输入为双路DL1B原始距离数据，输出为融合后的高度估计值及其方差。程序执行双侧EKF滤波，先根据上一时刻状态预测当前高度，再以两路测量值依次更新，更新过程中调用高度惩罚函数——当测量残差超出门限时，自适应增大对应通道的观测噪声协方差R，降低该路数据权重。
+速度融合子程序：输入为UPFLOW3901原始光流（delta_x， delta_y）及IMU偏航角速度，输出为互补滤波后的水平速度。程序首先执行角速度解耦：flow_true = flow_raw - K · gyaw，消除旋转分量。随后执行互补滤波：vel = α · (vel_prev + acc_world · Δt) + (1-α) · flow_true · scale，其中α为滤波系数，平衡加速度积分的高频响应与光流的低频稳定性。
+4.6.1.4 控制律执行子程序
+包含三个控制子程序，分别在对应PIT中断中调用：
+姿态控制子程序：输入为期望姿态角（来自遥控器或水平位置控制器）与当前姿态角，执行角度环PID与角速度环PID级联运算，输出滚转、俯仰、偏航三通道控制量。
+高度控制子程序：输入为期望高度与EKF融合高度，调用三阶ADRC算法。程序依次执行TD安排过渡过程、ESO状态估计（z1高度、z2速度、z3总扰动）、控制律计算及扰动补偿，输出油门指令。
+水平位置控制子程序：输入为期望位置（来自视觉定位或遥控器）与当前视觉定位坐标，外环PID计算期望速度，内环二阶ESO执行速度跟踪与扰动补偿，输出期望加速度，经角度映射函数转换为期望横滚角与俯仰角，下发至姿态控制子程序。
+
+4.6.2 小车核心算法子程序说明
+4.6.2.1 编码器测速子程序 encoder_read()
+功能：读取四轮正交编码器脉冲计数值，采用 M/T 测速法计算四轮实时转速。依托 CYT2BL3 定时器硬件正交解码单元捕获 A/B 相脉冲，在 10ms 控制周期读取脉冲增量，换算得到encoder_data_quad[0]~encoder_data_quad[3]。测速结果加入滑动平均滤波，抑制电磁噪声带来的转速跳变，作为电机速度环反馈输入。
+4.6.2.2 IMU 姿态解算子程序 imu_get_yaw()
+功能：读取六轴陀螺仪、加速度计原始数据，通过互补滤波完成姿态解算，输出车体偏航角yaw与 Z 轴角速度gyro_z。程序内置静态零偏校准函数，小车上电静止阶段自动估算陀螺仪零偏并实时补偿，降低角度漂移；对原始采样数据均值滤波，滤除高频振动噪声，为姿态双环 PID 提供反馈。
+4.6.2.3 位置环 PID 子程序 pid_calculate_positional()
+功能：实现离散位置式 PID 运算，接收坐标误差，输出世界坐标系期望平移速度。子程序内部集成积分限幅，防止远距离行进时积分饱和；分别用于 X、Y 方向位置闭环，输出。
+4.6.2.4 坐标变换子程序 world_to_body_speed()
+功能：利用车体偏航角，将世界坐标系速度转换为车体坐标系速度。
+输入：世界坐标期望速度、车体偏航角θ；
+输出：车体前进、横移方向期望速度。
+4.6.2.5 近距离自适应速度调节子程序 speed_adjust()
+功能：根据车体与目标点距离，计算自适应放大系数，实现远近分区速度策略。
+距离目标＞25：倍率置 1，使用原始车体速度；
+距离目标＜25：分段计算放大系数，提升近距离动力，避免低速蠕行；
+同时嵌入坡道防抬轮逻辑：X 方向误差较大时强制横向速度清零，优先前后向逼近目标。
+4.6.2.6 麦轮运动学解算子程序 mecanum_kinematic()
+功能：将车体期望前进、横移、旋转速度分解为四轮目标转速。
+输入：修正后车体平移速度、车体旋转角速度；输出：四轮目标转速wheel_speed_target[]。
+4.6.2.7 坡道卡死检测子程序 count()
+功能：判定小车是否发生坡道打滑、抬轮卡死。
+判定条件：
+连续多帧定位坐标变化量小于阈值；
+至少任意一轮编码器实测轮速接近 0；
+距离目标点位仍存在明显误差，排除正常定点静止。
+满足条件返回标志位extra_enable=1，启动脱困助力。
+4.6.2.8 坡道脱困助力子程序 boost()
+功能：根据位置误差象限，向四轮目标转速叠加定向助力。
+当检测到卡死状态时叠加助力；脱离卡死之后，助力量线性衰减至 0，避免持续助力干扰定点收敛。助力叠加完成后调用limit()子程序限制单轮最大转速，防止速度环饱和。
+4.6.2.9 电机速度环 PID pid_calculate_positional_MOTOR()
+功能：四轮独立速度闭环 PID 运算，引入前馈量提升动态响应。
+输出 PWM 指令经过 ±7000 硬限幅，送入 CYT2BL3 片内 GTM 定时器生成 PWM 波形驱动电机。
+4.6.2.10 串口数据解析子程序 uart_parse_xy_buffer()
+功能：PIT_CH10 中断内读取 FIFO 缓存数据，解析上位机下发的车体坐标x_data、y_data。
+内置野值过滤：坐标变化率超限、超出场地边界时丢弃异常帧，防止信标亮度二值化识别跳变造成车体失控。
+第五章 开发与调试过程
+5.1 开发工具与环境
+5.1.1无人机开发工具与环境
+本系统开发基于逐飞科技 CYT4BB7 核心板（英飞凌 Traveo II 系列，双 Cortex-M7F 主核，250MHz），开发环境采用 IAR Embedded Workbench 9.40.1，工程模板基于逐飞 CYT4BB7 开源库，集成了 PIT 定时器、PWM、UART、SPI 等底层驱动。
+调试工具选用逐飞 DAP 下载器，支持蓝牙模式无线调试，便于无人机动态调试场景下的程序下载与实时监控。CYT4BB7 包含 CM7_0、CM7_1 与 CM0+ 三个核心，IAR 中需为每个核心独立建立工程，分别配置链接脚本（.icf）划分内存区域，通过 Workspace 统一管理。系统时钟配置为 250MHz，晶振频率 16MHz，修改后需同时编译并下载 M0+ 核心工程方可生效。
+
+5.1.2小车开发工具与环境
+本项目软件基于逐飞科技 CYT2BL3 库开发，整体开发环境与工具链配置如下：
+软件开发 IDE 采用 Arm  9.40.1，程序下载与在线调试采用 DAP-Link 下载器，支持在线仿真、断点调试、实时变量查看与 Flash 烧录，能够实时监测 IMU 姿态数据、定位坐标、PID 输出、电机 PWM 等关键变量，极大提升了算法调试与问题排查效率。
+项目依托逐飞科技开源底层库，完成定时器、串口、PWM、正交解码、中断等外设初始化配置，无需手动配置寄存器，降低底层开发难度，专注控制算法与功能逻辑开发。
+
+5.2 制作与安装过程
+系统制作主要包括无人机与小车的机械改装、传感器安装、电路板固定及线路连接。小车底盘在原有麦克纳姆轮车模基础上适当缩短轴距，并将电池等质量较大的部件布置于车体中部，以提高运行过程中的稳定性。无人机侧将双路 DL1B 激光测距传感器分别安装于机体前后两侧，光流传感器安装于机体下方，IMU660RA 安装于机体中部，摄像头固定于机体前方。
+无人机与小车的主控电路板均布置在机体中央，通过螺钉、3D 打印固定板及绑带进行固定。各功能模块之间采用杜邦线连接，摄像头采用 FFC 排线连接。完成机械及电气安装后，对各模块的固定状态和线路连接进行检查，为后续程序下载、传感器校准及整车调试提供基础。
+
+5.3 调试过程与参数整定
+5.3.1 无人机调试过程与参数整定
+调试遵循“由底向上、先开环后闭环”原则。首先完成IMU静态校准及激光测距标定，验证传感器数据正确性。姿态控制先整定角速度内环（调Kp至响应快速无超调，引入Ki消除静差），再整定角度外环，悬停状态下轻推机体验证抗扰性能。高度控制先验证EKF融合效果及惩罚机制有效性，ADRC依次调节ESO带宽w0（保证z1快速跟踪、z2平滑无滞后）与控制律Kp（阶跃响应无超调）。水平控制先验证视觉定位准确性，速度环调节ESO带宽与Kp使响应平滑，位置外环PID调Kp控制接近速度、Kd增加阻尼。最终联调定点悬停与轨迹跟踪，通过无线串口上传波形辅助分析，微调参数直至满足设计指标。
+5.3.2 小车调试过程与参数整定
+5.3.2.1 传感器校准调试
+系统传感器包含 IMU660RA 惯性陀螺仪与普地正交编码器。 陀螺仪首先进行静态零偏校准，采集静态下陀螺仪零点漂移数据并进行软件补偿，消除上电零点误差；通过互补滤波 + 四元数姿态解算，修正车体姿态角度，保证偏航角输出平稳。
+正交编码器通过硬件正交解码采集脉冲数据，校准四轮测速方向与计数精度，采用 M/T 测速算法实现高精度轮速采集，为电机速度闭环提供精准反馈。
+5.3.2.2 PID 参数整定与前馈优化
+小车采用位置环、姿态环、速度环多级 PID 控制，初期调试存在典型矛盾： 比例系数 P 过大会导致车体高频抖动、定点震荡；P 值过小则整车动力不足、趋近缓慢、定点收敛精度差。
+为解决 “有力就抖、稳就慢” 的经典矛盾，系统引入速度前馈补偿算法。通过前馈提前补偿系统滞后，在不增大比例系数的前提下提升动态响应，既保留低速定点的稳定性，又保证远距离行进与上坡工况的动力充足。
+5.3.2.3 功能逻辑调试与场景适配
+针对蓝膜场地、信标定点、轻微坡道工况，逐步调试远近分区速度自适应策略、防抬轮运动约束、卡死检测与 Boost 脱困逻辑：
+调试远距离高速趋近、近距离倍率放大收敛逻辑，解决近点速度过低问题；
+调试 X 轴误差优先级策略，实现先上坡、后横向对齐；
+调试卡死检测算法，识别静止打滑状态并自动助力脱困。
+经过多轮场地实测与参数迭代，整车最终行驶平稳、定点精准、坡道不易卡死、姿态稳定，整体控制效果达到预期设计目标。
+
+5.4 遇到的主要问题与解决方案
+5.4.1无人机遇到的主要问题与解决方案
+无。
+5.4.2小车遇到的主要问题与解决方案
+5.4.2.1 近距离位置环输出速度过低，定点收敛缓慢
+问题现象：小车靠近目标信标、坐标误差较小时，位置环 PID 输出速度极低，导致小车蠕行、收敛慢、定点效率差。
+解决方案：设计远近分区自适应倍率算法，根据 XY 坐标误差动态调节速度增益，近距离自动放大控制输出，提升近距离动力与收敛速度，远距离保持稳定巡航状态，兼顾稳定性与快速性。
+5.4.2.2 45° 斜向趋近信标时容易卡轮、无法上坡
+问题现象：小车斜向趋近目标时，XY 同时存在误差，麦轮斜向受力，坡道摩擦力不均，容易出现卡轮、抬轮、无法前进的情况。
+解决方案：增加防抬轮优先级逻辑，设置 X 轴误差优先策略。当 X 方向误差较大时直接锁死横向平移，小车只进行前后上坡运动；待 X 轴误差收敛到小范围后，再开启横向对齐，彻底解决斜向坡道卡轮问题。
+5.4.2.3 坡道打滑静止卡死，无自动脱困能力
+问题现象：蓝膜坡道阻力大，小车偶尔出现轮速接近零、位置静止、卡死不动的情况，普通 PID 无法自主脱困。
+解决方案：设计位置静止 + 轮速停滞双条件卡死检测算法，通过计数判定真实卡死状态，触发 Boost 定向助力功能，短时叠加动力辅助脱困，脱离坡道阻力区后恢复正常控制，大幅提升场地适应性。
+
+第六章 模型车主要技术参数
+6.1 基本物理参数
+6.2 电路功耗参数
+6.3 传感器配置
+6.4 伺服电机配置
+无
+6.5 赛道检测性能
+参考文献
+[1] 王淑娟，蔡惟铮，齐明．模拟电子技术基础 [M]．北京：高等教育出版社.2009
+[2] 邵贝贝．单片机嵌入式应用的在线开发方法 [M]．北京．清华大学出版社.2004.
+[3] 尹怡欣, 陶永华. 新型 PID控制及其应用[M].北京: 机械工业出版社, 
+1998.
+[4]王伟,张晶涛,柴天佑.PID参数先进整定方法综述[J].自动化学报,2000(03)
+附录A 电路板原理图与核心算法子程序
+A.1 电路板详细设计原理图
+
+
+
+
+
+
+图A-1 系统电路总原理图
+A.2 电路板PCB图
+
+
+
+
+
+A.3 核心算法子程序
+附录B 程序源代码
+必须包含：完整的程序源代码。建议按模块分文件列出，或提供完整工程代码的附件链接。
+B.1 主程序文件
+无人机：
+#include "zf_common_headfile.h"
+#include "vofa.h"
+#include "dl1a_app.h"
+#include "flight_pid.h"
+#include "ekf.h"
+#include "my_imu.h"
+#include "pmw3901_app.h"
+#include "adrc_driver.h"
+//#include "mt9v034.h"
+#include "img_ctrl.h"
+#include "image.h"
+#include "flow_ctrl.h"
+
+// main函数内，clock_init之后加：
+uint8 image_copy[MT9V03X_H][MT9V03X_W];
+extern float u;
+extern float adrc_statue;
+extern float motor_pwm_base_target;
+extern float timer;
+extern float flight_status2;
+extern float pitch_test;
+extern float roll_test;
+extern float dir_flag;
+extern float search_flag;//关于飞机 是否稳定后（目前的想法 飞起来后 追车光 当距离都小于8 开启）
+
+// ==================== 全局变量 ====================
+// Kalman滤波状态
+float kf_x = 0, kf_x_p = 1;
+float kf_y = 0, kf_y_p = 1;
+extern float x_error_filtered;
+extern float y_error_filtered;
+
+float erzhihua = 0;
+//转置图像防畸变，显示两个小图像
+void matrix_transpose_120x188(const uint8 src[120][188], uint8 dst[188][120])
+{
+    uint16 i, j;
+    for(i = 0; i < 120; i++)
+        for(j = 0; j < 188; j++)
+            dst[j][i] = src[i][j];
+}
+uint8_t tran_image1[188][120];
+uint8_t tran_image2[188][120];
+
+static bool stable_val = false; //没有跳变的，判断是否有灯&是否启用串口的变量
+static int led_target_index_counter = 0;   //防跳变的计数变量
+extern int stable_val_counter;             //看不到灯开始计数，到达80自转
+#define THRESHOLD 5
+bool toward_flag = true;
+uint8_t toward_flag_counter = 30;
+float upflow302_receive_angle_x;
+float upflow302_receive_angle_y;
+ int main(void)
+{
+    clock_init(SYSTEM_CLOCK_250M); 
+
+    gpio_init(P10_0, GPI, 0, GPI_PULL_UP);
+    uint32_t reset_cause = Cy_SysReset_GetResetReason();
+    my_imu_init();
+    vofa_Init();
+    
+    dl1b_init();
+    dl1b2_init();
+    Height_EKF_Init();
+    Upflow_EKF_Init_X();
+    Upflow_EKF_Init_Y();
+    flight_pid_init(); 
+    motor_pwm_init();
+    upflow302_receive_init();
+//    mt9v03x_init();
+    car_led_uart_init();
+
+    gpio_init(P20_0, GPI, 0, GPI_PULL_UP);
+    exti_init(P20_0, EXTI_TRIGGER_FALLING);
+    
+    tft180_set_dir(TFT180_CROSSWISE);   // 需要先横屏 不然显示不下
+    tft180_init();
+    tft180_show_string(0, 0, "mt9v03x init.");
+    
+
+    while(1)
+    {
+        if(mt9v03x_init())
+            tft180_show_string(0, 16, "mt9v03x reinit.");
+        else
+            break;
+        system_delay_ms(1000);                                                  // 闪灯表示异常
+    }
+    tft180_show_string(0, 16, "init success.");
+    adc_init(ADC0_CH23_P07_7,ADC_12BIT);
+    pit_ms_init(PIT_CH0,1);
+    pit_ms_init(PIT_CH1,20);
+    pit_ms_init(PIT_CH2,30);
+    pit_ms_init(PIT_CH10,1);
+    
+    float raw_x_last=0;
+    float raw_y_last=0;
+    
+    uint16_t led_threshold;    
+    uint16_t search_flag_counter = 0;
+    uint16_t flow_ctrl_mode_counter = 0;
+    uint16_t adrc_statue_counter = 0;
+    uint16_t flight_status2_counter = 0;
+    
+    for(;;)
+    {      
+        if(vertical_h > 800.0f && !battery_comp_enable)
+            battery_comp_enable = 1;
+        
+        if(mt9v03x_finish_flag)
+        {
+            set_img_twovalue(235);
+            locate_component();
+            seek_connect_component();
+            
+//canny二值化:
+for(uint8_t i=0;i<120;i++)//3
+{
+  for(uint8_t j=0;j<188;j++)
+  {
+    temp_led_image[i][j] = mt9v03x_image[i][j];
+  }
+}
+    compute_gradient(temp_led_image, temp_led_mag_image);//3
+for(uint8_t i=0;i<120;i++)//3
+{
+  for(uint8_t j=0;j<188;j++)
+  {
+    if(temp_led_mag_image[i][j]>115){//90 70
+      temp_led_mag_image[i][j]=255;
+      temp_led_image[i][j] = 255;}
+    else{
+      temp_led_mag_image[i][j]=0;
+      temp_led_image[i][j] = 0;}
+  }
+}
+            extend_led_image(temp_led_image,temp_led_mag_image);
+            shrink_led_image(temp_led_mag_image,temp_led_image);
+            //外侧temp_led_image出来了
+
+for(uint8_t i=0;i<120;i++)//0——120
+{
+  for(uint8_t j=35;j<153;j++)
+  {
+    if(mt9v03x_image[i][j]>170)//140 140
+      temp_led_image[i][j]=255;
+    else
+      temp_led_image[i][j]=0;
+  }
+}
+            //内部定值二值化出来了
+
+            updata_show_led_image();
+            seek_led_connect_component();
+            locate_component_led();
+            
+            
+            
+    //畸变，无裁剪，显示大图像
+//    tft180_displayimage03x((const uint8 *)show_led_image, 160, 128);//mt9v03x_image  show_image  show_led_image
+    //无畸变，缩小，显示两个图像
+    matrix_transpose_120x188(mt9v03x_image,  tran_image1);
+    matrix_transpose_120x188(show_led_image,  tran_image2);
+
+    tft180_show_gray_image(0, 3, (const uint8 *)tran_image1, MT9V03X_H, MT9V03X_W, 78, 122, 0);
+    tft180_show_gray_image(82, 3, (const uint8 *)tran_image2, MT9V03X_H, MT9V03X_W, 78, 122, 0);
+    
+            mt9v03x_finish_flag = 0;
+            
+            // ====== X方向Kalman滤波 ======
+            float raw_x = x_error - led_x_error;
+            raw_x_last = raw_x * 0.3 + raw_x_last *0.7;
+            kf_x_p += 0.5f;                                    // p_pred = p + q
+            float kx = kf_x_p / (kf_x_p + 0.5f);              // Kalman增益
+            kf_x += kx * (raw_x_last - kf_x);                      // 状态更新
+            kf_x_p *= (1.0f - kx);                             // 协方差更新
+            x_error_filtered = kf_x;
+    
+            // ====== Y方向Kalman滤波 ======
+            float raw_y = y_error - led_y_error;
+            raw_y_last = raw_y * 0.3 + raw_y_last *0.7;
+            kf_y_p += 0.5f;                                    // p_pred = p + q
+            float ky = kf_y_p / (kf_y_p + 0.5f);              // Kalman增益
+            kf_y += ky * (raw_y_last - kf_y);                      // 状态更新
+            kf_y_p *= (1.0f - ky);                             // 协方差更新
+            y_error_filtered = kf_y;
+            
+}        
+
+      if(dl1a_get_distance_finish_flag)
+      {
+        dl1a_get_distance_finish_flag=0;
+        height=find_actual_distance()*show_qua.z;
+        Height_EKF_Updata();
+      } 
+      
+      if(flight_status==1)
+        flight_status2_counter++;
+      else
+        flight_status2_counter = 0;
+      if(flight_status2_counter>=5)
+        flight_status2 = 1;
+      else
+        flight_status2 = 0;
+      
+      
+      if(flight_status2==1)
+        adrc_statue_counter++;
+      else
+        adrc_statue_counter = 0;
+      if(adrc_statue_counter>=200)
+        adrc_statue = 1;
+      else
+        adrc_statue = 0;
+      
+      if(adrc_statue==1)
+        flow_ctrl_mode_counter++;
+      else
+        flow_ctrl_mode_counter = 0;
+      if(flow_ctrl_mode_counter>=35)
+        flow_ctrl_mode = 1;
+      else
+        flow_ctrl_mode = 0;
+      
+      if(flow_ctrl_mode==1)
+        search_flag_counter++;
+      else
+        search_flag_counter = 0;
+      if(search_flag_counter>=40)
+        search_flag = 1;
+      else
+        search_flag = 0;
+      
+      
+      vofa_send_float(flight_status*10);
+      vofa_send_float(flight_status2*11);
+      vofa_send_float(adrc_statue*12);
+      vofa_send_float(flow_ctrl_mode*13);
+      vofa_send_float(search_flag*14);
+      
+      vofa_send_float(motor_pwm_base);
+      vofa_send_float(vertical_pwm);
+      
+      vofa_send_float(height_target);
+      vofa_send_float(vertical_h);
+      vofa_send_float(dl1b_distance_mm);
+      vofa_send_float(dl1b2_distance_mm);
+      vofa_send_float(HR1);
+      vofa_send_float(HR2);
+      
+      vofa_send_float(extract*1000.0f);
+      vofa_send_float(extract1*1000.0f);
+      vofa_send_float(adrc_z1*1000.0f);
+      vofa_send_float(adrc_z2*1000.0f);
+      vofa_send_float(adrc_z3*1000.0f);
+      vofa_send_float(vertical_h - adrc_z1*1000.0f);
+      
+      vofa_send_float(led_target_index);
+      vofa_send_float(x_error);
+      vofa_send_float(y_error);
+      vofa_send_float(x_error - led_x_error);
+      vofa_send_float(led_y_error - y_error);
+      vofa_send_float(x_error_filtered);
+      vofa_send_float(-y_error_filtered);
+      
+      vofa_send_float(pid_flow_pos_x.out);
+      vofa_send_float(pid_flow_pos_y.out);
+      
+      vofa_send_float(upflow302_receive.upflow302_x);
+      vofa_send_float(upflow302_receive.upflow302_y);
+      vofa_send_float(upflow_dx);
+      vofa_send_float(upflow_dy);//
+      
+      vofa_send_float(flow_ctrl_target_pitch);
+      vofa_send_float(flow_ctrl_target_roll);
+      
+      vofa_send_float(Euler.pitch);
+      vofa_send_float(Euler.roll);
+      vofa_send_float(Euler.yaw);
+      
+      vofa_send_float(battery_v_last);
+
+      vofa_send_float(motor_lt_pwm);
+      vofa_send_float(motor_lb_pwm);
+      vofa_send_float(motor_rt_pwm);
+      vofa_send_float(motor_rb_pwm);
+      
+      vofa_send_float(stable_val);
+      vofa_send_float(stable_val_counter);
+      vofa_send_float(dir_flag);
+      
+      vofa_send_float((float)toward_flag);
+      
+      vofa_send_float(horizon_xv);
+      vofa_send_float(horizon_yv);
+      
+      vofa_send_float(vel_adrc_z1_x);
+      vofa_send_float(vel_adrc_z2_x);
+      vofa_send_float(vel_adrc_z1_y);
+      vofa_send_float(vel_adrc_z2_y);
+
+      //show_image检测不到灯光 -> components[biggest_components].centerX跳0 -> distance跳变 -> 图像锁定不稳
+      
+      //show_image检测不到灯光 -> components[biggest_components].centerX跳0 -> distance跳变 -> 图像锁定不稳
+      
+
+//stable_val
+      bool raw;
+      if(led_target_index>0)
+        raw = 1;
+      else
+        raw = 0;
+      
+if (raw == stable_val ) 
+{
+    led_target_index_counter = 0;
+}
+else if(raw == 0)
+{
+    led_target_index_counter++;
+    if (led_target_index_counter >= THRESHOLD) 
+    {
+        stable_val = raw;
+        led_target_index_counter = 0;
+    }
+}
+else if(raw == 1)
+{
+    stable_val = raw;
+    led_target_index_counter = 0;
+}
+//
+
+//toward_flag
+if(search_flag==1)
+   toward_flag_counter--;
+if(toward_flag_counter==0)
+   toward_flag = false;
+//
+
+//uart
+      if(search_flag)
+          {
+              if(toward_flag==false)
+              {
+                  if(stable_val > 0)
+                  {
+                      if(dir_flag == 0)
+                      {
+                          float yaw=-Euler.yaw/180.0f*3.141592653579f;
+                          //float x = (int)(x_error_filtered * cos(yaw) + y_error_filtered * sin(-yaw));
+                          //float y = (int)(x_error_filtered * sin(yaw) + y_error_filtered * cos( yaw));
+                          send_distance((int)(x_error_filtered * cos(yaw) + y_error_filtered * sin(-yaw)) , (int)(x_error_filtered * sin(yaw) + y_error_filtered * cos(yaw)));
+                      }
+                      else
+                      {
+                          uint8 car_led_dis_buffer1[7] = {0xAA, 0x00, 0x00, 0x00, 0x00, 0XAA, 0xFF};
+                          uart_write_buffer(UART_6, car_led_dis_buffer1, 7);
+                      }
+                  }
+                  else
+                  {
+                      uint8 car_led_dis_buffer1[7] = {0xAA, 0x00, 0x00, 0x00, 0x00, 0XAA, 0xFF};
+                      uart_write_buffer(UART_6, car_led_dis_buffer1, 7);
+                  }
+              }
+              else
+              {
+                  uint8 car_led_dis_buffer1[7] = {0xAA, 0x2D, 0x00, 0x00, 0x00, 0xD7, 0xFF};
+                  uart_write_buffer(UART_6, car_led_dis_buffer1, 7);
+              }
+          }
+          else
+          {
+             uint8 car_led_dis_buffer1[7] = {0xAA, 0x00, 0x00, 0x00, 0x00, 0XAA, 0xFF};
+             uart_write_buffer(UART_6, car_led_dis_buffer1, 7);
+          }
+        
+//rotate
+        if(search_flag && toward_flag==false)
+        {
+            //找不到灯开始计时
+            if(!stable_val)
+              stable_val_counter++;
+            else
+              stable_val_counter--;
+            
+            if(stable_val_counter >=20)
+              stable_val_counter = 20;
+            else if(stable_val_counter <=0)
+              stable_val_counter = 0;
+            
+            //计数到80开始旋转    //旋转里不停给计数器（stable_val_counter）清零
+            if(stable_val_counter>=20)
+              dir_flag = 1;
+            else
+              dir_flag = 0;
+        }
+        else
+            dir_flag = 0;
+        vofa_just_end();
+        vofa_update_data_fifo();
+    }
+}
+小车：
+main.c
+#include "zf_common_headfile.h"
+// **************************** 代码区域 ****************************
+uint8 led_star_flag;
+uint16 led_pwm;
+
+  int main(void)
+{
+    clock_init(SYSTEM_CLOCK_160M);      // 时钟配置及系统初始化<务必保留>
+    
+    //debug_init();                       // 调试串口初始化
+    //vofa_Init();//串口0 115200 921600 9600现在用作通信
+    uart_init(UART_0, 9600, UART0_TX_P00_1, UART0_RX_P00_0);
+    uart_rx_interrupt(UART_0, 1);
+    fifo_init(&uart_data_fifo, FIFO_DATA_8BIT, uart_get_data, 64);              // 初始化 fifo 挂载缓冲区
+
+    imu_init();//陀螺仪初始化 加去零漂（自动计算，手动测？
+    motor_init();//电机初始化
+    pwm_init(TCPWM_CH22_P23_7, 17000, 0);//老登
+    
+    encoder_init();//编码器初始化
+    
+    control_init();//速度环pid初始化
+    
+    pit_ms_init(PIT_CH0,2);
+    pit_ms_init(PIT_CH1,5);
+    pit_ms_init(PIT_CH10,10);
+    
+    for(;;)
+    {
+      if(x_data==0||y_data==0)
+        led_star_flag = 1;
+      else
+        led_star_flag = 0;
+      
+       pwm_set_duty(TCPWM_CH22_P23_7,led_pwm);
+    }
+}
+
+B.2 传感器驱动模块
+【sensor.c / sensor.h 完整代码】
+无人机：
+my_imu.c
+#include "my_imu.h"
+#include "math.h"
+#include "zf_common_headfile.h"
+#include "ekf.h"
+quaternion horizon_quaternion;
+quaternion change_quaternion;
+quaternion pre_qua;
+quaternion acc_present_quaternion;
+quaternion acc_present_quaternionl;
+float ex;
+float ey;
+float ez;
+float exInt=0;
+float eyInt=0;
+float ezInt=0;
+quaternion show_qua;
+quaternion tran_qua1;
+quaternion tran_qua2;
+quaternion tran_qua1_conj;
+quaternion tran_qua2_conj;
+float tran_angle1 ;
+float tran_angle2;
+float tran_angle3;
+float length;
+EulerAngle_Struct Euler;
+float gx;
+float gy;
+float gz;
+float gxl=0;
+float gyl=0;
+float gzl=0;
+float v=0;
+float horizon_xa;
+float horizon_ya;
+float horizon_xv;
+float horizon_yv;
+void my_imu_init()
+{
+    imu660ra_init();
+    my_calculate_horizon_quaternion();
+    change_quaternion.w=1;
+    change_quaternion.x=0;
+    change_quaternion.y=0;
+    change_quaternion.z=0;
+    pre_qua.x=horizon_quaternion.x;
+    pre_qua.y=horizon_quaternion.y;
+    pre_qua.z=horizon_quaternion.z;
+    pre_qua.w=horizon_quaternion.w;
+    acc_present_quaternion.x=0;
+    acc_present_quaternion.y=0;
+    acc_present_quaternion.z=0;
+    acc_present_quaternion.w=0;
+    acc_present_quaternionl.x=0;
+    acc_present_quaternionl.y=0;
+    acc_present_quaternionl.z=0;
+    acc_present_quaternionl.w=0;
+    length=0;
+    Euler.yaw=0;
+    my_calcuate_tran_qua();
+}
+void my_calculate_change_qua(void)
+{
+  imu660ra_get_gyro();
+change_quaternion.x=(imu660ra_gyro_x+0.37)*0.001/16.384/180*3.141592653579;
+  change_quaternion.y=(imu660ra_gyro_y-0.87)*0.001/16.384/180*3.141592653579;
+  change_quaternion.z=(imu660ra_gyro_z-1.825)*0.001/16.384/180*3.141592653579;
+  change_quaternion.w=0;
+  gx=imu660ra_gyro_x/16.384f;
+  gy=imu660ra_gyro_y/16.384f;
+  gz=((int)(imu660ra_gyro_z/16.384f*7))/7.0f;
+  gx=gx*0.2+gxl*0.8;
+  gy=gy*0.2+gyl*0.8;
+  gz=gz*0.2+gzl*0.8;
+  gxl=gx;
+  gyl=gy;
+  gzl=gz;
+  Euler.yaw+=gz*0.001f;
+  my_calculate_acc_present_quaternion();
+  ex=acc_present_quaternion.y*pre_qua.z-acc_present_quaternion.z*pre_qua.y;
+  ey=acc_present_quaternion.z*pre_qua.x-acc_present_quaternion.x*pre_qua.z;
+  ez=acc_present_quaternion.x*pre_qua.y-acc_present_quaternion.y*pre_qua.x;
+  exInt+=0.0002*ex;
+  eyInt+=0.0002*ey;
+  ezInt+=0.0002*ez;
+  change_quaternion.x+=ex*0.0002+exInt*0.0007;
+  change_quaternion.y+=ey*0.0002+eyInt*0.0007;
+  change_quaternion.z+=ez*0.0002+ezInt*0.0007;
+length=sqrt(change_quaternion.w*change_quaternion.w+change_quaternion.x*change_quaternion.x+change_quaternion.y*change_quaternion.y+change_quaternion.z*change_quaternion.z);
+  if(length<1e-6f)
+  {
+    change_quaternion.w=1.0;
+    change_quaternion.x=0;
+    change_quaternion.y=0;
+    change_quaternion.z=0;
+  }
+  else
+  {
+    change_quaternion.w=cos(length/2);
+    change_quaternion.x=change_quaternion.x/length*sin(length/2);
+    change_quaternion.y=change_quaternion.y/length*sin(length/2);
+    change_quaternion.z=change_quaternion.z/length*sin(length/2);
+  }
+}
+void my_calculate_pre_qua(void)
+{
+  quaternion temp;
+  temp.w=pre_qua.w*change_quaternion.w - pre_qua.x*change_quaternion.x - pre_qua.y*change_quaternion.y - pre_qua.z*change_quaternion.z;
+  temp.x=pre_qua.w*change_quaternion.x + pre_qua.x*change_quaternion.w + pre_qua.y*change_quaternion.z - pre_qua.z*change_quaternion.y;
+  temp.y=pre_qua.w*change_quaternion.y - pre_qua.x*change_quaternion.z + pre_qua.y*change_quaternion.w + pre_qua.z*change_quaternion.x;
+  temp.z=pre_qua.w*change_quaternion.z + pre_qua.x*change_quaternion.y - pre_qua.y*change_quaternion.x + pre_qua.z*change_quaternion.w;
+  pre_qua.w=change_quaternion.w*temp.w - (-change_quaternion.x)*temp.x - (-change_quaternion.y)*temp.y - (-change_quaternion.z)*temp.z;
+  pre_qua.x=change_quaternion.w*temp.x + (-change_quaternion.x)*temp.w + (-change_quaternion.y)*temp.z - (-change_quaternion.z)*temp.y;
+  pre_qua.y=change_quaternion.w*temp.y - (-change_quaternion.x)*temp.z + (-change_quaternion.y)*temp.w + (-change_quaternion.z)*temp.x;
+  pre_qua.z=change_quaternion.w*temp.z + (-change_quaternion.x)*temp.y - (-change_quaternion.y)*temp.x + (-change_quaternion.z)*temp.w;
+length=sqrt(pre_qua.w*pre_qua.w+pre_qua.x*pre_qua.x+pre_qua.y*pre_qua.y+pre_qua.z*pre_qua.z);
+  pre_qua.w/=length;
+  pre_qua.x/=length;
+  pre_qua.y/=length;
+  pre_qua.z/=length;
+}
+void my_calculate_acc_present_quaternion(void)
+{
+  imu660ra_get_acc();
+  acc_present_quaternion.w=0;
+  acc_present_quaternion.x=imu660ra_acc_x;
+  acc_present_quaternion.y=imu660ra_acc_y;
+  acc_present_quaternion.z=imu660ra_acc_z;
+acc_present_quaternion.x=acc_present_quaternion.x*0.2+acc_present_quaternionl.x*0.8;
+acc_present_quaternion.y=acc_present_quaternion.y*0.2+acc_present_quaternionl.y*0.8;
+acc_present_quaternion.z=acc_present_quaternion.z*0.2+acc_present_quaternionl.z*0.8;
+length=sqrt(acc_present_quaternion.x*acc_present_quaternion.x+acc_present_quaternion.y*acc_present_quaternion.y+acc_present_quaternion.z*acc_present_quaternion.z);
+  acc_present_quaternion.x/=length;
+  acc_present_quaternion.y/=length;
+  acc_present_quaternion.z/=length;
+  length=sqrtf(pre_qua.x*pre_qua.x + pre_qua.y*pre_qua.y + pre_qua.z*pre_qua.z);
+  vertical_a=((pre_qua.x*imu660ra_acc_x + pre_qua.y*imu660ra_acc_y + pre_qua.z*imu660ra_acc_z)/length-4096)*0.0023926f;
+  v+=vertical_a*0.001f;
+}
+void my_calculate_horizon_quaternion(void)
+{
+    horizon_quaternion.x=0;
+    horizon_quaternion.y=0;
+    horizon_quaternion.z=0;
+    horizon_quaternion.w=0;
+    int var;
+    for(var=0;var<100;var++)
+    {
+      imu660ra_get_acc();
+      horizon_quaternion.x+=imu660ra_acc_x;
+      horizon_quaternion.y+=imu660ra_acc_y;
+      horizon_quaternion.z+=imu660ra_acc_z;
+      system_delay_ms(10);
+    }
+length=sqrtf(horizon_quaternion.x*horizon_quaternion.x+horizon_quaternion.y*horizon_quaternion.y+horizon_quaternion.z*horizon_quaternion.z);
+    horizon_quaternion.x/=length;
+    horizon_quaternion.y/=length;
+    horizon_quaternion.z/=length;
+}
+void my_calcuate_tran_qua(void)
+{
+      tran_angle1 = atan2(-horizon_quaternion.x, horizon_quaternion.z) / 2.0f;
+    tran_qua1.w=cos(tran_angle1);
+    tran_qua1.x=0;
+    tran_qua1.y=sin(tran_angle1);
+    tran_qua1.z=0;
+tran_qua1_conj.w = tran_qua1.w;
+tran_qua1_conj.x = -tran_qua1.x;  // = 0
+tran_qua1_conj.y = -tran_qua1.y;  // -sin
+tran_qua1_conj.z = -tran_qua1.z;  // = 0
+// 第一步：tran_qua * pre_qua
+quaternion temp;
+temp.w = tran_qua1.w * horizon_quaternion.w - tran_qua1.x * horizon_quaternion.x - tran_qua1.y * horizon_quaternion.y - tran_qua1.z * horizon_quaternion.z;
+temp.x = tran_qua1.w * horizon_quaternion.x + tran_qua1.x * horizon_quaternion.w + tran_qua1.y * horizon_quaternion.z - tran_qua1.z * horizon_quaternion.y;
+temp.y = tran_qua1.w * horizon_quaternion.y - tran_qua1.x * horizon_quaternion.z + tran_qua1.y * horizon_quaternion.w + tran_qua1.z * horizon_quaternion.x;
+temp.z = tran_qua1.w * horizon_quaternion.z + tran_qua1.x * horizon_quaternion.y - tran_qua1.y * horizon_quaternion.x + tran_qua1.z * horizon_quaternion.w;
+// 第二步：temp * tran_qua_conj
+show_qua.w = temp.w * tran_qua1_conj.w - temp.x * tran_qua1_conj.x - temp.y * tran_qua1_conj.y - temp.z * tran_qua1_conj.z;
+show_qua.x = temp.w * tran_qua1_conj.x + temp.x * tran_qua1_conj.w + temp.y * tran_qua1_conj.z - temp.z * tran_qua1_conj.y;
+show_qua.y = temp.w * tran_qua1_conj.y - temp.x * tran_qua1_conj.z + temp.y * tran_qua1_conj.w + temp.z * tran_qua1_conj.x;
+show_qua.z = temp.w * tran_qua1_conj.z + temp.x * tran_qua1_conj.y - temp.y * tran_qua1_conj.x + temp.z * tran_qua1_conj.w;
+    tran_angle2 = atan2(show_qua.y, show_qua.z) / 2.0f;
+    tran_qua2.w=cos(tran_angle2);
+    tran_qua2.x=sin(tran_angle2);
+    tran_qua2.y=0;
+    tran_qua2.z=0;
+tran_qua2_conj.w = tran_qua2.w;
+tran_qua2_conj.x = -tran_qua2.x;  // = 0
+tran_qua2_conj.y = -tran_qua2.y;  // -sin
+tran_qua2_conj.z = -tran_qua2.z;  // = 0
+}
+void my_calculate_show_qua(void)
+{
+  quaternion temp;
+temp.w = tran_qua1.w * pre_qua.w - tran_qua1.x * pre_qua.x - tran_qua1.y * pre_qua.y - tran_qua1.z * pre_qua.z;
+temp.x = tran_qua1.w * pre_qua.x + tran_qua1.x * pre_qua.w + tran_qua1.y * pre_qua.z - tran_qua1.z * pre_qua.y;
+temp.y = tran_qua1.w * pre_qua.y - tran_qua1.x * pre_qua.z + tran_qua1.y * pre_qua.w + tran_qua1.z * pre_qua.x;
+temp.z = tran_qua1.w * pre_qua.z + tran_qua1.x * pre_qua.y - tran_qua1.y * pre_qua.x + tran_qua1.z * pre_qua.w;
+// 第二步：temp * tran_qua_conj
+show_qua.w = temp.w * tran_qua1_conj.w - temp.x * tran_qua1_conj.x - temp.y * tran_qua1_conj.y - temp.z * tran_qua1_conj.z;
+show_qua.x = temp.w * tran_qua1_conj.x + temp.x * tran_qua1_conj.w + temp.y * tran_qua1_conj.z - temp.z * tran_qua1_conj.y;
+show_qua.y = temp.w * tran_qua1_conj.y - temp.x * tran_qua1_conj.z + temp.y * tran_qua1_conj.w + temp.z * tran_qua1_conj.x;
+show_qua.z = temp.w * tran_qua1_conj.z + temp.x * tran_qua1_conj.y - temp.y * tran_qua1_conj.x + temp.z * tran_qua1_conj.w;
+temp.w = tran_qua2.w * show_qua.w - tran_qua2.x * show_qua.x - tran_qua2.y * show_qua.y - tran_qua2.z * show_qua.z;
+temp.x = tran_qua2.w * show_qua.x + tran_qua2.x * show_qua.w + tran_qua2.y * show_qua.z - tran_qua2.z * show_qua.y;
+temp.y = tran_qua2.w * show_qua.y - tran_qua2.x * show_qua.z + tran_qua2.y * show_qua.w + tran_qua2.z * show_qua.x;
+temp.z = tran_qua2.w * show_qua.z + tran_qua2.x * show_qua.y - tran_qua2.y * show_qua.x + tran_qua2.z * show_qua.w;
+// 第二步：temp * tran_qua_conj
+show_qua.w = temp.w * tran_qua2_conj.w - temp.x * tran_qua2_conj.x - temp.y * tran_qua2_conj.y - temp.z * tran_qua2_conj.z;
+show_qua.x = temp.w * tran_qua2_conj.x + temp.x * tran_qua2_conj.w + temp.y * tran_qua2_conj.z - temp.z * tran_qua2_conj.y;
+show_qua.y = temp.w * tran_qua2_conj.y - temp.x * tran_qua2_conj.z + temp.y * tran_qua2_conj.w + temp.z * tran_qua2_conj.x;
+show_qua.z = temp.w * tran_qua2_conj.z + temp.x * tran_qua2_conj.y - temp.y * tran_qua2_conj.x + temp.z * tran_qua2_conj.w;
+Euler.pitch=atan(show_qua.x/sqrtf(show_qua.y*show_qua.y+show_qua.z*show_qua.z))/3.141592653579f*180.0f;
+Euler.roll=atan(show_qua.y/sqrtf(show_qua.x*show_qua.x+show_qua.z*show_qua.z))/3.141592653579f*180.0f;
+}
+void extract_horizon_a()//用imu660ra_acc_x，imu660ra_acc_z
+{
+    quaternion temp,temp2;
+    temp.w = tran_qua1.w * 0 - tran_qua1.x * imu660ra_acc_x - tran_qua1.y * imu660ra_acc_y - tran_qua1.z * imu660ra_acc_z;
+    temp.x = tran_qua1.w * imu660ra_acc_x + tran_qua1.x * 0 + tran_qua1.y * imu660ra_acc_z - tran_qua1.z * imu660ra_acc_y;
+    temp.y = tran_qua1.w * imu660ra_acc_y - tran_qua1.x * imu660ra_acc_z + tran_qua1.y * 0 + tran_qua1.z * imu660ra_acc_x;
+    temp.z = tran_qua1.w * imu660ra_acc_z + tran_qua1.x * imu660ra_acc_y - tran_qua1.y * imu660ra_acc_x + tran_qua1.z * 0;
+    temp2.w = temp.w * tran_qua1_conj.w - temp.x * tran_qua1_conj.x - temp.y * tran_qua1_conj.y - temp.z * tran_qua1_conj.z;
+    temp2.x = temp.w * tran_qua1_conj.x + temp.x * tran_qua1_conj.w + temp.y * tran_qua1_conj.z - temp.z * tran_qua1_conj.y;
+    temp2.y = temp.w * tran_qua1_conj.y - temp.x * tran_qua1_conj.z + temp.y * tran_qua1_conj.w + temp.z * tran_qua1_conj.x;
+    temp2.z = temp.w * tran_qua1_conj.z + temp.x * tran_qua1_conj.y - temp.y * tran_qua1_conj.x + temp.z * tran_qua1_conj.w;
+    temp.w = tran_qua2.w * temp2.w - tran_qua2.x * temp2.x - tran_qua2.y * temp2.y - tran_qua2.z * temp2.z;
+    temp.x = tran_qua2.w * temp2.x + tran_qua2.x * temp2.w + tran_qua2.y * temp2.z - tran_qua2.z * temp2.y;
+    temp.y = tran_qua2.w * temp2.y - tran_qua2.x * temp2.z + tran_qua2.y * temp2.w + tran_qua2.z * temp2.x;
+    temp.z = tran_qua2.w * temp2.z + tran_qua2.x * temp2.y - tran_qua2.y * temp2.x + tran_qua2.z * temp2.w;
+    temp2.w = temp.w * tran_qua2_conj.w - temp.x * tran_qua2_conj.x - temp.y * tran_qua2_conj.y - temp.z * tran_qua2_conj.z;
+    temp2.x = temp.w * tran_qua2_conj.x + temp.x * tran_qua2_conj.w + temp.y * tran_qua2_conj.z - temp.z * tran_qua2_conj.y;
+    temp2.y = temp.w * tran_qua2_conj.y - temp.x * tran_qua2_conj.z + temp.y * tran_qua2_conj.w + temp.z * tran_qua2_conj.x;
+    temp2.z = temp.w * tran_qua2_conj.z + temp.x * tran_qua2_conj.y - temp.y * tran_qua2_conj.x + temp.z * tran_qua2_conj.w;
+    temp2.x/=4096;
+    temp2.y/=4096;
+    temp2.z/=4096;
+    horizon_xa=(show_qua.x-temp2.x)*9800;
+    horizon_ya=(temp2.y-show_qua.y)*9800;
+    // >>> 新增：低通滤波
+    static float horizon_xa_lpf = 0;
+    static float horizon_ya_lpf = 0;
+    horizon_xa_lpf = horizon_xa_lpf * 0.95f + horizon_xa * 0.05f;
+    horizon_ya_lpf = horizon_ya_lpf * 0.95f + horizon_ya * 0.05f;
+    horizon_xa = horizon_xa_lpf;
+    horizon_ya = horizon_ya_lpf;
+    // <<<
+}
+my_imu.h
+#ifndef CODE_MY_IMU_H_
+#define CODE_MY_IMU_H_
+typedef struct
+{
+  float x;
+  float y;
+  float z;
+  float w;
+}quaternion;
+extern quaternion pre_qua;
+extern quaternion change_quaternion;
+extern quaternion show_qua;
+typedef struct EulerAngle_Struct
+{
+    float pitch;
+    float roll;
+    float yaw;
+} EulerAngle_Struct;
+extern EulerAngle_Struct Euler;
+extern float gx;
+extern float gy;
+extern float gz;
+extern float v;
+extern float horizon_xa;
+extern float horizon_ya;
+extern float horizon_xv;
+extern float horizon_yv;
+void my_imu_init(void);
+void my_calculate_change_qua(void);
+void my_calculate_pre_qua(void);
+void my_calculate_acc_present_quaternion(void);
+void my_calculate_horizon_quaternion(void);
+void my_calcuate_tran_qua(void);
+void my_calculate_show_qua(void);
+void extract_horizon_a();
+#endif /* CODE_MY_IMU_H_ */
+ekf.c
+#include "ekf.h"
+#include "matrix.h"
+#include "dl1a_app.h"
+#include "imu_app.h"
+#include "my_imu.h"
+#include "zf_device_dl1b.h"
+float height=0;
+float HR1;
+float HR2;
+static float hx_h = 0;
+static float hp_h = 0.8f;
+static float hq_h = 0.03f;
+void Height_EKF_Init()
+{
+    hx_h = 0;
+    hp_h = 0.8f;
+}
+static float calc_sensor_r(uint16 raw_mm, float predicted_h_m)
+{
+    float r;
+    float diff;
+    if(raw_mm > 4000)
+    {
+        r = 9999.0f;
+        return r;
+    }
+    diff = (float)raw_mm / 1000.0f - predicted_h_m;
+    if(diff < 0) diff = -diff;
+    if(diff > 0.3f)
+    {
+        r = 50.0f + diff * 100.0f;
+    }
+    else
+    {
+        r = 1.0f;
+    }
+    return r;
+}
+void Height_EKF_Updata()
+{
+    hp_h = hp_h + hq_h;
+    dl1b_get_distance();
+    dl1b2_get_distance();
+    float z1_raw = (float)dl1b_distance_mm * show_qua.z;
+    float z2_raw = (float)dl1b2_distance_mm * show_qua.z;
+    float r1 = calc_sensor_r(dl1b_distance_mm, hx_h);
+    float r2 = calc_sensor_r(dl1b2_distance_mm, hx_h);
+    if(r1 < 9000.0f && r2 < 9000.0f)
+    {
+        if(dl1b_distance_mm < dl1b2_distance_mm)
+        {
+            float gap = (float)(dl1b2_distance_mm - dl1b_distance_mm) / 1000.0f;
+            r1 = r1 + gap * 200.0f;
+        }
+        else if(dl1b2_distance_mm < dl1b_distance_mm)
+        {
+            float gap = (float)(dl1b_distance_mm - dl1b2_distance_mm) / 1000.0f;
+            r2 = r2 + gap * 200.0f;
+        }
+    }
+    HR1=r1;
+    HR2=r2;
+    if(r1 > 9000.0f && r2 > 9000.0f)
+    {
+        vertical_h = hx_h * 1000.0f;
+        height = vertical_h;
+        return;
+    }
+    float z1_m = z1_raw / 1000.0f;
+    float z2_m = z2_raw / 1000.0f;
+    if(r1 < 9000.0f)
+    {
+        float k1 = hp_h / (hp_h + r1);
+        hx_h = hx_h + k1 * (z1_m - hx_h);
+        hp_h = (1.0f - k1) * hp_h;
+    }
+    if(r2 < 9000.0f)
+    {
+        float k2 = hp_h / (hp_h + r2);
+        hx_h = hx_h + k2 * (z2_m - hx_h);
+        hp_h = (1.0f - k2) * hp_h;
+    }
+    if(hp_h < 0.001f) hp_h = 0.001f;
+    vertical_h = hx_h * 1000.0f;
+    height = vertical_h;
+}
+ekf.c
+#ifndef CODE_EKF_H_
+#define CODE_EKF_H_
+#include "zf_common_headfile.h"
+#define DEG_TO_RAD      (57.295779513082320876798154814105f)
+#define dt              (0.001f)
+#define K               (1.0f)
+#define hdt             (0.02f)
+
+
+
+typedef struct
+{
+        float gyro_x;
+        float gyro_y;
+        float gyro_z;
+        float acc_x;
+        float acc_y;
+        float acc_z;
+}imu_t;
+
+extern imu_t imu_data;
+
+extern float height;
+
+extern float vertical_a;
+extern float vertical_v;
+extern float vertical_h;
+
+extern float upflow_dx;
+extern float upflow_dy;
+extern float upflow302_x_last;
+extern float upflow302_y_last;
+
+extern uint8_t dl1b_data_if_valid;
+
+extern float HR1;
+extern float HR2;
+
+void EKF_Init(void);
+void EKF_UpData(void);
+
+void Height_EKF_Init(void);
+void Height_EKF_Updata(void);
+
+void Upflow_EKF_Init_X();
+float Upflow_EKF_Updata_X(float d_pos);
+void Upflow_EKF_Init_Y();
+float Upflow_EKF_Updata_Y(float d_pos);
+
+#endif /* CODE_EKF_H_ */
+dl1a_app.c
+#include "zf_device_dl1a.h"
+#include "dl1a_app.h"
+#include "matrix.h"
+#include "ekf.h"
+#include "my_imu.h"
+uint16 dl1a_app_distance = 0;                               // 滤波后的距离值 mm
+uint8_t dl1a_if_valid=0;
+uint8_t dl1a_get_distance_finish_flag;
+//--------------------------------------------------------------------------------------------------------
+// 函数简介     对 uint16 数组进行升序排序 (插入排序 数据量小效率高)
+// 参数说明     arr             数据数组
+// 参数说明     len             数组长度
+// 返回参数     void
+//--------------------------------------------------------------------------------------------------------
+static void dl1a_app_sort_u16 (uint16 *arr, uint8 len)
+{
+    uint8 i = 0;
+    uint8 j = 0;
+    uint16 temp = 0;
+
+    for (i = 1; i < len; i++)
+    {
+        temp = arr[i];
+        j = i;
+        while (j > 0 && arr[j - 1] > temp)
+        {
+            arr[j] = arr[j - 1];
+            j--;
+        }
+        arr[j] = temp;
+    }
+}
+
+//--------------------------------------------------------------------------------------------------------
+// 函数简介     执行一次中值+均值组合滤波
+// 参数说明     void
+// 返回参数     uint16          滤波后的距离值 mm 同时存入 dl1a_app_distance
+// 使用示例     dl1a_app_filter();
+// 备注信息     采集 SAMPLE_COUNT 次 排序后去掉头尾极值 剩余取平均
+//              需要确保 dl1a 已完成初始化且处于连续测量模式
+//--------------------------------------------------------------------------------------------------------
+static uint16_t dl1b_distance_mm_last;
+static uint16_t dl1b2_distance_mm_last;
+uint16_t find_actual_distance()
+{
+  dl1b_get_distance();
+  dl1b2_get_distance();
+  
+  if(dl1b_distance_mm>1200) 
+  {
+    if( dl1b2_distance_mm>1200 )
+    {
+      return (dl1b_distance_mm_last>dl1b2_distance_mm_last)? dl1b_distance_mm_last : dl1b2_distance_mm_last;
+    }
+    else
+    {
+      dl1b2_distance_mm_last = dl1b2_distance_mm;
+      return dl1b2_distance_mm;
+    }
+  }
+          
+  if(dl1b2_distance_mm>1200) 
+  {
+    if(dl1b_distance_mm>1200) 
+    {
+      return (dl1b_distance_mm_last>dl1b2_distance_mm_last)? dl1b_distance_mm_last : dl1b2_distance_mm_last;
+    }
+    else
+    {
+      dl1b_distance_mm_last = dl1b_distance_mm;
+      return dl1b_distance_mm;
+    }
+  }
+  dl1b_distance_mm_last = dl1b_distance_mm;
+  dl1b2_distance_mm_last = dl1b2_distance_mm;
+  return (dl1b_distance_mm>dl1b2_distance_mm)? dl1b_distance_mm : dl1b2_distance_mm;
+}
+
+uint16 dl1a_app_filter (void)
+{
+    uint16 sample_buffer[DL1A_APP_SAMPLE_COUNT];
+    uint32 sum = 0;
+    uint8  i = 0;
+    uint8  valid_count = DL1A_APP_SAMPLE_COUNT - 2 * DL1A_APP_TRIM_COUNT;
+
+    // 采集 N 次原始数据
+    for (i = 0; i < DL1A_APP_SAMPLE_COUNT; i++)
+    {
+        dl1a_finsh_flag = 0;
+        dl1a_get_distance();
+        sample_buffer[i] = dl1a_distance_mm;
+    }
+
+    // 升序排序
+    dl1a_app_sort_u16(sample_buffer, DL1A_APP_SAMPLE_COUNT);
+
+    // 去掉头尾极值后求和
+    for (i = DL1A_APP_TRIM_COUNT; i < (DL1A_APP_SAMPLE_COUNT - DL1A_APP_TRIM_COUNT); i++)
+    {
+        sum += sample_buffer[i];
+    }
+    
+    // 取平均
+    dl1a_app_distance = (uint16)(sum / valid_count);
+
+//    Height_EKF_Updata();
+    
+    if(dl1a_app_distance>1000)
+      return (uint16)(1000*show_qua.z);
+    else
+      return (uint16)(dl1a_app_distance*show_qua.z);
+}
+
+//--------------------------------------------------------------------------------------------------------
+// 函数简介     判断当前滤波距离是否在有效范围内
+// 参数说明     void
+// 返回参数     uint8           1-有效 0-无效(超出范围)
+// 使用示例     if (dl1a_app_is_valid()) { /* 距离可信 */ }
+//--------------------------------------------------------------------------------------------------------
+uint8 dl1a_app_is_valid (void)
+{
+    return (dl1a_app_distance >= DL1A_APP_DISTANCE_MIN &&
+            dl1a_app_distance <= DL1A_APP_DISTANCE_MAX) ? 1 : 0;
+}
+dl1a_app.h
+#ifndef _DL1A_APP_H_
+#define _DL1A_APP_H_
+#include "zf_common_typedef.h"
+#define DL1A_APP_SAMPLE_COUNT           (5)                 // 每次滤波的采样次数 建议奇数 5~9
+#define DL1A_APP_TRIM_COUNT             (1)                 // 头尾各去掉的极值个数 需小于 SAMPLE_COUNT/2
+#define DL1A_APP_DISTANCE_MAX           (1200)              // 有效距离上限 mm 超出视为无效
+#define DL1A_APP_DISTANCE_MIN           (10)                // 有效距离下限 mm 低于视为无效
+
+extern uint16 dl1a_app_distance;                            // 滤波后的距离值 mm
+extern uint8_t dl1a_if_valid;
+extern uint8_t dl1a_get_distance_finish_flag;
+
+uint16  dl1a_app_filter         (void);        // 执行一次中值+均值组合滤波 结果存入 dl1a_app_distance
+uint8   dl1a_app_is_valid       (void);      // 判断当前距离是否在有效范围内
+uint16_t find_actual_distance   (void);
+#endif
+cm7_0_isr.c  
+pit0_ch2_isr()
+extern float upflow302_receive_angle_x;
+extern float upflow302_receive_angle_y;
+static float upflow302_gx;
+static float upflow302_gy;
+void pit0_ch2_isr() // 定时器通道 2 周期中断服务函数
+{
+    pit_isr_flag_clear(PIT_CH2);
+    if(upflow302_finsh_flag)  // 只要有新数据
+    {
+        if(upflow302_receive.upflow302_valid == 245)
+        {
+            static float flow_x_lpf = 0, flow_y_lpf = 0;
+            flow_x_lpf = 0.74f * upflow302_receive.upflow302_x + 0.26f * flow_x_lpf;
+            flow_y_lpf = 0.74f * upflow302_receive.upflow302_y + 0.26f * flow_y_lpf;
+            upflow302_receive.upflow302_x = flow_x_lpf;
+            upflow302_receive.upflow302_y = flow_y_lpf;
+            
+            upflow302_receive_angle_x = upflow302_gx / 180.0f *3.141592653579f ;
+            upflow302_receive_angle_y = upflow302_gy / 180.0f *3.141592653579f ;
+            
+            upflow302_gx = 0;
+            upflow302_gy = 0;
+            
+            upflow_dx = (upflow302_receive.upflow302_x/10000.0f-upflow302_receive_angle_y)/0.03f*vertical_h;
+            upflow_dy = (upflow302_receive.upflow302_y/10000.0f-upflow302_receive_angle_x)/0.03f*vertical_h;
+            
+            upflow_dx = 0.05*upflow_dx+0.95*(upflow302_x_last+horizon_xa*0.03f);
+            upflow_dy = 0.05*upflow_dy+0.95*(upflow302_y_last+horizon_ya*0.03f);
+            
+            upflow302_x_last = upflow_dx;
+            upflow302_y_last = upflow_dy;
+            
+            flow_ctrl_update();
+        }
+        upflow302_finsh_flag = 0;
+        upflow302_response_time = 0;
+        upflow302_state_flag = 1;
+    }
+    else
+    {
+        upflow302_response_time++;
+        if(upflow302_response_time > UP_FLOW_302_TIMEOUT_COUNT)
+        {
+            upflow302_state_flag = 0;
+        }
+    }
+}
+image.c
+void set_img_twovalue(uint8 threshold)
+{
+    for (uint8 i = 0; i < MT9V03X_H; i++)
+    {
+        for (uint8 j = 0; j < MT9V03X_W; j++)
+        {
+            temp_image[i][j] = (mt9v03x_image[i][j] >= threshold) ? 255 : 0;
+            show_image[i][j]  = (mt9v03x_image[i][j] >= threshold) ? 255 : 0;
+        }
+    }
+}
+static int8_t move[8][2] = {
+    { 1, 0}, { 0, 1}, {-1, 0}, { 0,-1},
+    {-1,-1}, {-1, 1}, { 1,-1}, { 1, 1}
+};
+
+typedef struct
+{
+    uint8 x;
+    uint8 y;
+} stacknode;
+
+static stacknode stack[22561];
+static int16_t stacktop;
+
+static void push(uint8_t i_, uint8_t j_)
+{
+    if (stacktop < 22561)
+    {
+        stack[++stacktop].x = i_;
+        stack[stacktop].y = j_;
+    }
+}
+
+static int pop(uint8_t *i_, uint8_t *j_)
+{
+    if (stacktop >= 0)
+    {
+        *i_ = stack[stacktop].x;
+        *j_ = stack[stacktop--].y;
+        return 1;
+    }
+    return 0;
+}
+
+connect_component components[15];
+uint8 component_counter;
+
+
+void seek_connect_component(void)
+{
+    stacktop = -1;
+    component_counter = 1;//
+    target_index= -1;
+    for (uint8_t i = 0; i < 15; i++)
+    {
+        components[i].centerX = 0;
+        components[i].centerY = 0;
+        components[i].area = 0;
+    }
+
+    for (uint8_t i = 0; i < MT9V03X_H; i++)
+    {
+        for (uint8_t j = 0; j < MT9V03X_W; j++)
+        {
+            if (temp_image[i][j] == 255)
+            {
+
+                push(i, j);
+                temp_image[i][j] = component_counter;
+                components[component_counter].centerX += i;
+                components[component_counter].centerY += j;
+                components[component_counter].area++;
+
+                uint8_t i2, j2;
+                while (pop(&i2, &j2))
+                {
+                    for (uint8 i1 = 0; i1 < 8; i1++)
+                    {
+                        int ni = i2 + move[i1][0];
+                        int nj = j2 + move[i1][1];
+                        if (ni >= 0 && nj >= 0 && ni < MT9V03X_H && nj < MT9V03X_W
+                            && temp_image[ni][nj] == 255)
+                        {
+                            push(ni, nj);
+                            temp_image[ni][nj] = component_counter;
+                            components[component_counter].centerX += ni;
+                            components[component_counter].centerY += nj;
+                            components[component_counter].area++;
+                        }
+                    }
+                }
+
+                if (components[component_counter].area > 1)
+                {
+                    components[component_counter].centerX /= components[component_counter].area;
+                    components[component_counter].centerY /= components[component_counter].area;
+                    component_counter++;
+                }
+                else
+                {
+                    components[component_counter].area = 0;
+                    components[component_counter].centerX = 0;
+                    components[component_counter].centerY = 0;
+                }
+            }
+        }
+    }
+    num = component_counter - 1;
+    
+    
+  float screen_centerX = MT9V03X_H / 2.0f;
+  float screen_centerY = MT9V03X_W / 2.0f;
+  
+  float min_dist = 10000.0f; 
+  
+  biggest_components= -1;
+  uint8_t biggest_components_area=0;
+  
+  for(uint8_t i=1;i<=num;i++)
+  {
+    if(components[i].area > biggest_components_area)
+    {
+      biggest_components=i;
+      biggest_components_area=components[i].area;
+    }
+  }
+  
+   if(biggest_components > 0)
+   {
+     x_error = components[biggest_components].centerX - screen_centerX + xxx;//0-60
+     y_error = screen_centerY - components[biggest_components].centerY + yyy;//94-0
+   }
+}
+void locate_component()
+{
+  if(biggest_components == -1) return;
+  
+  uint8_t tx,ty;
+  tx=(uint8_t)components[biggest_components].centerX;
+  ty=(uint8_t)components[biggest_components].centerY;
+  for(uint8_t i=0;i<MT9V03X_W;i++)
+  {
+    show_image[tx][i]=255;
+  }
+  for(uint8_t j=0;j<MT9V03X_H;j++)
+  {
+    show_image[j][ty]=255;
+  }
+}
+image.h
+#ifndef CODE_IMAGE_H_
+#define CODE_IMAGE_H_
+#include "zf_common_headfile.h"
+extern uint8 show_image[MT9V03X_H][MT9V03X_W];
+extern uint8 temp_image[MT9V03X_H][MT9V03X_W];
+
+typedef struct
+{
+    float area;         
+    float centerX;      
+    float centerY;      
+    float h;
+    float w;
+} connect_component;
+
+extern connect_component components[15];    
+extern connect_component components_led[15];    
+extern uint8 component_counter;           
+extern uint8 num;                           
+
+extern float y_error;
+extern float x_error;
+extern float dx;
+extern float dy;
+extern float dist_sq;
+
+extern uint8_t yyy;
+extern uint8_t xxx;
+
+extern int8_t biggest_components;
+
+//uint8 Ostu(void);                           
+void set_img_twovalue(uint8 threshold);     
+//void extend_image(void);                    
+//void shrink_image(void);                    
+void seek_connect_component(void);          
+
+void locate_component(void);
+
+#endif // CODE_IMAGE_H_
+image_led.c
+#include "image_led.h"
+// ========== Sobel自适应阈值参数 ==========
+//#define SOBEL_THRESH_MIN     50     // 自适应阈值下限
+//#define SOBEL_FACTOR_NUM     7      // 系数分子（等效0.7）
+//#define SOBEL_FACTOR_DEN     10     // 系数分母
+#define BORDER_WIDTH 15  // 边框宽度
+/*变量声明*/
+//uint8_t original_image[image_h][image_w];//缓存图像，压缩图像存放
+uint8_t show_led_image[image_h][image_w];
+uint8_t temp_led_image[image_h][image_w];
+//uint8_t temp_led_image1[image_h][image_w];
+uint8_t temp_led_mag_image[image_h][image_w];
+uint8_t temp_led_ang_image[image_h][image_w];
+int near_image_thereshold,far_image_thereshold;//图像分割阈值
+uint8_t led_num = 0;
+int all_black_count = 0;
+int8_t led_target_index = -1;
+int8_t led_target_index1 = -1;
+float led_dx;
+float led_dy;
+float led_x_error;
+float led_y_error;
+float led_dist_sq;
+float temp1,temp2;
+float distance[15];
+uint8_t get_pixel_mirror(uint8_t src[120][188], int x, int y, int width, int height) {
+    // x方向镜像
+    if (x < 0) {
+        x = -x;
+    } else if (x >= width) {
+        x = 2 * width - x - 2;
+    }
+    // y方向镜像
+    if (y < 0) {
+        y = -y;
+    } else if (y >= height) {
+        y = 2 * height - y - 2;
+    }
+    // 极端情况处理（防止镜像后仍越界）
+    if (x < 0) x = 0;
+    if (x >= width) x = width - 1;
+    if (y < 0) y = 0;
+    if (y >= height) y = height - 1;
+    
+    return src[y][x];
+}
+// 计算梯度，直接输出 uint8_t 幅值（归一化到0-255）
+void compute_gradient(uint8_t src[120][188], uint8_t magnitude[120][188]) {
+    int width = 188;
+    int height = 120;
+    float max_mag = 0.0f;
+    
+    // 第一遍：找最大值
+    for (int y = 1; y < height - 1; y++) {
+        for (int x = 1; x < width - 1; x++) {
+            float gx = -src[y-1][x-1] + src[y-1][x+1]
+                      -2*src[y][x-1] + 2*src[y][x+1]
+                      -src[y+1][x-1] + src[y+1][x+1];
+            float gy = -src[y-1][x-1] - 2*src[y-1][x] - src[y-1][x+1]
+                       +src[y+1][x-1] + 2*src[y+1][x] + src[y+1][x+1];
+            float mag = sqrtf(gx*gx + gy*gy);
+            if (mag > max_mag) max_mag = mag;
+        }
+    }
+    
+    // 第二遍：计算并归一化
+    if (max_mag < 0.001f) {
+        // 全图都是0，直接返回
+        for (int y = 0; y < height; y++)
+            for (int x = 0; x < width; x++)
+                magnitude[y][x] = 0;
+        return;
+    }
+    for (int y = 1; y < height - 1; y++) {
+        for (int x = 1; x < width - 1; x++) {
+            float gx = -src[y-1][x-1] + src[y-1][x+1]
+                      -2*src[y][x-1] + 2*src[y][x+1]
+                      -src[y+1][x-1] + src[y+1][x+1];
+            float gy = -src[y-1][x-1] - 2*src[y-1][x] - src[y-1][x+1]
+                       +src[y+1][x-1] + 2*src[y+1][x] + src[y+1][x+1];
+            float mag = sqrtf(gx*gx + gy*gy);
+            
+            magnitude[y][x] = (uint8_t)(mag / max_mag * 255.0f);
+            
+        }
+    }
+    
+    // 边界清零
+    for (int y = 0; y < height; y++) {
+        magnitude[y][0] = magnitude[y][width-1] = 0;
+    }
+    for (int x = 0; x < width; x++) {
+        magnitude[0][x] = magnitude[height-1][x] = 0;
+    }
+}
+float higher_canny_threhold;
+float lower_canny_threhold;
+static int8_t move1[21][2] = {
+          {-2,-1},{-2,0},{-2,1},
+  {-1,-2},{-1,-1},{-1,0},{-1,1},{-1,2},
+  {-0,-2},{-0,-1},{-0,0},{-0,1},{-0,2},
+  { 1,-2},{ 1,-1},{ 1,0},{ 1,1},{ 1,2},
+          { 2,-1},{ 2,0},{ 2,1}
+};
+
+void shrink_led_image(uint8_t src[MT9V03X_H][MT9V03X_W], uint8_t dst[MT9V03X_H][MT9V03X_W])
+{
+    uint8_t shrink_judge;
+    for (uint8 i = 0; i < MT9V03X_H; i++)
+    {
+        for (uint8 j = 0; j < MT9V03X_W; j++)
+        {
+            shrink_judge = 0;
+            for (uint8 i1 = 0; i1 < 21; i1++)
+            {
+                int ni = i + move1[i1][0];
+                int nj = j + move1[i1][1];
+                if (ni < 0 || nj < 0 || ni >= MT9V03X_H || nj >= MT9V03X_W)
+                    shrink_judge++;
+                else if (src[ni][nj] == 255)
+                    shrink_judge++;
+                else
+                    break;
+            }
+            if (shrink_judge == 21)
+                dst[i][j] = 255;
+            else
+                dst[i][j] = 0;
+        }
+    }
+}
+
+void extend_led_image(uint8_t src[MT9V03X_H][MT9V03X_W], uint8_t dst[MT9V03X_H][MT9V03X_W])
+{
+    for (uint8 i = 0; i < MT9V03X_H; i++)
+    {
+        for (uint8 j = 0; j < MT9V03X_W; j++)
+        {
+            if (src[i][j] == 255)
+            {
+                for (uint8 i1 = 0; i1 < 21; i1++)
+                {
+                    int ni = i + move1[i1][0];
+                    int nj = j + move1[i1][1];
+                    if (ni >= 0 && nj >= 0 && ni < MT9V03X_H && nj < MT9V03X_W)
+                    {
+                        dst[ni][nj] = 255;
+                    }
+                }
+            }
+        }
+    }
+}
+
+void updata_show_led_image(void)
+{
+    for (uint8 i = 0; i < MT9V03X_H; i++)
+    {
+        for (uint8 j = 0; j < MT9V03X_W; j++)
+        {
+            show_led_image[i][j]  = temp_led_image[i][j];
+        }
+    }
+}
+
+static int8_t move[8][2] = {
+    { 1, 0}, { 0, 1}, {-1, 0}, { 0,-1},
+    {-1,-1}, {-1, 1}, { 1,-1}, { 1, 1}
+};
+typedef struct
+{
+    uint8 x;
+    uint8 y;
+} stacknode_led;
+
+static stacknode_led stack[22561];
+static int16_t stacktop_led;
+
+static void push_led(uint8_t i_, uint8_t j_)
+{
+    if (stacktop_led < 22561)
+    {
+        stack[++stacktop_led].x = i_;
+        stack[stacktop_led].y = j_;
+    }
+}
+static int pop_led(uint8_t *i_, uint8_t *j_)
+{
+    if (stacktop_led >= 0)
+    {
+        *i_ = stack[stacktop_led].x;
+        *j_ = stack[stacktop_led--].y;
+        return 1;
+    }
+    return 0;
+}
+connect_component components_led[15];
+uint8 component_counter_led;
+void seek_led_connect_component(void)
+{
+    stacktop_led = -1;
+    component_counter_led = 1;//
+    led_target_index= -1;
+  float screen_centerX = MT9V03X_H / 2.0f;
+  float screen_centerY = MT9V03X_W / 2.0f;
+    
+    for (uint8_t i = 0; i < 30; i++)
+    {
+        components_led[i].centerX = 0;
+        components_led[i].centerY = 0;
+        components_led[i].area = 0;
+    }
+    for (uint8_t i = 0; i < MT9V03X_H; i++)
+    {
+        for (uint8_t j = 0; j < MT9V03X_W; j++)
+        {
+            if (temp_led_image[i][j] == 255)
+            {
+                push_led(i, j);
+                temp_led_image[i][j] = component_counter_led;
+                components_led[component_counter_led].centerX += i;
+                components_led[component_counter_led].centerY += j;
+                components_led[component_counter_led].area++;
+
+                uint8_t i2, j2;
+                while (pop_led(&i2, &j2))
+                {
+                    for (uint8 i1 = 0; i1 < 8; i1++)
+                    {
+                        int ni = i2 + move[i1][0];
+                        int nj = j2 + move[i1][1];
+                        if (ni >= 0 && nj >= 0 && ni < MT9V03X_H && nj < MT9V03X_W
+                            && temp_led_image[ni][nj] == 255)
+                        {
+                            push_led(ni, nj);
+                            temp_led_image[ni][nj] = component_counter_led;
+                            components_led[component_counter_led].centerX += ni;
+                            components_led[component_counter_led].centerY += nj;
+                            components_led[component_counter_led].area++;
+                        }
+                    }
+                }
+                float cx = components_led[component_counter_led].centerX / (float)components_led[component_counter_led].area;
+                float cy = components_led[component_counter_led].centerY / (float)components_led[component_counter_led].area;
+                float center_dist = sqrtf(
+                    (cx- screen_centerX - x_error) * 
+                    (cx - screen_centerX - x_error) +
+                    (cy - screen_centerY + y_error) * 
+                    (cy - screen_centerY + y_error)
+                );//led juli car
+                bool keep_component = false;
+
+                if (center_dist <= 70)
+                {
+                    // 靠近中心区域：面积必须大于阈值（比如 > 30）
+                    if (components_led[component_counter_led].area > 10)
+                    {
+                        keep_component = true;
+                    }
+                }
+                else
+                {
+                    // 远离中心区域：面积大于最小阈值即可（比如 > 6）
+                    if (components_led[component_counter_led].area > 7)
+                    {
+                        keep_component = true;
+                    }
+                }
+                
+                if (keep_component)
+                {
+                    components_led[component_counter_led].centerX = cx;    
+                    components_led[component_counter_led].centerY = cy;    
+                    component_counter_led++;
+                }
+                else
+                {
+                    components_led[component_counter_led].area = 0;
+                    components_led[component_counter_led].centerX = 0;
+                    components_led[component_counter_led].centerY = 0;
+                }
+            }
+        }
+    }
+    led_num = component_counter_led - 1;
+
+  for(uint8_t i=1;i<=led_num;i++)
+  {
+    if(components_led[i].area)
+      distance[i]=sqrtf((components_led[i].centerX - screen_centerX - x_error)* (components_led[i].centerX - screen_centerX - x_error) + (components_led[i].centerY - screen_centerY + y_error)*(components_led[i].centerY - screen_centerY + y_error));
+    else
+      distance[i]=9999999;
+  }
+// 找第二小的编号
+uint8_t min2_idx = 0;
+uint8_t min1_idx = 1;
+if(led_num >= 2)
+{
+    min1_idx = 1;
+    for(uint8_t i=2;i<=led_num;i++)
+    {
+        if(distance[i] < distance[min1_idx])
+        {
+            min1_idx = i;
+        }
+    }
+    if(min1_idx == 1)
+        min2_idx = 2;
+    else
+        min2_idx = 1;
+    for(uint8_t i=min2_idx;i<=led_num;i++)
+    {
+        if(i != min1_idx && distance[i] < distance[min2_idx])
+        {
+            min2_idx = i;
+        }
+    }
+}
+
+if(min2_idx==0)
+{
+  led_target_index=-1;
+  //led_x_error = 0;
+  //led_y_error = 0;
+}
+else
+{
+  led_target_index1 =min1_idx;
+  led_target_index=min2_idx;
+  led_x_error = components_led[led_target_index].centerX - screen_centerX ; 
+  led_y_error  =screen_centerY - components_led[led_target_index].centerY; 
+}
+}
+
+void locate_component_led()
+{
+  
+  if(led_target_index == -1) return;
+  
+  uint8_t tx,ty;
+  tx=(uint8_t)components_led[led_target_index].centerX;
+  ty=(uint8_t)components_led[led_target_index].centerY;
+  for(uint8_t i=0;i<MT9V03X_W;i++)
+  {
+    show_led_image[tx][i]=255;
+  }
+  for(uint8_t j=0;j<MT9V03X_H;j++)
+  {
+    show_led_image[j][ty]=255;
+  }
+}
+image_led.h
+#include "zf_common_headfile.h"
+
+#define image_h 120
+#define image_w 188
+extern float temp1;
+extern float temp2;
+extern float led_x_error;
+extern float led_y_error;
+extern float led_dx;
+extern float led_dy;
+extern float led_dist_sq;
+extern uint8_t show_led_image[image_h][image_w];
+extern uint8_t temp_led_image[image_h][image_w];
+extern uint8_t temp_led_mag_image[image_h][image_w];
+extern uint8_t temp_led_ang_image[image_h][image_w];
+extern uint8 component_counter_led;             
+extern uint8 led_num;                           
+extern int all_black_count;
+extern float dx;
+extern float dy;
+extern float dist_sq;
+extern int8_t led_target_index;
+extern int8_t led_target_index1;
+extern float higher_canny_threhold;
+extern float lower_canny_threhold;
+extern float distance[15];
+void set_img_twovalue_led(uint8 threshold_inner, uint8 threshold_border);
+void shrink_led_image(uint8_t src[MT9V03X_H][MT9V03X_W], uint8_t dst[MT9V03X_H][MT9V03X_W]);
+void extend_led_image(uint8_t src[MT9V03X_H][MT9V03X_W], uint8_t dst[MT9V03X_H][MT9V03X_W]);
+void updata_show_led_image(void);
+void seek_led_connect_component(void);
+void locate_component_led();
+小车：
+imu660ra.c
+#include "zf_common_headfile.h"
+#include "imu660ra.h"
+
+#define DT 0.002f
+#define K_COMP 0.02f 
+#define PI 3.1415926535f
+
+float gyro_x, gyro_y, gyro_z;
+float gyro_x_last, gyro_y_last, gyro_z_last;
+float acc_x, acc_y, acc_z;
+float gyro_offset_x = 0, gyro_offset_y = 0, gyro_offset_z = 0;
+float pitch,roll,yaw;
+
+void imu_init()
+{
+  imu660ra_init();
+  
+  uint32 i;
+  float sum_x = 0, sum_y = 0, sum_z = 0;
+
+  for(i = 0; i < 500; i++)//零漂 累计200次
+  {
+      imu660ra_get_gyro();
+      sum_x += imu660ra_gyro_transition(imu660ra_gyro_x);//imu660ra_gyro_transition(imu660ra_gyro_x);这个单位为°/s
+      sum_y += imu660ra_gyro_transition(imu660ra_gyro_y);
+      sum_z += imu660ra_gyro_transition(imu660ra_gyro_z);
+      system_delay_ms(2);
+  }
+  gyro_offset_x = sum_x / 500.0f;
+  gyro_offset_y = sum_y / 500.0f;
+  gyro_offset_z = sum_z / 500.0f;
+}
+
+void imu_read()//2ms 执行一次
+{
+  imu660ra_get_acc();
+  imu660ra_get_gyro();
+  
+  acc_x = imu660ra_acc_transition(imu660ra_acc_x);//单位为 g(m/s^2)
+  acc_y = imu660ra_acc_transition(imu660ra_acc_y);
+  acc_z = imu660ra_acc_transition(imu660ra_acc_z);
+  
+  gyro_x = (fabs)(imu660ra_gyro_transition(imu660ra_gyro_x) - gyro_offset_x) < 0.3 ? 0 : (imu660ra_gyro_transition(imu660ra_gyro_x) - gyro_offset_x);//单位为°/s
+  gyro_y = (fabs)(imu660ra_gyro_transition(imu660ra_gyro_y) - gyro_offset_y) < 0.3 ? 0 : (imu660ra_gyro_transition(imu660ra_gyro_y) - gyro_offset_y);
+  gyro_z = (fabs)(imu660ra_gyro_transition(imu660ra_gyro_z) - gyro_offset_z) < 0.3 ? 0 : (imu660ra_gyro_transition(imu660ra_gyro_z) - gyro_offset_z);
+  /*
+  gyro_x = (imu660ra_gyro_transition(imu660ra_gyro_x) - gyro_offset_x);//单位为°/s
+  gyro_y = (imu660ra_gyro_transition(imu660ra_gyro_y) - gyro_offset_y);
+  gyro_z = (imu660ra_gyro_transition(imu660ra_gyro_z) - gyro_offset_z);
+  */
+  float acc_roll  = atan2f(acc_y, acc_z) * 180.0f / PI;
+  float acc_pitch = atanf(-acc_x / sqrtf(acc_y*acc_y + acc_z*acc_z)) * 180.0f / PI;
+
+  float pitch_pred = pitch + (gyro_x_last + gyro_x) / 2.0f * DT;
+  float roll_pred  = roll  + (gyro_y_last + gyro_y) / 2.0f * DT;
+  yaw += (gyro_z_last + gyro_z) / 2.0f * DT;
+  
+  pitch = (1-K_COMP) * pitch_pred + K_COMP * acc_pitch;
+  roll  = (1-K_COMP) * roll_pred  + K_COMP * acc_roll;
+  
+  while(yaw >  180.0f) yaw -= 360.0f;
+  while(yaw < -180.0f) yaw += 360.0f;
+
+  gyro_z_last = gyro_z;
+  gyro_y_last = gyro_y;
+  gyro_x_last = gyro_x;
+}
+imu660ra.h
+#ifndef _IMU660RA_H
+#define _IMU660RA_H
+
+#include "zf_common_headfile.h"
+
+extern float gyro_x, gyro_y, gyro_z;
+extern float acc_x, acc_y, acc_z;
+extern float gyro_offset_x, gyro_offset_y, gyro_offset_z;
+extern float pitch,roll,yaw;
+
+void imu_init();
+void imu_read();//2ms 执行一次
+
+#endif
+encoder.c
+#include "zf_common_headfile.h"
+#include "encoder.h"
+#define ENCODER_DEAD_ZONE 1
+
+
+int16 encoder_data_quad[4] = {0};
+float encoder_data_quad_filt[4] = {0};
+int16 last_encoder_data_quad[4] = {0};//赵
+void encoder_init()
+{
+  encoder_quad_init(ENCODER_QUAD1, ENCODER_QUAD1_PHASE_A, ENCODER_QUAD1_PHASE_B);  // 初始化编码器模块与引脚 正交编码器模式
+  encoder_quad_init(ENCODER_QUAD2, ENCODER_QUAD2_PHASE_A, ENCODER_QUAD2_PHASE_B);  // 初始化编码器模块与引脚 正交编码器模式
+  encoder_quad_init(ENCODER_QUAD3, ENCODER_QUAD3_PHASE_A, ENCODER_QUAD3_PHASE_B);  // 初始化编码器模块与引脚 正交编码器模式
+  encoder_quad_init(ENCODER_QUAD4, ENCODER_QUAD4_PHASE_A, ENCODER_QUAD4_PHASE_B);  // 初始化编码器模块与引脚 正交编码器模式 
+}
+
+int16 encoder_get_count_deadzone(encoder_index_enum encoder_n)
+{
+    int16 delta = encoder_get_count(encoder_n);
+    if(fabs((float)delta) <= ENCODER_DEAD_ZONE)
+        return 0;
+    return delta;
+}
+
+void encoder_read()
+{
+   encoder_data_quad[0] = -encoder_get_count_deadzone(ENCODER_QUAD1);
+   encoder_clear_count(ENCODER_QUAD1);
+   encoder_data_quad[1] = encoder_get_count_deadzone(ENCODER_QUAD2);
+   encoder_clear_count(ENCODER_QUAD2);
+   encoder_data_quad[2] = -encoder_get_count_deadzone(ENCODER_QUAD3);
+   encoder_clear_count(ENCODER_QUAD3);
+   encoder_data_quad[3] = encoder_get_count_deadzone(ENCODER_QUAD4);
+   encoder_clear_count(ENCODER_QUAD4);
+/*
+    encoder_data_quad[0] = -(int16)(encoder_get_count_deadzone(ENCODER_QUAD1) / 5.0f);
+   encoder_clear_count(ENCODER_QUAD1);
+   encoder_data_quad[1] = (int16)(encoder_get_count_deadzone(ENCODER_QUAD2) / 5.0f);
+   encoder_clear_count(ENCODER_QUAD2);
+   encoder_data_quad[2] = -(int16)(encoder_get_count_deadzone(ENCODER_QUAD3) / 5.0f);
+   encoder_clear_count(ENCODER_QUAD3);
+   encoder_data_quad[3] = (int16)(encoder_get_count_deadzone(ENCODER_QUAD4) / 5.0f);
+   encoder_clear_count(ENCODER_QUAD4);
+*/
+}
+encoder.h
+#ifndef _ENCODER_H
+#define _ENCODER_H
+
+#include "zf_common_headfile.h"
+
+
+#define ENCODER_QUAD1                    (TC_CH19_ENCODER)                      // 左前编码器接口
+#define ENCODER_QUAD1_PHASE_A            (TC_CH19_ENCODER_CH1_P08_0)          // PHASE_A 对应的引脚
+#define ENCODER_QUAD1_PHASE_B            (TC_CH19_ENCODER_CH2_P08_1)            // PHASE_B 对应的引脚
+
+#define ENCODER_QUAD2                    (TC_CH09_ENCODER)                    // 右前编码器接口  
+#define ENCODER_QUAD2_PHASE_A            (TC_CH09_ENCODER_CH1_P05_0)            // PHASE_A 对应的引脚                 
+#define ENCODER_QUAD2_PHASE_B            (TC_CH09_ENCODER_CH2_P05_1)             // PHASE_B 对应的引脚 
+
+#define ENCODER_QUAD3                    (TC_CH36_ENCODER)                      // 左后编码器接口  
+#define ENCODER_QUAD3_PHASE_A            (TC_CH36_ENCODER_CH1_P12_0)            // PHASE_A 对应的引脚                 
+#define ENCODER_QUAD3_PHASE_B            (TC_CH36_ENCODER_CH2_P12_1)          // PHASE_B 对应的引脚                   
+                                                                                
+#define ENCODER_QUAD4                    (TC_CH07_ENCODER)                      // 右后编码器接口
+#define ENCODER_QUAD4_PHASE_A            (TC_CH07_ENCODER_CH1_P02_0)              // PHASE_A 对应的引脚
+#define ENCODER_QUAD4_PHASE_B            (TC_CH07_ENCODER_CH2_P02_1)           // PHASE_B 对应的引脚
+
+
+extern int16 encoder_data_quad[4];
+extern int16 last_encoder_data_quad[4] ;
+
+void encoder_init();
+void encoder_read();
+
+#endif
+
+
+
+
+B.3 电机驱动模块
+无人机：
+flight_pid.c
+#include "zf_common_headfile.h"
+#include "flight_pid.h"
+#include "my_imu.h"
+#include <math.h>
+#include "dl1a_app.h"
+#include "ekf.h"
+#include "img_ctrl.h"
+#include "flow_ctrl.h"
+#define LIMIT(a, min, max)  (((a) > (max)) ? (max) : (((a) < (min)) ? (min) : (a)))
+float pitch=0;
+float roll=0;
+// ======================== 串级PID实例================
+// 俯仰 (pitch)
+PID_T pid_pitch  = { .kp = -10.68, .ki = 0.0f, .kd = 0.0f,
+                     .max_integral = 1000.0f, .max_output = 1200.0f };
+PID_T pid_gyro_y = { .kp = 6.6f,   .ki = 0.0f, .kd = 0.12f,
+                     .max_integral = 500.0f, .max_output = 1200.0f };
+// 横滚 (roll)
+PID_T pid_roll   = { .kp = 12.0f,   .ki = 0.0f, .kd = 0.0f,
+                     .max_integral = 1000.0f, .max_output = 1200.0f };
+PID_T pid_gyro_x = { .kp = -4.80f, .ki = 0.0f, .kd = -0.18f,
+                     .max_integral = 500.0f, .max_output = 1200.0f };
+// 偏航 (yaw)
+PID_T pid_yaw    = { .kp = 0.0f, .ki = 0.0f, .kd = 0.0f,
+                     .max_integral = 500.0f, .max_output = 1200.0f };
+PID_T pid_gyro_z = { .kp = 0.0f, .ki = 0.0f, .kd = 0.0f,
+                     .max_integral = 600.0f, .max_output = 1200.0f };
+// 高度PID (框架保留, 参数待调)
+PID_T pid_height  = { .kp = 0.0f, .ki = 0.0f, .kd = 0.0f,
+                      .max_integral = 30000.0f, .max_output = 1000.0f };
+PID_T pid_z_speed = { .kp = 0.0f, .ki = 0.0f, .kd = 0.0f, .kf = 0.0 ,
+                      .max_integral = 30000.0f, .max_output = 900.0f };
+//height
+float  height_target      = 0.0f;
+static float last_height  = 0.0f;   // 上一次高度值 (mm)
+static float height_out   = 0.0f;   // 高度环总输出, 叠加到油门
+static int   height_div_cnt = 0;    // 高度环分频计数器
+float  z_speed_estimate   = 0.0f;   // Z轴速度估算 (mm/s)
+//
+// ======================== 电机与状态 ========================
+float motor_lt_pwm = 0;        // 左上电机PWM
+float motor_rt_pwm = 0;        // 右上电机PWM
+float motor_lb_pwm = 0;        // 左下电机PWM
+float motor_rb_pwm = 0;        // 右下电机PWM
+float   flight_status   = 0;   // 0=停止, 1=平衡
+int     balance_mode    = 1;   
+//height
+float   height_ctrl_enable=1;                             // 高度环使能: 0=关闭, 1=开启
+float motor_pwm_base  = 4610.0f; 
+float vertical_pwm;
+float pitch_target = 0;
+float roll_target = 0;
+float yaw_target = 0;
+float battery_v;
+float battery_v_last =12.0f;
+float battery_v_baseline = 10.55f;
+uint8_t battery_comp_enable = 0;
+void flight_pid_init(void)
+{
+    pid_init(&pid_pitch);
+    pid_init(&pid_gyro_y);
+    pid_init(&pid_roll);
+    pid_init(&pid_gyro_x);
+    pid_init(&pid_yaw);
+    pid_init(&pid_gyro_z);
+    pid_init(&pid_height);
+    pid_init(&pid_z_speed);
+//角速度加d试试//去角度环i试试
+    pid_set_params(&pid_pitch,  -5.4f,  -0.001f,  0.0f);//-10 -1.2° 12 -0.8°
+    pid_set_params(&pid_gyro_y,  5.5f,   0.0f,   2.0f);//本来应该是负数，但是因为角速度跟角度是反着的，所以又变成正数了
+    pid_set_params(&pid_roll,    5.4f,   0.001f,  0.0f);//10 1.3°  12 0.5°
+    pid_set_params(&pid_gyro_x, -5.5f,   0.0f,   2.0f);
+    pid_set_params(&pid_yaw,     12.0f,  0.01f,  0.0f);//12  0.01
+    pid_set_params(&pid_gyro_z,  10.0f,  0.0f,   0.0f);//10
+    pid_set_params(&pid_height,  0.0f,  0.0f,  0.0f);
+    pid_set_params_fee_dfl(&pid_z_speed, 0.4f, 0.0f, 0.0f, 0.0f);
+    img_ctrl_init();
+    pid_set_params(&pid_flow_pos_x,  8.0f,  0.0f, 0.0f);
+    pid_set_params(&pid_flow_pos_y,  8.0f,  0.0f, 0.0f);
+    pid_set_params(&pid_flow_vel_x,   0.028f, 0.001f, 0.0f);//0.04
+    pid_set_params(&pid_flow_vel_y,  -0.028f, -0.001f, 0.0f);//-0.04
+}
+void motor_pwm_init(void)
+{
+    pwm_init(MOTOR_LT_PIN, 300, 0);
+    pwm_init(MOTOR_LB_PIN, 300, 0);
+    pwm_init(MOTOR_RT_PIN, 300, 0);
+    pwm_init(MOTOR_RB_PIN, 300, 0);
+}
+ float pid_height_p;
+ float pid_height_i;
+void Flight_PID_Calculate(void)
+{
+   // (void)dt;  // 当前位置式PID不需要dt, 保留接口兼容性
+    // 安全保护: 倾角超过阈值时关闭电机
+    if (fabsf(Euler.roll) > SAFE_ANGLE_LIMIT || fabsf(Euler.pitch) > SAFE_ANGLE_LIMIT)
+    {
+        balance_mode = 0;
+        return;
+    }
+    // 俯仰串级PID: 外环(pitch角度) -> 内环(gyro_y角速度)
+//    pid_cascade(&pid_pitch, &pid_gyro_y, Euler.pitch , gy, pid_pitch.target  +  flow_ctrl_target_pitch);//
+    pid_calculate_positional(&pid_pitch, pitch_target  +  flow_ctrl_target_pitch , Euler.pitch);
+    pid_calculate_positional_2(&pid_gyro_y, pid_pitch.out , gy);
+    // 横滚串级PID: 外环(roll角度) -> 内环(gyro_x角速度)
+//    pid_cascade(&pid_roll, &pid_gyro_x, Euler.roll , gx,  pid_roll.target  + flow_ctrl_target_roll);//
+    pid_calculate_positional(&pid_roll, roll_target  +  flow_ctrl_target_roll , Euler.roll);
+    pid_calculate_positional_2(&pid_gyro_x, pid_roll.out , gx);
+    // 偏航串级PID: 外环(yaw角度) -> 内环(gyro_z角速度)
+    pid_cascade(&pid_yaw, &pid_gyro_z, Euler.yaw, gz, yaw_target);
+}
+
+void Update_Motor_PWM(void)
+{
+    float compensation = 1.0f;
+    if(battery_comp_enable)
+    {
+        // 用悬停时的电压作为基准，避免开机冲击影响
+        compensation = battery_v_baseline / battery_v_last;
+        // 限幅保护，防止异常值
+        if(compensation > 1.10f) compensation = 1.10f;  // 最多补偿+15%
+        if(compensation < 0.95f) compensation = 0.95f;  // 最多补偿-15%
+    }
+    switch ((int)flight_status)
+    {
+    case 0:  // 停止
+        motor_lt_pwm = 0;
+        motor_rt_pwm = 0;
+        motor_lb_pwm = 0;
+        motor_rb_pwm = 0;
+        balance_mode = 1;
+        
+        pid_height.integral=0;
+        pid_z_speed.integral=0;
+        pid_pitch.integral=0;
+        pid_roll.integral=0;
+        pid_yaw.integral=0;
+        break;
+    case 1:  // 平衡飞行
+        if (balance_mode)
+        {
+            float base = LIMIT(motor_pwm_base - 50 + vertical_pwm, 0, 5700);           //+pid_height.out
+            motor_lt_pwm =LIMIT(base + pid_gyro_y.out + pid_gyro_x.out + pid_gyro_z.out , 3000, 5700);
+            motor_rt_pwm =LIMIT(base + pid_gyro_y.out - pid_gyro_x.out - pid_gyro_z.out , 3000, 5700);
+            motor_lb_pwm =LIMIT(base - pid_gyro_y.out + pid_gyro_x.out - pid_gyro_z.out , 3000, 5700);
+            motor_rb_pwm =LIMIT(base - pid_gyro_y.out - pid_gyro_x.out + pid_gyro_z.out , 3000, 5700);
+        }
+        else
+        {
+            motor_lt_pwm = 0;
+            motor_rt_pwm = 0;
+            motor_lb_pwm = 0;
+            motor_rb_pwm = 0;
+        }
+        break;
+    default:
+        break;
+    }
+    // 输出PWM到引脚
+    pwm_set_duty(MOTOR_LT_PIN, (uint16_t)motor_lt_pwm);
+    pwm_set_duty(MOTOR_LB_PIN, (uint16_t)motor_lb_pwm);
+    pwm_set_duty(MOTOR_RT_PIN, (uint16_t)motor_rt_pwm);
+    pwm_set_duty(MOTOR_RB_PIN, (uint16_t)motor_rb_pwm);
+}
+flight_pid.h
+#ifndef FLIGHT_PID_H
+#define FLIGHT_PID_H
+
+#include "zf_common_headfile.h"
+#include "pid_driver.h"
+#include "dl1a_app.h"
+
+extern float pitch;
+extern float roll;
+
+// 串级PID实例 (外环角度 + 内环角速度)
+extern PID_T pid_pitch;         // 俯仰角度环
+extern PID_T pid_gyro_y;        // 俯仰角速度环
+
+extern PID_T pid_roll;          // 横滚角度环
+extern PID_T pid_gyro_x;        // 横滚角速度环
+
+extern PID_T pid_yaw;           // 偏航角度环
+extern PID_T pid_gyro_z;        // 偏航角速度环
+
+// 高度PID (框架保留)
+extern PID_T pid_height;        // 高度外环
+extern PID_T pid_z_speed;       // Z轴速度内环
+
+//extern PIT_T pid_position_x;
+//extern PIT_T pid_position_y;
+
+extern float vertical_pwm;
+
+// 电机PWM值
+extern float motor_lt_pwm;      // 左上电机
+extern float motor_rt_pwm;      // 右上电机
+extern float motor_lb_pwm;      // 左下电机
+extern float motor_rb_pwm;      // 右下电机
+
+// 飞行状态: 0=停止, 1=平衡, 2=定高悬停
+extern float flight_status;
+extern int   balance_mode;
+extern float motor_pwm_base;  // 电机基础PWM (油门量)
+
+
+//height
+extern float  height_ctrl_enable;   // 高度环使能: 0=关闭, 1=开启
+extern float  height_target;        // 目标高度 (mm)
+extern float  z_speed_estimate;     // Z轴速度估算 (mm/s)
+
+extern float pitch_target;
+extern float roll_target;
+
+extern float yaw_target;
+
+extern float battery_v;
+extern float battery_v_last;
+extern uint8_t battery_comp_enable;
+// 安全倾角阈值 (度)
+#define SAFE_ANGLE_LIMIT    20.0f
+
+// 电机PWM引脚 (与725一致)
+#define MOTOR_LT_PIN    TCPWM_CH11_P05_2//TCPWM_CH12_P05_3//TCPWM_CH09_P05_0
+#define MOTOR_LB_PIN    TCPWM_CH12_P05_3//TCPWM_CH10_P05_1//TCPWM_CH10_P05_1
+#define MOTOR_RT_PIN    TCPWM_CH09_P05_0//TCPWM_CH11_P05_2//TCPWM_CH11_P05_2
+#define MOTOR_RB_PIN    TCPWM_CH10_P05_1//TCPWM_CH09_P05_0//TCPWM_CH12_P05_3
+
+// 初始化函数
+void flight_pid_init(void);     // PID参数初始化
+void motor_pwm_init(void);      // 4路电机PWM初始化 (50Hz, 初始值550)
+
+// 控制函数 (在1ms中断中调用)
+void Flight_PID_Calculate(void);
+void Update_Motor_PWM(void);
+#endif // FLIGHT_PID_H
+
+小车：
+motor.c
+#include "zf_common_headfile.h"
+#include "motor.h"
+
+int16 left1_speed,right1_speed,left2_speed,right2_speed;
+
+void motor_init()
+{
+  pwm_init(MOTOR_LEFT1_PWM, 17000, 0);
+  gpio_init(MOTOR_LEFT1_DIR, GPO, 1, GPO_PUSH_PULL);
+  pwm_init(MOTOR_RIGHT1_PWM, 17000, 0);
+  gpio_init(MOTOR_RIGHT1_DIR, GPO, 0, GPO_PUSH_PULL);
+  pwm_init(MOTOR_LEFT2_PWM, 17000, 0);
+  gpio_init(MOTOR_LEFT2_DIR, GPO, 1, GPO_PUSH_PULL);
+  pwm_init(MOTOR_RIGHT2_PWM, 17000, 0);
+  gpio_init(MOTOR_RIGHT2_DIR, GPO, 0, GPO_PUSH_PULL);
+}
+
+//设置电机速度
+void set_motor_speed(int16 left1_speed, int16 right1_speed,int16 left2_speed, int16 right2_speed)
+{
+
+  
+    // 设置左前电机
+    if (left1_speed >= 0) {
+        gpio_set_level(MOTOR_LEFT1_DIR, 1);
+        pwm_set_duty(MOTOR_LEFT1_PWM, left1_speed);
+    } else {
+        gpio_set_level(MOTOR_LEFT1_DIR, 0);
+        pwm_set_duty(MOTOR_LEFT1_PWM, -left1_speed);
+    }
+    
+    // 设置右前电机
+    if (right1_speed >= 0) {
+        gpio_set_level(MOTOR_RIGHT1_DIR, 0);//01
+        pwm_set_duty(MOTOR_RIGHT1_PWM, right1_speed);
+    } else {
+        gpio_set_level(MOTOR_RIGHT1_DIR, 1);
+       pwm_set_duty(MOTOR_RIGHT1_PWM, -right1_speed);
+    }
+    // 设置左后电机
+    if (left2_speed >= 0) {
+        gpio_set_level(MOTOR_LEFT2_DIR, 1);//01
+        pwm_set_duty(MOTOR_LEFT2_PWM, left2_speed);
+    } else {
+        gpio_set_level(MOTOR_LEFT2_DIR, 0);
+        pwm_set_duty(MOTOR_LEFT2_PWM, -left2_speed);
+    }
+    
+    // 设置右后电机
+    if (right2_speed >= 0) {
+        gpio_set_level(MOTOR_RIGHT2_DIR, 0);//10
+        pwm_set_duty(MOTOR_RIGHT2_PWM, right2_speed);
+    } else {
+        gpio_set_level(MOTOR_RIGHT2_DIR, 1);
+       pwm_set_duty(MOTOR_RIGHT2_PWM, -right2_speed);
+    }
+}
+motor.h
+#ifndef _MOTOR_H
+#define _MOTOR_H
+
+#include "zf_common_headfile.h"
+
+//左前
+#define MOTOR_LEFT1_DIR  P06_2  
+#define MOTOR_LEFT1_PWM  TCPWM_CH01_P06_3 
+//右前
+#define MOTOR_RIGHT1_DIR P06_6 
+#define MOTOR_RIGHT1_PWM TCPWM_CH15_P07_1 
+//左后
+#define MOTOR_LEFT2_DIR  P06_0 
+#define MOTOR_LEFT2_PWM  TCPWM_CH00_P06_1 
+//右后
+#define MOTOR_RIGHT2_DIR P06_4 
+#define MOTOR_RIGHT2_PWM TCPWM_CH02_P06_5 
+
+
+extern int16 left1_speed,right1_speed,left2_speed,right2_speed;
+
+void motor_init();
+void set_motor_speed(int16 left1_speed, int16 right1_speed,int16 left2_speed, int16 right2_speed);
+
+#endif
+
+
+B.4 控制算法模块
+无人机：
+pid_driver.c
+#include "pid_driver.h"
+void pid_init(PID_T *pid)
+{
+    pid->target = 0;
+    pid->current = 0;
+    pid->out = 0;
+    pid->error = 0;
+    pid->last_error = 0;
+    pid->last2_error = 0;
+    pid->integral = 0;
+    pid->p_out = 0;
+    pid->i_out = 0;
+    pid->d_out = 0;
+    
+    pid->f_out = 0;
+}
+
+float pid_calculate_positional(PID_T *pid, float target, float current)
+{
+    pid->target = target;
+    pid->current = current;
+    pid->error = target - current;
+    // 积分累加
+    pid->integral += pid->error;
+    // 积分限幅
+    if (pid->max_integral > 0)
+    {
+        if (pid->integral > pid->max_integral)
+            pid->integral = pid->max_integral;
+        else if (pid->integral < -pid->max_integral)
+            pid->integral = -pid->max_integral;
+    }
+    // 各分量计算
+    pid->p_out = pid->kp * pid->error;
+    pid->i_out = pid->ki * pid->integral;
+    pid->d_out = pid->kd * (pid->error - pid->last_error);
+    pid->out = pid->p_out + pid->i_out + pid->d_out;
+    // 输出限幅
+    if (pid->max_output > 0)
+    {
+        if (pid->out > pid->max_output)
+            pid->out = pid->max_output;
+        else if (pid->out < -pid->max_output)
+            pid->out = -pid->max_output;
+    }
+    pid->last_error = pid->error;
+    return pid->out;
+}
+
+float pid_calculate_positional_2(PID_T *pid, float target, float current)
+{
+    pid->target = target;
+    pid->current = current;
+    pid->error = target - current;
+    // 积分累加
+    pid->integral += pid->error;
+    // 积分限幅
+    if (pid->max_integral > 0)
+    {
+        if (pid->integral > pid->max_integral)
+            pid->integral = pid->max_integral;
+        else if (pid->integral < -pid->max_integral)
+            pid->integral = -pid->max_integral;
+    }
+    // 各分量计算
+    pid->p_out = pid->kp * pid->error;
+    pid->i_out = pid->ki * pid->integral;
+    pid->d_out = pid->kd * (pid->current - pid->last_error);
+    pid->out = pid->p_out + pid->i_out + pid->d_out;
+    // 输出限幅
+    if (pid->max_output > 0)
+    {
+        if (pid->out > pid->max_output)
+            pid->out = pid->max_output;
+        else if (pid->out < -pid->max_output)
+            pid->out = -pid->max_output;
+    }
+
+    pid->last_error = current;
+    return pid->out;
+}
+
+float pid_calculate_incremental(PID_T *pid, float target, float current)
+{
+    pid->target = target;
+    pid->current = current;
+    pid->error = target - current;
+    pid->p_out = pid->kp * (pid->error - pid->last_error);
+    pid->i_out = pid->ki * pid->error;
+    pid->d_out = pid->kd * (pid->error - 2.0f * pid->last_error + pid->last2_error);
+    pid->out += pid->p_out + pid->i_out + pid->d_out;
+    // 输出限幅
+    if (pid->max_output > 0)
+    {
+        if (pid->out > pid->max_output)
+            pid->out = pid->max_output;
+        else if (pid->out < -pid->max_output)
+            pid->out = -pid->max_output;
+    }
+
+    pid->last2_error = pid->last_error;
+    pid->last_error = pid->error;
+    return pid->out;
+}
+
+void pid_cascade(PID_T *outer, PID_T *inner, float outer_measure, float inner_measure, float outer_target)
+{
+    // 先算外环
+    pid_calculate_positional(outer, outer_target, outer_measure);
+    // 外环输出作为内环目标
+    pid_calculate_positional(inner, outer->out, inner_measure);
+}
+
+void pid_set_params(PID_T *pid, float kp, float ki, float kd)
+{
+    pid->kp = kp;
+    pid->ki = ki;
+    pid->kd = kd;
+}
+
+void pid_set_params_fee_dfl(PID_T *pid, float kp, float ki, float kd, float kf)
+{
+    pid->kp = kp;
+    pid->ki = ki;
+    pid->kd = kd;
+    pid->kf = kf;
+}
+
+void pid_reset(PID_T *pid)
+{
+    pid->integral = 0;
+    pid->error = 0;
+    pid->last_error = 0;
+    pid->last2_error = 0;
+    pid->out = 0;
+    pid->p_out = 0;
+    pid->i_out = 0;
+    pid->d_out = 0;
+}
+
+float pid_constrain(float value, float min, float max)
+{
+    if (value < min)
+        return min;
+    else if (value > max)
+        return max;
+    return value;
+}
+pid_driver.h
+#ifndef PID_DRIVER_H
+#define PID_DRIVER_H
+#include <stdint.h>
+typedef struct
+{
+    float kp;                   /* 比例系数 */
+    float ki;                   /* 积分系数 */
+    float kd;                   /* 微分系数 */
+    float target;               /* 目标值 */
+    float current;              /* 当前值 */
+    float out;                  /* 输出值 */
+    float error;                /* 当前误差 */
+    float last_error;           /* 上次误差 */
+    float last2_error;          /* 上上次误差 */
+    float integral;             /* 积分累加 */
+    float p_out, i_out, d_out;  /* P/I/D 分量输出 */
+    float max_integral;         /* 积分限幅 (0 表示不限幅) */
+    float max_output;           /* 输出限幅 (0 表示不限幅) */
+    float kf;
+    float f_out;
+} PID_T;
+void pid_init(PID_T *pid);
+float pid_calculate_positional(PID_T *pid, float target, float current);
+float pid_calculate_positional_2(PID_T *pid, float target, float current);
+float pid_calculate_incremental(PID_T *pid, float target, float current);
+void pid_cascade(PID_T *outer, PID_T *inner, float outer_measure, float inner_measure, float outer_target);
+
+void pid_set_params(PID_T *pid, float kp, float ki, float kd );
+void pid_set_params_fee_dfl(PID_T *pid, float kp, float ki, float kd, float kf);
+void pid_reset(PID_T *pid);
+float pid_constrain(float value, float min, float max);
+#endif // PID_DRIVER_H
+flow_ctrl.c
+#include "zf_common_headfile.h"
+#include "flow_ctrl.h"
+#include "ekf.h"
+#include "image.h"
+#include <math.h>
+#include "adrc_driver.h"
+
+#define FLOW_LIMIT(a, lim)   (((a) > (lim)) ? (lim) : (((a) < -(lim)) ? -(lim) : (a)))
+
+float flow_ctrl_mode = 0;
+
+float flow_vel_x = 0.0f;
+float flow_vel_y = 0.0f;
+float flow_pos_x = 0.0f;
+float flow_pos_y = 0.0f;
+float flow_pos_target_x = 0.0f;
+float flow_pos_target_y = 0.0f;
+
+float flow_ctrl_target_pitch = 0.0f;
+float flow_ctrl_target_roll  = 0.0f;
+// 位置环: 输出 = 速度目标 (像素/单位时间)
+PID_T pid_flow_pos_x = { .kp = 0.0f, .ki = 0.0f, .kd = 0.0f,
+                          .max_integral = 1000.0f, .max_output = 0.0f };
+PID_T pid_flow_pos_y = { .kp = 0.0f, .ki = 0.0f, .kd = 0.0f,
+                          .max_integral = 1000.0f, .max_output = 0.0f };
+
+// 速度环: 输出 = pitch/roll 角度增量 (度)
+PID_T pid_flow_vel_x = { .kp = 0.0f, .ki = 0.0f, .kd = 0.0f,
+                          .max_integral = 1000.0f, .max_output = 0.0f };
+PID_T pid_flow_vel_y = { .kp = 0.0f, .ki = 0.0f, .kd = 0.0f,
+                          .max_integral = 1000.0f, .max_output = 0.0f };
+/**
+ * @brief 光流控制器初始化
+ */
+void flow_ctrl_init(void)
+{
+    pid_init(&pid_flow_pos_x);
+    pid_init(&pid_flow_pos_y);
+    pid_init(&pid_flow_vel_x);
+    pid_init(&pid_flow_vel_y);
+
+    // 位置环输出 = 速度目标, 限幅
+    pid_flow_pos_x.max_output = FLOW_VEL_TARGET_LIMIT;
+    pid_flow_pos_y.max_output = FLOW_VEL_TARGET_LIMIT;
+
+    // 速度环输出 = pitch/roll 角度, 限幅
+    pid_flow_vel_x.max_output = FLOW_CTRL_ANGLE_LIMIT;
+    pid_flow_vel_y.max_output = FLOW_CTRL_ANGLE_LIMIT;
+
+    ADRC_Vel_Reset();
+    flow_ctrl_reset();
+}
+
+/**
+ * @brief 重置光流控制器状态
+ */
+void flow_ctrl_reset(void)
+{
+    pid_reset(&pid_flow_pos_x);
+    pid_reset(&pid_flow_pos_y);
+    pid_reset(&pid_flow_vel_x);
+    pid_reset(&pid_flow_vel_y);
+
+    flow_vel_x = 0.0f;
+    flow_vel_y = 0.0f;
+    flow_pos_x = 0.0f;
+    flow_pos_y = 0.0f;
+    flow_pos_target_x = 0.0f;
+    flow_pos_target_y = 0.0f;
+
+    flow_ctrl_target_pitch = 0.0f;
+    flow_ctrl_target_roll  = 0.0f;
+}
+
+/**
+ * @brief 手动设置位置目标
+ */
+void flow_ctrl_set_pos_target(float target_x, float target_y)
+{
+    flow_pos_target_x = target_x;
+    flow_pos_target_y = target_y;
+}
+
+/**
+ * @brief 把当前位置锁为目标 (一键定点悬停)
+ */
+void flow_ctrl_capture_pos_target(void)
+{
+    flow_pos_target_x = flow_pos_x;
+    flow_pos_target_y = flow_pos_y;
+}
+float limit(float value, float min, float max) 
+{
+    if (value > max) return max;
+    if (value < min) return min;
+    return value;
+}
+/**
+ * @brief 光流控制更新 (30ms 周期调用)
+ */
+void flow_ctrl_update(void)
+{
+    // 模块关闭 -> 清零, 防止冻结值持续影响姿态环
+    if (flow_ctrl_mode == 0 )
+    {
+        flow_ctrl_target_pitch = 0.0f;
+        flow_ctrl_target_roll  = 0.0f;
+        pid_flow_pos_x.integral = 0.0f;
+        pid_flow_pos_y.integral = 0.0f;
+        pid_flow_vel_x.integral = 0.0f;
+        pid_flow_vel_y.integral = 0.0f;
+        ADRC_Vel_Reset();
+        return;
+    }
+
+    // 4) 位置环 -> 速度目标
+    float vel_target_x = 0.0f;
+    float vel_target_y = 0.0f;
+ 
+    static float x_filter = 0.0f, y_filter = 0.0f;
+    x_filter = 0.5f * x_error + 0.5f * x_filter;
+    y_filter = 0.5f * y_error + 0.5f * y_filter;
+    vel_target_x = pid_calculate_positional(&pid_flow_pos_x,0.0f, x_filter);
+    vel_target_y = pid_calculate_positional(&pid_flow_pos_y,0.0f, y_filter);
+    flow_ctrl_target_pitch = limit(ADRC_Vel_Update_X(vel_target_x,upflow_dx),-8.0,8.0);
+    flow_ctrl_target_roll  = limit(ADRC_Vel_Update_Y(vel_target_y,upflow_dy),-8.0,8.0);
+}
+flow_ctrl.h
+#ifndef FLOW_CTRL_H
+#define FLOW_CTRL_H
+#include "pid_driver.h"
+
+extern float flow_ctrl_mode;
+extern float flow_vel_x;                     // 滤波后光流速度 x (像素/单位时间)
+extern float flow_vel_y;                     // 滤波后光流速度 y
+extern float flow_pos_x;                     // 累积位置 x (积分得)
+extern float flow_pos_y;                     // 累积位置 y
+extern float flow_pos_target_x;              // 目标位置 x
+extern float flow_pos_target_y;              // 目标位置 y
+extern PID_T pid_flow_pos_x;                 // 位置环 x → 速度目标 x
+extern PID_T pid_flow_pos_y;                 // 位置环 y → 速度目标 y
+extern PID_T pid_flow_vel_x;                 // 速度环 x → pitch 目标
+extern PID_T pid_flow_vel_y;                 // 速度环 y → roll  目标
+extern float flow_ctrl_target_pitch;         // 期望 pitch 角度增量 (度)
+extern float flow_ctrl_target_roll;          // 期望 roll  角度增量 (度)
+#define FLOW_VEL_LPF_ALPHA      (0.30f)      // 一阶低通系数 (越大越接近原始)
+#define FLOW_VEL_DEADZONE       (2.0f)       // 速度死区 (像素) 抗静止漂移
+#define FLOW_VEL_TARGET_LIMIT   (60.0f)      // 位置环输出 (= 速度目标) 限幅
+#define FLOW_POS_INT_LIMIT      (5000.0f)    // 位置积分窗限幅 防止溢出
+#define FLOW_CTRL_ANGLE_LIMIT   (4.0f)       // 速度环输出 (= 角度增量) 限幅 (度)
+
+/** * @brief 光流控制器初始化 (在 flight_pid_init 内调用) */
+void flow_ctrl_init(void);
+
+/** * @brief 光流控制更新 (在 pit0_ch2_isr 30ms 周期调用)
+ * @param dt 调用间隔 (秒), 例如 30ms = 0.03f */
+void flow_ctrl_update(void);
+
+/*** @brief 重置光流控制器状态 (清零积分/位置/输出)*/
+void flow_ctrl_reset(void);
+
+/** * @brief 手动设置位置目标*/
+void flow_ctrl_set_pos_target(float target_x, float target_y);
+
+/** * @brief 把当前位置锁为目标 (一键定点)*/
+void flow_ctrl_capture_pos_target(void);
+
+#endif // FLOW_CTRL_H
+adrc_driver.c
+#include "adrc_driver.h"
+#include "math.h"
+#include "flight_pid.h"
+
+float adrc_x1 = 0.0f;       
+float adrc_x2 = 0.0f;       
+
+float adrc_z1 = 0.0f;       
+float adrc_z2 = 0.0f;       
+float adrc_z3 = 0.0f;       
+
+float adrc_u_prev = 0.0f;
+
+const float H  = 0.02f;
+const float R  = 0.2f;
+
+const float B0 = 0.03f;
+const float WO = 9.5f;
+const float WC = 0.75f;//这个没用
+
+float extract;
+float extract1;
+
+float fhan(float x1_err, float x2, float r, float h)
+{
+    float d, d0, y, a0, a;
+
+    d  = r * h;
+    d0 = h * d;
+    y  = x1_err + h * x2;
+    a0 = sqrtf(d * d + 8.0f * r * fabsf(y));
+
+    if (fabsf(y) > d0) {
+        a = x2 + (a0 - d) / 2.0f;
+        if (y < 0) a = x2 - (a0 - d) / 2.0f;
+    } else {
+        a = x2 + y / h;
+    }
+
+    if (fabsf(a) > d) {
+        if (a > 0) return  r;
+        else       return -r;
+    } else {
+        return r * a / d;
+    }
+}
+
+
+float ADRC_Height_Update(float target_height, float actual_height, float actual_velocity)
+{
+    const float kp    = 1.0f;   //1.7
+    const float kd    = 0.0f;   //2.0f * WC;
+    const float kp_v  = 0.4f;   //0.3
+    
+    const float beta1 = 3.0f * WO;
+    const float beta2 = 3.0f * WO * WO;
+    const float beta3 = WO   * WO * WO;
+    
+    float fh, e, u0, u1, u;
+    float pos_err, vel_err;
+    
+    fh      = -fhan(adrc_x1 - target_height, adrc_x2, R, H);
+    adrc_x1 = adrc_x1 + H * adrc_x2;
+    adrc_x2 = adrc_x2 + H * fh;
+    
+    e = adrc_z1 - actual_height; //eso估计h与实际h的差了多少，从而当作干扰返回到u里
+    
+    adrc_z1 = adrc_z1 + H * (adrc_z2                          - beta1 * e);
+    adrc_z2 = adrc_z2 + H * (adrc_z3 + B0 * vertical_pwm/5.0f - beta2 * e);
+    adrc_z3 = adrc_z3 + H * (                                 - beta3 * e);
+    
+    
+    pos_err = adrc_x1 - adrc_z1;
+    vel_err = adrc_x2 - adrc_z2;
+    
+    
+    u0 = kp * pos_err + kd * vel_err;    //目标速度
+    u1 = kp_v * (u0 - adrc_z2);          //速度环输出
+    
+    u  = (u1 - adrc_z3) / B0;
+    
+    extract=u0;
+    extract1=u1;
+    
+    return u;
+    
+}
+
+float u_to_pwm(float u)
+{
+    const float HOVER_PWM = 0.0f;
+    const float SCALE     = 5.0f;
+    const float PWM_MIN   = -1000.0f;
+    const float PWM_MAX   = 550.0f;
+
+    float pwm = HOVER_PWM + u * SCALE;
+
+    if (pwm > PWM_MAX) pwm = PWM_MAX;
+    if (pwm < PWM_MIN) pwm = PWM_MIN;
+
+    return pwm;
+}
+
+
+// ========================================== 速度环二阶ADRC ==========================================
+
+float vel_adrc_z1_x = 0.0f;
+float vel_adrc_z2_x = 0.0f;
+float vel_adrc_z1_y = 0.0f;
+float vel_adrc_z2_y = 0.0f;
+
+// 速度环ADRC参数
+#define VEL_H      0.03f       // 采样周期(秒), 30ms
+#define VEL_B0   171.0f      // X轴: pitch角(度)→加速度(mm/s²)
+#define VEL_WO     8.0f        // ESO带宽
+#define VEL_KP     6.0f        // 速度误差增益, = 原PID kp(0.028) × B0(171)
+
+float ADRC_Vel_Update_X(float target_vel, float actual_vel)
+{
+    const float beta1 = 2.0f * VEL_WO;
+    const float beta2 = VEL_WO * VEL_WO;
+    
+    static float u_prev = 0.0f;
+    float e, u0, u;
+    
+    // 二阶ESO
+    e = vel_adrc_z1_x - actual_vel;
+    vel_adrc_z1_x += VEL_H * (vel_adrc_z2_x + VEL_B0 * u_prev - beta1 * e);
+    vel_adrc_z2_x += VEL_H * (-beta2 * e);
+    
+    // 控制律
+    u0 = VEL_KP * (target_vel - vel_adrc_z1_x);
+    u  = (u0 - vel_adrc_z2_x) / VEL_B0;
+    
+    u_prev = u;
+    return u;
+}
+
+float ADRC_Vel_Update_Y(float target_vel, float actual_vel)
+{
+    const float beta1 = 2.0f * VEL_WO;
+    const float beta2 = VEL_WO * VEL_WO;
+    
+    static float u_prev = 0.0f;
+    float e, u0, u;
+    
+    // 二阶ESO
+    e = vel_adrc_z1_y - actual_vel;
+    vel_adrc_z1_y += VEL_H * (vel_adrc_z2_y + VEL_B0 * u_prev - beta1 * e);
+    vel_adrc_z2_y += VEL_H * (-beta2 * e);
+    
+    // 控制律
+    u0 = VEL_KP * (target_vel - vel_adrc_z1_y);
+    u  = (u0 - vel_adrc_z2_y) / (-VEL_B0);
+    
+    u_prev = u;
+    return u;
+}
+
+void ADRC_Vel_Reset(void)
+{
+    vel_adrc_z1_x = 0.0f;
+    vel_adrc_z2_x = 0.0f;
+    vel_adrc_z1_y = 0.0f;
+    vel_adrc_z2_y = 0.0f;
+}
+adrc_driver.h
+#ifndef CODE_ADRC_DRIVER_H_
+#define CODE_ADRC_DRIVER_H_
+
+/* TD states */
+extern float adrc_x1;
+extern float adrc_x2;
+
+/* ESO states (3rd-order: height, velocity, disturbance) */
+extern float adrc_x1;
+extern float adrc_x2;
+
+extern float adrc_z1;
+extern float adrc_z2;
+extern float adrc_z3;
+
+extern float adrc_u_prev;
+
+extern float extract;
+extern float extract1;
+
+float fhan(float x1_err, float x2, float r, float h);
+float ADRC_Height_Update(float target_height, float actual_height, float actual_velocity);
+float u_to_pwm(float u);
+
+
+extern float vel_adrc_z1_x;
+extern float vel_adrc_z2_x;
+extern float vel_adrc_z1_y;
+extern float vel_adrc_z2_y;
+
+float ADRC_Vel_Update_X(float target_vel, float actual_vel);
+float ADRC_Vel_Update_Y(float target_vel, float actual_vel);
+void  ADRC_Vel_Reset(void);
+#endif
+小车：
+control.c
+#include "zf_common_headfile.h"
+#include "control.h"
+
+//====================系统定时参数====================
+#define DT_CTRL         0.002f      // 控制周期 2ms
+#define DT_POS_LOOP     0.010f      // 位置环分频10ms执行
+//====================麦轮运动学参数====================
+#define WHEEL_KW        0.205f
+#define SPEED_FILTER_ALPHA 0.88f
+#define UART_INDEX              (UART_3)                           // 默认 UART_0
+//====================编码器速度相关====================
+//encoder_data_quad[] 你已有
+float wheel_speed_raw[4];   // 原始速度          
+float wheel_speed_filt[4];  //滤波后速度，送入PID反馈 0
+float wheel_speed_target[4];//四轮目标速度 0 
+float encoder_target[4];
+float pwm_out[4];
+//float ff[4] = {37.5,37,35.3,36};//前馈1
+float ff[4] = {29.7,27.4,27,26.5};//前馈2
+//====================车体速度====================
+float vx_body, vy_body;    //车体坐标系 前后/横移目标速度
+float vx_world, vy_world;  //世界坐标系视觉输出速度
+float extra [4] = {0};
+//====================分频计数器====================
+uint16 ctrl_cnt = 0;
+
+float yaw_target= 0;
+
+//四轮速度内环PI
+PID_T speed_pid[4];
+//航向串级PID
+PID_T yaw_angle_pid;    //角度外环 P
+PID_T yaw_gyro_pid;     //角速度内环 PI
+PID_T pid_y;
+PID_T pid_x;
+//====================串口相关====================
+fifo_struct uart_data_fifo;                         
+uint8 uart_get_data[64];                                                        // 串口接收数据缓冲区
+uint8 fifo_get_data[64];                                                        // fifo 输出读出缓冲区
+
+uint8 time = 0;
+float x_data= 0;
+float y_data = 0;
+float x_data_last= 0;
+float y_data_last = 0;
+uint8_t speed_data = 0;
+
+uint8  get_data = 0;                                                            // 接收数据变量
+uint32 fifo_data_count = 0;                                                     // fifo 数据
+
+
+void control_init(void)
+{
+  pid_set_params(&speed_pid[0],115.0f, 0.00f, 0.0f);
+  pid_set_params(&speed_pid[1], 115.0f, 0.00f, 0.0f);
+  pid_set_params(&speed_pid[2], 115.0f, 0.00f, 0.0f);
+  pid_set_params(&speed_pid[3], 115.0f, 0.00f, 0.0f);
+  pid_set_params(&pid_y, 0.8f, 0.00f, 0.0f);//0.8
+  pid_set_params(&pid_x, 0.8f, 0.00f, 0.0f);
+  
+ // =========航向串级 =========
+  //角度环：只用P
+  pid_set_params(&yaw_angle_pid, 27.8f, 0.0f, 0.0f);//1.2
+  //yaw_angle_pid.max_output = 0.0f;//180
+  //pid_reset(&yaw_angle_pid);
+
+  //角速度内环 PI
+  pid_set_params(&yaw_gyro_pid, 21.4f, 0.00f, 0.0f);//0.35  0.08
+  //yaw_gyro_pid.max_output = 0.0f;//1200
+  //yaw_gyro_pid.max_integral = 0.0f;//60
+  pid_reset(&yaw_gyro_pid);
+}
+
+// 输入：车体Vx(前+),Vy(左+),W(逆时针转向控制量)
+// 输出：wheel_speed_target[0~3] 四轮目标速度
+
+void mecanum_kinematic_calc(float Vx, float Vy, float W)
+{
+    wheel_speed_target[0] = Vx - Vy - WHEEL_KW * W;
+    wheel_speed_target[1] = Vx + Vy + WHEEL_KW * W;
+    wheel_speed_target[2] = Vx + Vy - WHEEL_KW * W;
+    wheel_speed_target[3] = Vx - Vy + WHEEL_KW * W;
+}
+
+int count()
+{
+if((fabsf(x_data - x_data_last)<=3)&&(fabsf(y_data - y_data_last)<=3)&& !(x_data == 0 && y_data == 0))
+{ 
+  if(((fabsf(encoder_data_quad[1])<=8)&&(fabsf(encoder_data_quad[2])<=8))||((fabsf(encoder_data_quad[3])<=8)&&(fabsf(encoder_data_quad[0])<=8)))
+  {
+    time++;
+    if(time> 150)
+    {
+     //time = 0;
+     return 1;
+     }
+  }
+}
+else
+{
+     time = 0;
+}
+     x_data_last= x_data;
+     y_data_last= y_data;
+    return 0;
+}
+
+void boost(int enable, float force)
+{        
+  if(enable==1)
+  {
+    if(x_data>0&&y_data>0)    
+        {
+          extra[0] = 0;
+          extra[1] = force;
+          extra[2] = force;
+          extra[3] = 0;
+        }
+        if(x_data>0&&y_data<-0)
+        {
+          extra[0] = force;
+          extra[1] = 0;
+          extra[2] = 0;
+          extra[3] = force;
+        }
+        if(x_data<-0&&y_data>0)
+        {
+          extra[0] = -force;
+          extra[1]=  0;
+          extra[2]=  0;
+          extra[3] = -force ;
+        }
+        if(x_data<-0&&y_data<-0)
+        {
+          extra[0] = 0;
+          extra[1]= -force;
+          extra[2]= -force;
+          extra[3] = 0;
+        }
+    }
+   else
+   {
+         extra[0]= extra[0]-2;
+         extra[1]= extra[1]-2;
+         extra[2]= extra[2]-2;
+         extra[3]= extra[3]-2;
+        if(extra[0]<=0) extra[0]=0;
+        if(extra[1]<=0) extra[1]=0;
+        if(extra[2]<=0) extra[2]=0;
+        if(extra[3]<=0) extra[3]=0;
+   }
+    wheel_speed_target[0] = wheel_speed_target[0] + extra[0] ;
+    wheel_speed_target[1] = wheel_speed_target[1] + extra[1] ;
+    wheel_speed_target[2] = wheel_speed_target[2] + extra[2] ;
+    wheel_speed_target[3] = wheel_speed_target[3] + extra[3];
+}
+void limit(float MAX)
+{
+if(wheel_speed_target[0]>MAX)
+  wheel_speed_target[0] = MAX;
+else if(wheel_speed_target[0]<-MAX)
+  wheel_speed_target[0] = -MAX;
+
+if(wheel_speed_target[1]>MAX)
+  wheel_speed_target[1] = MAX;
+else if(wheel_speed_target[1]<-MAX)
+  wheel_speed_target[1] = -MAX;
+
+if(wheel_speed_target[2]>MAX)
+  wheel_speed_target[2] = MAX;
+else if(wheel_speed_target[2]<-MAX)
+  wheel_speed_target[2] = -MAX;
+
+if(wheel_speed_target[2]>MAX)
+  wheel_speed_target[2] = MAX;
+else if(wheel_speed_target[2]<-MAX)
+  wheel_speed_target[2] = -MAX;
+}
+
+void uart_parse_xy_buffer(uint8_t *buf, uint8_t len)
+{
+    if(len != 7) return;
+
+    uint8_t head    = buf[0];
+    uint8_t zx  = buf[1];
+    uint8_t fx  = buf[2];
+    uint8_t zy  = buf[3];
+    uint8_t fy  = buf[4];
+    uint8_t check   = buf[5];
+    uint8_t tail    = buf[6];
+
+    // 帧头帧尾校验    
+ /*   if( (head == 0xAA && tail == 0xAA && check == 0x00) &&
+        (zx == 0 && fx == 0 && zy == 0 && fy == 0) )
+    {
+        motor_enable = 1;  // 电机使能
+        return;
+    }
+
+    if( (head == 0xFF && tail == 0xFF && check == 0x00) &&
+        (zx == 0 && fx == 0 && zy == 0 && fy == 0) )
+    {
+        motor_enable = 0;  // 电机失能
+        return;
+    }*/
+
+    /*if( (head == 0xAA && tail == 0xAA && check == 0xAA) &&
+        (zx == 0 && fx == 0 && zy == 0 && fy == 0) )
+    {
+        uart_set_yaw_zero();  // 零漂处理
+        return;
+    }*/
+    
+    if(head != 0xAA || tail != 0xFF) return;
+
+    // 解析角度和速度
+    //uint16_t angle = (angleH << 8) | angleL;
+    //uint16_t angle=angleH+angleL;
+    uint8_t cal_check = head + zx + fx + zy + fy ;
+
+    if(cal_check != check) return;
+
+    // 解析成功！把值存到全局变量里，避免被优化
+   x_data  = (int16_t)zx - (int16_t)fx;
+   y_data  = (int16_t)zy - (int16_t)fy;
+   
+     /*if(x_data != 0 && y_data != 0)
+   {
+     if(fabs((double)x_data) <= 30)
+     {
+
+       if(fabs((double)x_data) >= 5)
+          x_data = (x_data > 0) ? x_data + 5 : x_data - 5;
+     }
+
+        
+     if(fabs((double)y_data) <= 30)
+     {
+       if(fabs((double)y_data) >= 5)
+          y_data = (y_data > 0) ? y_data + 5 : y_data - 5;    
+     }
+
+       }*/
+     }
+control.h
+#ifndef _CONTROL_H
+#define _CONTROL_H
+
+#include "zf_common_headfile.h"
+
+extern float wheel_speed_raw[4];   // 原始速度          
+extern float wheel_speed_filt[4];  //滤波后速度，送入PID反馈
+extern float wheel_speed_target[4];//四轮目标速度
+extern float encoder_target[4];
+extern float pwm_out[4];
+extern float ff[4];
+extern float extra [4];
+extern float vx_body, vy_body;    //车体坐标系 前后/横移目标速度
+extern float vx_world, vy_world;  //世界坐标系视觉输出速度
+extern uint16 ctrl_cnt;
+
+extern float yaw_target;
+
+extern PID_T speed_pid[4];
+extern PID_T yaw_angle_pid;    
+extern PID_T yaw_gyro_pid; 
+extern PID_T pid_y;
+extern PID_T pid_x;
+
+void control_init(void);
+void uart_parse_xy_buffer(uint8_t *buf, uint8_t len);
+void boost(int enable, float force);
+void mecanum_kinematic_calc(float Vx, float Vy, float W);
+void limit(float MAX);
+int count();
+extern uint8 uart_get_data[64];                                                        // 串口接收数据缓冲区
+extern uint8 fifo_get_data[64];                                                        // fifo 输出读出缓冲区
+extern int16 encoder_data_quad [4];
+extern fifo_struct uart_data_fifo;
+extern float x_data;
+extern float y_data;
+extern float x_data_last;
+extern float y_data_last;
+extern uint8  get_data ;                                                            // 接收数据变量
+extern uint32 fifo_data_count;                                                     // fifo 数
+#endif
+cm4.isr.c
+    #include "zf_common_headfile.h"
+
+extern uint8 led_star_flag;
+extern uint16 led_pwm;
+float CAR_MAX =  55;
+float VX_high= 0;
+float VY_high= 0;
+// **************************** PIT中断函数 ****************************
+void pit0_ch0_isr()                     // 定时器通道 0 周期中断服务函数      
+{
+    pit_isr_flag_clear(PIT_CH0);
+  
+    //tsl1401_collect_pit_handler();
+    imu_read();
+    
+    if(led_star_flag)
+    {
+      led_pwm = (led_pwm + 10) % 10000;//2s
+    }
+    else
+    {
+      led_pwm = 0;
+    }
+
+}
+       
+
+
+
+void pit0_ch1_isr()                     // 定时器通道 1 周期中断服务函数      
+{
+    pit_isr_flag_clear(PIT_CH1);
+    ctrl_cnt++;
+    
+    encoder_read();
+   
+    
+    
+   // float w_out    = pid_calculate_positional(&yaw_gyro_pid, target, gyro_z);//这个输出的是°/s
+    
+    
+    
+    if(ctrl_cnt >= 2)//10ms
+    {
+        ctrl_cnt = 0;
+       //float w_target  = 20;
+        // w_target = pid_calculate_positional(&yaw_angle_pid,0, 5);//yaw_target
+        float w_target= angel_pid_calculate(&yaw_angle_pid, 0, yaw , 0.2);
+        float w_out    = pid_calculate_positional(&yaw_gyro_pid, w_target, gyro_z);//这个输出的是°/s
+        
+        vx_world = pid_calculate_positional(&pid_x,0,-x_data);
+        vy_world = pid_calculate_positional(&pid_y,0,y_data);
+        // 3. 世界坐标 → 车体坐标
+        float rad = yaw * 3.1415926f / 180.0f;
+     
+        // X为前进 y为左右
+  //世界速度转机体坐标系
+float vx_body = vx_world * cosf(rad) + vy_world * sinf(rad);
+float vy_body = -vx_world * sinf(rad) + vy_world * cosf(rad);
+     
+float alpha_x = 1.0f;
+float alpha_y = 1.0f;
+
+// 倍率参数：x=25 →1倍；x=5 →最大2.2倍，可修改
+#define MAX_ALPHA 5.0f
+
+if(fabsf(x_data) < 25.0f)
+{
+    if(fabsf(x_data) <= 5.0f)
+    {
+        alpha_x = 5.0f;//0.0f
+    }
+    else
+    {
+        alpha_x = 1.0f + (25.0f - fabsf(x_data)) / 5.0f;
+        if(alpha_x > MAX_ALPHA) alpha_x = MAX_ALPHA;
+    }
+}
+
+if(fabsf(y_data) < 25.0f)
+{
+    if(fabsf(y_data) <= 5.0f)
+    {
+        alpha_y = 5.0f;
+    }
+    else
+    {
+        alpha_y = 1.0f + (25.0f - fabsf(y_data)) / 5.0f;
+        if(alpha_y > MAX_ALPHA) alpha_y = MAX_ALPHA;
+    }
+}
+
+float VX_low = vx_body * alpha_x;
+float VY_low = vy_body * alpha_y;
+
+
+// =========防抬轮：X误差大时锁死Y，先冲坡，再横向对齐=========
+        if(fabs(x_data) < 25 && fabs(y_data) < 25 && !(x_data == 0 && y_data == 0))
+        {
+            if(fabsf(x_data) > 6.0f)
+            {
+                VY_low = 0.0f;
+            }
+            else if(fabsf(x_data) <= 6.0f)
+            {
+                 VY_low = (VY_low > 0) ? VY_low + 8 : VY_low - 8;    
+            }
+        }
+
+
+
+        if(fabs(x_data) < 25 && fabs(y_data) < 25 && !(x_data == 0 && y_data == 0))
+        {               
+        mecanum_kinematic_calc(VX_low, VY_low, w_out * 3.1415926535f / 180.0f);
+        }
+        else 
+        { 
+        mecanum_kinematic_calc(vx_body, vy_body, w_out * 3.1415926535f / 180.0f);
+        }
+ 
+        int extra_enable = count();
+        boost(extra_enable, 50);
+        
+        limit(CAR_MAX);
+       // mecanum_kinematic_calc(VX, VY, w_out * 3.1415926535f / 180.0f);
+    
+    
+    for(uint8 i=0;i<4;i++)
+    {
+        pwm_out[i] = 0;
+        pwm_out[i] = pid_calculate_positional_MOTOR(&speed_pid[i], wheel_speed_target[i],encoder_data_quad[i],ff[i]);//这个是位置式（要不要改增量式？ 速度环内环 编码器的值 pid   encoder_target[i]
+        if(fabs(pwm_out[i]) > 7000)
+        {
+          if(pwm_out[i] > 7000) pwm_out[i] = 7000;
+          else pwm_out[i] = -7000;
+        }
+    }
+
+
+
+    set_motor_speed((int16_t)pwm_out[0],(int16_t)pwm_out[1],(int16_t)pwm_out[2],(int16_t)pwm_out[3]);   
+        
+}
+
+}
+void pit0_ch2_isr()                     // 定时器通道 2 周期中断服务函数      
+{
+    pit_isr_flag_clear(PIT_CH2);
+    
+}
+
+void pit0_ch10_isr()                    // 定时器通道 10 周期中断服务函数      
+{
+    pit_isr_flag_clear(PIT_CH10);
+    fifo_data_count = fifo_used(&uart_data_fifo);                           // 查看 fifo 是否有数据
+       
+    if(fifo_data_count != 0)                                                // 读取到数据了fifo_data_count >= 5
+    {
+      fifo_read_buffer(&uart_data_fifo, fifo_get_data, &fifo_data_count, FIFO_READ_AND_CLEAN) ;    // 将 fifo 中数据读出并清空 fifo 挂载的缓冲
+      //uart_write_string(UART_0, "\r\nUART get data:");                // 输出测
+      uart_parse_xy_buffer(fifo_get_data, fifo_data_count);
+      uart_write_buffer(UART_0, fifo_get_data, fifo_data_count);      // 将读取到的数据发送出去
+    }
+}
+   
+B.5 其他模块
+【其他源文件代码】
+无人机：
+matrix.c
+#include "matrix.h"
+void Matrix_Init(matrix_t* martix, int rows, int cols)
+{
+    ASSERT(rows > 0 && cols > 0);//判断程序是否出错
+    martix->rows = rows;
+    martix->cols = cols;         //赋值矩阵行列数
+    memset(martix->data, 0, MAX_SIZE * MAX_SIZE * sizeof(matrix_type));//清零matrix数组里，（4*4*float字节数）个数据
+}//初始化一个 rows 行 cols 列的矩阵martix，并将所有元素清零
+
+
+
+void Matrix_Identity(matrix_t* matrix, int size)
+{
+    ASSERT(size > 0);
+    matrix->rows = size;
+    matrix->cols = size;
+    memset(matrix->data, 0, sizeof(matrix->data));
+    for(int i = 0; i < size; i++)
+    {
+        matrix->data[i][i] = 1.0f;
+    }
+}
+
+
+
+void Matrix_From_Array(matrix_t* mat, const matrix_type* array,const int rows,const int cols)
+{
+    ASSERT(NULL != array);
+    Matrix_Init(mat, rows, cols);
+    for(int i = 0; i < rows; ++i)
+    {
+        for (int j = 0; j < cols; ++j)
+        {
+            mat->data[i][j] = array[i * cols + j];
+        }
+    }
+}
+
+
+
+
+matrix_t Matrix_Transpose(const matrix_t* src)
+{
+    matrix_t dest;
+    Matrix_Init(&dest, src->cols, src->rows);
+
+    for(int i = 0; i < src->rows; i++)
+    {
+        for(int j = 0; j < src->cols; j++)
+        {
+            dest.data[j][i] = src->data[i][j];
+        }
+    }
+    return dest;
+}    // 进行转置操作
+
+
+
+
+// 矩阵乘法
+matrix_t multiply_matrices(const matrix_t* A, const matrix_t* B)
+{
+    ASSERT(A->cols == B->rows);
+
+    // 初始化结果矩阵
+    matrix_t dest;
+    Matrix_Init(&dest, A->rows, B->cols);
+
+    // 进行矩阵乘法运算
+    for(int i = 0; i < A->rows; i++)
+    {
+        for(int j = 0; j < B->cols; j++)
+        {
+            for(int k = 0; k < A->cols; k++)
+            {
+                dest.data[i][j] += A->data[i][k] * B->data[k][j];
+            }
+        }
+    }
+
+    return dest;  // 成功
+}
+
+
+
+// 矩阵加法
+matrix_t add_matrices(const matrix_t* A, const matrix_t* B)
+{
+    // 使用 assert 来确保两个矩阵的维度相同
+    ASSERT(A->rows == B->rows && A->cols == B->cols);
+
+    matrix_t result;
+    Matrix_Init(&result, A->rows, A->cols);
+
+    // 进行矩阵加法运算
+    for(int i = 0; i < A->rows; i++)
+    {
+        for(int j = 0; j < A->cols; j++)
+        {
+            result.data[i][j] = A->data[i][j] + B->data[i][j];
+        }
+    }
+
+    return result;  // 返回加法结果矩阵
+}
+
+
+
+
+// 矩阵减法
+matrix_t subtract_matrices(const matrix_t* A, const matrix_t* B)
+{
+    // 使用 assert 来确保两个矩阵的维度相同
+    ASSERT(A->rows == B->rows && A->cols == B->cols);
+
+    // 初始化结果矩阵
+    matrix_t result;
+    Matrix_Init(&result, A->rows, A->cols);
+
+    // 进行矩阵减法运算
+    for(int i = 0; i < A->rows; i++)
+    {
+        for(int j = 0; j < A->cols; j++)
+        {
+            result.data[i][j] = A->data[i][j] - B->data[i][j];
+        }
+    }
+
+    return result;  // 返回减法结果矩阵
+}
+
+
+
+
+// 高斯消元法求矩阵的逆
+int inverse_matrix(matrix_t* A, matrix_t* invA)
+{
+    ASSERT(A->rows == A->cols);  // 仅支持方阵
+
+    const matrix_type THRESHOLD = 1e-6;  // 根据具体情况调整阈值
+
+    Matrix_Init(invA, A->rows, A->cols);
+
+    int n = A->rows;
+
+    matrix_type augmented[MAX_SIZE][2 * MAX_SIZE];
+
+    // 构造增广矩阵 [A | I]
+    for(int i = 0; i < n; i++)
+    {
+        for(int j = 0; j < n; j++)
+        {
+            augmented[i][j] = A->data[i][j];
+            augmented[i][j + n] = (float)((i == j) ? 1 : 0);  // 设置单位矩阵部分
+        }
+    }
+
+    // 高斯消元过程
+    for(int i = 0; i < n; i++)
+    {
+        // 找到第 i 列的主元素
+        int max_row = i;
+        for(int j = i + 1; j < n; j++)
+        {
+            if(fabs(augmented[j][i]) > fabs(augmented[max_row][i]))
+            {
+                max_row = j;
+            }
+        }
+
+        // 如果主元素为 0，说明矩阵不可逆
+        if(fabs(augmented[max_row][i]) < THRESHOLD)
+        {
+            return 1;  // 不可逆
+        }
+
+        // 交换当前行和最大行
+        if(max_row != i)
+        {
+            for(int j = 0; j < 2 * n; j++)
+            {
+                matrix_type temp = augmented[i][j];
+                augmented[i][j] = augmented[max_row][j];
+                augmented[max_row][j] = temp;
+            }
+        }
+
+        // 对当前行进行归一化，使得主元素为 1
+        matrix_type pivot = augmented[i][i];
+        for(int j = 0; j < 2 * n; j++)
+        {
+            augmented[i][j] /= pivot;
+        }
+
+        // 消去当前列其他行的元素
+        for(int j = 0; j < n; j++)
+        {
+            if(j != i)
+            {
+                matrix_type factor = augmented[j][i];
+                for(int k = 0; k < 2 * n; k++)
+                {
+                    augmented[j][k] -= factor * augmented[i][k];
+                }
+            }
+        }
+    }
+
+    // 提取逆矩阵部分 [I | A^-1]
+    for(int i = 0; i < n; i++)
+    {
+        for(int j = 0; j < n; j++)
+        {
+            invA->data[i][j] = augmented[i][j + n];
+        }
+    }
+
+    return 0;  // 可逆，返回 0
+}
+
+
+
+
+
+static inline float invSqrt(float x)
+{
+    float xhalf = 0.5f * x;
+
+    int i = *(int*)&x;
+
+    i = 0x5f375a86 - (i >> 1);
+
+    x = *(float*)&i;
+
+    x = x * (1.5f - xhalf * x * x);
+
+    return x;
+}
+
+
+
+
+void normalize_vector(matrix_t *v)
+{
+    ASSERT(1 == v->cols || 1 == v->rows);
+
+    matrix_type norm = 0;
+
+    if(1 == v->rows)
+    {
+        for(int i = 0; i < v->cols; ++i)
+        {
+            norm += (v->data[0][i] * v->data[0][i]);
+        }
+    }
+    if(1 == v->cols)
+    {
+        for(int i = 0; i < v->rows; ++i)
+        {
+            norm += (v->data[i][0] * v->data[i][0]);
+        }
+    }
+
+    norm = invSqrt((float)norm);//倒数
+    if(1 == v->rows)
+    {
+        for(int i = 0; i < v->cols; ++i)
+        {
+            v->data[0][i] *= norm;
+        }
+    }
+    if(1 == v->cols)
+    {
+        for(int i = 0; i < v->rows; ++i)
+        {
+            v->data[i][0] *= norm;
+        }
+    }
+}
+
+
+
+
+
+void print_matrix(const matrix_t* matrix)
+{
+    for(int i = 0; i < matrix->rows; i++)
+    {
+        for(int j = 0; j < matrix->cols; j++)
+        {
+            printf("%2f ", matrix->data[i][j]);
+        }
+        printf("\n");
+    }
+    printf("\n");
+}
+matrix.h
+#include "zf_common_headfile.h"
+#ifndef CODE_MATRIX_H_
+#define CODE_MATRIX_H_
+
+
+#define __weak                __attribute__((weak))
+#define clip(x, min, max)    (((x) > (max)) ? (max) : (((x) < (min)) ? (min) : (x)))
+#define ABS(x)               (((x) > 0) ? (x) : (-(x)))
+#define clip2(x, num)        (clip((x), (-ABS(num)), (ABS(num))))
+#define MAX(a, b)            (((a) > (b)) ? (a) : (b))
+#define MIN(a, b)            (((a) < (b)) ? (a) : (b))
+
+
+
+#define MAX_SIZE (4)
+#define ASSERT(x) zf_assert(x)//zf_assert(x)用于判断程序是否出错，是逐飞官方库里的函数，当出错{x=0),屏幕报错，并输出
+
+
+typedef float matrix_type;
+typedef struct
+{
+    int rows;
+    int cols;
+    matrix_type data[MAX_SIZE][MAX_SIZE];
+}matrix_t;
+extern matrix_t error;
+extern matrix_t exf_x;
+
+typedef struct
+{
+    matrix_type roll, pitch, yaw;
+}EulerAngles;
+extern EulerAngles euler_angle;
+
+
+void Matrix_Init(matrix_t*martix,int rows,int col);//创建0矩阵
+
+void Matrix_From_Array(matrix_t* mat, const matrix_type* array,const int rows,const int cols);
+
+void Matrix_Identity(matrix_t* matrix, int size);//创建单位矩阵
+
+matrix_t Matrix_Transpose(const matrix_t* src);//矩阵转置
+
+matrix_t multiply_matrices(const matrix_t* A, const matrix_t* B);//矩阵乘法
+
+matrix_t add_matrices(const matrix_t* A, const matrix_t* B);//矩阵加法
+
+matrix_t subtract_matrices(const matrix_t* A, const matrix_t* B);//矩阵减法
+
+int inverse_matrix(matrix_t *A, matrix_t *invA);//矩阵求逆
+
+void normalize_vector(matrix_t *v);//向量归一化
+
+void print_matrix(const matrix_t* matrix);
+
+#endif /* CODE_MATRIX_H_ */
+car_led_uart.c
+#include "car_led_uart.h"
+
+void car_led_uart_init()
+{
+    uart_init(UART_6, 9600, UART6_TX_P03_1, UART6_RX_P03_0);             // 初始化串口6
+}
+
+void send_distance(int8 x_dis, int8 y_dis)
+{
+    uint8 car_led_dis_buffer[7] = {0xAA, 0x00, 0x00, 0x00, 0x00, 0X00, 0xFF};
+    
+    uint8 x_abs = (uint8)abs(x_dis);
+    uint8 y_abs = (uint8)abs(y_dis);
+    
+    if(x_dis > 0 && y_dis > 0)
+    {
+        car_led_dis_buffer[1] = x_abs;
+        car_led_dis_buffer[3] = y_abs;
+    }
+    else if(x_dis > 0 && y_dis < 0)
+    {
+        car_led_dis_buffer[1] = x_abs;
+        car_led_dis_buffer[4] = y_abs;
+    }
+    else if(x_dis < 0 && y_dis > 0)
+    {
+        car_led_dis_buffer[2] = x_abs;
+        car_led_dis_buffer[3] = y_abs;
+    }
+    else if(x_dis < 0 && y_dis < 0)
+    {
+        car_led_dis_buffer[2] = x_abs;
+        car_led_dis_buffer[4] = y_abs;
+    }
+
+    
+    for(uint8_t i=0;i<5;i++)
+      car_led_dis_buffer[5] += car_led_dis_buffer[i];
+    
+    uart_write_buffer(UART_6, car_led_dis_buffer, 7);
+}
+
+void start_send_distance(int8 x_dis, int8 y_dis)
+{
+  uint8 car_led_dis_buffer[7] = {0xAA, 0x00, 0x00, 0x00, 0x00, 0X00, 0xAA};
+  uart_write_buffer(UART_6, car_led_dis_buffer, 7);
+}
+
+void stop_send_distance(int8 x_dis, int8 y_dis)
+{
+  uint8 car_led_dis_buffer[7] = {0xFF, 0x00, 0x00, 0x00, 0x00, 0X00, 0xFF};
+  uart_write_buffer(UART_6, car_led_dis_buffer, 7);
+}
+car_led_uart.h
+#include "zf_common_headfile.h"
+void car_led_uart_init();
+void send_distance(int8 x_dis, int8 y_dis);
+void start_send_distance(int8 x_dis, int8 y_dis);
+void stop_send_distance(int8 x_dis, int8 y_dis);
+
+
+
+
+===== TABLE 1 =====
+参数项 | 数值 | 备注
+车模总体重量 | 1500g | 
+车模长度 | 290mm | 
+车模宽度 | 290mm | 
+车模高度 | 290mm | 
+轴距 | 200mm | 
+轮距 | 200mm | 
+
+===== TABLE 2 =====
+参数项 | 数值 | 备注
+工作电压 | 12.5V | 
+静态功耗 | 1000mA | 
+动态功耗 | 15A | 全速运行
+所有电容总容量 | 3020uF | 
+
+===== TABLE 3 =====
+传感器类型 | 数量 | 型号/规格
+TOF | 2 | dl1b
+光流 | 1 | 优象UP-FLOW-302-3C
+陀螺仪 | 2 | imu660ra
+摄像头 | 1 | 总钻风MT9V034
+
+===== TABLE 4 =====
+参数项 | 数值 | 备注
+赛道信息检测精度 | 5cm | 
+传感器采样频率 | 200Hz | 
+控制周期 | 5ms | 
+最高测试速度 | 1m/s | 
+
+===== TABLE 5 =====
+void PID_Calculate(float error) {     static float last_error = 0;     static float integral = 0;     float derivative;     integral += error;     derivative = error - last_error;     output = Kp * error + Ki * integral + Kd * derivative;     last_error = error; } 无人机： float pid_calculate_positional(PID_T *pid, float target, float current) {     pid->target = target;     pid->current = current;     pid->error = target - current;      // 积分累加     pid->integral += pid->error;      // 积分限幅     if (pid->max_integral > 0)     {         if (pid->integral > pid->max_integral)             pid->integral = pid->max_integral;         else if (pid->integral < -pid->max_integral)             pid->integral = -pid->max_integral;     }      // 各分量计算     pid->p_out = pid->kp * pid->error;     pid->i_out = pid->ki * pid->integral;     pid->d_out = pid->kd * (pid->error - pid->last_error);      pid->out = pid->p_out + pid->i_out + pid->d_out;      // 输出限幅     if (pid->max_output > 0)     {         if (pid->out > pid->max_output)             pid->out = pid->max_output;         else if (pid->out < -pid->max_output)             pid->out = -pid->max_output;     }      pid->last_error = pid->error;     return pid->out; } float ADRC_Height_Update(float target_height, float actual_height, float actual_velocity) {     const float kp    = 1.0f;   //1.7     const float kd    = 0.0f;   //2.0f * WC;     const float kp_v  = 0.4f;   //0.3          const float beta1 = 3.0f * WO;     const float beta2 = 3.0f * WO * WO;     const float beta3 = WO   * WO * WO;          float fh, e, u0, u1, u;     float pos_err, vel_err;          fh      = -fhan(adrc_x1 - target_height, adrc_x2, R, H);     adrc_x1 = adrc_x1 + H * adrc_x2;     adrc_x2 = adrc_x2 + H * fh;          e = adrc_z1 - actual_height; //eso估计h与实际h的差了多少，从而当作干扰返回到u里          adrc_z1 = adrc_z1 + H * (adrc_z2                          - beta1 * e);     adrc_z2 = adrc_z2 + H * (adrc_z3 + B0 * vertical_pwm/5.0f - beta2 * e);     adrc_z3 = adrc_z3 + H * (                                 - beta3 * e);               pos_err = adrc_x1 - adrc_z1;     vel_err = adrc_x2 - adrc_z2;               u0 = kp * pos_err + kd * vel_err;    //目标速度     u1 = kp_v * (u0 - adrc_z2);          //速度环输出          u  = (u1 - adrc_z3) / B0;          extract=u0;     extract1=u1;          return u;      } float ADRC_Vel_Update_X(float target_vel, float actual_vel) {     const float beta1 = 2.0f * VEL_WO;     const float beta2 = VEL_WO * VEL_WO;          static float u_prev = 0.0f;     float e, u0, u;          // 二阶ESO     e = vel_adrc_z1_x - actual_vel;     vel_adrc_z1_x += VEL_H * (vel_adrc_z2_x + VEL_B0 * u_prev - beta1 * e);     vel_adrc_z2_x += VEL_H * (-beta2 * e);          // 控制律     u0 = VEL_KP * (target_vel - vel_adrc_z1_x);     u  = (u0 - vel_adrc_z2_x) / VEL_B0;          u_prev = u;     return u; } 小车： void mecanum_kinematic_calc(float Vx, float Vy, float W)//麦轮解算 {     wheel_speed_target[0] = Vx - Vy - WHEEL_KW * W;     wheel_speed_target[1] = Vx + Vy + WHEEL_KW * W;     wheel_speed_target[2] = Vx + Vy - WHEEL_KW * W;     wheel_speed_target[3] = Vx - Vy + WHEEL_KW * W; }  float pid_calculate_positional_MOTOR(PID_T *pid, float target, float current , float ff)//pid计算+前馈 {     pid->target = target;     pid->current = current;     pid->error = target - current;      // 积分累加     pid->integral += pid->error;      // 积分限幅     if (pid->max_integral > 0)     {         if (pid->integral > pid->max_integral)             pid->integral = pid->max_integral;         else if (pid->integral < -pid->max_integral)             pid->integral = -pid->max_integral;     }      // 各分量计算     pid->p_out = pid->kp * pid->error;     pid->i_out = pid->ki * pid->integral;     pid->d_out = pid->kd * (pid->error - pid->last_error);      pid->out = pid->p_out + pid->i_out + pid->d_out +  ff * target;      // 输出限幅     if (pid->max_output > 0)     {         if (pid->out > pid->max_output)             pid->out = pid->max_output;         else if (pid->out < -pid->max_output)             pid->out = -pid->max_output;     }      pid->last_error = pid->error;     return pid->out; }  // =========速度决策，low：近点========= if(fabsf(x_data) < 25.0f) {     if(fabsf(x_data) <= 5.0f)     {         alpha_x = 5.0f;//0.0f     }     else     {         alpha_x = 1.0f + (25.0f - fabsf(x_data)) / 5.0f;         if(alpha_x > MAX_ALPHA) alpha_x = MAX_ALPHA;     } }  if(fabsf(y_data) < 25.0f) {     if(fabsf(y_data) <= 5.0f)     {         alpha_y = 5.0f;     }     else     {         alpha_y = 1.0f + (25.0f - fabsf(y_data)) / 5.0f;         if(alpha_y > MAX_ALPHA) alpha_y = MAX_ALPHA;     } }  float VX_low = vx_body * alpha_x; float VY_low = vy_body * alpha_y;   // =========防45度抬轮========= if(fabs(x_data) < 25 && fabs(y_data) < 25 && !(x_data == 0 && y_data == 0))             {             if(fabsf(x_data) > 6.0f)             {                 VY_low = 0.0f;             }             else if(fabsf(x_data) <= 6.0f)             {                  VY_low = (VY_low > 0) ? VY_low + 8 : VY_low - 8;                 }         }            if(fabs(x_data) < 25 && fabs(y_data) < 25 && !(x_data == 0 && y_data == 0))         {                        mecanum_kinematic_calc(VX_low, VY_low, w_out * 3.1415926535f / 180.0f);         }         else          {          mecanum_kinematic_calc(vx_body, vy_body, w_out * 3.1415926535f / 180.0f);         } // =========防45度卡轮=========     int extra_enable = count();     boost(extra_enable, 50);              limit(CAR_MAX);   //限幅

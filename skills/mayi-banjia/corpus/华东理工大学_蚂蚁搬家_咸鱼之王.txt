@@ -1,0 +1,1614 @@
+第二十一届全国大学生
+智能汽车竞赛
+技 术 报 告
+学　　   校：华东理工大学
+队 伍 名 称：咸鱼之王
+参 赛 队 员：李一陶、徐轶凡、肖合洋、曾少通
+
+带 队 教 师：刘笛、韩雅婷
+
+
+关于技术报告和研究论文使用授权的说明
+本人完全了解全国大学生智能汽车竞赛关保留、使用技术报告和研究论文的规定，即：参赛作品著作权归参赛者本人，比赛组委会可以在相关主页上收录并公开参赛作品的设计方案、技术报告以及参赛模型车的视频、图像资料，并将相关内容编纂收录在组委会出版论文集中。
+  参赛队员签名：                                           
+
+
+
+ 带队教师签名：                                           
+日　　　　期：2026年8月16日             
+
+目　　录x
+主要符号表.....................................................................i
+第一章　引言.................................................................1
+　　1.1　智能汽车制作概述.....................................................1
+　　1.2　报告内容框架.........................................................1
+第二章　系统总体设计.........................................................2
+　　2.1　设计思路.............................................................2
+　　2.2　技术方案.............................................................2
+第三章　机械结构设计.........................................................3
+　　3.1　车模安装与改造.......................................................3
+　　3.2　传感器安装...........................................................3
+第四章　硬件电路设计.........................................................4
+　　4.1　电路总体设计.........................................................4
+　　4.2　传感器电路...........................................................4
+第五章　软件算法设计.........................................................5
+　　5.1　控制理论.............................................................5
+　　5.2　核心算法.............................................................5
+　　5.3　代码设计.............................................................5
+第六章　系统调试.............................................................6
+　　6.1　开发工具.............................................................6
+　　6.2　制作与安装...........................................................6
+　　6.3　调试过程.............................................................6
+第七章　技术参数.............................................................7
+附录B　程序源代码（必须）..................................................B-1
+
+主要符号表
+（注：若论文中使用符号和缩略词数量不多，可不设专门的汇集表，但在论文中出现时须加以说明。）
+第一章　引言
+1.1　智能汽车制作概述
+本组别为微缩组别蚂蚁搬家赛道。比赛要求：两辆MicroPython小车搬运网球/沙袋/泰迪熊至场外指定方位（决赛需分类），辅助车不碰物品；预赛无障碍，决赛有坡道和砖块（≤3块）；车模需返回发车区，时间短者胜；车模重量与成绩挂钩，车模越轻，罚时越少。
+基本设计思路：完成比赛任务要求，找到速度与车模质量的最佳平衡点。为实现小车灵活转向，我们采用三轮全向轮车模方案。在车身结构，车模材料，电路板，电池等部件上减轻重量。两车搬运采用“对牛”方案，即两车前后夹住物体搬运出界，两车间采用WIFI模块通信。物体分类，障碍物及边界识别等采用摄像头识别。
+技术路线规划：首先完成大体方案敲定；确定方案后同步开启车模设计和电路板原理图PCB设计；车模组装完成后开始软件调试，电机选型，搬运方案验证。
+1.2　报告内容框架
+本报告将从系统总体设计、机械结构设计、硬件电路设计、软件算法设计和系统调试这五个方面系统阐述。
+第二章　系统总体设计
+2.1　设计思路
+我们的赛题任务要求将不同种类的物体推至不同的方向，因此对车模灵活性有较高要求。在设计方案之初我们有两种车模方案，四轮麦轮全向车模和三轮全向轮车模。综合考量结构复杂程度和重量，我们选择三轮全向轮车模方案。
+我们的比赛成绩与重量挂钩，因此我们车模的设计思路便是在保证速度的前提下尽可能地减轻重量。在车身减重方面，我们在车身结构，车模材料，电路板，电池等部件上减轻重量。车身结构方面，删去不必要的结构，仅保留能支持整车结构的最小强度件；车模材料方面，整车结构全部采用3D打印物料，连接件全部使用尼龙件（尼龙螺柱，尼龙螺丝，尼龙螺母等）；电路板方面，仅保留所需要功能，主驱同板，最小化电路板尺寸（5cm*5cm，0.8mm板厚），空板重量控制在4.9g；电池方面，选择850mAh 3S锂电池，电池容量满足基本任务需求。
+2.2　技术方案
+2.2.1　方案选择依据
+蚂蚁搬家组别目前有两种主流搬运方案，一种是“对牛”，即两车前后夹住物体搬运出界，另一种是逐飞方案，从车跟随主车，两车呈V型将物体一起推出界。但由于逐飞方案推出时间较晚，对牛方案在前期验证过程中也调试的较为顺利，故最终敲定使用“对牛”方案。
+2.2.2　系统架构
+本系统以 RT1021 MicroPython 核心板作为唯一主控单元，构成感知-决策-执行闭环的嵌入式实时控制架构。主控通过 PWM 信号驱动三路 DRV8701 栅极驱动器（12V 供电）控制三个直流电机，同时采集同轴编码器（3V3）的脉冲反馈实现速度与位置闭环；姿态感知方面，核心板经 SPI 总线高速读取 IMU963 九轴姿态数据，用于车体平衡与航向解算。环境感知与显示共享一组 I²C 总线：TOF 红外测距模块实时输出距离数据，IPS200 屏幕同步显示运行状态与关键参数。通信链路由三路 UART 承担，分别对接无线转串口模块（5V，用于双车协同）、OpenArt Plus 视觉模块（用于物体与障碍识别）及上位机（用于调试与数据回传），实现多源信息融合与远程监控。此外，通用 IO 口连接拨码开关、时序电路与蜂鸣器，完成车模方案选择、起跑信号触发及状态提示等人机交互功能。各功能模块按总线类型分工明确，PWM 专供电机驱动、SPI 用于高速姿态采集、I²C 负责测距与显示、UART 承载多路通信、IO 处理离散控制，总线资源无冲突，系统具备良好的实时性与可扩展性。
+图2.1　系统整体架构框图
+第三章　机械结构设计
+3.1　车模安装与改造
+ 
+图3.1　车模实物图
+机械结构设计方面在保障性能的前提下，尽可能地减重（对结构进行镂空处理），轮子使用全向轮，保障小车的灵活性。电路板通过尼龙螺柱悬空于底盘安装，悬空部分塞入电池。车模长18cm，宽17cm，高20cm，总体重量287g。
+3.2　传感器安装
+TOF测距模块（1个）：安装在推杆正中间，用螺丝固定。
+OpenArt Plus摄像头（1个）：安装在摄像头支架上，用螺丝固定。
+IMU963陀螺仪（1个）：直插在电路板边缘，正下方悬空无干扰物。
+WIFI模块（1个）：直插在电路板上。
+第四章　硬件电路设计
+4.1　电路总体设计
+4.1.1 电源管理模块
+	电源管理模块负责将 3S 锂电池（11.1 V/12.6 V）的电压分为两路，一路提供给电机，一路转换为系统所需的5 V（外设）、3.3 V（MCU与传感器）两级电压，并具备时序上电、过压保护、欠压监测功能。电源管理部分由以下子电路组成：
+（1）：地隔离
+电机驱动会产生大量噪声，通过一个0ohm的电阻把"大电流、强噪声"的功率回路和"低电平、高敏感"的信号回路在地参考上分开，避免电机开关噪声顺着共地路径灌进 MCU 和传感器。
+
+（2）12V→5V 降压电路（DCDC）
+采用TI的TPS62135RGXR同步降压型DCDC芯片，最大输出电流4A，效率高、纹波低。如图3所示，输入端经 SS54 肖特基二极管防反接，U8为1μH功率电感，与芯片内部开关构成Buck拓扑；R30（510kΩ）与R32（82kΩ）构成输出电压反馈分压，将输出电压设置为5 V（Vref=0.8V）。
+
+（3）5V→3.3V降压电路（LDO）
+采用RT9013-33GB低压差LDO，最大输出 500 mA，具备低噪声、高 PSRR 特性，专为MCU、传感器等模拟/数字混合电路供电。如图4所示，Vin端加10μF+100nF输入滤波；Vout端加10μF+100nF输出滤波，确保3V3母线噪声在50mVpp以内。
+
+(4)双路电子开关（电源时序控制）
+采用MPS MP5090GQHT-Z（U5）双通道负载开关，EN1/EN2由MCU CR引脚控制（MCU在5V上电后CR输出高电平），可实现5V_CR（受控 5V）、3V3_CR（受控3.3V）的分时序上电，避免大电流负载同时启动造成母线跌落。
+
+(5)电源开关
+电源开关由 P-MOSFET AGM60P100A（Q21）+ 拨片开关MSK12C02（SW2）+ 防反TVS BZT52C16（D1）+ R7（10 kΩ）下拉组成，波动开关将栅极拉低，Q21导通将12V母线接通；TVS用于吸收感性负载关断时的电压尖峰。
+
+(6)电源指示灯
+12V、5V、3V3、CR 四路LED指示，分别串联R33、R34、R35、R36（10kΩ）限流电阻至GND，方便调试时观察各级母线状态。
+
+(7)电池电压测量
+由R28（10 kΩ）+ R29（1 kΩ）构成分压网络，将12V电池电压按约11:1比例衰减送入MCU ADC引脚BAT_ADC；BAV99（D2）双向钳位二极管将ADC引脚电压限制3v3内；C6（100 nF）滤除高频干扰。MCU 可据此实现低压报警、自动停机等功能。
+
+4.1.2 MCU核心板接口模块
+主控采用基于NXP RT1021的MicroPython核心板（U15，型号 RT1021_BTB_CoreBoard，板对板连接器型号 HC-PM254-5.0H-2x8PS），主频500MHz，自带MicroPython固件，便于快速开发。核心板通过 50-pin BTB（板对板）连接器与底板对接，将 MCU 引出的电源（5V）、控制信号（CR）、3路电机PWM/DIR、6 路编码器输入、2路I2C（屏幕、TOF）、1路SPI（IMU963）、3路UART（无线转串口、OpenArt Plus摄像头、上位机）、ADC（BAT_ADC）、普通GPIO（按键、拨码、蜂鸣器、屏幕控制）等资源全部引出到主板。
+
+4.1.3 电机驱动模块 
+三路电机驱动采用完全对称的设计结构，每一路由栅极驱动芯片DRV8701 + 2颗漏源相连的双N-MOSFET AGM304MBQ组成H桥。满足性能的同时缩小体积。
+
+4.1.4 电路功耗
+车模整体工作功耗在10-20W之间，电路板使用两颗220uF固态电容一共440uF。
+4.2 整体电路原理图
+
+
+第五章　软件算法设计
+5.1　控制理论
+5.1.1　控制系统总体框架
+本车控制软件以 NXP i.MX RT1021 微处理器（Cortex-M7，500 MHz）为核心，基于逐飞科技 MicroPython 固件开发，软件需要完成"自主定位—目标搜索—目标识别—搬运推送—双车协同—回归停靠"的完整任务流程。针对这一复杂任务，软件采用分层递阶控制的整体策略，自顶向下划分为四个层次：
+1. 任务决策层：以有限状态机（FSM）为骨架，共定义 23 个任务状态（主流程实际使用 17 个，其余为调试与预留状态），负责根据传感器信息、定位结果与队友车辆状态进行任务调度与状态切换，是整车的"大脑"；
+2. 环级控制层：采用串级 PID 结构，由外向内依次为距离环（点到点定位）、角度环（航向跟踪）、角速度环（陀螺仪反馈）和轮速环（三电机分别闭环），实现"位置→姿态→速度→力矩"的逐级精确控制；
+3. 运动学解算层：根据三全向轮底盘逆运动学模型，把合速度指令（平移速度、平移方向、旋转速度）解算为三个轮子的目标转速；
+4. 执行层：以 13 kHz PWM 驱动三路直流电机，通过 575 线正交编码器构成速度闭环反馈。
+在控制方式上，本车采用开环规划与闭环校正相结合的策略：起停与加速阶段使用 Sigmoid 速度曲线进行开环平滑规划，避免速度阶跃引起的打滑与冲击；行驶与接近目标阶段切换为闭环控制，由传感器反馈实时修正。
+坐标系定义。 全场建立全局直角坐标系，单位 cm；车体航向角 ψ 由九轴姿态解算获得，取值范围 0°~360°，定义车头朝向 +Y 轴方向时为 90°；上电起点坐标为 (46, −20)。全部状态机中的目标点、边界判断与坐标修正均在此坐标系下进行。
+控制周期选择。 控制周期是影响系统性能的关键参数：过短则中断负载过重、MicroPython 解释执行开销导致周期抖动；过长则相位滞后大、带宽不足。经实测，姿态解算（Mahony 九轴）与控制环计算在 RT1021 上的最坏执行时间约 1.5 ms，故将控制中断周期定为 4 ms（250 Hz），既保证足够的控制带宽，又留有充裕的时间余量；编码器采集与里程计更新对实时性要求较低，定为 40 ms（25 Hz），该周期内编码器脉冲计数上限（±80）足以覆盖全速运行范围。
+5.1.2　串级控制理论
+对于航向控制这类"姿态→转速"双积分对象，单环 PID 难以兼顾响应速度与稳定性：比例系数增大可加快响应，但会放大角度噪声（陀螺仪噪声经微分放大）引起转向抖动。本系统采用串级控制结构（图5-2）：外环为角度环，以目标航向与实际航向的偏差为输入，输出期望角速度；内环为角速度环，以期望角速度与陀螺仪实测角速度之差为输入，输出转向指令。
+
+串级结构的优势在于：车身扰动（如地面不平引起的角速度突变）在内环即被抑制，无需等角度偏差显现后才响应，等效于大幅提高了外环的抗干扰能力；同时内环将控制对象改造为近似的"角速度伺服系统"，外环只需面对一阶对象，参数整定大为简化。内环响应频率应显著高于外环（工程上一般取 5~10 倍），本系统内环与外环采用相同的 PD 参数并直接以内环输出限幅（±300）约束转向速度，实测航向阶跃响应无超调、到位后无摆动。
+同理，目标接近控制也采用了"横向居中环 + 纵向定距环"的双环结构，两环分别以视觉像素偏差和 TOF 距离偏差为输入，输出经矢量合成后送入底盘，实现了接近过程中的空间解耦控制。
+5.1.3　滤波算法
+竞赛现场存在场地反光、电机振动、无线干扰等多种噪声源。传感器原始数据若直接进入控制环，噪声将被微分项放大，导致执行机构抖动、能耗增大甚至失稳。本系统综合运用了以下滤波方法：
+（1）一阶低通滤波。 用于目标横向坐标的平滑以及开发早期 IMU 数据的预处理。其差分方程为：
+公式3：y(k) = α·y(k−1) + (1−α)·x(k)
+其中 α 为滤波系数。α 越大，滤波越强但相位滞后越大；α 越小则跟踪越快。本系统对 IMU 六轴数据取 α=0.3，在抑制高频振动的同时保持较小的相位滞后；对视觉目标坐标取 0.7/0.3 的加权比（即 α=0.7），重点抑制单帧误检引起的车辆横向抖动——因为目标坐标噪声主要来自帧间跳变，而非连续高频干扰，需要更强的平滑。
+（2）算术平均滤波。 用于电池电压监测：ADC 连续采集 10 次电压数据取平均后与阈值比较，有效抑制了电源纹波与 ADC 量化噪声造成的误报警。
+（3）卡尔曼滤波。 用于水平位置—速度的最优估计。系统将位置与速度建模为二维状态向量 X=[x, v]ᵀ，以编码器里程计作为位置观测、加速度计积分作为速度观测，按以下五条递推公式计算：
+公式4：状态预测　X(k|k−1) = F·X(k−1)
+公式5：协方差预测　P(k|k−1) = F·P(k−1)·Fᵀ + Q
+公式6：卡尔曼增益　K(k) = P(k|k−1)·Hᵀ·(H·P(k|k−1)·Hᵀ + R)⁻¹
+公式7：状态更新　X(k) = X(k|k−1) + K(k)·(Z(k) − H·X(k|k−1))
+公式8：协方差更新　P(k) = (I − K(k)·H)·P(k|k−1)
+其中状态转移矩阵 F=[[1, dt], [0, 1]]（匀速运动模型），观测矩阵 H 为单位阵。过程噪声 Q=diag(0.001, 0.01) 反映模型不确定性（速度噪声大于位置噪声），观测噪声 R=diag(0.0001, 1.0) 反映传感器特性——位置观测噪声取小值表示更信任编码器，速度观测噪声取大值反映加速度积分的不确定性。滤波器在预测—更新两步递推中按噪声协方差自适应加权，兼顾了里程计的长时稳定与惯性导航的短时响应，抑制了加速度二次积分随时间发散的问题。
+（4）互补滤波（Mahony 算法）。 用于九轴姿态解算。其理论基础是传感器的频域互补特性：陀螺仪动态响应好、短时精度高，但积分存在长期漂移；加速度计与磁力计长期稳定（绝对基准），但易受振动和磁场干扰、动态精度差。将两者分别在低频段与高频段取信，即可在全频段获得理想估计。Mahony 算法以加速度计与磁力计观测误差经 PI 反馈校正陀螺仪漂移，再以校正后的角速度更新四元数，实质上是"积分陀螺仪 + 低频误差反馈"的互补滤波结构，计算量远小于卡尔曼滤波，适合在 MicroPython 解释执行环境下实时运行（详见 5.2.2 节）。
+5.2　核心算法
+5.2.1　PID 控制算法
+PID 控制是环级控制层的基础，其连续形式为：
+公式1：u(t) = Kp·e(t) + Ki·∫e(t)dt + Kd·de(t)/dt
+式中 e(t) 为期望值与实测值之差；比例项即时响应误差、积分项消除稳态误差、微分项预报误差趋势并抑制超调。在微处理器中实现时将其离散化为位置式 PID：
+公式2：u(k) = Kp·e(k) + Ki·Σe(j) + Kd·[e(k) − e(k−1)]
+其中采样周期即控制周期 4 ms，Σ 为误差累加（积分项），e(k)−e(k−1) 为误差增量（微分项）。工程实现中针对两类饱和问题进行了处理：
+积分饱和：任务切换或目标点突变时误差长时间同号，积分项累积过大，引起大超调与长时间震荡。软件中对积分项设置 ±inte_limit 限幅，并在状态切换、到达目标点、推送结束等时机主动清零积分项与微分项历史值（inlast/integral），避免上一状态的控制量污染下一状态；
+输出饱和：当输出超出电机量程（±5500）时钳位，防止执行机构过载，也避免了饱和期间积分继续累积（配合限幅后系统实际具备一定的积分抗饱和能力）。
+根据控制对象的不同，本系统共设计了七组 PID 控制器，最终整定参数如表5-1所示。
+表5-1 PID 参数整定表
+各环设计要点如下：
+轮速环是全部控制的基础。三个电机因减速比、摩擦特性的个体差异必须分别闭环。调试中先以纯比例环节建立基本跟随能力，再引入微分抑制超调，最后以小量积分消除静差；积分限幅 10000 保证稳态误差快速收敛又不会失控；
+角度环与角速度环构成串级（见 5.1.2）。角度环输出经限幅 ±250 后作为角速度环的期望值，角速度环以陀螺仪 X 轴角速度为反馈。角度误差计算中处理了 ±180° 跳变（误差先归一化到 [−180°, 180°] 再计算），保证车辆始终沿最短路径转向，不会出现"绕远路转大圈"的现象；
+距离环以剩余距离为误差、输出行驶速度，天然实现"远端快速、近端减速"的软着陆效果：距离远时速度受限幅 70 顶满，接近目标时速度随距离线性下降，避免了定点急停造成的惯量冲击与打滑。到达判定距离 ≤1 cm 时输出到位标志；
+TOF 定距环与居中环用于目标接近，均为小增益比例（微分）环节并设严格输出限幅，保证接近目标时动作柔和，避免碰撞与目标物被撞飞。
+5.2.2　基于 Mahony 互补滤波的九轴姿态解算
+姿态解算是航向控制与惯性导航的基础。本系统采用逐飞 IMU963RX 九轴传感器（三轴加速度计 + 三轴陀螺仪 + 三轴磁力计），运行 Mahony 互补滤波算法，在 4 ms 控制中断中完成一次完整解算，步骤如下：
+（1）数据预处理与标定。 上电静置时采样三轴陀螺仪输出取均值得到零漂（本车标定值为 gx=0.696、gy=−6.353、gz=−4.341），运行时原始值减去零漂并按灵敏度系数 14.3 LSB/(°/s) 换算为弧度制角速度；加速度计与磁力计数据分别进行模长归一化，消除量纲影响。采样周期 dt 由定时器时标实测获得（对异常值限幅在 0.02 s 内，缺省取 0.004 s），避免中断延迟引入积分误差。
+（2）参考矢量估计。 由当前四元数 q=(q0, q1, q2, q3) 计算出重力方向在机体系中的估计值 (vx, vy, vz)；由归一化磁场数据结合四元数先计算地磁水平分量 (bx, bz)，再反推出机体系中的地磁参考矢量 (wx, wy, wz)。
+（3）误差计算与 PI 校正。 将加速度计实测值与重力估计值叉乘得到姿态误差，磁力计实测值与地磁参考叉乘得到航向误差：
+公式9：e_acc = a_meas × v_est，e_mag = m_meas × w_est
+叉乘结果的方向与幅值反映了估计姿态与真实姿态的偏差。按磁力计权重 MAG_K=0.8 融合两类误差后（e = e_acc + 0.8·e_mag），经 PI 环节校正陀螺仪：
+公式10：g = g_raw + Kp·e + Ki·∫e·dt
+其中 Kp=1.5、Ki=0.0005。积分项持续补偿陀螺仪零漂的缓慢变化（温漂），使系统对零漂标定误差具有自适应能力。
+（4）四元数更新。 以校正后的角速度求解四元数微分方程并作一阶数值积分，随后对四元数归一化，抑制数值误差累积：
+公式11：dq/dt = ½·Ω(ω)·q
+（5）欧拉角输出。 由四元数换算欧拉角供控制系统使用：
+公式12：
+roll = atan2[2(q0q1+q2q3), 1−2(q1²+q2²)]·180/π
+pitch = asin[2(q0q2−q3q1)]·180/π
+yaw = atan2[2(q0q3+q1q2), 1−2(q2²+q3²)]·180/π
+其中 yaw 归一化到 0°~360° 区间，与全局坐标系的航向定义一致。
+磁力计的融合使 yaw 角具备绝对航向基准，长时间运行不漂移，这是纯陀螺仪积分方案无法实现的；加速度计校正则保证了动态过程中横滚、俯仰角的准确。实际测试中，车辆连续行驶 3 分钟后航向误差小于 2°，完全满足任务要求。
+5.2.3　三全向轮运动学解算
+本车底盘采用三全向轮结构，三个轮子沿圆周 120° 均布，轮缘小滚子使轮子具有横向滑动能力。全向底盘的运动由平移速度 v、平移方向角 θ 与旋转角速度 ω 三个自由度合成。
+（1）逆运动学——指令解算。 控制层给出合速度指令 (v, θ, ω) 后，需要解算为三个轮子的目标转速。每个轮子的线速度等于平移速度在其轴线法向上的投影与旋转速度的叠加：
+公式13：V_i = v·cos(θ_i − θ) + ω，i = 1, 2, 3
+其中 θ_i 为第 i 个轮子轴线相对参考方向的角度。软件中 speed_get() 函数按此模型实现（三个轮子分别对应 0°、−60°、+60° 布局），并对 ω 做 ±180° 归一化处理。该函数同时承担限幅与符号定义职责。这一解算模型使车辆可以在不改变航向的情况下沿任意方向平移（如推送目标物时以 90° 方向侧移），也能在保持位置的同时原地旋转（搜索扫描），为全部任务动作提供了运动学基础。
+（2）正运动学——里程计解算。 编码器里程计是逆过程的运用：40 ms 采集周期内得到三路编码器脉冲增量后，按安装角加权求和得到车体系位移矢量，再依据 yaw 角旋转投影到全局坐标系：
+公式14：
+ΔX = [n_md·cos(ψ−90°) + n_ul·cos(ψ+150°) + n_ur·cos(ψ+30°)] / K
+ΔY = [n_md·sin(ψ−90°) + n_ul·sin(ψ+150°) + n_ur·sin(ψ+30°)] / K
+其中 ψ 为当前 yaw 角，n_i 为本周期脉冲增量，K 为标定系数（27 脉冲/cm）。由于三个轮子受电机接线方向、编码器极性的影响，实际安装角存在符号差异，公式中的角度数值以实测校准结果为准
+
+5.2.4　惯性导航与多传感器定位
+本车以编码器里程计为主、惯性导航为辅实现全场定位。
+（1）编码器里程计。 在 40 ms 定时中断中读取三路 575 线正交编码器脉冲增量，经限幅（±80）剔除干扰毛刺后，按公式14解算位移并累加得到全局坐标 (X, Y)。针对误差来源采取了以下措施：
+打滑补偿：推送目标物时驱动轮打滑，轮速虚高而位移不足。系统在推送工况下分方向动态修正标定系数（直线推送时 X/Y 方向分别取 27/35 或 36/27 脉冲/cm），使坐标估计与真实位移吻合；
+跳变保护：当单次脉冲增量异常（|Δ|>1000）时判定为采集故障，重置累计器并放弃本周期积分，防止坐标突变引发任务误判；
+边界刷新：检测到场地黄色边界线时，以黄区的精确几何参数强制刷新坐标，消除多轮任务间的累计误差（详见 5.2.6 节）。
+（2）加速度计惯性导航。 将加速度计数据经坐标系旋转与重力补偿投影到水平面后，采用梯形积分法先积出速度、再积出位置。由于加速度二次积分误差随时间平方增长，单独使用会在数秒内发散，故设计了 5.1.3 节所述的二维卡尔曼滤波器，以"编码器提供位置、加速度计提供速度"的方式融合两路信息。
+实际调试表明，在场地平整、轮压稳定的竞赛条件下，配合上述补偿策略后纯编码器里程计即可满足任务所需的定位精度，故决赛代码以编码器里程计为主要定位手段，卡尔曼融合框架保留为冗余方案，用于冲击、碰撞等特殊工况下的位置修正。
+5.2.5　目标检测与接近控制
+（1）目标检测与识别。 本车融合三类传感器完成目标的发现、识别与精确定位：
+OpenART mini 视觉模块负责识别目标物类别（方块、熊、球）并输出目标横向像素坐标，通过串口以 5 字节定长帧与主控通信，协议格式见表5-3；
+DL1X 激光测距模块（TOF）提供目标纵向距离，量程内输出 mm 级距离值，8192 为无效值（超量程或无信号）。
+
+表5-3 视觉模块串口帧协议
+为保证识别可靠性，目标类别采用三次一致投票确认机制：连续 3 帧类别编码相同才锁定目标类型，类别未锁定前不进入推送流程。该机制有效抑制了单帧误识别造成的策略错误。
+（2）接近控制。 检测到目标后，横向与纵向分别闭环（双环解耦）：
+横向：居中环 PID 以坐标偏差（160−x）为误差生成横向速度分量，输入前先经 0.7/0.3 一阶低通平滑；纵向：TOF 定距环按期望距离（首轮 90 mm，后续轮次 40 mm）生成纵向速度分量，TOF 数据无效（8192）时该分量置零；
+引入距离缩放系数 min(tof/200, 1.0) 与横向速度分量相乘，使车辆在接近目标过程中自动减速，避免碰撞；
+两个分量经矢量合成得到合速度指令：
+公式15：v = √(v_x² + v_y²)，θ = atan2(v_y, v_x)
+合成后的 (v, θ) 连同航向环输出的 ω 一并送入全向轮逆运动学解算。
+（3）目标锁定判定。 当横向偏差 |x−160| ≤ 25 且 TOF 距离小于阈值（首轮 120 mm、后续轮次 100 mm）持续稳定一定周期（计数器累计达到 55，约 0.22 s）时，判定目标已锁定，进入下一任务状态；任一条件不满足则计数器清零。多传感器联合的持续性判定避免了单帧干扰造成的误触发，是任务可靠性的重要保证。
+5.2.6　有限状态机与双车协同
+（1）状态机设计。 任务决策层共定义 23 个状态（主流程使用 17 个，其余为调试与预留），每个状态在 4 ms 控制中断中完成"读取传感器→计算控制量→输出电机"的完整闭环，状态切换在主循环中依据标志位与传感器数据完成。状态定义与流转关系见表5-4。
+表5-4 任务状态机状态表
+（2）位置修正策略。 推送过程中目标物对车的反作用力会造成里程计漂移，系统采取"任务内补偿 + 边界强校正"的双重修正：
+每轮任务结束（end 状态）后按类别补偿坐标：方块 X+30 cm、球 Y+15 cm、熊 X−30 cm，修正推送阶段的反作用力位移误差；
+检测到黄色边界线时，直接以黄区几何参数强制刷新坐标（方块 X=15、球 Y=270、熊 X=305），消除多轮任务间的累计误差，保证三个目标物搬运过程的定位精度一致。
+（3）双车无线协同。 两车各搭载逐飞无线串口模块（460800 bps），自定义协议帧格式为：
+s + (X+100) + (Y+100) + 目标类别 + v
+其中帧头 s 用于同步，坐标加 100 偏移保证帧长固定，v 为结束符。发送采用双发冗余机制（同一帧连续发送两次）抑制无线丢包，接收端以固定帧长校验过滤误码。典型协同时序为：本车推送球类目标至收集区后进入 stop 状态停稳，随即向队友车发送自身坐标与目标类别，队友车完成对应推送并回报就绪信号 '1'，本车收到后立即开始二次推送——两车"接力"完成单个目标的搬运，显著缩短了总任务时间。
+5.3　代码设计
+5.3.1　软件整体架构
+软件基于逐飞科技 RT1021 MicroPython 开源库开发，按功能划分为七个模块，模块划分与职责见表5-5，完整的程序源代码见附录B。
+表5-5 软件模块划分
+模块间通过全局变量共享传感器数据与控制指令，函数接口简洁、数据流向单向（传感器→解算→控制→执行），便于分工开发与增量调试。代码按比赛阶段进行版本管理（开发版、预赛版、决赛版分别留存），任何一次关键参数调整都可回溯。
+5.3.2　双中断任务调度
+系统采用双定时器中断架构，按实时性要求划分任务：
+PIT2 控制中断（4 ms）：依次执行九轴姿态解算（Mahony）→ 状态机控制量计算（move_speed/move_angle/turn_speed）→ 全向轮逆运动学解算（speed_get）→ 三路速度环 PID → 电机 PWM 输出。这是实时性要求最高的闭环控制链路，由硬件定时器保证周期严格恒定；
+PIT1 采集中断（40 ms）：编码器数据读取与限幅 → 里程计解算与坐标累加。周期较长但足以覆盖全速运行范围的脉冲计数；
+主循环：承担 LCD 多行显示（坐标、航向、状态编号、传感器原始数据等 15 行）、串口协议解析、电池监测、状态切换判定等非实时任务，并在每轮循环末尾调用 gc.collect() 回收内存。
+传感器采集由 ticker 硬件的 capture_list 机制自动完成（PIT2 关联 IMU 与 TOF，PIT1 关联三路编码器），中断回调中仅执行必要的计算，进一步降低了中断开销。分层调度使 CPU 负载均衡，避免了长任务挤占控制周期的问题；实测中断处理时间稳定在 1.5 ms 以内，留有 60% 以上的周期余量。
+
+5.3.3　关键模块实现思路
+（1）PIDController 类。 封装 kp/ki/kd、积分限幅、输出限幅等属性，提供两个接口：compute() 为通用位置式 PID，用于轮速环、距离环、TOF 环与居中环；compute_theita() 专用于角度环，内部先对角度误差做 ±180° 归一化，再经角度环 PID 生成期望角速度，最后调用角速度环 PID 以陀螺仪角速度为反馈完成串级计算。状态切换时由上层主动清零积分与微分历史，保证状态切换后的控制量平滑过渡，杜绝"上一个状态的输出突跳"。
+（2）状态机实现。 使用字典将状态名映射为整数索引（state_index），配合目标类别索引（obj_index：方块 0、熊 1、球 2、空 3），使状态转移代码可读性强、便于扩展。每个状态的入口动作（清零 PID、复位标志位、初始化计数器）集中编写在转移处，保证状态间边界清晰。
+（3）通信协议处理。 串口接收采用"先查长度再定长读取"的方式（any() 查询 + read(5) 定长读取），辅以帧长校验与无效值（899）过滤：帧长不等于 5 的残缺帧直接丢弃，未检测到目标时不更新坐标。接收逻辑只在对应状态的主循环分支中执行，避免无效数据污染其他状态。
+（4）初始化序列。 上电后按序完成：GPIO（LED、蜂鸣器、拨码开关）→ 编码器 → 双串口（视觉 115200、无线 460800）→ 三电机 → IMU → 电池 ADC → LCD（含片选复位时序）→ TOF → 定时器启动。陀螺仪零漂标定值与全部 PID 参数以常量形式固化在程序中，上电即进入可运行状态。
+5.3.4　可靠性设计
+异常保护：拨码开关随时可终止程序运行，防止调试时失控；
+电池监测：ADC 经 11 倍分压电路采集电池电压，换算公式 V = N·11/19520，连续 10 次均值滤波后与 11.297 V 阈值比较，欠压时蜂鸣器与 LED 报警，提醒更换电池；
+内存管理：全部滤波状态、PID 状态、坐标变量等采用预分配的全局变量，杜绝中断内动态分配内存；主循环定期执行垃圾回收，长时间运行无内存异常；
+数据限幅：编码器脉冲（±80）、控制输出（各环限幅）、积分项均设限幅，任何单点故障都不会造成满功率失控输出；
+无效值过滤：TOF 的 8192、视觉坐标的 899 等传感器无效标志被统一过滤，保证控制环输入始终有效。
+第六章　系统调试
+6.1　开发工具
+开发过程中使用的软件工具、仿真环境与调试设备如表6-1所示。
+表6-1 开发与调试工具
+6.2　制作与安装
+整车采用三层结构设计：底层安装电池与三路电机驱动板，中层为主控核心板与编码器接口，顶层安装 IMU、OpenART mini 视觉模块、线性 CCD 与 TOF 测距模块。制作安装过程与关键注意事项如下：
+（1）底盘与动力系统装配。 三个全向轮按 120° 均布安装，轮轴指向车体中心；电机与轮子同轴直连，编码器安装于电机尾部。装配完成后逐轮通电检查旋转方向，通过电机初始化参数（invert）与编码器极性参数（True/False）统一方向定义，确保公式13、公式14中的符号体系一致——这是运动学解算正确的前提，任何一路方向错误都会导致全向运动互相"打架"。
+（2）电路安装。 主控核心板固定于中层，电源经稳压模块给主控供电；ADC 通过 11 倍分压电阻网络采集电池电压，分压电阻选用 1% 精度并经实测标定比例系数（对应换算公式中的 19520 系数）；全部接口线缆按长度裁剪并做绝缘处理。
+（3）传感器安装。 IMU 安装于车体旋转中心正上方，轴线与车体系严格对齐——远离旋转中心会引入杠杆臂效应，旋转时离心加速度叠加到加速度计输出上，直接破坏姿态解算精度；安装面粘贴减振棉抑制电机振动。OpenART mini 与线性 CCD 安装于车体前上方，俯仰角可调，安装高度与角度经反复试验确定：过高易丢失近距离目标，过低则视野受限。TOF 模块水平安装于目标物高度，避开反光金属件干扰光路。
+（4）整车走线与安全措施。 所有线缆扎带固定，防止运动中的剐蹭导致接触不良；保留拨码开关作为紧急停止装置；蜂鸣器与 LED 用于欠压报警。整车重心压低，保证急停与转向时的稳定性。
+6.3　调试过程
+调试遵循"先底层后上层、先单环后整体"的原则分阶段进行，全部调试数据通过车载 LCD 与无线虚拟示波器实时观察。
+6.3.1　底层驱动调试
+逐项验证各外设的驱动与电气连接：电机 PWM 输出与占空比线性度、编码器计数方向与分辨率（575 线 ×4 倍频）、IMU 九轴数据刷新率、TOF 量程与精度、无线串口收发误码率、LCD 显示。底层验证通过后才开始搭建上层控制，避免"上层问题与底层问题纠缠"的调试困境。
+6.3.2　传感器标定
+（1）陀螺仪零漂标定。 车体静置，连续采样三轴陀螺仪输出取均值，得到零漂 (0.696, −6.353, −4.341)，写入程序作固定补偿。调试中发现零漂还会随温度缓慢变化，Mahony 算法中的积分反馈项（Ki=0.0005）可在运行中进一步自适应补偿残余零漂。
+（2）编码器—位移标定。 让车辆直线行驶已知距离（1 m），记录脉冲总数，反推标定系数 K≈27 脉冲/cm。在推送任务测试中发现轮子打滑导致实际位移偏小，又针对推送工况分方向标定（Y 方向 35 脉冲/cm、X 方向 36 脉冲/cm），使坐标估计与真实位置吻合。标定过程反复多次取均值，并在预赛、决赛场地分别复测。
+6.3.3　PID 参数整定
+按"先内环后外环、先比例后积分再微分"的顺序整定，全程用虚拟示波器观察响应曲线：
+轮速环：先令 Kp 逐渐增大至阶跃响应出现轻微振荡，记录临界值；再引入 Kd 抑制超调，最后加入小量 Ki 消除静差并设置积分限幅 10000。最终 Kp=103.2、Ki=5.8、Kd=1.45，阶跃响应快速且无超调，稳态误差趋零；
+角度环：最初采用单环 PD 整定，发现大角度误差下转向过冲、小角度误差下响应迟钝，遂改为串级结构——外环 Kp=0.85、Kd=0.025 生成期望角速度（限幅 ±250），内环以陀螺仪角速度闭环（限幅 ±300）。改造后转向过程平顺，到位后无摆动，原地旋转扫描时航向跟随误差小于 2°；
+距离环与接近环：距离环采用 PD（Kp=1.0、Kd=0.0002、限幅 70）实现"远端快速、近端减速"；TOF 定距环与居中环仅用比例（微分）环节并设输出限幅（±100），保证接近目标时动作柔和。整定中发现居中环增益过大会引起车辆横向来回摆动，最终取 Kp=0.235，摆动幅度控制在 ±2 cm 内。
+6.3.4　功能调试
+（1）状态机逐状态验证。 每实现一个状态，先将其设为初始状态单独验证（如 test 状态即为此用途），验证通过后再联入整体流程。状态机完整联调后，在场地上一遍遍跑完整任务流程，记录每个状态的耗时与切换原因，针对性优化：如缓启动时间由 1 s 逐步缩短至 0.4 s，在"起步不打滑"与"任务总时长"之间取得平衡。
+（2）视觉识别联调。 与 OpenART mini 联调时首先验证串口帧格式（表5-3），逐帧核对坐标与类别编码；随后在场地不同光照、不同距离下测试识别稳定性，据此引入三帧投票确认与坐标低通滤波。目标锁定阈值（|x−160|≤25、TOF<120 mm、持续 55 周期）经过多次调整：过严导致锁定困难、任务卡死，过松导致误触发提前进入推送。
+（3）双车联调。 两车在无线环境下反复测试协同时序：发送坐标帧→队友回报 '1'→本车启动二次推送。调试中曾出现帧丢失导致双方互相等待的死锁，加入双发冗余与固定帧长校验后死锁概率降为零；同时保留超时保护逻辑，确保极端情况下任务仍能继续。
+6.3.5　典型问题与解决
+调试过程中记录的主要问题及解决措施如下：
+1. 原地旋转时里程计漂移。现象：车辆原地旋转一圈后坐标偏离达数厘米。原因：三全向轮轮径与安装角存在制造误差，旋转时各轮合成位移不为零。解决：对旋转工况单独标定修正；并在每轮任务结束后用黄区几何信息强制刷新坐标，将累计误差限制在一轮任务内；
+2. 推送时坐标估计偏小。现象：推送目标物后坐标显示未到位而实际已到位。原因：驱动轮打滑，轮速虚高而位移不足。解决：分工况标定脉冲/厘米系数（35/36 脉冲/cm），并在推送结束后按目标类别补偿坐标（+30/+15/−30 cm）；
+3. 目标误识别。现象：OpenART mini 单帧识别结果不稳定，连续帧间类别跳变，曾导致推送策略错误。解决：引入三帧一致投票确认机制与坐标低通滤波（0.7/0.3），误识别率大幅下降；
+4. 无线通信丢包。现象：双车协同等待时队友车偶发收不到同步帧，任务卡死。解决：发送端同帧双发冗余，接收端固定帧长校验；并保留超时保护，超时后按默认策略继续执行；
+5. TOF 受环境干扰。现象：强反光地面与金属目标物造成 TOF 数据偶发跳变（返回无效值 8192）。解决：无效值过滤置零、距离缩放系数限幅，并联合横向坐标进行多条件锁定判定，单传感器异常不再导致任务中断；
+6. 电池电压跌落影响性能。现象：多轮任务后电机输出力矩下降、速度环跟踪变差。原因：电池内阻增大、电压跌落。解决：加入欠压监测与报警（11.297 V 阈值），赛前统一充电并规定换电流程；
+7. MicroPython 内存碎片。现象：长时间运行偶发内存不足、代码执行卡顿。解决：传感器与滤波数据全部使用预分配全局变量，中断内禁止动态分配；主循环定期 gc.collect()，连续运行 10 分钟以上无内存异常；
+8. 起步打滑与推球失控。现象：全速起步瞬间车轮打滑，球被撞飞偏离方向。解决：起步与推送阶段改用 Sigmoid 速度曲线（总时长 0.4 s）平滑加速，推球时同时锁定航向（车身 180°、推送方向 90°），推送成功率显著提高。
+6.3.6　关键参数汇总
+经反复试验，决赛使用的关键参数汇总如下：
+控制周期 4 ms；编码器采集/里程计周期 40 ms；Sigmoid 缓启动时长 0.4 s；
+轮速环 Kp=103.2、Ki=5.8、Kd=1.45，积分限幅 10000，输出限幅 5500；角度环 Kp=0.85、Kd=0.025；角速度环 Kp=0.85、Kd=0.025；
+Mahony 姿态解算 Kp=1.5、Ki=0.0005、磁力计权重 0.8；陀螺仪零漂 (0.696, −6.353, −4.341)；
+里程计标定系数 27 脉冲/cm（推送工况 35/36 脉冲/cm）；
+目标锁定条件：|x−160|≤25 且 TOF<120 mm 持续约 0.22 s；
+电池报警阈值 11.297 V。
+经过上述调试，整车在预赛与决赛场地均稳定完成任务流程，定位精度、目标搬运成功率与双车协同可靠性满足赛题要求。
+第七章　技术参数
+列出模型车的主要技术参数，包括但不限于以下内容：
+a) 改造后的车模总体重量：287g；长：18mm；宽：17mm；高：20mm；
+b) 电路功耗：15 W；所有电容总容量：440μF；
+c) 传感器种类以及个数：TOF测距模块（1个）、OpenArt Plus摄像头（1个）、IMU963陀螺仪（1个）、WIFI模块（1个）：直插在电路板上。
+d) 除了车模原有的驱动电机、舵机之外伺服电机个数：0个；
+e) 赛道信息检测精度：50mm；检测频率：100Hz。
+附录A　程序源代码
+本附录为必须包含的内容。请在此处粘贴或插入程序源代码，特别是核心算法子程序。代码应包含必要的注释说明。
+import math
+from machine import *
+
+from smartcar import ticker
+from smartcar import encoder
+
+from seekfree import IMU963RX
+from seekfree import MOTOR_CONTROLLER
+from seekfree import TSL1401
+from seekfree import WIRELESS_UART
+from seekfree import KEY_HANDLER
+from seekfree import DL1X
+
+from display import *
+from imu_get_and_kalman_filter import *
+from move_ctrl import *
+from inertial_navigation_acc import *
+
+import gc
+import time
+import math
+import array
+
+led     = Pin('C4' , Pin.OUT, pull = Pin.PULL_UP_47K, value = True)
+switch2 = Pin('D9' , Pin.IN , pull = Pin.PULL_UP_47K, value = True)
+
+state2  = switch2.value()
+
+tof = DL1X()
+
+
+
+#编码器初始化
+encoder_ur = encoder("C0" , "C1" , False)
+encoder_md = encoder("D13" , "D14" , False)#True和False调整编码器方向
+encoder_ul = encoder("C2" , "C3" , False)
+
+#UART初始化
+uart6 = UART(7)
+uart6.init(115200)
+wireless = UART(2)
+wireless.init(460800)
+buf_len = 0
+buf = 0
+buf_data_x = 899
+buf_data_y = 899
+
+buf_wireless_len = 0
+buf_wireless = 0
+send_wireless_flag = 0
+
+
+stop_self_flag = 0#本车停止标志位
+stop_other_flag = 0#从车停止标志位
+
+#电机初始化
+motor_ur = MOTOR_CONTROLLER(MOTOR_CONTROLLER.PWM_C28_DIR_C29, 13000, duty = 0, invert = False)
+motor_md = MOTOR_CONTROLLER(MOTOR_CONTROLLER.PWM_D4_DIR_D5, 13000, duty = 0, invert = False)
+motor_ul = MOTOR_CONTROLLER(MOTOR_CONTROLLER.PWM_C30_DIR_C31, 13000, duty = 0, invert = False)#True和False调整电机方向
+
+#位姿传感器初始化
+imu = IMU963RX()
+
+#蜂鸣器初始化
+beep = Pin('D24', Pin.OUT, pull = Pin.PULL_UP_47K, value = False)
+
+#ADC初始化
+Bat_ADC = ADC('B12')
+
+# 定义片选引脚
+cs = Pin('B29' , Pin.OUT, pull=Pin.PULL_UP_47K, value=1)
+# 拉高拉低一次 CS 片选确保屏幕通信时序正常
+cs.high()
+cs.low()
+# 定义控制引脚
+rst = Pin('B31', Pin.OUT, pull=Pin.PULL_UP_47K, value=1)
+dc  = Pin('B5' , Pin.OUT, pull=Pin.PULL_UP_47K, value=1)
+blk = Pin('C21', Pin.OUT, pull=Pin.PULL_UP_47K, value=1)
+# 新建 LCD 驱动实例 这里的索引范围与 SPI 示例一致 当前仅支持 IPS200
+drv = LCD_Drv(SPI_INDEX=2, BAUDRATE=60000000, DC_PIN=dc, RST_PIN=rst, LCD_TYPE=LCD_Drv.LCD200_TYPE)
+# 新建 LCD 实例
+lcd = LCD(drv)
+# color 接口设置屏幕显示颜色 [前景色,背景色]
+lcd.color(0xFFFF, 0x0000)
+# mode 接口设置屏幕显示模式 [0:竖屏,1:横屏,2:竖屏180旋转,3:横屏180旋转]
+lcd.mode(2)
+# 清屏 不传入参数就使用当前的 背景色 清屏
+# 传入 RGB565 格式参数会直接把传入的颜色设置为背景色 然后清屏
+lcd.clear(0x0000)
+#电池预警
+count1 = 0
+adc_agg = 0.00
+adc_avg = 0.00
+
+obj_sum = 0
+
+
+def batter_waring():
+  global count1,adc_agg,adc_avg
+  adc_value = Bat_ADC.read_u16() * 11 /19520
+  if adc_value<12.00 and adc_value>11.00:
+        count1 = count1 + 1
+        adc_agg = adc_agg + adc_value
+  if count1 == 10:
+        adc_avg = adc_agg / 10
+#         if adc_avg<=11.297:
+#             beep.high()
+        #elif adc_avg>11.297:
+            #beep.low()
+        count1 = 0
+        adc_agg = 0.00
+
+
+
+
+
+ticker1_flag = False
+ticker1_count = 0
+
+timer_2ms = 0
+LPF_ALPHA    = 0.4        # 低通滤波
+PI           = 3.141592653589793
+# 定义全局滤波变量（放在函数外初始化）
+acc_x_filt = 0.0
+acc_y_filt = 0.0
+acc_z_filt = 0.0
+roll_filt = 0.0
+pitch_filt = 0.0
+# 初始角度
+init_angle = 90
+
+dt = 0.004
+
+gyro_x_offset = 0.696234826386301
+gyro_y_offset = -6.352734055123758
+gyro_z_offset = -4.341108260342145
+# PI控制器参数
+param_Kp = 0.19
+param_Ki = 0.001
+
+# 滤波后数据
+acc_data  = [0.0, 0.0, 0.0]
+gyro_data = [0.0, 0.0, 0.0]
+
+# 积分项
+I_ex = 0.0
+I_ey = 0.0
+I_ez = 0.0
+
+# 四元数
+class Quater:
+    def __init__(self):
+        self.q0 = 1.0
+        self.q1 = 0.0
+        self.q2 = 0.0
+        self.q3 = 0.0
+Q_info = Quater()
+
+# 欧拉角
+class Euler:
+    def __init__(self):
+        self.roll = 0.0
+        self.pitch = 0.0
+        self.yaw = 0.0
+        self.last_roll = 0.0
+        self.last_yaw = 0.0
+        self.Dirchange = 0
+eulerAngle = Euler()
+
+#求平方根倒数
+def fast_sqrt(x):
+    if x <= 0:
+        return 0.0
+    return 1.0 / math.sqrt(x)
+
+#六轴数据一阶低通滤波
+def imu_update_acc(ax, ay, az, gx, gy, gz):
+    global acc_data, gyro_data
+    acc_data[0]  = LPF_ALPHA * acc_data[0]  + (1-LPF_ALPHA) * ax
+    acc_data[1]  = LPF_ALPHA * acc_data[1]  + (1-LPF_ALPHA) * ay
+    acc_data[2]  = LPF_ALPHA * acc_data[2]  + (1-LPF_ALPHA) * az
+    gyro_data[0] = LPF_ALPHA * gyro_data[0] + (1-LPF_ALPHA) * gx
+    gyro_data[1] = LPF_ALPHA * gyro_data[1] + (1-LPF_ALPHA) * gy
+    gyro_data[2] = LPF_ALPHA * gyro_data[2] + (1-LPF_ALPHA) * gz
+#     gyro_min = 0.5
+#     if abs(gyro_data[0] - gyro_x_offset) <= gyro_min:
+#         gyro_data[0] = gyro_x_offset
+#     if abs(gyro_data[1] - gyro_y_offset) <= gyro_min:
+#         gyro_data[1] = gyro_y_offset
+#     if abs(gyro_data[2] - gyro_z_offset) <= gyro_min:
+#         gyro_data[2] = gyro_z_offset
+
+#AHRS更新
+def ICM_AHRSupdate(gx, gy, gz, ax, ay, az):
+    global Q_info, I_ex, I_ey, I_ez
+
+    halfT = 0.5 * dt
+    q0 = Q_info.q0
+    q1 = Q_info.q1
+    q2 = Q_info.q2
+    q3 = Q_info.q3
+
+    # 归一化加速度
+    norm = fast_sqrt(ax*ax + ay*ay + az*az)
+    ax *= norm
+    ay *= norm
+    az *= norm
+
+    # 重力方向估计
+    vx = 2 * (q1*q3 - q0*q2)
+    vy = 2 * (q0*q1 + q2*q3)
+    vz = (q0*q0 - q1*q1 - q2*q2 + q3*q3)
+
+    # 误差计算
+    ex = ay * vz - az * vy
+    ey = az * vx - ax * vz
+    ez = ax * vy - ay * vx
+
+    # 积分限幅
+    I_ex += ex * dt
+    I_ey += ey * dt
+    I_ez += ez * dt
+    I_ex = max(-5.0, min(5.0, I_ex))
+    I_ey = max(-5.0, min(5.0, I_ey))
+    I_ez = max(-5.0, min(5.0, I_ez))
+
+    # PI校正陀螺仪
+    gx += param_Kp * ex + param_Ki * I_ex
+    gy += param_Kp * ey + param_Ki * I_ey
+    gz += param_Kp * ez + param_Ki * I_ez
+
+    # 四元数微分更新
+    dq0 = (-q1*gx - q2*gy - q3*gz) * halfT
+    dq1 = ( q0*gx + q2*gz - q3*gy) * halfT
+    dq2 = ( q0*gy - q1*gz + q3*gx) * halfT
+    dq3 = ( q0*gz + q1*gy - q2*gx) * halfT
+
+    # 二阶修正
+    delta_2 = (2*halfT*gx)**2 + (2*halfT*gy)**2 + (2*halfT*gz)**2
+    q0 = (1 - delta_2/8) * q0 + dq0
+    q1 = (1 - delta_2/8) * q1 + dq1
+    q2 = (1 - delta_2/8) * q2 + dq2
+    q3 = (1 - delta_2/8) * q3 + dq3
+
+    # 四元数归一化
+    norm = fast_sqrt(q0*q0 + q1*q1 + q2*q2 + q3*q3)
+    Q_info.q0 = q0 * norm
+    Q_info.q1 = q1 * norm
+    Q_info.q2 = q2 * norm
+    Q_info.q3 = q3 * norm
+
+flag1 = 1
+gyro_sum = 0.0
+ax_f = 0
+ay_f = 0
+az_f = 0
+gx_f = 0
+gy_f = 0
+gz_f = 0
+alt_sum = 0
+alt_count = 0
+def altitude_calc():
+    global eulerAngle
+    global init_angle
+    global ax_f, ay_f, az_f, gx_f, gy_f, gz_f
+    global alt_count,alt_sum
+    # 1. 读取 LSM6DSR 数据
+    imu_data = imu.get()
+    ax = imu_data[0]
+    ay = imu_data[1]
+    az = imu_data[2]
+    gx = imu_data[3]
+    gy = imu_data[4]
+    gz = imu_data[5]
+    
+        
+    
+    # 2. 低通滤波
+    imu_update_acc(ax, ay, az, gx, gy, gz)
+    
+#     alt_count+=1
+#     alt_sum += gyro_data[1]
+#     if alt_count == 1000:
+#         print(alt_sum/1000)
+      
+    # 3. 减去陀螺仪零偏 + 单位转换
+    gx_f = -(gyro_data[0] - gyro_x_offset) /14.3 * PI / 180.0
+    gy_f = -(gyro_data[1] - gyro_y_offset) /14.3 * PI / 180.0
+    gz_f = -(gyro_data[2] - gyro_z_offset) /14.3 * PI / 180.0
+    ax_f = -acc_data[0]
+    ay_f = -acc_data[1]
+    az_f = -acc_data[2]
+
+
+    # 4. AHRS 解算
+    ICM_AHRSupdate(gx_f, gy_f, gz_f, ax_f, ay_f, az_f)
+    q0 = Q_info.q0
+    q1 = Q_info.q1
+    q2 = Q_info.q2
+    q3 = Q_info.q3
+
+    # 5. 四元数转欧拉角
+    eulerAngle.pitch = math.asin(-2 * q1 * q3 + 2 * q0 * q2) * 180.0 / PI
+    eulerAngle.roll  = math.atan2(2 * q2 * q3 + 2 * q0 * q1, -2*q1*q1 -2*q2*q2 +1) * 180.0 / PI
+    eulerAngle.yaw   = math.atan2(2 * q1 * q2 + 2 * q0 * q3, -2*q2*q2 -2*q3*q3 +1) * 180.0 / PI
+    eulerAngle.yaw = eulerAngle.yaw + init_angle
+    # Yaw 范围限定 0到360
+    if eulerAngle.yaw > 360:
+        eulerAngle.yaw -= 360
+    if eulerAngle.yaw < 0:
+        eulerAngle.yaw += 360
+
+    # 大角度保护（防止翻车跳变）
+    if abs(eulerAngle.pitch) > 70.0:
+        eulerAngle.roll = eulerAngle.last_roll
+        eulerAngle.yaw  = eulerAngle.last_yaw
+
+    # 转圈计数
+    if (eulerAngle.yaw - eulerAngle.last_yaw) < -350:
+        eulerAngle.Dirchange += 1
+    elif (eulerAngle.yaw - eulerAngle.last_yaw) > 350:
+        eulerAngle.Dirchange -= 1
+
+    eulerAngle.last_roll = eulerAngle.roll
+    eulerAngle.last_yaw  = eulerAngle.yaw
+    #print(str(eulerAngle.yaw)+"\r\n")
+
+
+
+en_md_data = 0
+en_ul_data = 0
+en_ur_data = 0
+def time_pit_handler_1(time):
+    global timer_2ms
+    global buf_wireless_len,buf_wireless,first_ready_flag,second_ready_flag
+    global state, state_index
+    global en_md_data,en_ur_data,en_ul_data,X,Y
+    global target_pulses_y,target_pulses_x
+    if state == state_index["push"]:
+        pul_y = 24
+        pul_x = 27
+    elif state == state_index["push_2nd"]:
+        pul_y = 27
+        pul_x = 36
+    else:
+        pul_y = 27
+        pul_x = 27
+    timer_2ms += 1
+       #get_encoders()
+    en_limit = 80
+    en_ul_data = encoder_ul.get()
+    en_ur_data = encoder_ur.get()
+    en_md_data = encoder_md.get()
+    
+    if en_ul_data >= en_limit:
+        en_ul_data = en_limit
+    elif en_ul_data <= -en_limit:
+        en_ul_data = -en_limit
+    if en_ur_data >= en_limit:
+        en_ur_data = en_limit
+    elif en_ur_data <= -en_limit:
+        en_ur_data = -en_limit 
+    if en_md_data >= en_limit:
+        en_md_data = en_limit
+    elif en_md_data <= -en_limit:
+        en_md_data = -en_limit
+
+    #编码器脉冲累加
+    encoder_x = en_md_data * math.cos(math.radians(eulerAngle.yaw-90)) + en_ul_data * math.cos(math.radians(eulerAngle.yaw+150)) + en_ur_data * math.cos(math.radians(eulerAngle.yaw+30))
+    encoder_y = en_md_data * math.sin(math.radians(eulerAngle.yaw-90)) + en_ul_data * math.sin(math.radians(eulerAngle.yaw+150)) + en_ur_data * math.sin(math.radians(eulerAngle.yaw+30))
+    x_cross, y_cross = update_wheel_pulses(encoder_x,encoder_y,pul_x,pul_y)
+    X += x_cross
+    Y += y_cross
+   
+
+      
+  
+  
+  
+
+ticker2_flag = False
+ticker2_count = 0#4ms
+t_flag = 0
+
+x_pulses = 0
+y_pulses = 0
+
+omega = 90
+
+speed_up_count = 0
+detect_count = 0
+push_count = 0
+find_flag = 0
+detect_flag = 0
+tof_flag = 0
+color_flag = 0
+enc_cnt = 0
+enc_abs_x = 0
+enc_abs_y = 0
+tof_data = 8192
+end_count = 0
+spin_2_cnt = 0
+detect_x_filter = 160
+stop_count = 0
+color_count = 0
+home_detect_count = 0
+Y_save1 = 0
+
+#定时中断2
+def time_pit_handler_2(time):
+    global ticker2_flag, ticker2_count, speed_up_count,push_count,detect_count,color_count,omega,X,Y
+    global move_angle,move_angle_index,turn_speed,en_md_data,en_ul_data,en_ur_data
+    global point_get_flag,find_flag,detect_flag,color_flag,buf_data_x,buf_data_y,yellow_detect_flag
+    global eulerAngle,init_angle
+    global detect_x_filter
+    global state,state_index,obj_index,obj
+    global ax_f, ay_f, az_f, gx_f, gy_f, gz_f
+    global enc_abs_x,enc_abs_y
+    global x_x,p_x,x_y,p_y,F_x,F_y,H_x,H_y,Q_x,Q_y,R_x,R_y
+    global tof_flag,tof_data,end_count,spin_2_cnt,stop_count,home_detect_count
+    global buf_wireless_len,buf_wireless
+    global first_ready_flag,second_ready_flag,obj_sum
+    global pid_ul,pid_ur,pid_md,pid_theita,pid_point_get,pid_detect,pid_tof,pid_theita_w,target_pulses_x,target_pulses_y,Y_save1
+
+    
+    ticker2_count += 1
+    
+    altitude_calc()
+    
+
+    #tof_data = tof.get()
+
+    
+    
+    #状态判断
+    if state == state_index["speed_up"]:#缓启动
+        # 计算速度曲线
+        speed_up_count += 0.004
+        if obj_sum <= 2:
+            move_angle,target,point_get_flag = goto_point(X,Y,110 + obj_sum * 20,60)
+       
+        else:
+            move_angle,target,point_get_flag = goto_point(X,Y,140,170)
+        move_speed = sigmoid_speed_curve(speed_up_count, 0, target, 0.4, 6)
+        turn_speed = pid_theita.compute_theita(0, eulerAngle.yaw - 90, gx_f)#计算角度环
+    
+    elif state == state_index["move"]:
+        if obj_sum <= 2:
+            move_angle,move_speed,point_get_flag = goto_point(X,Y,110 + obj_sum * 20,60)
+        else:
+            move_angle,move_speed,point_get_flag = goto_point(X,Y,140,170)
+        turn_speed = pid_theita.compute_theita(0, eulerAngle.yaw - 90, gx_f)
+        if point_get_flag:
+            move_speed = 0
+            turn_speed = 0 
+    
+    elif state == state_index["detect"]:
+        detect_count += 1
+        if X > 300:
+            state = state_index["home"]
+            Y_save1 = Y
+            wireless.write("z")
+        if buf_data_x == 899:
+            if find_flag == 0:
+                if detect_count <= 0.5 * 250:                
+                    move_speed = sigmoid_speed_curve(detect_count/250, 0, 35, 0.5, 6)
+                else:
+                    move_speed = 35
+            else:
+                move_speed = 10
+                
+            move_angle = 0
+        else:
+            find_flag = 1
+            detect_x_filter = 0.7 * detect_x_filter + 0.3 * buf_data_x
+            
+            move_speed_x = pid_detect.compute(0,160 - detect_x_filter)
+            tof_data = tof.get()
+            distance_scale = min(tof_data / 200, 1.0)
+            move_speed_x *= distance_scale
+            if tof_data != 8192:
+                move_speed_y = pid_tof.compute(0, 90 - tof_data)
+            else:
+                if buf_data_y < 60:
+                    move_speed_y = 15
+                else:
+                    move_speed_y = 0
+            move_speed = math.sqrt(move_speed_x*move_speed_x + move_speed_y*move_speed_y)          # 等价于 sqrt(x^2 + y^2)，更安全
+            angle_rad = math.atan2(move_speed_y, move_speed_x)          # 返回 -π 到 π 之间的弧度
+            move_angle = math.degrees(angle_rad)   # 转换为度数
+        if obj_sum <= 2:
+            turn_speed = pid_theita.compute_theita(0, eulerAngle.yaw - 90,gx_f)
+        else:
+            turn_speed = pid_theita.compute_theita(0, eulerAngle.yaw - 0,gx_f)
+
+        if abs(buf_data_x - 160) <= 25 and tof_data < 120:
+            detect_flag += 1
+        else:
+            detect_flag = 0
+            
+     
+    
+    elif state == state_index["spin"]:
+
+        if obj == obj_index["ball"]:
+            pur_angle = -90
+            turn_sum = 2.95
+            
+            omega = omega - 0.25  
+            if eulerAngle.yaw > 180:
+                yaw_push = eulerAngle.yaw - 360
+            else:
+                yaw_push = eulerAngle.yaw
+            if yaw_push >= pur_angle:
+                turn_speed = pid_theita.compute_theita(0, yaw_push - omega,gx_f)
+                move_speed = turn_speed * turn_sum
+                move_angle = 0
+            else:
+                state = state_index["detect_2nd"]
+                second_ready_flag = 0
+                #uart6.write('1')
+                detect_x_filter = 160
+                detect_flag = 0
+                move_speed = 0
+                turn_speed = 0
+                pid_ur.inlast = 0
+                pid_ur.integral = 0
+                pid_ul.inlast = 0
+                pid_ul.integral = 0
+                pid_md.inlast = 0
+                pid_md.integral = 0
+                
+        elif obj == obj_index["bear"]:
+            pur_angle = 0
+            turn_sum = 2.95
+            
+            omega = omega - 0.25  
+            if eulerAngle.yaw > 180:
+                yaw_push = eulerAngle.yaw - 360
+            else:
+                yaw_push = eulerAngle.yaw
+            if yaw_push >= pur_angle:
+                turn_speed = pid_theita.compute_theita(0, yaw_push - omega,gx_f)
+                move_speed = turn_speed * turn_sum
+                move_angle = 0
+            else:
+                state = state_index["detect_2nd"]
+                second_ready_flag = 0
+                #uart6.write('1')
+                detect_x_filter = 160
+                detect_flag = 0
+                move_speed = 0
+                turn_speed = 0
+                pid_ur.inlast = 0
+                pid_ur.integral = 0
+                pid_ul.inlast = 0
+                pid_ul.integral = 0
+                pid_md.inlast = 0
+                pid_md.integral = 0
+                
+        elif obj == obj_index["cube"]:
+            pur_angle = 180
+            turn_sum = 2.95
+            
+            omega = omega + 0.25  
+            
+            if eulerAngle.yaw <= pur_angle:
+                turn_speed = pid_theita.compute_theita(0, eulerAngle.yaw - omega,gx_f)
+                move_speed = turn_speed * turn_sum
+                move_angle = 0
+            else:
+                state = state_index["detect_2nd"]
+                
+                second_ready_flag = 0
+                #uart6.write('1')
+                detect_x_filter = 160
+                detect_flag = 0
+                move_speed = 0
+                turn_speed = 0
+                pid_ur.inlast = 0
+                pid_ur.integral = 0
+                pid_ul.inlast = 0
+                pid_ul.integral = 0
+                pid_md.inlast = 0
+                pid_md.integral = 0
+            
+    elif state == state_index["detect_2nd"]:
+        detect_count += 1
+        if buf_data_x == 899:
+            move_speed = 0
+            move_angle = 0
+        else:
+            detect_x_filter = 0.7 * detect_x_filter + 0.3 * buf_data_x
+            move_speed_x = pid_detect.compute(0,160 - detect_x_filter)
+            tof_data = tof.get()
+            distance_scale = min(tof_data / 200, 1.0)
+            move_speed_x *= distance_scale
+            if tof_data != 8192:
+                move_speed_y = pid_tof.compute(0, 40 - tof_data)
+            else:
+                move_speed_y = 0
+            move_speed = math.sqrt(move_speed_x*move_speed_x + move_speed_y*move_speed_y)          # 等价于 sqrt(x^2 + y^2)，更安全
+            angle_rad = math.atan2(move_speed_y, move_speed_x)          # 返回 -π 到 π 之间的弧度
+            move_angle = math.degrees(angle_rad)   # 转换为度数
+            
+        if obj == obj_index["cube"]:
+            turn_speed = pid_theita.compute_theita(0, eulerAngle.yaw - 180,gx_f)
+        elif obj == obj_index["ball"]:
+            turn_speed = pid_theita.compute_theita(0, eulerAngle.yaw - 270,gx_f)
+        elif obj == obj_index["bear"]:
+            turn_speed = pid_theita.compute_theita(0, eulerAngle.yaw - 0,gx_f)
+        
+        if abs(buf_data_x - 160) <= 25 and tof_data < 100:
+            detect_flag += 1
+        else:
+            detect_flag = 0
+    
+        
+        
+    
+    
+    elif state == state_index["push"]:
+        push_count += 1
+        
+        if obj == obj_index["ball"]:
+            if push_count < 240:
+                move_speed = 60
+                move_angle = 90
+                turn_speed = pid_theita.compute_theita(0, eulerAngle.yaw - 270,gx_f)            
+           
+            else:
+                state = state_index["spin_2nd"]
+                wireless.write(f"s{int(X)+100}{int(Y)+100}{obj}v")
+                wireless.write(f"s{int(X)+100}{int(Y)+100}{obj}v")
+                if obj == obj_index["ball"]:
+                    omega = 90
+                else:
+                    omega = 270
+                move_speed = 0
+                move_angle = 0
+                turn_speed = 0
+                push_count = 0
+                pid_ur.inlast = 0
+                pid_ur.integral = 0
+                pid_ul.inlast = 0
+                pid_ul.integral = 0
+                pid_md.inlast = 0
+                pid_md.integral = 0
+                
+        else:#obj = "bear" or obj = "cube"
+            if Y > 80:
+                if push_count <= 100:
+                    move_speed = sigmoid_speed_curve(push_count / 250, 0, 25, 0.4, 6)
+                else:
+                    move_speed = 25
+          
+                move_angle = 90
+                turn_speed = pid_theita.compute_theita(0, eulerAngle.yaw - 270,gx_f)            
+            else:
+                
+                
+                state = state_index["spin_2nd"]
+                 
+                wireless.write(f"s{int(X)+100}{int(Y)+100}{obj}v")
+                wireless.write(f"s{int(X)+100}{int(Y)+100}{obj}v")
+                move_speed = 0
+                move_angle = 0
+                turn_speed = 0
+                push_count = 0
+                pid_ur.inlast = 0
+                pid_ur.integral = 0
+                pid_ul.inlast = 0
+                pid_ul.integral = 0
+                pid_md.inlast = 0
+                pid_md.integral = 0
+                
+                
+    elif state == state_index["spin_2nd"]:
+
+        if obj == obj_index["ball"]:
+            omega = (omega - 0.25) % 360
+            if eulerAngle.yaw >= 90:
+                turn_speed = pid_theita.compute_theita(0, eulerAngle.yaw - omega,gx_f)            
+                move_speed = turn_speed * 3.8
+                move_angle = 0
+            else:
+                state = state_index["detect_3rd"]
+                wireless.write(f"s{int(X)+100}{int(Y)+100}{obj}v")
+                wireless.write(f"s{int(X)+100}{int(Y)+100}{obj}v")
+                spin_2nd_cnt = 0
+                move_speed = 0
+                turn_speed = 0
+                pid_ur.inlast = 0
+                pid_ur.integral = 0
+                pid_ul.inlast = 0
+                pid_ul.integral = 0
+                pid_md.inlast = 0
+                pid_md.integral = 0
+        
+        elif obj == obj_index["cube"]:
+            omega = omega - 0.25
+            if eulerAngle.yaw >= 180:
+                turn_speed = pid_theita.compute_theita(0, eulerAngle.yaw - omega,gx_f)            
+                move_speed = turn_speed * 3.5
+                move_angle = 0
+            else:
+                state = state_index["detect_3rd"]
+                spin_2nd_cnt = 0
+                move_speed = 0
+                turn_speed = 0
+        else:
+            omega = omega + 0.25
+            if eulerAngle.yaw > 180:
+                yaw_push = eulerAngle.yaw - 360
+            else:
+                yaw_push = eulerAngle.yaw
+            if yaw_push <= 0:
+                turn_speed = pid_theita.compute_theita(0, yaw_push - omega + 360,gx_f)            
+                move_speed = turn_speed * 3.0
+                move_angle = 0
+            else:
+                state = state_index["detect_3rd"]
+                spin_2nd_cnt = 0
+                move_speed = 0
+                turn_speed = 0
+                
+     
+    elif state == state_index["detect_3rd"]:
+        detect_count += 1
+        if buf_data_x == 899:
+            move_speed = 0
+            move_angle = 0
+        else:
+            detect_x_filter = 0.7 * detect_x_filter + 0.3 * buf_data_x
+            move_speed_x = pid_detect.compute(0,160 - detect_x_filter)
+            tof_data = tof.get()
+            distance_scale = min(tof_data / 200, 1.0)
+            move_speed_x *= distance_scale
+            if tof_data < 200:
+                move_speed_y = pid_tof.compute(0, 40 - tof_data)
+            else:
+                move_speed_y = 0
+            move_speed = math.sqrt(move_speed_x*move_speed_x + move_speed_y*move_speed_y)          # 等价于 sqrt(x^2 + y^2)，更安全
+            angle_rad = math.atan2(move_speed_y, move_speed_x)          # 返回 -π 到 π 之间的弧度
+            move_angle = math.degrees(angle_rad)   # 转换为度数
+        if obj == obj_index["ball"]:
+            turn_speed = pid_theita.compute_theita(0, eulerAngle.yaw - 90,gx_f)
+        elif obj == obj_index["cube"]:
+            turn_speed = pid_theita.compute_theita(0, eulerAngle.yaw - 180,gx_f)
+        elif obj == obj_index["bear"]:
+            turn_speed = pid_theita.compute_theita(0, eulerAngle.yaw - 0,gx_f)
+        if abs(buf_data_x - 160) <= 25 and tof_data < 100:
+            detect_flag += 1
+        else:
+            detect_flag = 0
+                
+                
+    elif state == state_index["stop"]:
+
+        move_speed = 0
+        move_angle = 90
+        if obj == obj_index["cube"]:
+            turn_speed = pid_theita.compute_theita(0, eulerAngle.yaw - 180,gx_f)
+        elif obj == obj_index["ball"]:
+            turn_speed = pid_theita.compute_theita(0, eulerAngle.yaw - 270,gx_f)
+        else:
+            turn_speed = pid_theita.compute_theita(0, eulerAngle.yaw - 0,gx_f)        
+        if first_ready_flag:
+            state = state_index["push_2nd"]
+            
+            push_count = 0
+            buf_wireless_len = 0
+            send_wireless_flag = 0
+            
+    elif state == state_index["push_2nd"]:
+        
+        push_count += 1
+        if obj == obj_index["ball"]:
+            if push_count < 50:
+                move_speed = 0
+                move_angle = 0
+                turn_speed = 0
+            elif Y < 240 and yellow_detect_flag == 0:
+                
+                if buf_data_x != 899:
+                    move_speed_x = 1.5 * pid_detect.compute(0,160 - buf_data_x)
+                else:
+                    move_speed_x = 0
+        
+                move_speed_y = -35
+                move_speed = math.sqrt(move_speed_x*move_speed_x + move_speed_y*move_speed_y)          # 等价于 sqrt(x^2 + y^2)，更安全
+                angle_rad = math.atan2(move_speed_y, move_speed_x)          # 返回 -π 到 π 之间的弧度
+                move_angle = math.degrees(angle_rad)   # 转换为度数
+                
+                turn_speed = pid_theita.compute_theita(0, eulerAngle.yaw - 270,gx_f)
+            else:
+                state = state_index["yellow_detect"]
+                move_speed = 0
+                move_angle = 0
+                turn_speed = 0
+                push_count = 0
+                
+        elif obj == obj_index["bear"]:
+            if X < 290 and yellow_detect_flag == 0:
+                if push_count <= 100:
+                    move_speed = sigmoid_speed_curve(push_count / 250, 0, 40, 0.4, 6)
+                else:
+                    move_speed = 40
+                move_angle = 90
+                turn_speed = pid_theita.compute_theita(0, eulerAngle.yaw - 0,gx_f)
+            else:
+                state = state_index["yellow_detect"]
+                move_speed = 0
+                move_angle = 0
+                turn_speed = 0
+                push_count = 0
+                pid_ur.inlast = 0
+                pid_ur.integral = 0
+                pid_ul.inlast = 0
+                pid_ul.integral = 0
+                pid_md.inlast = 0
+                pid_md.integral = 0
+                
+        else:#obj=cube
+            if X > 30 and yellow_detect_flag == 0:
+                if push_count <= 100:
+                    move_speed = sigmoid_speed_curve(push_count / 250, 0, 40, 0.4, 6)
+                else:
+                    move_speed = 40
+                move_angle = 90
+                turn_speed = pid_theita.compute_theita(0, eulerAngle.yaw - 180,gx_f)
+            else:
+
+                state = state_index["yellow_detect"]
+                move_speed = 0
+                move_angle = 0
+                turn_speed = 0
+                push_count = 0
+                pid_ur.inlast = 0
+                pid_ur.integral = 0
+                pid_ul.inlast = 0
+                pid_ul.integral = 0
+                pid_md.inlast = 0
+                pid_md.integral = 0
+               
+                
+                
+    elif state == state_index["yellow_detect"]:
+        move_speed = 25
+        if obj == obj_index["ball"]:
+            move_speed = -25
+        move_angle = 90
+        if obj == obj_index["cube"]:
+            turn_speed = pid_theita.compute_theita(0, eulerAngle.yaw - 180,gx_f)
+            y_flag = X < -30
+            y2_flag = X < 0
+        elif obj == obj_index["bear"]:
+            turn_speed = pid_theita.compute_theita(0, eulerAngle.yaw - 0,gx_f)
+            y_flag = X > 350
+            y2_flag = X > 320
+        else:
+            turn_speed = pid_theita.compute_theita(0, eulerAngle.yaw - 270,gx_f)
+            y_flag = Y > 300
+            y2_flag = Y > 270
+        if (yellow_detect_flag == 1 and y2_flag) or y_flag:
+            state = state_index["end"]
+#============================================================================================================
+            
+    
+   
+    
+    
+   
+    
+#     elif state == state_index["stop_2nd"]:
+#     
+#         move_speed = 0
+#         if obj == obj_index["ball"]:
+#             turn_speed = pid_theita.compute_theita(0, eulerAngle.yaw - 90,gx_f)
+#         else:
+#             turn_speed = pid_theita.compute_theita(0, eulerAngle.yaw - 0,gx_f)
+#         
+#         if second_ready_flag:
+#             state = state_index["push_2nd"]
+#             push_count = 0
+#             buf_wireless_len = 0
+#             buf_wireless = 0
+#             send_wireless_flag = 0
+        
+
+                
+#===========================================================================================================             
+    elif state == state_index["end"]:
+        end_count += 1
+        wait_time = 150
+        if obj == obj_index["ball"]:
+            wait_time = 600
+        if end_count <= wait_time:
+            move_speed = 0
+            move_angle = 90
+            turn_speed = pid_theita.compute_theita(0, eulerAngle.yaw - 90,gx_f)
+        
+        else:
+            obj_sum += 1
+            
+            if obj_sum == 5:
+                state = state_index["home"]
+                Y_save1 = Y
+            else:
+                state = state_index["speed_up"]
+
+            if not yellow_detect_flag:
+                if obj == obj_index["cube"]:
+                    X = X + 30
+                elif obj == obj_index["ball"]:
+                    Y = Y + 20
+                elif obj == obj_index["bear"]:
+                    X = X - 30
+            yellow_detect_flag = 0
+            omega = 90
+            obj_detect_flag = 0
+            first_ready_flag = 0
+            obj = obj_index["null"]
+            end_count = 0
+            move_speed = 0
+            move_angle = 0
+            turn_speed = 0
+            
+    elif state == state_index["home"]:
+        move_speed = 80
+        move_angle = 180
+        turn_speed = pid_theita.compute_theita(0, eulerAngle.yaw - 90, gx_f)
+        if X < 50:
+            state = state_index["home_detect"]
+            point_get_flag = 0
+            yellow_detect_flag = 0
+            
+    elif state == state_index["home_detect"]:
+        home_detect_count += 1
+        if home_detect_count < 200: 
+            move_speed = 0
+            move_angle = 90
+            turn_speed = pid_theita.compute_theita(0, eulerAngle.yaw - 180, gx_f)
+        else:
+            move_speed = 25
+            move_angle = 90
+            turn_speed = pid_theita.compute_theita(0, eulerAngle.yaw - 180, gx_f)
+            if yellow_detect_flag or X < -20:
+                state = state_index["back"]
+                move_speed = 0
+            
+    elif state == state_index["back"]:
+        move_angle,move_speed,point_get_flag = goto_point(X,Y,30,-90)
+        turn_speed = pid_theita.compute_theita(0, eulerAngle.yaw - 90, gx_f)
+        if point_get_flag:
+            state = state_index["blind_box"]
+        
+        
+    elif state == state_index["blind_box"]:
+        move_speed = 0
+        move_angle = 90
+        turn_speed = -20
+        if eulerAngle.yaw > 100 and eulerAngle.yaw < 110:
+            state = state_index["stand_still"]
+        
+    elif state == state_index["stand_still"]:
+        move_speed = 0
+        move_angle = 90
+        turn_speed = 0
+        
+    elif state == state_index["test"]:
+        #move_angle,move_speed,point_get_flag = goto_point(X,Y,46,300)
+        if Y < 210:
+            move_speed = 60
+        else:
+            move_speed = 0
+        move_angle = 90
+        turn_speed = pid_theita.compute_theita(0, eulerAngle.yaw - 90,gx_f)
+        
+        if point_get_flag:
+            move_speed = 0
+            turn_speed = 0 
+
+    #计算三个轮子速度     
+    motor_md_speed, motor_ul_speed, motor_ur_speed = speed_get(move_speed,move_angle,turn_speed)
+
+    
+
+    #pid计算
+    speed_md = pid_md.compute(motor_md_speed,en_md_data)
+    speed_ul = pid_ul.compute(motor_ul_speed,en_ul_data)
+    speed_ur = pid_ur.compute(motor_ur_speed,en_ur_data)
+    #输出pwm
+    motor_ul.duty(speed_ul)
+    motor_ur.duty(speed_ur) 
+    motor_md.duty(speed_md)
+
+
+
+
+
+
+pit1 = ticker(1)
+pit2 = ticker(2)
+# 关联采集接口
+pit1.capture_list(encoder_ul, encoder_ur, encoder_md) 
+pit2.capture_list(imu,tof)
+
+# 关联 Python 回调函数
+pit1.callback(time_pit_handler_1)
+pit2.callback(time_pit_handler_2)
+
+# 每5ms触发一次回调函数
+pit1.start(40)
+pit2.start(4)
+
+
+state_index = {
+    "test":-2,
+    "speed_up":0,
+    "move":1,
+    "detect":2,
+    "tof":3,
+    "spin":4,
+    "detect_2nd":5,
+    "tof_2nd":6,
+    "stop":7,
+    "push":8,
+    "spin_2nd":9,
+    "detect_3rd":10,
+    "tof_3rd":11,
+    "stop_2nd":12,
+    "push_2nd":13,
+    "end":14,
+    "wait":15,
+    "home":16,
+    "back":17,
+    "yellow_detect":18,
+    "blind_box":19,
+    "stand_still":20,
+    "home_detect":21
+}
+
+state = state_index["speed_up"]
+#state = state_index['test']
+
+obj_index = {
+    "cube":0,
+    "ball":2,
+    "bear":1,
+    "null":3
+}
+obj = obj_index["null"]
+obj_detect = [0,0,0]
+obj_detect_flag = 0
+first_ready_flag = 0
+second_ready_flag = 0
+yellow_detect_flag = 0
+X_save = 0
+while True:
+    
+    #电池预警
+    batter_waring()
+    
+    
+    lcd.str12(0,  0, "x={:f}".format(X), 0xF800)
+    lcd.str12(0,  10, "y={:f}".format(Y), 0xF800)
+    lcd.str12(0,  20, "yaw={:f}".format(eulerAngle.yaw), 0xF800)
+    lcd.str12(0,  30, "buf_data_x={:f}".format(buf_data_x), 0xF800)
+    lcd.str12(0,  40, "buf_data_y={:f}".format(buf_data_y), 0xF800)
+    lcd.str12(0,  50, f"{state}    ", 0xF800)
+    lcd.str12(0,  60, "tof={:f}".format(tof_data), 0xF800)
+    lcd.str12(0,  70, f"{adc_avg}", 0xF800)
+    lcd.str12(0,  80, f"first={first_ready_flag}", 0xF800)
+    lcd.str12(0,  90, f"second={second_ready_flag}", 0xF800)
+    lcd.str12(0,  100, f"obj={obj}", 0xF800)
+    lcd.str12(0,  110, f"omega={omega}", 0xF800)
+    lcd.str12(0,  120, f"gx_f={gx_f}", 0xF800)
+    lcd.str12(0,  130, f"x_save={X_save}", 0xF800)
+    lcd.str12(0,  140, f"yellow={yellow_detect_flag}", 0xF800)
+    #print(f"{eulerAngle.yaw}")
+    
+    if state == state_index["stop"] or state == state_index["push_2nd"] :
+        buf_wireless_len = wireless.any()
+        if(buf_wireless_len):
+            buf_wireless = wireless.read(buf_wireless_len)
+            if '1' in buf_wireless:
+                first_ready_flag = 1
+            
+                
+    
+        
+    #状态判断及转换函数
+    if state == state_index["speed_up"]:
+        if speed_up_count >= 0.4:
+            state = state_index["move"]
+            speed_up_count = 0
+            
+    
+            
+    elif state == state_index["move"]:
+        if point_get_flag == 1:
+            
+            pid_ur.inlast = 0
+            pid_ur.integral = 0
+            pid_ul.inlast = 0
+            pid_ul.integral = 0
+            pid_md.inlast = 0
+            pid_md.integral = 0
+            state = state_index["detect"]
+            point_get_flag = 0
+            
+   
+       
+    elif state == state_index["detect"] or state == state_index["back"]:
+        buf_len = uart6.any()
+        if(buf_len):
+            buf = uart6.read(8)
+            if buf_len == 8:
+                
+                buf_data_x = int(buf[0:3]) - 100
+                buf_data_y = int(buf[5:8]) - 100
+                
+                if obj_detect_flag == 0 and abs(buf_data_x - 160) <= 25:
+                    buf_int = int(buf[3]) - 48
+                    for i in range(3):
+                        if i != buf_int:
+                            obj_detect[i] = 0
+                    obj_detect[buf_int] += 1
+                    if obj_detect[buf_int] == 3:
+                        obj = buf_int
+                        obj_detect_flag = 1
+                
+                
+                       
+                        
+        if detect_flag >= 55 and obj != obj_index["null"]:
+             if obj_sum <= 2:
+                 state = state_index["spin"]
+             else:
+                 state = state_index["stop"]
+                 wireless.write(f"s{int(X)+100}{int(Y)+100}{obj}v")
+                 wireless.write(f"s{int(X)+100}{int(Y)+100}{obj}v")
+             omega = 90
+             tof_data = 8192
+             detect_flag = 0
+             find_flag = 0
+             buf_data_x = 899
+             buf_data_y = 899
+             detect_count = 0
+             detect_x_filter = 160
+             obj_detect = [0,0,0]
+             obj_detect_flag = 0 
+             
+    
+    elif state == state_index["detect_2nd"]:
+        buf_len = uart6.any()
+        if(buf_len):
+            buf = uart6.read(8)
+            if buf_len == 8:
+                buf_data_x = int(buf[0:3]) - 100
+                
+                
+                
+                
+        if detect_flag >= 55 and obj != obj_index["null"]:
+            
+            state = state_index["stop"]
+            wireless.write(f"s{int(X)+100}{int(Y)+100}{obj}v")
+            wireless.write(f"s{int(X)+100}{int(Y)+100}{obj}v")
+#             if obj_sum < 1:
+#                 eulerAngle.yaw -= 5
+            tof_data = 8192
+            detect_flag = 0
+            buf_data_x = 899
+            buf_data_y = 899
+            detect_count = 0
+            detect_x_filter = 160
+            obj_detect = [0,0,0]
+            obj_detect_flag = 0 
+  
+             
+   
+    elif state == state_index["detect_3rd"]:
+        buf_len = uart6.any()
+        if(buf_len):
+           
+            buf = uart6.read(8)
+            if buf_len == 8:
+                buf_data_x = int(buf[0:3]) - 100
+                
+        if detect_flag >= 30:
+            state = state_index["stop"]
+            tof_data = 8192
+            detect_flag = 0
+            buf_data_x = 899
+            buf_data_y = 899
+            detect_count = 0
+            detect_3rd_cnt = 0
+            detect_x_filter = 160
+  
+    
+    elif state == state_index["push_2nd"] or state == state_index["yellow_detect"] or state == state_index["home_detect"]:
+        buf_len = uart6.any()
+        if buf_len and not yellow_detect_flag:
+            buf = uart6.read(8)
+            if buf_len == 8:
+                
+                buf_data_x = int(buf[0:3]) - 100
+                
+                color_detect = int(buf[4])
+                if color_detect == 1 or color_detect == 49:
+                    yellow_detect_flag = 1
+                    led.value(False)
+                    if obj == obj_index["cube"]:
+                        X_save = X
+                        X = 15
+                    elif obj == obj_index["ball"]:
+                        Y = 270
+                        
+                    elif obj == obj_index["bear"]:
+                        X = 305
+                        
+                
+    
+   
+    if switch2.value() != state2:
+        print("Test program stop.")
+        break
+
+    # 回收内存
+    gc.collect()
+【页眉页脚设置说明】
+1. 页眉设置（从第一章开始）：
+   - 页眉字体：宋体五号字；
+   - 每章首页不设页眉；
+   - 偶数页页眉设置于左侧，内容为：第二十一届全国大学生智能汽车竞赛技术报告；
+   - 奇数页页眉设置于右侧，内容为：第X章 章节名称；
+   - 正文之前部分（封面、授权书、目录等）不设页眉。
+
+2. 页码设置：
+   - 封面、授权书、目录等正文之前的部分：从前往后用罗马数字（i, ii, iii...）单独编排；
+   - 从引言（第一章）开始：按阿拉伯数字（1, 2, 3...）连续编排；
+   - 正文之后的部分（参考文献、附录等）：同样用罗马数字单独编排；
+   - 页码位于页面底端，居中书写；
+   - 所有留白页不设页眉和页码。
+
+3. 操作步骤（Microsoft Word）：
+   a) 在封面后、第一章前插入"下一页"分节符；
+   b) 在结论后、参考文献前插入"下一页"分节符；
+   c) 取消各节"链接到前一节"选项；
+   d) 分别设置各节的页眉内容和页码格式。
+
+4. 提交格式：
+   - 需要同时提交 Microsoft Word 和 PDF 两种格式；
+   - 技术报告文件命名格式：学校名称_队伍名称_竞赛组别.文件后缀。
+
+===== TABLE 1 =====
+符号 | 含义 | 单位
+v | 车速 | m/s
+ω | 角速度 | rad/s
+θ | 舵机转角 | °
+e | 偏差 | —
+Kp | 比例系数 | —
+Ki | 积分系数 | —
+Kd | 微分系数 | —
+
+===== TABLE 2 =====
+控制环 | 控制对象 | Kp | Ki | Kd | 积分限幅 | 输出限幅
+轮速环 ×3 | 三电机转速 | 103.2 | 5.8 | 1.45 | 10000 | 5500
+角度环 | 航向角 | 0.85 | 0 | 0.025 | 1000 | 250
+角速度环 | 转向角速度（串级内环） | 0.85 | 0 | 0.025 | 1000 | 300
+距离环 | 点到点距离 | 1.0 | 0 | 0.0002 | 5000 | 70
+TOF 定距环 | 目标物纵向距离 | 0.09 | 0 | 0 | 2000 | 100
+居中环 | 目标物横向位置 | 0.235 | 0 | 0.001 | 2000 | 100
+
+===== TABLE 3 =====
+字节 | 内容 | 说明
+B0~B2 | 横向像素坐标 | 带 +100 偏移发送，主控减去 100 还原，画面中心为 160，899 表示未检测到目标
+B3 | 目标类别 | ASCII 编码：'0' 方块、'1' 熊、'2' 球
+B4 | 颜色标志 | 1 或 ASCII '1'（49）表示检测到黄色
+
+===== TABLE 4 =====
+状态 | 编号 | 功能与行为 | 退出条件
+speed_up 缓启动 | 0 | 按 Sigmoid 曲线 0.4 s 平滑加速至距离环输出的目标速度，航向锁 90° | 计时 0.4 s
+move 定点行驶 | 1 | goto_point 距离环驱动驶向检测区 (110, 60)，到位即停 | 距离 ≤1 cm
+detect 搜索 | 2 | 直线前进搜索目标（未发现时 35 速度巡航）；发现后切换为横向居中+TOF 定距 90 mm 双环接近 | 锁定判定 55 次；X>300 越界保护→home
+spin 原地扫描 | 4 | 期望航向 omega 按 0.25°/周期递减（约 62.5°/s），串级角度环闭环实现柔顺旋转扫描 | 航向扫过 −90°
+detect_2nd 二次检测 | 5 | 同 detect，TOF 定距 40 mm，同时三帧投票识别目标类别 | 锁定且类别确认：球→stop，其他→push
+stop 协同等待 | 7 | 本车停稳保持姿态，向队友车发送坐标与类别，等待队友回报就绪信号 '1' | 收到 first_ready_flag
+push 推送 | 8 | 球：60 速度推 0.96 s；方块/熊：缓启动至 60 沿 90° 方向推至 Y≤80 | 推送完成
+spin_2nd 二次扫描 | 9 | 按目标类别原地转回对应航向（球→90°、方块→180°、熊→0°） | 航向到位
+detect_3rd 三次检测 | 10 | 再次双环接近目标，锁定判定 30 次 | 锁定
+push_2nd 二次推送 | 13 | 球：先静候 50 周期，再以 −35 纵向速度后撤并保持横向居中；方块/熊：缓启动后 40 速度向前推送 | 到达黄区边界位置
+yellow_detect 黄区检测 | 18 | 沿 90° 方向以 25 速度行进，等待视觉模块黄线标志 | 黄线出现且越过边界坐标
+end 收尾 | 14 | 停稳保持姿态 0.6 s（球 2 s），计数目标物并补偿坐标，清零全部标志 | 计时结束
+home 回归 | 16 | goto_point 返回出发区 (50, 30) | 到达
+home_detect 出发区检测 | 21 | 转向 180° 等待 0.8 s 后以 25 速度前进，直至检测到黄线 | 黄线出现
+back 倒车 | 17 | goto_point 返回盲盒区后方的 (50, −90) | 到达
+blind_box 盲盒转向 | 19 | 以 −20 转向速度原地转动至航向 100°~110° | 航向到位
+stand_still 停稳 | 20 | 全部指令清零，车辆静止 | —（任务结束）
+
+===== TABLE 5 =====
+模块 | 职责 | 关键接口
+main0724.py（主程序） | 系统初始化、状态机调度、串口协议解析、LCD 显示、电池监测 | time_pit_handler_1/2、主循环
+move_ctrl.py（运动控制） | 全向轮逆运动学解算、PID 控制器类及全部控制环实例 | speed_get()、PIDController 类
+inertial_navigation_acc.py（惯性导航） | 编码器里程计、脉冲—位移换算、跳变保护、点到点规划 | update_wheel_pulses()、goto_point()、sigmoid_speed_curve()
+imu_get_and_kalman_filter.py（滤波） | 二维卡尔曼滤波、加速度梯形积分、坐标系变换 | kalman_filter_explicit()、accel_integral()、sensor_to_car()
+pid_controller.py | 早期 PID 参数在线调试例程 | —
+display.py | IPS200 LCD 显示驱动 | LCD、LCD_Drv 类
+usart.py | 串口收发 | —
+
+===== TABLE 6 =====
+类别 | 工具 | 用途
+软件开发 | Thonny IDE | MicroPython 集成开发环境，支持串口交互式调试与文件管理
+固件与库 | 逐飞 RT1021 MicroPython 固件及开源库 | 提供 ticker、encoder、IMU963RX、DL1X、MOTOR_CONTROLLER、WIRELESS_UART、TSL1401 等外设的 Python 接口
+上位机 | 逐飞助手上位机 | 虚拟示波器实时观测电机转速、姿态角、PID 输出等内部波形，用于参数整定；无线摄像头图像监视
+视觉开发 | OpenART mini 配套 IDE | 目标识别模型的采集、训练与部署
+通信链路 | 逐飞无线转 USB 串口模块 | 车体与电脑间的无线数据链路（460800 bps），摆脱 USB 线缆对运动的约束
+车载显示 | IPS200 LCD | 实时显示坐标、姿态、状态机编号、传感器原始数据等，实现"车上就地诊断"
+硬件调试 | 万用表、示波器 | 供电与信号完整性检查
+结构制作 | 3D 打印机 | 传感器支架、结构件等制作

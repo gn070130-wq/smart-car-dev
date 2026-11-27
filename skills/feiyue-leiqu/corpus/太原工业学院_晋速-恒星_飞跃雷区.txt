@@ -1,0 +1,643 @@
+
+第二十一届全国大学生
+智能汽车竞赛
+
+技 术 报 告
+
+
+学    校：太原工业学院
+队伍名称：晋速-恒星
+参赛队员：柴世宇，赵恒艺，李帅，王金旺，谢衍文 
+带队教师：武丽云，娄菊红
+
+
+
+
+摘要：在本次比赛中，本组使用自制车模和自制四旋翼无人机, 选用Infineon公司的微控制器作为核心控制单元，通过逐飞总钻风,imu963ra，icm20602陀螺仪模块获取赛道信息以及当前姿态从而规划路径；通过编码器实时检测模型车的速度，使用麦轮解算来确定小车行驶方向和速度，使用 PID 控制算法对无人机姿态的矫正、驱动电机的转速进行调节，实现了无人机运动控制，以确保无人机能稳定跟随小车，在赛道上稳定行驶
+关键字：智能车，STC32G12812K,CYT2BL3，CYT4BB7单片微控制器，PID控制
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+第一章 引 言
+全国大学生智能汽车竞赛是以“立足培养、重在参与、 鼓励探索、追求卓越”为宗旨，鼓励创新的一项科技竞赛活动。参赛队伍使用自制车模以及微控制器，通过增加传感器，电机驱动模块并编写对应的控制代码，制作完成一辆无人机和一辆小车能够自主完成相应任务的空地协同模型。飞跃雷区组的比赛场地基本形状为长方形， 边长在 5.5 米 到 6.5米的范围内。 比赛环境安排在室内平整的场地内。比赛场地使用蓝色广告布铺设在平整的地面上， 四周使用黄色宽胶带进行固定。 场地内部署有 5 个以上不定数量的信标灯。其设计内容涵盖了控制、模式识别、传感技术、汽车电子、电气、计算机、机械、能源等多个学科的知识，对学生的知识融合和实践动手能力的培养，具有良好的推动作用。
+本次比赛中，我们采用infineon公司CYT4BB7和CYT2BL3作为核心控制单元，采用STC32G12812K作为无刷电机的驱动控制单元，自主构思了一套控制方案，包括传感器信号采集处理、动力电机驱动、控制算法及执行等，设计并实现出一套能够自主识别红外灯的智能车控制系统。
+在制作过程中，本组对小车和无人机的整体构架进行研究，分别在硬件电路设计、机械结构和软件都不断迭代。电路设计方面我们考虑并实践各种传感器的布局；软件上不断进行完善，机械结构上我们尽可能保证整个车模和无人机轻量化。
+本报告我们主要通过对整体方案、机械、硬件、算法等方面的介绍，详细为大家呈现该系统的设计方案和制作过程。我队成员涉及计算机、机械、自动化等专业，在备赛过程中，队员查阅了大量相关资料，反复地调试无人机和小车的各项参数。所有队员都为此次智能汽车竞赛付出了艰苦的劳动。
+第二章 方案设计
+本章主要介绍智能汽车系统总体方案的选定和总体设计思路，在后面的章节中将整个系统分为传感器布局，机械结构、硬件模块、控制算法等三部分对智能汽车控制系统进行深入的介绍和分析。
+2.1 系统总体结构
+对于无人机，首要的任务是定点，定点的核心是陀螺仪加速度计模块、角速度计模块。由陀螺仪获取无人机角速度和加速度信息，通过姿态解算计算出当前俯仰，横滚角和偏航角，运用PID控制电机带动扇叶旋转保持无人机平衡，然后由无人机上的红外摄像头来采集赛道信息，以此来规划路径。然后通过串口线与小车进行通信，小车主要通过麦轮解算来进行控制，通过串口线收到无人机发送的信息进行处理和解算运动方向进行协同灭灯。
+2.2 系统总体方案选定
+在往届竞赛相关技术资料的帮助下，路径识别模块是智能汽车系统的关键模块之一，路径识别方案的好坏，直接关系到智能汽车最终性能的优劣，由于无人机与车通过线缆连接，因此确定路径识别和无人机与车的速度配合是决定总体方案的关键。目前能够用于无人机路径识别的传感器主要有摄像头和UWB超宽带定位模块。我们通过调整、 规划最后选择了只使用摄像头进行路径规划循迹的方案，在保证轻量化的同时加之精简的程序控制和较快的信息处理速度，达到较好的控制效果。
+  2.3系统总体方案的设计
+遵照竞赛规则规定，本组别采用CYT4BB7单片机作为核心控制单元用于无人机和车模系统的控制。在选定智能汽车系统采用摄像头方案后，目标位置的信息主要通过图像分析来进行路径规划，经CYT4BB7 MCU对无人机进行控制从而而保持赛道上能够自主跟随小车，并把较短的路径传送给小车以及较稳定姿态以最快的速度进行跟随，小车接收到信息后进行处理以及方向解算运动。此外，还增加了五轴按键和拨码开关作为输入输出设备，用于无人机，小车的速度和控制方案选择。
+根据以上系统方案设计，系统共包括六大模块：CYT4BB7,CYT2BL3，STC32G12K128主控模块、传感器模块、速度检测模块、辅助调试模块和电源模块。各模块的作用如下所述：
+CYT4BB7主控模块：作为无人机和车模的“大脑”，其采集陀螺仪,摄像头传感器、编码器等传感器的信号，根据控制算法做出控制决策，无刷电机、对无人机进行控制，与小车进行通信以及小车的运动解算与速度闭环。
+STC32G12812K模块：作为无人机无刷驱动的核心，通过接受“大脑”串口发送的信息，对电机转速进行调整，保证电机执行正常的转速，维持无人机姿态的稳定。
+传感器模块：是车模和无人机的“感官”，可以通过一定的前瞻性，提前感知前方的赛道信息，为无人机的“大脑”做出决策提供必要的依据和充足的反应时间。
+速度检测模块：检测反馈车模车轮的转速。
+辅助调试模块：主要用于车模系统的功能调试、状态检测。
+电源模块：为整个系统提供合适而又稳定的电源。
+
+
+第三章 传感器安装及布局
+该组别为自制组别，因此这部分机械结构需要自行设计制作并安装。我们需要自制覆有铜层的PCB板子，在对机械结构进行设计，另外，为了提高车模和无人机的运动性能，对一些机械结构还需要不断优化。
+
+3.1 陀螺仪＆加速度计安装
+陀螺仪和加速度计用于测量无人机姿态和小车偏航角度的测量，需要和无人机以及小车紧密相连，对于加速度计，为了减少运动产生的噪声，需要安装的尽可能靠近车轴和无人机的自转轴上，对于陀螺仪，则需要保证完全水平安装，陀螺仪同时也测量了无人机的角速度和加速度用来解算准确的角度，使无人机可以准确到达目标角度从而控制无人机速度，考虑到无人机在飞行过程中电机与机臂产生共振会大大增加陀螺仪噪声，最终我们决定采用软海绵垫底将它放在海绵上然后放置在无人机中间，小车陀螺仪则用螺丝进行固定。图3.1为陀螺仪＆加速度计安装图。
+    
+图3.1    陀螺仪&加速度计安装图
+
+3.2 总钻风摄像头安装
+
+图3.2 摄像头安装图
+
+
+第四章 机械结构分析及调节
+任何的控制算法和软件程序都是需要一定的机械结构来执行和实现的，无人机和小车的机械决定了速度的上限，一个好的机械结构能避免很多麻烦，因此在设计整个软件架构和算法之前一定要对整个车模的机械结构有一个理性的认识。
+4.1车体机械建模
+我们自制了四旋翼无人机和麦轮小车。无人机的机械结构调整方案主要是针对竞赛车模的重心，对于四旋翼无人机，要想实现高速稳定的运行，机械结构应当做到使重心尽可能集中于中心，用来提高无人机控制抗干扰能力更强，提高无人机被下方电源线和通信线拉扯后稳定的能力，同时减少无人机的转动惯量，使其可以稳定自转。对于下方的麦轮车，我们参考了逐飞科技M车模的结构，使用了其M车的麦轮，调高了车模对地面的抓地力，车模底板以及侧板做了自己的改造，增加了悬挂处理，这样可以使麦轮车更好的通过信标灯，从而避免由于车模底盘过低，卡信标灯罩上。
+4.2电源线与通信线&车模定位的安装 
+我们通过有线串口通信的方式进行无人机和下方车模之间的通信，为了可以提高灭灯容错，我们将通信线与电源线缠绕在一起，在下方车模后方增加了直立的碳杆，用于固定电源线与通信线，可以有效的防止通信线和电源线在空中晃动对无人机平衡与对小车定位识别的干扰。为了使无人机定位下方车模位置，我们给下方车模挡板上粘贴了横向放置的红外灯条，由于红外灯条发出的红外光存在扩散性导致识别出错，为了更好的定位，我的在红外灯旁增加了H型结构的打印件，这样可以有效的防止红外光的扩散。
+4.3摄像头&陀螺仪&测距模块&光流传感器的安装
+两个摄像头的位置经过了调整可以看见最远6米左右的信标灯，添加了遮光片和挡光的打印件，可以减少环境光的影响。陀螺仪模块是无人机和车模获取车模姿态的传感器，为了让陀螺仪可以更好的出值，我们将陀螺仪尽可能安装在了无人机和车模中间部分，陀螺仪放在了无人机两夹板之间和车模底板上面，在维持无人机平衡时可以更好的进行微调。我们使用两个测距模块，一个位于无人机的下夹板左侧，一个位于无人机的下夹板右上侧这样可以有效避免测距模块同时被线干扰的情况发生，光流传感器与左侧测距模块放在一起，可以有效避免其镜头被遮挡。
+4.4系统电路板的固定及连接
+无人机主板为了便于参数调试，将无人机主板放在了无人机的正上方了与机械的结构通过减震球来提供减震效果，以减少飞行过程中的轻微震动对电路板的一些影响。 STC电调固定在了无人机4个机臂上，以保持稳定的驱动力，小车的主板固定在了小车4个电机驱动上方，驱动放置在最底层，以靠近电机提供稳定的驱动。驱动跟小车主板都采用了尼龙柱与车模进行隔离。
+第五章 硬件电路设计
+整套无人机与小车由cyt4bb7核心板两块，cyt2bl3核心板一块，无人机飞控主板，小车主板，stc无刷电调四块，直流有刷电机驱动板一块，陀螺仪两块， ips屏幕两块， TFT显示屏一块，摄像头转接板两块。主板包含了单片机最小系统插口、陀螺仪插口、串口插口、TFT插口、摄像头插口、TOF测距插口、光流定位插口、通信接口、有刷电机PWM口、无刷电机PWM口、五轴拨码调试口，编码器插口。
+
+5.1电源模块
+电源输入：对于无人机飞控的高集成性，选择了将分压板集成到无人机主板上，以稳定的为无刷电机供电。并选用0Ω电阻将功率地与信号地进行简单隔离，经过实验，隔离效果达到了要求。
+
+图5.2-1 飞控分压示意图
+5V电源：降压采用了SCT2450的降压方案，直接将24V降到5V,这款芯片支持宽电压输入，且电源纹波小。5V主要给光流模块、TOF高度测距模块、CYT4BB7单片机等。
+
+图5.2-2 5V电源电路
+3.3V电源：3.3V电源比较重要，给摄像头，调参的上拉电源、TFT和陀螺仪。采用RT9013-3.3供电，RT9013 是一款高性能、输出电流能力 500mA 的线性稳压器，提供极高的 PSRR 和 超低压降。摄像头单独设置一个电源模块，其他共用一个，如图5.2-3。
+
+图5.2-3 3.3v电源电路
+5.2 电机驱动模块
+电机驱动采用BTN方案，通过AMS117(12V-5V)加RT9013(5V-3.3V)的降压来给隔离芯片74LVC245供电，电路图如图5.3 所示
+
+图5.3电机驱动模块
+5.3无刷电机驱动模块
+无刷电机驱动板使用逐飞开源STC方案，为了使面积更小巧，尽量采用0603的封装电阻电容，电路图如图5.4-1和5.4-2所示
+
+图5.4-1 无刷电机驱动MCU模块
+  无刷驱动stc电调的电源供电电路示意图
+
+图5.4-2 无刷电机驱动降压模块
+
+图5.4-3 无刷电机驱动功率模块
+
+第六章 无人机车模软件算法
+6.1 无人机的平衡控制
+6.1.1 PID控制原理
+PID控制以其结构简单、稳定性好、工作可靠、调整方便而成为工业控制的主要技术之一。当被控对象的结构和参数不能完全掌握，或得不到精确的数学模型时，系统控制器的结构和参数必须依靠经验和现场调试来确定，这时应用PID控制技术最为方便。
+PID控制就是根据系统的误差，利用比例(P)、积分(I)、微分(D)计算出控制量进行控制的。目前PID控制在工业控制系统中无处不见，随着控制效果的要求不断提高，PID逐渐向智能化发展，但形形色色的现代控制理论最终还是源自经典PID理论。
+PID解决了自动控制理论所要解决的最基本问题，既系统的稳定性、快速性和准确性。调节PID的参数，可实现在系统稳定的前提下，兼顾系统的带载能力和抗扰能力，同时，在PID调节器中引入积分项，系统增加了一个零积点，使之成为一阶或一阶以上的系统，这样系统阶跃响应的稳态误差就为零。
+由于自动控制系统被控对象的千差万别，PID的参数也必须随之变化，以满足系统的性能要求。因此PID参数的确定是PID控制中重要的部分之一[3]。
+PID控制的基本原理如公式1所示：
+                  公式1
+式中，u(t) -- 控制量
+KP -- 比例系数
+Ti -- 积分时间常数
+Td -- 微分时间常数
+
+
+
+将公式1离散化，即将描述连续系统的微分方程代之以等效的描述离散系统的差分方程，就可以得到相应的数字PID调节器。当控制周期也就是积分时间足够小的时候，利用矩形法进行数值积分，即以求和代替积分，以差分代替微分，可得到数字形式的PID控制方程如公式2所示：
+             公式2
+式中T为控制周期，当T足够小时离散化的控制模型可以逼近连续式的PID控制模型。另外，可以将公式2中的T提取出来，把Kp分配进去，分别与1/Ti和Td组成比例项系数KP，积分项系数KI和微分项系数KD，公式2可简化为公式3：
+             公式3
+公式3也就是常说的位置式PID控制方程，但是由于积分项累加计算比较复杂，而且在程序计算中极容易出现溢出现象，因此人们考虑每一次不是给出绝对的控制量，而是根据上一次的控制，给出本次需要增加的控制量即可。根据这一想法，我们首先考虑上一次(即k-1时)给出的控制量u(k-1)为：
+        公式4
+公式3－公式4可得k时刻需要给出的增量
+ 公式-5
+由公式5得输出u(k)也可表示为：
+ 公式6
+公式6就是增量式PID控制方程，由此可以看出，增量式PID消去了积分项的累加部分，这样便于程序编写。
+
+6.1.2无人机平衡控制原理
+四旋翼无人机的姿态控制核心围绕 pitch（俯仰）、roll（横滚）、yaw（偏航）三轴展开，其中 pitch 轴与前后两组旋翼的转速差相关，在假设 roll、yaw 轴完全锁死的情况下，仅依靠前后旋翼的转速调整即可完成姿态平衡操作，此时 pitch 轴的运动控制逻辑与常规平衡载体的俯仰控制基本一致。
+若四旋翼无人机的四个旋翼同步顺时针旋转，根据动量守恒定律，机身会产生逆时针方向的反作用力矩。宏观层面，当无人机出现向右倾斜的姿态偏差时，只需增大左侧两个旋翼的顺时针转速、减小右侧两个旋翼的转速，即可产生反向力矩使机身回正，实现 roll轴的平衡调节。
+同理，当四旋翼无人机的前后旋翼产生反向转速差时，机身会在 yaw 轴上产生逆时针旋转趋势（即无人机发生左转行为）。为避免 yaw 轴旋转干扰 roll 轴的平衡状态，需对左右两侧旋翼施加反向且等大的转速差，使 roll 轴的力矩由两侧旋翼的反向作用力相互抵消，同时完成 yaw 轴的转向动作，实现控制的解耦。
+理解四旋翼无人机串级 PID 控制，需先明确其核心控制参数，并将三轴控制系统拆分为独立闭环进行分析：pitch 轴的平衡由前后旋翼转速差控制实现，roll 轴与 yaw 轴的平衡则完全由左右旋翼转速差及四旋翼联动控制，将三轴控制隔离为独立闭环，才能清晰构建串级 PID 控制框架。
+针对无人机姿态控制系统，核心已知参数如下：
+四个旋翼的实时转速；陀螺仪回传的机身三轴角速度与角加速度；通过陀螺仪数据解算得到的无人机实时姿态角度（俯仰角、横滚角、偏航角）。
+上述参数的优先级遵循“内环优先响应、外环精准调控”的原则，由此确定串级 PID 的内外环顺序。基于2ms 定时器编写的中断服务函数，可实现内外环控制代码的分层执行，从外到内依次为速度环、角度环、角速度环，形成完整的串级控制闭环，各环控制量最终转化为四旋翼的转速调整指令。
+需特别注意的是，此处的角速度特指陀螺仪回传的机身姿态角速度，而非单个旋翼的旋转角速度，二者物理意义不同，不可混淆。在控制逻辑中，需将 yaw 轴与 roll 轴的控制量分开计算，最终叠加为四个旋翼的转速指令，实现两轴控制的解耦，避免相互干扰。
+这一控制逻辑完全契合串级 PID 的核心思想：内环的目标值由外环的输出量提供，内环直接作用于执行机构（四个旋翼）的 PWM 信号，实现快速响应。完成最内环（角速度环）的控制后，向外层延伸即为角度环，在导航模式下，角度环的目标值为目标导航点对应的姿态角度偏差，在当前控制框架下，可将该偏差值视为无人机当前姿态与目标姿态的角度差，通过 PID 单位换算，可将视觉导航或传感器检测的偏差值转化为姿态角度偏差，实现精准调控。
+6.1.3麦轮小车控制原理
+麦轮小车的运动控制核心围绕直线行进、横向平移及转向展开，其核心在于方向解算，其中前进方向的运动控制与普通轮式小车基本一致，在假设横向平移与转向动作锁死的情况下，仅依靠前后驱动电机的转速调整即可完成直线行进的平衡与定位操作。
+麦轮小车的四个麦轮呈对称分布，若四个麦轮同步顺时针旋转，根据轮组受力特性，小车会产生向前的直线运动趋势。宏观层面，当小车出现行进方向偏移时，只需调整左右两侧麦轮的转速差，即可产生反向力矩使小车回正，实现直线行进方向的精准控制，这也是方向解算的基础环节。
+同理，当麦轮小车的前后麦轮产生反向转速差时，小车会在平面内产生转向趋势。为避免转向动作干扰直线行进的稳定性，需对左右两侧麦轮施加反向且等大的转速差，通过方向解算抵消横向分力，使小车在完成转向动作的同时，不产生额外的横向偏移，实现行进与转向的解耦控制。
+理解麦轮小车串级 PID 控制，需先明确其核心控制参数，重点聚焦方向解算逻辑，并将行进、平移、转向控制拆分为独立闭环进行分析：直线行进由前后麦轮转速同步控制实现，横向平移与转向则完全由左右麦轮转速差及四麦轮联动控制，将各运动模式隔离为独立闭环，才能清晰构建基于方向解算的串级 PID 控制框架。
+针对麦轮小车控制系统，核心已知参数如下：
+四个麦轮的实时转速；陀螺仪回传的小车平面角速度与角加速度；通过陀螺仪数据解算得到的小车实时行进方向角度及转向角度。
+上述参数的优先级遵循“内环优先响应、外环精准调控”的原则，由此确定串级 PID 的内外环顺序。基于2ms 定时器编写的中断服务函数，可实现内外环控制代码的分层执行，从外到内依次为速度环、角度环、角速度环，形成完整的串级控制闭环，各环控制量经方向解算后，最终转化为四个麦轮的转速调整指令。
+需特别注意的是，此处的角速度特指陀螺仪回传的小车平面运动角速度，而非单个麦轮的旋转角速度，在控制逻辑中，需通过方向解算将行进方向与转向方向的控制量分开计算，最终叠加为四个麦轮的转速指令，实现行进与转向的解耦，避免相互干扰。
+这一控制逻辑完全契合串级 PID 的核心思想：内环的目标值由外环的输出量提供，内环直接作用于执行机构（四个麦轮）的 PWM 信号，实现快速响应。完成最内环（角速度环）的控制后，向外层延伸即为角度环，在导航模式下，角度环的目标值为目标行进方向对应的角度偏差，在当前控制框架下，可将该偏差值视为小车当前行进方向与目标方向的角度差，通过 PID 单位换算及方向解算，可将传感器检测的偏差值转化为麦轮转速调整量，实现精准调控。
+6.1.4无人机小车协同原理
+循迹：由摄像头，陀螺仪，编码器等获取赛道信息，由无人机摄像头识别小车计算小车所在地与目的地的地角度和距离，通过串口线进行通信数据传输，此时小车接收到数据后进行方向解算后就可以沿着路线行驶。
+6.2无刷电机控制
+电机的控制通过角速度环与角度环的串级PID的方法可以很好的实现最佳效果，并不需要过多的处理。
+6.3 速度控制
+无人机速度控制并不像小车速度控制那样精确，只要在短时间内达到目标角度即可，小车主要通过速度闭环使小车保持相同的速度去行驶，经过调试，选择合适的参数后，速度控制效果好。
+
+第七章  系统开发及调试工具
+7.1软件开发平台
+我们采用的是 IAR EW for Arm 9.40.1 开发工具，IAR EW for Arm 是 IAR Systems 公司推出的针对 ARM 架构芯片的商用编译环境。EWARM 集成了编译器、调试器、设备驱动支持库等必备组件，无需开发者额外分散获取编译链与基础驱动代码，并且 IAR Systems 对于此 EWARM 开发环境非常重视
+7.2上位机调试助手
+关于上位机我们采用的是VOFA+，通过数据的依据来进行分析，推理然后根据得出的结论来改变参数，远远比盲目调参效率要高的多，如下图所示：
+
+图7.2 VOFA+
+
+
+
+
+7.3人机交互界面
+因为在比赛的时候要跟就不同的赛道设置不通的参数，调整策略。所以一个方便的快捷的调参界面非常重要。对于策略的修改我们用到了拨码开关，和五轴按键。效果如图所示：
+在赛场起到了非常大的作用。
+
+
+
+
+
+第八章 车模技术检测
+
+
+第九章 结论
+在此份技术报告中，我们主要介绍了无人机与小车协同灭信标灯项目的整体研发思路，涵盖机械结构设计、电路硬件搭建、核心控制算法开发及协同控制策略等关键环节，重点阐述了协同控制方案的创新思想与落地实现路径。
+项目准备初始阶段，由于涉及无人机与小车双载体协同控制，知识储备不足，我们在机械适配、电路兼容、协同算法调试等方面遇到诸多困难，也出现过硬件布局不合理、协同响应滞后等问题。通过团队成员不断查阅资料、开展实验测试、优化调试方案，逐步攻克了各项技术难题，完善了软硬件系统，最终实现了无人机与小车协同灭信标灯的稳定运行。
+在机械结构布局上，我们结合无人机与小车的运行特性，针对信标灯灭灯需求优化载体结构：无人机采用轻量化机架设计，合理排布摄像头、灭灯执行机构及传感器位置，确保飞行稳定性与灭灯操作精准度；小车则优化底盘布局，适配信标灯定位与协同行进需求，在实现轻量化的同时，保障双载体在协同过程中的运动稳定性与适配性。
+在电路制作过程中，双载体的硬件兼容与动力控制成为核心难点，尤其是无人机无刷电机驱动与小车麦轮驱动的电路协同调试，增加了硬件制作的难度。在电路设计中，我们优化电源分配方案，解决了双载体传感器、执行机构的供电兼容问题；针对无刷电机驱动、麦轮驱动的控制需求，逐一排查电路故障、优化驱动电路参数，在团队成员的不懈努力下，成功攻克硬件制作难题，为协同控制奠定了坚实基础。
+在软件控制方案中，我们构建了双载体协同控制体系：无人机采用基于串级 PID 算法的姿态控制方案，实现精准飞行与灭灯操作；小车依托麦轮小车串级 PID 控制逻辑，完成方向解算与精准行进，实现与无人机的位置协同。在信标灯定位与协同控制环节，通过摄像头采集信标灯位置信息，结合陀螺仪、编码器等传感器数据进行误差校正，分别控制无人机的飞行姿态与小车的行进轨迹，实现双载体协同定位、精准灭灯，最终达成高效、稳定完成信标灯熄灭任务的目标。
+回顾整个研发过程，我们不仅解决了双载体协同控制的技术难题，更在实践中提升了团队的软硬件开发与协同调试能力。后续可进一步优化协同算法的响应速度，提升双载体在复杂场景下的适配性，为同类协同作业项目提供更完善的技术参考。
+
+参考文献
+[1] 张化光，何希勤．模糊自适应控制理论及其应用[M]．北京：北京航空大学出版社，2002 
+[2] 王威．HCS12微控制器原理及应用[M]．北京：北京航空航天大学出版社，2007 
+[3] 孙同景，陈贵友．十六位单片机原理及嵌入式开发技术[M]．北京：机械工业出版社，2008
+[4] 刘畅生，张耀进．新型集成电路简明手册及典型应用[Ｊ]．西安电子科技大学出版社，2005 
+[5] 夏路易，石宗义著．电路原理图与电路板设计[M]．北京： 北京希望电子出版社， 2002．6
+[5] 桌晴，黄开胜，邵贝贝．学做智能车[M]． 北京：北京航空大学出版社，2007 
+[6] 张靖武．单片机原理应用与PROTEUS仿真[J]．电子工业出版社，2009．8（１）：19-28
+[7] 邵贝贝 ．单片机嵌入式应用的在线开发方法[M]． 北京：清华大学出版社， 2004
+[8] 臧杰，阎岩．汽车构造[M]．北京：机械工业出版社，2005 
+[9] 王柏盛．C程序设计[Ｊ]．北京：高等教育出版社．2004．4(1)：65-98 
+[10] 卓晴公众号
+[11] 智能车论坛
+
+
+
+
+
+
+
+
+
+
+
+附录：源代码
+/*
+ * xianshikongzhi.c
+ *
+ *  Created on: 2025年9月22日
+ *      Author: Lenovo
+ */
+#include "zf_common_headfile.h"
+
+int X_JJ=0,page_roll=0,hongwai_flag=0;
+float multible=1;
+uint8 Up,Down,Left,Right,Middle,Boma1,Boma2,Boma3,Boma4;
+uint16 page=1,flag=1;
+float a=0;
+int bianhuazhi_c=0;
+void boma_Init(void)//拨码初始化
+{
+    gpio_init(up,GPI,1,GPI_PULL_UP);
+    gpio_init(down,GPI,1,GPI_PULL_UP);
+    gpio_init(left,GPI,1,GPI_PULL_UP);
+    gpio_init(right,GPI,1,GPI_PULL_UP);
+    gpio_init(middle,GPI,1,GPI_PULL_UP);
+    gpio_init(P14_0,GPO,0,GPO_PUSH_PULL);
+    tft180_init();
+}
+void boma_key(void)
+{
+    Up=gpio_get_level(up);
+    Down=gpio_get_level(down);
+    Left=gpio_get_level(left);
+    Right=gpio_get_level(right);
+    Middle=gpio_get_level(middle);
+    if(hongwai_flag==0){gpio_set_level(P14_0, 0);}
+    if(hongwai_flag==1){gpio_set_level(P14_0, 1);}
+
+
+}
+void boma_yidong(void)
+{
+    if(Up==1&&Down==1&&Left==1&&Right==1&&Middle==1&&flag==0)flag=1;//限幅
+    if(Up==0&&flag==1)
+    {
+        flag=0;
+        page_roll-=20;
+        tft180_clear();
+    }
+    if(Down==0&&flag==1)
+    {
+        flag=0;
+        page_roll+=20;
+        tft180_clear();
+    }
+    if(Left==0&&flag==1)
+    {
+        flag=0;
+        X_JJ=-1;
+        tft180_clear();
+    }
+    if(Right==0&&flag==1)
+    {
+        flag=0;
+        X_JJ=1;
+        tft180_clear();
+    }
+    switch(page_roll)//标注控制和页面数值计算
+    {
+        case 0:
+            if(page==1){flash_duqu_flag=flash_duqu_flag+X_JJ*1;X_JJ=0;}
+            if(page==2){V=V+X_JJ*multible;X_JJ=0;}
+            if(page==3){bmq_miedeng_flag_open=bmq_miedeng_flag_open+X_JJ*1;X_JJ=0;}
+            if(page==4){bmq_0=bmq_0+X_JJ*multible;X_JJ=0;}
+            if(page==5){a=a+X_JJ*multible;X_JJ=0;}
+            if(page==6){bmq_0_target=bmq_0_target+X_JJ*multible;X_JJ=0;}
+            if(page==7){yaw_kp=yaw_kp+X_JJ*multible;X_JJ=0;}
+            if(page==8){js_x_kp=js_x_kp+X_JJ*multible;X_JJ=0;}
+            if(page==9){a=a+X_JJ*multible;X_JJ=0;}
+            if(page==10){js_x_kp_deng=js_x_kp_deng+X_JJ*multible;X_JJ=0;}
+            if(page==11){a=a+X_JJ*multible;X_JJ=0;}
+            if(page==12){bmq_gd_flag=bmq_gd_flag+X_JJ*1;X_JJ=0;}
+            if(page==13){a=a+X_JJ*multible;X_JJ=0;}
+            break;
+        case 20:
+            if(page==1){road_memery_start_Plus_flag=road_memery_start_Plus_flag+X_JJ*1;X_JJ=0;}
+            if(page==2){fache_flag=fache_flag+X_JJ*1;X_JJ=0;}
+            if(page==3){circle_sudu=circle_sudu+X_JJ*multible;X_JJ=0;}
+            if(page==4){bmq_0_kp=bmq_0_kp+X_JJ*multible;X_JJ=0;}
+            if(page==5){bmq_2_kp=bmq_2_kp+X_JJ*multible;X_JJ=0;}
+            if(page==6){bmq_1_target=bmq_1_target+X_JJ*multible;X_JJ=0;}
+            if(page==7){yaw_kd=yaw_kd+X_JJ*multible;X_JJ=0;}
+            if(page==8){js_x_kp_in=js_x_kp_in+X_JJ*multible;X_JJ=0;}
+            if(page==9){a=a+X_JJ*multible;X_JJ=0;}
+            if(page==10){js_x_kd_deng=js_x_kd_deng+X_JJ*multible;X_JJ=0;}
+            if(page==11){a=a+X_JJ*multible;X_JJ=0;}
+            if(page==12){distance_scope=distance_scope+X_JJ*multible;X_JJ=0;}
+            if(page==13){a=a+X_JJ*multible;X_JJ=0;}
+            break;
+        case 40:
+            if(page==1){flash_flag_Plus=flash_flag_Plus+X_JJ*1;X_JJ=0;}
+            if(page==2){jiasu_V=jiasu_V+X_JJ*multible;X_JJ=0;}
+            if(page==3){a=a+X_JJ*multible;X_JJ=0;}
+            if(page==4){bmq_0_ki=bmq_0_ki+X_JJ*multible;X_JJ=0;}
+            if(page==5){bmq_2_ki=bmq_2_ki+X_JJ*multible;X_JJ=0;}
+            if(page==6){bmq_2_target=bmq_2_target+X_JJ*multible;X_JJ=0;}
+            if(page==7){yaw_kp_in=yaw_kp_in+X_JJ*multible;X_JJ=0;}
+            if(page==8){js_x_kd_in=js_x_kd_in+X_JJ*multible;X_JJ=0;}
+            if(page==9){a=a+X_JJ*multible;X_JJ=0;}
+            if(page==10){js_y_kp_deng=js_y_kp_deng+X_JJ*multible;X_JJ=0;}
+            if(page==11){a=a+X_JJ*multible;X_JJ=0;}
+            if(page==12){target_bmq_v_x_distance=target_bmq_v_x_distance+X_JJ*multible;X_JJ=0;}
+            if(page==13){circle_sudu_mh=circle_sudu_mh+X_JJ*multible;X_JJ=0;}
+            break;
+        case 60:
+            if(page==1){guandao_flag=guandao_flag+X_JJ*1;X_JJ=0;}
+            if(page==2){jiasu_jiaodu=jiasu_jiaodu+X_JJ*multible;X_JJ=0;}
+            if(page==3){a=a+X_JJ*multible;X_JJ=0;}
+            if(page==4){a=a+X_JJ*multible;X_JJ=0;}
+            if(page==5){a=a+X_JJ*multible;X_JJ=0;}
+            if(page==6){bmq_3_target=bmq_3_target+X_JJ*multible;X_JJ=0;}
+            if(page==7){yaw_kd_in=yaw_kd_in+X_JJ*multible;X_JJ=0;}
+            if(page==8){js_y_kp=js_y_kp+X_JJ*multible;X_JJ=0;}
+            if(page==9){a=a+X_JJ*multible;X_JJ=0;}
+            if(page==10){js_y_kd_deng=js_y_kd_deng+X_JJ*multible;X_JJ=0;}
+            if(page==11){a=a+X_JJ*multible;X_JJ=0;}
+            if(page==12){target_bmq_v_y_distance=target_bmq_v_y_distance+X_JJ*multible;X_JJ=0;}
+            if(page==13){bmq_miedeng_flag_open_mh=bmq_miedeng_flag_open_mh+X_JJ*1;X_JJ=0;}
+            break;
+        case 80:
+            if(page==1){plan_flag=plan_flag+X_JJ*1;X_JJ=0;}
+            if(page==2){circle_sudu=circle_sudu+X_JJ*multible;X_JJ=0;}
+            if(page==3){a=a+X_JJ*multible;X_JJ=0;}
+            if(page==4){bmq_1_kp=bmq_1_kp+X_JJ*multible;X_JJ=0;}
+            if(page==5){bmq_3_kp=bmq_3_kp+X_JJ*multible;X_JJ=0;}
+            if(page==6){target_zhuansu=target_zhuansu+X_JJ*multible;X_JJ=0;}
+            if(page==7){a=a+X_JJ*multible;X_JJ=0;}
+            if(page==8){js_y_kp_in=js_y_kp_in+X_JJ*multible;X_JJ=0;}
+            if(page==9){a=a+X_JJ*multible;X_JJ=0;}
+            if(page==10){target_zhuansu_deng=target_zhuansu_deng+X_JJ*multible;X_JJ=0;}
+            if(page==11){a=a+X_JJ*multible;X_JJ=0;}
+            if(page==12){a=a+X_JJ*multible;X_JJ=0;}
+            if(page==13){pl_flag=pl_flag+X_JJ*1;X_JJ=0;}
+            break;
+        case 100:
+            if(page==1){mode=mode+X_JJ*multible;X_JJ=0;}
+            if(page==2){hongwai_flag=hongwai_flag+X_JJ*multible;X_JJ=0;}
+            if(page==3){a=a+X_JJ*multible;X_JJ=0;}
+            if(page==4){bmq_1_ki=bmq_1_ki+X_JJ*multible;X_JJ=0;}
+            if(page==5){bmq_3_ki=bmq_3_ki+X_JJ*multible;X_JJ=0;}
+            if(page==6){yaw_zhuansu=yaw_zhuansu+X_JJ*multible;X_JJ=0;}
+            if(page==7){a=a+X_JJ*multible;X_JJ=0;}
+            if(page==8){js_y_kd_in=js_y_kd_in+X_JJ*multible;X_JJ=0;}
+            if(page==9){a=a+X_JJ*multible;X_JJ=0;}
+            if(page==10){a=a+X_JJ*multible;X_JJ=0;}
+            if(page==11){bmq_V=bmq_V+X_JJ*multible;X_JJ=0;}
+            if(page==12){a=a+X_JJ*multible;X_JJ=0;}
+            if(page==13){pl=pl+X_JJ*multible;X_JJ=0;}
+            break;
+        case 120:
+            if(X_JJ==-1){multible=multible/10;X_JJ=0;}
+            if(X_JJ==1){multible=multible*10;X_JJ=0;} break;
+        case 140:
+            page+=X_JJ;X_JJ=0;            break;
+    }
+    if(page==1)
+    {
+        if(page_roll>140)//标志限幅
+            page_roll=0;
+        if(page_roll<0)
+            page_roll=140;
+    }
+    else
+    {
+        if(page_roll>140)//标志限幅
+            page_roll=0;
+        if(page_roll<0)
+             page_roll=140;
+    }
+    if(page>13)//页面限幅
+        page=1;
+    if(page<1)
+        page=13;
+    if(fache_flag>1){fache_flag=0;}
+    if(fache_flag<0){fache_flag=1;}
+    if(hongwai_flag>1){hongwai_flag=0;}
+    if(hongwai_flag<0){hongwai_flag=1;}
+    if(mode>1){mode=0;}
+    if(mode<0){mode=1;}
+    if(plan_flag>3){plan_flag=0;}
+    if(plan_flag<0){plan_flag=3;}
+    if(bmq_miedeng_flag_open>1){bmq_miedeng_flag_open=0;}
+    if(bmq_miedeng_flag_open<0){bmq_miedeng_flag_open=1;}
+    if(bmq_miedeng_flag_open_mh>1){bmq_miedeng_flag_open_mh=0;}
+    if(bmq_miedeng_flag_open_mh<0){bmq_miedeng_flag_open_mh=1;}
+    if(bmq_gd_flag>1){bmq_gd_flag=0;}
+    if(bmq_gd_flag<0){bmq_gd_flag=1;}
+    if(guandao_flag>1){guandao_flag=0;}
+    if(guandao_flag<0){guandao_flag=1;}
+    if(road_memery_start_Plus_flag>1){road_memery_start_Plus_flag=0;}
+    if(flash_duqu_flag>1){flash_duqu_flag=0;}
+    if(pl_flag<0){pl_flag=1;}
+    if(pl_flag<0){pl_flag=1;}
+}
+void page_1(void)//页面1显示
+{
+
+//      tft180_show_string(0,0,"pit");         
+//      tft180_show_string(0,20,"roll");        
+//      tft180_show_string(0,40,"yaw");
+      tft180_show_float(0,0,flash_duqu_flag,3,1);
+//      tft180_show_float(42,0,roll,3,1); 
+//      tft180_show_float(84,0,yaw,3,1); 
+      tft180_show_string(0,20,"jlu");         tft180_show_float(50,20,road_memery_start_Plus_flag,3,2);
+    tft180_show_string(0,40,"cunc");          tft180_show_float(50,40,flash_flag_Plus,3,2);
+    tft180_show_string(0,60,"gd");            tft180_show_float(50,60,guandao_flag,3,2);
+    tft180_show_string(0,80,"plan");          tft180_show_int(50,80,plan_flag,2);
+    tft180_show_string(0,100,"mode");         tft180_show_int(50,100,mode,2);
+//    tft180_show_int(50,60,dat,3);
+//    tft180_show_int(0,60,reason,10);
+//    tft180_show_int(50,100,mode,2);
+//    tft180_show_int(100,0,0,1);
+//    tft180_show_uint(100,120,stack_top,2);
+//    tft180_show_uint(80,20,0,2);
+}
+void page_2(void)//页面2显示
+{
+    tft180_show_string(0,0,"V");              tft180_show_float(50,0,V,4,1);
+    tft180_show_string(0,20,"fache");         tft180_show_float(50,20,fache_flag,2,1);
+    tft180_show_string(0,40,"js_V");          tft180_show_float(50,40,jiasu_V,3,1);
+    tft180_show_string(0,60,"js_jd");         tft180_show_float(50,60,jiasu_jiaodu,3,1);
+    tft180_show_string(0,80,"t_yaw");         tft180_show_float(50,80,target_yaw,3,1);
+    tft180_show_string(0,100,"w");            tft180_show_float(50,100,w_jiaodu,3,2);
+//    tft180_show_string(0,100,"hongw");          tft180_show_float(50,100,hongwai_flag,3,2);
+}
+
+
+void page_3(void)//页面4显示
+{
+//    tft180_show_string(0,0,"bmqx");           tft180_show_float(50,0,bmq_v_x,3,2);
+//    tft180_show_string(0,20,"bmqy");          tft180_show_float(50,20,bmq_v_y,3,2);
+//      tft180_show_string(0,0,"bmq_s");       tft180_show_float(50,0,bmq_sum,5,1);
+    tft180_show_string(0,0,"b_mdo");          tft180_show_float(50,0,bmq_miedeng_flag_open,3,1);
+    tft180_show_string(0,20,"qs");            tft180_show_float(50,20,circle_sudu,5,1);
+    tft180_show_string(0,40,"V0");            tft180_show_float(50,40,V0,4,1);
+    tft180_show_string(0,60,"V1");            tft180_show_float(50,60,V1,4,1);
+    tft180_show_string(0,80,"V2");            tft180_show_float(50,80,V2,4,1);
+    tft180_show_string(0,100,"V3");           tft180_show_float(50,100,V3,4,1);
+}
+void page_4(void)//页面5显示
+{
+    tft180_show_string(0,0,"bmq0");           tft180_show_float(50,0,bmq_0,3,2);
+    tft180_show_string(0,20,"b0kp");          tft180_show_float(50,20,bmq_0_kp,3,2);
+    tft180_show_string(0,40,"b0ki");          tft180_show_float(50,40,bmq_0_ki,3,2);
+    tft180_show_string(0,60,"bmq1");          tft180_show_float(50,60,bmq_1,3,2);
+    tft180_show_string(0,80,"b1kp");          tft180_show_float(50,80,bmq_1_kp,3,2);
+    tft180_show_string(0,100,"b1ki");         tft180_show_float(50,100,bmq_1_ki,3,2);
+}
+void page_5(void)//页面6显示
+{
+    tft180_show_string(0,0,"bmq2");           tft180_show_float(50,0,bmq_2,3,2);
+    tft180_show_string(0,20,"b2kp");          tft180_show_float(50,20,bmq_2_kp,3,2);
+    tft180_show_string(0,40,"b2ki");          tft180_show_float(50,40,bmq_2_ki,3,2);
+    tft180_show_string(0,60,"bmq3");          tft180_show_float(50,60,bmq_3,3,2);
+    tft180_show_string(0,80,"b3kp");          tft180_show_float(50,80,bmq_3_kp,3,2);
+    tft180_show_string(0,100,"b3ki");         tft180_show_float(50,100,bmq_3_ki,3,2);
+}
+void page_6(void)//页面7显示
+{
+    tft180_show_string(0,0,"t_b0");           tft180_show_float(50,0,bmq_0_target,4,1);
+    tft180_show_string(0,20,"t_b1");          tft180_show_float(50,20,bmq_1_target,4,1);
+    tft180_show_string(0,40,"t_b2");          tft180_show_float(50,40,bmq_2_target,4,1);
+    tft180_show_string(0,60,"t_b3");          tft180_show_float(50,60,bmq_3_target,4,1);
+    tft180_show_string(0,80,"t_zs");          tft180_show_float(50,80,target_zhuansu,3,2);
+      tft180_show_string(0,100,"y_zs");       tft180_show_float(50,100,yaw_zhuansu,3,1);
+//    tft180_show_string(0,100,"R");          tft180_show_float(50,100,R,3,1);
+}
+void page_7(void)//页面88显示
+{
+    tft180_show_string(0,0,"yawkp");          tft180_show_float(50,0,yaw_kp,1,4);
+    tft180_show_string(0,20,"yawkd");         tft180_show_float(50,20,yaw_kd,4,1);
+    tft180_show_string(0,40,"ykpin");         tft180_show_float(50,40,yaw_kp_in,3,1);
+    tft180_show_string(0,60,"ykdin");         tft180_show_float(50,60,yaw_kd_in,3,1);
+    tft180_show_string(0,80,"yaw");           tft180_show_float(50,80,yaw,3,1);
+    tft180_show_string(0,100,"a");            tft180_show_float(50,100,a,4,1);
+}
+void page_8(void)//页面88显示
+{
+    tft180_show_string(0,0,"x_kp");           tft180_show_float(50,0,js_x_kp,3,2);
+    tft180_show_string(0,20,"xkpin");         tft180_show_float(50,20,js_x_kp_in,3,2);
+    tft180_show_string(0,40,"xkdin");         tft180_show_float(50,40,js_x_kd_in,3,2);
+    tft180_show_string(0,60,"y_kp");          tft180_show_float(50,60,js_y_kp,3,2);
+    tft180_show_string(0,80,"ykpin");         tft180_show_float(50,80,js_y_kp_in,3,2);
+    tft180_show_string(0,100,"ykdin");        tft180_show_float(50,100,js_y_kd_in,3,2);
+    
+}
+
+
+void page_9(void)//页面88显示
+{
+//    tft180_show_string(0,0,"Ls");           tft180_show_float(50,0,0,3,2);
+//    tft180_show_string(0,20,"Lz");          tft180_show_float(50,20,0,3,2);
+//    tft180_show_string(0,40,"Lx");          tft180_show_float(50,40,0,3,2);
+//    tft180_show_string(0,60,"Rs");          tft180_show_float(50,60,0,3,2);
+//    tft180_show_string(0,80,"Rz");          tft180_show_float(50,80,0,3,2);
+//    tft180_show_string(0,100,"kz");         tft180_show_float(50,100,0,3,2);
+    
+    tft180_show_int(0,0,C_fifo_get_data[0],3);         tft180_show_float(32,0,sin(jiaodu*PI/180),3,1);        tft180_show_int(80,0,send_data[0],3);
+    tft180_show_int(0,16,C_fifo_get_data[1],3);        tft180_show_float(32,16,cos(jiaodu*PI/180),3,1);       tft180_show_int(80,16,send_data[1],3);
+    tft180_show_int(0,32,C_fifo_get_data[2],3);        tft180_show_float(32,32,pitch,3,1);                    tft180_show_int(80,32,send_data[2],3);
+    tft180_show_int(0,48,C_fifo_get_data[3],3);        tft180_show_float(32,48,roll,3,1);                     tft180_show_int(80,48,send_data[3],3);
+    tft180_show_int(0,64,C_fifo_get_data[4],3);        tft180_show_float(32,64,gyro_z,3,1);                   tft180_show_int(80,64,send_data[4],3);
+    tft180_show_int(0,80,C_fifo_get_data[5],3);        tft180_show_float(32,80,acc_x_lvbo,2,2);               tft180_show_int(80,80,send_data[5],3);
+    tft180_show_int(0,96,C_fifo_get_data[6],3);        tft180_show_float(32,96,acc_y_lvbo,2,2);               tft180_show_int(80,96,send_data[6],3);
+}
+
+void page_10(void)//页面88显示
+{
+    tft180_show_string(0,0,"dx_kp");           tft180_show_float(50,0,js_x_kp_deng,3,2);
+    tft180_show_string(0,20,"dx_kd");          tft180_show_float(50,20,js_x_kd_deng,3,2);
+    tft180_show_string(0,40,"dy_kp");          tft180_show_float(50,40,js_y_kp_deng,3,2);
+    tft180_show_string(0,60,"dy_kd");          tft180_show_float(50,60,js_y_kd_deng,3,2);
+    tft180_show_string(0,80,"t_zsd");          tft180_show_float(50,80,target_zhuansu_deng,3,1);
+    tft180_show_string(0,100,"bV_d");          tft180_show_float(50,100,bmq_V_deng,3,1);
+}
+void page_11(void)//页面88显示
+{
+    tft180_show_string(0,0,"gap");             tft180_show_float(50,0,gap_flag,3,2);
+    tft180_show_string(0,20,"gap_l");          tft180_show_float(50,20,gap_flag_last,3,2);
+    tft180_show_string(0,40,"b_md");           tft180_show_float(50,40,bmq_miedeng_flag,3,2);
+    tft180_show_string(0,60,"yt_x");           tft180_show_float(50,60,yuantu_x_last,3,1);
+    tft180_show_string(0,80,"yt_y");           tft180_show_float(50,80,yuantu_y_last,3,1);
+    tft180_show_string(0,100,"bmq_V");         tft180_show_float(50,100,bmq_V,4,1);
+}
+
+void page_12(void)//页面88显示
+{
+//    tft180_show_float(0,0,X_Memery_Store_Plus[bianhuazhi_c],4,1);             
+//    tft180_show_float(0,20,Y_Memery_Store_Plus[bianhuazhi_c],4,1);
+    tft180_show_string(0,0,"hzd");             tft180_show_float(50,0,bmq_gd_flag,3,1);             
+    tft180_show_string(0,20,"fanw");           tft180_show_float(50,20,distance_scope,4,1);
+    tft180_show_string(0,40,"t_x");            tft180_show_float(50,40,target_bmq_v_x_distance,4,1);
+    tft180_show_string(0,60,"t_y");            tft180_show_float(50,60,target_bmq_v_y_distance,4,1);
+    tft180_show_string(0,80,"bmqx");           tft180_show_float(50,80,bmq_v_x_distance,4,1);
+    tft180_show_string(0,100,"bmqy");          tft180_show_float(50,100,bmq_v_y_distance,4,1);//    tft180_show_int(0,60,reason,10);
+}
+void page_13(void)//页面88显示
+{
+//     tft180_show_int(0,0,reason,10);
+//    tft180_show_string(0,0,"a");           tft180_show_float(50,0,a,4,1);   
+    tft180_show_string(0,0,"x");               tft180_show_float(50,0,yuantu_x,3,1);
+    tft180_show_string(0,20,"y");              tft180_show_float(50,20,yuantu_y,3,1);
+    tft180_show_string(0,40,"mhqs");           tft180_show_float(50,40,circle_sudu_mh,5,1);
+    tft180_show_string(0,60,"mh");             tft180_show_float(50,60,bmq_miedeng_flag_open_mh,3,1);
+    tft180_show_string(0,80,"pl_f");           tft180_show_float(50,80,pl_flag,3,2);
+    tft180_show_string(0,100,"pl");            tft180_show_int(50,100,pl,5);
+}
+void boma_tft_xianshi(void)//显示
+{
+    tft180_show_string(0,120,"mul");           tft180_show_float(50,120,multible,3,4);
+    tft180_show_string(45,140,"<");            tft180_show_string(75,140,">");       tft180_show_float(0,140,Battery_test(),2,2);
+    tft180_show_string(110,page_roll,"<-");
+    tft180_show_uint(60,140,page,2);
+    switch(page)
+    {
+        case 1:page_1();break;
+        case 2:page_2();break;
+        case 3:page_3();break;
+        case 4:page_4();break;
+        case 5:page_5();break;
+        case 6:page_6();break;
+        case 7:page_7();break;
+        case 8:page_8();break;
+        case 9:page_9();break;
+        case 10:page_10();break;
+        case 11:page_11();break;
+        case 12:page_12();break;
+        case 13:page_13();break;
+    }
+void cm7_0_ALL_Init()
+{
+//    ips200_init(IPS200_TYPE_SPI);    
+//    ips200_full(RGB565_WHITE);
+//    ips200_set_font(IPS200_8X16_FONT);
+
+  tft180_set_dir(TFT180_PORTAIT_180);
+    boma_Init();
+    icm20602_init();
+//    imu963ra_init();
+//    imu660ra_init();
+    gyro_data_Init();
+    C_uart_Init();
+    Battery_test_Init();
+//    C2_uart_Init();
+    bianmaqi_Init();
+    mailun_dianji_Init();
+
+    flash_init ();
+    pit_ms_init(PIT_CH1, 2); 
+    pit_ms_init(PIT_CH2, 100); 
+    
+}
+
+===== TABLE 1 =====
+队伍名称 | 晋速-恒星 | 晋速-恒星 | 晋速-恒星 | 晋速-恒星
+参赛学校 | 太原工业学院 | 太原工业学院 | 太原工业学院 | 太原工业学院
+赛题组组别 | 飞跃雷区 | 飞跃雷区 | 飞跃雷区 | 飞跃雷区
+检查项目 | 规格 （选手自行填写） | 符合 （） | 不符合（） | 备注
+车模类型是什么？ 无人机类型是什么？ |  |  |  | 均自制
+车模整体尺寸： （包括传感器在内）长，宽，高(mm) 车模整体重量： 无人机整体尺寸：（包括传感器在内）长，宽，高(mm) 无人机整体重量： | 1.小车长295mm  宽295mm  高205mm 小车重1294g   2.无人机长400mm     宽395mm 高104mm 无人机重833g |  |  | 车模尺寸限制：长30cm，宽30cm 无人机尺寸限制：长50cm，宽50cm
+传感器种类、规格(型号)数量。 是否使用自带MCU的成品传感器模块？型号是什么？ | 1.mt9v034总钻风红外摄像头*2 陀螺仪imu963ra *1 icm20602*1 TOF测距模块DL1B 逐飞*2 光流模块UP-FLOW-302*1 2.否 |  |  | 
+控制转向舵机型号是否自行改装舵机？ 防伪易损标签是否完整？ | 1.无 2.完整 |  |  | 
+1. 是否增加伺服电机？ 2. 如果有种类、个数和作用？ | 1.否 2.否 |  |  | 
+电路中微处理器型号和个数？ | 英飞凌CYT2BL3*1 英飞凌CYT4BB7*2 |  |  | 赛事指定英飞凌 TRAVEO 系列芯片
+是否具有其它可编程器件，个数与作用？ | 无 |  |  | 
+是否有无线通讯装置？ 如果有种类和个数？ 车模与悬停飞机之间是否使用无线通讯？ | 1.是 2.HC-05*1 3.否 |  |  | 车模与悬停飞机之间不允许使用无线通讯模块
+电池的种类、规格和数量？  悬停飞机上是否安装电池？ | 1.3S 6400mA航模电池*1   3S 2200mA航模电池*1 2.否 |  |  | 悬停飞机不允许自带电池，须由车模通过线缆供电
+车模与悬停飞机连接线缆长度？ 线缆是否包含电源线和数据线？ | 1.145mm 2.是 |  |  | 线缆长度不超过1.5米；
+1. 是否使用GPS导航？ 2. 是否没有使用RTK？ | 1否 2否 |  |  | 
+后轮驱动电机是否是原车模电机？ 是否具有防伪易损标签？ | 1是   2是 |  |  | 
+车模轮胎是否原有的纹理可辨析？ 轮胎表面是否具有粘性物质？ 对于麦克纳姆轮是否更换过小轮胶皮？ | 1是   2否  3否 |  |  | 
+车轮轴距、轮距是否改装？ 改装参数是什么？ | 1否  2否 |  |  | 
+车模驱动轮传动机构是否改装？ 改装方式是什么？ | 1否  2否 |  |  | 
+是否更换过原装车模中的机械元器件？更换后的规格 是什么？ | 否 |  |  | 。
+悬停飞机桨叶是否安装保护罩？ 保护罩网眼尺寸？ 是否覆盖上方、侧面及下方？ | 1.是 2.小于4cm 3.是 |  |  | 保护罩网眼应小于4cm（乒乓球不能掉入）；
+车模电路板个数及功能。 其中是否有购买成品电路板？ | 1、共10块 （1）TFT屏幕  一块  显示图像与参数 （2）CYT2BL3核心板 副摄像头的图像处理与CYT4BB7核心的通信 （3）CYT4BB7主板  一块  供电与接口电路 （4）BTN直流有刷电机驱动  一块  驱动行进轮 （5）五轴拨码  一块  调试参数 （6）imu963ra陀螺仪  一个  姿态传感器 （7）CYT4BB7核心板  一块  飞机主控 （8）摄像头转接板  两块 （9）mt9v034摄像头  2个  搜寻红外灯信号 （10）TOF测距模块DL1B 逐飞*2 无人机高度测量 （11）光流模块UP-FLOW-302*1 无人机定点模块  2、有 imu963ra陀螺仪，mt9v034摄像头，TOF测距模块DL1B 逐飞*2，光流模块UP-FLOW-302*1 |  |  | 
+自制电路板是否标记有学校名称、队伍名称、制作日期等信息？ 标示信息在PCB的哪一层？ | 1、是 太原工业学院 晋速-恒星 2026/5/20（无人机主板，小车主板，CYT2BL3核心板，STC无刷驱动板）2026/5/5（小车电机驱动）、CYT4BB7核心板（2026/5/9） 2、敷铜层 |  |  | 请在表格中注明电路板队伍信息的内容。
+电路功耗： 所有电容总容量： | 1.500W 2.5000uF |  |  | 
+其它待说明内容 |  |  |  | 
+检查人员签名： | 检查意见： | 检查意见： | 检查意见： | 检查意见：

@@ -1,0 +1,769 @@
+第二十一届全国大学生
+智能汽车竞赛
+
+技	术	报	告
+
+
+
+
+
+
+
+
+学		 校：青岛恒星科技学院
+队伍名称：搬家不翻车
+参赛队员：茹明阳、吕庆欢、李文濮、李海滨
+带队教师：许颖、陈沪峰
+
+
+
+
+
+关于技术报告和研究论文使用授权的说明
+本人完全了解全国大学生智能汽车竞赛关保留、使用技术报告和研究论文的规定，即：参赛作品著作权归参赛者本人，比赛组委会可以在相关主页上收录并公开参赛作品的设计方案、技术报告以及参赛模型车的视频、图像资料，并将相关内容编纂收录在组委会出版论文集中。
+参赛队员签名：      
+带队教师签名：  
+日 		期：2026.8.21
+
+
+
+第一章 引言
+本章旨在简要介绍全国大学生智能汽车竞赛的背景、宗旨及整体概况，并阐述本次参赛任务与制作要求，为后续章节中技术方案、设计思路及调试过程的深入说明奠定理论与工程基础。
+1.1 竞赛简介
+全国大学生智能汽车竞赛以“立足培养，重在参与，鼓励探索，追求卓越”为指导思想，致力于推动高等学校素质教育的发展，提升大学生综合知识运用能力、工程实践能力与创新意识。该竞赛旨在激发大学生从事科学研究与技术探索的兴趣与潜能，倡导理论与实践相结合、求真务实的学术作风以及团队协作精神，从而为高水平技术人才的培养提供良好条件。
+竞赛由秘书处统一设计并规范标准化的软硬件技术平台，涵盖理论设计、整车制造、系统调试与现场竞赛等环节。参赛队伍须由学生自主组成，协同完成从系统设计到实物实现的完整工程流程。竞赛结合科学性、趣味性与观赏性，以汽车电子快速发展的背景为依托，融合自动控制、模式识别、传感技术、电子工程、电气工程、计算机科学、机械工程与汽车工程等多学科内容，具有高度的综合性与创新性。赛事规则透明，评价标准客观，始终坚持“公开、公平、公正”的原则，力求在健康、普及与可持续的方向上稳步发展。
+1.2 搬运任务要求
+本次比赛选用逐飞 RT1021_BTB 核心板（144pin，MicroPython）作为主控平台，控制两辆三电机全向底盘车模，通过OpenART 摄像头完成目标物品识别、赛道特征检测与双车协同搬运，并以完成规定搬运任务的用时作为主要评价指标。
+整车设计需满足以下要求：
+电路板设计：必须由参赛团队自主设计和制作，包含电源单元、处理单元、电机控制单元与人机交互单元；不得使用成品模块，并须在电路板铜层刻印学校名称及队伍名称，电路板附有二维码。
+机械结构调校：根据赛道特性与车辆运行状态对车模重心偏移调整，增加其稳定性。
+软件系统：团队需自主开发车辆控制程序，实现物品及赛道检测、路径规划与运动控制。
+整车组装：各部件需经过精确测量后安装，保证左右对称性与重量分布均衡，避免运行偏差。
+本次智能车设计与制作涉及机械结构优化、电路板研发与控制软件设计三大核心任务，三者的协同优化直接决定了整车性能与比赛成绩。
+1.3 设计思路及技术方案概要
+
+图1-1 设计方案图
+1.3.1.视觉识别
+对赛道中物品的识别采用TFLite YOLO模型。识别box/ball/bear三类物品；
+（1）隔帧推理（默认每3帧一次）提升帧率，检测结果缓存复用；
+（2）目标锁定跟踪：按类别顺序锁定目标，支持目标短暂丢失重拾与死区判定；
+（3）线检测：识别停止线（触发stop）与后板线（触发back）；
+（4）支持通过串口指令切换推送目标（球/沙包/熊）。
+1.3.2程序控制
+运动控制：
+（1）三电机全向底盘：支持全向平移与原地旋转（120°布置解算）；
+（2）IMU660RX 陀螺仪+卡尔曼滤波估计航向，静止时自动校正零漂；
+（3）串级控制：速度环PID（变速积分+静摩擦补偿）+航向环+角速度环；
+（4）编码器反馈，5ms定时器中断执行，主循环100ms任务调度
+任务状态机：
+物品对准后直接推送；
+（1）车头方向与目标板边不匹配时绕物品旋转；
+（2）推送完成后自动掉头并继续下一目标；
+（3）目标丢失超时回idle、通信超时进入emergency、拨码开关急停。
+1.3.3机械结构​
+在机械结构方面，团队对现有车模进行了针对性改装，以满足智能汽车在速度与稳定性上的需求：
+（1）推杆优化：斜向分力可以 “兜住” 物品，物品不容易从两车中间滑跑；允许两车位置存在一定的对齐误差，容错更高。
+（2）底盘及传动结构设计：采用三电机全向轮底盘，车模体积较小，可实现前后运动、横向平移与原地旋转，便于双车协同过程中的快速姿态调整。
+（3）底盘及传动结构设计：采用全向轮，车模体积小，转向灵活，稳定
+（4）车身重心调整：将电池和pcb后置，使得车模整体重心偏后，保证了车辆在完成搬运任务的稳定性。
+1.3.4电路设计​
+在电路系统方面，项目团队自主设计了六层PCB主控板，实现了电源模块、电机驱动模块与多传感器接口的高度集成，显著减少了布线复杂度与空间占用。
+实际测试中，电路部分的优化进展如下：
+已解决问题：陀螺仪放置位置偏移，重新设计后保持在车模中心位置。
+待改进问题：缺少开关防打火电路，上电瞬间大冲击电流直接灌入后端，电解电容、电源芯片、单片机、电机驱动芯片易受浪涌冲击损坏。
+综上所述，电路部分的性能已能满足当前阶段需求，但仍需提高抗干扰能力以适应更复杂的赛道环境。
+1.4 报告内容及框架安排
+本报告将围绕智能汽车的设计与实现过程展开，系统地对机械、电路与软件的整体方案进行说明，并对调试过程中的关键问题与解决思路进行总结。全文结构安排如下：
+第一章引言部分：对智能汽车制作的整体情况进行概述，包括研究背景、项目目标与当前进度。
+第二章设计方案：介绍智能汽车的总体设计思路，包括系统架构、硬件选择与功能划分。通过整体方案图与流程描述，明确各模块之间的功能关系与协同方式。
+第三章电路设计：重点阐述主控电路板的设计方案，包括电源模块、电机驱动模块、传感器接口与通信接口的电路原理及布局。
+第四章算法设计：介绍目标识别、停止线检测、状态机、转向控制与速度闭环控制等核心算法的实现原理与优化策略。
+第五章开发与调试：描述整个开发与调试的过程，包括编译环境的搭建、程序在目标板上的移植等。
+第六章技术参数说明：对车模尺寸、重量、传感器配置、电路功耗、电机数量及模型识别精度等关键技术参数进行说明。
+第七章结论：对本课题的研究成果进行总结，指出当前系统的不足之处，并对后续的优化方向与应用前景进行展望。
+报告内容及框架安排如图1-2所示。
+图1-2 报告内容及框架安排
+
+
+第二章 设计方案
+2.1 车模的结构
+参赛车模采用镂空三角形结构稳定轻量化，碳纤维材料在保证轻量化的同时有较强的支撑性。车轮采用全向轮，转向更灵活。
+驱动电机为N20减速电机，最高转速约2000 r/min，搭配逐飞公司生产的 1024线增量式编码器，用于测速与速度闭环控制。编码器可输出双相脉冲信号，经主控正交解码后获得旋转方向与脉冲计数信息，为三轮速度反馈提供依据。全向车模示意图如图2-1所示。
+
+图2-1 全向车模示意图
+主车采用双摄像头方案：OpenART Plus 主摄像头用于 YOLO 物品识别，OpenART mini 副摄像头用于黄色停止线等赛道特征检测，从而将目标识别与停车判断分离，提高系统鲁棒性，如图2-2所示。从车摄像头用于获取主车相关引导信息并配合跟随控制，如图2-3所示。
+     
+图2-2 主车摄像头                 图2-3  从车摄像头 
+2.2 推杆结构
+主车推杆与车体中轴线呈一定斜角，安装位置偏向车体一侧，如图2-4所示；从车推杆采用相对配合的布置形式，如图2-5所示。主车斜杆与从车横杆共同形成非对称夹持构型：横杆提供主要前向推力，斜杆提供侧向约束，使目标物在双车之间不易侧向滑出。该结构允许一定的双车对接误差，可降低协同定位与同步控制的压力。
+2.3 传感器安装
+IMU660RX陀螺仪安装在车模中心附近，使其测量坐标系与车体坐标系尽可能一致，可减小安装偏置对航向估计与闭环控制的影响，如图2-6所示。摄像头目标坐标则结合其安装位置、视场及图像中心进行误差换算后用于运动控制。
+
+图2-6 陀螺仪安装位置
+第三章 电路设计
+3.1 电源电路设计
+本系统电源模块选用TPS564201DDCR电源芯片，支持4.5-17V宽输入电压范围，能够稳定输出5 V直流电压，满足整车控制与传感器供电需求。如图3-1所示，为TPS564201DDCR芯片引脚与外围元件的供电电路图。
+
+图3-1 电源模块原理图
+3.2 驱动电路设计
+电机驱动部分采用DRV8701ERGET栅极驱动芯片配合外置N沟道MOSFET构成全桥驱动电路。该方案能够根据控制信号驱动电机正反转及调速，并通过外置功率器件承担电机负载电流，有利于降低驱动芯片本体的功耗与发热。电机驱动模块原理图如图3-2所示。
+
+图3-2 电机驱动模块原理图
+
+
+第四章 算法设计
+基于NXP RT1021 MicroPython与OpenART视觉模块的智能搬运小车项目（主车+从车），实现目标物品的识别、对准、推送以及停止线检测等任务。
+4.1 项目简介
+主车：OpenART Plus 主摄像头（YOLO 目标识别）+ OpenART mini 副摄像头（黄线/停止线检测）+RT1021主控，三电机全向底盘。
+从车：RT1021 主控，三电机全向底盘，与主车协同搬运。
+视觉模型识别三类物品：box（沙包）、ball（球）、bear（熊），按配置顺序完成对准与推送。
+4.2 系统架构
+4.3 核心功能
+4.3.1视觉识别
+使用 TFLite YOLO 模型（yolo3_iou_smartcar_final_with_post_processing. tflite）识别box/ball/bear三类物品；
+隔帧推理（默认每3帧一次）提升帧率，检测结果缓存复用；
+目标锁定跟踪：按类别顺序锁定目标，支持目标短暂丢失重拾与死区判定；
+线检测：识别停止线（触发 stop）与后板线（触发 back）；
+支持通过串口指令 push_enter 切换推送目标（球/沙包/熊）。
+4.3.2停止线检测
+对摄像头图像进行颜色阈值二值化后，使用 find_line_segments 提取候选线段，并在图像下半区域筛选长度、水平跨度及纵向偏差满足阈值的横向线段作为停止线候选；
+停止线连续3帧满足条件后确认触发，并设置5 s启动保护与约300 ms状态保持时间，以降低起步阶段和瞬时噪声造成的误触发；
+通过固定曝光等方式减小运动拖影和环境亮度波动对赛道特征提取的影响；具体曝光参数应结合现场光照进行标定。
+4.3.3运动控制
+三电机全向底盘：支持全向平移与原地旋转（120° 布置解算）；
+IMU660RX 陀螺仪 + 卡尔曼滤波估计航向，静止时自动校正零偏；
+串级控制：速度环 PID（变速积分 + 静摩擦补偿）+ 航向环 + 角速度环；
+编码器反馈，5ms 定时器中断执行，主循环 100ms 任务调度。
+4.3.4状态机
+init → forward → shuipingr → follow → push / orbit_item → diaotou → forward → follow ...
+包含init、idle、forward、shuipingr、shuipingl、follow、emergency、diaotou、back、huijia、push、orbit、orbit_item 等状态，支持：
+物品对准后直接推送；
+车头方向与目标板边不匹配时绕物品旋转（orbit_item）；
+推送完成后自动掉头（diaotou）并继续下一目标；
+目标丢失超时回 idle、通信超时进入 emergency、拨码开关急停。
+
+
+
+第五章 开发与调试
+5.1 Micropython开发环境的安装
+本系统未采用传统嵌入式裸机开发模式，而是基于 MicroPython 嵌入式开发环境进行程序开发与调试。开发过程中完成适配 RT1021 主控的固件烧录、串口连接、脚本下载与运行调试，并结合 OpenART 视觉模块完成相关程序部署。该方式便于快速迭代控制逻辑与视觉算法，同时保留串口输出用于在线调试和状态观察。
+5.2 静摩擦补偿调试
+针对车辆起步、掉头复位后 PID 输出不足以及电机受静摩擦影响出现堵转的问题，在速度环中加入可开关的静摩擦补偿：当控制器存在明确速度需求但输出不足以克服起步阻力时，叠加最小启动占空比；同时采用积分限幅抑制积分饱和，并在目标速度为零时禁止补偿，避免车辆静止时蠕行。相关补偿阈值与最小占空比结合实车和赛道摩擦条件进行标定。
+5.3 航向环、角速度环调试
+航向环与角速度环采用独立控制开关，以区分常规行驶和绕物体运动两类工况。常规行驶时以航向闭环为主；绕目标物体时根据需要启用角速度内环，避免两个控制环在不适用工况下同时强制修正而产生相互干扰。该调整保持原有串级控制框架，不改变从车通信、视觉识别及电机速度环等模块。
+
+
+第六章 技术参数说明
+6.1 车模的长宽高尺寸
+本设计所采用的实验平台为官方指定标准车模，主车几何尺寸为170mm×170 mm×350mm，从车几何尺寸为170mm×170 mm×240mm。推杆设计满足竞赛规则的限制条件，车模尺寸如图6-1所示。
+
+图6-1 车模尺寸与高度限制示意图
+6.2 重量
+通过称重主车重量为274.2g，从车重量为224.8g。
+6.3 传感器
+系统主要传感信息包括视觉、惯性与轮速三类：OpenART 摄像头用于目标物品及赛道特征识别，IMU660RX 陀螺仪用于航向估计与姿态修正，增量式编码器用于获取各驱动轮速度并构成速度闭环。主车传感器安装位置如图 6-2 所示。
+
+图6-2 智能车传感器安装位置图
+6.4 电路功耗
+整车功耗可分为逻辑与传感器供电功耗、以及电机驱动功耗。电机由电池端VCCBAT直接供电；TPS564201DDCR将电池电压降至5 V，为摄像头和主控等外设供电。按5 V侧总负载电流约1.2 A、转换效率约90%估算，5 V支路电池侧输入功率约为6.7 W，其中DC-DC转换损耗约0.67 W。RT9013-33GU5由5 V进一步产生3.3 V，在3.3 V负载电流约0.35 A时，其压差损耗约0.60 W。电机重载搬运时，整车总功耗主要由电机决定，原测试估算约为27～47 W；该数据会随电池电压、负载和占空比变化。
+6.5 电机个数
+两车电机个数为6个。
+6.6 模型识别精度
+
+
+图6-3 模型识别精度测试结果
+从当前测试结果可见，模型整体mAP为38.16%，其中bear类AP约为0.59、box类AP约为0.30、ball类AP约为0.26。结果表明模型已经具备三类目标的基本识别能力，但不同类别之间精度差异较大，尤其ball与box仍有较明显的提升空间。后续可从补充样本数量、增加不同光照与距离条件的数据、优化标注质量及模型训练参数等方面继续改进。
+
+
+
+第七章 结论
+本项目围绕全国大学生智能汽车竞赛搬运任务完成了双车协同智能搬运系统的设计与实现。团队依次完成资料调研、机械结构设计、车模装配、电路设计、视觉算法开发和运动控制调试，并在多轮实车测试基础上形成当前总体方案。
+本报告从机械结构、电路系统、视觉识别、状态机及运动控制等方面对系统进行了说明。整体方案以三电机全向底盘为运动平台，通过主车双摄像头完成目标识别与赛道特征检测，并结合编码器、IMU及速度/航向闭环控制实现车辆运动与双车协同搬运。
+机械与传感器布局方面仍存在进一步优化空间。当前摄像头支架整体高度较高，会抬高整车重心并增加高速运动时的摆动；后续可在保证视场的前提下降低摄像头安装高度、优化支架刚度，并进一步调整电池与 PCB 的布置，使整车重心更低、质量分布更合理。
+电路方面采用模块化思路完成主控、传感器、电源、电机驱动、速度检测及辅助调试等功能设计，并通过多方案比较与实测确定最终电路。现阶段需重点完善电源入口保护与抗浪涌设计，合理配置输入端电容和防打火/限流措施，提高上电可靠性及整车抗干扰能力。
+算法方面采用 MicroPython 完成视觉信息交互、状态机和运动控制逻辑。现有程序能够完成目标选择、跟踪、推送及异常状态处理，但模型识别精度和高速转向适应性仍需持续优化。后续将结合不同赛道摩擦条件进一步标定速度环、航向环和角速度环参数，并通过扩充训练数据提升三类目标识别的稳定性。
+
+
+参考文献
+[1] 王亮, 李伟, 张凯. 基于STM32的智能循迹小车设计与实现[J]. 电子设计工程, 2020, 28(12): 115-119.
+[2] 周强, 刘洋. 嵌入式系统中的交叉编译工具链研究与应用[J]. 微计算机信息, 2019, 35(6): 42-45.
+[3] 高翔, 陈波, 赵磊. 基于图像识别的智能车赛道检测与控制方法[J]. 计算机工程与应用, 2021, 57(10): 221-227.
+[4] 黄磊, 王志强. Linux环境下嵌入式系统开发与部署流程研究[J]. 电子技术应用, 2018, 44(8): 56-60.
+[5] 陈伟, 刘子豪. 基于VS Code的嵌入式开发与远程调试方法[J]. 单片机与嵌入式系统应用, 2022, 22(4): 31-35.
+[6] 张敏, 赵俊杰. 智能车转向与速度控制的PD算法优化[J]. 控制工程, 2021, 28(3): 144-150.
+[7] 李航. 机器学习导论[M]. 北京: 清华大学出版社, 2019.
+
+
+附录1：原理图
+
+
+
+
+
+
+
+
+
+
+
+
+附录2：程序源码
+import seekfree, pyb
+import sensor, image, time, math, gc
+import os, tf
+from machine import UART
+from pyb import LED
+
+uart = UART(12, baudrate=115200)
+
+# ---------- 摄像头初始化（顺序正确） ----------
+sensor.reset()
+sensor.set_pixformat(sensor.RGB565)
+sensor.set_framesize(sensor.QQVGA)   # 160x120，提升帧率
+sensor.skip_frames(time=2000)
+sensor.set_auto_gain(False)
+sensor.set_auto_whitebal(False)
+
+clock = time.clock()
+thresholds = [(98, 78, 0, -45, 94, 8)]
+
+# ---------- YOLO模型 ----------
+face_detect_path = "yolo3_iou_smartcar_final_with_post_processing.tflite"
+net_det = tf.load(face_detect_path, load_to_fb=True)
+labels = [line.rstrip() for line in open("/sd/trained.txt")]
+
+PUSH_LABEL_ORDER = ["box", "ball", "bear"]
+PUSH_LABEL_INDEX_ORDER = [1, 0, 2]
+PUSH_LABEL_COUNT = [1, 2, 2]
+push_label_index = 0
+push_current_count = 0
+last_stop_car = False
+stop_advance_used = False
+last_advance_time = 0
+ADVANCE_GUARD_MS = 800
+
+lcd = seekfree.IPS200(3)
+lcd.full()
+death_zone = 20
+
+# ---------- 线检测参数（QQVGA） ----------
+mini_line = 2000
+STOP_LINE_MIN_LEN =15
+STOP_LINE_DY_MAX = 10
+STOP_LINE_DX_MIN = 15
+STOP_CONFIRM_FRAMES = 3
+STOP_HOLD_MS = 300
+stop_line_count = 0
+stop_hold_until = 0
+START_PROTECT_MS = 5000
+start_time = time.ticks_ms()
+BACK_LINE_X = 100                     # QQVGA宽度160，中心80，阈值100左右
+VERTICAL_LINE_MIN_LEN = 6
+VERTICAL_LINE_DX_MAX = 100
+BACK_CONFIRM_FRAMES = 1
+BACK_HOLD_MS = 500
+back_line_count = 0
+back_hold_until = 0
+back_car = False
+
+# ---------- 目标锁定 ----------
+locked_label = None
+locked_cx = None
+locked_cy = None
+locked_miss = 0
+LOCK_TOLERANCE = 10
+LOCK_MATCH_DIST = 0.25
+
+white = LED(4)
+stop_car = False
+error_x = 0.0
+error_y = 0.0
+has_target = False
+send_label_index = -1                  # 发送物品索引
+SEND_PERIOD_MS = 5
+last_send_time = 0
+
+# ---------- 隔帧推理 ----------
+frame_counter = 0
+YOLO_SKIP_FRAMES = 2                   # 每3帧推理一次
+cached_detection_list = []
+
+seekfree.init()
+
+def get_label_name(label_idx):
+    idx = int(label_idx)
+    if 0 <= idx < len(labels):
+        return labels[idx]
+    return "unknown"
+
+def advance_push_target():
+    global push_label_index, push_current_count, locked_label, locked_cx, locked_cy, locked_miss, last_advance_time
+    now = time.ticks_ms()
+    if last_advance_time != 0 and time.ticks_diff(now, last_advance_time) < ADVANCE_GUARD_MS:
+        return
+    last_advance_time = now
+    push_current_count += 1
+    if push_current_count >= PUSH_LABEL_COUNT[push_label_index]:
+        if push_label_index < len(PUSH_LABEL_ORDER) - 1:
+            push_label_index += 1
+            push_current_count = 0
+    locked_label = None
+    locked_cx = None
+    locked_cy = None
+    locked_miss = 0
+    print("advance", PUSH_LABEL_ORDER[push_label_index], push_current_count)
+
+def receive_master_command():
+    if uart.any():
+        line = uart.readline()
+        if line:
+            try:
+                cmd = line.decode().strip()
+                if cmd == "push_enter":
+                    advance_push_target()
+            except:
+                pass
+
+while(True):
+    receive_master_command()
+    clock.tick()
+    gc.collect()
+    white.off()
+    back_car = False
+
+    img = sensor.snapshot()
+    img = img.replace(vflip=True, hmirror=True)
+    binary_img = img.copy()
+    binary_img.binary([thresholds[0]])
+    binary_img.dilate(1)
+
+    # ---------- 线检测 ----------
+    zhaoxian = binary_img.find_line_segments(merge_distance=10, max_theta_difference=5)
+    xiaban_y = img.height() * 0.50
+    line_bottom_norm = 1.0
+
+    if zhaoxian:
+        is_stop_line = False
+        best_stop_score = -1
+        best_stop_line = None
+        best_vertical_line = None
+        vertical_candidates = []
+
+        for line in zhaoxian:
+            line_len = line.length()
+            line_cx = (line.x1() + line.x2()) / 2
+            line_cy = (line.y1() + line.y2()) / 2
+            line_dx = abs(line.x1() - line.x2())
+            line_dy = abs(line.y1() - line.y2())
+            line_bottom_y = max(line.y1(), line.y2())
+
+            if line_bottom_y > xiaban_y:
+                line_bottom_norm = min(line_bottom_norm, line_bottom_y / img.height())
+
+            if line_len > VERTICAL_LINE_MIN_LEN and line_dy > line_dx and line_dx < VERTICAL_LINE_DX_MAX:
+                vertical_candidates.append(line)
+
+            horizontal_ok = (line_len > STOP_LINE_MIN_LEN and
+                             line_dx > STOP_LINE_DX_MIN and
+                             line_dy < STOP_LINE_DY_MAX and
+                             line_cy > xiaban_y)
+            if horizontal_ok:
+                score = line_dx + line_bottom_y
+                if score > best_stop_score:
+                    best_stop_score = score
+                    best_stop_line = line
+                    is_stop_line = True
+
+        if vertical_candidates:
+            min_x = min(min(l.x1(), l.x2()) for l in vertical_candidates)
+            max_x = max(max(l.x1(), l.x2()) for l in vertical_candidates)
+            min_y = min(min(l.y1(), l.y2()) for l in vertical_candidates)
+            max_y = max(max(l.y1(), l.y2()) for l in vertical_candidates)
+            avg_x = int((min_x + max_x) / 2)
+            best_vertical_line = (avg_x, int(min_y), avg_x, int(max_y))
+            if avg_x > BACK_LINE_X:
+                back_line_count += 1
+            else:
+                back_line_count = 0
+        else:
+            back_line_count = 0
+
+        if back_line_count >= BACK_CONFIRM_FRAMES:
+            back_hold_until = time.ticks_add(time.ticks_ms(), BACK_HOLD_MS)
+            back_car = True
+        else:
+            back_car = time.ticks_diff(back_hold_until, time.ticks_ms()) > 0
+
+        if best_vertical_line:
+            vx1, vy1, vx2, vy2 = best_vertical_line
+            img.draw_line(vx1, vy1, vx2, vy2, color=(255, 255, 0), thickness=3)
+            vx = int((vx1 + vx2) / 2)
+            vy = int((vy1 + vy2) / 2)
+            #img.draw_cross(vx, vy, color=(255, 255, 0), size=10, thickness=2)
+            #img.draw_string(vx + 5, vy, "BACK", color=(255, 255, 0), scale=2)
+
+        if is_stop_line:
+            stop_line_count += 1
+        else:
+            stop_line_count = 0
+
+        if stop_line_count >= STOP_CONFIRM_FRAMES and time.ticks_diff(time.ticks_ms(), start_time) > START_PROTECT_MS:
+            stop_hold_until = time.ticks_add(time.ticks_ms(), STOP_HOLD_MS)
+            stop_car = True
+            print("stop")
+        else:
+            stop_car = time.ticks_diff(stop_hold_until, time.ticks_ms()) > 0
+    else:
+        stop_line_count = 0
+        back_line_count = 0
+        back_car = time.ticks_diff(back_hold_until, time.ticks_ms()) > 0
+        stop_car = time.ticks_diff(stop_hold_until, time.ticks_ms()) > 0
+
+    last_stop_car = stop_car
+
+    # ---------- 图像中心（QQVGA：80,60） ----------
+    screen_center_x = 80
+    screen_center_y = 60
+
+    # ---------- 隔帧YOLO识别 ----------
+    frame_counter += 1
+    if frame_counter > YOLO_SKIP_FRAMES:
+        frame_counter = 0
+        img1 = img.copy(0.75, 1)
+        cached_detection_list = tf.detect(net_det, img1)
+
+    detection_list = cached_detection_list
+
+    best_bottom = -1.0
+    best_error_x = 0.0
+    best_error_y = 0.0
+    best_medium = 9999
+    best_lock_dist = 9999.0
+
+    target_label_index = PUSH_LABEL_INDEX_ORDER[push_label_index] if push_label_index < len(PUSH_LABEL_INDEX_ORDER) else -1
+    lock_active = (locked_label == target_label_index and locked_cx is not None and locked_cy is not None)
+    lock_found = False
+
+    for obj in detection_list:
+        x1, y1, x2, y2, label_idx, scores = obj
+        if scores <= 0.70:
+            continue
+        if int(label_idx) != target_label_index:
+            continue
+        if y2 > line_bottom_norm:
+            continue
+
+        obj_center_x_norm = (x1 + x2) / 2.0
+        obj_center_y_norm = (y1 + y2) / 2.0
+        obj_center_x = obj_center_x_norm * img.width()
+        x_obj = abs(screen_center_x - obj_center_x)
+
+        if lock_active:
+            lock_dx = obj_center_x_norm - locked_cx
+            lock_dy = obj_center_y_norm - locked_cy
+            lock_dist = lock_dx * lock_dx + lock_dy * lock_dy
+            if lock_dist > LOCK_MATCH_DIST * LOCK_MATCH_DIST:
+                continue
+            choose_obj = lock_dist < best_lock_dist
+        else:
+            choose_obj = (y2 > best_bottom and x_obj < best_medium)
+
+        if choose_obj:
+            best_bottom = y2
+            best_medium = x_obj
+            if lock_active:
+                best_lock_dist = lock_dist
+                lock_found = True
+            w = x2 - x1
+            h = y2 - y1
+            x1_draw = int(x1 * img.width())
+            y1_draw = int(y1 * img.height())
+            w_draw = int(w * img.width())
+            h_draw = int(h * img.height())
+
+            box_center_x = x1_draw + w_draw // 2
+            box_center_y = y1_draw + h_draw // 2
+            error_x_temp = box_center_x - screen_center_x
+            error_y_temp = screen_center_y - box_center_y
+
+            if abs(error_x_temp) < death_zone:
+                error_x_temp = 0.0
+            if abs(error_y_temp) < death_zone:
+                error_y_temp = 0.0
+
+            best_error_x = error_x_temp
+            best_error_y = error_y_temp
+            locked_label = target_label_index
+            locked_cx = obj_center_x_norm
+            locked_cy = obj_center_y_norm
+            locked_miss = 0
+            img.draw_rectangle((x1_draw, y1_draw, w_draw, h_draw), thickness=3, color=(0,255,0))
+            img.draw_string(x1_draw, y1_draw - 12, get_label_name(label_idx), color=(255,255,255), scale=2)
+
+    if best_bottom == -1.0:
+        if lock_active:
+            locked_miss += 1
+            if locked_miss > LOCK_TOLERANCE:
+                locked_label = None
+                locked_cx = None
+                locked_cy = None
+                locked_miss = 0
+        error_x = 0.0
+        error_y = 0.0
+        has_target = False
+        send_label_index = -1
+    else:
+        error_x = best_error_x
+        error_y = best_error_y
+        has_target = True
+        send_label_index = target_label_index
+
+    # ---------- 主循环发送 ----------
+    now_ms = time.ticks_ms()
+    if time.ticks_diff(now_ms, last_send_time) >= SEND_PERIOD_MS:
+        last_send_time = now_ms
+        if stop_car:
+            uart.write("stop\r\n")
+        elif has_target:
+            data = "{:.1f},{:.1f},{:d}\r\n".format(error_x, error_y, send_label_index)
+            white.on()
+            uart.write(data)
+        elif back_car:
+            uart.write("back\r\n")
+            print("back")
+
+
+
+# 停止线检测 - OpenART mini 适配版
+# 1) OpenART mini 在 QQVGA/QVGA 下 set_windowing() 无效，所以用 ROI 软件裁图，
+#    只处理下半部分 160x60，不复制图像
+# 2) 不用 binary()+get_pixel()：该固件 get_pixel 返回元组会报错，且逐像素 Python
+#    扫描太慢；改用 find_blobs 在左右两端 ROI 里找黄色色块（C 实现，快得多）
+# 3) 中间被物品遮挡不影响：左右两端都检测到黄色才判为停止线（标志位判断）
+# 4) 只认"有一定横向长度和厚度的黄线段"，滤掉零星噪点
+# 5) 识别到停止线（停车）时 LED 爆闪
+
+import sensor, image, time
+from machine import UART
+from pyb import LED
+
+# ---------- 串口初始化 ----------
+uart = UART(2, baudrate=115200)   # 根据实际串口号修改
+
+# ---------- 摄像头初始化 ----------
+sensor.reset()
+sensor.set_pixformat(sensor.RGB565)
+sensor.set_framesize(sensor.QQVGA)          # 160x120
+# 注：OpenART mini 在 QQVGA/QVGA 下 set_windowing() 无效（VGA 下才有效），
+#     所以裁图改为在检测时用 ROI 实现，等效只处理下半部分 160x60。
+# 如果摄像头装反/镜像，取消下面注释：
+# sensor.set_hmirror(True)
+# sensor.set_vflip(True)
+sensor.skip_frames(time=2000)
+sensor.set_auto_gain(False)
+sensor.set_auto_whitebal(False)
+sensor.set_auto_exposure(False, exposure_us=1200)  # 锁定曝光，减少拖影
+
+clock = time.clock()
+
+# ---------- 黄线 LAB 阈值 ----------
+# 格式：(L_min, L_max, A_min, A_max, B_min, B_max)
+# 注意：旧版三组 min/max 写反了，这里按 min<=max 修正；建议按实际黄线重新标定
+yellow_threshold = (75, 100, -60, 6, -5, 102)
+
+# ---------- 检测区域（等效裁图 160x60，只处理下半部分）----------
+LEFT_ROI = (0, 60, 60, 60)      # 左端 60px 宽
+RIGHT_ROI = (100, 60, 60, 60)   # 右端 60px 宽
+
+# ---------- 黄线段长度/形状过滤（防噪点误判）----------
+BLOB_PIXELS_THRESHOLD = 6       # find_blobs 合并前的最小色块（先保留小碎片再过滤）
+MIN_LINE_LEN = 20               # 黄线段最小横向长度(px)，滤掉小噪点
+MIN_LINE_H = 2                  # 最小厚度(px)，滤掉 1px 细噪条
+MIN_LINE_PIXELS = 40            # 每侧最少黄色像素总数
+
+# ---------- 停车判断参数 ----------
+STOP_CONFIRM_FRAMES = 2         # 连续多少帧确认
+STOP_HOLD_MS = 300              # 确认后保持停车状态的时间
+START_PROTECT_MS = 5000         # 启动保护，避免起步误触发
+stop_confirm = 0
+stop_hold_until = 0
+start_time = time.ticks_ms()
+
+# ---------- LED 爆闪参数 ----------
+LED_BLINK_MS = 40               # 爆闪间隔(ms)，越小闪得越快
+last_blink_time = 0
+led_on_state = False
+white = LED(4)
+white.off()
+
+# ---------- 判断一侧是否出现"合格的黄线段" ----------
+def side_has_line(blobs):
+    for blob in blobs:
+        if (blob.w() >= MIN_LINE_LEN and
+                blob.h() >= MIN_LINE_H and
+                blob.pixels() >= MIN_LINE_PIXELS):
+            return True
+    return False
+
+# ---------- 主循环 ----------
+while True:
+    clock.tick()
+    img = sensor.snapshot()
+
+    # 左右两端各找黄色色块，中间被物品挡住也不影响
+    left_blobs = img.find_blobs([yellow_threshold], roi=LEFT_ROI,
+                                pixels_threshold=BLOB_PIXELS_THRESHOLD, merge=True)
+    right_blobs = img.find_blobs([yellow_threshold], roi=RIGHT_ROI,
+                                 pixels_threshold=BLOB_PIXELS_THRESHOLD, merge=True)
+
+    # 两侧都要求出现一定长度/厚度的黄线段，噪点不算
+    left_ok = side_has_line(left_blobs)
+    right_ok = side_has_line(right_blobs)
+    is_stop_line = left_ok and right_ok
+
+    # 调试：把找到的色块框出来（不需要时可删除）
+    for blob in left_blobs + right_blobs:
+        img.draw_rectangle(blob.rect(), color=(255, 0, 0), thickness=2)
+
+    # 连续多帧确认，并保持停车状态
+    if is_stop_line:
+        stop_confirm += 1
+    else:
+        stop_confirm = 0
+
+    if stop_confirm >= STOP_CONFIRM_FRAMES and \
+       time.ticks_diff(time.ticks_ms(), start_time) > START_PROTECT_MS:
+        stop_hold_until = time.ticks_add(time.ticks_ms(), STOP_HOLD_MS)
+        stop_car = True
+    else:
+        # 在保持时间内继续发送 stop
+        stop_car = time.ticks_diff(stop_hold_until, time.ticks_ms()) > 0
+
+    # 发送停车命令
+    if stop_car:
+        uart.write("stop\r\n")
+
+    # LED：停车时爆闪，否则熄灭
+    now_ms = time.ticks_ms()
+    if stop_car:
+        if time.ticks_diff(now_ms, last_blink_time) >= LED_BLINK_MS:
+            last_blink_time = now_ms
+            led_on_state = not led_on_state
+            if led_on_state:
+                white.on()
+            else:
+                white.off()
+    else:
+        white.off()
+
+    # 调试：看实际帧率和左右命中情况（不需要时可删除）
+    #print("fps:", clock.fps(), "L:", left_ok, "R:", right_ok)
+
+# # 停止线检测 - OpenART mini 适配版
+# # 1) OpenART mini 在 QQVGA/QVGA 下 set_windowing() 无效，所以用 ROI 软件裁图，
+# #    只处理下半部分 160x60，不复制图像
+# # 2) 不用 binary()+get_pixel()：该固件 get_pixel 返回元组会报错，且逐像素 Python
+# #    扫描太慢；改用 find_blobs 在左右两端 ROI 里找黄色色块（C 实现，快得多）
+# # 3) 中间被物品遮挡不影响：左右两端都检测到黄色才判为停止线（标志位判断）
+
+# import sensor, image, time
+# from machine import UART
+# from pyb import LED
+
+# # ---------- 串口初始化 ----------
+# uart = UART(2, baudrate=115200)   # 根据实际串口号修改
+
+# # ---------- 摄像头初始化 ----------
+# sensor.reset()
+# sensor.set_pixformat(sensor.RGB565)
+# sensor.set_framesize(sensor.QQVGA)          # 160x120
+# # 注：OpenART mini 在 QQVGA/QVGA 下 set_windowing() 无效（VGA 下才有效），
+# #     所以裁图改为在检测时用 ROI 实现，等效只处理下半部分 160x60。
+# # 如果摄像头装反/镜像，取消下面注释：
+# # sensor.set_hmirror(True)
+# # sensor.set_vflip(True)
+# sensor.skip_frames(time=2000)
+# sensor.set_auto_gain(False)
+# sensor.set_auto_whitebal(False)
+# sensor.set_auto_exposure(False, exposure_us=1200)  # 锁定曝光，减少拖影
+
+# clock = time.clock()
+
+# # ---------- 黄线 LAB 阈值 ----------
+# # 格式：(L_min, L_max, A_min, A_max, B_min, B_max)
+# # 注意：旧版三组 min/max 写反了，这里按 min<=max 修正；建议按实际黄线重新标定
+# yellow_threshold = (75, 100, -60, 6, -5, 102)
+
+# # ---------- 检测区域（等效裁图 160x60，只处理下半部分）----------
+# LEFT_ROI = (0, 60, 60, 60)      # 左端 60px 宽
+# RIGHT_ROI = (100, 60, 60, 60)   # 右端 60px 宽
+# MIN_PIXELS = 40                 # 每侧最少黄色像素数，滤掉噪点
+
+# # ---------- 停车判断参数 ----------
+# STOP_CONFIRM_FRAMES = 2         # 连续多少帧确认
+# STOP_HOLD_MS = 300              # 确认后保持停车状态的时间
+# START_PROTECT_MS = 5000         # 启动保护，避免起步误触发
+# stop_confirm = 0
+# stop_hold_until = 0
+# start_time = time.ticks_ms()
+
+# # ---------- LED 指示（可选） ----------
+# white = LED(4)
+# white.off()
+
+# # ---------- 主循环 ----------
+# while True:
+#     clock.tick()
+#     img = sensor.snapshot()
+
+#     # 左右两端各找黄色色块，中间被物品挡住也不影响
+#     left_blobs = img.find_blobs([yellow_threshold], roi=LEFT_ROI,
+#                                 pixels_threshold=MIN_PIXELS, merge=True)
+#     right_blobs = img.find_blobs([yellow_threshold], roi=RIGHT_ROI,
+#                                  pixels_threshold=MIN_PIXELS, merge=True)
+
+#     left_ok = len(left_blobs) > 0
+#     right_ok = len(right_blobs) > 0
+#     is_stop_line = left_ok and right_ok
+
+#     # 调试：把找到的色块框出来（不需要时可删除）
+#     for blob in left_blobs + right_blobs:
+#         img.draw_rectangle(blob.rect(), color=(255, 0, 0), thickness=2)
+
+#     # 连续多帧确认，并保持停车状态
+#     if is_stop_line:
+#         stop_confirm += 1
+#     else:
+#         stop_confirm = 0
+
+#     if stop_confirm >= STOP_CONFIRM_FRAMES and \
+#        time.ticks_diff(time.ticks_ms(), start_time) > START_PROTECT_MS:
+#         stop_hold_until = time.ticks_add(time.ticks_ms(), STOP_HOLD_MS)
+#         stop_car = True
+#     else:
+#         # 在保持时间内继续发送 stop
+#         stop_car = time.ticks_diff(stop_hold_until, time.ticks_ms()) > 0
+
+#     # 发送停车命令
+#     if stop_car:
+#         uart.write("stop\r\n")
+#         white.on()                          # LED 指示停车状态
+#     else:
+#         white.off()
+
+#     # 调试：看实际帧率和左右命中情况（不需要时可删除）
+#     print("fps:", clock.fps(), "L:", left_ok, "R:", right_ok)
+主车
+
+
+===== TABLE 1 =====
+ | 
+图2-4 主车推杆 | 图2-5 从车推杆
+
+===== TABLE 2 =====
+模块 | 硬件平台 | 代码路径 | 职责
+主摄像头 | OpenART Plus（RT117x） | Main_camera/main.py | YOLO 目标检测、目标锁定跟踪、停止线/后板线检测，通过串口上报主车
+副摄像头 | OpenART mini（RT106x） | Second_camera/main.py | 黄色停止线检测，检测到后通过串口发送停车命令
+主车主控 | RT1021_BTB 核心板（144pin，MicroPython） | master/run.py | 运动控制、任务状态机、物品推送逻辑、主从车通信
+从车主控 | RT1021_BTB 核心板（144pin，MicroPython） | second/run_2.py | 从车运动控制（当前版本为基础运动控制/调试程序）
+引脚配置 | OpenART 系列 | cmm_load.py + cmm_cfg.csv | 引脚/外设映射加载

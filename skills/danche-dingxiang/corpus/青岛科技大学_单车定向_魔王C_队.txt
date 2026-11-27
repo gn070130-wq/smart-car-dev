@@ -1,0 +1,740 @@
+   第21届全国大学生智能汽车竞赛
+技术报告
+
+
+
+
+
+
+
+
+
+						学		校:青岛科技大学
+					队伍名称:魔王C+队
+					参赛队员:余伟明 张瑞 戚靖浩
+					带队教师:邢关生 李振伟
+
+关于技术报告和研究论文使用授权的说明
+本人完全了解全国大学生智能汽车竞赛有关保留、使用技术报告和研究论文的规定，即：参赛作品著作权归参赛者本人，比赛组委会可以在相关主页上收录并公开参赛作品的设计方案、技术报告以及参赛模型车的现场录像、图像资料，并将相关内容编辑收录在组委会出版论文集中。
+
+
+
+
+
+
+
+
+
+
+              日        期：2026年8月18日
+
+目  录
+
+
+第一章  引言
+1.1 课题背景
+单车定向组要求车辆在限定场地内依靠车载计算、感知和执行机构自主完成定向行驶任务。与四轮车不同，两轮单车在低速和转向过程中存在显著的侧倾—转向耦合，既要保证纵向速度，又要通过前轮转角及时产生侧向支撑，因此系统的实时性、姿态估计质量和控制器协调性直接决定车辆能否稳定运行[1]。
+本车采用单车定向 N1 一体成型车架，后轮升级为无刷电机，使用组委会提供的 TC264 核心板作为主控制器。自制主板完成供电、接口与执行机构连接，自制 CYT2BL3 无霍尔无刷单驱完成后轮驱动，ICM42688 六轴姿态传感器提供三轴角速度与三轴加速度，自制 TLE5012B 磁编码器板提供转速/里程反馈。软件基于逐飞 TC264 开源库开发，形成姿态解算、平衡转向、速度闭环、里程航位推算和分段路径控制的完整链路[6]。
+1.2 设计目标与主要工作
+设计目标是在不改变指定车模基本形式的前提下，实现可靠上电、自主起步、稳定直行、按预设路径转向及异常倒伏停车。围绕该目标，主要完成以下工作：一是调整机械安装位置，使电池、主板和传感器靠近车架中心并降低无效振动；二是设计分级电源、无刷驱动和磁编码器电路；三是建立 1 ms 实时控制框架，融合陀螺仪与加速度计得到姿态；四是采用方向外环—侧倾/转向内环、速度增量式 PID 和航位推算实现定向行驶；五是通过屏幕菜单、无线串口、蜂鸣器和 Flash 参数存储完成调试。
+1.3 报告结构
+第二章介绍总体方案；第三章说明机械安装与连接；第四章给出电路设计；第五章阐述软件架构及核心算法；第六章总结开发、制作和调试过程；第七章列出模型车主要技术参数；第八章给出结论与改进方向。附录 A 收录三张完整原理图，附录 B 收录核心算法子程序。
+
+第二章  系统总体方案
+2.1 设计思路
+系统采用“机械低重心布置—多源状态反馈—分层闭环控制—路径状态机决策”的设计思路。主控以 IMU 姿态与后轮速度为快速反馈，以累计里程和航向为导航状态；路径模块给出目标航向和目标速度，方向环把航向误差换算为目标侧倾角，平衡模块再把目标侧倾角换算为前轮舵机角度，速度环则控制后轮无刷电机。目标量通过斜坡函数平滑，避免航向或速度阶跃造成瞬时冲击。
+2.2 系统组成与信息流
+表2.1 系统组成及功能
+
+软件中 CPU0 承担 1 ms 实时中断、倒伏判断和 Flash 后台服务，CPU1 负责路径初始化、蜂鸣器判断、按键扫描、调试数据输出和菜单显示。双核之间通过初始化同步事件协调，耗时的 Flash 擦写以及人机交互均不放入 1 ms 中断，降低非实时任务对核心控制的影响。
+2.3 控制周期与安全策略
+CCU6 通道 0 配置为 1 ms 周期中断。每次中断依次更新全局位置和惯性导航状态，读取 ICM42688 并完成四元数姿态解算，执行科目控制、速度反馈滤波、后轮命令输出和里程累计；增量式速度 PID 每 10 次中断更新一次，即 100 Hz。转向舵机 PWM 频率为 300 Hz，无刷驱动通信串口为 460800 bit/s。CPU0 后台持续检查车辆侧倾角，绝对值超过 40° 时置停止状态并清除启动标志，避免倒伏后电机持续输出。
+
+第三章  机械结构与安装
+3.1 N1 车模与改造原则
+N1 车模采用金属一体成型主车架、前轮转向机构和后轮驱动机构。车架已有用于主板、电池和支架安装的孔位，可减少二次加工造成的几何误差。机械改造遵循轴线对正、结构刚度优先、线束不干涉、重心靠近纵向中心面和易维护五项原则。后轮更换为无刷电机驱动，以提高效率与速度控制性能；前轮保留舵机转向，通过控制前轮转角建立维持侧向平衡所需的轨迹曲率。
+
+图3.1 单车定向 N1 车模
+完成装配后的前视、侧视和俯视状态如图3.2所示。三视图直观反映了前端保护支架、转向舵机、电池、主板、驱动板及线束在车架上的相对位置，并作为整车包络尺寸实测时的结构依据。
+
+图3.2 完成装配后的模型车三视图（左上为前视图，右上为俯视图，下方为侧视图）
+为降低车辆倒伏或前部碰撞时舵机及转向机构直接受冲击的风险，车架前端加装舵机保护支架。支架采用纵向护梁与端部加强结构形成前端围护，其结构如图3.3所示；支架通过车架前部三处预留孔位固定，孔位对应关系如图3.4所示。装配后应确认支架不限制前轮转向行程，且与舵机摆臂、连杆和线束保持安全间隙。
+
+图3.3 前端舵机保护支架结构
+
+图3.4 前端舵机保护支架安装位置
+3.2 主板、电池与驱动板安装
+主板和无刷驱动板不直接分散固定在车架上，而是统一安装在与 N1 车模配套的专用“主板驱动安装板”上。安装板作为两块电路板共同的机械基准，再利用车架预留孔位与螺钉固定于车架中部。主板与安装板之间、驱动板与安装板之间均设置绝缘垫柱，使板底焊点和过孔与金属件保持安全间隙，同时形成底部走线和散热空间。主板使用安装板上部、环绕中心圆孔布置的四个固定孔，孔位对应关系如图3.5所示；无刷驱动板使用安装板下部的四个固定孔，孔位对应关系如图3.6所示。
+装配时将主板布置在便于连接屏幕、按键、IMU 和通信接口的一侧，将无刷驱动板布置在靠近后轮电机的一侧，接插件朝向车架外缘或预定走线方向，便于插拔和赛前检修。采用独立安装板后，主板与驱动板的相对位置不随车架振动或拆装而改变，可减少线束拉扯并提高装配重复性。驱动板至后轮电机的三相功率线和电池输入线按最短路径布置，功率线束与 IMU、磁编码器及串口等弱信号线分区固定；必须交叉时采用近似垂直的走向，避免长距离平行。
+
+图3.5 主板在专用安装板上的安装位置
+
+图3.6 无刷驱动板在专用安装板上的安装位置
+电池不与电路板叠压，而是单独放置在车架中下部的矩形电池仓内，具体安装位置如图3.7所示。该位置靠近车辆纵向中心且低于主板安装区域，有利于降低整车重心，并减小电池质量对转向响应的附加影响。电池采用仓体机械限位与绑带双重固定，电池引线从靠近主板电源输入的一端引出并设置应力释放，确保急转、制动或倒伏时电池不发生窜动、接头不承受拉力。最终装配应保证安装板紧固无翘曲、板卡间无导电接触、线束不进入车轮和前叉运动范围，并为电源开关、调试口和主要接插件保留操作空间。
+
+图3.7 电池在车架中下部电池仓内的安装位置
+3.3 传感器安装
+ICM42688 安装面应与车体坐标系保持固定关系，模块安装在主板上的刚性区域，远离电机相线和松动线束，实物如图3.8所示。软件通过 GYRO_DATA_X/Y/Z 与 ACC_DATA_X/Y/Z 宏完成传感器坐标到车体坐标的映射：车体 X 轴取传感器 −Y 轴，车体 Y 轴取传感器 X 轴，Z 轴方向保持不变。上电及复位后的初始收敛阶段应保持车辆静止，避免动态加速度影响重力方向估计。
+
+图3.8 ICM42688 六轴姿态传感器模块实物
+磁编码器板安装在后轮轴端，通过三个安装孔与后轮轴承座外侧的三点孔位固定，具体位置如图3.9所示。安装时应使 TLE5012B 芯片中心与磁体旋转轴同轴，并保持轴向间隙稳定；板上 3.3 V 稳压、串联电阻和 5.1 V 钳位器件用于提高供电和接口可靠性。
+
+图3.9 磁编码器板在后轮轴端的安装位置
+3.4 线束与结构检查
+所有接插件按电源、舵机、无刷信号、GPS/无线串口、屏幕和编码器分类。线束沿车架内侧固定，并在前叉转动范围内预留弯曲余量；任何转角下均不得触碰轮胎。装配完成后依次检查前后轮共面、车轮自由转动、舵机中位、后轮旋向、螺钉防松、主板绝缘、保护支架间隙和重心左右对称。控制模型所需的轴距及质心位置实测填写项列于表7.1。
+
+第四章  电路设计
+4.1 总体电气方案
+电气系统由组委会 TC264 核心板、自制单车主板、自制 CYT2BL3 无刷单驱板和自制 TLE5012B 磁编码器板构成。组委会提供的核心 MCU 板不展开内部电路，只说明其与外围板的连接。电池输入进入主板和无刷驱动板；主板生成 5 V、舵机电源、3.3 V 与独立 IMU 电源，无刷驱动板生成自身 5 V、3.3 V 电源并完成三相功率驱动。各板共地，接口按电压域和功能分组[2]。
+4.2 单车主板
+主板通过双排连接器引出 TC264 的 GPIO、PWM、串口和 SPI 信号。两路 SCT2450 开关降压电路分别提供 5 V 稳压电源与舵机电源，输入端设置 SS54 肖特基二极管，输出端采用电感及大容量电容滤波。RT9013-33 线性稳压器分别产生系统 3.3 V 与 ICM42688 专用电源，降低数字负载变化对惯性测量的影响。姿态传感器使用硬件 SPI0、模式 0、5 MHz 通信，SCLK、MOSI、MISO 和 CS 分别连接 P20.11、P20.14、P20.12 和 P20.13，沿用原 IMU 接口而不额外占用引脚。主板还集成五向开关、蜂鸣器、IPS200 屏接口、GPS 接口、无线串口、编码器接口和无刷信号接口。
+4.3 CYT2BL3 无刷单驱
+无刷单驱以 CYT2BL3CAx 为控制核心，FD6288Q 作为三相预驱，六只功率 MOS 管组成三相桥。控制器输出三组互补 PWM，经预驱产生高低侧栅极信号；自举二极管和电容为高侧驱动供电。电池输入端并联多只 22 μF 电容并设置 SMAJ16CA 瞬态抑制器，抑制换相电流造成的母线纹波和尖峰。板上 RY9121E 分别产生 5 V 与 3.3 V 电源，UART 用于接收 TC264 的占空比命令并回传后轮速度帧，通信帧采用 0xA5 帧头和累加和校验。
+4.4 磁编码器板
+磁编码器板采用 TLE5012BE1000 角度传感器。RT9013-33 将接口电源稳压为 3.3 V，C1～C4 完成输入、输出和芯片就地去耦；CLK、CS、MOSI、MISO 通过串联电阻连接至六针接口，5.1 V 稳压二极管提供接口过压保护。编码器角度经驱动板处理后形成后轮速度反馈，主控进一步进行五点滑动窗口求和滤波[3]。
+4.5 电源完整性与电容统计
+功率回路与控制回路采用分区布置：MOS 管、母线电容和相线构成尽可能短的高电流回路；MCU、晶振、调试口和通信接口远离功率桥。每个电源芯片的输入输出均配置高频陶瓷电容和储能电容，IMU 单独稳压。依据提供的三张原理图逐一按标称值折算，电容统计如下。该数值不包含组委会 TC264 核心板及屏幕、IMU 成品模块内部未给出的电容。
+表4.1 自制电路板电容容量统计
+
+
+第五章  控制软件设计
+5.1 软件架构与任务分配
+软件使用 AURIX Development Studio 与逐飞 TC264 开源库，以 C 语言开发。上电后 CPU0 完成时钟与调试串口初始化，再由 all_init 依次初始化通信帧、导航、显示、ICM42688、姿态与控制结构、无线串口、无刷通信、按键、蜂鸣器、舵机、Flash 参数、路径和周期中断。CPU0 后台循环执行倒伏判断与 Flash 服务；CPU1 等待双核同步后循环执行 Path_Init、Buzzer_Judge、Key_scan、调试数据输出和 menu1。实时控制集中在 CPU0 的 1 ms 中断中，避免菜单刷新和 Flash 擦写阻塞控制链路[5]。
+表5.1 软件任务安排
+
+5.2 ICM42688 采集与四元数姿态解算
+ICM42688 初始化时先保持 CS 为高电平并等待 10 ms，再以 SPI0 模式 0、5 MHz 读取 WHO_AM_I；只有芯片标识为 0x47 才继续配置。加速度计设为 ±16 g、1 kHz，陀螺仪设为 ±2000 °/s、1 kHz，二者进入低噪声模式后最多尝试 10 次有效数据读取；上层 Gyroscope_Init 在失败时最多重试 3 次。正常采集从 ACCEL_DATA_X1 起连续突发读取 12 字节，一次获得六轴原始量，避免分两次访问造成的采样时刻差异[4]。
+原始坐标按 Xb=−Ys、Yb=Xs、Zb=Zs 映射到车体坐标；陀螺仪按 16.384 LSB/(°/s) 换算，加速度计按 2048 LSB/g 换算。加速度模长位于 0.9g～1.1g 时判定为近静止，低通系数取 0.8；运动时低通系数取 0.6，并将比例校正降为静止时的 0.8 倍、积分修正降为 0.1 倍，避免转弯向心加速度被误认为重力方向。初始化后的前 0.1 s 使用较强比例校正加快四元数收敛，Z 轴角速度还设置 0.05 rad/s 死区以减小静止偏航漂移。
+由当前四元数计算重力在车体坐标系中的投影，与归一化加速度向量作叉乘得到误差 e。横滚与俯仰角速度经比例—积分修正后按 1 ms 步长积分四元数，再进行归一化并转换为横滚、俯仰和偏航角。ICM42688 不含磁力计，重力向量不能校正绕 Z 轴的偏航，因此偏航通道只积分经死区处理的陀螺仪角速度；航向统一归一化到 −180°～180°，解决跨越 ±180° 时的方向突变，但长时间运行仍需评估惯性积分漂移。
+5.3 航位推算与路径表示
+后轮速度反馈在每个 1 ms 周期内换算为位移增量 Δs，当前航向 ψ 由姿态解算给出。车辆在平面内的位置按公式2更新。路径既可通过示教过程将厘米坐标写入 Flash，也可由 Waypoint_t 数组直接给出触发里程、目标航向、目标速度和转角等待标志。Flash 坐标采用 int16_t、单位厘米，名义量化分辨率为 1 cm。
+运行时，系统比较累计里程与下一航点触发距离。若当前航点要求等待转角，只有航向误差小于 5° 才继续累计里程和切换航点，从而防止掉头尚未完成就进入下一段。目标航向采用每次最大 0.5°或按科目设定步长的斜坡过渡，速度采用加速 0.005 m/s、减速 0.008 m/s 的非对称斜坡，提高起步和制动稳定性。
+5.4 方向外环与侧倾—转向控制
+方向外环首先计算目标航向与当前航向的最短角误差，并在 ±180°边界处修正。PD 控制器把航向误差映射为目标侧倾角，其输出按不同科目限制在 ±10°或±15°，防止方向环要求过大侧倾而导致倒伏。
+侧倾—转向模块使用轴距 l=0.211 m、质心距后轮接地点 lm=0.0852 m 和当前速度 v 建模。侧倾误差经自适应 PD 得到等效横向加速度指令；低于 0.5 m/s 时按 0.5/v 放大微分阻尼，并把模型计算速度下限限制为 0.2 m/s，避免分母过小。随后由自行车几何关系求得舵机目标角，反三角函数输入、舵机角和目标侧倾角均设限幅[7]。
+舵机中值占空比为 5100，每度增量约 32.333，占空比最终限制在 2000～8000。目标侧倾角还经过 0.01°/ms 的软启动斜坡，避免使能瞬间的转向冲击。
+5.5 后轮速度闭环
+主控通过 UART3 在初始化时请求无刷驱动连续回传速度帧，驱动默认约每 10 ms 上报一次；接收回调验证 0xA5 帧头及七字节累加和后更新速度。1 ms 中断读取最新反馈并送入长度为 5 的滑动窗口求和滤波。速度目标乘以标定系数 1357.9125，换算为每毫秒反馈单位；增量式 PID 每 10 ms 以当前、上次和上上次误差计算输出增量，输出限制在 ±6000 后由 1 ms 任务持续发送给无刷驱动。
+当前速度环参数为 Kp=1.65、Ki=0.03、Kd=0。程序使用 |目标值|×1.3+100 作为动态积分阈值：误差超出阈值时停止积分，避免起步或堵转阶段积分累积；当控制输出方向与误差方向相反时，将积分增益临时放大为 3 倍以加快反向修正。参数同时支持从 Flash 读取，便于针对直线、弯道和掉头速度分别整定。
+5.6 状态机与故障处理
+Car_State、start_flag、page_5 和当前航点索引共同构成运行状态。路径模块根据科目选择不同的航点表和控制器组合；坡道、绕桩、草地等特殊标志可写入 Flash 并在运行时切换状态。蜂鸣器用于初始化完成、参数操作和阶段提示。侧倾绝对值超过 40°触发倒伏截停；ICM42688 初始化与数据有效性、速度、航向和舵机输出均设置检查或限幅，Flash 数据使用魔数与计数信息校验，通信帧使用累加和校验。
+
+第六章  开发、制作与调试
+6.1 开发工具
+表6.1 主要开发与制作工具
+
+6.2 电路制作与上电检查
+焊接完成后先在断电状态检查电源与地之间是否短路，并核对二极管、稳压器、MOS 管和电解/钽电容方向。首次上电使用限流电源，依次测量电池端、5 V、舵机电源、3.3 V 和 ICM42688 专用电源；确认纹波及芯片温升正常后再插入 TC264 核心板、ICM42688、屏幕和舵机。姿态传感器接入后先核对 SPI0 四线连接和 CS 上电高电平，再确认 WHO_AM_I=0x47。无刷功率级首次测试应断开车轮负载或架空后轮，逐步增加占空比并检查三相波形和旋向。
+6.3 软件分阶段调试
+调试按“单模块—内环—外环—整车路径”逐级进行。首先验证按键、屏幕、蜂鸣器、无线串口和 Flash；其次确认 ICM42688 自检成功、原始六轴数据不为全 0 或全 0xFFFF，并检查 Xb=−Ys、Yb=Xs、Zb=Zs 的轴向映射与姿态角方向；再验证舵机中位、左右极限和后轮速度反馈符号。速度环在架空和低速地面条件下整定，先 P、后 I，再按需要加入 D。方向和平衡控制从小输出限幅开始，逐步提高 Kp 并增加 Kd 抑制摆动。最后建立短直线、定角转向、掉头和完整路径测试。
+6.4 关键问题及处理
+表6.2 调试问题及解决方法
+
+
+第七章  模型车主要技术参数
+模型车平台、控制器、传感器、执行机构、控制频率、电容容量及安全限幅等主要技术参数汇总见表7.1。
+表7.1 模型车主要技术参数
+
+表7.1 模型车主要技术参数（续）
+
+
+第八章  结论
+8.1 工作总结
+本车以 N1 两轮车模和 TC264D 为核心，完成了机械安装、主板/无刷驱动/磁编码器三块电路设计，以及 ICM42688 六轴数据采集、四元数姿态解算、速度闭环、方向—侧倾—舵机控制、航位推算和航点状态机的软件实现。系统以 1 ms 周期读取 IMU 并运行姿态与核心控制，以 10 ms 周期更新速度 PID；方向外环生成目标侧倾角，再由带低速增益调度的自行车模型求解舵机角。速度、航向和侧倾目标均采用斜坡过渡，并设置传感器自检、倒伏、通信、Flash 和输出限幅保护。
+8.2 特点与不足
+方案的主要特点是把单车的方向控制与侧倾平衡统一到目标侧倾角这一中间变量，并针对低速模型奇异性增加有效速度下限和微分阻尼；ICM42688 采用六轴同步突发读取并设置身份与数据有效性检查；路径既可示教存储，也可由航点表配置，便于多科目复用。现阶段不足在于 ICM42688 不含磁力计，航向依赖 Z 轴角速度积分，长距离存在漂移；后轮里程会受轮胎打滑和直径变化影响；部分路径参数仍依赖人工整定。
+8.3 后续改进方向
+后续可引入磁航向或 GNSS/RTK 的低频校正，与 IMU 和轮速构成误差状态滤波；利用在线曲率和侧倾裕量进行速度规划；对电流、母线电压和温度增加采样保护；通过结构模态检查优化 IMU 安装刚度；建立自动化数据记录与参数辨识流程。
+
+参考文献
+[1] 全国大学生智能汽车竞赛组委会. 第二十一届全国大学生智能汽车竞赛技术报告要求细则[EB/OL]. (2026-08-07)[2026-08-18]. https://blog.csdn.net/zhuoqingjoking97298/article/details/163553155.
+[2] Infineon Technologies AG. AURIX TC26xB User's Manual[Z]. Neubiberg: Infineon Technologies AG.
+[3] Infineon Technologies AG. TLE5012B GMR-Based Angle Sensor User's Manual[Z]. Neubiberg: Infineon Technologies AG.
+[4] TDK InvenSense. ICM-42688-P High Precision 6-Axis MEMS MotionTracking Device Datasheet[Z].
+[5] 成都逐飞科技有限公司. TC264 开源库及外设驱动程序[CP/OL].
+[6] 余伟明, 张瑞, 戚靖浩. 单车定向 N1 控制程序、单车主板及无刷驱动原理图[Z]. 2026.
+[7] 王田苗, 丑武胜. 机电控制基础理论及应用[M]. 北京: 清华大学出版社, 2018.
+
+附录A  电路板详细设计原理图
+
+图A-1 单车主板完整原理图
+
+图A-2 CYT2BL3 无霍尔无刷单驱完整原理图
+
+图A-3 TLE5012B 磁编码器板完整原理图
+
+附录B  核心算法子程序
+以下程序直接摘自 2026.8.17 版 TC264 工程，保留函数接口、关键参数与保护逻辑。除本次改型直接相关的 ICM42688 初始化和突发采集外，其余开源库底层驱动不再重复列出。
+程序B-1  1 ms 实时控制中断
+IFX_INTERRUPT(cc60_pit_ch0_isr, 0, CCU6_0_CH0_ISR_PRIORITY)
+{
+    interrupt_global_enable(0);
+    count1++;
+    count2++;
+    count3++;
+   // count4++;
+    Update_Global_Position(motor_speed_feedback);
+    Nag_System();
+    Gyroconture();
+    if(Gyroscope_Data_Valid())
+    {
+        quaternion_module_calculate(&roll_balance_cascade);
+        Yaw_Integral();
+    }
+    Subject_ctrl();
+    motor_speed_feedback = Sliding_Window_Sum_Filter(small_driver_get_rear_speed());
+    motor_use();
+//    target_pulse = 0.35 * SPEED_TO_PULSE_1MS;
+//    real_speed_ms=motor_speed_feedback/SPEED_TO_PULSE_1MS;
+//    small_driver_set_duty((int16)pwm, 0);
+    //small_driver_set_duty(500, 0);
+    if(pause_mileage_flag==0)
+    {
+    ALL_S += motor_speed_feedback;
+    total_distance_m = (float)ALL_S / (SPEED_TO_PULSE_1MS * 1000.0f);
+    }
+    if(count1>=10)
+    {
+        count1=0;
+    }
+    if(count2%10==0)
+    {
+        if(Car_State == Start_Car && start_flag == 1) pwm = PID_Calculate_Incremental(&motor_pid, (int32)target_pulse, motor_speed_feedback);
+//        Navigation_Tick();
+        //if(servo_flag==1) Body_ctrl_2();
+ 
+    }
+ 
+//    if(count3>=1000&&Car_State == Start_Car)
+//    {
+//        count3=0;
+//        //if(Tim_flag==0) tim_count++;
+//        tim_count++;
+//        count4++;
+//        if(count4>=5&&Car_State == Start_Car)
+//        {
+//            servo_flag=0;
+//            Car_State = Stop_Car;
+//            start_flag = 0;
+//        }
+//    }
+//    if(count4>=500)
+//    {
+//        count4=0;
+//        rro+=10;
+//        if(rro>=90)  rro=90;
+//    }
+ 
+    pit_clear_flag(CCU60_CH0);
+}
+程序B-2  ICM42688 初始化与自检
+uint8 icm42688_init (void)
+{
+    uint8 return_state = 0;
+    uint8 data_check_count = 0;
+ 
+    // ICM42688 上电期间 CS 必须保持高电平，避免芯片进入错误的串行接口状态。
+    gpio_init(ICM42688_CS_PIN, GPO, GPIO_HIGH, GPO_PUSH_PULL);
+    ICM42688_CS(1);
+    system_delay_ms(10);                                                        // 等待传感器上电稳定
+    spi_init(ICM42688_SPI, SPI_MODE0, ICM42688_SPI_SPEED,
+             ICM42688_SPC_PIN, ICM42688_SDI_PIN, ICM42688_SDO_PIN, SPI_CS_NULL);
+    ICM42688_CS(1);
+    icm42688_who_am_i = 0;
+    icm42688_data_valid = 0;
+ 
+    do
+    {
+        icm42688_write_register(ICM42688_REG_BANK_SEL, 0x00);                   // 确保后续访问 Bank 0
+        if(icm42688_self_check())
+        {
+            zf_log(0, "ICM42688 self check error.");
+            return_state = 1;
+            break;
+        }
+ 
+        // 与官方例程保持一致：先关闭传感器，再配置量程和输出速率。
+        icm42688_write_register(ICM42688_PWR_MGMT0, 0x00);
+        system_delay_ms(10);                                                    // PWR_MGMT0 写入后至少等待 200 us
+ 
+        if(icm42688_set_config(ICM42688_ACC_SAMPLE_DEFAULT, ICM42688_ACC_ODR_DEFAULT,
+                               ICM42688_GYRO_SAMPLE_DEFAULT, ICM42688_GYRO_ODR_DEFAULT))
+        {
+            zf_log(0, "ICM42688 default config error.");
+            return_state = 1;
+            break;
+        }
+ 
+        icm42688_write_register(ICM42688_PWR_MGMT0, 0x0F);                      // 陀螺仪和加速度计进入低噪声模式
+        system_delay_ms(50);                                                    // 等待陀螺仪启动并输出稳定数据
+ 
+        // 连续尝试读取有效数据，避免上电后的第一帧全 0 被送入姿态解算。
+        for(data_check_count = 0; data_check_count < 10; data_check_count ++)
+        {
+            icm42688_get_acc_gyro();
+            if(icm42688_data_valid)
+            {
+                break;
+            }
+            system_delay_ms(2);
+        }
+ 
+        if(0 == icm42688_data_valid)
+        {
+            zf_log(0, "ICM42688 data check error.");
+            return_state = 1;
+        }
+    }while(0);
+ 
+    return return_state;
+}
+程序B-3  ICM42688 六轴突发采集
+void icm42688_get_acc_gyro (void)
+{
+    uint8 data[12];
+ 
+    icm42688_read_registers(ICM42688_ACCEL_DATA_X1, data, 12);
+    icm42688_acc_x  = (int16)(((uint16)data[0]  << 8) | data[1]);
+    icm42688_acc_y  = (int16)(((uint16)data[2]  << 8) | data[3]);
+    icm42688_acc_z  = (int16)(((uint16)data[4]  << 8) | data[5]);
+    icm42688_gyro_x = (int16)(((uint16)data[6]  << 8) | data[7]);
+    icm42688_gyro_y = (int16)(((uint16)data[8]  << 8) | data[9]);
+    icm42688_gyro_z = (int16)(((uint16)data[10] << 8) | data[11]);
+ 
+    // 静止时加速度至少有一个轴包含约 1 g；全 0 或全 0xFFFF 表示 SPI 数据无效。
+    if(((0 == icm42688_acc_x) && (0 == icm42688_acc_y) && (0 == icm42688_acc_z)) ||
+       ((-1 == icm42688_acc_x) && (-1 == icm42688_acc_y) && (-1 == icm42688_acc_z)))
+    {
+        icm42688_data_valid = 0;
+    }
+    else
+    {
+        icm42688_data_valid = 1;
+    }
+}
+程序B-4  四元数姿态解算
+void quaternion_module_calculate(cascade_value_struct *cascade_value)
+{
+    static float first_count_time = 0;  // 首次计算时间计数器（用于快速收敛）
+    float length;                       // 四元数模长（用于归一化）
+    float x, y, z;                      // 陀螺仪角速度（弧度/秒）
+    int32 gyro_x_count;
+    int32 gyro_y_count;
+    int32 gyro_z_count;
+ 
+    // 保持 new_imu 的坐标映射和 10 LSB 量化方式，直接使用陀螺仪原始数据。
+    gyro_x_count = (int32)GYRO_DATA_X;
+    gyro_y_count = (int32)GYRO_DATA_Y;
+    gyro_z_count = (int32)GYRO_DATA_Z;
+ 
+    gyro_x_count = gyro_x_count / 10 * 10;
+    gyro_y_count = gyro_y_count / 10 * 10;
+    gyro_z_count = gyro_z_count / 10 * 10;
+ 
+    x = (float)gyro_x_count / GYRO_TRANSITION_FACTOR * 0.01745329f;
+    y = (float)gyro_y_count / GYRO_TRANSITION_FACTOR * 0.01745329f;
+    z = (float)gyro_z_count / GYRO_TRANSITION_FACTOR * 0.01745329f;
+ 
+    // 加速度计数据转换：原始数据 -> g 为单位（1g ≈ 9.8 m/s2）
+    float ax_g = (float)ACC_DATA_X / ACC_TRANSITION_FACTOR;
+    float ay_g = (float)ACC_DATA_Y / ACC_TRANSITION_FACTOR;
+    float az_g = (float)ACC_DATA_Z / ACC_TRANSITION_FACTOR;
+ 
+    bool static_state = is_static_state(ax_g, ay_g, az_g);  // 判断设备是否静止
+    float acc_alpha = static_state ? 0.8f : 0.6f;           // 静止时滤波系数更大（平滑效果更好）
+ 
+    // 加速度计数据低通滤波
+    acc_lowpass_filter(&ax_g, &ay_g, &az_g,
+                       &cascade_value->quaternion.pro.acc_filtered[0],
+                       &cascade_value->quaternion.pro.acc_filtered[1],
+                       &cascade_value->quaternion.pro.acc_filtered[2], acc_alpha);
+ 
+    // 取滤波后的加速度数据
+    float ax = cascade_value->quaternion.pro.acc_filtered[0];
+    float ay = cascade_value->quaternion.pro.acc_filtered[1];
+    float az = cascade_value->quaternion.pro.acc_filtered[2];
+ 
+    acc_normalize(&ax, &ay, &az);  // 加速度数据归一化
+ 
+    // 取出当前四元数 (w, x, y, z)
+    float q0 = cascade_value->quaternion.pro.qua[0];
+    float q1 = cascade_value->quaternion.pro.qua[1];
+    float q2 = cascade_value->quaternion.pro.qua[2];
+    float q3 = cascade_value->quaternion.pro.qua[3];
+ 
+    // 根据当前四元数计算重力向量在机体坐标系中的投影（用于与加速度计数据对比）
+    float gx = 2 * (q1 * q3 - q0 * q2);
+    float gy = 2 * (q0 * q1 + q2 * q3);
+    float gz = q0 * q0 - q1 * q1 - q2 * q2 + q3 * q3;
+ 
+    // 计算加速度计与重力投影的误差（梯度误差）
+    float ex = ay * gz - az * gy;
+    float ey = az * gx - ax * gz;
+    float ez = ax * gy - ay * gx;
+ 
+    // 根据静止状态调整校正系数（运动时减弱校正，避免引入噪声）KI不衰减，保证积分校正力度
+    float kp = static_state ? cascade_value->posture_value.correct_kp : cascade_value->posture_value.correct_kp * 0.8f;
+    float ki = cascade_value->posture_value.correct_ki;
+ 
+    // 首次计算的前 0.1 秒，使用大比例系数加速收敛
+    if(first_count_time < 0.1f)
+    {
+        first_count_time += cascade_value->posture_value.call_cycle;  // 累加时间
+        kp = 10.0f;  // 强比例校正，快速收敛
+    }
+ 
+    // 动态时积分力度降为1/10
+    float integral_gain = static_state ? 1.0f : 0.1f;
+ 
+    cascade_value->quaternion.parameter.acc_err[0] += (ex * cascade_value->posture_value.call_cycle) * integral_gain;
+    cascade_value->quaternion.parameter.acc_err[1] += (ey * cascade_value->posture_value.call_cycle) * integral_gain;
+    cascade_value->quaternion.parameter.acc_err[2] += (ez * cascade_value->posture_value.call_cycle) * integral_gain;
+ 
+    // 积分限幅：防止饱和
+    float acc_err_limit = 1.0f;
+    cascade_value->quaternion.parameter.acc_err[0] = (cascade_value->quaternion.parameter.acc_err[0] > acc_err_limit) ? acc_err_limit :
+                                                      (cascade_value->quaternion.parameter.acc_err[0] < -acc_err_limit) ? -acc_err_limit :
+                                                      cascade_value->quaternion.parameter.acc_err[0];
+    cascade_value->quaternion.parameter.acc_err[1] = (cascade_value->quaternion.parameter.acc_err[1] > acc_err_limit) ? acc_err_limit :
+                                                      (cascade_value->quaternion.parameter.acc_err[1] < -acc_err_limit) ? -acc_err_limit :
+                                                      cascade_value->quaternion.parameter.acc_err[1];
+    cascade_value->quaternion.parameter.acc_err[2] = (cascade_value->quaternion.parameter.acc_err[2] > acc_err_limit) ? acc_err_limit :
+                                                      (cascade_value->quaternion.parameter.acc_err[2] < -acc_err_limit) ? -acc_err_limit :
+                                                      cascade_value->quaternion.parameter.acc_err[2];
+ 
+    // 偏航角速度死区：必须在叠加加速度计校正项之前施加
+    // 原因：加速度计 ez 分量无法修正偏航漂移（重力无偏航信息），
+    // 若死区放在校正之后，校正噪声会将 z 推出死区，死区完全失效
+    // 阈值约 2°/s（0.035 rad/s），可在 0.02~0.06 之间调整
+#define YAW_GYRO_DEAD_ZONE  (0.05f)
+    if(z > -YAW_GYRO_DEAD_ZONE && z < YAW_GYRO_DEAD_ZONE)
+        z = 0.0f;
+ 
+    // 用误差校正陀螺仪数据（比例+积分校正）
+    // z 轴（偏航）不叠加加速度计校正，acc_err[2] 强制清零以防止噪声积累
+    x += kp * ex + ki * cascade_value->quaternion.parameter.acc_err[0];
+    y += kp * ey + ki * cascade_value->quaternion.parameter.acc_err[1];
+    cascade_value->quaternion.parameter.acc_err[2] = 0.0f;
+ 
+    // 四元数微分方程更新（根据陀螺仪角速度）
+    cascade_value->quaternion.pro.qua[0] += ((-q1 * x - q2 * y - q3 * z) * cascade_value->posture_value.call_cycle / 2.0f);
+    cascade_value->quaternion.pro.qua[1] += (( q0 * x + q2 * z - q3 * y) * cascade_value->posture_value.call_cycle / 2.0f);
+    cascade_value->quaternion.pro.qua[2] += (( q0 * y - q1 * z + q3 * x) * cascade_value->posture_value.call_cycle / 2.0f);
+    cascade_value->quaternion.pro.qua[3] += (( q0 * z + q1 * y - q2 * x) * cascade_value->posture_value.call_cycle / 2.0f);
+ 
+    // 取出当前四元数 (w, x, y, z)
+    q0 = cascade_value->quaternion.pro.qua[0];
+    q1 = cascade_value->quaternion.pro.qua[1];
+    q2 = cascade_value->quaternion.pro.qua[2];
+    q3 = cascade_value->quaternion.pro.qua[3];
+ 
+    // 四元数归一化（避免数值漂移）
+    length = sqrt(q0 * q0 + q1 * q1 + q2 * q2 + q3 * q3);  // 计算模长
+    if (length > 0.001f)  // 模长有效时才归一化
+    {
+        q0 /= length;
+        q1 /= length;
+        q2 /= length;
+        q3 /= length;
+ 
+        cascade_value->quaternion.pro.qua[0] = q0;
+        cascade_value->quaternion.pro.qua[1] = q1;
+        cascade_value->quaternion.pro.qua[2] = q2;
+        cascade_value->quaternion.pro.qua[3] = q3;
+    }
+    else
+    {
+        // 异常四元数恢复为单位四元数，避免后续姿态角持续输出无效数据。
+        q0 = 1.0f;
+        q1 = 0.0f;
+        q2 = 0.0f;
+        q3 = 0.0f;
+        cascade_value->quaternion.pro.qua[0] = q0;
+        cascade_value->quaternion.pro.qua[1] = q1;
+        cascade_value->quaternion.pro.qua[2] = q2;
+        cascade_value->quaternion.pro.qua[3] = q3;
+    }
+ 
+    // 必须使用归一化后的四元数构造旋转矩阵。
+    float q0_2 = q0 * q0;
+    float q1_2 = q1 * q1;
+    float q2_2 = q2 * q2;
+    float q3_2 = q3 * q3;
+ 
+    // 根据四元数计算旋转矩阵（用于后续姿态角计算）
+    cascade_value->quaternion.data.rot_mat[0][0] = q0_2 + q1_2 - q2_2 - q3_2;
+    cascade_value->quaternion.data.rot_mat[0][1] = 2 * (q1 * q2 + q0 * q3);
+    cascade_value->quaternion.data.rot_mat[0][2] = 2 * (q1 * q3 - q0 * q2);
+    cascade_value->quaternion.data.rot_mat[1][0] = 2 * (q1 * q2 - q0 * q3);
+    cascade_value->quaternion.data.rot_mat[1][1] = q0_2 - q1_2 + q2_2 - q3_2;
+    cascade_value->quaternion.data.rot_mat[1][2] = 2 * (q2 * q3 + q0 * q1);
+    cascade_value->quaternion.data.rot_mat[2][0] = 2 * (q1 * q3 + q0 * q2);
+    cascade_value->quaternion.data.rot_mat[2][1] = 2 * (q2 * q3 - q0 * q1);
+    cascade_value->quaternion.data.rot_mat[2][2] = q0_2 - q1_2 - q2_2 + q3_2;
+//------------------------------------------到时候自己看下输出结果 输出结果正负号记录在手机上了
+    // 根据旋转矩阵计算姿态角（横滚角、俯仰角、偏航角）
+    cascade_value->posture_value.rol = arctan2(cascade_value->quaternion.data.rot_mat[2][2], cascade_value->quaternion.data.rot_mat[1][2]);  // 横滚角
+    cascade_value->posture_value.pit = -arcsin(cascade_value->quaternion.data.rot_mat[0][2]);                                            // 俯仰角
+    cascade_value->posture_value.yaw = arctan2(cascade_value->quaternion.data.rot_mat[0][0], cascade_value->quaternion.data.rot_mat[0][1]);   // 偏航角
+}
+程序B-5  方向外环
+float Direction_Tick(float current_yaw, float current_yaw_rate, float target_yaw)
+{
+    // 1. 计算偏航角误差
+    dir_data.yaw_error = target_yaw - current_yaw;
+ 
+    // 2. 处理 Yaw 角 360 度环绕问题 (非常重要！)
+    // 如果 Yaw 角在 -180 到 180 之间跳变，误差计算会出错，必须将其限制在 ±180 内
+    if (dir_data.yaw_error > 180.0f) {
+        dir_data.yaw_error -= 360.0f;
+    } else if (dir_data.yaw_error < -180.0f) {
+        dir_data.yaw_error += 360.0f;
+    }
+ 
+    // 3. PD 控制计算目标倾角
+    // 误差(P)决定要压多少弯，偏航角速度(D)产生阻尼，防止车头晃动
+    dir_data.target_roll_out = (dir_data.kp * dir_data.yaw_error) - (dir_data.kd * current_yaw_rate);
+ 
+    // 4. 目标倾角严格限幅 (核心保护机制)
+    // 绝对不能让方向环给出过大的倾角，否则单车内环救不回来直接摔倒。
+    // 一般限制在正负 15 度以内 (根据你的车速和轮胎抓地力决定)
+ 
+    if (dir_data.target_roll_out > MAX_TARGET_ROLL[page_5]) {
+        dir_data.target_roll_out = MAX_TARGET_ROLL[page_5];
+    } else if (dir_data.target_roll_out < -MAX_TARGET_ROLL[page_5]) {
+        dir_data.target_roll_out = -MAX_TARGET_ROLL[page_5];
+    }
+ 
+    return dir_data.target_roll_out;
+}
+程序B-6  侧倾—转向控制
+void Balance_Tick(float current_roll, float current_roll_rate, float current_speed, float target_angle)
+{
+    float temp_val;
+    float temp_arc;
+ 
+    // 1. 获取状态数据
+    balance_data.roll = current_roll;
+    balance_data.roll_rate = current_roll_rate;
+ 
+    // 【优化点 1：放宽速度下限】
+    // 允许运动学模型下探到更低的速度（比如0.2），让低速时依然能算出足够大的转向角来救车。
+    // 具体数值(0.15~0.25)根据你的车体重量和舵机响应速度微调。
+    float v_eff = (current_speed < 0.2f) ? 0.2f : current_speed;
+ 
+    // 2. 姿态误差计算
+    balance_data.angle_car_deg = balance_data.roll - balance_data.angle_core_deg;
+    balance_data.d_angle_deg = balance_data.angle_core_deg + target_angle - balance_data.angle_car_deg;
+ 
+    // 【优化点 2：动态增益调度 (Gain Scheduling)】
+    // 提取当前的 PID 参数
+    float adaptive_kp = balance_data.kp;
+    float adaptive_kd = balance_data.kd;
+ 
+    // 如果处于低速区间（如小于0.5m/s），动态放大阻尼
+    if (current_speed < 0.5f)
+    {
+        // 计算速度跌落的比例，速度越低，ratio 越大
+        // 例如当 v_eff = 0.2 时，ratio = 0.5 / 0.2 = 2.5
+        float damping_ratio = 0.5f / v_eff;
+ 
+        // 大幅放大 Kd 以抑制低速时因为分母太小导致的舵机高频“画龙”
+        adaptive_kd = balance_data.kd * damping_ratio;
+ 
+        // 可选：极低速时，可以将 Kp 稍微削弱一点，防止舵机反应过敏
+        // adaptive_kp = balance_data.kp * 0.9f;
+    }
+ 
+    // 3. PD 控制器计算横向加速度 (使用自适应后的参数)
+    balance_data.ax_cmd = adaptive_kp * balance_data.d_angle_deg - adaptive_kd * balance_data.roll_rate;
+ 
+    // 4. 几何映射 (使用 TC264 FPU 指令)
+    // 这里的分母使用了放宽后的 v_eff，算出来的向心力补偿更符合真实的低速物理模型
+    temp_val = (-balance_data.ax_cmd * balance_data.lm) / (v_eff * v_eff);
+ 
+    // 防止后续 asinf 运算后触发 tan(90°) 奇点翻转
+    if (temp_val > 0.99f) temp_val = 0.99f;
+    if (temp_val < -0.99f) temp_val = -0.99f;
+ 
+    temp_arc = asinf(temp_val);
+ 
+    // 计算舵机目标角度
+    balance_data.servo_target_deg = atanf((balance_data.l / balance_data.lm) * tanf(temp_arc)) * RAD_TO_DEG;
+ 
+    // 5. 限幅保护
+    if (balance_data.servo_target_deg > SERVO_MAX_ANGLE)
+    {
+        balance_data.servo_target_deg = SERVO_MAX_ANGLE;
+    }
+    else if (balance_data.servo_target_deg < SERVO_MIN_ANGLE)
+    {
+        balance_data.servo_target_deg = SERVO_MIN_ANGLE;
+    }
+ 
+    // 6. 执行输出
+//    Servo_Output(balance_data.servo_target_deg);
+}
+程序B-7  增量式速度 PID
+int32 PID_Calculate_Incremental(Pid_TypeDef *pid, int32 target, int32 feedback)
+{
+    pid->target = target;
+    pid->feedback = feedback;
+    pid->error = pid->target - pid->feedback;
+ 
+    float current_ki = 0.0f;
+    float dynamic_threshold = fabsf((float)pid->target) * 1.3f + 100.0f;
+ 
+    if((pid->output > 0.0f && pid->error < 0) ||
+       (pid->output < 0.0f && pid->error > 0))
+    {
+        current_ki = (float)pid->ki * 3.0f;
+    }
+    else if(fabsf((float)pid->error) < dynamic_threshold)
+    {
+        current_ki = (float)pid->ki;
+    }
+ 
+    float delta_output = (float)pid->kp * (float)(pid->error - pid->last_error) +
+                         current_ki * (float)pid->error +
+                         (float)pid->kd * (float)(pid->error - 2 * pid->last_error + pid->prev_error);
+ 
+    if(delta_output > pid->max_output)  delta_output = pid->max_output;
+    if(delta_output < -pid->max_output) delta_output = -pid->max_output;
+ 
+    pid->output += delta_output;
+ 
+    pid->prev_error = pid->last_error;
+    pid->last_error = pid->error;
+ 
+    if(pid->output > pid->max_output)  pid->output = pid->max_output;
+    if(pid->output < -pid->max_output) pid->output = -pid->max_output;
+ 
+    return (int32)pid->output;
+}
+程序B-8  全局位置更新
+void Update_Global_Position(int32 current_encoder_pulse)
+{
+    // 1. 将 1 毫秒内的脉冲转化为物理距离 (米)
+    float delta_s = (float)current_encoder_pulse / (SPEED_TO_PULSE_1MS * 1000.0f);
+ 
+    // 2. 获取当前真实的陀螺仪偏航角，并转为弧度
+    float Car_Yaw_Rad = track_relative_yaw() * (3.14159265f / 180.0f);
+ 
+    // 3. 极坐标转直角坐标积算 (XY 积分)
+    Car_X += delta_s * cosf(Car_Yaw_Rad);
+    Car_Y += delta_s * sinf(Car_Yaw_Rad);
+}
+程序B-9  航点状态机
+void Navigation_Tick(void)
+{
+    // 1. 获取当前科目对应的路径数组指针 (根据你的页面判断逻辑)
+    Waypoint_t* active_path;
+    if(page_5 == 0 || page_5 == 4)      active_path = path_subject1;
+    else if(page_5 == 1||page_5==3) active_path = path_subject2;
+    else                 active_path = path_subject3;
+ 
+    // 2. 判断是否达到了【下一个点】的触发里程
+    // 注意：如果是末尾填充的 999.0f 的点，永远不会触发这里的 if
+    if (total_distance_m >= active_path[current_wp_index + 1].trigger_distance)
+    {
+        // 3. 拦截判断：【当前正在执行的点】是否配置了强制等待
+        if (active_path[current_wp_index].wait_angle_flag == 1)
+        {
+            // 获取实际陀螺仪偏航角 (Angle_Z_Quaternions) 与 当前目标角 的偏差
+            // AngleErrorNormalize 用于把角度差处理到 ±180 度以内
+            float angle_diff = fabs(AngleErrorNormalize(Angle_Z_Quaternions - active_path[current_wp_index].target_yaw));
+ 
+            // 如果车头还没转过来
+            if (angle_diff > ANGLE_WAIT_TOLERANCE)
+            {
+                pause_mileage_flag = 1; // 【强制冻结里程】
+                return;                 // 直接退出函数，不执行后续的 current_wp_index++
+            }
+        }
+ 
+        // 4. 角度已转到位，或者这个点根本不需要等待
+        pause_mileage_flag = 0; // 解除冻结，恢复里程计算
+        current_wp_index++;     // 顺利切入下一个路段
+    }
+ 
+    // 5. 更新全局控制目标
+    current_target_yaw   = active_path[current_wp_index].target_yaw;
+    current_target_speed = active_path[current_wp_index].target_speed;
+}
+
+===== TABLE 1 =====
+层级 | 组成 | 主要功能
+感知层 | ICM42688 六轴 IMU、TLE5012B 磁编码器 | 输出三轴角速度、三轴加速度、航向/侧倾姿态以及后轮速度和里程
+决策层 | TC264 双核主控、路径与状态机 | 选择科目路径，生成目标航向和目标速度，管理起停及特殊状态
+控制层 | 方向 PD、平衡控制、速度增量式 PID | 计算目标侧倾角、舵机转角与后轮驱动占空比
+执行层 | 前轮转向舵机、后轮无刷电机 | 形成转向力矩、侧向支撑和纵向驱动力
+人机层 | IPS200 屏、按键、蜂鸣器、无线串口 | 参数选择、状态显示、调试数据输出和故障提示
+
+===== TABLE 2 =====
+电路板 | 电容数量 | 标称总容量/μF | 统计说明
+CYT2BL3 无刷单驱 | 90 | 1388.00046 | 含 61 只 22 μF 母线/电源电容及高频去耦
+单车主板 | 22 | 784.20940 | 含两路 220 μF、两路 100 μF及稳压去耦
+TLE5012B 磁编码器板 | 4 | 11.20000 | 1 μF、10 μF及两只 100 nF
+合计 | 116 | 2183.40986 | 约 2183.41 μF
+
+===== TABLE 3 =====
+执行周期 | 主要任务 | 设计目的
+上电一次 | ICM42688 自检/配置、参数读取、接口与路径初始化 | 建立确定初值并检查外设
+1 ms | 位置/导航更新、IMU 读取、姿态与科目控制、速度反馈滤波、驱动输出、里程累计 | 保证姿态和执行控制实时性
+10 ms | 增量式速度 PID 更新 | 匹配无刷驱动约 10 ms 的速度上报节拍
+20 ms | 预留的 CCU6 通道，当前仅清除中断标志 | 为后续低速辅助任务保留接口
+后台循环 | 倒伏与 Flash 服务、路径初始化、按键、菜单、蜂鸣器和调试输出 | 不干扰硬实时中断
+
+===== TABLE 4 =====
+ | q̇ = 1/2 · q ⊗ [0, ωx, ωy, ωz] | 公式1
+
+===== TABLE 5 =====
+ | x(k+1)=x(k)+Δs·cosψ；y(k+1)=y(k)+Δs·sinψ | 公式2
+
+===== TABLE 6 =====
+ | φr = sat(Kpψ·eψ − Kdψ·ωz, ±φmax) | 公式3
+
+===== TABLE 7 =====
+ | δ = atan[(l/lm)·tan(asin(−ax·lm/v²))] | 公式4
+
+===== TABLE 8 =====
+ | Δu(k)=Kp[e(k)−e(k−1)]+Ki·e(k)+Kd[e(k)−2e(k−1)+e(k−2)] | 公式5
+
+===== TABLE 9 =====
+类别 | 工具/平台 | 用途
+嵌入式开发 | AURIX Development Studio 1.10.x、TASKING 工具链 | TC264 工程编译、下载和在线调试
+基础软件 | 逐飞 TC264 开源库 | 时钟、GPIO、PWM、PIT、UART、SPI、Flash、显示等驱动
+电路设计 | 嘉立创 EDA | 主板、无刷单驱和磁编码器原理图设计
+数据观测 | 无线串口、逐飞助手/VOFA、IPS200 | 查看姿态、速度、航向、里程与控制输出
+机械制作 | 螺钉、绝缘垫柱、绑带及常用装配工具 | 车架、板卡、传感器和线束固定
+
+===== TABLE 10 =====
+现象 | 原因分析 | 处理措施
+低速时舵机高频摆动 | 模型含 v² 分母，低速对误差过敏 | 设置 0.2 m/s 有效速度下限，并按 0.5/v 增加微分阻尼
+跨越 ±180°时突然反向 | 直接相减得到错误的大角度误差 | 统一使用 AngleErrorNormalize 取最短角误差
+起步或航点切换冲击 | 速度、航向和目标侧倾阶跃 | 设置速度、航向和侧倾斜坡，输出逐步逼近
+ICM42688 上电初始化失败 | CS 上电状态、SPI 接线/模式或传感器稳定时间异常 | 保持 CS 高电平、核对 SPI0 模式0与引脚、检查 0x47 标识并最多重试3次
+电机开关干扰姿态/通信 | 功率回路 di/dt 大，地与信号线耦合 | 功率/信号分区走线、母线并联电容、IMU 独立稳压
+倒伏后电机继续驱动 | 缺少姿态安全状态 | 侧倾超过 ±40°立即停止并清除启动标志
+
+===== TABLE 11 =====
+项目 | 参数/结果 | 依据或说明
+车模平台 | 单车定向 N1，一体成型车架，后轮无刷升级 | 车模资料与照片
+主控制器 | Infineon AURIX TC264D 核心板 | 工程平台与主板原理图；核心板由组委会提供
+整车质量 | 790 g | 含电池、线束、紧固件、保护支架和全部板卡
+长×宽×高 | 310mm×150 mm×145 mm | 车辆直立、舵机中位时的最大包络尺寸
+传感器 | 1 套 ICM42688 六轴 IMU；1 套 TLE5012B 后轮磁编码器 | 当前初始化和闭环实际使用；ICM42688 不含磁力计，GPS/ToF/摄像头仅保留接口或回调
+附加伺服电机 | 0 个 | 除车模前轮转向舵机和后轮驱动电机外无附加伺服
+ICM42688 工作配置 | SPI0 模式0、5 MHz；加速度计 ±16 g/1 kHz；陀螺仪 ±2000 °/s/1 kHz | 驱动宏与初始化寄存器配置；WHO_AM_I=0x47
+IMU 读取/姿态更新频率 | 1000 Hz | CCU60_CH0 为 1 ms；四元数 call_cycle=0.001 s
+速度 PID 更新频率 | 100 Hz | 每 10 次 1 ms 中断更新一次；驱动约 10 ms 上报速度
+
+===== TABLE 12 =====
+项目 | 参数/结果 | 依据或说明
+舵机 PWM | 300 Hz，占空比命令 2000～8000 | servo_init 与 servo_conr
+无刷通信 | UART3，460800 bit/s，7 字节校验帧 | small_driver_uart_control
+赛道信息检测频率 | 姿态/航向 1000 Hz；后轮速度 100 Hz | 1 ms 姿态更新；10 ms 速度反馈与闭环更新
+赛道信息检测精度 | 直线里程平均误差8%；最大误差13% | 在已知距离直线和已知角度转向条件下重复测试
+三块自制板电容总容量 | 2183.40986 μF（约 2183.41 μF） | 不含 TC264 核心板及成品模块内部电容
+电路功耗 | 静态36W；运行平均55W；峰值80 W | 在电池输入端测量电压、电流并按 P=U×I 计算
+主要限幅 | 目标侧倾 ±10°/±15°；倒伏保护 ±40°；速度 PID 输出 ±6000 | 源代码限幅与安全逻辑

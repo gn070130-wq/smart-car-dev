@@ -1,0 +1,405 @@
+第二十一届全国大学生
+智能汽车竞赛
+
+技术报告
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+学校：东南大学
+队伍名称：轮腿穿越组-苏A001队
+参赛队员：郭峰硕 马巍嘉 沈佳福 吕扬帆
+带队教师：黄永明 赵冰雅
+表 1 架构表	2
+表 2 调度框架表	6
+表 3 跳跃阶段表	8
+表 4 状态算法表	10
+表 5 开发工具表	12
+表 6 车模参数表	13
+
+图 1 小车图	1
+图 2 驱动板图	1
+图 3 主板图	2
+图 3 软件总体架构和数据流图	6
+图 4 主板原理图	I
+图 5 主板布局图	I
+图 6 磁编原理图	II
+图 7 磁编布局图	II
+图 8 驱动板原理图	III
+图 9 驱动板布局图	III
+
+第一章、模型车设计制作的主要思路及技术方案概要
+1.1 总体设计思路
+本车以惯导为主、视觉为辅为设计思路，围绕三大科目（行进绕桩、定点排雷、颠簸路段）解决导航、平衡与越障三个核心问题。
+车模平台选用龙邱六无刷轮腿车模：五连杆腿机构由 4 个关节无刷电机驱动，2 个无刷电机作为行进电机；主控采用逐飞 CYT4BB7 核心板，与 3 块自制无刷驱动板之间通过串口通信。
+
+
+图 1小车图
+
+图 2驱动板图
+
+
+图 3主板图
+
+1.2 技术方案概要
+本车软件按“感知—决策—控制—执行”四层架构组织，各层模块与职责如下：
+表 1架构表
+关键设计决策：
+惯导为主、视觉为辅：三个科目的元素位置现场可测，导航采用纯惯导（IMU 航向 + 轮速里程），摄像头仅用于曝光 / 阈值标定与台阶识别，降低对视觉的依赖，提高室外可靠性；
+双速度控制通路：直接串级（速度环 → 角度环）加减速快；间接控制（速度环 → 关节倾角 → 重心）车身稳定，按科目需求切换；
+离线规划 + 在线调度：轨迹与任务序列发车前一次性生成，运行时按里程推进，各算法模块独立、易扩展、易调试；
+多速率实时控制：1 ms 中断内分频执行 20 / 5 / 1 / 15 ms 各控制环，兼顾实时性与计算量。
+
+
+第二章、机械部分安装及改造
+车模结构：保留龙邱六无刷车模的五连杆腿机构，两条腿各由前后两个关节电机驱动，实现腿部末端（足端）在平面内的二维定位，从而控制车身俯仰、横滚与高度。
+传感器安装：摄像头安装于车头，俯仰角可调，保证近端视野覆盖赛道；IMU 安装于车体重心附近，减少振动与角加速度耦合。
+电路板固定：主板、无刷驱动板、电池通过 3D 打印安装板 固定于车架上，使用 金属尼龙柱、M3 螺丝与 M3 螺母 连接，兼顾强度与减振。
+走线与防护：关节电机线缆沿连杆走向布置并留有运动余量，避免关节运动时拉扯。
+
+
+
+第三章、电路设计说明
+组委会提供了 CYT4BB7 核心 MCU 电路板，本车直接采用逐飞 CYT4BB7 核心板，其电路不做说明。其余电路均为自制：
+自制主板：参考逐飞 CYT4BB7 主板原理图重新设计，删去与轮腿车无关的配件（如扩展排针、部分外设接口），集成摄像头、IMU、屏幕、按键、拨码开关、蜂鸣器等接口，体积与重量更适配轮腿车。
+自制无刷驱动板 ×3：参考逐飞 CYT2BL3 无刷双驱板设计，一块驱动两个行进电机，两块分别驱动前、后关节电机，板载三相驱动。
+自制磁编码器：用于无刷电机转子位置检测，为关节角位置闭环与行进速度测量提供反馈。
+通信架构：主板与各无刷驱动板采用 UART 串口通信（7 字节定长帧，带校验和），发送占空比 / 目标角度指令，接收速度、角度、位置及电压数据。
+
+
+第四章、微处理器控制软件设计
+4.1 软件总体架构与数据流
+控制软件运行于 CYT4BB7 的 CM7_0 核，按“感知—决策—控制—执行”四层架构组织，模块间以全局变量松耦合衔接，形成由感知到执行、再由反馈闭环的完整控制链路：
+
+图 3软件总体架构和数据流图
+实时调度框架：采用”1 ms 周期中断驱动实时控制 + 主循环慢速任务调度”的结构：
+表 2调度框架表
+多速率控制：各控制环在 1 ms 中断内分频执行——速度环 20 ms、角度环 5 ms、角速度环 1 ms、转向环 15 ms。内环（角速度）最快以保证稳定，外环（速度）较慢以匹配轮速响应带宽。
+决策—控制解耦：状态引擎与控制层之间仅通过三个全局变量通信——set_speed（速度目标）、offset（航向偏差）、jump_flag（跳跃触发）。状态引擎只负责”产生目标”，控制层只负责”跟踪目标”，二者可独立调试。
+4.2 感知层：姿态解算（AHRS）
+IMU963RA 六轴数据在 1 ms 中断中读取，经硬编码零偏矫正（陀螺仪三轴分别修正）与 10 dps 死区处理后，送入四元数梯度下降法 AHRS（Madgwick 类算法）：
+以加速度计实测重力方向与四元数估计重力方向做叉积误差，经比例（梯度步长 β=0.8）与积分（零漂补偿 ζ=0.005）校正陀螺仪角速度，再积分更新四元数并归一化；
+静止检测：加速度模长落在 [0.9, 1.1] g 判定为静止，此时加大加速度低通滤波系数（α=0.8，运动时 0.5）与校正强度，抑制运动加速度对姿态的污染；
+快速收敛：上电前 0.5 s 使用强比例校正（kp=100）使姿态快速收敛；
+解算输出俯仰 / 横滚 / 偏航角，分别供平衡控制、横滚补偿与惯导导航使用，不使用磁力计。
+4.3 控制层：速度控制（直接 / 间接）与平衡
+速度控制是控制层的核心，提供直接控制与间接控制两条通路，由 `speed_control_mode` 切换，按科目需求选用。
+直接控制（串级）：速度环（PI）→ 角度环（PD）→ 角速度环（PD）三串级结构，全部采用位置式 PID（调试发现增量式 PID 加减速性能极差，故弃用）：
+// 1ms 中断内的多速率控制骨架
+if (i % 20 == 1) {                                   // 20ms 速度环
+    balance_speed_pid_interpolate(set_speed);        // 速度环参数随目标速度插值
+    pid_control(&speed_cycle, run_speed, car_speed);
+}
+if (i % 5 == 1) {                                    // 5ms 角度环
+    pid_control(&angle_cycle,
+        mechanical_zero - speed_cycle.out * speed_control_mode,
+        filtering_angle);
+}
+pid_control(&angular_speed_cycle, angle_cycle.out, gyro[1]);  // 1ms 角速度环
+串级结构的意义：内环角速度环阻尼车身振荡、提供快速力矩响应；中环角度环维持俯仰角稳定；外环速度环控制车速。各环输出限幅逐级放宽，避免饱和叠加。
+两条速度控制通路（由 speed_control_mode 切换）：
+间接控制的具体实现（见 4.5）：速度环输出经增益 0.06、限幅 ±0.8° 后得到前后倾角度，叠加到四腿关节角上使重心偏移，从而间接改变车速；同时依据俯仰角大小对补偿量做衰减（俯仰角大时减弱），防止过补偿。
+速度环参数自适应：速度目标越大，整车对力矩响应越平缓，故速度环参数随目标速度线性插值（低速端 Kp=0.10 / Ki=0.01 以克服静摩擦，高速端 Kp=0.20 / Ki=0.02 以减少震荡）。
+4.4 控制层：转向控制
+转向环在位置式 PID 基础上引入两个非线性项：
+out = Kp*e + Ki*i_value + Kd*diff_value
+    + Kp2 * fabsf(e) * e          // 非线性比例：大误差增强转向力矩
+    + Kd2 * gyro_z;               // 角速度阻尼：抑制转向速度
+Kp2·|e|·e：误差大时提供更强的转向力矩，误差小时退化为线性，兼顾快速回正与精确锁线；
+Kd2·gyro：引入偏航角速度阻尼（Kd2=0.2），有效抑制转向过程中的角速度，对转向性能的改善非常显著。
+转向环输出 trans_error 以差速形式叠加到左右轮：left = 角速度环输出 ? trans_error、right = 角速度环输出 + trans_error，再经占空比限幅（±80%）后下发。
+转向参数自适应：转向误差越大越需平滑回正，故转向环参数随误差大小线性插值（小误差端 Kp=3.6 / Kd=0.2 精准锁线，大误差端 Kp=0.4 / Kd=0.2 平滑回中）。
+4.5 控制层：五连杆逆运动学与关节控制
+腿部为平面五连杆机构，杆长 L1=80、L2=145、L3=145、L4=80、L5=70（mm）。给定左右足端目标位置，用解析几何求解前（α）、后（β）关节角，并对 α∈[90°,200°]、β∈[-20°,90°] 限幅、按工作空间选解：
+// 逆解核心（右腿）：由足端位置 (x,y) 求关节角
+
+
+// 后关节 β 同理（以 L4、L5、L3 为参数）
+基于逆运动学实现三类腿动作：
+前后倾速度调节（间接控制）：四腿关节角统一叠加速度环输出的前后倾量 jointAngles.*= speed_output，通过重心偏移间接调速；
+横滚腿高差补偿（单边桥）：横滚角经 5 ms 纯积分控制（Ki=10、输出限幅 ±40）后映射为左右腿高度差（±60 mm），“只抬一条腿”自适应保持横滚平衡（含 5° 死区，跳跃时禁用）；
+压弯控制：转向偏移经中值滤波后超过阈值时，降低内侧腿高度并向后收腿，提升高速过弯稳定性。
+关节角度经映射（前：200-α，后：β+20）后通过 UART 下发给前后关节驱动板。
+4.6 控制层：跳跃控制（三级台阶）
+跳跃采用基于腿长的状态机，以 Z 轴加速度检测离地与触地：
+蓄势 → 起跳 → 空中收腿 → 等待触地 → 缓冲 → 完成
+表 3跳跃阶段表
+各阶段腿长用三次缓动函数（ease-in-out-cubic）平滑过渡，避免腿速突变；离地 / 触地检测均带超时保护，防止传感器误判导致失控。
+4.7 感知层：视觉处理（摄像头）
+摄像头选用逐飞 MT9V03X（188×120 灰度），图像在主循环中按帧处理：
+自动曝光（标定模式）：取图像底部 1/3 行、中间 50% 列计算平均灰度，使其落在 [100,156] 区间，以步长 2 调节曝光时间（每 5 帧检测一次，避免频繁 I?C 通信），应对室外光线剧烈变化；
+大津法自适应阈值（标定模式）：对中间 50% 列建立直方图求最优二值化阈值（钳位 [60,200]），每 6 帧更新并做 EMA 平滑（α=0.3）防抖；
+台阶边缘检测：检测指定行黑白跳变（白色像素占比 >80% 判白），用上升沿检测避免同一台阶重复触发，输出 is_jump 供台阶算法触发跳跃；
+中线提取：对近端行由图像中心向两侧搜索赛道边界求中线偏差（二值化法与行内对比度自适应法两种），输出 mid_offset 作为视觉循迹备选。
+曝光与阈值在标定模式下自动整定后固定用于比赛，无需在线自适应，降低主循环负载。
+4.8 决策层：惯导轨迹规划与执行
+三个科目场地元素位置现场可测，据此规划轨迹。定义途径点描述每一段路径：
+typedef struct {
+    waypoint_type_t type;   /* 类型：起点/自转/台阶/单边桥/颠簸/匀速/到达/终点 */
+    float distance;         /* 到下一点的距离 (cm) */
+    float azimuth;          /* 行驶方位角 (°) */
+    int16 speed;            /* 该段目标速度 */
+} waypoint_t;
+轨迹引擎将途径点转化为可回放的航向序列：
+支持三种路径生成算法：折线、Catmull-Rom 样条（C1 连续、拐弯平滑）、Dubins 路径（直线 + 圆弧过渡），编译期宏切换；
+按 5 cm 弧长等距重采样生成 heading_samples[]，并建立途径点 → 实际弧长映射 wp_arc_dist[]——样条路径比直线段长，状态引擎与速度查询均以真实弧长定位，保证里程准确；
+发车基准：发车瞬间记录航向角与里程（traj_start_mileage / traj_start_anglez），此后 dist = accumulated_dist ? traj_start_mileage，消除上电姿态不确定的影响，显著提高发车成功率；
+航向前瞻：按车速分档（0–150 / 150–420 / >420）向前偏移 0 / 1 / 2 个采样点查询航向，补偿转向响应滞后。
+里程计算：由轮速积分得到 accumulated_dist += 0.89495·(car_speed/60)·轮周长(π×12 cm)·0.001，系数 0.89495 为标定的打滑修正。
+4.9 决策层：任务状态引擎
+状态引擎在 1 ms 中断中运行，将途径点解析为状态条目序列，按 SE.current 顺序调度：
+typedef struct {
+    state_type_t state;     /* 状态类型 */
+    uint8  wp_index;        /* 目标途径点索引 */
+    float  target_dist;     /* 从起点到目标点的累计距离 (cm) */
+} state_entry_t;
+状态条目在初始化时一次性生成（如 SPIN 点展开为 FOLLOW + SPIN 两个条目），各状态算法内部判断完成条件后自增 SE.current 推进。各状态算法：
+表 4状态算法表
+该架构使”打点快、轨迹明确”，各状态算法相互独立，可方便地增删状态与修改算法。例如科目二（定点排雷）只需 SPIN 与 PASS 点即可完成。
+4.10 关键调试历程与工程决策
+三级台阶跳跃（STAIRS_T）——调试投入最大的算法：
+识别：台阶边界线检测 → 固定行黑白跳变 → 上升沿去重；灰度处理由对比度法切换为二值化法（配合自动曝光与自适应阈值后效果稳定）；
+触发：三级全视觉触发 → 第二、三级改时间锁 → 仅第一级视觉触发 → 最终第一级距离触发、第二三级时间锁触发；
+三次跳跃分别设置不同触发行阈值与跳跃参数（第三跳提高腿长、缩短起跳时间），第三跳后做里程补偿，保证后续循迹不偏。
+自转（SPIN）：早期尝试 PID 控制转向 offset 实现丝滑自转，但不同场地摩擦力差异导致部分地块无法完成两圈，最终改为固定转向力自转，并在自转结束时将方向对准下一段路径以提速。
+转向环 KD2 与两侧补偿：加入偏航角速度阻尼（KD2）显著改善转向；同时实测多块自制驱动板两侧性能不对称，通过在占空比输出施加左右比值补偿（左 ×1.2、右 ×1.0）——该补偿是转向环有效工作的前提。
+位置式 vs 增量式 PID：速度环实际调试发现增量式 PID 加减速性能极差，故全部控制环采用位置式 PID。
+4.11 安全保护机制
+倾倒检测：俯仰角超过 60° 立即停车并蜂鸣提示；
+转圈保护：累计偏航超过 8 圈时强制停车，防止自转失控；
+拨码开关 4 档模式：0=菜单初始化、1=图像调试（自动标定曝光 / 阈值）、2=进入平衡、3=发车，现场快速切换；
+控制与显示隔离：菜单 / 图像模式（DIP=0/1）下控制中断不执行，运动模式下不刷新屏幕，从架构上避免控制与显示抢占同一 SPI 总线导致异常。
+
+
+第五章、开发工具与调试过程
+表 5开发工具表
+调试流程：先在菜单模式下完成参数整定与轨迹编辑 → 图像模式下确认曝光、阈值与识别结果 → 平衡模式确认姿态 → 发车试跑，配合上位机波形观察速度环、角度环、转向环及各状态量，逐步迭代参数。
+
+
+第六章、模型车主要技术参数
+表 6车模参数表
+
+
+附录
+电路板详细设计原理图
+主板原理图和布局图
+
+图 4主板原理图
+
+图 5主板布局图
+
+磁编原理图和布局图
+
+图 6磁编原理图
+
+图 7磁编布局图
+驱动板原理图和布局图
+
+图 8驱动板原理图
+
+图 9驱动板布局图
+
+
+
+
+
+
+
+核心算法子程序
+（1）三串级平衡控制 —— balance_control.c
+（2）姿态控制主流程 —— posture_control.c
+（3）五连杆逆运动学 —— steer_control.c
+（4）跳跃控制状态机 —— jump_control.c
+（5）图像处理 —— img_process.c
+（6）轨迹引擎 —— trajectory_engine.c
+（7）任务状态引擎 —— state_engine.c
+（8）无刷驱动串口通信 —— small_driver_uart_control.c
+
+
+
+
+===== TABLE 1 =====
+层级 | 模块 | 功能
+感知层 | IMU963RA + 四元数 AHRS | 1 ms 解算俯仰 / 横滚 / 偏航角
+感知层 | 无刷电机磁编码器 | 轮速测量、关节角位置反馈
+感知层 | MT9V03X 摄像头 | 自动曝光、大津法阈值、中线 / 台阶检测
+决策层 | 轨迹引擎 | 途径点 → 航向序列（折线 / 样条 / Dubins）
+决策层 | 状态引擎 | 途径点 → 任务状态序列，顺序调度
+控制层 | 速度控制 | 直接控制（串级）/ 间接控制（重心调节）双通路
+控制层 | 转向控制 | 非线性 PID，差速输出
+控制层 | 腿控制 | 逆运动学 + 横滚补偿 + 跳跃状态机
+执行层 | 无刷驱动板 ×3 | UART 指令：占空比 / 目标角度
+
+===== TABLE 2 =====
+调度单元 | 周期 | 职责
+PIT_CH0 中断 | 1 ms | 姿态解算、状态引擎、直接 / 间接速度控制、转向、腿控制、跳跃、里程累计
+PIT_CH1 中断 | 20 ms | 按键扫描
+主循环 | ms 级 | 按键事件解析、DIP 模式路由、图像处理、屏幕刷新
+
+===== TABLE 3 =====
+通路 | 速度环输出去向 | 响应 | 稳定性
+直接控制 | 作为角度环目标偏移 mechanical_zero - speed_out | 快 | 差，车身俯仰扰动大，无法过颠簸
+间接控制 | 叠加到关节角度使整车重心前倾 / 后倾 | 慢 | 好，可稳定通过颠簸路段
+
+===== TABLE 4 =====
+阶段 | 触发条件 | 腿长
+蓄势 150 ms | 时间 | 收腿至 60 mm
+起跳 100 ms | 时间 | 伸腿至 125 mm
+空中收腿 100 ms | az < 0.5 g 或超时 100 ms | 收至 100 mm
+等待触地 | az > 1.5 g 或超时 120 ms | 保持 100 mm
+缓冲 300 ms | 时间 | 回到正常 88 mm
+
+===== TABLE 5 =====
+状态 | 算法要点
+CONST | 匀速循迹
+FOLLOW | 循迹，接近段尾降速至固定低速，到达后停车
+DECEL | 循迹，段尾速度线性过渡到下一段目标速度（段长不足时全程线性过渡）
+SPIN | 原地自转 720° + 折线转角补偿，采用固定转向力；自转结束时方向已对准下一段
+STAIRS_T | 三级台阶跳跃（见 4.10）
+STAIRS_C | 台阶下行，循迹 + 距离补偿
+BRIDGE | 单边桥，循迹 + 横滚腿高补偿 + 距离补偿
+BUMPY | 颠簸路段，间接控制速度下循迹，速度 120 可稳定通过（受电池电量影响显著）
+COMPLETE | 停车，蜂鸣提示
+
+===== TABLE 6 =====
+用途 | 工具
+编译开发 | IAR 9.40.1
+代码编辑 | Visual Studio Code
+AI 辅助编程 | GitHub Copilot
+数据调试 | 逐飞串口助手、逐飞助手（WIFI-SPI 多通道波形示波）
+
+===== TABLE 7 =====
+项目 | 参数
+车模平台 | 龙邱六无刷轮腿车模（五连杆机构）
+总体重量 / 长 × 宽 × 高 | 240mm x 314mm x 157mm
+电路功耗 / 电容总容量 | （待补充）
+电机 | 无刷电机 ×6：行进 ×2、关节（伺服） ×4
+无刷驱动板 | 自制双驱板 ×3
+传感器 | MT9V03X 摄像头 ×1、IMU963RA 六轴 IMU ×1、无刷电机磁编码器 ×6、按键 ×4、拨码开关 ×2、蜂鸣器 ×1、IPS200 显示屏 ×1
+赛道信息检测 | MT9V03X 188×120 灰度图像，最高约 110 帧/s；中线检测精度约 ±1 像素
+
+===== TABLE 8 =====
+函数头 | 功能说明
+void angle_filtering(cascade_com *filter_value, int16 angle_type) | 角度滤波：按类型（0=俯仰、1=横滚、2=偏航）从 AHRS 读取角度存入滤波结构体
+void pid_control(pid_ctrl_t *pid_ctrl, float target, float real) | 位置式 PID：误差比例 + 积分限幅 + 微分，输出限幅
+void pid_control_incremental(pid_ctrl_t *pid_ctrl, float target, float real) | 增量式 PID：按误差增量与二次差分累加输出（调试后弃用）
+void turn_pid_control(pid_ctrl_t *pid_ctrl, float target, float real, float gyro, float Kp2, float Kd2) | 转向位置式 PID：位置式基础上加入非线性项 Kp2·|e|·e 与角速度阻尼 Kd2·gyro；积分分段处理（小误差清零、大误差衰减）
+void balance_cascade_init(void) | 平衡参数初始化：初始化三串级 + 转向环的 PID 参数、积分 / 输出限幅与机械零点，并备份原始参数
+void balance_speed_cycle_updata(float KP, float KI, float KD) | 速度环 PID 参数更新
+void balance_speed_pid_interpolate(float speed) | 速度环参数线性插值：随目标速度在低速 / 高速两组参数间插值
+void balance_turn_pid_interpolate(float error) | 转向环参数线性插值：随转向误差在小误差 / 大误差两组参数间插值
+
+===== TABLE 9 =====
+函数头 | 功能说明
+void imu_data_get(float *acc, float *gyro) | 姿态数据获取：读取 IMU963RA，零偏矫正、单位换算、死区处理
+void speed_filter(void) | 速度滤波：左右轮速取均值、异常值剔除、一阶低通平滑
+static float calc_steer_speed_output(float speed_cycle_out, float pitch_angle) | 计算速度补偿倾角：速度环输出 → 前后倾角度（含限幅、俯仰衰减，间接控制时使能）
+static float median_filter(float last_values[3], float new_value) | 三值中值滤波
+static void handle_leaning_control(float offset) | 压弯控制：转向偏移超阈值时降低内侧腿高度并向后收腿
+static float adaptive_height_compensation(float base_height, float type) | 自适应腿高补偿：用横滚角 PID 输出映射为单侧腿高补偿量
+void dynamic_steer_control(float pitch_angle, float roll_angle) | 腿控制主函数：间接速度倾角 + 横滚腿高补偿 → 逆运动学 → 叠加前后倾 → 下发关节角度
+void dynamic_motor_control(void) | 行进电机控制：角速度环输出叠加转向差速 → 左右占空比 → 下发驱动板，并累计里程
+void height_fit_adaptive(float y_height) | 高度自适应：按当前腿高在三组 PID 参数间线性插值（预留）
+void pit_isr_callback(void) | 1 ms 中断控制回调：姿态解算、状态引擎、多速率控制、腿 / 跳跃 / 电机控制与安全保护
+
+===== TABLE 10 =====
+函数头 | 功能说明
+void joint_control_init(void) | 关节控制初始化：初始化前后关节角结构体（弧度）
+static float limit_alpha(float angle) | 前关节角限幅 [90°, 200°]
+static float limit_beta(float angle) | 后关节角限幅 [?20°, 90°]
+void joint_set_front_angles(float left_angle, float right_angle) | 设置前部电机角度（左右腿），映射 200?α 后下发
+void joint_set_back_angles(float left_angle, float right_angle) | 设置后部电机角度（左右腿），映射 β+20 后下发
+float constrainValue(float value, float minValue, float maxValue) | 通用数值限幅
+void inverseKinematics(Node *LeftTarget, Node *RightTarget, JointAngles *jointAngles) | 五连杆逆运动学：由左右足端目标位置解析求解四条关节角，按工作空间选解
+void forwardKinematics(Node *LeftTarget, Node *RightTarget, JointAngles *jointAngles) | 五连杆正运动学：由关节角反算足端位置（调试 / 校验用）
+void calculateJointTargets(void) | 计算并下发目标角度：关节角弧度转角度，分发到前后关节驱动板
+
+===== TABLE 11 =====
+函数头 | 功能说明
+void jump_start(void) | 启动跳跃：置 jump_flag、初始化状态机与腿长基准
+void jump_stop(void) | 停止跳跃：清标志、复位状态机、发送跳跃结束指令
+void dynamic_jump_control(void) | 跳跃主控制（1 ms）：状态机推进 + 平滑腿长 + 逆运动学 + 下发
+static float get_current_leg_length(void) | 获取当前实际腿长（左右腿均值）
+static float ease_in_out_cubic(float t) | 三次缓动函数：输出 0~1 的平滑过渡曲线
+static float generate_smooth_leg_len(float start, float end, float progress) | 生成平滑腿长：起止腿长按缓动曲线插值
+static void state_squat(void) | 蓄势状态：150 ms 收腿至最短
+static void state_takeoff(void) | 起跳状态：100 ms 伸腿至最长
+static void state_flight_retract(void) | 空中收腿：检测离地（az<0.5 g）或超时后收腿至缓冲腿长
+static void state_touchdown_wait(void) | 等待触地：检测触地（az>1.5 g）或超时后进入缓冲
+static void state_buffer(void) | 缓冲状态：300 ms 回至正常腿长
+static void state_complete(void) | 完成：清标志、复位状态机、发送跳跃结束指令
+static void jump_state_machine(void) | 状态机调度：按当前状态分发到对应状态函数
+const char *get_jump_state_name(void) | 获取当前状态名称（调试打印）
+uint8_t is_jumping(void) | 是否处于跳跃中
+uint8_t is_jump_complete(void) | 跳跃是否已完成
+
+===== TABLE 12 =====
+函数头 | 功能说明
+bool mt9v03x_auto_exposure(const uint8_t *src, uint16_t rows, uint16_t cols, uint8_t target_low, uint8_t target_high, float near_ratio, uint16_t *p_exposure, uint16_t exp_min, uint16_t exp_max, uint16_t step, uint8_t *out_brightness) | 自动曝光校准：检测近端区域平均灰度，死区 + 定步长调节曝光时间（帧间隔控制避免频繁 I?C）
+uint8_t mt9v03x_otsu_threshold(const uint8_t *src, uint16_t rows, uint16_t cols) | 大津法阈值：对中间 50% 列建直方图，搜索最大类间方差的最优二值化阈值（钳位 [60, 200]）
+bool get_image_trigger(const uint8_t *src, uint8_t rows, uint8_t cols, uint8_t test_row, uint8_t binary_threshold) | 台阶边缘检测（二值化法）：统计指定行白色占比判色，上升沿触发跳变
+bool get_image_trigger_adaptive(const uint8_t *src, uint8_t rows, uint8_t cols, uint8_t test_row, uint8_t diff_x) | 台阶边缘检测（对比度法）：行间归一化对比度判边（调试后弃用）
+float get_image_mid_offset(const uint8_t *src, uint8_t rows, uint8_t cols, uint8_t binary_threshold, uint8_t test_row1, uint8_t test_row2) | 中线偏差提取（二值化法）：由图像中心向两侧搜索边界求赛道中线
+float get_image_mid_offset_adaptive(const uint8_t *src, uint8_t rows, uint8_t cols, uint8_t test_row1, uint8_t test_row2) | 中线偏差提取（对比度自适应法）：行内对比度自适应阈值搜索左右边界
+void draw_boundary_triple(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t color, uint16_t screen_width, uint16_t screen_height) | 画三重边界线（屏幕调试辅助）
+
+===== TABLE 13 =====
+函数头 | 功能说明
+void TrajEngine_Init(const trajectory_t *traj) | 初始化：清零 + 加载途径点 + 按编译期模式生成航向序列（折线 / 样条 / Dubins）
+void TrajEngine_Start(void) | 发车：记录里程与航向角基准
+void TrajEngine_Stop(void) | 停止引擎
+void TrajEngine_MainLoop_Handler(void) | 主循环入口（预留）
+int16 TrajEngine_GetSpeedAtDist(void) | 按当前行进距离反查所在段的目标速度
+float TrajEngine_GetHeadingAtDist(void) | 按当前行进距离查目标航向并计算航向偏差（含按车速分档的前瞻）
+int16 TrajEngine_GetSpeedAtArcDist(float arc_dist) | 按任意弧长反查目标速度
+float TrajEngine_GetWaypointArcDist(uint8 wp_index) | 获取途径点沿样条的实际弧长距离
+static bool generate_catmull_rom(void) | Catmull-Rom 样条生成：途径点 → 笛卡尔坐标 → 样条 → 弧长等距重采样 → 航向序列 + 弧长映射
+static bool generate_Dubins(void) | Dubins 路径生成：直线 + 圆弧过渡
+static bool generate_row(void) | 折线路径生成（无平滑）
+static float angle_diff_deg(float target, float source) | 角度差归一化到 [?180°, 180°]
+static float normalize_angle_deg(float ang) | 角度规范化到 [0°, 360°)
+
+===== TABLE 14 =====
+函数头 | 功能说明
+void StateEngine_Init(const trajectory_t *traj) | 初始化：清零 + 解析途径点生成状态条目序列
+void StateEngine_Process(void) | 状态调度（1 ms 调用）：按 SE.current 分发到当前状态算法
+static state_type_t wp_to_state(waypoint_type_t wp_type) | 途径点类型 → 状态类型映射
+static float calc_heading_offset(float target_heading_deg) | 计算航向偏差并规范化到 [?180°, 180°]
+static void algo_init(const state_entry_t *e) | 启动状态：直接推进到下一状态
+static void algo_follow(const state_entry_t *e) | 到达状态：循迹，段尾降速至固定低速，到达目标点停车后推进
+static void algo_const(const state_entry_t *e) | 匀速状态：恒定速度循迹，到达目标点推进
+static void algo_decel(const state_entry_t *e) | 减速状态：段尾速度线性过渡到下一段目标速度（段长不足时全程过渡）
+static void algo_spin(const state_entry_t *e) | 自转状态：固定转向力自转 720° + 折线转角补偿，结束后方向对准下一段
+bool detect_rising_edge(bool current) | 上升沿检测：信号由假变真时返回 true（去重）
+static void algo_stairs_t(const state_entry_t *e) | 三级台阶跳跃：视觉 / 距离触发三级跳跃、逐级切换阈值与跳跃参数、里程补偿
+static void algo_stairs_c(const state_entry_t *e) | 台阶下行：循迹 + 距离补偿
+static void algo_bridge(const state_entry_t *e) | 单边桥：循迹 + 横滚补偿使能 + 距离补偿
+static void algo_bumpy(const state_entry_t *e) | 颠簸路段：循迹 + 距离补偿
+static void algo_complete(const state_entry_t *e) | 完成状态：停车 + 蜂鸣提示
+
+===== TABLE 15 =====
+函数头 | 功能说明
+void small_driver_uart_init(void) | 串口通信初始化：初始化 3 路 UART（行进 / 前关节 / 后关节）、结构体与默认关节角度
+void small_driver_control_callback(small_device_value_struct *driver_value) | 串口接收回调：解析 7 字节校验帧，更新速度 / 角度 / 位置 / 电压数据
+void small_driver_set_duty(small_device_value_struct *driver_value, int left_duty, int right_duty) | 设置左右电机占空比（±10000 对应 ±100%，负数反转）
+void small_driver_get_speed(small_device_value_struct *driver_value) | 请求电机转速数据（RPM）
+void small_driver_get_angle(small_device_value_struct *driver_value) | 请求转子机械角度
+void small_driver_get_location(small_device_value_struct *driver_value) | 请求减速后输出位置
+void small_driver_set_location_zero(small_device_value_struct *driver_value) | 设置当前输出位置为零
+void small_driver_get_voltage(small_device_value_struct *driver_value) | 请求电池电压
+void motor_driver_set_zero(small_device_value_struct *driver_value, uint8 motor_select) | 自矫正零点（0=左、1=右、2=双）
+void motor_driver_set_both_angles(small_device_value_struct *driver_value, float left_angle, float right_angle) | 设置左右电机目标角度（0~360°，一次下发减少通信次数）
+void motor_driver_emergency_stop(small_device_value_struct *driver_value, uint8 motor_select) | 紧急停止电机输出
+void motor_driver_jump_ready(small_device_value_struct *driver_value) | 发送准备跳跃指令
+void motor_driver_jump_end(small_device_value_struct *driver_value) | 发送结束跳跃指令

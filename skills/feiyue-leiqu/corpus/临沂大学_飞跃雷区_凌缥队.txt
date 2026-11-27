@@ -1,0 +1,410 @@
+第二十一届全国大学生智能汽车竞赛
+
+技 术 报 告
+
+
+
+
+
+
+学    校：临沂大学
+队伍名称：凌缥队
+参赛队员：马福润 周涛 邵宪栋 
+郭婷婷 牟红舟
+带队教师：李文永 孙建强
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+关于技术报告和研究论文使用授权的说明
+
+本人完全了解全国大学生智能汽车竞赛关保留、使用技术报告和研究论文的规定，即：参赛作品著作权归参赛者本人，比赛组委会可以在相关主页上收录并公开参赛作品的设计方案、技术报告以及参赛模型车的视频、图像资料，并将相关内容编纂收录在组委会出版论文集中。
+
+
+参赛队员签名：马福润 周涛 邵宪栋 郭婷婷 牟红舟
+带队教师签名：李文永   孙建强
+
+日     期：2026-8-17
+
+
+摘要
+本文以第二十一届全国大学生智能车竞赛为背景，以大赛组委会指定的Y车模与自主研发四旋翼无人机为协同平台，介绍本队智能视觉组机车协同飞行系统方案。本设计采用CYT4BB与CYT2B0双核异构架构作为系统控制核心，系统主要由双核主控模块、无刷电调驱动模块、MT9V034全局快门视觉采集模块、UP-FLOW-302-3C光流定位模块、VL53L7CX 激光TOF测距模块以及BMI270惯性陀螺仪模块组成。系统任务分为无人机环境感知跟随与小车信标执行两部分，无人机依托全局快门摄像头完成场地图像信息采集，结合光流与激光测距模块实现位置速度反馈，通过串级PID算法调节电调动力输出，实现稳定姿态控制与跟随飞行。在协同任务中，无人机负责场地环境侦察与小车跟随定位，为下位Y车模提供环境信息支撑，小车依靠姿态解算与视觉矫正完成精准对位，最终完成信标踩踏作业，实现机车协同飞跃雷区的自主任务功能。
+关键词：智能车竞赛；双核异构无人机；机车协同；多传感器融合；串级PID控制
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+引言
+随着全国大学生智能车竞赛的不断升级，机车协同自主作业已成为智能视觉组的主流竞赛方向。第二十一届智能车竞赛飞跃雷区任务采用无人机与地面小车协同作业模式，依靠机载视觉与多传感器感知完成环境探测、目标跟随与定点执行，对无人机的定位精度、飞行稳定性与协同可靠性提出了较高要求。
+传统无人机控制系统多采用单核架构与单一传感方式，存在姿态漂移明显、定位误差大、任务耦合严重、实时性不足等问题，难以满足室内无GPS环境下的稳定跟随与精准协同作业需求，无法适配飞跃雷区机车配合、精准踩点的竞赛任务标准。
+针对以上问题，本文设计基于CYT4BB与CYT2B0双核异构的四旋翼协同飞行系统。以CYT4BB为主控核心完成姿态解算、传感器融合、PID闭环控制与视觉信息处理，CYT2B0协处理器负责传感器采集与电调驱动，实现控制任务与外设任务解耦。系统搭载MT9V034全局快门摄像头、UP-FLOW-302-3C光流模块、VL53L7CX 激光测距模块与BMI270惯性测量模块，构建多传感器融合感知体系，有效提升无人机定位与飞行稳定性。
+系统采用串级PID控制算法实现无人机姿态与位置稳定控制，通过视觉识别与光流激光融合算法实现小车跟随与场地信息采集。在协同逻辑中无人机负责环境侦察与跟随定位，Y车模负责精准对位与信标踩踏，通过机空协同完成飞跃雷区自主任务，整体系统稳定性强、协同精度高，能够较好完成本届竞赛指定任务要求。
+第二章 系统总体设计
+2.1 主要思路
+2.1.1 小车与信标识别方面
+系统采用MT9V034总钻风全局快门摄像头作为无人机视觉采集核心，针对第二十一届智能车竞赛飞跃雷区任务特性，通过红外视觉识别算法对小车顶部V形红外灯带进行精准锁定与位置解算，同时完成场地信标目标检测与坐标提取。无人机将识别得到的小车相对位置、信标分布信息进行数据缓存与校验处理，通过内部数据交互方式为协同控制提供视觉输入依据，实现对地面作业目标的稳定感知。
+2.1.2 无人机定位跟随方面
+无人机定位系统采用多传感器融合方案，搭载UP-FLOW-LC-302-3C优象光流传感器实现地面水平位移检测，配合VL53L7CX 激光TOF测距模块获取精准垂直高度信息。通过光流速度积分与高度缩放矫正，结合BMI270（660RA）六轴惯性单元的姿态数据，修正惯性积分漂移问题，实时解算无人机自身位置与运动状态，保证无人机能够稳定跟随地面Y车模同步运动。
+2.1.3 视觉矫正与环境适配方面
+针对室内场地光照不均、画面畸变、远距离识别偏移等问题，无人机视觉系统采用离线标定与图像矫正算法，对MT9V034采集的画面进行畸变修正与透视变换处理，优化小车灯带与信标目标的识别精度。通过固定阈值与动态阈值结合的方式，有效抑制环境杂光干扰，提升复杂场地环境下的视觉识别稳定性与鲁棒性。
+2.1.4 无人机姿态与动力控制方面
+无人机采用四旋翼动力布局，通过四元数姿态解算实时获取机身俯仰、横滚、航向角度与角速度信息。根据目标跟随偏差、高度偏差与水平速度偏差，解算四旋翼各电机所需动力输出，完成整机姿态平衡与位移控制，实现机身平稳悬停、定点跟随、低速伴飞等基础飞行状态，为机车协同作业提供稳定的空中平台支撑。
+2.1.5 多级闭环飞行控制方面
+无人机飞行控制采用多级串级PID控制架构，利用BMI270六轴传感器输出的姿态角度与角速度数据构建姿态内环，实现快速姿态矫正；结合光流与激光融合得到的位置、速度信息构建位置与速度外环，消除跟随稳态偏差。同时引入视觉位置偏差作为前馈补偿，提前修正机身偏移，有效提升无人机跟随响应速度与定位精度，保证高速跟随小车过程中的稳定性。
+2.1.6 通信方面
+通信与驱动方面，本系统采用分层隔离通信架构，保障整机数据传输稳定、抗干扰能力强。无人机双核通信依托CYT4B主核与CYT2B协处理器的片内共享内存实现高速数据交互，无需外设总线传输，零延迟完成传感器预处理数据、控制指令的双向同步，高效解耦控制任务与外设驱动任务。四旋翼主板与四合一无刷电调之间采用串口通信完成动力参数交互与指令传输，同时主控输出PWM波形精准控制地面小车DRV8701驱动芯片，实现小车电机转速与转向的精准调控。为解决机车协同长线传输干扰、地电位差影响问题，四旋翼与地面小车之间搭载两组相同的隔离通信模块，采用π122U31隔离芯片搭配B0505隔离电源方案，实现传输线路电气全隔离，彻底杜绝共模干扰、电压波动造成的数据丢包与通信异常，大幅提升机车远距离协同通信的稳定性与可靠性。
+
+2.1.7 机车协同任务控制方面
+本系统采用“空察地执”的协同作业逻辑，四旋翼无人机全程负责环境侦察、小车定位、信标检测与实时跟随，持续输出场地目标信息；地面Y车模根据场地任务逻辑自主行进，完成信标精准踩踏作业。无人机始终保持相对小车的稳定跟随姿态，不干预小车基础循迹运动，仅提供环境感知与目标定位支撑，实现机车高效协同完成飞跃雷区任务。
+2.2 技术方案概要说明
+2.2.1 硬件方面
+本机车协同系统采用双核异构主控架构，空中四旋翼平台以CYT4B作为主控制核心，负责姿态解算、多传感器融合、视觉处理与闭环控制；搭配CYT2B协处理器专门驱动四合一无刷电调，独立承担电机动力输出控制、传感器数据采集预处理任务，实现控制与驱动任务解耦，提升系统实时性与稳定性。地面Y车模采用三路DRV8701电机驱动芯片，配合1024线mini迷你正交解码带方向编码器，实现高精度速度与里程采集，为小车闭环控制提供精准反馈数据。
+整机感知系统统一搭载660RA（BMI270）六轴陀螺仪加速度计传感器，为无人机与小车提供高频姿态数据；无人机额外搭载UP-FLOW-LC-302-3C优象光流传感器与VL53L7CX 激光测距模块，构建完整的空中定位感知体系。视觉部分采用MT9V034全局快门摄像头，凭借无拖影、高帧率的采集优势，适配动态跟随场景下的目标识别需求。
+结构设计上，无人机严格优化重心布局，将动力电池内置机架中心位置，搭配对称配重块保证整机重心居中，有效抑制飞行倾斜与抖动；同时加装视觉挡光结构，弱化环境杂光对红外灯带与信标识别的干扰，大幅提升复杂光照场景下的作业稳定性。小车采用组委会标准Y车底盘，结构稳定、机动灵活，适配场地循迹与定点踩踏任务需求。
+2.2.2 软件方面
+本系统整体软件开发基于IAR嵌入式开发平台，依托逐飞开源硬件库完成整机底层驱动、传感器解析、控制算法与通信协议的程序开发与移植，程序架构规整、可移植性强、运行稳定性高。视觉识别软件层面，针对场地光照多变导致的目标识别阈值漂移问题，系统采集多场景、多光照条件下的图像数据，优化出动态自适应阈值算法，可根据环境亮度自动调节识别阈值，有效提升小车V形红外灯带与场地信标的识别准确率，避免单一阈值造成的漏检、误检问题。
+控制算法层面，无人机采用姿态环、速度环、位置环多级串级PID控制结构，结合视觉偏差前馈补偿算法，实现高精度稳定跟随。基于逐飞标准算法库完成PID算法、四元数姿态解算、传感器数据滤波的快速移植与优化，依托BMI270惯性传感器实时修正机身姿态，搭配UP-FLOW-LC-302-3C光流数据与激光测距数据长期修正位置漂移，通过多传感器互补融合解决单一传感器噪声大、漂移严重的问题。小车依托1024线编码器速度反馈与陀螺仪姿态反馈，完成自主循迹与精准对位，配合无人机感知信息完成信标踩踏任务。
+协同逻辑层面，系统采用分层任务调度机制，无人机实时完成感知、解算、跟随任务，稳定输出环境与目标信息；地面小车独立完成运动控制与任务执行，两者分工明确、协同配合，有效完成第二十一届智能车竞赛飞跃雷区机车协同自主作业任务，系统稳定性与任务完成度较高。
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+第三章 机械系统设计与实现
+3.1.1四旋翼结构
+
+
+
+图3.1.1.1 四旋翼俯视图
+
+图3.1.1.2四旋翼正视图
+
+图3.1.1.4四旋翼底部图
+
+图3.1.1.3陀螺仪安装图
+
+
+3.1.2车身结构
+
+
+
+
+
+图3.1.2.3 车模侧视图
+
+图3.1.2.4 四旋翼底部图
+
+3.1.3保护罩
+
+
+
+
+
+硬件系统设计与实现
+4.1.1四旋翼主板
+
+
+
+
+
+
+
+
+4.1.2四旋翼电机驱动板
+
+4.2.1车模主板
+
+
+车模驱动板我们采用DRV8701ERGER芯片，主要是因为他具有过流保护（OCP）、过热保护（TSD）、VM 欠压闭锁（UVLO）、电荷泵欠压保护（CPUV）等多项保护功能。故障情形下可借由 nFAULT 引脚输出信号，提示系统及时处理，以此保障芯片、电机及整个系统免遭损坏以及它具有紧凑的封装节省空间，采用 24 引脚 VQFN 封装，尺寸仅 4.0×4.0×0.9mm，面积小、厚度薄。
+
+
+4.2.2FLASH板
+
+
+
+
+
+
+
+4.3.1通信隔离板
+
+
+
+软件系统设计与实现
+5.1.1四旋翼平衡控制
+5.1.2四旋翼高度控制
+5.1.3四旋翼速度控制
+
+5.1.4四旋翼摄像头处理
+
+5.2.1车模运动控制
+
+5.2.2车模运动路径规划
+
+5.3.1串口通信
+
+
+结语
+在第二十一届智能车竞赛赛题于11月份公布后，团队经过多组别方案斟酌比对，结合老师指导建议与自身学习规划，最终毅然选择挑战智能视觉机车协同飞跃雷区项目。该赛题为本届竞赛全新推出的四旋翼协同题型，不仅对于团队成员是从零起步的全新领域，也是本校首次尝试无人机机车协同竞赛方向，无往届经验、无成熟方案参考，对我们而言是极具难度与挑战性的全新探索。
+备赛初期，全新Y车模与无人机硬件尚未到位，团队便利用实验室旧车模提前留校学习，自主钻研摄像头循迹、图像预处理、基础控制算法等核心知识，在寒假离校前成功实现基础小车循迹功能，为后续整机开发打下扎实基础。寒假结束新设备到位后，开学第四天我们便完成了车模简易搭建，依托寒假积累的技术经验，次日便实现新车模稳定慢速循迹，阶段性的突破极大鼓舞了团队士气。
+项目整体研发进度整体缓慢且坎坷，直至四月份才初步完成无人机机架搭建、小车主板与驱动电路自制调试，设备硬件初具雏形。研发过程中团队历经多次硬件迭代，先后测试F330、Mark4等多款机架，对比稳定性与适配性后最终确定逐飞机架；小车也从最初底盘过低、扭矩不匹配的麦轮底盘，整体迭代更换为赛事标准Y车模。同时无人机调试困难重重，长期受陀螺仪零飘问题困扰，校准调试耗时极久，也是本队“凌缥”队名的由来，调试期间多次出现机身失控坠机、参数整定失误等问题，甚至发生桨叶打伤的安全事故。临近六月，团队才勉强完成无人机跟随、机车协同基础任务功能。
+本次备赛过程也暴露出团队前期规划不足的问题，忽视了无人机姿态校准、多传感器融合调试、协同逻辑适配所需的大量时间，导致后期任务紧张仓促。为提升视觉识别精度、解决光照干扰与目标误检问题，省赛前一周左右，团队集中三四天时间采集数万张场景图像数据，完成数据集扩充与算法参数迭代优化，大幅提升了小车红外灯带、场地信标的识别准确率，有效改善了系统工作稳定性。
+省赛前夕，观看其他赛区参赛队伍的比赛视频与调试成果，见识到众多优秀队伍的精湛技术与稳定发挥，让我们倍感压力的同时也收获了大量优化思路，在赛前最后阶段对控制算法、通信隔离、视觉阈值、跟随逻辑进行了大量迭代整改。团队坚持调试至赛前最后一刻，最终奔赴赛场，不负长期熬夜攻坚、反复试错的努力，取得了较为满意的竞赛成绩。
+本次智能车竞赛备赛经历让我们深刻明白，竞赛项目无绝对的难易之分，唯有脚踏实地、持之以恒、勤于调试、善于复盘，才能在从零起步的陌生领域突破自我、收获成果。任何复杂的技术项目，只要肯投入时间与精力深耕细作，终会收获意想不到的成长与突破。
+最后，衷心感谢学校与学院领导对智能车竞赛项目的大力支持，感谢指导老师的悉心指导与耐心解惑，也感谢实验室并肩奋斗的各位同学的互帮互助、携手同行。长风破浪会有时，直挂云帆济沧海，祝愿所有智能车竞赛参赛学子皆能深耕有所得、历练有所成。
+附录
+#include "zf_common_headfile.h"
+#include "flight.h"
+#include "attitude.h"
+#include "small_driver_uart_control.h"              
+#include "pid.h"
+#include "height.h"
+#include "flow.h"
+#include "imu_vel.h"
+
+volatile uint32_t system_ms_ticks = 0;
+uint32_t last_send_ticks = 0;
+float target_x = 0.0f;
+float target_h = 1.0f;
+float target_y = 0.0f;
+uint8_t ch2 = 0;
+static uint8_t landing_stage = 0;      // 0:正常, 1:前进, 2:降落
+static uint32_t landing_start_ms = 0;  // 前进阶段开始时间
+void move(float x,float y, float h);
+
+void rotate_point(float x, float y, float *out_x, float *out_y);
+
+float avgX_b, avgY_b;
+float new_x, new_y;
+float ti_kp;
+float ti_kb;
+extern float angle_correction_pitch;
+extern float angle_correction_roll;
+
+#define DATA_LENGTH               (20)
+#pragma location = 0x28001000                
+#define V_SPEED     0.000001f
+__no_init float m7_1_data[DATA_LENGTH];
+PID_HandleTypeDef pos_x;
+PID_HandleTypeDef pos_y;
+Kalman1D_t kf_x, kf_y;
+Kalman1D_t x_kf, y_kf;
+int main(void)
+{
+    clock_init(SYSTEM_CLOCK_250M);
+    debug_info_init();
+
+    flight_init();
+    motor_init();
+    
+//    wireless_uart_init();
+    system_delay_init();
+    imu660ra_init();
+    attitude_init(0.001f);
+
+    // 新光流与高度传感器初始化
+    upflow302_receive_init();
+    dl1b_init();
+    height_init();
+    optical_flow_init();
+    // 延迟等待光流模块稳定
+    system_delay_ms(1000);
+    optical_flow_calibrate_zero(0);
+    system_delay_ms(5000);
+    imu_calibrate(5000);
+
+    pit_init(PIT_CH0,  1000);
+    pit_init(PIT_CH1,  10000);
+    pit_init(PIT_CH2, 20000);
+    pit_init(PIT_CH10, 10000);
+
+   seekfree_assistant_interface_init(SEEKFREE_ASSISTANT_DEBUG_UART);
+  
+    PID_ClearState(&flight.pid_rate_roll);
+    PID_ClearState(&flight.pid_rate_pitch);
+    PID_ClearState(&flight.pid_rate_yaw);
+    PID_ClearState(&flight.pid_angle_roll);
+    PID_ClearState(&flight.pid_angle_pitch);
+    PID_ClearState(&flight.pid_angle_yaw);
+    PID_ClearState(&flight.pid_pos_x);
+    PID_ClearState(&flight.pid_pos_y);
+    PID_ClearState(&flight.pid_vel_x);
+    PID_ClearState(&flight.pid_vel_y);
+    PID_ClearState(&flight.pid_height);
+    PID_Init(&pos_x, PID_POSITION, 0.001f, 0.0f, 0.0f, 0.1f, -0.1f, 0.05f, -0.05f);
+    PID_Init(&pos_y, PID_POSITION, 0.001f, 0.0f, 0.0f, 0.1f, -0.1f, 0.05f, -0.05f);  //120
+    
+    Kalman_Init(&kf_x, 0.001f, 0.08f, 0.1f);
+    Kalman_Init(&kf_y, 0.001f, 0.08f, 0.1f);
+    m7_1_data[0] = 1;
+    while (1)
+    {
+    if (system_ms_ticks - last_send_ticks >= 10)
+    {
+        last_send_ticks = system_ms_ticks;
+        seekfree_assistant_oscilloscope_data.channel_num = 8;
+        seekfree_assistant_oscilloscope_data.data[0] = flight.pid_vel_y.set_point;
+        seekfree_assistant_oscilloscope_data.data[1] = flight.pid_vel_y.feedback;  
+        seekfree_assistant_oscilloscope_data.data[2] = flight.pid_vel_y.output;         
+        seekfree_assistant_oscilloscope_data.data[3] = flight.pid_vel_x.set_point;
+        seekfree_assistant_oscilloscope_data.data[4] =flight.motor[0];
+        seekfree_assistant_oscilloscope_data.data[5] = flight.motor[1];
+        seekfree_assistant_oscilloscope_data.data[6] = flight.motor[2];
+        seekfree_assistant_oscilloscope_data.data[7] = flight.motor[3];    
+        seekfree_assistant_oscilloscope_send(&seekfree_assistant_oscilloscope_data);
+    }
+        
+      system_delay_ms(3);
+    }
+}
+
+void pit0_ch0_isr(void)
+{
+    pit_isr_flag_clear(PIT_CH0);
+    system_ms_ticks++;
+    
+    flight.pid_angle_roll.kp =3+2+4*(10000-flight.total_throttle) /10000; 
+    flight.pid_angle_pitch.kp=3+2+4*(10000-flight.total_throttle) /10000; 
+    flight.pid_angle_yaw.kp  =3+2+4*(10000-flight.total_throttle) /10000; 
+
+    attitude_update();
+    flight_attitude_control();
+}
+
+void pit0_ch1_isr(void)
+{
+    pit_isr_flag_clear(PIT_CH1);
+    m7_1_data[1] = pitch;
+    m7_1_data[2] = roll;
+    m7_1_data[3] = yaw;
+    m7_1_data[4] = dl1b_distance_mm;
+    m7_1_data[5] = flow_pos_y;   // PosX
+    m7_1_data[6] = -flow_pos_x;  // PosY
+    SCB_CleanInvalidateDCache_by_Addr((uint32_t*)m7_1_data, sizeof(m7_1_data));
+}
+
+void pit0_ch2_isr(void)
+{
+    pit_isr_flag_clear(PIT_CH2);
+
+    height_update();
+    optical_flow_update();
+
+    float raw_x = m7_1_data[11];
+    float raw_y = m7_1_data[12];
+    float stop1 = m7_1_data[13];
+    float stop2 = m7_1_data[14];
+
+    // -------- 降落状态机 ----------
+    if (stop1) {
+        if (landing_stage == 0) {
+            landing_stage = 1;
+            landing_start_ms = system_ms_ticks;
+            // 进入前进阶段，清零速度环积分，避免积分饱和导致过冲
+            PID_ClearState(&flight.pid_vel_x);
+            PID_ClearState(&flight.pid_vel_y);
+        }
+    } else {
+        if (landing_stage != 0) {
+            landing_stage = 0;
+        }
+    }
+
+    // 根据状态设置速度指令（target_x, target_y）
+    if (landing_stage == 1) {
+        uint32_t elapsed = system_ms_ticks - landing_start_ms;
+        if (elapsed < 1000) {
+            // 前进阶段：向前 0.5 m/s（注意映射：target_y 对应 x 轴速度）
+            target_y = 0.005f;
+            target_x = 0.0f;
+            // 高度保持不变
+        } else {
+            // 前进 1 秒结束，转入降落
+            landing_stage = 2;
+            target_y = 0.0f;
+            target_x = 0.0f;
+            // 降落阶段也清零积分，避免减速过冲
+            PID_ClearState(&flight.pid_vel_x);
+            PID_ClearState(&flight.pid_vel_y);
+        }
+    } else if (landing_stage == 2) {
+        // 降落阶段：垂直下降
+        target_h -= 0.03f;      
+        if (target_h < 0.0f) target_h = 0.0f;
+        target_y = 0.0f;
+        target_x = 0.0f;
+    } else {
+
+        // 正常模式：使用位置环输出（仅在非降落时）
+        float pos_x_out = PID_Compute(&pos_x, 0, raw_x);
+        float pos_y_out = PID_Compute(&pos_y, 0, raw_y);
+        target_x = pos_x_out;
+        target_y = pos_y_out;
+        // target_h 由外部设定
+    }
+
+    // 更新高度目标并调用高度控制
+    move(0.0f, 0.0f, 1.0);
+    flight_height_control();
+}
+void pit0_ch10_isr()                    // 定时器通道 10 周期中断服务函数      
+{
+    pit_isr_flag_clear(PIT_CH10);
+    acc_integral_calc_vel(roll, pitch);
+    flight_speed_control(target_y,-target_x);  
+}
+void move(float x, float y, float h)
+{
+    flight_set_target_position(-y, x, h); 
+}
+
+

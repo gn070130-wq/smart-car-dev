@@ -1,0 +1,3065 @@
+
+第二十一届全国大学生
+智能汽车竞赛
+技 术 报 告
+
+
+
+
+
+
+学    校：西南交通大学
+队伍名称：恁白吊搭
+参赛队员：尹旭
+          樊伟玥
+          何东润
+          薛许羽骊
+带队教师：郭东明
+蒋朝根
+关于技术报告和研究论文使用授权的说明
+	 本人完全了解全国大学生智能汽车竞赛关保留、使用技术报告和研究论文的规定，即：参赛作品著作权归参赛者本人，比赛组委会可以在相关主页上收录并公开参赛作品的设计方案、技术报告以及参赛模型车的视频、图像资料，并将相关内容编纂收录在组委会出版论文集中。
+
+参赛队员签名：尹  旭
+樊伟玥
+何东润
+薛许羽骊
+带队教师签名：郭东明
+蒋朝根
+日     期：2026.8.15
+
+
+
+
+摘  要
+本文介绍西南交通大学“恁白吊搭”队在第二十一届全国大学生智能汽车竞赛蚂蚁搬家组中的双车协同搬运系统。两辆搬运车均采用三全向轮缩微车模、NXP i.MX RT1021 MicroPython核心板、IMU660RA六轴惯性测量模块、三路1024线增量式编码器和N20减速电机。主车使用OpenART Plus完成网球、沙包、泰迪熊及红砖等目标的神经网络识别，同时利用颜色阈值提取黄色边界；副车使用OpenART mini配合170°红外镜头识别主车红外灯带，通过无线串口接收主车运动前馈并进行红外相对位置闭环。底盘控制采用三全向轮运动分解、三路增量式速度PID以及偏航角—角速度串级控制，主车进一步结合编码器分段里程、目标锁定、扫描恢复和任务状态机，实现目标搜索、横向对位、共同推动、转向避让及最后归库等动作。整车采用DRV8701E外置MOSFET全桥驱动，并围绕蚂蚁搬家组计重特点进行轻量化设计。
+【关键词】蚂蚁搬家；全向轮；MicroPython；双车协同；OpenART；红外跟随
+
+
+目录
+第一章 引言	1
+1.1 智能车大赛介绍	1
+1.2 第二十一届蚂蚁搬家组规则介绍	1
+1.3 报告内容	1
+第二章 机械结构设计	3
+2.1 整体结构	3
+2.2 编码器的安装	4
+2.3 车模主要技术参数	5
+第三章 硬件电路设计	7
+3.1 单片机系统设计	7
+3.2 调试电路设计	8
+3.3 电机驱动电路	9
+3.4 传感器的选择	11
+3.4.1 摄像头	11
+3.4.2 编码器	11
+3.5 主控板	12
+3.6 红外灯带	13
+3.7 图像处理板	14
+第四章 软件控制设计	15
+4.1 PID 控制算法介绍	15
+4.1.1 位置式 PID	15
+4.1.2 增量式 PID	15
+4.1.3 PID参数整定	16
+4.1.4 全向轮速度分解	16
+第五章 系统调试	20
+5.1 开发调试工具	20
+5.2 人机交互工具	20
+5.3 无线串口及上位机调试	21
+第六章 结论	23
+致谢	I
+参考文献	II
+附录	III
+
+第一章 引言
+1.1 智能车大赛介绍
+全国大学生智能汽车竞赛是一项以智能车辆为研究对象的综合性工程实践竞赛，强调自主设计、实际制作、整车调试和现场比赛的完整工程过程。竞赛内容涵盖嵌入式控制、传感器、模式识别、电机驱动、机械设计和任务规划等多个方向，为参赛学生提供了将理论知识与工程实践相结合的平台。第二十一届竞赛进一步增加了以任务规划和多车协作为核心的赛题，其中蚂蚁搬家组以MicroPython开发、轻量化搬运车和双车协同为主要特点。[1][2]
+与传统竞速组相比，蚂蚁搬家组不以沿固定赛道高速循迹为核心，而是要求车模根据场地中的目标物、边界和相互位置完成搜索、搬运与归库。该任务对全向运动能力、视觉识别稳定性、无线通信和多状态流程控制提出了较高要求，也使机械、电路和软件之间的耦合更加明显。
+1.2 第二十一届蚂蚁搬家组规则介绍
+第二十一届蚂蚁搬家组要求参赛队伍制作两辆搬运车模，根据目标类别将场地中央的物体搬运到指定区域。搬运物品需要由两个车模共同推动，搬运过程中物体不离开地面；参与搬运的车模之间不得存在机械连接，但允许通过无线方式通信。含MCU的图像处理平台限定使用基于NXP微控制器的OpenART、OpenART Plus、MCXVision、MV5-RT等模块。[2]
+本组主要搬运车使用竞赛指定的NXP RT1021 MicroPython核心板，按照规则使用官方MicroPython固件和Python语言开发，程序通过Thonny及Type-C接口写入与调试。[2] 主车承担目标识别、黄线边界识别和全局状态机决策；副车不直接判断搬运目标，而是通过红外视觉跟随主车，并结合无线前馈实现协同搬运。
+1.3 报告内容
+本报告共分六章。第一章介绍智能车竞赛及第二十一届蚂蚁搬家组任务；第二章说明双车机械结构、编码器安装和整车主要技术参数；第三章介绍RT1021主控、DRV8701E电机驱动、视觉模块、红外灯带及自制主板等硬件设计；第四章阐述PID控制、三全向轮运动分解、视觉识别、红外跟随、里程估计和搬运状态机；第五章总结开发工具、人机交互及无线串口联调方法；第六章对系统设计进行总结。文末给出参考文献和主要电路、核心程序等附录。
+
+第二章 机械结构设计
+蚂蚁搬家组的搬运效率不仅取决于控制算法，还与车模重量、推杆刚度、轮系布置和传感器安装密切相关。本组在满足比赛限制的前提下，采用三全向轮缩微车模，并尽量减少非必要结构件，使两车兼顾全向运动能力、结构刚度和轻量化。
+2.1 整体结构
+主、副车均采用三轮全向底盘，三个N20减速电机沿车体周向布置并分别驱动全向轮。三轮结构可在车头朝向基本不变的情况下完成前进、后退和左右横移，特别适合目标搜索后直接横向对位。主车前部安装单根推杆和OpenART Plus摄像头，车体上布置RT1021核心板、主板、双驱/单驱板、IMU、无线串口及红外灯带；副车结构基本相同，但摄像头替换为OpenART mini并加装红外镜头，用于识别主车红外灯带。
+主车承担目标识别和任务决策，因此视觉模块、红外灯带和相关支架略多，整车重量304 g；副车主要承担跟随和共同推动，整车重量284 g。两车平均重量294 g。
+
+图2.1 主车与副车整车实物图
+
+图2.2 推杆SolidWorks三维模型
+推杆进行了多种不同样式的设计，最终选择了图2.2的推杆。该推杆采用一体式刚性框架结构，通过两处螺钉固定于车体前部。相比原先的单根横向推杆，新结构采用折弯式轮廓，在保证较大有效接触宽度的同时形成两个不同位置的支撑段，使推杆在接触网球、沙包及泰迪熊等不同形状、不同尺寸的搬运物体时具有更好的适应性。框架中部采用错位折线结构，在减小材料用量和整体质量的同时，提高了推杆的结构刚度和受力稳定性。
+在双车协同搬运过程中，主车与副车的推杆整体保持约90°夹角，使两辆车能够从相互垂直的方向对目标物体形成约束，降低物体在推动过程中向两侧滑移或脱离推杆的概率。安装时重点保证两处固定点可靠，并调整推杆接触边缘的高度以及与地面的平行度，使推杆能够稳定作用于搬运物体，同时减小因接触位置偏移或受力不均造成的车体偏航，从而提高双车协同搬运过程的稳定性。
+2.2 编码器的安装
+每辆车使用三个1024线增量式编码器，分别对应三个驱动轮。编码器体积小、质量约1.5 g，可同时提供方向和正交脉冲信号，满足MicroPython控制周期下的轮速闭环和里程估计需求。安装时保证编码器与电机输出轴同轴，固定后检查转动无明显偏心和轴向窜动，并通过程序逐一确认三个编码器的正负方向。
+调试中首先让单个电机以低速正反转，观察编码器符号是否与程序坐标系一致；若方向相反，在软件中调整捕获方向或速度符号。完成单轮确认后，再进行三轮前进、横移和自转测试，以避免轮速反馈符号错误造成PID持续增大输出。
+
+图2.3 编码器与驱动电机
+2.3 车模主要技术参数
+智能车主要技术参数包括整车重量、机械尺寸、主控制器、传感器及通信模块等，具体见表2.1。
+表2.1 智能车主要技术参数
+
+
+第三章 硬件电路设计
+硬件电路是双车稳定运行的基础。本组围绕轻量化、模块化和便于现场维修三个目标设计自制电路：RT1021核心板通过自制主板连接电源、编码器、IMU、屏幕、无线串口和电机驱动；三台N20电机由一块DRV8701E双驱板和一块DRV8701E单驱板驱动；主车额外安装红外灯带，为副车提供稳定的视觉定位特征。
+3.1 单片机系统设计
+两辆车的主控制器均为逐飞科技恩智浦RT1021_BTB核心板，核心器件属于NXP i.MX RT1021系列，采用Arm Cortex-M7内核，主频最高500 MHz，具有较丰富的UART、SPI、定时器和编码器等外设资源，可满足MicroPython解释执行、三路速度闭环、IMU采样、状态机和无线通信等任务。 本届蚂蚁搬家组要求主要搬运车使用指定MicroPython固件和Python语言开发，本组软件与该规则一致。[2]
+核心板通过BTB连接器安装在自制主板上。主板将编码器、IMU、摄像头串口、无线串口、IPS200PRO显示接口和三路PWM/DIR电机控制信号统一引出，使核心板只负责计算和接口控制，功率驱动与电源模块独立布置，降低高电流部分对主控的干扰。
+
+图3.1 主控制器与姿态传感器
+3.2 调试电路设计
+本组设置了两套相互独立的显示与调试链路。主车和副车的RT1021核心板均使用IPS200PRO作为运行状态调试屏，用于显示当前状态、任务序号、目标标签、目标横向偏差、目标面积、黄线状态、偏航角和本段里程等关键变量，便于整车运动过程中快速判断状态机与闭环控制是否正常。
+屏幕转接板并非用于RT1021核心板的IPS200PRO，而是专门用于摄像头视觉调试。转接板将OpenART摄像头侧的SPI显示信号、电源及背光等接口重新排布，连接IPS全彩2.0寸320×240液晶屏，可直接显示摄像头采集画面、检测框、颜色阈值及识别结果。主、副车核心板调试仍独立使用IPS200PRO；软件开发阶段同时通过Thonny的REPL与串口输出观察车辆变量，并使用OpenMV IDE调试主、副车摄像头程序。
+
+图3.2 屏幕转接板原理图
+
+图3.3 摄像头调试用IPS全彩2.0寸320×240液晶屏
+
+图3.4 主、副车调试用IPS200PRO屏幕
+3.3 电机驱动电路
+三台有刷直流N20减速电机采用“DRV8701E双驱板+DRV8701E单驱板”的组合驱动。DRV8701E是一款单H桥栅极驱动器，通过四个外置N沟道MOSFET构成完整H桥，采用PH/EN接口即可实现方向控制和PWM调速，并提供欠压、过流、短路和过温等保护功能。使用外置MOSFET能够根据小车电机电流和板面积选择合适的功率器件，同时便于将两路驱动集成到一块双驱板中。
+双驱板承担左、右两个电机，单驱板承担第三个电机。主控向各驱动通道提供DIR和PWM信号，输入端经74HC125缓冲后送入DRV8701E；驱动芯片输出高低侧栅极信号控制外部MOSFET桥。电机电源直接来自3S锂电池母线，逻辑部分使用3.3 V供电。每个控制周期内，RT1021先完成三全向轮速度分解，再由三路增量式速度PID输出PWM占空比。
+
+图3.5 DRV8701E双驱板原理图
+
+图3.6 DRV8701E单驱板原理图
+3.4 传感器的选择
+3.4.1 摄像头
+本组两辆车采用不同的视觉分工。主车使用OpenART Plus智能视觉模块及配套摄像头，负责搬运目标神经网络识别和黄色边界检测；副车使用OpenART mini，并在镜头端加装170°广角红外镜头，负责识别主车上的红外灯带。两类视觉模块均可使用MicroPython/OpenMV风格接口开发，并通过UART向RT1021发送处理后的低维特征，避免主控直接处理完整图像。
+主车视觉采用320×240 RGB565图像，关闭自动增益和自动白平衡，降低曝光并提高对比度与饱和度，以减小蓝色背景和反光对颜色阈值的影响。副车视觉采用QQVGA灰度图，固定低曝光和增益，利用红外镜头滤除大部分可见光，再通过双光斑配对获得相对位置。
+
+图3.7 主车副车视觉模块
+3.4.2 编码器
+编码器选择1024线增量式编码器Pro，每辆车使用三只。编码器输出方向与正交脉冲，可由RT1021的encoder接口直接采集。程序按固定采样周期读取各轮增量并换算为速度量，一方面作为增量式速度PID反馈，另一方面通过三轮速度反解车体纵向/横向速度，完成分段里程估计。
+本组实测标定中，240 cm直线运动约对应1650个原始里程单位。里程比例并不用于建立全场绝对坐标，而只在每个状态段内累计，从而限制启动前进、横向主搜索、第三目标强制前进和扫描范围。状态切换时将本段里程清零，可降低长期轮滑误差的累积影响。
+3.5 主控板
+自制主控板是整车信号与电源的汇聚板。板上包含电源接口与总开关、5 V降压电源、3.3 V稳压、电池电压检测、三路编码器接口、三路电机控制接口、IMU接口、无线串口接口、摄像头串口接口、屏幕接口和红外灯带使能接口等。RT1021_BTB核心板插接在主控板上，便于损坏后快速更换。
+电源部分将3S锂电池母线分配给电机驱动和逻辑电源，5 V与3.3 V分别为视觉/显示及低压逻辑模块供电。将功率驱动板与主控板分开布置，可以缩短电机大电流路径，同时减少驱动MOSFET发热和开关噪声对IMU、编码器及串口信号的影响。
+
+图3.8 RT1021主控板原理图
+3.6 红外灯带
+红外灯带作为副车定位的主动光源，安装在主车上，由5 V供电，两组红外LED经限流电阻连接，低边MOSFET由主控EN信号控制开关，栅极设置下拉电阻防止上电误亮。
+主动红外光源相比依赖主车外形或自然光特征更稳定，副车红外镜头在低曝光模式下可将灯带呈现为高亮光斑。程序按两个灯点的中心位置、间距和倾角估算主副车相对位置，为无线前馈提供闭环修正。
+
+图3.9 主车红外灯带驱动原理图
+
+图3.10 主车红外灯带PCB三维图
+
+3.7 图像处理板
+主车图像处理板采用OpenART Plus，副车图像处理板采用OpenART mini。两者均独立完成图像采集和处理，再通过UART把结果发送给RT1021核心板，因此视觉处理与底盘控制在计算资源上相互隔离。主车OpenART Plus从SD卡加载TensorFlow Lite目标检测模型；副车OpenART mini运行灰度阈值、光斑筛选、双灯配对、ROI跟踪和低通滤波算法。
+主车摄像头识别到目标时发送[label, deltax, area, yellow_area, pushsign]，未识别到目标时仍发送[yellow_area, pushsign]，保证黄线信息持续更新。副车摄像头发送[横向偏移, 前后距离, 灯带倾斜角]。该通信方式使主控只处理少量数值信息，适合MicroPython环境下的实时控制。
+
+第四章 软件控制设计
+软件控制系统以MicroPython实现。主车软件负责视觉数据解析、任务目标锁定、编码器里程、IMU偏航角、三轮速度闭环、任务状态机和无线指令发送；副车软件负责无线接收、红外视觉跟随、转向避让以及自身三轮速度和姿态闭环。底层采样周期约5 ms，主车任务状态机每4次采样执行一次，即约20 ms更新一次。
+4.1 PID控制算法介绍
+PID控制器根据目标值与实际值的偏差，通过比例、积分和微分项形成控制输出。由于本车同时需要轮速控制和姿态控制，程序实现了位置式PID和增量式PID两种形式：三轮速度环使用增量式PID，偏航角环、角速度环以及副车红外位置修正使用位置式PID。状态切换时主车清除PID历史误差和积分，避免上一运动段的控制量带入下一状态。
+4.1.1 位置式PID
+位置式PID直接根据当前误差、积分误差和误差变化计算输出，离散形式可写为：
+	u(k)=Kₚe(k)+Kᵢ∑e(k)+K_d[e(k)-e(k-1)]	公式1
+主车偏航角外环首先将target_yaw与当前yaw的误差限制在−180°～180°，再由位置式PID输出目标角速度；角速度内环比较目标角速度与IMU660RA测得的Z轴角速度，输出用于三轮运动分解的旋转修正量。副车的偏航角环和角速度环采用相同结构，并另外用位置式PID计算红外横向和前后位置修正。
+4.1.2 增量式PID
+增量式PID不直接计算全部控制量，而是在上一周期输出基础上增加一个控制增量，其离散形式为：
+	Δu(k)=Kₚ[e(k)-e(k-1)]+Kᵢe(k)+K_d[e(k)-2e(k-1)+e(k-2)]	公式2
+三台电机均使用增量式速度PID。编码器每个采样周期提供轮速反馈，控制器根据轮速目标与实际轮速的差值逐步修正PWM占空比。相比固定PWM开环控制，速度闭环能够减小电池电压变化、地面摩擦差异以及推物负载变化造成的速度波动。
+4.1.3 PID参数整定
+本车采用工程整定法完成参数调试。首先固定偏航控制，只调单轮速度环，使轮速在不同目标速度下能够快速跟随且无明显持续振荡；随后进行三轮前进和横移，微调各轮参数补偿电机与机械差异；最后加入偏航角—角速度串级控制，通过原地90°、180°旋转和直线横移测试确定航向参数。
+主车最终三路速度环参数分别为：左轮Kp=30、Ki=0.25，右轮Kp=28、Ki=0.25，后轮Kp=30、Ki=0.23，输出限幅±8000；偏航角环Kp=1.0，角速度环Ki=0.1。副车三路速度环Kp=30、Ki=0.34；偏航角环Kp=0.9，角速度环Ki=0.09；红外横向修正Kp=10，前后修正Kp=20。上述参数均为当前比赛程序中的实装值。
+4.1.4 全向轮速度分解
+三个全向轮按固定角度安装。程序定义车体运动方向角θ：0°为前进，180°为后退，−90°为左移，90°为右移。设车体平移速度为v，旋转修正量为ω，三轮目标速度按安装角30°、150°和270°投影：
+	u₁=(2/3)v·cos(30°−θ)+ω−g_z/40	公式3
+	u₂=(2/3)v·cos(150°−θ)+ω−g_z/40	公式4
+	u₃=(2/3)v·cos(270°−θ)+ω−g_z/40	公式5
+其中g_z为陀螺仪Z轴角速度反馈项。状态机只需给出运动方向、目标平移速度和target_yaw，速度分解函数即可统一生成三轮目标值，再交给三个速度PID执行。
+（1）主车视觉识别与目标锁定
+主车OpenART Plus使用RGB565、QVGA（320×240）图像，从SD卡加载yolo3_iou_smartcar_final_with_post_processing.tflite模型。神经网络置信度阈值设为0.75，为兼顾实时性每3帧执行一次AI推理，其余帧复用最近一次目标列表。每个检测目标计算类别label、横向偏差deltax和检测框面积area。主控只锁定当前任务标签，并在同标签多目标时优先选择面积更大的目标。
+黄色边界采用LAB颜色阈值逐帧检测，不经过神经网络。摄像头统计yellow_area并利用连续帧计数器得到pushsign。主车程序中pushsign=0表示看到黄线，pushsign=1表示未看到黄线。该信息用于判断普通物体已经到达边界，以及最后一次搬运结束后的归库位置。
+表4.1 主车视觉标签定义
+
+（2）编码器分段里程估计
+程序通过三轮编码器速度反解车体横向速度v_x和纵向速度v_y，并根据当前运动方向只累计相应方向的正向里程。实测标定240 cm约等于1650个原始里程单位。每次进入新状态时reset_segment_distance()将本段里程清零，因此该方法主要用于限制某一动作段的最大距离，而不是构建全局绝对坐标。
+当前最终程序的关键距离参数包括：启动后强制前进130 cm；第一、第二目标横向主搜索上限均为150 cm；第三目标转向后强制前进120 cm；扫描采用50 cm、100 cm、50 cm的往返范围。通过“里程控制大范围运动+视觉完成局部对位”，可以减小远距离视觉误检对整体流程的影响。
+（3）副车红外跟随与双车协同
+副车OpenART mini在灰度图中提取高亮光斑，先在上一帧目标附近ROI搜索，失败后再全图搜索。候选灯点按照像素面积、宽高、双灯间距、纵向差和亮度比评分，选出最符合主车红外灯带特征的一对。双灯实际间距L=10.0 cm，摄像头等效焦距标定f=54.73 px，设双灯像素间距为d、中心相对图像中心偏移为e，则前后距离D=fL/d，横向偏移X=eL/d。计算结果经α=0.35的一阶低通滤波后通过UART发送给副车主控。
+副车从无线串口接收主车move_angle、move_speed、target_yaw和change_sign，将主车运动指令分解为X/Y方向前馈，再叠加红外位置闭环修正。若短时看不到红外灯带，启动保护期内副车仅执行无线前馈；之后仍丢失则在前馈基础上增加向右搜索分量，重新识别后自动恢复闭环。
+
+图4.1 副车无线前馈与红外闭环跟随结构
+（4）搬运任务状态机
+主车最终程序采用三类物体连续状态机。上电完成IMU零偏校准后等待8 s，先按里程强制前进，然后向右搜索第一个目标；目标进入较宽视觉范围后进入最终横向对位。普通目标推到黄线后继续推进约1.4 s，再后退并转向下一任务。第一类目标转向后还有一次短距离后退，再向右搜索第二类目标；第三类目标转向后必须先走满120 cm，避免远距离误检提前改变流程。
+当最终对位过程中目标连续丢失超过1 s，车辆进入通用扫描状态，按优先方向50 cm、反方向100 cm、再回50 cm的方式寻找目标。当前TASK_SEQUENCE依次为网球（target_yaw=0°）、熊（target_yaw=90°）、沙包（target_yaw=270°），各类别拥有独立的最终deltax和允许误差。
+最后一个物体采用界内归库逻辑：首次看到黄线后继续以较低速度推动，直到黄线消失；随后后退，直到重新看到黄线且yellow_area≤8000；再向左横移，直到yellow_area>25000；最后继续向左约2 s后停车。对于逆时针或约180°转向，主车在真正修改target_yaw前先通过change_sign通知副车横向避让约0.4 s，以减少两车推杆和车体相互干涉。
+
+图4.2 主车三物体搬运流程概览
+
+第五章 系统调试
+5.1 开发调试工具
+RT1021核心板程序使用Thonny开发和下载，通过Type-C虚拟串口连接核心板。Thonny可直接编辑MicroPython文件、查看REPL输出和异常信息，符合蚂蚁搬家组对指定固件和Python开发方式的要求。[2] 主车OpenART Plus和副车OpenART mini使用OpenMV IDE进行图像调试、阈值调整和程序下载。
+自制主板、DRV8701双驱/单驱板、红外灯带板和屏幕转接板均采用嘉立创EDA专业版完成原理图及PCB设计；推杆和安装结构使用SolidWorks建模；AI模型训练依据逐飞科技OpenART相关训练流程完成，并最终导出TensorFlow Lite模型部署到OpenART Plus。
+表5.1 项目开发与调试工具
+
+5.2 人机交互工具
+车辆调试阶段，主车和副车均使用IPS200PRO屏幕与串口输出作为核心板侧的人机交互手段。主车IPS200PRO实时显示state、task、label、deltax、area、pushsign、yaw和segment_distance等信息，副车IPS200PRO用于观察红外跟随、偏航和转向状态。摄像头侧的图像显示则使用另一套“屏幕转接板+IPS全彩2.0寸320×240液晶屏”，主要服务于视觉算法调试，不与核心板IPS200PRO混用。
+为了方便现场修改，主车把任务顺序、视觉目标位置、搜索距离、扫描范围、状态持续时间、各段速度、归库黄线面积阈值和偏航角死区集中在程序顶部“现场快速参数区”。现场调车时优先修改这些参数，无需改动状态机主体。该方式减少了额外按键、旋钮等硬件，同时降低因临场大范围改代码带来的风险。
+
+5.3 无线串口及上位机调试
+主、副车之间使用逐飞科技无线串口模块V2.4，程序中WIRELESS_UART波特率设置为460800。主车周期性发送“move_angle_cmd,target_move_speed,target_yaw,change_sign”，副车按换行帧解析后作为运动前馈和转向状态依据。摄像头与各自RT1021之间使用115200波特率UART。
+联调过程分为三个阶段：首先仅打开无线前馈，确认副车能够跟随主车前后和横移；其次固定主车，在不同距离和横向偏移下标定红外双灯位置闭环；最后将无线前馈与红外修正叠加，并加入主车转向、目标丢失和避让状态。Thonny与OpenMV IDE的串口窗口作为上位机监视界面，用于输出轮速、yaw、红外偏移、目标面积和状态机编号。
+整车调试中发现的主要问题包括：同类目标在连续帧间跳变、远距离目标误检、蓝色场地背景干扰、黄线短时丢失以及主副车转向时相互干涉。最终分别采用按任务标签锁定目标、1 s丢失等待、强制里程段、独立黄线阈值、红外低曝光、无线前馈以及转向前避让等方式进行改进。
+
+图5.1 逐飞无线串口模块V2.4
+
+第六章 结论
+本组围绕第二十一届蚂蚁搬家组“双车无机械连接协同搬运”的任务要求，完成了两辆三全向轮缩微搬运车的机械、电路、视觉和控制系统设计。两车均采用RT1021 MicroPython核心板、IMU660RA、三路1024线编码器和三台N20减速电机，功率驱动使用DRV8701E双驱与单驱组合。主车利用OpenART Plus完成目标与黄色边界感知，副车利用OpenART mini和红外镜头识别主车红外灯带。
+在软件方面，三轮速度环采用增量式PID，姿态控制采用偏航角外环和角速度内环；主车通过编码器分段里程限制大范围运动，并利用视觉完成最终横向对位；副车将主车无线运动前馈与红外位置闭环叠加，实现无刚性连接条件下的编队跟随。最终三类物体状态机能够依次完成搜索、对位、共同推动、后退、转向、避让及界内归库等动作。
+当前方案仍有进一步改进空间。主车神经网络在复杂光照和多个同类目标同时出现时仍可能发生漏检或目标跳变；副车双灯定位采用简化针孔模型，大角度侧视时存在一定系统误差；编码器里程受全向轮滑移影响，长距离累计精度有限。后续可增加镜头畸变标定、视觉与里程融合、目标轨迹连续性约束和更通用的在线任务规划，以提升现场鲁棒性和对不同摆放方式的适应能力。
+
+致谢
+经过半年的努力，我们终于站在了全国大学生智能汽车竞赛的舞台上。从最初接触智能车，到最终选择蚂蚁搬家组别，这一路充满了挑战与收获。备赛期间，我们经历了无数次方案修改和熬夜调试，也遇到过许多机械、电路、视觉识别和控制算法方面的问题。正是在一次次发现问题、分析问题和解决问题的过程中，我们逐渐完成了整车系统，也结识了许多志同道合的伙伴，留下了许多难忘的回忆。
+首先，衷心感谢西南交通大学对我们参加竞赛给予的大力支持。正是学校提供的良好学习环境、实验条件和竞赛平台，让我们能够将课堂上学到的知识真正应用到工程实践中，并有机会站上全国赛的舞台展示自己的成果。
+特别感谢郭东明老师和蒋朝根老师在整个备赛过程中的悉心指导与支持。两位老师始终耐心地为我们分析问题、提供建议，并在实验条件和参赛保障等方面给予了充分支持，使我们能够将更多精力投入到赛车设计、制作和调试之中。
+同时，感谢实验室的学长学姐们在这半年中的帮助。特别是王哥、徐哥和薛哥，不仅向我们分享了宝贵的参赛经验和技术积累，也在我们遇到困难和瓶颈时给予了耐心的指导和鼓励。我们深知，这次比赛不仅承载着我们四个人的努力，也凝聚着实验室历届成员不断积累的经验。
+还要感谢实验室一起备赛的同学们。大家在调试过程中互相交流、互相帮助、共同进步，让紧张而忙碌的备赛生活多了许多温暖和乐趣。
+最后，感谢一路并肩作战的队友们。从最初的磨合到如今的默契配合，我们共同经历了方案设计、机械加工、电路制作、程序编写以及无数次整车调试，也一起面对并解决了一个又一个问题。能够共同努力并最终闯入全国赛，是这段备赛经历中最值得珍惜的回忆之一。
+希望我们能够在全国赛的舞台上发挥出最好的水平，也希望这段共同奋斗的经历能够成为大学生活中一段珍贵而难忘的记忆，为半年来的努力画上一个圆满的句号。
+
+参考文献
+[1] 全国大学生智能汽车竞赛组委会. 第二十一届全国大学生智能汽车竞赛比赛规则[EB/OL]. 2025-11-09.
+[2] 卓晴. 第二十一届全国大学生智能汽车竞赛蚂蚁搬家组细则及MicroPython开发板相关说明[EB/OL]. 2025-12-27.
+[3] 卓晴. 第21届智能车竞赛蚂蚁搬家组搬运任务说明[EB/OL]. 2025.
+[4] 逐飞科技. OpenART/OpenART Plus智能视觉模块与AI训练资料[EB/OL]. 2026.
+[5] 逐飞科技. OpenART AI模型训练与部署教程[EB/OL]. 2023-3-20.
+
+附录A 电路原理图及硬件配置
+附录给出本车主要自制电路原理图、硬件清单以及最终比赛程序。程序内容与本报告描述的三类物体搬运、红外跟随及双车无线协同方案一致。
+
+图A-1 主控板原理图
+
+图A-2 DRV8701E双驱板原理图
+
+图A-3 DRV8701E单驱板原理图
+
+图A-4 红外灯带原理图
+
+图A-5 屏幕转接板原理图
+表A-1 主要硬件配置
+
+
+附录B 主车核心板程序
+from machine import *
+from smartcar import *
+from seekfree import *
+from display import *
+import gc, time, math
+ 
+TASK_SEQUENCE = (
+    # 标签  面积   yaw     最终delta  允许误差
+    (0,   3000,   0.0,       32,       13),
+    (3,   6000,  90.0,       50,       15),
+    (1,   6000, 270.0,       45,       18),
+)
+ 
+# 自动计算任务数量，不要手动改。
+TASK_COUNT = len(TASK_SEQUENCE)
+ 
+ 
+# ---------- 2. 视觉搜索与对位参数 ----------
+# 初始微调目标位置及允许误差。
+# 这两个参数供原微调状态使用。
+INITIAL_TARGET_DELTA = 20
+CENTER_DEAD_ZONE = 30
+ 
+# 主搜索时，目标进入下列范围才提前结束搜索：
+#   abs(target_deltax - SEARCH_TARGET_DELTA) <= SEARCH_TARGET_RANGE
+SEARCH_TARGET_DELTA = 20
+SEARCH_TARGET_RANGE = 50
+ 
+# 微调阶段目标连续丢失超过1000ms，就转入扫描寻找。
+TARGET_LOST_WAIT_MS = 1000
+ 
+ 
+# ---------- 3. 编码器里程标定 ----------
+# 实测标定：240cm ≈ 1650原始里程单位。
+# 比例不准时，应重新实测后修改分子或分母。
+ODOM_X_CM_PER_UNIT = 240.0 / 1650.0
+ODOM_Y_CM_PER_UNIT = 240.0 / 1650.0
+ 
+# 方向符号修正：
+# 向右运动时横向里程不增加，ODOM_X_SIGN改为-1.0；
+# 向前运动时纵向里程不增加，ODOM_Y_SIGN改为-1.0。
+ODOM_X_SIGN = 1.0
+ODOM_Y_SIGN = 1.0
+ 
+# 低于该速度值的编码器速度视为0，减少静止抖动累计。
+ODOM_SPEED_DEAD_ZONE = 2.0
+ 
+ 
+# ---------- 4. 各段运动距离（单位：cm） ----------
+# 上电等待结束后，先向前走80cm。
+START_FORWARD_CM = 130
+ 
+# 第一个物体：向右主搜索最多150cm。
+FIRST_SEARCH_RIGHT_CM = 150.0
+ 
+# 第一个物体完成并转向后：向右搜索第二个物体最多110cm。
+SECOND_SEARCH_RIGHT_CM = 150.0
+ 
+# 第3个物体转向后，先强制向前115cm。
+# 这一段走满前不会因为提前识别到目标而结束。
+LATER_FORCE_FORWARD_CM = 120.0
+ 
+# 原初始微调完成后的前进距离。
+AFTER_INITIAL_ALIGN_FORWARD_CM = 20.0
+ 
+# 扫描范围：
+# 先向优先方向35cm，再向反方向70cm，再回35cm。
+SCAN_HALF_RANGE_CM = 50.0
+SCAN_FULL_RANGE_CM = 100.0
+ 
+ 
+# ---------- 5. 时间参数 ----------
+# 状态机周期约20ms。
+TASK_UPDATE_PERIOD_MS = 20
+ 
+# 上电完成IMU校准后，原地等待8秒再启动。
+START_WAIT_MS = 8000
+START_WAIT_TICKS = START_WAIT_MS // TASK_UPDATE_PERIOD_MS
+ 
+# 普通转向完成后原地等待80 ticks = 1.6秒。
+TURN_WAIT_TICKS = 80
+ 
+# 逆时针90°或180°转向前，主车先停车20 ticks = 0.4秒，
+# 同时让副车根据change_sign提前避让。
+PRETURN_AVOID_TICKS = 20
+ 
+# 前两个物体第一次看到黄线后，
+# 继续推70 ticks；状态机周期约20ms，所以约为1.4秒。
+PUSH_AFTER_YELLOW_TICKS = 70
+ 
+# 第三类物体作为最后一个物体：
+# 第一次看到pushsign=0后继续以速度200向前，
+# 直到pushsign=1，不再使用固定推进时间。
+ 
+# 普通物体推出后，后退100 ticks = 2秒。
+BACKUP_TICKS = 100
+ 
+# 第一个物体转向完成后的特殊移动时间：
+# 55 ticks = 1.1秒。
+FIRST_TURN_BACKUP_TICKS = 55
+ 
+ 
+# ---------- 6. 速度参数 ----------
+# 启动后第一段强制前进速度。
+START_FORWARD_SPEED = 180
+ 
+# 左右主搜索速度。
+MAIN_SEARCH_SPEED = 150
+ 
+# 左右扫描速度。
+SCAN_SPEED = 80
+ 
+# 原初始微调速度。
+INITIAL_ALIGN_SPEED = 80
+ 
+# 最终横向对位速度。
+FINAL_ALIGN_SPEED = 60
+ 
+# 原微调后前进20cm的速度。
+FORWARD_20CM_SPEED = 120
+ 
+# 前两个物体的推出速度。
+PUSH_SPEED = 250
+ 
+# 普通后退和最终归库后退速度。
+BACKUP_SPEED = 120
+ 
+# 第一个物体转向完成后特殊移动的速度。
+FIRST_TURN_BACKUP_SPEED = 100
+ 
+# 第3个物体转向后强制前进速度。
+FORWARD_SEARCH_SPEED = 180
+ 
+ 
+# ---------- 7. B版界内归库参数 ----------
+# 第3个物体作为最后一个物体时，以及越过黄线阶段的向前速度。
+FINAL_OBJECT_PUSH_SPEED = 200
+ 
+# 最终后退：
+# pushsign=0且yellow_area<=9000时，结束后退并开始向左。
+RETURN_BACKUP_AREA_MAX = 8000 
+ 
+# 最终向左：
+# pushsign=0且yellow_area>30000时，进入最后继续左移阶段。
+RETURN_LEFT_AREA_TARGET = 25000
+ 
+# 达到30000后继续向左100 ticks = 2秒。
+RETURN_LEFT_EXTRA_TICKS = 100
+ 
+# 最终向左归库速度。
+RETURN_LEFT_SPEED = 150
+ 
+ 
+# ---------- 8. 偏航角参数 ----------
+# 转向误差绝对值不超过5°，认为转向完成。
+YAW_DEAD_ZONE = 5.0
+ 
+# ============================================================
+#                 现场快速参数区结束
+# ============================================================
+ 
+Pin26 = Pin('B26', Pin.OUT, value=True)
+ 
+# ==================== 屏幕初始化 ====================
+ips = IPS200PRO(IPS200PRO.TITLE_BOTTOM, 30)
+page = ips.page_create("Main")
+label = ips.label_create(0, 0, 240, 240, "", IPS200PRO.LABEL_AUTO)
+ips.set_parent(label, page)
+ips.set_color(label, IPS200PRO.COLOR_BACKGROUND, 0x0000)
+ips.set_color(label, IPS200PRO.COLOR_FOREGROUND, 0xFFFF)
+ips.set_font(label, IPS200PRO.FONT_SIZE_24)
+ips.page_switch(page)
+ 
+# ==================== 硬件初始化 ====================
+wireless = WIRELESS_UART(460800)
+ 
+led = Pin('C4', Pin.OUT, pull=Pin.PULL_UP, value=True)
+switch2 = Pin('D9', Pin.IN, pull=Pin.PULL_UP_47K)
+state2 = switch2.value()
+motor_l = MOTOR_CONTROLLER(MOTOR_CONTROLLER.PWM_C28_DIR_C29, 13000, duty=0, invert=False)
+motor_r = MOTOR_CONTROLLER(MOTOR_CONTROLLER.PWM_C30_DIR_C31, 13000, duty=0, invert=False)
+motor_b = MOTOR_CONTROLLER(MOTOR_CONTROLLER.PWM_D6_DIR_D7, 13000, duty=0, invert=False)
+ 
+encoder_l = encoder("D15", "D16", True, capture_div=1)
+encoder_r = encoder("D13", "D14", True, capture_div=1)
+encoder_b = encoder("C2", "C3", True, capture_div=1)
+ 
+imu = IMU660RX()
+GYRO_SENS = 16.384
+uart = UART(7, baudrate=115200)
+ 
+# ==================== IMU ====================
+# 陀螺仪只用于：
+# 1. 积分得到当前yaw；
+# 2. 与target_yaw形成偏航角闭环；
+# 3. 在平移和前后运动时抑制车身转动。
+def gyro_to_dps(raw):
+    return raw / GYRO_SENS
+ 
+ 
+class KalmanFilter:
+    def __init__(self, Q=0.001, R=0.1):
+        self.Q = Q
+        self.R = R
+        self.P = 1.0
+        self.x = 0.0
+        self.K = 0.0
+ 
+    def update(self, z):
+        self.P += self.Q
+        self.K = self.P / (self.P + self.R)
+        self.x += self.K * (z - self.x)
+        self.P = (1.0 - self.K) * self.P
+        return self.x
+ 
+ 
+def imu_zero_offset(imu_obj, sample_count=200):
+    pit = ticker(3)
+    pit.capture_list(imu_obj)
+    pit.callback(lambda t: None)
+    pit.start(5)
+    time.sleep_ms(20)
+ 
+    sum_gx = 0.0
+    sum_gy = 0.0
+    sum_gz = 0.0
+ 
+    for _ in range(sample_count):
+        time.sleep_ms(5)
+        data = imu_obj.get()
+        sum_gx += data[3]
+        sum_gy += data[4]
+        sum_gz += data[5]
+ 
+    pit.stop()
+    return sum_gx / sample_count, sum_gy / sample_count, sum_gz / sample_count
+ 
+ 
+offset_gx, offset_gy, offset_gz = imu_zero_offset(imu, 200)
+kf_gz = KalmanFilter()
+ 
+yaw = 0.0
+last_imu_time = time.ticks_ms()
+ 
+ 
+def read_imu():
+    global yaw, last_imu_time
+ 
+    data = imu.get()
+    raw_gz = data[5] - offset_gz
+    gz_dps = gyro_to_dps(raw_gz)
+    gz_filt = kf_gz.update(gz_dps)
+ 
+    now = time.ticks_ms()
+    dt = time.ticks_diff(now, last_imu_time) / 1000.0
+    last_imu_time = now
+ 
+    if dt <= 0.0 or dt > 0.05:
+        dt = 0.005
+ 
+    yaw += gz_filt * dt
+ 
+    if yaw >= 360.0:
+        yaw -= 360.0
+    elif yaw < 0.0:
+        yaw += 360.0
+ 
+    return gz_filt, yaw
+ 
+ 
+def angle_error(target, current):
+    err = target - current
+    while err > 180.0:
+        err -= 360.0
+    while err < -180.0:
+        err += 360.0
+    return err
+ 
+ 
+# ==================== 定时器 ====================
+# 底层采样周期为5ms。
+# 状态机每4次采样执行一次，因此状态机周期约20ms。
+ticker_flag = False
+ticker_count = 0
+ 
+ 
+def ticker_callback(t):
+    global ticker_flag, ticker_count
+    ticker_flag = True
+    ticker_count = (ticker_count + 1) % 1000
+ 
+ 
+pit1 = ticker(1)
+pit1.capture_list(encoder_l, encoder_r, encoder_b, imu)
+pit1.callback(ticker_callback)
+pit1.start(5)
+ 
+# ==================== 编码器 ====================
+# encoder.get()读取的是定时器捕获周期内的编码器增量。
+# 乘3000/1024沿用原主车代码，将其转换为速度PID使用的速度量。
+def read_encoders():
+    sp_l = encoder_l.get() * 3000.0 / 1024.0
+    sp_r = encoder_r.get() * 3000.0 / 1024.0
+    sp_b = encoder_b.get() * 3000.0 / 1024.0
+    return sp_l, sp_r, sp_b
+ 
+ 
+# ==================== PID ====================
+# 三个轮子使用增量式速度PID。
+# 偏航角环和陀螺仪角速度环使用位置式PID。
+# change_state()时会把所有PID的输出、误差和积分清零，
+# 防止上一个状态的积分和输出带入下一个状态。
+class PID_t:
+    def __init__(self):
+        self.Target = 0.0
+        self.Actual = 0.0
+        self.Out = 0.0
+        self.Kp = 0.0
+        self.Ki = 0.0
+        self.Kd = 0.0
+        self.Error0 = 0.0
+        self.Error1 = 0.0
+        self.Error2 = 0.0
+        self.ErrorInt = 0.0
+        self.OutMax = 0.0
+        self.OutMin = 0.0
+ 
+ 
+def Pos_PID_Update(p):
+    p.Error1 = p.Error0
+    p.Error0 = p.Target - p.Actual
+ 
+    if p.Ki != 0:
+        p.ErrorInt += p.Error0
+    else:
+        p.ErrorInt = 0.0
+ 
+    p.Out = p.Kp * p.Error0 + p.Ki * p.ErrorInt + p.Kd * (p.Error0 - p.Error1)
+ 
+    if p.Out > p.OutMax:
+        p.Out = p.OutMax
+    if p.Out < p.OutMin:
+        p.Out = p.OutMin
+ 
+ 
+def Inc_PID_Update(p):
+    p.Error2 = p.Error1
+    p.Error1 = p.Error0
+    p.Error0 = p.Target - p.Actual
+ 
+    p.Out += (
+        p.Kp * (p.Error0 - p.Error1)
+        + p.Ki * p.Error0
+        + p.Kd * (p.Error0 - 2.0 * p.Error1 + p.Error2)
+    )
+ 
+    if p.Out > p.OutMax:
+        p.Out = p.OutMax
+    if p.Out < p.OutMin:
+        p.Out = p.OutMin
+ 
+ 
+def clear_pid(p):
+    p.Target = 0.0
+    p.Actual = 0.0
+    p.Out = 0.0
+    p.Error0 = 0.0
+    p.Error1 = 0.0
+    p.Error2 = 0.0
+    p.ErrorInt = 0.0
+ 
+ 
+speed_pid_l = PID_t()
+speed_pid_l.Kp = 30
+speed_pid_l.Ki = 0.25
+speed_pid_l.OutMax = 8000
+speed_pid_l.OutMin = -8000
+ 
+speed_pid_r = PID_t()
+speed_pid_r.Kp = 28
+speed_pid_r.Ki = 0.25
+speed_pid_r.OutMax = 8000
+speed_pid_r.OutMin = -8000
+ 
+speed_pid_b = PID_t()
+speed_pid_b.Kp = 30
+speed_pid_b.Ki = 0.23
+speed_pid_b.OutMax = 8000
+speed_pid_b.OutMin = -8000
+ 
+pid_gyro = PID_t()
+pid_gyro.Kp = 0.0
+pid_gyro.Ki = 0.1
+pid_gyro.Kd = 0.0
+pid_gyro.OutMax = 500
+pid_gyro.OutMin = -500
+ 
+pid_yaw = PID_t()
+pid_yaw.Kp = 1.0
+pid_yaw.Ki = 0.0
+pid_yaw.Kd = 0.0
+pid_yaw.OutMax = 200
+pid_yaw.OutMin = -200
+ 
+ 
+def clear_all_pid():
+    clear_pid(speed_pid_l)
+    clear_pid(speed_pid_r)
+    clear_pid(speed_pid_b)
+    clear_pid(pid_gyro)
+    clear_pid(pid_yaw)
+ 
+ 
+# ==================== 运动控制 ====================
+# move_angle采用车体坐标系：
+#   0°   = 向前
+#   180° = 向后
+#   -90° = 向左
+#   90°  = 向右
+#
+# calculate_motor_speeds()先把车体平移速度和旋转修正量
+# 分解成三个轮子的目标速度，再由三个速度PID控制电机。
+MOVE_FORWARD = 0
+MOVE_BACKWARD = 180
+MOVE_LEFT = -90
+MOVE_RIGHT = 90
+ 
+ 
+def calculate_motor_speeds(move_angle, move_speed, z_speed, gyro_z):
+    ul = math.cos(math.radians(30 - move_angle)) * move_speed * 2.0 / 3.0 + z_speed - gyro_z / 40.0
+    ur = math.cos(math.radians(150 - move_angle)) * move_speed * 2.0 / 3.0 + z_speed - gyro_z / 40.0
+    ub = math.cos(math.radians(270 - move_angle)) * move_speed * 2.0 / 3.0 + z_speed - gyro_z / 40.0
+    return ul, ur, ub
+ 
+ 
+def speed_loop(move_angle, move_speed, wz, gz_f, sp_l, sp_r, sp_b):
+    tl, tr, tb = calculate_motor_speeds(move_angle, move_speed, wz, gz_f)
+ 
+    speed_pid_l.Target = tl
+    speed_pid_l.Actual = sp_l
+    Inc_PID_Update(speed_pid_l)
+    motor_l.duty(int(speed_pid_l.Out))
+ 
+    speed_pid_r.Target = tr
+    speed_pid_r.Actual = sp_r
+    Inc_PID_Update(speed_pid_r)
+    motor_r.duty(int(speed_pid_r.Out))
+ 
+    speed_pid_b.Target = tb
+    speed_pid_b.Actual = sp_b
+    Inc_PID_Update(speed_pid_b)
+    motor_b.duty(int(speed_pid_b.Out))
+ 
+ 
+def gyro_loop(target_wz, current_gz):
+    pid_gyro.Target = target_wz
+    pid_gyro.Actual = current_gz
+    Pos_PID_Update(pid_gyro)
+    return pid_gyro.Out
+ 
+ 
+def yaw_loop(target, current):
+    pid_yaw.Target = angle_error(target, current)
+    pid_yaw.Actual = 0.0
+    Pos_PID_Update(pid_yaw)
+    return pid_yaw.Out
+ 
+def emergency_stop():
+    motor_l.duty(0)
+    motor_r.duty(0)
+    motor_b.duty(0)
+ 
+ 
+# ==================== 分段里程 ====================
+# 本程序不做全场绝对坐标定位，只计算“当前状态走了多远”。
+# 每次进入新状态时，reset_segment_distance()会把本段里程清零。
+#
+# 实测比例：
+#   240cm ≈ 1650原始里程单位
+#   1原始单位 ≈ 0.14545cm
+#
+# ODOM_X_SIGN或ODOM_Y_SIGN用于修正方向：
+#   向右时横向里程不增加，可把ODOM_X_SIGN改为-1；
+#   向前时纵向里程不增加，可把ODOM_Y_SIGN改为-1。
+# 具体里程参数已集中到文件顶部“现场快速参数区”。
+ 
+segment_raw_distance = 0.0
+segment_distance_cm = 0.0
+last_odom_time = time.ticks_ms()
+ 
+ 
+def calculate_body_speed(sp_l, sp_r, sp_b):
+    vx = (0.5 * (sp_l + sp_r) - sp_b) * ODOM_X_SIGN
+    vy = (0.8660254 * (sp_l - sp_r)) * ODOM_Y_SIGN
+ 
+    if abs(vx) < ODOM_SPEED_DEAD_ZONE:
+        vx = 0.0
+    if abs(vy) < ODOM_SPEED_DEAD_ZONE:
+        vy = 0.0
+ 
+    return vx, vy
+ 
+ 
+def reset_segment_distance():
+    global segment_raw_distance, segment_distance_cm, last_odom_time
+    segment_raw_distance = 0.0
+    segment_distance_cm = 0.0
+    last_odom_time = time.ticks_ms()
+ 
+ 
+def update_segment_distance(move_angle, sp_l, sp_r, sp_b):
+    global segment_raw_distance, segment_distance_cm, last_odom_time
+ 
+    now = time.ticks_ms()
+    dt = time.ticks_diff(now, last_odom_time) / 1000.0
+    last_odom_time = now
+ 
+    if dt <= 0.0 or dt > 0.05:
+        dt = 0.005
+ 
+    vx, vy = calculate_body_speed(sp_l, sp_r, sp_b)
+ 
+    if move_angle == MOVE_FORWARD:
+        along_speed = vy
+        scale = ODOM_Y_CM_PER_UNIT
+    elif move_angle == MOVE_BACKWARD:
+        along_speed = -vy
+        scale = ODOM_Y_CM_PER_UNIT
+    elif move_angle == MOVE_LEFT:
+        along_speed = -vx
+        scale = ODOM_X_CM_PER_UNIT
+    elif move_angle == MOVE_RIGHT:
+        along_speed = vx
+        scale = ODOM_X_CM_PER_UNIT
+    else:
+        along_speed = 0.0
+        scale = 1.0
+ 
+    if along_speed > 0.0:
+        segment_raw_distance += along_speed * dt
+ 
+    segment_distance_cm = segment_raw_distance * scale
+    return segment_distance_cm
+ 
+ 
+# ==================== 摄像头解析 ====================
+# 摄像头数据格式：
+#   识别到物体：
+#       [label, deltax, area, yellow_area, pushsign]
+#   没识别到物体：
+#       [yellow_area, pushsign]
+#
+# objects只保存当前完整数据帧中的目标。
+# update_locked_target()再从objects中挑选当前任务标签里面积最大的目标。
+objects = []
+pushsign = 3
+yellow_area = 0
+camera_rx_buf = ""
+ 
+ 
+def parse_camera():
+    global objects, pushsign, yellow_area, camera_rx_buf
+ 
+    if uart.any() <= 0:
+        return
+ 
+    try:
+        recv_data = uart.read(uart.any())
+        if not recv_data:
+            return
+        camera_rx_buf += recv_data.decode().replace("\r", "")
+    except:
+        return
+ 
+    if len(camera_rx_buf) > 512:
+        camera_rx_buf = ""
+        objects = []
+        return
+ 
+    temp_objects = []
+    got_complete_line = False
+ 
+    while "\n" in camera_rx_buf:
+        line, camera_rx_buf = camera_rx_buf.split("\n", 1)
+        line = line.strip()
+ 
+        if not line:
+            continue
+ 
+        got_complete_line = True
+ 
+        try:
+            line = line.replace("[", "").replace("]", "")
+            parts = line.split(",")
+ 
+            if len(parts) == 5:
+                obj_label = int(float(parts[0].strip()))
+                deltax = int(float(parts[1].strip()))
+                area = abs(int(float(parts[2].strip())))
+                yellow_area = abs(int(float(parts[3].strip())))
+                pushsign = int(float(parts[4].strip()))
+                temp_objects.append([obj_label, deltax, area])
+ 
+            elif len(parts) == 2:
+                yellow_area = abs(int(float(parts[0].strip())))
+                pushsign = int(float(parts[1].strip()))
+                temp_objects = []
+ 
+        except:
+            pass
+ 
+    if not got_complete_line:
+        return
+ 
+    unique_objects = []
+    seen = set()
+ 
+    for obj in temp_objects:
+        key = (obj[0], obj[1], obj[2])
+        if key not in seen:
+            seen.add(key)
+            unique_objects.append(obj)
+ 
+    objects = unique_objects
+ 
+ 
+# ==================== 任务参数说明 ====================
+# TASK_SEQUENCE、视觉参数、距离、时间、速度、里程比例、
+# 转向死区与回库黄线阈值，均已集中到文件顶部：
+# “现场快速参数区（只改这里）”
+#
+# 下面从状态定义开始，保持用户原文件的状态机流程不变。
+ 
+# ==================== 状态定义 ====================
+# 状态分成四类：
+# 1. 启动与主搜索；
+# 2. 扫描、初始微调、最终微调；
+# 3. 推物体、后退与转向；
+# 4. 第五个物体后的回库流程；
+# 5. 逆时针/180°转向前的副车提前避让等待。
+ST_START_WAIT = 0
+ST_START_FORWARD_70 = 1
+ST_SEARCH_FIRST_RIGHT = 2
+ST_SEARCH_SECOND_RIGHT = 3
+ST_FORCE_FORWARD_1M = 4
+ST_SCAN_SEARCH = 5
+ST_INITIAL_ALIGN = 6
+ST_FORWARD_20CM = 7
+ST_FINAL_ALIGN = 8
+ST_PUSH = 9
+ST_PUSH_AFTER_YELLOW = 10
+ST_FINAL_EXTRA_PUSH = 11
+ST_BACKUP = 12
+ST_TURN_TO_NEXT = 13
+ST_TURN_WAIT = 14
+ST_FIRST_TURN_BACKUP = 15
+ 
+# 第5个物体后的界内归库状态。
+ST_RETURN_BACKUP_FIND_SMALL = 16
+ST_RETURN_LEFT_FIND_LARGE = 17
+ST_RETURN_LEFT_EXTRA = 18
+ST_FINISH = 19
+ST_PRETURN_AVOID = 20
+ 
+state_names = [
+    "START_WAIT", "START_FORWARD_70", "SEARCH_FIRST_RIGHT",
+    "SEARCH_SECOND_RIGHT", "FORCE_FORWARD_1M", "SCAN_SEARCH",
+    "INITIAL_ALIGN", "FORWARD_20CM", "FINAL_ALIGN", "PUSH",
+    "PUSH_AFTER_YELLOW", "FINAL_EXTRA_PUSH", "BACKUP",
+    "TURN_TO_NEXT", "TURN_WAIT", "FIRST_TURN_BACKUP",
+    "RETURN_BACKUP_9000", "RETURN_LEFT_30000", "RETURN_LEFT_EXTRA",
+    "FINISH", "PRETURN_AVOID",
+]
+ 
+state = ST_START_WAIT
+state_tick = 0
+current_task_index = 0
+current_label = TASK_SEQUENCE[0][0]
+current_target_area = TASK_SEQUENCE[0][1]
+completed_count = 0
+ 
+target_visible = False
+target_deltax = 0
+target_area = 0
+last_valid_deltax = None
+last_valid_area = 0
+last_target_seen_ms = 0
+ 
+target_yaw = TASK_SEQUENCE[0][2]
+change_sign = 0
+target_turn_rate = 0.0
+target_move_speed = 0.0
+move_angle_cmd = MOVE_FORWARD
+ 
+# 逆时针或180°转向时，不能马上修改target_yaw。
+# 先把新角度暂存在pending_target_yaw，并向副车发送change_sign=1；
+# 主车保持旧target_yaw停车0.4秒，随后才真正开始旋转。
+pending_target_yaw = target_yaw
+pending_turn_state = ST_TURN_TO_NEXT
+ 
+scan_target_delta = TASK_SEQUENCE[0][3]
+scan_success_state = ST_FINAL_ALIGN
+scan_primary_direction = MOVE_LEFT
+scan_phase = 0
+ 
+ 
+def change_state(new_state):
+    """切换状态，并清除当前分段里程和所有PID历史量。
+ 
+    注意：这里不会把target_yaw改为当前yaw。
+    因此车辆从启动到任务结束始终保持既定的偏航角闭环。
+    """
+    global state, state_tick
+ 
+    if state != new_state:
+        state = new_state
+        state_tick = 0
+        reset_segment_distance()
+        clear_all_pid()
+ 
+ 
+def reset_target_history():
+    """切换到下一个物体时，清空上一个物体的视觉历史。"""
+    global last_valid_deltax, last_valid_area, last_target_seen_ms
+    last_valid_deltax = None
+    last_valid_area = 0
+    last_target_seen_ms = 0
+ 
+ 
+def update_locked_target():
+    """从当前摄像头目标中锁定任务标签对应、面积最大的物体。
+ 
+    同时保存最后一次有效deltax和时间。
+    当微调期间目标消失超过1秒时，会利用这些历史信息决定搜索方向。
+    """
+    global target_visible, target_deltax, target_area
+    global last_valid_deltax, last_valid_area, last_target_seen_ms
+ 
+    target_visible = False
+    target_deltax = 0
+    target_area = 0
+ 
+    best = None
+    best_area = -1
+ 
+    for obj in objects:
+        if obj[0] == current_label and obj[2] > best_area:
+            best = obj
+            best_area = obj[2]
+ 
+    if best is not None:
+        target_visible = True
+        target_deltax = best[1]
+        target_area = best[2]
+        last_valid_deltax = target_deltax
+        last_valid_area = target_area
+        last_target_seen_ms = time.ticks_ms()
+ 
+ 
+def switch_to_next_task():
+    """物体推出完成后，切换到TASK_SEQUENCE中的下一个任务。"""
+    global current_task_index, current_label, current_target_area
+ 
+    current_task_index += 1
+ 
+    if current_task_index < TASK_COUNT:
+        current_label = TASK_SEQUENCE[current_task_index][0]
+        current_target_area = TASK_SEQUENCE[current_task_index][1]
+        reset_target_history()
+ 
+ 
+def current_task_push_yaw():
+    """返回当前任务规定的推出偏航角。"""
+    return TASK_SEQUENCE[current_task_index][2]
+ 
+ 
+def current_final_target_delta():
+    """返回当前物体自己的最终微调目标delta。"""
+    return TASK_SEQUENCE[current_task_index][3]
+ 
+ 
+def current_final_dead_zone():
+    """返回当前物体自己的最终微调允许范围。"""
+    return TASK_SEQUENCE[current_task_index][4]
+ 
+ 
+def choose_recovery_direction(target_delta, default_direction):
+    """根据最后一次deltax选择目标丢失后的优先搜索方向。
+ 
+    本摄像头坐标关系：
+    - last_valid_deltax > target_delta：物体更靠左，车向左找；
+    - last_valid_deltax < target_delta：物体更靠右，车向右找；
+    - 从未看到目标：使用调用者给出的默认方向。
+    """
+    if last_valid_deltax is None:
+        return default_direction
+ 
+    if last_valid_deltax > target_delta:
+        return MOVE_LEFT
+ 
+    if last_valid_deltax < target_delta:
+        return MOVE_RIGHT
+ 
+    return default_direction
+ 
+ 
+def opposite_direction(direction):
+    if direction == MOVE_LEFT:
+        return MOVE_RIGHT
+    return MOVE_LEFT
+ 
+ 
+def start_scan(target_delta, success_state, default_direction):
+    """进入通用左右扫描状态。
+ 
+    target_delta：
+        本次恢复后需要对准的目标位置，具体数值见文件顶部快速参数区。
+    success_state：
+        找到目标后返回哪个状态。
+    default_direction：
+        没有历史deltax时先往哪个方向扫描。
+    """
+    global scan_target_delta, scan_success_state
+    global scan_primary_direction, scan_phase
+ 
+    scan_target_delta = target_delta
+    scan_success_state = success_state
+    scan_primary_direction = choose_recovery_direction(target_delta, default_direction)
+    scan_phase = 0
+    change_state(ST_SCAN_SEARCH)
+ 
+ 
+def advance_scan_phase():
+    global scan_phase
+ 
+    scan_phase += 1
+    if scan_phase > 2:
+        scan_phase = 0
+ 
+    reset_segment_distance()
+    clear_all_pid()
+ 
+ 
+def scan_phase_direction():
+    """返回当前扫描阶段的平移方向。
+ 
+    扫描顺序：
+    1. 优先方向50cm；
+    2. 反方向100cm；
+    3. 优先方向50cm；
+    之后循环。
+    """
+    if scan_phase == 0:
+        return scan_primary_direction
+    if scan_phase == 1:
+        return opposite_direction(scan_primary_direction)
+    return scan_primary_direction
+ 
+ 
+def scan_phase_distance_cm():
+    if scan_phase == 0:
+        return SCAN_HALF_RANGE_CM
+    if scan_phase == 1:
+        return SCAN_FULL_RANGE_CM
+    return SCAN_HALF_RANGE_CM
+ 
+ 
+def target_lost_for_1s():
+    """判断当前目标是否已经连续消失至少1秒。
+ 
+    消失不足1秒时，微调状态保持停车等待，避免视觉偶尔丢一两帧就乱动。
+    """
+    if target_visible:
+        return False
+ 
+    if last_target_seen_ms == 0:
+        return True
+ 
+    return time.ticks_diff(time.ticks_ms(), last_target_seen_ms) >= TARGET_LOST_WAIT_MS
+ 
+ 
+def set_turn_signal_for_target():
+    """根据新的target_yaw计算发给副车的转向标志。
+ 
+    约180°掉头统一发change_sign=1；
+    正角度误差的90°转向发2；
+    负角度误差的90°转向发1。
+    """
+    global change_sign
+ 
+    turn_err = angle_error(target_yaw, yaw)
+ 
+    if abs(turn_err) >= 135.0:
+        change_sign = 1
+    elif turn_err > 0.0:
+        change_sign = 2
+    elif turn_err < 0.0:
+        change_sign = 1
+    else:
+        change_sign = 0
+ 
+ 
+def request_turn(new_target_yaw, turn_state):
+    """请求主车转向，并在逆时针/180°转向前让副车提前避让。
+ 
+    顺时针约90°：
+        立即修改target_yaw，主车和副车直接开始顺时针转向。
+ 
+    逆时针约90°或约180°：
+        1. 暂存新角度，不立即修改target_yaw；
+        2. 先发送change_sign=1；
+        3. 主车保持旧偏航角并停车0.4秒；
+        4. 等待结束后再修改target_yaw并进入真正转向状态。
+    """
+    global pending_target_yaw, pending_turn_state
+    global target_yaw, change_sign
+ 
+    pending_target_yaw = new_target_yaw % 360.0
+    pending_turn_state = turn_state
+ 
+    turn_err = angle_error(pending_target_yaw, yaw)
+ 
+    # 约180°仍按原要求让副车执行逆时针，并同样先避让。
+    if abs(turn_err) >= 135.0 or turn_err < 0.0:
+        change_sign = 1
+        change_state(ST_PRETURN_AVOID)
+ 
+    elif turn_err > 0.0:
+        target_yaw = pending_target_yaw
+        change_sign = 2
+        change_state(turn_state)
+ 
+    else:
+        target_yaw = pending_target_yaw
+        change_sign = 0
+        change_state(turn_state)
+ 
+ 
+def state_machine():
+    """三物体搬运主状态机，每20ms左右执行一次。"""
+    global state_tick
+    global target_move_speed, move_angle_cmd, target_turn_rate
+    global completed_count, target_yaw, change_sign
+    global pending_target_yaw, pending_turn_state
+ 
+    state_tick += 1
+    target_move_speed = 0.0
+    move_angle_cmd = MOVE_FORWARD
+    target_turn_rate = 0.0
+ 
+    # ---------- 启动：等待8秒 ----------
+    if state == ST_START_WAIT:
+        if state_tick >= START_WAIT_TICKS:
+            change_state(ST_START_FORWARD_70)
+ 
+    # ---------- 第1个物体：先强制前进设定距离 ----------
+    elif state == ST_START_FORWARD_70:
+        target_move_speed = START_FORWARD_SPEED
+        move_angle_cmd = MOVE_FORWARD
+ 
+        if segment_distance_cm >= START_FORWARD_CM:
+            change_state(ST_SEARCH_FIRST_RIGHT)
+ 
+    # ---------- 第1个物体：向右搜索至设定上限 ----------
+    # 这一段允许途中发现目标后立即进入最终微调。
+    elif state == ST_SEARCH_FIRST_RIGHT:
+        target_move_speed = MAIN_SEARCH_SPEED
+        move_angle_cmd = MOVE_RIGHT
+ 
+        if target_visible and abs(target_deltax - SEARCH_TARGET_DELTA) <= SEARCH_TARGET_RANGE:
+            change_state(ST_FINAL_ALIGN)
+        elif segment_distance_cm >= FIRST_SEARCH_RIGHT_CM:
+            start_scan(current_final_target_delta(), ST_FINAL_ALIGN, MOVE_LEFT)
+ 
+    # ---------- 第2个物体：向右搜索至设定上限 ----------
+    # 第1个物体完成后已经顺时针转90°、等待并小后退。
+    elif state == ST_SEARCH_SECOND_RIGHT:
+        target_move_speed = MAIN_SEARCH_SPEED
+        move_angle_cmd = MOVE_RIGHT
+ 
+        if target_visible and abs(target_deltax - SEARCH_TARGET_DELTA) <= SEARCH_TARGET_RANGE:
+            change_state(ST_FINAL_ALIGN)
+        elif segment_distance_cm >= SECOND_SEARCH_RIGHT_CM:
+            # 主搜索刚刚向右，走满后默认先向左回扫50cm。
+            start_scan(current_final_target_delta(), ST_FINAL_ALIGN, MOVE_LEFT)
+ 
+    # ---------- 第3个物体：强制前进设定距离 ----------
+    # 远处视觉不可靠，因此即使途中识别到目标也不能提前结束。
+    elif state == ST_FORCE_FORWARD_1M:
+        target_move_speed = FORWARD_SEARCH_SPEED
+        move_angle_cmd = MOVE_FORWARD
+ 
+        # 必须走满1米，途中识别只记录，不切换状态。
+        if segment_distance_cm >= LATER_FORCE_FORWARD_CM:
+            if target_visible and abs(target_deltax - SEARCH_TARGET_DELTA) <= SEARCH_TARGET_RANGE :
+                change_state(ST_FINAL_ALIGN)
+            else:
+                start_scan(current_final_target_delta(), ST_FINAL_ALIGN, MOVE_LEFT)
+ 
+    # ---------- 通用左右扫描 ----------
+    # 目标出现后，根据scan_success_state回到初始微调或最终微调。
+    elif state == ST_SCAN_SEARCH:
+        target_move_speed = SCAN_SPEED
+        move_angle_cmd = scan_phase_direction()
+ 
+        # 扫描可能用于两种情况：
+        # 1. 初始微调丢失目标，此时scan_target_delta=INITIAL_TARGET_DELTA；
+        # 2. 最终微调丢失目标，此时scan_target_delta为当前物体自己的最终delta。
+        # 因此必须使用当前扫描任务保存的scan_target_delta。
+        if (
+            target_visible
+            and abs(target_deltax - scan_target_delta) <= 40
+        ):
+            change_state(scan_success_state)
+        elif segment_distance_cm >= scan_phase_distance_cm():
+            advance_scan_phase()
+ 
+    # ---------- 初始微调：目标delta=30 ----------
+    # 目标在左侧过多（delta大）则车向左；
+    # 目标在右侧过多（delta小）则车向右。
+    elif state == ST_INITIAL_ALIGN:
+        if target_visible:
+            if abs(target_deltax - INITIAL_TARGET_DELTA) <= CENTER_DEAD_ZONE:
+                change_state(ST_FORWARD_20CM)
+            else:
+                target_move_speed = INITIAL_ALIGN_SPEED
+                if target_deltax > INITIAL_TARGET_DELTA:
+                    move_angle_cmd = MOVE_LEFT
+                else:
+                    move_angle_cmd = MOVE_RIGHT
+ 
+        elif target_lost_for_1s():
+            start_scan(INITIAL_TARGET_DELTA, ST_INITIAL_ALIGN, MOVE_LEFT)
+ 
+    # ---------- 初始微调完成后，强制前进20cm ----------
+    # 不使用面积结束，也不因视觉丢失提前结束。
+    elif state == ST_FORWARD_20CM:
+        target_move_speed = FORWARD_20CM_SPEED
+        move_angle_cmd = MOVE_FORWARD
+ 
+        if segment_distance_cm >= AFTER_INITIAL_ALIGN_FORWARD_CM:
+            change_state(ST_FINAL_ALIGN)
+ 
+    # ---------- 最终微调：每个物体使用自己的delta和允许范围 ----------
+    # 参数位于文件顶部TASK_SEQUENCE每一行的最后两个数。
+    elif state == ST_FINAL_ALIGN:
+        final_delta = current_final_target_delta()
+        final_dead_zone = current_final_dead_zone()
+ 
+        if target_visible:
+            if abs(target_deltax - final_delta) <= final_dead_zone:
+                change_state(ST_PUSH)
+            else:
+                target_move_speed = FINAL_ALIGN_SPEED
+ 
+                if target_deltax > final_delta:
+                    move_angle_cmd = MOVE_LEFT
+                else:
+                    move_angle_cmd = MOVE_RIGHT
+ 
+        elif target_lost_for_1s():
+            # 丢失超过1秒后，也按照当前物体自己的最终delta找回。
+            start_scan(
+                final_delta,
+                ST_FINAL_ALIGN,
+                MOVE_LEFT
+            )
+ 
+    # ---------- 正常推物体 ----------
+    # pushsign=0表示已经看到推出边界黄线。
+    elif state == ST_PUSH:
+        # 前两个物体仍使用PUSH_SPEED；
+        # 最后一个物体单独使用FINAL_OBJECT_PUSH_SPEED=200。
+        if current_task_index == TASK_COUNT - 1:
+            target_move_speed = FINAL_OBJECT_PUSH_SPEED
+        else:
+            target_move_speed = PUSH_SPEED
+ 
+        move_angle_cmd = MOVE_FORWARD
+ 
+        if pushsign == 0:
+            if current_task_index == TASK_COUNT - 1:
+                change_state(ST_FINAL_EXTRA_PUSH)
+            else:
+                change_state(ST_PUSH_AFTER_YELLOW)
+ 
+    # ---------- 前两个物体：看到黄线后继续推固定时间 ----------
+    # 进入本状态说明刚收到pushsign=0（看到黄线）。
+    # 按五物体B版原参数继续推70 ticks，约1.4秒，然后进入后退。
+    elif state == ST_PUSH_AFTER_YELLOW:
+        target_move_speed = PUSH_SPEED
+        move_angle_cmd = MOVE_FORWARD
+ 
+        if state_tick >= PUSH_AFTER_YELLOW_TICKS:
+            completed_count += 1
+            switch_to_next_task()
+            change_state(ST_BACKUP)
+ 
+    # ---------- 第3个物体：看到黄线后继续推到黄线消失 ----------
+    # 进入本状态说明刚收到pushsign=0（看到黄线）。
+    # 保持速度200继续向前，直到pushsign=1（看不到黄线），
+    # 然后立即进入界内归库后退和黄线面积判断。
+    elif state == ST_FINAL_EXTRA_PUSH:
+        target_move_speed = FINAL_OBJECT_PUSH_SPEED
+        move_angle_cmd = MOVE_FORWARD
+ 
+        if pushsign == 1:
+            completed_count += 1
+            change_state(ST_RETURN_BACKUP_FIND_SMALL)
+ 
+    # ---------- 前两个物体推出后的后退 ----------
+    # 后退结束后，将target_yaw修改为下一个任务规定的角度。
+    elif state == ST_BACKUP:
+        target_move_speed = BACKUP_SPEED
+        move_angle_cmd = MOVE_BACKWARD
+ 
+        if state_tick >= BACKUP_TICKS:
+            # 逆时针90°或180°时，副车先避让0.4秒；
+            # 顺时针90°仍按原流程立即开始旋转。
+            request_turn(
+                current_task_push_yaw(),
+                ST_TURN_TO_NEXT
+            )
+ 
+    # ---------- 副车提前避让 ----------
+    elif state == ST_PRETURN_AVOID:
+        # 此时target_yaw仍是旧角度，所以主车偏航角闭环只负责原地保持，
+        # 不会提前开始旋转；change_sign=1已经持续发送给副车。
+        if state_tick >= PRETURN_AVOID_TICKS:
+            target_yaw = pending_target_yaw
+            change_state(pending_turn_state)
+ 
+    # ---------- 原地转到下一个任务角度 ----------
+    # 转向期间主车偏航角闭环自动工作，副车依据change_sign同步转向。
+    elif state == ST_TURN_TO_NEXT:
+        if abs(angle_error(target_yaw, yaw)) <= YAW_DEAD_ZONE:
+            change_sign = 0
+            change_state(ST_TURN_WAIT)
+ 
+    # ---------- 转向完成后原地等待 ----------
+    elif state == ST_TURN_WAIT:
+        if state_tick >= TURN_WAIT_TICKS:
+            change_sign = 0
+ 
+            if current_task_index == 1:
+                change_state(ST_FIRST_TURN_BACKUP)
+            else:
+                change_state(ST_FORCE_FORWARD_1M)
+ 
+    # ---------- 第1个物体后的特殊流程 ----------
+    # 顺时针转90°并等待后，小后退，再向右搜索第2个物体。
+    elif state == ST_FIRST_TURN_BACKUP:
+        target_move_speed = FIRST_TURN_BACKUP_SPEED
+        move_angle_cmd = MOVE_BACKWARD
+ 
+        if state_tick >= FIRST_TURN_BACKUP_TICKS:
+            change_state(ST_SEARCH_SECOND_RIGHT)
+ 
+    # ==================== 第3个物体后的界内归库流程 ====================
+    # 第3个物体已经以速度200推过黄线，并确认pushsign由0变为1。
+    # 接下来：
+    # 后退到pushsign=0且yellow_area<=9000
+    # -> 向左到pushsign=0且yellow_area>30000
+    # -> 再向左2秒 -> 永久停车。
+    elif state == ST_RETURN_BACKUP_FIND_SMALL:
+        target_move_speed = BACKUP_SPEED
+        move_angle_cmd = MOVE_BACKWARD
+ 
+        # pushsign=1：没看到黄线，继续后退。
+        # pushsign=0且面积>9000：继续后退。
+        # 只有看到黄线且面积<=9000才开始向左。
+        if (
+            pushsign == 0
+            and yellow_area <= RETURN_BACKUP_AREA_MAX
+        ):
+            change_state(ST_RETURN_LEFT_FIND_LARGE)
+ 
+    elif state == ST_RETURN_LEFT_FIND_LARGE:
+        target_move_speed = RETURN_LEFT_SPEED
+        move_angle_cmd = MOVE_LEFT
+ 
+        if (
+            pushsign == 0
+            and yellow_area > RETURN_LEFT_AREA_TARGET
+        ):
+            change_state(ST_RETURN_LEFT_EXTRA)
+ 
+    elif state == ST_RETURN_LEFT_EXTRA:
+        target_move_speed = RETURN_LEFT_SPEED
+        move_angle_cmd = MOVE_LEFT
+ 
+        if state_tick >= RETURN_LEFT_EXTRA_TICKS:
+            change_state(ST_FINISH)
+ 
+    elif state == ST_FINISH:
+        target_move_speed = 0.0
+        target_turn_rate = 0.0
+        move_angle_cmd = MOVE_FORWARD
+        change_sign = 0
+ 
+ 
+# ==================== 主循环 ====================
+# 5ms周期内执行：
+# 1. 读取编码器和IMU；
+# 2. 解析摄像头并锁定当前任务目标；
+# 3. 更新当前状态的分段里程；
+# 4. 每20ms执行一次状态机；
+# 5. 持续进行偏航角闭环和三个轮子的速度PID；
+while True:
+    if ticker_flag:
+        ticker_flag = False
+ 
+        sp_l, sp_r, sp_b = read_encoders()
+        gz_f, yaw = read_imu()
+ 
+        parse_camera()
+        update_locked_target()
+ 
+        update_segment_distance(move_angle_cmd, sp_l, sp_r, sp_b)
+ 
+        if ticker_count % 4 == 0:
+            state_machine()
+ 
+        # target_yaw全程闭环，不记录当前yaw作为新目标。
+        target_turn_rate = yaw_loop(target_yaw, yaw)
+        wz = gyro_loop(target_turn_rate, gz_f)
+ 
+        if state == ST_FINISH:
+            emergency_stop()
+        else:
+            speed_loop(
+                move_angle_cmd,
+                target_move_speed,
+                wz,
+                gz_f,
+                sp_l,
+                sp_r,
+                sp_b,
+            )
+ 
+        # 与原副车通信格式保持不变。
+        send_str = "{},{},{},{}\r\n".format(
+            move_angle_cmd,
+            target_move_speed,
+            target_yaw,
+            change_sign,
+        )
+        wireless.send_str(send_str)
+ 
+    if ticker_count % 40 == 0:
+        ips.label_string(
+            label,
+            "state:{}\ntask:{}/{}\nlabel:{} dx:{}\narea:{} push:{}\nyaw:{:.1f}\ndis:{:.1f}cm".format(
+                state_names[state],
+                min(current_task_index + 1, TASK_COUNT),
+                TASK_COUNT,
+                current_label,
+                target_deltax,
+                target_area,
+                pushsign,
+                yaw,
+                segment_distance_cm,
+            ),
+        )
+ 
+    if ticker_count % 200 == 0:
+        led.toggle()
+ 
+    gc.collect()
+ 
+"""
+
+整体任务流程
+------------
+1. 上电完成IMU零偏校准，原地等待8秒。
+2. 第1个物体：
+   - 强制前进设定距离；
+   - 向右搜索至设定上限；
+   - 未找到时以当前位置进行左右扫描；
+   - 按当前物体自己的最终delta进行最终横向微调；
+   - 看到黄线后继续推70 ticks，约1.4秒。
+3. 第2个物体：
+   - 后退；
+   - target_yaw由0°改为90°，即顺时针转90°；
+   - 转完等待并小后退；
+   - 向右搜索至设定上限；
+   - 未找到时左右扫描；
+   - 按当前物体自己的最终delta进行最终横向微调；
+   - 看到黄线后继续推70 ticks，约1.4秒。
+4. 第3个物体：
+   - 上一个物体推出后后退并按TASK_SEQUENCE转向；
+   - 转完后强制前进设定距离，途中即使识别到目标也不提前结束；
+   - 走满115cm后，目标可见且位置合适则进入最终微调；
+   - 目标不可见则左右扫描；
+   - 使用delta=60进行最终微调；
+   - 推物体。
+5. 第3个物体作为最后一个物体，以速度200推到pushsign=0后继续向前，直到pushsign=1，再执行界内归库：后退找小面积黄线、向左入库并停车。
+ 
+视觉坐标约定
+------------
+- target_deltax数值越大，物体越靠摄像头左侧。
+- target_deltax > 目标delta：车向左平移。
+- target_deltax < 目标delta：车向右平移。
+- 初始微调目标位置见INITIAL_TARGET_DELTA。
+- 每个物体的最终微调delta和允许范围都在TASK_SEQUENCE对应行中设置。
+ 
+里程约定
+--------
+- 实测240cm约等于1650原始里程单位。
+- 横向和纵向暂时使用同一比例，后续可分别标定。
+- 每次状态切换都会清空“本段里程”和全部PID历史量。
+- target_yaw不会在每段运动开始时重新记录，始终保持闭环；
+  只有明确转向时才修改target_yaw。
+ 
+副车通信
+--------
+- 保留原无线初始化和发送格式。
+- 发送内容仍为：move_angle_cmd、target_move_speed、target_yaw、change_sign。
+- D9初始化保持原文件不变。
+"""
+ 
+
+附录C 副车核心板程序
+from machine import *
+from smartcar import *
+from seekfree import *
+from display import *
+from array import array
+import gc, time, math
+ 
+# ==================== 屏幕初始化 ====================
+ips = IPS200PRO(IPS200PRO.TITLE_BOTTOM, 30)
+page = ips.page_create("Main")
+label = ips.label_create(0, 0, 240, 240, "", IPS200PRO.LABEL_AUTO)
+ips.set_parent(label, page)
+ips.set_color(label, IPS200PRO.COLOR_BACKGROUND, 0x0000)
+ips.set_color(label, IPS200PRO.COLOR_FOREGROUND, 0xFFFF)
+ips.set_font(label, IPS200PRO.FONT_SIZE_24)
+ips.page_switch(page)
+ 
+# ==================== 硬件初始化 ====================
+led = Pin('C4', Pin.OUT, value=True)
+switch2 = Pin('D9', Pin.IN, pull=Pin.PULL_UP_47K)
+state2 = switch2.value()
+ 
+uart6 = UART(7, 115200)          # 红外摄像头
+wireless = WIRELESS_UART(460800)  # 接收主车数据
+ 
+motor_r = MOTOR_CONTROLLER(MOTOR_CONTROLLER.PWM_C30_DIR_C31, 13000, duty=0, invert=False)
+motor_l = MOTOR_CONTROLLER(MOTOR_CONTROLLER.PWM_C28_DIR_C29, 13000, duty=0, invert=False)
+motor_b = MOTOR_CONTROLLER(MOTOR_CONTROLLER.PWM_D6_DIR_D7, 13000, duty=0, invert=False)
+ 
+encoder_r = encoder("D13", "D14", True, capture_div=1)
+encoder_l = encoder("D15", "D16", True, capture_div=1)
+encoder_b = encoder("C2",  "C3",  True, capture_div=1)
+ 
+imu = IMU660RX()
+GYRO_SENS = 16.384
+ 
+def gyro_to_dps(raw): return raw / GYRO_SENS
+ 
+class KalmanFilter:
+    def __init__(self, Q=0.001, R=0.1):
+        self.Q, self.R, self.P, self.x, self.K = Q, R, 1.0, 0.0, 0.0
+    def update(self, z):
+        self.P += self.Q
+        self.K = self.P / (self.P + self.R)
+        self.x += self.K * (z - self.x)
+        self.P = (1.0 - self.K) * self.P
+        return self.x
+ 
+def imu_zero_offset(imu, sample_count=200):
+    pit = ticker(3)
+    pit.capture_list(imu)
+    pit.callback(lambda t: None)
+    pit.start(5)
+    time.sleep_ms(20)
+    sum_gx = sum_gy = sum_gz = 0.0
+    for _ in range(sample_count):
+        time.sleep_ms(5)
+        data = imu.get()
+        sum_gx += data[3]; sum_gy += data[4]; sum_gz += data[5]
+    pit.stop()
+    return sum_gx/sample_count, sum_gy/sample_count, sum_gz/sample_count
+ 
+offset_gx, offset_gy, offset_gz = imu_zero_offset(imu, 200)
+kf_gz = KalmanFilter()
+ 
+ticker_flag = False
+ticker_count = 0
+def cb(t):
+    global ticker_flag, ticker_count
+    ticker_flag = True
+    ticker_count = (ticker_count + 1) % 1000
+ 
+pit1 = ticker(1)
+pit1.capture_list(encoder_l, encoder_r, encoder_b, imu)
+pit1.callback(cb)
+pit1.start(5)
+ 
+# ==================== 全局变量 ====================
+yaw_angle = 0.0
+last_time = time.ticks_ms()
+ 
+ir_found = False
+ir_deltax = 0.0
+ir_area = 0.0
+last_ir_time = 0
+target_area = 11.4
+target_deltax = 0
+ 
+master_angle = 0.0
+master_speed = 0.0
+target_yaw = 0.0
+change_sign = 0
+move_angle_cmd = 0
+target_move_speed = 0
+target_turn_rate = 0
+ 
+# 本次旋转参数，由旋转方向和目标转角共同决定：
+# 顺时针90°： move_speed= 200，turn_rate= 60
+# 顺时针>90°：move_speed= 220，turn_rate= 60
+# 逆时针90°： move_speed=-200，turn_rate=-60
+# 逆时针>90°：move_speed=-220，turn_rate=-60
+turn_move_speed = 200
+turn_rate_cmd = 60
+last_target_yaw_cmd = 0.0
+ 
+# FOLLOW状态下看不到主车红外灯带时：
+# 在主车无线前馈速度上额外叠加一个向右平移分量；
+# 重新看到红外后自动恢复正常红外闭环跟随。
+IR_SEARCH_RIGHT_SPEED = 80
+ 
+# 副车上电后的红外摄像头启动保护时间。
+# 前3秒看不到红外灯带时，不主动向右搜索，只执行主车无线前馈。
+IR_STARTUP_GRACE_MS = 5000
+program_start_time = time.ticks_ms()
+ 
+# ==================== 状态机定义 ====================
+# ==================== 状态机定义 ====================
+STATE_FOLLOW = 0
+STATE_SHIFT_LEFT = 1
+STATE_ANTICLOCKWISE = 2
+STATE_CLOCKWISE = 3
+state_names = ["FOLLOW", "SHIFT_LEFT", "ANTICLOCK", "CLOCKWISE"]
+ 
+state = STATE_FOLLOW
+state_tick = 0
+ 
+# 收到旋转指令后，先向左平移一段时间。
+# 状态机每20ms执行一次，30次约为0.6秒。
+SHIFT_LEFT_SPEED = 120
+SHIFT_LEFT_TICKS = 45
+SHIFT_LEFT_ANGLE = -90
+ 
+# 左移结束后要进入的旋转状态。
+pending_turn_state = STATE_CLOCKWISE
+ 
+# 防止主车连续发送相同 change_sign 时重复触发。
+last_change_sign = 0
+ 
+def change_state(new_state):
+    global state, state_tick
+    if state != new_state:
+        state = new_state
+        state_tick = 0
+ 
+# ==================== PID 类 ====================
+class PID_t:
+    def __init__(self):
+        self.Target = self.Actual = self.Out = 0.0
+        self.Kp = self.Ki = self.Kd = 0.0
+        self.Error0 = self.Error1 = self.Error2 = self.ErrorInt = 0.0
+        self.OutMax = self.OutMin = 0.0
+ 
+def Pos_PID_Update(p: PID_t):
+    p.Error1 = p.Error0
+    p.Error0 = p.Target - p.Actual
+    if p.Ki != 0: p.ErrorInt += p.Error0
+    else: p.ErrorInt = 0
+    p.Out = p.Kp * p.Error0 + p.Ki * p.ErrorInt + p.Kd * (p.Error0 - p.Error1)
+    if p.Out > p.OutMax: p.Out = p.OutMax
+    if p.Out < p.OutMin: p.Out = p.OutMin
+ 
+def Inc_PID_Update(p: PID_t):
+    p.Error2 = p.Error1
+    p.Error1 = p.Error0
+    p.Error0 = p.Target - p.Actual
+    p.Out += p.Kp * (p.Error0 - p.Error1) + p.Ki * p.Error0 + p.Kd * (p.Error0 - 2*p.Error1 + p.Error2)
+    if p.Out > p.OutMax: p.Out = p.OutMax
+    if p.Out < p.OutMin: p.Out = p.OutMin
+ 
+# 速度环
+speed_pid_l = PID_t(); speed_pid_l.Kp = 30; speed_pid_l.Ki = 0.34; speed_pid_l.OutMax = 8000; speed_pid_l.OutMin = -8000
+speed_pid_r = PID_t(); speed_pid_r.Kp = 30; speed_pid_r.Ki = 0.34; speed_pid_r.OutMax = 8000; speed_pid_r.OutMin = -8000
+speed_pid_b = PID_t(); speed_pid_b.Kp = 30; speed_pid_b.Ki = 0.34; speed_pid_b.OutMax = 8000; speed_pid_b.OutMin = -8000
+pid_gyro = PID_t(); pid_gyro.Kp = 0; pid_gyro.Ki = 0.09; pid_gyro.Kd = 0; pid_gyro.OutMax = 500; pid_gyro.OutMin = -500
+pid_yaw = PID_t(); pid_yaw.Kp = 0.9; pid_yaw.Ki = 0.0; pid_yaw.Kd = 0.0; pid_yaw.OutMax = 200; pid_yaw.OutMin = -200
+pid_lateral = PID_t(); pid_lateral.Kp = 10; pid_lateral.Ki = 0; pid_lateral.Kd = 0; pid_lateral.OutMax = 200; pid_lateral.OutMin = -200
+pid_longitudinal = PID_t(); pid_longitudinal.Kp = 20; pid_longitudinal.Ki = 0; pid_longitudinal.Kd = 0; pid_longitudinal.OutMax = 200; pid_longitudinal.OutMin = -200
+ 
+# ==================== 运动分解 ====================
+def calculate_motor_speeds(move_angle, move_speed, z_speed, gyro_z):
+    r = math.radians
+    u1 = math.cos(r(30 - move_angle)) * move_speed * 2/3 + z_speed - gyro_z/40
+    u2 = math.cos(r(150 - move_angle)) * move_speed * 2/3 + z_speed - gyro_z/40
+    u3 = math.cos(r(270 - move_angle)) * move_speed * 2/3 + z_speed - gyro_z/40
+    return u1, u2, u3
+ 
+# ==================== 传感器读取 ====================
+def read_encoders():
+    return (encoder_l.get()*3000/1024, encoder_r.get()*3000/1024, encoder_b.get()*3000/1024)
+ 
+def read_imu():
+    global yaw_angle, last_time
+    d = imu.get()
+    raw = d[5] - offset_gz
+    dps = gyro_to_dps(raw)
+    gz_f = kf_gz.update(dps)
+    now = time.ticks_ms()
+    dt = time.ticks_diff(now, last_time) / 1000.0
+    last_time = now
+    yaw_angle += gz_f * dt
+    yaw_angle %= 360.0
+    return gz_f, yaw_angle
+ 
+# ==================== 红外解析 ====================
+def parse_infrared():
+    global ir_found, ir_deltax, ir_area, last_ir_time
+    if uart6.any():
+        line = uart6.readline()
+        if line:
+            try:
+                s = line.decode().strip().replace('[','').replace(']','')
+                p = s.split(',')
+                if len(p) >= 2 and abs(float(p[1])):
+                    ir_deltax = float(p[0])
+                    ir_area = abs(float(p[1]))
+                    ir_found = True
+                    last_ir_time = time.ticks_ms()
+            except: pass
+    if time.ticks_diff(time.ticks_ms(), last_ir_time) > 300:
+        ir_found = False; ir_deltax = 0.0; ir_area = 0.0
+ 
+# ==================== 无线接收 ====================
+rx_buf = array('b', [0]*32)
+str_buf = ""
+send_ack_flag = False   # 全局加这一行
+ 
+def recv_master():
+    global str_buf, master_angle, master_speed, target_yaw, change_sign
+    n = wireless.receive_bytearray(rx_buf, 32)
+    if n <= 0:
+        return
+    # 兼容固件，不再用chr逐个拼接
+    data_bytes = bytes(rx_buf[:n])
+    try:
+        str_buf += data_bytes.decode('utf-8')
+    except:
+        # 异常只保留可见字符
+        for b in data_bytes:
+            if 32 <= b <= 126:
+                str_buf += chr(b)
+ 
+    if len(str_buf) > 256:
+        str_buf = ""
+    if "\n" in str_buf:
+        frame, str_buf = str_buf.split("\n", 1)
+        frame = frame.replace("\r", "")
+        parts = frame.split(",")
+        if len(parts) >= 4:
+            try:
+                master_angle = float(parts[0])
+                master_speed = float(parts[1])
+                target_yaw   = float(parts[2])
+                change_sign = float(parts[3])
+            except:
+                pass
+ 
+# ==================== 控制辅助函数 ====================
+def gyro_loop(target_wz, gz_f):
+    """角速度闭环"""
+    pid_gyro.Target = target_wz
+    pid_gyro.Actual = gz_f
+    Pos_PID_Update(pid_gyro)
+    return pid_gyro.Out
+ 
+def speed_loop(ang, spd, wz, gz_f, spl, spr, spb):
+    """速度闭环 + 运动分解"""
+    tl, tr, tb = calculate_motor_speeds(ang, spd, wz, gz_f)
+    speed_pid_l.Target = tl; speed_pid_l.Actual = spl; Inc_PID_Update(speed_pid_l); motor_l.duty(int(speed_pid_l.Out))
+    speed_pid_r.Target = tr; speed_pid_r.Actual = spr; Inc_PID_Update(speed_pid_r); motor_r.duty(int(speed_pid_r.Out))
+    speed_pid_b.Target = tb; speed_pid_b.Actual = spb; Inc_PID_Update(speed_pid_b); motor_b.duty(int(speed_pid_b.Out))
+ 
+def yaw_loop(tgt_yaw, cur_yaw):
+    """偏航角闭环，输出期望角速度"""
+    err = tgt_yaw - cur_yaw
+    if err > 180.0: err -= 360.0
+    elif err < -180.0: err += 360.0
+    pid_yaw.Target = err; pid_yaw.Actual = 0.0
+    Pos_PID_Update(pid_yaw)
+    return pid_yaw.Out
+ 
+def follow_motion():
+    """
+    红外跟随模式：计算跟随主车的运动指令
+    返回: (move_angle_cmd, target_move_speed, target_turn_rate)
+    """
+    target_turn_rate = yaw_loop(target_yaw, yaw_angle)
+ 
+    # 红外修正
+    pid_lateral.Target = target_area
+    pid_lateral.Actual = ir_area
+    Pos_PID_Update(pid_lateral)
+    pid_longitudinal.Target = target_deltax
+    pid_longitudinal.Actual = ir_deltax
+    Pos_PID_Update(pid_longitudinal)
+ 
+    # 前馈 + 修正合成
+    rad_ang = math.radians(master_angle)
+    master_vx = master_speed * math.sin(rad_ang)
+    master_vy = master_speed * math.cos(rad_ang)
+    fx = master_vx - pid_lateral.Out
+    fy = master_vy + pid_longitudinal.Out
+ 
+    if ir_found:
+        # 看到主车红外灯带：主车前馈 + 红外位置闭环修正。
+        move_angle_cmd = math.degrees(math.atan2(fx, fy))
+        target_move_speed = math.sqrt(fx**2 + fy**2)
+ 
+    elif time.ticks_diff(time.ticks_ms(), program_start_time) < IR_STARTUP_GRACE_MS:
+        # 上电前3秒为摄像头启动保护期：
+        # 看不到红外时不主动向右搜索，只执行主车无线前馈。
+        move_angle_cmd = master_angle
+        target_move_speed = abs(master_speed)
+ 
+    else:
+        # 启动保护结束后仍看不到红外：
+        # 保留主车无线前馈，同时额外向右平移搜索。
+        # 在本车运动分解中，+X对应move_angle=+90°，即向右。
+        search_fx = master_vx + IR_SEARCH_RIGHT_SPEED
+        search_fy = master_vy
+        move_angle_cmd = math.degrees(math.atan2(search_fx, search_fy))
+        target_move_speed = math.sqrt(search_fx**2 + search_fy**2)
+ 
+    if target_move_speed > 300:
+        target_move_speed = 300
+ 
+    return move_angle_cmd, target_move_speed, target_turn_rate
+ 
+def emergency_stop():
+    pit1.stop()
+    motor_l.duty(0); motor_r.duty(0); motor_b.duty(0)
+ 
+def state_change():
+    global last_change_sign, pending_turn_state
+    global turn_move_speed, turn_rate_cmd, last_target_yaw_cmd
+ 
+    try:
+        cmd = int(change_sign)
+    except:
+        cmd = 0
+ 
+    # 只在FOLLOW状态接收新的旋转指令。
+    # change_sign=1：左移后逆时针旋转
+    # change_sign=2：左移后顺时针旋转
+    if state == STATE_FOLLOW and last_change_sign == 0:
+        if cmd == 1:
+            # 逆时针角度差，范围0～360°，可正确处理跨0°。
+            turn_angle = (
+                last_target_yaw_cmd - target_yaw
+            ) % 360.0
+ 
+            if turn_angle <= 90.0:
+                turn_move_speed = -200
+                turn_rate_cmd = -60
+            else:
+                turn_move_speed = -220
+                turn_rate_cmd = -60
+            last_target_yaw_cmd = target_yaw
+            pending_turn_state = STATE_ANTICLOCKWISE
+            change_state(STATE_SHIFT_LEFT)
+ 
+        elif cmd == 2:
+            # 顺时针角度差，范围0～360°，可正确处理跨0°。
+            turn_angle = (
+                target_yaw - last_target_yaw_cmd
+            ) % 360.0
+ 
+            if turn_angle <= 90.0:
+                turn_move_speed = 200
+                turn_rate_cmd = 60
+            else:
+                turn_move_speed = 220
+                turn_rate_cmd = 60
+            last_target_yaw_cmd = target_yaw
+            pending_turn_state = STATE_CLOCKWISE
+            change_state(STATE_SHIFT_LEFT)
+ 
+    last_change_sign = cmd
+ 
+def get_yaw_err(target, curr):
+    diff = target - curr
+    if diff > 180:
+        diff -= 360
+    elif diff < -180:
+        diff += 360
+    return diff
+ 
+def state_machine():
+    global state_tick
+    global move_angle_cmd, target_move_speed, target_turn_rate
+ 
+    # 每20ms调用一次。
+    state_tick += 1
+ 
+    if state == STATE_FOLLOW:
+        move_angle_cmd, target_move_speed, target_turn_rate = follow_motion()
+ 
+    elif state == STATE_SHIFT_LEFT:
+        # 只向左平移，不记录当前偏航角，也不在左移阶段进行偏航角控制。
+        move_angle_cmd = SHIFT_LEFT_ANGLE
+        target_move_speed = SHIFT_LEFT_SPEED
+        target_turn_rate = 0
+ 
+        if state_tick >= SHIFT_LEFT_TICKS:
+            change_state(pending_turn_state)
+ 
+    elif state == STATE_ANTICLOCKWISE:
+        # 逆时针旋转：90°使用-200，超过90°使用-220，角速度统一为-60。
+        move_angle_cmd = 0
+        target_move_speed = turn_move_speed
+        target_turn_rate = turn_rate_cmd
+ 
+        if abs(get_yaw_err(target_yaw, yaw_angle)) < 7.0:
+            move_angle_cmd = 0
+            target_move_speed = 0
+            target_turn_rate = 0
+            change_state(STATE_FOLLOW)
+            pid_yaw.ErrorInt = 0
+            pid_gyro.ErrorInt = 0
+ 
+    elif state == STATE_CLOCKWISE:
+        # 顺时针旋转：90°使用200，超过90°使用220，角速度统一为+60。
+        move_angle_cmd = 0
+        target_move_speed = turn_move_speed
+        target_turn_rate = turn_rate_cmd
+ 
+        if abs(get_yaw_err(target_yaw, yaw_angle)) < 7.0:
+            move_angle_cmd = 0
+            target_move_speed = 0
+            target_turn_rate = 0
+            change_state(STATE_FOLLOW)
+            pid_yaw.ErrorInt = 0
+            pid_gyro.ErrorInt = 0
+ 
+    else:
+        move_angle_cmd = 0
+        target_move_speed = 0
+        target_turn_rate = 0
+ 
+ 
+# ==================== 主循环 ====================
+while True:
+    if switch2.value() != state2:
+        emergency_stop()
+        break
+ 
+    if ticker_flag:
+        ticker_flag = False
+        # 读取传感器
+        sp_l, sp_r, sp_b = read_encoders()
+        gz_f, yaw = read_imu()
+        parse_infrared()
+        recv_master()
+        state_change()
+        
+        if ticker_count % 4 == 0:
+            state_machine()
+        
+        # 执行控制
+        wz = gyro_loop(target_turn_rate, gz_f)
+        speed_loop(move_angle_cmd, target_move_speed, wz, gz_f, sp_l, sp_r, sp_b)
+ 
+        # 屏幕显示
+        if ticker_count % 40 == 0:
+            ips.label_string(label, "state:{}\ndeltax:{}\n area:{}\n".format(state_names[state], ir_deltax, ir_area))
+ 
+    if ticker_count % 200 == 0:
+        led.toggle()
+ 
+    gc.collect()
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+附录D 主车OpenART Plus程序
+import sensor, image, time, tf  #导入需要的库：摄像头、图像处理、时间、神经网络
+import seekfree, pyb
+from machine import UART        #导入串口库，用于给RT1021核心板发送数据
+import gc
+ 
+#==================== 摄像头初始化 ====================
+sensor.reset()                       #复位摄像头硬件，重新启动摄像头
+sensor.set_pixformat(sensor.RGB565)  #设置摄像头为彩色模式
+sensor.set_framesize(sensor.QVGA)    #设置分辨率 320x240，速度和效果平衡
+sensor.set_windowing((320, 240))     #明确窗口大小
+sensor.skip_frames(time = 2000)      #等待2秒，让摄像头稳定
+sensor.set_auto_gain(False)          #颜色识别必须关闭自动增益，否则颜色不准
+sensor.set_auto_whitebal(False)      #颜色识别必须关闭自动白平衡
+sensor.set_hmirror(False)            #确保镜像关闭
+sensor.set_vflip(False)              #确保翻转关闭
+sensor.set_auto_exposure(False, exposure_us = 600)  #降低曝光，减少反光
+sensor.set_contrast(3)      #提高对比度
+sensor.set_saturation(3)    #提高饱和度，让蓝色更蓝
+# 需要特别注意 水平镜像 与 垂直翻转 需要在配置完sensor其他参数后进行设置
+# sensor参数配置完毕，接下来配置水平镜像 与 垂直翻转
+# 设置垂直翻转
+sensor.set_vflip(True)
+sensor.skip_frames(time = 200)      # 跳过一些帧
+# 设置水平镜像
+sensor.set_hmirror(True)
+clock = time.clock()
+#lcd = seekfree.IPS200(3)             #3:屏幕显示方向 参数范围0-3
+#lcd.full()
+ 
+#==================== 加载模型 ====================
+net = tf.load('/sd/yolo3_iou_smartcar_final_with_post_processing.tflite')
+ 
+#==================== 黄色阈值与推出判断参数 ====================
+yellow_threshold = [(67, 100, -27, 4, 60, 93)]#(89, 97, -27, -6, 75, 127)
+MIN_YELLOW_AREA = 3000
+PUSHED_OUT_CNT = 6
+push_out_counter = 0
+is_pushed_out = False
+IN_STABLE_CNT = 3
+in_stable_counter = 0
+ 
+#==================== 红色阈值与障碍判断参数 ====================
+red_threshold = [(15, 61, 25, 127, 12, 127)]
+MIN_RED_AREA = 3000
+SEE_RED_CNT = 5
+see_red_counter = 0
+has_barrier = False
+NO_RED_CNT = 5
+no_red_counter = 0
+ 
+#==================== 串口初始化 ====================
+uart = UART(12, 115200)
+uart.read()                          #清空串口缓冲区
+gc.collect()
+ 
+#==================== 预分配变量 ====================
+img_w = 320
+img_h = 240
+half_img_w = 160
+ 
+#==================== 跳帧配置 ====================
+AI_INTERVAL = 3
+#LCD_INTERVAL = 2
+frame_counter = 0
+ 
+#==================== 多目标缓存 ====================
+cached_object_list = []
+ 
+#==================== 主循环 ====================
+while True:
+    clock.tick()
+    frame_counter += 1
+    img = sensor.snapshot()
+    #img1 = img.copy(0.75,1)
+ 
+    #--------------- AI检测 ---------------
+    if frame_counter % AI_INTERVAL == 0:
+        #每次AI检测都重新统计本帧所有有效目标
+        #每个目标先保存为：[obj_label, deltax, area]
+        object_list = []
+ 
+        for obj in tf.detect(net, img):
+            tx1, ty1, tx2, ty2, obj_label, scores = obj
+ 
+            if scores > 0.75:
+                x1 = int((tx1-0.08) * img_w)
+                y1 = int(ty1 * img_h)
+                x2 = int((tx2-0.2) * img_w)
+                y2 = int(ty2 * img_h)
+ 
+                cx = (x1 + x2) >> 1
+                cy = (y1 + y2) >> 1
+                deltax = half_img_w - cx
+                area = (x2 - x1) * (y2 - y1)
+ 
+                img.draw_rectangle((x1, y1, x2 - x1, y2 - y1), color = (0, 255, 0), thickness = 1)
+                img.draw_string(x1, y1 - 10, str(obj_label))
+ 
+                #记录每一个有效检测目标，不再只保留同类最高置信度目标
+                if obj_label == 0 or obj_label == 1 or obj_label == 2 or obj_label == 3 or obj_label == 4 or obj_label == 5:
+                    object_list.append([obj_label, deltax, area])
+ 
+        cached_object_list = object_list
+ 
+    #--------------- 障碍逐帧检测 ---------------
+    has_red = False
+    red_area = 0
+    blobs2 = img.find_blobs(red_threshold, area_threshold = MIN_RED_AREA, max_blobs = 1)
+ 
+    for b2 in blobs2:
+        if b2.area() > MIN_RED_AREA:
+            has_red = True
+            red_area = b2.area()
+            img.draw_rectangle(b2.rect(), color = (255, 0, 0))
+ 
+    #--------------- 黄线逐帧检测 ---------------
+    has_yellow = False
+    yellow_area = 0
+    blobs1 = img.find_blobs(yellow_threshold, area_threshold = MIN_YELLOW_AREA, max_blobs = 1)
+ 
+    for b1 in blobs1:
+        if b1.area() > MIN_YELLOW_AREA:
+            has_yellow = True
+            yellow_area = b1.area()
+            img.draw_rectangle(b1.rect(), color = (255, 255, 0))
+ 
+    #--------------- 障碍判断逻辑 ---------------
+    if has_red:
+        see_red_counter += 1
+        if see_red_counter >= SEE_RED_CNT:
+            no_red_counter = 0
+            has_barrier = True
+    else:
+        see_red_counter = 0
+        no_red_counter += 1
+        if no_red_counter >= NO_RED_CNT:
+            has_barrier = False
+    barrier_flag = 1 if has_barrier else 0
+ 
+    #--------------- 推出状态逻辑 ---------------
+    if has_yellow:
+        in_stable_counter += 1
+        if in_stable_counter >= IN_STABLE_CNT:
+            push_out_counter = 0
+            is_pushed_out = False
+    else:
+        in_stable_counter = 0
+        push_out_counter += 1
+        if push_out_counter >= PUSHED_OUT_CNT:
+            is_pushed_out = True
+    push_flag = 1 if is_pushed_out else 0
+ 
+    obj_send_list = []
+    for obj_data in cached_object_list:
+        obj_send_list.append([obj_data[0], obj_data[1], obj_data[2], yellow_area, push_flag])
+ 
+    #--------------- LCD显示（跳帧执行）---------------
+#    if frame_counter % LCD_INTERVAL == 0:
+#        lcd.show_image(img, 320, 240)
+ 
+    #--------------- 发送数据 ---------------
+    #发送前清空接收缓冲区
+    while uart.any():
+        uart.read()
+ 
+    if len(obj_send_list) > 0:
+        for send_list in obj_send_list:
+            uart.write(str(send_list) + "\n")
+            print(str(send_list) + "\n")
+    else:
+        uart.write("[" + str(yellow_area) + "," + str(push_flag) + "]\n")
+#        print("[" + str(yellow_area) + "," + str(push_flag) + "]\n")
+ 
+#    if frame_counter % 10 == 0:
+#        print("FPS:", clock.fps())
+ 
+
+附录E 副车OpenART mini红外程序
+import sensor, image, time, math, gc
+from machine import UART
+ 
+uart = UART(2, 115200)
+ 
+# ==================== 标定参数 ====================
+ 
+LED_SPACING_CM = 10.0
+FOCAL_LEN_PX = 54.73
+ 
+# ==================== 光斑筛选参数 ====================
+ 
+MIN_PIXELS = 2
+MAX_PIXELS = 5000
+MAX_BLOB_W = 45
+MAX_BLOB_H = 45
+ 
+# ==================== 输出滤波参数 ====================
+ 
+ALPHA = 0.35
+SEND_INTERVAL = 3
+ 
+# ==================== 摄像头参数 ====================
+ 
+# 低曝光抑制太阳光斑
+EXPOSURE_US = 600
+GAIN_DB = 0
+ 
+# 固定灰度阈值
+# 只识别灰度值为180～255的高亮区域
+FIXED_THRESHOLD = (50, 255)
+ 
+# ==================== 双灯配对参数 ====================
+ 
+MIN_PAIR_DIST_PX = 4
+MAX_PAIR_DIST_PX = 150
+MIN_BRIGHT_RATIO = 0.35
+MAX_PAIR_DY = 30
+PAIR_BRIGHT_RATIO_WEIGHT = 100
+ 
+# ==================== 跟踪参数 ====================
+ 
+LOST_HOLD_FRAMES = 6
+ROI_MARGIN = 25
+ 
+# ==================== 全局变量 ====================
+ 
+last_offset_cm = None
+last_distance_cm = None
+last_led_angle_deg = None
+ 
+last_pixel_dist = 0.0
+last_points = None
+ 
+lost_count = 999
+frame_count = 0
+ 
+ 
+def safe_call(func, *args, **kwargs):
+    """
+    安全调用摄像头接口。
+    某些摄像头固件不支持部分参数时，避免程序直接报错退出。
+    """
+    try:
+        func(*args, **kwargs)
+    except Exception:
+        pass
+ 
+ 
+def init_camera():
+    """
+    初始化摄像头。
+    使用灰度图和固定低曝光，压制太阳光和普通环境光干扰。
+    """
+    sensor.reset()
+ 
+    sensor.set_pixformat(sensor.GRAYSCALE)
+    sensor.set_framesize(sensor.QQVGA)
+ 
+    sensor.skip_frames(time=500)
+ 
+    safe_call(
+        sensor.set_auto_gain,
+        False,
+        gain_db=GAIN_DB
+    )
+ 
+    safe_call(
+        sensor.set_auto_whitebal,
+        False
+    )
+ 
+    safe_call(
+        sensor.set_auto_exposure,
+        False,
+        exposure_us=EXPOSURE_US
+    )
+ 
+    safe_call(
+        sensor.set_contrast,
+        2
+    )
+ 
+    safe_call(
+        sensor.set_brightness,
+        0
+    )
+ 
+    sensor.skip_frames(time=1500)
+ 
+ 
+def make_roi_from_last(img):
+    """
+    根据上一帧两个红外灯点的位置生成ROI。
+ 
+    优先在上一帧目标附近搜索，提高跟踪速度并减少误识别。
+    """
+    if last_points is None:
+        return None
+ 
+    (x1, y1), (x2, y2) = last_points
+ 
+    min_x = int(min(x1, x2) - ROI_MARGIN)
+    max_x = int(max(x1, x2) + ROI_MARGIN)
+ 
+    min_y = int(min(y1, y2) - ROI_MARGIN)
+    max_y = int(max(y1, y2) + ROI_MARGIN)
+ 
+    if min_x < 0:
+        min_x = 0
+ 
+    if min_y < 0:
+        min_y = 0
+ 
+    if max_x > img.width() - 1:
+        max_x = img.width() - 1
+ 
+    if max_y > img.height() - 1:
+        max_y = img.height() - 1
+ 
+    w = max_x - min_x + 1
+    h = max_y - min_y + 1
+ 
+    if w < 10 or h < 10:
+        return None
+ 
+    return (min_x, min_y, w, h)
+ 
+ 
+def get_fixed_threshold(img, roi=None):
+    """
+    返回固定灰度阈值。
+ 
+    max_value仅用于调试，不参与阈值计算。
+    """
+    if roi:
+        stat = img.get_statistics(roi=roi)
+    else:
+        stat = img.get_statistics()
+ 
+    try:
+        max_value = stat.max()
+    except Exception:
+        max_value = 255
+ 
+    return FIXED_THRESHOLD, max_value
+ 
+ 
+def blob_score(b):
+    """
+    计算单个候选光斑的评分。
+ 
+    光斑像素越多、内部越密集，得分越高。
+    """
+    rect_area = b.w() * b.h()
+ 
+    if rect_area <= 0:
+        return b.pixels()
+ 
+    density = b.pixels() / rect_area
+ 
+    return b.pixels() * (0.5 + density)
+ 
+ 
+def is_valid_blob(b):
+    """
+    判断光斑是否满足基本尺寸要求。
+    """
+    if b.pixels() < MIN_PIXELS:
+        return False
+ 
+    if b.pixels() > MAX_PIXELS:
+        return False
+ 
+    if b.w() > MAX_BLOB_W:
+        return False
+ 
+    if b.h() > MAX_BLOB_H:
+        return False
+ 
+    if b.h() == 0:
+        return False
+ 
+    ratio = b.w() / b.h()
+ 
+    if ratio < 0.08 or ratio > 12.0:
+        return False
+ 
+    return True
+ 
+ 
+def same_blob(b1, b2):
+    """
+    判断两个候选光斑是否为同一个光斑。
+    """
+    return (
+        abs(b1.cx() - b2.cx()) <= 3
+        and abs(b1.cy() - b2.cy()) <= 3
+    )
+ 
+ 
+def add_candidate_no_duplicate(candidates, new_blob):
+    """
+    把候选光斑加入列表，并去除重复光斑。
+    """
+    for i in range(len(candidates)):
+        if same_blob(candidates[i], new_blob):
+ 
+            if blob_score(new_blob) > blob_score(candidates[i]):
+                candidates[i] = new_blob
+ 
+            return
+ 
+    candidates.append(new_blob)
+ 
+ 
+def collect_candidates(img, roi=None):
+    """
+    使用固定灰度阈值提取候选红外灯点。
+ 
+    不再使用动态阈值，也不再进行多级阈值放宽。
+    """
+    threshold, max_value = get_fixed_threshold(
+        img,
+        roi=roi
+    )
+ 
+    if roi is None:
+        blobs = img.find_blobs(
+            [threshold],
+            pixels_threshold=MIN_PIXELS,
+            area_threshold=MIN_PIXELS,
+            merge=True,
+            margin=2
+        )
+ 
+    else:
+        blobs = img.find_blobs(
+            [threshold],
+            pixels_threshold=MIN_PIXELS,
+            area_threshold=MIN_PIXELS,
+            merge=True,
+            margin=2,
+            roi=roi
+        )
+ 
+    all_candidates = []
+ 
+    for b in blobs:
+        if is_valid_blob(b):
+            add_candidate_no_duplicate(
+                all_candidates,
+                b
+            )
+ 
+    return (
+        all_candidates,
+        threshold,
+        max_value,
+        len(blobs)
+    )
+ 
+ 
+def pair_score(b1, b2):
+    """
+    计算两个候选光斑组成一对红外灯的评分。
+    """
+    dx = b1.cx() - b2.cx()
+    dy = b1.cy() - b2.cy()
+ 
+    dist = math.sqrt(
+        dx * dx + dy * dy
+    )
+ 
+    # 两灯距离不能过近或过远
+    if dist < MIN_PAIR_DIST_PX:
+        return -999999
+ 
+    if dist > MAX_PAIR_DIST_PX:
+        return -999999
+ 
+    # 两灯纵向差值不能过大
+    if abs(b1.cy() - b2.cy()) > MAX_PAIR_DY:
+        return -999999
+ 
+    p1 = b1.pixels()
+    p2 = b2.pixels()
+ 
+    # 防止除以零
+    if max(p1, p2) <= 0:
+        return -999999
+ 
+    # 比较两个灯点面积是否接近
+    bright_ratio = min(p1, p2) / max(p1, p2)
+ 
+    if bright_ratio < MIN_BRIGHT_RATIO:
+        return -999999
+ 
+    score = (
+        min(blob_score(b1), blob_score(b2)) * 2.0
+        + bright_ratio * PAIR_BRIGHT_RATIO_WEIGHT
+    )
+ 
+    # 如果上一帧已经识别到灯带，
+    # 则优先选择距离上一帧位置和间距更接近的灯对。
+    if last_points is not None and last_pixel_dist > 1:
+ 
+        (lx1, ly1), (lx2, ly2) = last_points
+ 
+        last_cx = (lx1 + lx2) / 2.0
+        last_cy = (ly1 + ly2) / 2.0
+ 
+        now_cx = (b1.cx() + b2.cx()) / 2.0
+        now_cy = (b1.cy() + b2.cy()) / 2.0
+ 
+        center_shift = (
+            abs(now_cx - last_cx)
+            + abs(now_cy - last_cy)
+        )
+ 
+        dist_shift = abs(
+            dist - last_pixel_dist
+        )
+ 
+        score -= center_shift * 3.5
+        score -= dist_shift * 4.0
+ 
+    return score
+ 
+ 
+def choose_best_pair(candidates):
+    """
+    从所有候选光斑中选择得分最高的一对。
+    """
+    if len(candidates) < 2:
+        return None
+ 
+    best = None
+    best_score = -999999
+ 
+    for i in range(len(candidates)):
+        for j in range(i + 1, len(candidates)):
+ 
+            score = pair_score(
+                candidates[i],
+                candidates[j]
+            )
+ 
+            if score > best_score:
+                best_score = score
+                best = (
+                    candidates[i],
+                    candidates[j]
+                )
+ 
+    if best is None:
+        return None
+ 
+    if best_score < -99999:
+        return None
+ 
+    b1, b2 = best
+ 
+    # 保证第一个点在左边，第二个点在右边
+    if b1.cx() > b2.cx():
+        b1, b2 = b2, b1
+ 
+    return (
+        (b1.cx(), b1.cy()),
+        (b2.cx(), b2.cy())
+    )
+ 
+ 
+def find_two_ir_lights(img):
+    """
+    查找两个红外灯点。
+ 
+    首先在上一帧ROI内搜索；
+    ROI搜索失败后，再进行全图搜索。
+    """
+    roi = make_roi_from_last(img)
+ 
+    candidates, threshold, max_value, blob_count = collect_candidates(
+        img,
+        roi=roi
+    )
+ 
+    result = choose_best_pair(candidates)
+ 
+    if result:
+        return (
+            result,
+            threshold,
+            max_value,
+            blob_count,
+            len(candidates),
+            roi is not None
+        )
+ 
+    candidates, threshold, max_value, blob_count = collect_candidates(
+        img,
+        roi=None
+    )
+ 
+    result = choose_best_pair(candidates)
+ 
+    return (
+        result,
+        threshold,
+        max_value,
+        blob_count,
+        len(candidates),
+        False
+    )
+ 
+ 
+def low_pass(new_value, old_value):
+    """
+    一阶低通滤波，减小测量值跳动。
+    """
+    if old_value is None:
+        return new_value
+ 
+    return (
+        ALPHA * new_value
+        + (1.0 - ALPHA) * old_value
+    )
+ 
+ 
+def calc_led_angle_deg(x1, y1, x2, y2):
+    """
+    计算红外灯带在图像中的倾斜角，单位为度。
+ 
+    led_angle_deg > 0：
+        右侧灯点比左侧灯点更靠下。
+ 
+    led_angle_deg < 0：
+        右侧灯点比左侧灯点更靠上。
+ 
+    led_angle_deg = 0：
+        两灯连线水平。
+    """
+    dx = x2 - x1
+    dy = y2 - y1
+ 
+    if abs(dx) < 1e-6:
+        if dy >= 0:
+            return 90.0
+        else:
+            return -90.0
+ 
+    angle_rad = math.atan2(
+        dy,
+        dx
+    )
+ 
+    angle_deg = math.degrees(
+        angle_rad
+    )
+ 
+    return angle_deg
+ 
+ 
+def send_data(offset_cm, distance_cm, led_angle_deg):
+    """
+    串口发送格式：
+ 
+    [横向偏移,前后距离,灯带倾斜角]
+    """
+    msg = "[%.2f,%.2f,%.2f]\r\n" % (
+        offset_cm,
+        distance_cm,
+        led_angle_deg
+    )
+ 
+    uart.write(msg)
+ 
+ 
+def print_debug(
+    valid,
+    offset_px,
+    offset_cm,
+    distance_cm,
+    led_angle_deg,
+    pixel_dist,
+    center_x,
+    center_y,
+    threshold,
+    max_value,
+    blob_count,
+    candidate_count,
+    used_roi,
+    lost_count
+):
+    """
+    打印调试信息。
+    """
+    if valid:
+        print(
+            "offset_px=%d | "
+            "offset_cm=%.2f cm | "
+            "distance=%.2f cm | "
+            "angle=%.2f deg | "
+            "pixel_dist=%.2f px | "
+            "threshold=%d | "
+            "max=%d | "
+            "blobs=%d | "
+            "candidates=%d | "
+            "roi=%d | "
+            "fps=%.1f"
+            % (
+                offset_px,
+                offset_cm,
+                distance_cm,
+                led_angle_deg,
+                pixel_dist,
+                threshold[0],
+                max_value,
+                blob_count,
+                candidate_count,
+                1 if used_roi else 0,
+                clock.fps()
+            )
+        )
+ 
+    else:
+        print(
+            "lost | "
+            "threshold=%d | "
+            "max=%d | "
+            "blobs=%d | "
+            "candidates=%d | "
+            "lost_count=%d | "
+            "fps=%.1f"
+            % (
+                threshold[0],
+                max_value,
+                blob_count,
+                candidate_count,
+                lost_count,
+                clock.fps()
+            )
+        )
+ 
+ 
+# ==================== 初始化 ====================
+ 
+init_camera()
+ 
+clock = time.clock()
+ 
+ 
+# ==================== 主循环 ====================
+ 
+while True:
+    clock.tick()
+ 
+    frame_count += 1
+ 
+    img = sensor.snapshot()
+ 
+    (
+        result,
+        threshold,
+        max_value,
+        blob_count,
+        candidate_count,
+        used_roi
+    ) = find_two_ir_lights(img)
+ 
+    valid = 0
+ 
+    offset_px = 0
+    offset_cm = 0.0
+    distance_cm = 0.0
+    led_angle_deg = 0.0
+ 
+    pixel_dist = 0.0
+ 
+    center_x = 0.0
+    center_y = 0.0
+ 
+    if result:
+        (x1, y1), (x2, y2) = result
+ 
+        center_x = (x1 + x2) / 2.0
+        center_y = (y1 + y2) / 2.0
+ 
+        img_center_x = img.width() / 2.0
+ 
+        offset_px = center_x - img_center_x
+ 
+        dx = x1 - x2
+        dy = y1 - y2
+ 
+        pixel_dist = math.sqrt(
+            dx * dx + dy * dy
+        )
+ 
+        if pixel_dist >= MIN_PAIR_DIST_PX:
+ 
+            distance_cm = (
+                FOCAL_LEN_PX
+                * LED_SPACING_CM
+                / pixel_dist
+            )
+ 
+            offset_cm = (
+                offset_px
+                * LED_SPACING_CM
+                / pixel_dist
+            )
+ 
+            led_angle_deg = calc_led_angle_deg(
+                x1,
+                y1,
+                x2,
+                y2
+            )
+ 
+            # 低通滤波
+            offset_cm = low_pass(
+                offset_cm,
+                last_offset_cm
+            )
+ 
+            distance_cm = low_pass(
+                distance_cm,
+                last_distance_cm
+            )
+ 
+            led_angle_deg = low_pass(
+                led_angle_deg,
+                last_led_angle_deg
+            )
+ 
+            # 保存本帧识别结果
+            last_offset_cm = offset_cm
+            last_distance_cm = distance_cm
+            last_led_angle_deg = led_angle_deg
+ 
+            last_pixel_dist = pixel_dist
+ 
+            last_points = (
+                (x1, y1),
+                (x2, y2)
+            )
+ 
+            lost_count = 0
+            valid = 1
+ 
+            # 图像显示标记
+            img.draw_cross(
+                int(x1),
+                int(y1),
+                color=255
+            )
+ 
+            img.draw_cross(
+                int(x2),
+                int(y2),
+                color=255
+            )
+ 
+            img.draw_line(
+                int(x1),
+                int(y1),
+                int(x2),
+                int(y2),
+                color=255
+            )
+ 
+    else:
+        lost_count += 1
+ 
+        # 短时间丢失时继续输出上一帧数据
+        if (
+            lost_count <= LOST_HOLD_FRAMES
+            and last_offset_cm is not None
+            and last_distance_cm is not None
+            and last_led_angle_deg is not None
+        ):
+            valid = 1
+ 
+            offset_cm = last_offset_cm
+            distance_cm = last_distance_cm
+            led_angle_deg = last_led_angle_deg
+ 
+            pixel_dist = last_pixel_dist
+ 
+            if last_points is not None:
+                (x1, y1), (x2, y2) = last_points
+ 
+                center_x = (x1 + x2) / 2.0
+                center_y = (y1 + y2) / 2.0
+ 
+                img_center_x = img.width() / 2.0
+ 
+                offset_px = center_x - img_center_x
+ 
+                img.draw_cross(
+                    int(x1),
+                    int(y1),
+                    color=255
+                )
+ 
+                img.draw_cross(
+                    int(x2),
+                    int(y2),
+                    color=255
+                )
+ 
+                img.draw_line(
+                    int(x1),
+                    int(y1),
+                    int(x2),
+                    int(y2),
+                    color=255
+                )
+ 
+        else:
+            last_points = None
+ 
+            offset_px = 0
+            offset_cm = 0.0
+            distance_cm = 0.0
+            led_angle_deg = 0.0
+ 
+    # 按固定间隔发送数据
+    if frame_count % SEND_INTERVAL == 0:
+ 
+        if valid:
+            send_data(
+                offset_cm,
+                distance_cm,
+                led_angle_deg
+            )
+ 
+        else:
+            send_data(
+                0.0,
+                0.0,
+                0.0
+            )
+ 
+        print_debug(
+            valid,
+            offset_px,
+            offset_cm,
+            distance_cm,
+            led_angle_deg,
+            pixel_dist,
+            center_x,
+            center_y,
+            threshold,
+            max_value,
+            blob_count,
+            candidate_count,
+            used_roi,
+            lost_count
+        )
+ 
+    # 定期进行垃圾回收
+    if frame_count % 60 == 0:
+        gc.collect()
+
+===== TABLE 1 =====
+1024线增量式编码器Pro | N20减速电机
+
+===== TABLE 2 =====
+项目 | 主车 | 副车
+整车重量 | 304 g | 284 g
+整车长×宽×高 | 220mm×160 mm×235mm | 220 mm×160 mm×235mm
+车模平台 | 三全向轮缩微车模 | 三全向轮缩微车模
+驱动电机 | N20减速电机×3 | N20减速电机×3
+编码器 | 1024线增量式×3 | 1024线增量式×3
+主控制器 | RT1021_BTB×1 | RT1021_BTB×1
+IMU | IMU660RA×1 | IMU660RA×1
+视觉模块 | OpenART Plus×1 | OpenART mini×1 + 170°红外镜头
+无线通信 | 逐飞无线串口V2.4×1 | 逐飞无线串口V2.4×1
+电池 | 3S 300 mAh×1 | 3S 300 mAh×1
+额外伺服电机 | 0 | 0
+
+===== TABLE 3 =====
+RT1021_BTB核心板 | IMU660RA六轴惯性测量模块
+
+===== TABLE 4 =====
+主车OpenART Plus | 副车OpenART mini
+
+===== TABLE 5 =====
+标签 | 目标物 | 功能
+0 | 网球 | 搬运目标
+1 | 蓝沙包 | 搬运目标
+2 | 红沙包 | 搬运目标
+3 | 棕熊 | 搬运目标
+4 | 白熊 | 搬运目标
+5 | 红砖 | 障碍/环境目标
+
+===== TABLE 6 =====
+开发内容 | 工具/平台 | 主要用途
+RT1021核心板程序 | Thonny | MicroPython编写、下载、REPL调试
+OpenART视觉程序 | OpenMV IDE | 图像调试、阈值调整、模型部署
+PCB设计 | 嘉立创EDA专业版 | 主板、驱动板和转接板设计
+机械设计 | SolidWorks | 推杆及安装结构建模
+AI训练 | 逐飞OpenART相关训练流程 | 目标训练、模型导出与TFLite部署
+
+===== TABLE 7 =====
+项目 | 主车 | 副车
+整车重量 | 304 g | 284 g
+整车长×宽×高 | 220mm×160mm×235mm | 220mm×160mm×235mm
+车模平台 | 三全向轮缩微车模 | 三全向轮缩微车模
+驱动电机 | N20减速电机×3 | N20减速电机×3
+编码器 | 1024线增量式×3 | 1024线增量式×3
+主控制器 | RT1021_BTB×1 | RT1021_BTB×1
+IMU | IMU660RA×1 | IMU660RA×1
+视觉模块 | OpenART Plus×1 | OpenART mini×1 + 170°红外镜头
+无线通信 | 逐飞无线串口V2.4×1 | 逐飞无线串口V2.4×1
+电池 | 3S 300 mAh×1 | 3S 300 mAh×1
+额外伺服电机 | 0 | 0

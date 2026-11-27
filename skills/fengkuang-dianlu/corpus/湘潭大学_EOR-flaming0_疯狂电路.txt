@@ -1,0 +1,1180 @@
+第二十一届全国大学生智能汽车竞赛技术报告
+基于视觉与多传感器融合的智能赛车控制系统设计
+ 	
+
+	参赛学校：湘潭大学
+ 	队伍名称：EOR-flaming0
+ 	参赛队员：吴小亮、李茜、吴宇航
+ 	带队教师：陈洋卓 蔡晓雯
+
+
+引言
+全国大学生智能汽车竞赛是面向全国高校大学生的综合性人工智能与自动控制类赛事，赛事以“立足培养、重在参与、鼓励探索、追求卓越”为宗旨，聚焦智能车辆的感知、决策、控制全流程技术研发，是检验大学生嵌入式开发、自动控制、机器视觉、传感器融合等综合技术能力的重要平台。
+随着智能驾驶技术的快速发展，机器视觉、多传感器融合、高精度运动控制等技术已成为智能车辆研发的核心方向。本次参赛智能赛车以自主循迹、稳定行驶、精准转向为核心目标，依托嵌入式控制系统，融合视觉识别与编码器传感技术，实现赛道自主检测、路径规划与自适应行驶控制，具备较强的工程实践价值与技术创新性。
+国内外研究现状
+随着智能驾驶技术的快速发展，视觉感知、多传感器融合与高精度运动控制已成为智能车辆研究领域的核心方向。全国大学生智能汽车竞赛作为国内最具影响力的智能车赛事之一，其技术路线也紧密跟随行业发展前沿。自2006年首届赛事举办以来，参赛队伍的主控芯片经历了从8位、16位到32位乃至多核MCU的技术跃迁，环境感知方式也从单一光电感知向多传感器融合方向持续演进。
+视觉感知方面，摄像头作为智能车最主要的赛道信息采集传感器，承担着车道线识别、路径检测等核心任务。单目摄像头因结构简单、成本低廉且具备较强的环境感知能力，成为众多参赛队伍首选的视觉传感器方案。近年来，随着图像处理算法与嵌入式平台算力的不断提升，自适应二值化、动态前瞻等高效视觉处理算法在智能车竞赛中得到广泛应用。
+多传感器融合方面，单一传感器在复杂光照、高速行驶等工况下存在局限性，融合视觉、惯性、测速等多源传感信息已成为提升系统鲁棒性的主流技术路径。已有研究表明，多传感器融合可显著提高环境感知精度与决策可靠性。在智能车竞赛场景中，摄像头与陀螺仪、编码器的融合方案被广泛采用，有效弥补了视觉感知易受环境干扰、转向精度受限等问题。
+控制算法方面，PID控制因其结构简洁、实现方便、响应迅速，仍是智能车底层电机与舵机控制的基石。在此基础上，串级PID、自适应PID等改进策略被广泛应用于直道高速与弯道减速等不同工况的切换控制。与此同时，模糊PID等智能控制方法在路径跟踪等场景中也表现出优于传统PID的控制效果。
+总体而言，智能车技术正朝着“感知-决策-执行”闭环系统不断深化，视觉识别与多传感器融合的协同控制已成为提升车辆赛道适应性与行驶稳定性的关键技术方向。
+本文主要研究内容与章节安排
+本报告完整阐述湘潭大学EOR-flaming0（疯狂电路组）参赛智能赛车的整体设计、硬件搭建、软件算法、调试优化及技术参数等全部核心内容。车辆采用单层PCB板分层布局设计，上层集成核心芯片、驱动模块等核心器件，反面布局其余辅助器件，结构简洁、稳定性强。同时采用视觉识别完成赛道路径判定，结合陀螺仪与编码器多传感器融合算法，实现车辆高精度转向与平稳行驶。
+报告后续章节依次介绍车辆整体技术方案、机械结构改造、硬件电路设计、软件控制算法、开发调试过程、核心技术参数，最后总结设计成果与现存问题，提出后续优化方向
+第一章 整体设计思路与技术方案概要
+1.1 整体设计思路
+本次参赛智能赛车以轻量化、高稳定、高精度、快响应为核心设计理念，兼顾结构合理性、硬件稳定性与算法实时性。硬件层面采用独创的单层PCB板分层布局方案，摒弃多层板复杂结构，简化制作工艺，降低电路干扰。PCB上层集中布置主控核心芯片、电机驱动模块、视觉处理模块等核心器件，保证核心电路信号传输效率；电路板反面统一安装电源模块、滤波电容、接口电路等辅助器件，实现硬件分区布局，有效规避电磁干扰，提升整车运行稳定性。
+14控制层面摒弃单一传感器检测方案，采用视觉识别+陀螺仪+编码器多传感器融合的核心技术思路，通过视觉摄像头实时采集赛道图像信息，完成路径、弯道、直道等赛道元素识别，确定车辆行驶路线与移动方向；依托陀螺仪检测车辆姿态角度、编码器采集车轮转速数据，实现车辆转向角度、行驶速度的闭环精准控制，解决单一视觉识别易受光线干扰、转向精度不足的问题。
+1.2 整体技术方案架构
+整车系统分为硬件底层、感知层、决策控制层、执行层四大模块，各模块协同工作，实现智能车自主行驶功能。
+硬件底层：以组委会提供的核心MCU电路板为控制核心，搭配自主设计的单层扩展PCB板，完成所有器件的集成与固定，为整车运行提供硬件支撑；
+感知层：由视觉摄像头、陀螺仪传感器、编码器传感器组成，实时采集赛道图像、车辆姿态、行驶位移等核心数据；
+决策控制层：主控芯片接收感知层数据，通过视觉识别算法、传感器融合算法、PID控制算法完成路径判定、姿态修正、速度调节；
+执行层：由原车驱动电机、舵机组成，接收主控指令，完成车辆前进、后退、转向、调速等动作。
+2.3 设计创新点概要
+硬件布局创新：采用单层PCB正反分区布局设计，结构简洁、布线规整，有效降低电磁干扰，提升系统稳定性，降低硬件故障概率；
+感知算法创新：融合视觉识别与惯性、测速传感器数据，弥补单一感知方案的缺陷，大幅提升赛道检测精度与转向控制精度；
+控制策略创新：采用自适应PID控制算法，根据赛道工况自动调节控制参数，适配直道、弯道、连续弯道等复杂赛道场景。
+
+第二章 机械结构设计与改造
+2.1 整车机械结构整体布局
+本次参赛车模基于赛事标准车模进行轻量化改造，整体结构紧凑、重心合理。整车机械结构主要包括车架主体、车轮传动结构、舵机转向结构、传感器安装支架、PCB板固定结构五大部分。所有改造均遵循赛事规则，不改变原车核心传动结构，仅针对器件安装、重心分布、检测视野进行优化改造。
+2.2 机械结构改造细节
+本次车模改造采用上下分层布局方案，充分利用垂直空间，在保证结构强度的同时实现整车轻量化与功能分区。
+2.2.1 上层结构：PCB板固定与布局
+PCB板固定于车架上层的碳纤维横梁之上，采用铜柱支撑方案——使用M3尼龙柱或金属铜柱，一端通过螺丝固定在车架或支架上，另一端穿过PCB板的安装孔后用尼龙螺母锁紧固定。PCB上层集中布置MCU核心芯片、视觉处理模块、电机驱动模块等核心器件，板体反面布局电源电路、滤波电容、接线端子、稳压模块等辅助器件，实现正反分区布线。PCB板在布局阶段即预留电机固定等安装孔位，为后续组装提供便利。
+2.2.2 下层结构：镂空碳纤维底板与负压风扇
+车架下层采用镂空碳纤维底板作为主要承力结构。碳纤维材料具备硬度高、韧性强、密度小的特点，在同等强度下相比铝合金更轻，相比塑料形变更小。底板厚度选用1.5mm规格，兼顾强度与轻量化需求。底板设计时采用镂空图案分布优化，在保证结构强度的前提下去除冗余材料，实现极致轻量化。
+底板中央区域预留负压风扇安装位。负压系统通过在底盘加装无刷风扇产生向下吸附力，有效增强轮胎的侧向抓地力，抑制高速过弯时的侧滑和甩尾。底板中心预留离心风机进气口及无刷电机固定孔。风扇紧贴底板安装以产生地面效应。安装时使用M2沉头螺钉将风扇固定支架与底板连接，确保风扇与底盘之间无干涉。底板宽度设计保证负压的有效吸盘面积，底板前后不做过度延伸，避免赛道卡顿。
+
+2.2.3 两侧结构：镂空金属支架固定
+车架两侧采用镂空金属支架作为上下层的连接与固定结构。侧板采用6061铝合金CNC精加工一体成型，在保证结构强度的同时进行合理镂空减重处理。侧板集成电机安装孔（M2电机孔，030电机固定孔倾斜角度30°，同时预留130电机孔位）、车轴安装孔（2个M2车轴孔）、编码器固定孔（3.5g/1.5g两款编码器安装孔，共4个M1.6孔位）等多功能安装孔位。侧板通过螺栓分别与上层PCB支架和下层碳纤维底板紧固连接，形成稳定的框架式承载结构。镂空设计在去除冗余材料的同时保留关键受力区域的实体厚度，确保承载PCB板及传感器组件时的结构刚性。
+2.2.3 下层补充：摄像头安装
+摄像头安装于车架下层前端位置，通过碳素杆支架固定。碳素杆作为前瞻支架，质量轻、硬度高，可有效减少行驶晃动对传感器采集的干扰。摄像头采用黑色碳素杆作为支撑杆，通过一字双向固定架将摄像头固定于碳素杆上方，碳素杆下方使用摄像头支架碳素杆固定座固定在车模底盘居中靠前位置。摄像头镜片中心距地面高度设置为15–25 cm，俯仰角设置为10–15度，确保视野能完整覆盖前方赛道区域。安装平面经精加工至平面度0.02mm以内，杜绝镜头光学畸变。
+2.3 传感器安装设计
+2.3.1 视觉摄像头
+本车选用MT9V03X总钻风数字摄像头作为赛道信息采集传感器，其全局快门特性能够有效抑制高速行驶时的图像拖影与果冻效应，适合智能车竞赛的高速移动场景。摄像头安装方案如下：
+安装位置：摄像头采用黑色碳素杆作为支撑支架，将摄像头固定于一字双向固定架上，通过螺栓连接固定在碳素杆上方，碳素杆下方使用摄像头支架碳素杆固定座固定在车模底盘居中靠前位置。此种安装方式确保了摄像头在车体纵轴线上严格居中，视野能完整覆盖前方赛道区域。
+安装高度：摄像头镜片中心距地面高度设置为15–25 cm。此高度范围既能保证摄像头获得足够的前方视野，又避免了过高安装引入的透视畸变问题。实际安装中，使用卡尺精确测量地面到镜头中心的距离，误差控制在±2 mm以内。
+俯仰角度：摄像头俯仰角设置为10–15度，确保能够清晰看到前方3米外的赛道。此角度可平衡近处盲区与远处畸变，使赛道特征在图像中保持良好几何形态。安装后通过以下方法验证：在赛道最远端放置一条5 cm宽的黑线，其在图像中应保持3–4像素宽度。
+水平校准：摄像头严格垂直于赛道中线安装。采用激光水平仪从摄像头中心投射光线，确保光线与赛道中心线重合。0.5度的水平偏转偏差会使拐点在图像中水平位移达10像素，直接影响元素识别准确率。
+固定与减震：摄像头支架选用金属材质（碳素杆配合金属固定座），避免塑料支架在高速震动中产生微变形。所有连接处采用螺栓锁紧，并在摄像头与固定架之间加装减震垫片，有效抑制车模运行振动对图像采集的干扰。
+2.3.2陀螺仪传感器
+本车采用逐飞IMU660RA六轴陀螺仪作为姿态检测传感器，集成了三轴陀螺仪和三轴加速度计，能够为系统提供实时的角速度与姿态数据。
+安装位置：陀螺仪安装在车模底盘中部、几何中心位置，最大程度上减少车模运行振动对姿态测量的干扰。陀螺仪安装在车体正中心可使转向环控制更加精准，避免因偏心导致的转向误差。
+固定方式：采用3D打印陀螺仪专用支架，通过M3螺丝将陀螺仪模块锁紧固定在车体中心位置。支架设计预留了PCB板器件的避让空间，确保安装后陀螺仪与主板电气连接可靠。
+水平校准：陀螺仪安装时需确保其感测平面与地面严格平行。安装过程中使用水平仪辅助校准，确保陀螺仪X-Y平面处于水平状态。水平校准的精度直接影响姿态角解算的准确性。
+电气连接：IMU660RA采用SPI通信模式与主控芯片连接，以获得更高的数据刷新率。在VCC引脚附近添加0.1 μF去耦电容，有效抑制电源噪声对传感器数据的干扰。
+初始校准：每次上电后，车辆保持静止状态，由软件自动完成陀螺仪零偏校准（imu660rb_init()），消除传感器静态漂移对积分角度的影响。
+2.3.3编码器传感器
+本车采用带方向式1024线编码器作为速度与里程检测传感器，分别安装于左右后轮，实现双轮独立速度反馈与行驶距离累加。
+安装方式：编码器通过专用编码器支架固定于车模后轮电机架位置。支架通过电机架紧固孔位与车体电机架连接，并通过加固筋加强整体支架刚度。编码器本体通过编码器紧固孔位与编码器间隙卡槽实现可靠紧固。
+与车轮的连接：编码器通过后轮轴上的齿轮与电机输出轴相连。车轮每转动一圈，编码器轴转过一定圈数（取决于齿轮传动比），从而将车轮的机械转动转换为编码器的电脉冲信号。编码器齿轮与电机齿轮之间通过紧密啮合确保传动无滑差，保证测速精度。
+左右轮独立安装：左轮编码器（ENCODER_DIR_L）与右轮编码器（ENCODER_DIR_R）分别独立安装，各自采集对应车轮的转速与转向信息。左右轮独立测速是实现速度闭环控制和差速转向控制的数据基础。
+电气连接：编码器输出PULSE（脉冲）和DIR（方向）两路信号，分别接入主控芯片的编码器计数通道。信号线采用双绞屏蔽线，有效抑制电机驱动产生的电磁干扰，确保测速信号在高速行驶时的稳定传输。
+安装精度要求：编码器安装精度直接影响测速准确性和速度控制精度。安装时需确保编码器轴与车轮轴同心，避免因轴心偏移导致的脉冲计数误差。所有紧固螺丝采用螺纹胶固定，防止车辆运行震动导致松动。
+2.4 电路板固定与布线设计
+本次设计采用单层PCB作为整车核心电路载体，铜柱固定于车架中部，保证整车重心居中，提升行驶稳定性。PCB板严格采用正反分区布线方案，上层集中布局MCU核心芯片、视觉处理模块、电机驱动模块等高频、核心器件；板体反面布局电源电路、滤波电容、接线端子、稳压模块等辅助器件。布线过程中严格区分强电线路与弱电信号线路，规避信号串扰，所有线路规整固定，避免车辆行驶过程中线路松动、摩擦破损，保障硬件系统长期稳定运行。
+第三章 硬件电路系统设计
+3.1 电路整体架构
+整车硬件电路系统以赛事组委会提供的核心MCU电路板为控制核心，无需对核心MCU电路进行二次设计，仅自主设计外围扩展电路，包含电源稳压电路、传感器信号采集电路、电机驱动电路、信号滤波电路等模块，各电路模块独立工作、协同配合，满足整车感知、控制、执行功能需求。
+3.2 各模块电路设计说明
+3.2.1 电源稳压电路
+12V锂电池供电。12V直供电机驱动；LM2596S降压至5V供摄像头和编码器；AMS1117-3.3V降压至3.3V供MCU；LM2941可调稳压至6V供舵机。
+3.2.2 传感器信号采集电路
+MT9V03X摄像头经8位并行总线接入MCU，PCLK触发DMA搬运。IMU660RA陀螺仪经SPI总线通信。1024线编码器输出PULSE和DIR信号接入MCU计数通道。
+3.2.3 电机与舵机驱动电路
+两片BTS7960构成H全桥驱动电机，PWM频率17kHz，芯片内置过流保护。舵机S3010由6V供电，50Hz PWM信号控制转向。
+3.3 电路抗干扰设计
+本次硬件设计充分考虑智能车高速行驶中的电磁干扰问题，通过PCB分区布局、强弱电分离布线、增加滤波电容、接地优化等方式，降低电机、驱动模块工作产生的电磁干扰，保障传感器信号采集的准确性与主控系统的稳定性。
+
+第四章 软件算法与程序设计
+4.1 软件开发环境与工具
+本车软件基于逐飞科技（ZF） 提供的TC264系列MCU底层驱动库（zf_common_headfile.h）开发，使用Infineon AURIX Development Studio作为集成开发环境，编译器为TASKING C/C++ Compiler。调试工具采用逐飞科技无线调试器和Vofa+上位机，用于实时数据可视化与参数在线整定。代码版本管理使用Git，团队协作开发。
+4.2 软件整体架构
+软件采用分层模块化设计，各模块职责清晰，耦合度低，具体划分如下：
+底层驱动层：包含GPIO、PWM、ADC、编码器、摄像头（MT9V03X）、IMU660RA、按键、蜂鸣器、LED、Flash存储等外设驱动，由逐飞库封装提供。
+数据采集层：定时（2ms中断）采集编码器速度、陀螺仪角速度、摄像头图像，并完成图像预处理（复制、压缩、伽马校正）。
+视觉识别层（上帝之眼）：实现图像二值化（分区大津法）、边线追逐、动态前瞻计算、元素（直角/节点/分支/T型/十字）检测与识别、框检测等。
+传感器融合与控制层：包括互补滤波姿态融合、外环（角度偏差→目标角速度）、内环（目标角速度→差速）、速度环（目标速度→PWM占空比）三级PID控制。
+决策与路径规划层：基于预设路径点（转向方向与距离），结合编码器里程计进行路径索引更新，实现赛道元素转向决策。
+人机交互层：IPS114屏幕菜单系统，支持参数在线修改、EEPROM存储、LED与蜂鸣器状态指示；无线模块支持Vofa上位机调参与实时波形显示。
+任务调度层：主循环轮询执行各功能模块，2ms定时器中断负责编码器读取、陀螺仪读取、速度环计算等实时性要求高的任务。
+4.3 核心算法原理说明
+4.3.1 视觉识别算法
+图像预处理：摄像头采集160×120灰度图，裁边后压缩为80×60，再经伽马校正（gamma值可调）增强对比度，提升弱光环境下的边缘清晰度。
+自适应二值化：采用分区大津法，将图像分为远端（0-19行）、中端（20-39行）、近端（40-59行）三个区域，分别计算阈值并二值化，有效抑制光照不均匀影响。
+边线追逐：从底边（第59行）开始，利用上一行左右边界位置作为先验，设置搜索区间（±ImageScanInterval_small），逐行向上寻找黑白跳变点，标记正常边（T）、白边（W）、黑边（H），并记录每一行的左右边界、宽度、中线。
+动态前瞻与偏差计算：根据最远可见行（OFFLine）计算白列高度，动态调整前瞻行位置（TowPoint），在20行范围内采用正态分布权重加权平均得到图像偏差Det_True，用于控制转向。
+元素识别：基于边线类型（W/H）和跳变点分布，结合框检测（Frame_Detect）判断直角、节点、T型、分支、十字等赛道元素，并输出对应道路类型（Road_type）。
+4.3.2 多传感器融合算法
+姿态融合：采用一阶互补滤波，将陀螺仪积分角度与由陀螺仪Z轴角速度积分得到的角度（或加速度计角度，本车未用加速度计）融合，得到当前车体偏航角（post.yaw_angle）。公式为：
+fused_angle = alpha * (fused_angle + gyro_rate * dt) + (1-alpha) * acc_angle
+本车设置alpha = 0.98，dt=2ms，有效滤除陀螺仪漂移，获得平滑的姿态角。
+速度里程计：左右轮编码器脉冲数累加，取平均得到行驶距离encoder.disA，结合预设路径节点距离，实现路径点切换与速度决策。
+4.3.3 自适应PID控制算法
+本车采用三级串级PID控制结构，适应直道、弯道不同工况：
+外环（角度环）：输入为图像偏差Err，输出为目标角速度out_ang_speed，PD控制器（比例Outer_Ring_P、微分Outer_Ring_D），其中偏差经过动态前瞻加权，增强弯道响应。
+内环（角速度环）：输入为目标角速度与实际陀螺仪角速度的差值，输出为左右轮差速motor.speed_diff，PD控制器（比例Inner_Ring_P、微分Inner_Ring_D），快速抑制车身抖动。
+速度环：输入为目标速度与实际编码器速度的差值，输出为电机PWM占空比，PI控制器（比例kp_m、积分ki_m），并带有积分限幅和低通滤波，防止积分饱和。
+自适应策略：根据Road_type和路径剩余距离动态调整目标速度（target_speed），直道高速、弯道减速，确保行驶稳定。
+4.4 主程序流程与核心子程序设计
+主程序流程（由main()函数执行）：
+系统初始化（All_Init()）：包括外设、传感器、Flash读取参数、路径初始化。
+进入主循环，循环执行以下任务（非阻塞）：
+若摄像头新帧就绪，执行Eye_of_Providence_Task()（图像处理与元素识别）。
+执行Menu_Logic_Run()（屏幕菜单显示、按键处理、参数修改）。
+执行motor_control()（速度决策、速度环计算、PWM输出）。
+执行Gyro_Get_Angle()（更新姿态角，用于元素转向退出判断）。
+执行Dis_Measure()（里程累加，路径点切换判断）。
+若无线通信有数据，执行Vofa_Adjust_Parameter()（无线调参）。
+2ms定时器中断（优先级最高）：
+读取左右编码器计数（encoder_get()），并进行速度平滑限幅。
+读取陀螺仪角速度（Gyro_Get()）。
+调用Speed_Loop()计算速度环，更新电机PWM（注：实际代码中速度环在motor_control()中调用，可根据实际中断情况调整，但逻辑上速度环应放在中断以确保实时性）。
+核心子程序说明：
+DrawLinesProcess()：边线追逐核心函数，逐行搜索跳变点，处理大跳变恢复。
+Element_Judgment()：基于边线类型和框检测识别赛道元素。
+Outer_Ring_PID()与Inner_Ring_PID()：外环和内环PD计算。
+Speed_Loop()：速度环PI计算，输出占空比。
+speed_decision()：根据路径剩余距离和道路类型决策目标速度。
+第五章 开发调试过程与问题解决
+5.1 开发制作流程
+本次智能车开发整体分为方案设计、硬件制图与制作、器件焊接组装、软件程序编写、模块单独调试、整车联调、赛道实测优化七个阶段。团队分工协作，依次完成机械改造、电路搭建、算法编程、调试优化等全部工作，逐步实现车辆各项功能。
+5.2 分模块调试过程
+1、硬件模块调试：完成电路通断检测、电压测试、传感器供电测试，排查虚焊、短路、器件损坏等硬件问题；
+2、感知模块调试：单独测试摄像头图像采集、陀螺仪姿态检测、编码器测速功能，校准传感器参数；
+3、控制模块调试：调试PID控制参数，优化视觉识别阈值，测试车辆转向、调速响应效果；
+4、整车联调：结合实际赛道，完成全功能调试，优化算法参数与机械结构细节。
+5.3 调试核心问题与解决方案
+在整车联调与赛道实测中，团队遇到以下关键问题并逐一攻克：
+5.3.1 图像二值化阈值不稳定
+现象：光照变化导致阈值波动，边线提取断续，引起转向抖动。
+解决：采用分区大津法，将图像分为远中近三区独立计算阈值，并设置上下限（OSTU_Low/OSTU_High）约束，同时引入伽马校正提前增强对比度，阈值稳定性显著提升。
+5.3.2 直角转弯误识别或漏识别
+现象：普通弯道被误判为直角，或直角处无法检测到特征。
+解决：增加元素锁（Element_lock）机制，仅当路径预设转向方向匹配时才开启识别；同时引入encoder.element_limit_dis距离限制，避免过早识别；优化框检测判定条件（Frame_Detect的flag组合），提高识别鲁棒性。
+5.3.3 高速直道车身抖动
+现象：直道速度提高后，车身左右摇摆，控制发散。
+解决：优化内环PD参数（Inner_Ring_P/Inner_Ring_D），提高角速度环响应速度；对编码器速度增加平滑滤波（限幅斜率20），降低速度反馈噪声；调整外环偏差计算权重，减小远距离偏差的权重，防止远行噪声引起抖动。
+5.3.4 过弯时冲出赛道
+现象：弯道速度过快导致转向不足。
+解决：修改速度决策函数calculate_speed_by_distance()，根据当前剩余弯道距离线性降低目标速度，并针对不同道路类型（Road_type）设置独立速度曲线，确保入弯前充分减速。
+5.3.5 EEPROM参数丢失
+现象：断电后之前调好的参数未保存。
+解决：增加长按按键（KEY_4长按）触发flash_write_mydata()写入操作，并在初始化时读取标志位判断是否有有效数据，若无则加载默认参数，确保参数持久化。
+5.3.6 无线调参响应延迟
+现象：通过Vofa上位机调整参数时，小车反应滞后。
+解决：优化无线中断接收处理，将调参命令解析放到主循环，避免中断阻塞；同时将参数更新立即应用于控制环，无需等待下一周期。
+
+第六章 模型车主要技术参数
+6.1 整车物理参数
+整车长度：	138 mm
+整车宽度：	63 mm
+整车高度：	16 mm
+整车总重量：111.4 g
+6.2 电路功耗与电容参数
+整车静态功耗：		__________ W
+整车动态最大功耗：	__________ W
+电路总电容容量：		__________ μF
+6.3 传感器配置参数
+传感器种类：视觉摄像头（MT9V03X）、六轴陀螺仪（IMU660RA）、双路磁编码器（带方向）传感器总数量：4个（1个摄像头、1个陀螺仪、2个编码器）
+6.4 伺服电机配置
+原车自带驱动电机数量：2个（左右后轮驱动）
+原车自带舵机数量：1个（转向舵机）
+额外增设伺服电机个数：0个（本车未额外增设）
+6.5 赛道检测性能参数
+赛道信息检测精度：可通过编码器里程计实现约±1cm的行驶距离精度（取决于编码器分辨率，本车编码器脉冲数折算为每圈约520个脉冲，对应1cm约5.2个脉冲）
+数据检测刷新频率：图像处理约125Hz（周期8ms），速度环更新频率500Hz（2ms中断），控制输出频率与速度环相同。
+
+第七章 总结与展望
+7.1 项目工作总结
+本团队本次设计的智能赛车，严格遵循大赛规则要求，采用单层PCB正反分区硬件布局方案，结构简洁、稳定性强；软件层面依托视觉识别与多传感器融合控制算法，实现了赛道精准识别、高精度转向、稳定调速的核心功能。整车经过多次调试优化，能够适配常规赛道工况，行驶稳定性、响应速度、控制精度均达到赛事参赛标准。
+在整个设计制作过程中，团队完成了机械结构改造、硬件电路设计、软件算法编程、整车调试优化等全流程工作，熟练掌握了嵌入式开发、机器视觉、传感器融合、自动控制等核心技术，综合工程实践能力与团队协作能力得到显著提升。
+7.2 现存问题与不足
+本次设计的智能赛车虽然基本实现了赛道自主循迹与稳定行驶的核心功能，但在实测与调试过程中，仍暴露出若干技术短板与系统局限，具体体现在以下五个方面：
+7.2.1 视觉识别算法的环境适应性不足
+视觉系统是本车最为核心的感知手段，但其对环境光照变化的鲁棒性仍然有限。虽然采用了分区大津法（OSTU）和伽马校正来抑制光照不均的影响，但在强光直射、阴影遮挡或赛道表面反光差异较大的场景下，二值化阈值仍会出现波动，导致边线提取断续甚至丢失。此外，当赛道背景与赛道颜色对比度较低时（如浅色地面搭配浅色赛道），现有算法的识别率显著下降。这反映出当前算法在处理极端光照条件和低对比度场景时仍存在泛化能力不足的问题。
+7.2.2 陀螺仪零偏漂移与积分累积误差
+本车采用的IMU660RA六轴陀螺仪在长时间运行中不可避免地存在零偏漂移问题。陀螺仪输出角速度信号中含有零值偏移误差ε₀和随机漂移误差ε_d。实测数据显示，即便经过上电零偏校准，运行过程中温度变化（电机发热传导至PCB）和机械振动仍会使零偏值产生缓慢漂移。互补滤波（alpha=0.98）虽然能在一定程度上抑制漂移，但无法完全消除积分累积误差——当车辆长时间行驶时，偏航角估计值仍会逐渐偏离真实值。此外，本车当前未充分利用加速度计数据进行姿态辅助校正，姿态融合的精度和鲁棒性仍有提升空间。
+7.2.3 串级PID控制器的参数适配性问题
+本车采用三级串级PID控制（外环角度环→内环角速度环→速度环），虽然结构合理，但存在两个突出问题。其一，PID参数（Outer_Ring_P/D、Inner_Ring_P/D、kp_m/ki_m）是在特定赛道条件下整定得到的，当赛道特征（弯道曲率、直道长度）发生变化时，同一套参数难以在所有工况下都保持最优性能。直道要求稳速抗扰，急弯要求敏捷预判，两者的控制需求完全相反，而当前参数无法动态自适应调整。其二，内环与外环之间的耦合协调不够理想，在连续弯道等复杂场景下可能出现内外环“打架”的现象，导致车身抖动或响应滞后。
+7.2.4 负压风扇系统效能有限且功耗较高
+机械结构上引入的负压风扇虽然在一定程度上增强了轮胎的侧向抓地力，但实测中发现其效能受限于多个因素。首先，风扇与地面之间的间隙控制精度直接影响负压效果——间隙过大则吸力不足，间隙过小则可能触碰赛道造成阻力。其次，风扇高速运转时产生较大电流消耗，对整车电源系统造成额外负担，在极限工况下可能影响主控系统和传感器供电稳定性。此外，风扇自身的振动会通过车架传导至摄像头和陀螺仪，对图像采集和姿态检测引入额外噪声。
+7.2.5 系统实时性与计算资源的瓶颈
+视觉图像处理（160×120灰度图裁边压缩为80×60、伽马校正、分区二值化、边线追逐、元素识别等）计算量较大，虽然当前帧率可达约125Hz，但在赛道元素密集区域（如连续直角弯或十字路口），图像处理与元素识别任务会占用大量CPU时间，导致控制周期出现抖动。此外，无线调参（Vofa上位机）在数据量较大时仍存在响应延迟问题，影响调试效率。随着未来算法复杂度的进一步提升（如引入更复杂的元素识别逻辑），当前TC264双核MCU的计算资源可能成为瓶颈。
+7.3 后续优化展望
+针对当前设计存在的不足，后续可从硬件、算法、结构三个维度进行优化升级：一是优化PCB布线布局，进一步降低电磁干扰，提升硬件稳定性；二是优化视觉识别算法与传感器融合策略，提升复杂光线、复杂赛道环境下的适配能力；三是微调机械结构重心，进一步提升车辆高速行驶的平稳性，提升赛事竞技性能。
+参考文献
+[1] 熊泽远, 马雨樵, 颜斌. 基于CYT2BL3的负压惯导巡线系统设计[J]. 电子制作, 2026(2).
+[2] 徐昊洋, 程海豫, 颜斌. 基于TC264D的双车跟随智能车控制系统设计[J]. 电子制作, 2025(23).
+[3] 许柯翰, 颜斌, 陈龙. 基于视觉感知的负压四轮智能车控制系统[J]. 电子制作, 2025(13): 16-20.
+附录A 电路原理图
+
+
+附录B 核心算法子程序与完整源代码
+/**********************************************************************************************************************
+ * 智能赛车控制系统核心源代码合集
+ * 
+ * 本文件整合了整车控制系统中最为核心的算法模块，涵盖主程序、中断服务、视觉识别、
+ * 姿态融合、串级PID控制、速度决策、里程计、参数存储及无线调参等全部关键功能。
+ * 
+ * 编译环境：Infineon AURIX Development Studio (ADS)
+ * 编译器：TASKING C/C++ Compiler
+ * 底层库：逐飞科技 TC264 开源库 (zf_common_headfile.h)
+ * 
+ * 各部分来源文件均以注释标注，便于技术报告附录查阅。
+ **********************************************************************************************************************/
+
+#include "zf_common_headfile.h"
+
+/* ============================================================
+    CPU0 主循环（cpu0_main.c）
+    功能：系统初始化、菜单交互、无线调参及数据显示
+   ============================================================ */
+#pragma section all "cpu0_dsram"
+int core0_main(void)
+{
+    clock_init();
+    debug_init();
+    All_Init();                         // 系统总初始化
+    cpu_wait_event_ready();
+    while (TRUE)
+    {
+        if(!Wireless_init_flag)
+        {
+            Vofa_Adjust_Parameter();    // 无线调参
+            Vofa_Show();                // 上位机数据显示
+        }
+        Menu_Logic_Run();               // 屏幕菜单与按键交互
+    }
+}
+#pragma section all restore
+
+/* ============================================================
+    CPU1 视觉处理核心（cpu1_main.c）
+    功能：摄像头帧就绪后，执行上帝之眼视觉识别任务
+   ============================================================ */
+#pragma section all "cpu1_dsram"
+void core1_main(void)
+{
+    disable_Watchdog();
+    interrupt_global_enable(0);
+    cpu_wait_event_ready();
+    while (TRUE)
+    {
+        if(mt9v03x_finish_flag_1)       // 摄像头新帧就绪
+        {
+            system_start();
+            Eye_of_Providence_Task();   // 视觉识别核心任务
+            image_solve_fps = 100000000 / system_getval();
+        }
+    }
+}
+#pragma section all restore
+
+/* ============================================================
+    中断服务程序（isr.c）
+    功能：2ms定时器中断，完成编码器读取、陀螺仪更新、姿态融合
+          以及串级PID控制（外环、内环、速度环）的实时调度
+   ============================================================ */
+int stop_flag = 1;
+uint8_t run_to_stop_flag = 0;
+uint8_t stop_to_run_flag = 1;
+int car_depart_time = 0;
+int time_pid = 0;
+int car_start_flag = 0;
+
+// 2ms 定时器中断（优先级30）
+IFX_INTERRUPT(cc60_pit_ch0_isr, 0, CCU6_0_CH0_ISR_PRIORITY)
+{
+    interrupt_global_enable(0);
+    pit_clear_flag(CCU60_CH0);
+
+    encoder_get();                      // 读取编码器速度
+    Dis_Measure();                      // 里程累加与停车判断
+    Gyro_Get();                         // 读取陀螺仪角速度
+    Gyro_Get_Angle();                   // 姿态角更新（互补滤波）
+    
+    Err = ImageSensorMid - ImageStatus.Det_True;  // 图像偏差：正→偏右→左转
+
+    if(stop_flag == 0)                  // 运行状态
+    {
+        // 缓启动控制（负压风扇先启动1s，再缓起电机）
+        if(car_depart_time <= Fuya_Start_Time) {
+            buzzer_on();
+            post.yaw_angle = 0;
+            post.target_angle = 0;
+            post.target_angle_turn = Path.memory_target_turn[0];
+            encoder.target_distance = Path.memory_target_distance[0];
+            car_depart_time++;
+            motor_fuya_duty(duct_duty);
+            if(car_depart_time == Fuya_Start_Time + 1) buzzer_off();
+        }
+        else {
+            if(car_depart_time <= Total_Start_Time) {
+                target_speed = Motor_Start;   // 电机缓起
+                car_depart_time++;
+                if(car_depart_time == Total_Start_Time + 1) car_start_flag = 1;
+            }
+            motor_fuya_duty(duct_duty);
+            
+            // ★★★ 串级PID控制核心 ★★★
+            time_pid++;
+            motor.speed_diff = Inner_Ring_PID(out_ang_speed);  // 内环：角速度环
+            if(time_pid == 2) {
+                time_pid = 0;
+                out_ang_speed = -Outer_Ring_PID(0, Err);       // 外环：角度环（每4ms执行）
+            }
+            motor_control();             // 速度环与PWM输出
+        }
+    }
+    else                               // 停车状态：缓制动
+    {
+        if(run_to_stop_flag == 1) {
+            if(car_depart_time <= Total_Time) {
+                motor.speedTL = 0; motor.speedTR = 0;
+                Speed_Loop();
+                car_depart_time++;
+            } else {
+                motor.speedTL = 0; motor.speedTR = 0;
+                Speed_Loop();
+                motor_fuya_duty(500);
+            }
+        }
+    }
+}
+
+// 其他中断函数（编码器、摄像头、DMA、串口等）省略，仅保留核心控制中断
+
+/* ============================================================
+    视觉识别核心（Eye_of_Providence.c）
+    功能：图像预处理（复制、压缩、伽马校正）、分区大津法二值化、
+          边线追逐、动态前瞻计算、加权偏差提取、元素识别（直角/节点等）
+   ============================================================ */
+// 全局变量定义
+ImageStatustypedef ImageStatus;
+ImageDealDatatypedef ImageDeal[60];
+ImageFlagtypedef ImageFlag;
+RoadType_lock Element_lock;
+ImageFrameDetecttypedef ImageFrameDetect;
+Pathtypedef Path;
+
+uint8_t mt9_copy_image[MT9V03X_1_H][MT9V03X_1_W - 20];
+uint8_t mt9_compress_image[MT9_COMPRESS_H][MT9_COMPRESS_W];
+uint8_t mt9_binary_image[MT9_COMPRESS_H][MT9_COMPRESS_W];
+uint8_t whitehigh;
+int threshold_total, threshold_far, threshold_middle, threshold_near;
+uint8_t OSTU_Low, OSTU_High;
+int Gain_High, Gain_Low, TowPoint;
+float DetTemp;
+int Err, ImageScanInterval_small, continue_lost_count;
+uint8_t Image_Solve_Finish_Flag;
+float gamma_value;
+int Y_top_limit, Y_bottom_limit, angle_threshold;
+int Ysite_bottom, Ysite_top;
+float Weighting_20[20] = {0.99,0.97,0.94,0.90,0.85, 0.79,0.72,0.64,0.56,0.48,
+                          0.40,0.33,0.27,0.21,0.16, 0.12,0.08,0.05,0.03,0.01};
+uint8_t lut[256];
+
+// 图像复制
+void copy_img(void)
+{
+    for (int i = 0; i < MT9V03X_1_H; i++) {
+        memcpy(&mt9_copy_image[i][0], &mt9v03x_image_1[i][10], MT9V03X_1_W - 20);
+    }
+    mt9v03x_finish_flag_1 = 0;
+}
+
+// 图像压缩（160×120 → 80×60）
+void img_compress(void)
+{
+    const float div_h = MT9V03X_1_H / (float)MT9_COMPRESS_H;
+    const float div_w = (MT9V03X_1_W - 20) / (float)MT9_COMPRESS_W;
+    for (int j = 0; j < MT9_COMPRESS_H; j++) {
+        int row = j * div_h + 0.5;
+        for (int k = 0; k < MT9_COMPRESS_W; k++) {
+            int line = k * div_w + 0.5;
+            mt9_compress_image[j][k] = mt9_copy_image[row][line];
+        }
+    }
+}
+
+// 伽马校正
+void gamma_init(float gamma) {
+    for (int i = 0; i < 256; i++) {
+        lut[i] = (unsigned char)(pow(i / 255.0, 1.0 / gamma) * 255);
+    }
+}
+void gamma_correction(unsigned char* img, int size) {
+    for (int i = 0; i < size; i++) {
+        img[i] = lut[img[i]];
+    }
+}
+
+// 大津法求阈值（标准实现）
+uint8_t GetOSTU(uint8_t *OSTUImage, uint16_t width, uint16_t height)
+{
+    int X; uint16_t Y;
+    uint32_t Amount = 0, PixelBack = 0, PixelshortegralBack = 0, Pixelshortegral = 0;
+    int32_t PixelshortegralFore = 0, PixelFore = 0;
+    double OmegaBack, OmegaFore, MicroBack, MicroFore, Sigma, SigmaB = -1;
+    uint8_t MinValue, MaxValue, Threshold = 0;
+    int HistoGram[256] = {0};
+
+    for (Y = 0; Y < height; Y++)
+        for (X = 0; X < width; X++)
+            HistoGram[OSTUImage[Y*width + X]]++;
+
+    for (MinValue = 0; MinValue < 256 && HistoGram[MinValue] == 0; MinValue++);
+    for (MaxValue = 255; MaxValue > MinValue && HistoGram[MaxValue] == 0; MaxValue--);
+    if (MaxValue == MinValue) return MaxValue;
+    if (MinValue + 1 == MaxValue) return MinValue;
+
+    for (Y = MinValue; Y <= MaxValue; Y++) Amount += HistoGram[Y];
+    for (Y = MinValue; Y <= MaxValue; Y++) Pixelshortegral += HistoGram[Y] * Y;
+
+    for (Y = MinValue; Y < MaxValue; Y++) {
+        PixelBack += HistoGram[Y];
+        PixelFore = Amount - PixelBack;
+        OmegaBack = (float)PixelBack / Amount;
+        OmegaFore = (float)PixelFore / Amount;
+        PixelshortegralBack += HistoGram[Y] * Y;
+        PixelshortegralFore = Pixelshortegral - PixelshortegralBack;
+        MicroBack = (float)PixelshortegralBack / PixelBack;
+        MicroFore = (float)PixelshortegralFore / PixelFore;
+        Sigma = OmegaBack * OmegaFore * (MicroBack - MicroFore) * (MicroBack - MicroFore);
+        if (Sigma > SigmaB) { SigmaB = Sigma; Threshold = (uint8_t)Y; }
+    }
+    return Threshold;
+}
+
+// ★★★ 分区大津法二值化（远/中/近三区独立阈值） ★★★
+void binary_by_part(void)
+{
+    threshold_total = GetOSTU((uint8_t *)mt9_compress_image, MT9_COMPRESS_W, MT9_COMPRESS_H);
+    if(threshold_total < OSTU_Low) threshold_total = OSTU_Low;
+    else if(threshold_total > OSTU_High) threshold_total = OSTU_High;
+    threshold_far = threshold_total - 2;
+    threshold_middle = threshold_total - 1;
+    threshold_near = threshold_total + 1;
+
+    for (int i = 0; i < 20; i++) {
+        for (int j = 0; j < MT9_COMPRESS_W; j++) {
+            mt9_binary_image[i][j]     = (mt9_compress_image[i][j] >= threshold_far) ? 1 : 0;
+            mt9_binary_image[i+20][j]  = (mt9_compress_image[i+20][j] >= threshold_middle) ? 1 : 0;
+            mt9_binary_image[i+40][j]  = (mt9_compress_image[i+40][j] >= threshold_near) ? 1 : 0;
+        }
+    }
+}
+
+// 跳变点搜索函数
+void GetJumpPointFromDet(uint8_t* p, uint8_t type, int L, int H, JumpPointtypedef* JumpPoint)
+{
+    int i;
+    if (type == 'L') {
+        for (i = L; i <= H; i++) {
+            if (*(p + i) == 0 && *(p + i + 1) == 1) {
+                JumpPoint->point = i; JumpPoint->type = 'T'; break;
+            } else if (i == (H - 1)) {
+                if (*(p + (L + H) / 2) == 1) {
+                    JumpPoint->point = (L + H) / 2; JumpPoint->type = 'W';
+                } else {
+                    JumpPoint->point = (L + H) / 2; JumpPoint->type = 'H';
+                }
+                break;
+            }
+        }
+    } else if (type == 'R') {
+        for (i = H; i >= L; i--) {
+            if (*(p + i) == 0 && *(p + i - 1) == 1) {
+                JumpPoint->point = i; JumpPoint->type = 'T'; break;
+            } else if (i == (L + 1)) {
+                if (*(p + (L + H) / 2) == 1) {
+                    JumpPoint->point = (L + H) / 2; JumpPoint->type = 'W';
+                } else {
+                    JumpPoint->point = (L + H) / 2; JumpPoint->type = 'H';
+                }
+                break;
+            }
+        }
+    }
+}
+
+// ★★★ 边线追逐（核心） ★★★
+static void DrawLinesProcess(void)
+{
+    for (int Ysite = 58; Ysite >= ImageStatus.OFFLine; Ysite--)
+    {
+        uint8_t* PicTemp = mt9_binary_image[Ysite];
+        JumpPointtypedef JumpPoint[2];
+        int IntervalLow, IntervalHigh;
+
+        // 左边界搜索（基于上一行边界+搜索区间）
+        IntervalLow = ImageDeal[Ysite+1].LeftBorder - ImageScanInterval_small;
+        IntervalHigh = ImageDeal[Ysite+1].LeftBorder + ImageScanInterval_small;
+        LimitL(IntervalLow); LimitH(IntervalHigh);
+        GetJumpPointFromDet(PicTemp, 'L', IntervalLow, IntervalHigh, &JumpPoint[0]);
+
+        // 右边界搜索
+        IntervalLow = ImageDeal[Ysite+1].RightBorder - ImageScanInterval_small;
+        IntervalHigh = ImageDeal[Ysite+1].RightBorder + ImageScanInterval_small;
+        LimitL(IntervalLow); LimitH(IntervalHigh);
+        GetJumpPointFromDet(PicTemp, 'R', IntervalLow, IntervalHigh, &JumpPoint[1]);
+
+        // 记录边界及类型（T=正常, W=白边, H=黑边）
+        ImageDeal[Ysite].LeftBorder = JumpPoint[0].point;
+        ImageDeal[Ysite].RightBorder = JumpPoint[1].point;
+        ImageDeal[Ysite].IsLeftFind = JumpPoint[0].type;
+        ImageDeal[Ysite].IsRightFind = JumpPoint[1].type;
+
+        // 大跳变恢复（针对直角/节点等元素）
+        if (ImageDeal[Ysite].IsLeftFind == 'H' || ImageDeal[Ysite].IsLeftFind == 'W') {
+            for (int Xsite = 5; Xsite <= MT9_COMPRESS_W-5; Xsite++) {
+                if (*(PicTemp + Xsite) == 0 && *(PicTemp + Xsite + 1) == 1) {
+                    ImageDeal[Ysite].LeftBorder = Xsite;
+                    ImageDeal[Ysite].IsLeftFind = 'T';
+                    break;
+                }
+            }
+        }
+        if (ImageDeal[Ysite].IsRightFind == 'H' || ImageDeal[Ysite].IsRightFind == 'W') {
+            for (int Xsite = MT9_COMPRESS_W-5; Xsite >= 5; Xsite--) {
+                if (*(PicTemp + Xsite) == 0 && *(PicTemp + Xsite - 1) == 1) {
+                    ImageDeal[Ysite].RightBorder = Xsite;
+                    ImageDeal[Ysite].IsRightFind = 'T';
+                    break;
+                }
+            }
+        }
+
+        ImageDeal[Ysite].Wide = ImageDeal[Ysite].RightBorder - ImageDeal[Ysite].LeftBorder;
+        ImageDeal[Ysite].Center = (ImageDeal[Ysite].RightBorder + ImageDeal[Ysite].LeftBorder) / 2;
+
+        // 丢边过多则提前终止
+        if(continue_lost_count > 5 && Ysite <= 10) {
+            ImageStatus.OFFLine = Ysite + 5;
+            break;
+        }
+        else if(continue_lost_count >= 25 && Ysite <= 35) {
+            ImageStatus.OFFLine = Ysite + 25;
+            break;
+        }
+    }
+}
+
+// 白列高度计算
+void Fine_whitepoint(void)
+{
+    uint8_t black_high = 2;
+    for(; black_high < 60; black_high++) {
+        if((ImageDeal[black_high].IsLeftFind == 'T' || ImageDeal[black_high].IsLeftFind == 'W') &&
+           (ImageDeal[black_high].IsRightFind == 'T' || ImageDeal[black_high].IsRightFind == 'W')) {
+            ImageStatus.OFFLine = black_high;
+            break;
+        }
+    }
+    if(ImageStatus.OFFLine > 58) ImageStatus.OFFLine = 58;
+    if(ImageStatus.OFFLine < 2) ImageStatus.OFFLine = 2;
+    whitehigh = 59 - ImageStatus.OFFLine;
+}
+
+// ★★★ 动态前瞻计算 ★★★
+void Get_TowPoint(void)
+{
+    float WhiteGain = 9 * ((float)(whitehigh - 40) / (60 - 40) + 0.5);
+    if (WhiteGain >= Gain_High) WhiteGain = Gain_High;
+    else if (WhiteGain <= Gain_Low) WhiteGain = Gain_Low;
+    TowPoint = ImageStatus.TowPoint - (int)WhiteGain;
+    if (TowPoint < ImageStatus.OFFLine) TowPoint = ImageStatus.OFFLine + 1;
+    if (TowPoint >= 48) TowPoint = 48;
+    else if(TowPoint <= 17) TowPoint = 17;
+    Ysite_bottom = TowPoint - 15;
+    Ysite_top = TowPoint + 5;
+}
+
+// ★★★ 加权偏差计算（正态分布权重） ★★★
+void Get_Deviation(void)
+{
+    float UnitAll = 0, DetTemp = 0;
+    for (int Ysite = Ysite_bottom; Ysite < Ysite_top; Ysite++) {
+        DetTemp += Weighting_20[Ysite - Ysite_bottom] * ImageDeal[Ysite].Center;
+        UnitAll += Weighting_20[Ysite - Ysite_bottom];
+    }
+    DetTemp = (ImageDeal[TowPoint].Center + DetTemp) / (UnitAll + 1);
+    ImageStatus.Det_True = (int)DetTemp;
+    ImageStatus.TowPoint_True = TowPoint;
+}
+
+// 框检测（辅助元素识别）
+void Frame_Detect(int center_x, int center_y, int frame_width, int frame_height)
+{
+    int Y_bottom = (center_y + frame_height/2 >= MT9_COMPRESS_H-5) ? MT9_COMPRESS_H-5 : center_y + frame_height/2;
+    int Y_top   = (center_y - frame_height/2 <= 1) ? 1 : center_y - frame_height/2;
+    int X_right = (center_x + frame_width/2 >= MT9_COMPRESS_W-5) ? MT9_COMPRESS_W-5 : center_x + frame_width/2;
+    int X_left  = (center_x - frame_width/2 <= 5) ? 5 : center_x - frame_width/2;
+    ImageFrameDetect.frame_bottom_flag = ImageFrameDetect.frame_top_flag = 0;
+    ImageFrameDetect.frame_left_flag = ImageFrameDetect.frame_right_flag = 0;
+
+    // 检测上下边界跳变
+    for (int Ysite = Y_top; Ysite <= Y_bottom-2; Ysite++) {
+        if(ImageFrameDetect.frame_left_flag == 0 && mt9_binary_image[Ysite][X_left]==0 && mt9_binary_image[Ysite+1][X_left]==1) ImageFrameDetect.frame_left_flag=1;
+        else if(ImageFrameDetect.frame_left_flag==1 && mt9_binary_image[Ysite][X_left]==1 && mt9_binary_image[Ysite+1][X_left]==0) ImageFrameDetect.frame_left_flag=2;
+        // 类似处理右边界...
+    }
+    // 检测左右边界跳变（类似）
+}
+
+// ★★★ 元素识别（以左直角为例） ★★★
+void Element_Judgment(void)
+{
+    // 左直角识别条件
+    if(ImageFrameDetect.spinodal_L_Ysite != 0 && ImageFrameDetect.spinodal_R_Ysite == 0 &&
+       ImageStatus.First_W_Point_L != 0 && ImageStatus.First_H_Point_L != 0 &&
+       ImageStatus.First_H_Point_R != 0 && ImageFlag.image_element_angle_flag == 0 &&
+       encoder.disA >= encoder.element_limit_dis &&
+       Path.memory_target_turn[Path.target_angle_index] == 'L' &&
+       Element_lock.RightAngle_L == 1)
+    {
+        ImageFrameDetect.frame_center_x = ImageDeal[ImageStatus.First_W_Point_L].Center;
+        ImageFrameDetect.frame_center_y = ImageStatus.First_W_Point_L;
+        ImageFrameDetect.frame_width = 60;
+        ImageFrameDetect.frame_height = 40;
+        Frame_Detect(ImageFrameDetect.frame_center_x, ImageFrameDetect.frame_center_y,
+                     ImageFrameDetect.frame_width, ImageFrameDetect.frame_height);
+        if(ImageFrameDetect.frame_top_flag == 0 && ImageFrameDetect.frame_bottom_flag == 2 &&
+           ImageFrameDetect.frame_left_flag == 2 && ImageFrameDetect.frame_right_flag == 0) {
+            post.target_angle -= 90;
+            ImageFlag.image_element_angle_flag = 1;
+            ImageStatus.Road_type = RightAngle_L;
+        }
+    }
+    // 其他元素（右直角、节点、T型、分支、十字）识别逻辑类似……
+}
+
+// 元素转向执行（以左直角为例）
+void Elment_Handle_RightAngle_L(void)
+{
+    buzzer_on();
+    ImageStatus.First_W_Point_L += 5;
+    if(ImageStatus.First_W_Point_L < 10) ImageStatus.First_W_Point_L = 10;
+    if(ImageStatus.First_W_Point_L > 58) ImageStatus.First_W_Point_L = 58;
+    for(int Ysite = 0; Ysite <= ImageStatus.First_W_Point_L; Ysite++)
+        ImageDeal[Ysite].Center = 0;   // 强制中线偏左
+
+    if(ImageFlag.image_element_angle_flag == 1) ImageFlag.image_element_angle_flag = 2;
+    if(abs(post.diff_angle) < angle_threshold && ImageFlag.image_element_angle_flag == 3) {
+        buzzer_off();
+        encoder_clear();
+        ImageStatus.Road_type = Normal;
+        ImageFlag.image_element_angle_flag = 0;
+        Path.target_angle_index++;
+        encoder.target_distance = Path.memory_target_distance[Path.target_angle_index];
+        post.target_angle_turn = Path.memory_target_turn[Path.target_angle_index];
+    }
+}
+
+// 上帝之眼总任务
+void Eye_of_Providence_Task(void)
+{
+    copy_img();
+    img_compress();
+    gamma_correction(mt9_compress_image[0], MT9_COMPRESS_W * MT9_COMPRESS_H);
+    Image_Solve_Finish_Flag = 0;
+    // 初始化数据结构
+    ImageStatus.OFFLine = 2;
+    for (int i = 0; i < 60; i++) { ImageDeal[i].IsLeftFind = 'F'; ImageDeal[i].IsRightFind = 'F'; }
+    binary_by_part();
+    // 绘制底边
+    // ...（省略底边绘制细节）
+    DrawLinesProcess();                 // ★ 边线追逐
+    Fine_whitepoint();                  // 白列高度
+    Get_TowPoint();                     // ★ 动态前瞻
+    // Find_Spinodal();                 // 寻找拐点
+    if(Path.target_angle_index < Path.path_length) Element_Judgment();  // ★ 元素识别
+    // RouteFilter();                   // 中线滤波
+    // Element_Handle();                // ★ 元素转向执行（含各分支）
+    Get_Deviation();                    // ★ 加权偏差计算
+    Image_Solve_Finish_Flag = 1;
+}
+
+/* ============================================================
+    姿态融合与陀螺仪（Imu660.c）
+    功能：读取角速度，一阶互补滤波融合角度，提供偏航角
+   ============================================================ */
+POSTURE post = {0,0.0,0.0,0.0,0};
+#define COMPLEMENTARY_ALPHA  0.98f
+#define COMPLEMENTARY_BETA   0.02f
+
+void gyro_init()
+{
+    while(imu660rb_init()) printf("\r\nIMU660RB init error.");
+}
+
+void Gyro_Get(void)
+{
+    imu660rb_get_gyro();
+    post.gyro_yaw = imu660rb_gyro_z;
+    if(post.gyro_yaw <= 10 && post.gyro_yaw >= -20) post.gyro_yaw = 0;  // 零漂死区
+}
+
+void Gyro_Get_Angle(void)
+{
+    // 角速度积分（2ms周期）
+    post.yaw_angle += imu660rb_gyro_transition(post.gyro_yaw) * 0.002;
+    if(post.yaw_angle > 360) post.yaw_angle -= 360;
+    else if(post.yaw_angle < 0) post.yaw_angle += 360;
+
+    // 元素转向过程中的角度偏差计算（最短路径）
+    if(ImageFlag.image_element_angle_flag >= 2 || ImageFlag.image_element_Node_flag >= 2 ||
+       ImageFlag.image_element_branch_flag >= 2 || ImageFlag.image_element_cross_flag >= 2)
+    {
+        post.diff_angle = post.target_angle - post.yaw_angle;
+        if(post.diff_angle > 180) post.diff_angle -= 360;
+        else if(post.diff_angle < -180) post.diff_angle += 360;
+        // 状态机推进
+        if(ImageFlag.image_element_angle_flag == 2) ImageFlag.image_element_angle_flag = 3;
+        if(ImageFlag.image_element_Node_flag == 2) ImageFlag.image_element_Node_flag = 3;
+        if(ImageFlag.image_element_branch_flag == 2) ImageFlag.image_element_branch_flag = 3;
+        if(ImageFlag.image_element_cross_flag == 2) ImageFlag.image_element_cross_flag = 3;
+    }
+}
+
+/* ============================================================
+    电机控制与PID算法（Motor.c）
+    功能：外环（角度环）→内环（角速度环）→速度环（PI）
+   ============================================================ */
+MOTOR motor = {0};
+ERROR error = {0};
+float Outer_Ring_P=515, Outer_Ring_D=210;
+float Inner_Ring_P=0.051, Inner_Ring_D=0.016;
+float kp_m=5.5, ki_m=0.31, kd_m=0;
+int target_speed=450, duct_duty=700, motor_range=8888;
+int out_ang_speed;
+
+// 电机初始化与PWM设置
+void motor_init(void)
+{
+    pwm_init(MOTOR_L_PWM, 17000, 0);
+    pwm_init(MOTOR_R_PWM, 17000, 0);
+    pwm_init(MOTOR_DUCT_PIN, 50, 500);
+    gpio_init(MOTOR_L_DIR, GPO, GPIO_HIGH, GPO_PUSH_PULL);
+    gpio_init(MOTOR_R_DIR, GPO, GPIO_HIGH, GPO_PUSH_PULL);
+}
+void motor_l_duty(int duty) { /* 方向及占空比设置 */ }
+void motor_r_duty(int duty) { /* 同上 */ }
+void motor_fuya_duty(int duty) { pwm_set_duty(MOTOR_DUCT_PIN, duty); }
+
+// ★★★ 外环：角度偏差 → 目标角速度 ★★★
+int Outer_Ring_PID(int expect_val, int err)
+{
+    static float Outer_Ring_Out=0, Outer_Ring_Last_Out=0;
+    static int Error_Last_Outer=0;
+    float A = 0.9;
+    int Error_Current_Outer = err - expect_val;
+    int ek = Error_Current_Outer;
+    int ek1 = Error_Current_Outer - Error_Last_Outer;
+    Error_Last_Outer = Error_Current_Outer;
+    Outer_Ring_Last_Out = Outer_Ring_Out;
+    Outer_Ring_Out = Outer_Ring_P * ek + Outer_Ring_D * ek1;
+    Outer_Ring_Out = A * Outer_Ring_Out + (1 - A) * Outer_Ring_Last_Out;
+    return (int)Outer_Ring_Out;
+}
+
+// ★★★ 内环：目标角速度 → 车轮差速 ★★★
+int Inner_Ring_PID(int expect_speed)
+{
+    static float Inner_Ring_Out=0, Inner_Ring_Last_Out=0;
+    static int Error_Last_Inner=0;
+    float A = 0.9;
+    int Error_Current_Inner = expect_speed - post.gyro_yaw;
+    int ek = Error_Current_Inner;
+    int ek1 = Error_Current_Inner - Error_Last_Inner;
+    Error_Last_Inner = Error_Current_Inner;
+    Inner_Ring_Last_Out = Inner_Ring_Out;
+    Inner_Ring_Out = Inner_Ring_P * ek + Inner_Ring_D * ek1;
+    Inner_Ring_Out = A * Inner_Ring_Out + (1 - A) * Inner_Ring_Last_Out;
+    return (int)Inner_Ring_Out;
+}
+
+// ★★★ 速度环（PI + 低通滤波） ★★★
+void Speed_Loop(void)
+{
+    float A = 0.9;
+    // 左轮
+    error.currentL = motor.speedTL - encoder.speedL;
+    error.derivationL = error.currentL - 2*error.previousL + error.beforeL;
+    error.proportionL = error.currentL - error.previousL;
+    error.integrationL = error.currentL;
+    error.beforeL = error.previousL;
+    error.previousL = error.currentL;
+    motor.l_speed_out_last = motor.l_speed_out;
+    motor.l_speed_out += kp_m * error.proportionL + ki_m * error.integrationL;
+    motor.l_speed_out = A * motor.l_speed_out + (1 - A) * motor.l_speed_out_last;
+
+    // 右轮（对称）
+    error.currentR = motor.speedTR - encoder.speedR;
+    error.derivationR = error.currentR - 2*error.previousR + error.beforeR;
+    error.proportionR = error.currentR - error.previousR;
+    error.integrationR = error.currentR;
+    error.beforeR = error.previousR;
+    error.previousR = error.currentR;
+    motor.r_speed_out_last = motor.r_speed_out;
+    motor.r_speed_out += kp_m * error.proportionR + ki_m * error.integrationR;
+    motor.r_speed_out = A * motor.r_speed_out + (1 - A) * motor.r_speed_out_last;
+
+    // 限幅
+    if(motor.l_speed_out > motor_range) motor.l_speed_out = motor_range;
+    if(motor.l_speed_out < -motor_range) motor.l_speed_out = -motor_range;
+    if(motor.r_speed_out > motor_range) motor.r_speed_out = motor_range;
+    if(motor.r_speed_out < -motor_range) motor.r_speed_out = -motor_range;
+
+    motor.dutyL = (int)motor.l_speed_out;
+    motor.dutyR = (int)motor.r_speed_out;
+    motor_l_duty(motor.dutyL);
+    motor_r_duty(motor.dutyR);
+}
+
+// 速度决策参数
+int straight_length_1 = CM_TO_ENCODER(150);
+int straight_length_2 = CM_TO_ENCODER(100);
+int straight_length_3 = CM_TO_ENCODER(50);
+int straight_speed_1 = 650, straight_speed_2 = 550, straight_speed_3 = 450, straight_speed_4 = 400;
+int curve_speed = 350;
+
+// ★★★ 速度决策：根据剩余距离线性降低目标速度 ★★★
+int calculate_speed_by_distance(int surplus_dis)
+{
+    int max_speed = straight_speed_1, min_speed = straight_speed_4;
+    int max_distance = straight_length_1, min_distance = straight_length_3;
+    if(surplus_dis >= max_distance) return max_speed;
+    else if(surplus_dis <= min_distance) return min_speed;
+    else {
+        float ratio = (surplus_dis - min_distance) * 1.0 / (max_distance - min_distance);
+        return min_speed + ratio * (max_speed - min_speed);
+    }
+}
+
+void speed_decision(void)
+{
+    if(ImageStatus.Road_type == Normal) {
+        if(post.target_angle_turn != 'N') {
+            encoder.surplus_dis = encoder.target_distance - encoder.disA;
+            encoder.element_limit_dis = encoder.target_distance - CM_TO_ENCODER(40);
+            target_speed = calculate_speed_by_distance(encoder.surplus_dis);
+        } else {
+            // N直行路口：累加多个直道段
+            int current_straight_length = 0, index = Path.target_angle_index;
+            while(1) {
+                current_straight_length += Path.memory_target_distance[index];
+                if(Path.memory_target_turn[index] != 'N') break;
+                index++;
+            }
+            encoder.surplus_dis = current_straight_length - encoder.disA;
+            target_speed = calculate_speed_by_distance(encoder.surplus_dis);
+        }
+    } else {
+        target_speed = curve_speed;   // 弯道/元素区域低速
+    }
+}
+
+void motor_control(void)
+{
+    if(car_start_flag == 1) speed_decision();
+    motor.speedTL = target_speed + motor.speed_diff;   // 左轮 = 目标速度 + 差速
+    motor.speedTR = target_speed - motor.speed_diff;   // 右轮 = 目标速度 - 差速
+    Speed_Loop();
+}
+
+/* ============================================================
+    编码器里程计（Encoder.c）
+    功能：读取左右编码器，速度平滑限幅，累加行驶距离
+   ============================================================ */
+ENCODERINFO encoder = {0};
+int current_encoder = 0;
+uint8_t N_count_flag = 0;
+
+void encoder_init(void)
+{
+    encoder_dir_init(ENCODER_DIR_L, ENCODER_DIR_PULSE_L, ENCODER_DIR_DIR_L);
+    encoder_dir_init(ENCODER_DIR_R, ENCODER_DIR_PULSE_R, ENCODER_DIR_DIR_R);
+}
+
+void Speed_smooth_limit(void)
+{
+    if(encoder.speedL > encoder.last_speedL + 20.0)
+        encoder.speedL = encoder.last_speedL + 20.0;
+    else if(encoder.speedL < encoder.last_speedL - 20.0)
+        encoder.speedL = encoder.last_speedL - 20.0;
+    if(encoder.speedR > encoder.last_speedR + 20.0)
+        encoder.speedR = encoder.last_speedR + 20.0;
+    else if(encoder.speedR < encoder.last_speedR - 20.0)
+        encoder.speedR = encoder.last_speedR - 20.0;
+    encoder.last_speedL = encoder.speedL;
+    encoder.last_speedR = encoder.speedR;
+}
+
+void encoder_get(void)
+{
+    encoder.speedL = -encoder_get_count(ENCODER_DIR_L);
+    encoder.speedR = encoder_get_count(ENCODER_DIR_R);
+    Speed_smooth_limit();
+    encoder_clear_count(ENCODER_DIR_L);
+    encoder_clear_count(ENCODER_DIR_R);
+}
+
+void Dis_Measure(void)
+{
+    // 左右轮速度平均，累加得到行驶距离
+    encoder.disA += (int)((encoder.speedL + encoder.speedR) / 2.0);
+    if(N_count_flag == 1) {
+        encoder.N_run_dis += (int)((encoder.speedL + encoder.speedR) / 2.0);
+    }
+    // 到达终点 → 停车
+    if(encoder.disA >= encoder.target_distance && Path.target_angle_index >= Path.path_length) {
+        stop_flag = 1;
+    }
+}
+
+void encoder_clear(void)
+{
+    encoder.disA = 0;
+    encoder.N_run_dis = 0;
+    N_count_flag = 0;
+}
+
+/* ============================================================
+    EEPROM参数持久化（eeprom.c）
+    功能：上电读取参数，长按按键或无线指令保存参数
+   ============================================================ */
+uint8_t flash_flag = 0;
+#define FLASH_SECTION_INDEX 0
+#define FLASH_PAGE_INDEX    8
+
+void data_init(void)
+{
+    flash_read_page_to_buffer(FLASH_SECTION_INDEX, FLASH_PAGE_INDEX);
+    flash_flag = flash_union_buffer[0].uint8_type;
+    if(flash_flag == 1) {
+        // 读取EEPROM中的全部参数
+        Outer_Ring_P = flash_union_buffer[1].float_type;
+        Outer_Ring_D = flash_union_buffer[2].float_type;
+        Inner_Ring_P = flash_union_buffer[3].float_type;
+        Inner_Ring_D = flash_union_buffer[4].float_type;
+        kp_m = flash_union_buffer[5].float_type;
+        ki_m = flash_union_buffer[6].float_type;
+        target_speed = flash_union_buffer[7].uint16_type;
+        duct_duty = flash_union_buffer[8].uint16_type;
+        ImageStatus.TowPoint = flash_union_buffer[9].uint16_type;
+        // ... 其余参数读取（共30余项）
+    } else {
+        // 加载默认参数
+        Outer_Ring_P = 515; Outer_Ring_D = 210;
+        Inner_Ring_P = 0.051; Inner_Ring_D = 0.016;
+        kp_m = 5.5; ki_m = 0.31;
+        target_speed = 450; duct_duty = 700;
+        ImageStatus.TowPoint = 15;
+        // ... 其他默认值
+    }
+}
+
+void flash_write_mydata(void)
+{
+    flash_erase_page(FLASH_SECTION_INDEX, FLASH_PAGE_INDEX);
+    flash_union_buffer[0].uint8_type = 1;
+    flash_union_buffer[1].float_type = Outer_Ring_P;
+    flash_union_buffer[2].float_type = Outer_Ring_D;
+    // ... 写入全部参数
+    flash_write_page_from_buffer(FLASH_SECTION_INDEX, FLASH_PAGE_INDEX);
+    buzzer_on(); LED_on(); system_delay_ms(100);
+    LED_off(); buzzer_off();
+}
+
+/* ============================================================
+    路径规划与参数配置（Parameters.c）
+    功能：预设多条路径（距离及转向方向），根据选择加载
+   ============================================================ */
+int path_switch = 0;
+
+// 预赛正跑路径（29个节点）
+long target_distance_0[30] = {
+    CM_TO_ENCODER(120), CM_TO_ENCODER(55), CM_TO_ENCODER(90), CM_TO_ENCODER(160), CM_TO_ENCODER(45),
+    CM_TO_ENCODER(60),  CM_TO_ENCODER(45), CM_TO_ENCODER(60), CM_TO_ENCODER(45),  CM_TO_ENCODER(120),
+    CM_TO_ENCODER(45),  CM_TO_ENCODER(120), CM_TO_ENCODER(130), CM_TO_ENCODER(60), CM_TO_ENCODER(45),
+    CM_TO_ENCODER(205), CM_TO_ENCODER(160), CM_TO_ENCODER(100), CM_TO_ENCODER(50), CM_TO_ENCODER(75),
+    CM_TO_ENCODER(50),  CM_TO_ENCODER(75),  CM_TO_ENCODER(60),  CM_TO_ENCODER(60), CM_TO_ENCODER(65),
+    CM_TO_ENCODER(100), CM_TO_ENCODER(45),  CM_TO_ENCODER(230), CM_TO_ENCODER(180), CM_TO_ENCODER(105)
+};
+uint8_t target_turn_0[29] = {
+    'R','R','L','L','L', 'R','R','L','L','L',
+    'L','R','R','L','L', 'L','L','R','R','R',
+    'R','L','L','R','R', 'L','R','R','R'
+};
+
+void path_init(void)
+{
+    switch(path_switch) {
+        case 0:
+            Path.path_length = 29;
+            for (int i = 0; i < Path.path_length+1; i++)
+                Path.memory_target_distance[i] = target_distance_0[i];
+            for (int i = 0; i < Path.path_length; i++)
+                Path.memory_target_turn[i] = target_turn_0[i];
+            break;
+        // 其他路径（case 1~4）类似……
+    }
+}
+
+void All_Init(void)
+{
+    data_init();
+    Wireless_init_flag = wireless_uart_init();
+    buzzer_init();
+    ips114_init();
+    while(mt9v03x_double_init(mt9v03x_1)) system_delay_ms(500);
+    motor_init();
+    encoder_init();
+    gyro_init();
+    adc_init(ADC0_CH11_A11, ADC_12BIT);
+    gamma_init(gamma_value);
+    key_init(10);
+    LED_init();
+    Gain_High = 9; Gain_Low = -3;
+    ImageStatus.Road_type = Normal;
+    ImageScanInterval_small = 3;
+    path_init();
+    pit_ms_init(CCU60_CH0, 2);   // 启动2ms定时器中断
+}
+
+/* ============================================================
+    无线调参接口（wireless.c）
+    功能：接收上位机指令，在线调整PID参数及系统控制
+   ============================================================ */
+uint8_t Wireless_init_flag = 1;
+uint8_t Wireless_Receive_Data = 0;
+
+void Vofa_Adjust_Parameter(void)
+{
+    wireless_uart_read_buffer(&Wireless_Receive_Data, 32);
+    switch (Wireless_Receive_Data) {
+        case 1:  kp_m += 0.1; break;
+        case 2:  kp_m -= 0.1; break;
+        case 3:  ki_m += 0.01; break;
+        case 4:  ki_m -= 0.01; break;
+        case 7:  target_speed += 30; break;
+        case 8:  target_speed -= 30; break;
+        case 9:  stop_flag = !stop_flag; if(stop_flag == 0) pid_init(); break;
+        case 10: Outer_Ring_P += 5; break;
+        case 11: Outer_Ring_P -= 5; break;
+        case 12: Outer_Ring_D += 5; break;
+        case 13: Outer_Ring_D -= 5; break;
+        case 14: Inner_Ring_P += 0.001; break;
+        case 15: Inner_Ring_P -= 0.001; break;
+        case 16: Inner_Ring_D += 0.001; break;
+        case 17: Inner_Ring_D -= 0.001; break;
+        case 20: flash_write_mydata(); break;
+        default: break;
+    }
+}
+
+void Vofa_Show(void)
+{
+    // 上位机数据流（速度、PID参数、姿态、里程等）
+    printf("%d,%d,%d,%d,%d, %d,%d,%d, %.1f,%.1f,%.3f,%.3f,%.3f,%.3f, %d,%d,%.2f, %.1f,%d,%d,%d,%d \r\n",
+        target_speed, encoder.speedL, encoder.speedR, motor.speedTL, motor.speedTR,
+        Err, out_ang_speed, post.gyro_yaw,
+        Outer_Ring_P, Outer_Ring_D, Inner_Ring_P, Inner_Ring_D, kp_m, ki_m,
+        Path.target_angle_index, ImageStatus.Road_type, post.yaw_angle,
+        battery_voltage, ENCODER_TO_CM(encoder.disA),
+        ENCODER_TO_CM(encoder.target_distance), ENCODER_TO_CM(encoder.N_run_dis), motor.dutyL);
+}
+
+/* 全局辅助宏及类型定义（分散在各头文件，此处集中） */
+#define MT9_COMPRESS_W  80
+#define MT9_COMPRESS_H  60
+#define ImageSensorMid 39
+#define LimitL(L) (L = ((L < 1) ? 1 : L))
+#define LimitH(H) (H = ((H > 78) ? 78 : H))
+#define CM_TO_ENCODER(x) (x * 520)
+#define ENCODER_TO_CM(x) ((int)(x / 520))
+
+typedef struct { int point; uint8_t type; } JumpPointtypedef;
+typedef enum { Normal, RightAngle_L, RightAngle_R, Node_L, Node_R, Node_T, Branch, Cross } RoadType_e;
+typedef struct { uint8_t RightAngle_L; uint8_t RightAngle_R; uint8_t Node_L; uint8_t Node_R;
+                 uint8_t Node_T; uint8_t Branch; uint8_t Cross; uint8_t Protect; } RoadType_lock;
+typedef struct { uint8_t IsRightFind; uint8_t IsLeftFind; int Wide;
+                 int LeftBorder; int RightBorder; int LeftBorder2; int RightBorder2; int Center; } ImageDealDatatypedef;
+typedef struct { int TowPoint; int TowPoint_True; int Det_True; int Det_Last;
+                 uint8_t OFFLine_Last; uint8_t OFFLine; uint8_t Left_Line; uint8_t Right_Line;
+                 RoadType_e Road_type;
+                 int First_W_Point_L; int First_W_Point_R; int First_H_Point_L; int First_H_Point_R; } ImageStatustypedef;
+typedef struct { uint8_t image_element_Node_flag; uint8_t image_element_angle_flag;
+                 uint8_t image_element_branch_flag; uint8_t image_element_cross_flag; } ImageFlagtypedef;
+typedef struct { int spinodal_L_Ysite; int spinodal_R_Ysite; int image_center_x;
+                 int frame_center_x; int frame_center_y; int frame_width; int frame_height;
+                 int frame_bottom_flag; int frame_right_flag; int frame_top_flag; int frame_left_flag; } ImageFrameDetecttypedef;
+typedef struct { int memory_target_distance[35]; uint8_t memory_target_turn[35];
+                 uint8_t target_angle_index; uint8_t path_length; } Pathtypedef;
+typedef struct { int gyro_yaw; double yaw_angle; double target_angle; double diff_angle; uint8_t target_angle_turn; } POSTURE;
+typedef struct { int dutyL; int dutyR; float l_speed_out; float r_speed_out;
+                 float l_speed_out_last; float r_speed_out_last;
+                 int speed_diff; int speedD; int speedTL; int speedTR; } MOTOR;
+typedef struct { double currentL; double currentR; double previousL; double previousR;
+                 double beforeL; double beforeR; double derivationL; double derivationR;
+                 double integrationL; double integrationR; double proportionL; double proportionR; } ERROR;
+typedef struct { int speedL; int speedR; int last_speedL; int last_speedR;
+                 long disA; long target_distance; long element_limit_dis; long surplus_dis; long N_run_dis; } ENCODERINFO;
+
+/* 外部变量声明（供其他模块使用） */
+extern ImageStatustypedef ImageStatus;
+extern ImageDealDatatypedef ImageDeal[60];
+extern ImageFlagtypedef ImageFlag;
+extern RoadType_lock Element_lock;
+extern ImageFrameDetecttypedef ImageFrameDetect;
+extern Pathtypedef Path;
+extern POSTURE post;
+extern MOTOR motor;
+extern ERROR error;
+extern ENCODERINFO encoder;
+extern int stop_flag, car_start_flag, out_ang_speed, target_speed, duct_duty, motor_range;
+extern float Outer_Ring_P, Outer_Ring_D, Inner_Ring_P, Inner_Ring_D, kp_m, ki_m, kd_m;
+extern uint8_t OSTU_Low, OSTU_High, Image_Solve_Finish_Flag;
+extern int Gain_High, Gain_Low, TowPoint, ImageScanInterval_small, continue_lost_count;
+extern float gamma_value;
+extern int Y_top_limit, Y_bottom_limit, angle_threshold;
+extern int Ysite_bottom, Ysite_top;
+extern int straight_length_1, straight_length_2, straight_length_3;
+extern int straight_speed_1, straight_speed_2, straight_speed_3, straight_speed_4, curve_speed;
+extern uint8_t Wireless_init_flag;
+
+/* PID初始化函数（清零积分项等） */
+void pid_init(void)
+{
+    kp_out = ki_out = kd_out = 0;
+    motor.l_speed_out = motor.r_speed_out = 0;
+    motor.l_speed_out_last = motor.r_speed_out_last = 0;
+    error.beforeL = error.beforeR = error.previousL = error.previousR = 0;
+    Outer_Ring_Out = Outer_Ring_Last_Out = 0;
+    Inner_Ring_Out = Inner_Ring_Last_Out = 0;
+}
+
+/* ============================================================
+    菜单与交互（menu.c）—— 仅保留核心函数声明
+    实际实现包含屏幕显示、按键处理、参数修改等，非核心算法部分略
+   ============================================================ */
+// 菜单逻辑主循环（在cpu0_main中调用）
+void Menu_Logic_Run(void)
+{
+    // 显示电池电压、处理按键、切换菜单、修改参数等
+    // 具体实现依赖硬件，此处仅作占位
+}
+
+// 其他辅助函数（LED、蜂鸣器等）略
+
+===== TABLE 1 =====
+
+
+
+
+
+
+

@@ -1,0 +1,928 @@
+  第二十一届大学生智能汽车竞赛
+
+
+技 术 报 告
+
+
+
+
+
+	学    校：    南京信息工程大学
+队伍名称：      飞跃三队
+参赛队员：刘宁馨，刘宇晨，郑钦光，郭露熙，石文哲
+
+带队教师：    周旺平            
+
+
+
+
+关于技术报告和研究论文使用授权的说明
+
+	 本人完全了解第二十一全国大学生智能汽车竞赛关保留、使用技术报告和研究论文的规定，即：参赛作品著作权归参赛者本人，比赛组委会和可以在相关主页上收录并公开参赛作品的设计方案、技术报告以及参赛模型车的视频、图像资料，并将相关内容编纂收录在组委会出版论文集中。
+
+                                    参赛队员签名：
+
+
+带队教师签名：	
+
+日   期：2026/8/19
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+引言
+全国大学生智能汽车竞赛是一项以“立足培养、重在参与、鼓励探索、追求卓越”为指导思想，面向全国大学生开展的具有探索性的工程实践活动。它以设计制作在特定赛道上能自主行驶且具有优越性能的智能模型汽车这类复杂工程问题为任务，鼓励大学生组成团队，综合运用多学科知识，提出、分析、设计、开发并研究智能汽车的机械结构、电子线路、运动控制和开发与调试工具等问题，激发大学生从事工程技术开发和科学研究探索的兴趣和潜能，倡导理论联系实际、求真务实的学风和团队协作的人文精神。
+在大赛中选手们追求卓越，挑战自我，超越自我，实现从无到有，从零到一的锐变。而飞跃雷区作为新型竞赛组别，对我们提出了更高层次的挑战。无人机需要保持稳定的空中姿态，同时实现精准飞行；此外，无人机与地面车之间还需要完成信息交互、任务协同，以实现一体化作业。在这一过程中，如何解决无人机姿态控制以及空地平台协同等关键问题，都是我们需要重点攻克的技术难题。
+在这份报告中，包含我们组对无人机与下车的整体制作思路，电路，算法，结构，车辆大体参数等车辆涵盖的内容，详尽地描述了我们的思路以及创新，同时这份报告凝聚了我们的努力以及智慧，是我们组共同努力的结果。
+
+
+
+
+
+
+
+
+
+
+
+
+
+智能车系统总体设计概述
+1.1机械设计概述
+根据组委会要求，我们的系统由悬停飞机和地面车两部分组成，通过不超过1.5米的系留线缆连接，线缆同时承担供电与数据传输。悬停飞机采用五寸穿越机碳板机架，搭载MT9V03X全局快门摄像头、激光ToF、UPFLOW302光流模块及imu963ra九轴IMU。地面车采用M全向轮车模，顶部安装V形红外灯板作为视觉信标，主控板与DRV8701E驱动板分层固定于车身，搭载imu660rcIMU与四路编码器。
+1.2硬件电路设计概述
+硬件电路是保证无人机稳定行驶以及功能实现的基础，所以其稳定性至关重要，通过EDA以及AD设计所需的驱动模块，降压稳压模块等模块的原理图，并将其功能凝聚在三块PCB板中，为保证系统的稳定，我们将驱动PCB，主板PCB 分离互不干扰，而最小系统板由于自己设计焊接难度以及稳定性较差，最后采用商家提供的最小系统板，若损坏可随时更换。
+
+1.3软件设计概述
+本系统软件采用空地精细架构，核心包含视觉感知、控制与成型解算三大模块。无人机主控通过图像快速算法提取信标与车体坐标解算位置偏差后下发。飞端利用串级PID算法执行姿势与定高闭环实现稳定悬停；地面车接收偏差指令，完成全向运动学解算与电机闭环速度保障，驱动车模精准灭灯。整体设计系统具有高鲁棒性。
+智能车系统总体设计详述
+本章主要描述了智能车系统总体的设计方案，在后文中主要分为总体思路，机械设计，电路设计，软件控制这几个部分来进行描述。
+
+2.1 总体思路
+本次设计对象为无人机与地面车协同系统，是智能车大赛中首次引入空地协同任务的竞赛组别，对系统的感知、控制与协同能力提出了更高要求。基于前期智能车项目的实践经验，在确定采用无人机搭载摄像头进行视觉感知后，我们围绕无人机姿态稳定控制、目标识别定位以及与地面车协同通信等关键问题展开研究。通过对无人机飞行控制系统的学习与调试，我们逐步掌握了姿态调整、位置控制以及视觉信息处理等核心技术，并结合任务需求设计了协同控制方案，使无人机能够稳定完成信标灯定位任务，并为地面车提供有效的导航信息，从而实现空地平台之间的高效配合。任务要求利用安装在无人机上的摄像头对场地内信标灯进行精准定位，并引导无人机与地面车协同完成灭灯任务。无人机负责空中视觉感知、目标识别与位置定位，通过实时获取信标灯信息，为地面车提供导航与决策依据；随后，地面车通过搭载的遮挡板依次划过各信标灯上方，实现信标灯的熄灭。当所有信标灯熄灭后，系统将自动点亮下一组信标灯，无人机与地面车继续协同执行任务循环，直至完成全部任务，最终以总用时最短者获胜。相较于传统单一移动平台任务，该赛题更加注重空地协同能力，无人机不仅需要具备稳定飞行与精准定位能力，还需要与地面车实现高效的信息交互与任务配合，这为系统设计与算法优化提供了更大的挑战与发挥空间。
+ 
+
+
+图1.1  M车车模图
+根据题目要求以及团队前期智能车项目经验，主控芯片我们选择了 Infineon TRAVEO™ T2G CYT3BB/4BB 系列微控制器。该芯片基于 Arm® Cortex®-M7 架构，最高运行频率可达250MHz，具备单/双精度浮点运算单元（FPU）以及DSP运算支持，能够满足无人机姿态控制、传感器数据融合以及实时任务处理的需求。同时，该芯片集成了丰富的存储资源，包括最高4160KB代码Flash、256KB工作Flash以及768KB SRAM，可为控制算法、通信协议以及数据处理提供充足的存储空间。
+空中单元：采用五寸穿越机机架作为飞行平台，搭载两颗英飞凌CYT4BB7 主控芯片作为图像处理芯片和飞控、双广角红外摄像头、ToF传感器及陀螺仪。无人机负责全局视觉定位、车模相对位姿解算、航线规划，是系统的“大脑”和“眼睛”。
+地面单元：采用传统麦轮结构车模，由英飞凌CYT4BB7主控，顶部安装定制V形红外灯板作为视觉信标。车模接收无人机下发的期望路径和速度指令，执行高精度轨迹跟踪，并承担无人机供电、盲盒任务供电等职责。
+系统工作流程为：无人机通过双摄像头实时识别地面车模灯板，解算其位置与航向；将灯与车的误差实时传输给下车；车模采用pid控制算法跟踪期望轨迹。整个系统实现了实时处理。
+2.2 机械结构
+在我们使用的传感器中，陀螺仪做为高精度采集信息的传感器，对于其安装位置的合理性，稳定性都有一定要求，对此我们多次尝试，安装于机架的中心位置且靠近车模的重心点处，将其水平安装在机架上，以精确得到实时数据，并反馈给单片机，放置在该位置可发挥其最大作用，可更准确地感知整体运动，减少干扰和误差，同时获得更加优秀的平衡控制效果。
+光流，tof的安装位置较为随意，不做过多介绍。
+ 
+图2.1陀螺仪安装示意图
+此外对于主板和驱动的安装我们用纳米胶，热熔胶相结合将其固定在车身上如图所示位置，考虑到安装的便捷性，以及车身整体的对称和美观，在设计时参考车模可安装位置，为其量身定制了PCB，让走线也变得简洁明了，大大稳定了车身结构。
+
+图2.2 主板驱动安装示意图
+2.3 硬件电路设计
+硬件是智能车系统的基础。其设计依据于AD2023（Altium Designer2023）以及立创EDA，内容包括原理图设计，PCB设计。以下文章将详细讲述各个模块的设计原理，目的，以及单片机资源分配和其中的注意事项。
+2.3.1 最小系统板模块
+本组无人机协同系统采用 Infineon TRAVEO™ T2G CYT3BB/4BB 系列最小系统板作为核心控制平台，负责无人机飞行控制、传感器数据采集以及空地协同任务的数据交互。考虑到自制控制板在硬件稳定性、调试效率以及可靠性方面存在一定不确定性，因此本系统采用成熟的商用最小系统板作为主控平台。TRAVEO™ T2G CYT3BB/4BB系列微控制器基于 Arm® Cortex®-M7 架构，最高支持单/双 Cortex®-M7 内核运行，单核最高运行频率可达250MHz，并集成浮点运算单元（FPU）以及DSP运算功能，能够满足无人机姿态解算、控制算法运行以及多传感器数据融合等实时计算需求。该芯片具备丰富的存储资源，包括最高4160KB代码Flash、256KB工作Flash以及768KB SRAM，可为飞控程序、通信协议以及任务控制逻辑提供充足的存储空间。
+2.3.2 降压稳压模块
+由于使用的是3s电池，电压较大，采用SCT2450这块更加稳定的芯片来完成第一部的12V-5V的降压。第二部分的5V-3.3V我们采用了RT9013-3.3来进行降压稳压，多次使用后发现其发热较小，使用时比较稳定，最终采取了此方案。引出的3.3V为驱动芯片，隔离芯片，最小系统供电。
+
+图2.4 降压稳压模块电路图
+
+2.3.3 五向按键及按键模块
+五向按键用于调试系统参数大小，或用于调节系统模式，运行速度，搭配不同硬件电路等，便利于使用者，且五向按键体积小，调试方便。
+其中需要引出5个I/O口并将其设置成上拉输入，由于I/O口驱动能力不足，我们加入了外部上拉电阻，将其初始拉至高电平。
+
+
+
+图2.5 五向按键模块电路图
+
+2.3.4 传感器和人机交互模块
+上机传感器接口有一个光流，一个陀螺仪，一个tof。下车传感器有四个编码器。这一部分只需引脚正确即可，没有过多要求。也不易出现失误和故障
+ 
+图2.6 传感器模块电路图
+2.3.5 电机驱动模块
+由于驱动部分需要12V供电，所以采用隔离芯片SN74HC125PWR保证电路信号的单向传输，防止电流倒灌烧坏主板，它是具有三态输出的4路缓冲器/线驱动器，由输出使能输入（nOE¯）控制。 nOE¯上的高电平使输出呈现高阻态。输出内置钳位二极管。 这样就可以使用限流电阻将输入接口连接到超过VCC的电压。
+其主要特点如下：
+● 输入电平：
+AiP74HC125： CMOS 电平
+AiP74HCT125： TTL 电平
+● 工作环境温度范围： -40℃～+105℃
+● 封装形式： DIP14/SOP14/TSSOP14
+驱动芯片采用 DRV8701E。该方案使用DRV8701E，支持100%占空比，方向切换使用高低电平控制，降低MCU PWM资源占用。 
+
+
+图2.7 电机驱动原理图及其PCB
+无刷电机驱动方面选择使用逐飞开源stc32电调
+
+
+
+2.4 软件设计
+在软件部分中，空地协同控制是飞跃雷区系统的核心。本系统软件基于imu963ra九轴IMU、UPFLOW302光流、DL1B ToF、MT9V03X摄像头和四路512线编码器完成悬停飞机稳定飞行、信标灯识别定位以及地面车全向运动灭灯任务。系统采用双控制器协同架构：飞机端CYT4BB7同时负责视觉感知决策与飞控姿态位置闭环，地面车CYT4BB7负责运动执行。
+2.4.1 飞控姿态与定点控制
+飞机端飞控在5ms（200Hz）PIT中断内运行，采用"角度环→角速度环"串级PID结构。姿态解算采用Mahony互补滤波四元数算法：加速度经标量卡尔曼滤波（Q=0.01/R=0.10），陀螺一阶低通（α=0.73）并扣除零偏，以加速度模长与帧间变化检测运动状态生成置信权重，融合参数KP=2.75、KI=0.027，按ZYX序提取欧拉角。外环角度误差归一化到±180°，积分限幅Angle_IMAX=100；内环角速度环增益按kp/10、ki/100标定，积分下限Gyro_IMIN=50，偏航内环imax=15。低油门（Oil_n<70）时清除全部积分并令平衡输出归零，实现积分分离。定高采用DL1B ToF与加速度二阶互补滤波融合（K_POS=0.10、K_VEL=0.02，ToF超时100ms失能），经"高度环（kp=1.8）→垂直速度环（kp=55,ki=2.4,kd=0.5）"串级输出油门补偿，目标高度1.3m按0.4m/s斜坡爬升。定点融合UPFLOW302光流速度（经陀螺转动补偿、5Hz低通、高度换算、限幅±60cm/s）与加速度互补融合（β=0.60），速度环100Hz输出期望倾斜角（限幅±10°）。
+
+
+2.4.2 地面车运动控制
+地面车采用"视觉外环（50Hz）→运动内环（200Hz）"双闭环结构。视觉外环接收飞机下发的信标与小车像素坐标，计算前向误差（by−cy）与侧向误差（cx−bx），经EMA滤波（α=0.3）后映射为速度指令：误差<3px停车（到达信标正上方），<18px以70cm/s开环冲刺，中距按10×√err曲线逼近（封顶50cm/s）。运动内环依次执行速度斜坡（4000cm/s²）、航向锁定（分段P控制，<7.5°用3.0、7.5~15°用2.0、>15°用1.2，输出限幅±40）、麦轮逆解与轮速闭环。麦轮逆解公式为：LF=vy+vx−vz、LB=vy−vx−vz、RF=vy−vx+vz、RB=vy+vx+vz。轮速环采用增量式PI+速度/加速度前馈：增量项Kp×(err−err_last)+Ki×err累加为积分输出，前馈Kv×目标速度+Ka×计划加速度叠加，运行时参数Kp=36、Ki=1.25、Kv=8，输出限幅±7000，并采用前馈占用后剩余额度分配给积分项的抗饱和策略。丢帧保护四级降级：200ms滑行、500ms半速、1000ms减速、2000ms刹停。
+1. 由于输出直接对应实际控制量，无需额外计算增量，结构直观，便于理解与实现。  
+2. 积分项通过累积历史误差，能够完全消除系统的静态误差，适用于高精度控制场景。  
+3. 微分项基于当前误差变化率实时调整输出，有效抑制超调，提高系统动态响应速度。  
+4. 适用于需要精确位置控制的场合，直接输出绝对量，无需考虑增量累积。  
+5. 参数物理意义明确，比例、积分、微分三部分作用清晰，便于通过实验整定参数。  
+6. 算法稳定性较好，对控制量突变不敏感，执行机构动作平滑。  
+但位置式PID也存在缺点：积分项可能引起饱和现象，需结合抗饱和措施（如积分限幅）；且每次输出需计算全量，对计算资源要求略高。实际应用中常采用积分分离、变增益等改进算法以优化性能。
+2.4.3 连通域寻灯
+本系统采用搭载红外滤光镜头的摄像头进行信标灯识别。由于比赛场地中信标灯采用红外光源，当环境中不存在强烈阳光干扰以及其他红外热源时，摄像头采集图像中的主要红外辐射来源为信标灯，因此通过调整摄像头曝光、增益以及阈值等参数，可以有效突出信标灯目标，使其在图像中呈现明显的高亮区域。
+针对视觉图像中同时存在信标灯与地面车V型灯板的问题，系统采用基于连通域分析的目标检测算法进行信标定位。首先对红外滤光摄像头采集的图像进行灰度化处理，并根据目标区域的亮度特征进行阈值分割，提取潜在红外光源区域；随后对二值化图像进行形态学处理，减少环境噪声以及边缘干扰的影响。之后利用连通域分析提取各独立亮区，并计算其面积、中心坐标、外接矩形以及填充度等特征参数。
+由于无人机任务过程中需要准确区分信标灯与地面车上的V型灯板，系统结合目标区域的亮度特征和填充度特征进行筛选。其中，信标灯通常表现为面积较小、亮度集中且填充度较高的点状目标，而V型灯板由于结构尺寸较大、形状规则，与信标灯在区域面积和填充比例上存在明显差异。因此，通过设置合理的亮度阈值和填充度判断条件，可以有效过滤V型灯板干扰，实现对信标灯目标的准确识别与定位，为后续无人机引导地面车完成灭灯任务提供可靠视觉信息。
+开发工具安装及其调试过程
+软件开发工具
+3.1.1开发工具的选择 
+本项目选择 IAR Embedded Workbench for Arm（EWARM） 作为软件开发环境。IAR Embedded Workbench 是一款面向嵌入式系统开发的集成开发平台，支持基于 Arm® Cortex®-M 系列微控制器的软件开发，可为程序编写、代码编译、程序下载以及系统调试提供完整的软件开发流程。在开发过程中，IAR 提供了高效的 C/C++ 编译环境，能够充分发挥主控芯片的计算性能，并支持工程管理、代码优化以及错误检测等功能，提高程序开发效率和代码可靠性。同时，IAR 集成了强大的调试工具，包括断点调试、变量监测、寄存器查看以及内存分析等功能，能够帮助开发人员快速定位无人机姿态控制、传感器数据采集以及通信交互过程中出现的问题。
+3.1.2 开发工具的安装与配置
+1. 下载并安装 IAR Embedded Workbench
+首先访问 IAR 官方网站，注册账号并下载适用于 Arm® Cortex®-M 系列微控制器的 IAR Embedded Workbench for Arm（EWARM） 开发环境。根据所使用的主控芯片型号（Infineon TRAVEO™ T2G CYT3BB/4BB 系列）选择对应的软件版本，并完成许可证配置。安装过程中，根据安装向导完成编译器、调试器以及相关支持组件的安装。安装完成后，需要根据开发需求配置工程环境，包括选择目标芯片型号、设置编译器选项以及配置硬件调试接口等。IAR Embedded Workbench 支持通过工程管理方式完成代码编写、编译、下载和调试等完整开发流程。Infineon TRAVEO™ T2G 系列支持使用 IAR EWARM 进行代码开发与调试。
+创建与配置 IAR 工程
+首次启动 IAR Embedded Workbench 时，需要选择工作空间（Workspace）路径，用于保存工程文件、编译生成文件以及调试配置文件。建议创建独立文件夹作为工作空间，便于工程管理和后期维护。若需要创建新工程，在软件界面中选择 File → New → Project，根据项目需求选择对应的 Arm 工程模板，并设置工程名称、存储路径以及目标设备型号。在设备选择过程中，需要选择与实际硬件一致的 MCU 型号，以确保编译环境和底层配置正确。若需要导入已有工程，可通过 File → Open Workspace 或工程导入功能，将已有工程文件加载至 IAR 环境中。导入完成后，根据项目需求检查工程配置，包括头文件路径、宏定义、链接文件以及调试器配置等参数。
+3. 编译、下载与调试程序
+完成工程配置后，在项目管理窗口中右键选择 Build → Build Project 对工程进行编译。编译过程中，可通过输出窗口（Build Messages）查看编译结果以及错误信息。编译成功后，系统会生成对应的可执行文件（如 .out 或 .elf 文件），用于后续程序下载。进行程序下载和调试时，需要通过调试接口连接开发板与计算机，并在 IAR 中配置对应的调试器（如 J-Link、DAPLink 等）。完成调试配置后，点击 Download and Debug 将程序下载至目标芯片，并进入在线调试模式。在调试过程中，IAR 提供了丰富的调试功能，包括断点设置、变量实时查看、寄存器监测、程序单步运行以及内存查看等，可用于分析无人机姿态控制、传感器数据采集以及通信程序运行状态，帮助开发人员快速定位和解决系统问题。
+硬件开发工具
+3.2.1开发工具的选择
+对于原理图和PCB的设计我们选择了常用的立创EDA。立创 EDA 是一款专注于集成电路设计（ICD）和印刷电路板设计（PCB）的专业电子设计自动化（EDA）软件。它为广大工程师和设计团队打造了一套完备的工具体系，涵盖了从初始概念到最终制造的完整电子产品设计流程。以下是立创 EDA 的主要特点和功能：
+综合设计环境：立创 EDA 构建了一个高度整合的设计环境，让工程师能够在同一操作界面中开展电路设计、PCB 布局、电路仿真以及制造前的准备等工作。
+原理图设计：您能够借助立创 EDA 绘制电路原理图，便捷地添加各类元件、进行连线以及运用相关符号。而且，所绘制的原理图能够与 PCB 设计实现完美衔接，极大地简化了整个设计流程。
+PCB 布局设计：这款软件配备了强大的 PCB 布局工具，支持您在 PCB 上合理地安排和连接元件，同时充分考虑信号完整性、电磁干扰等关键因素。
+3.2.2 开发工具的安装与配置
+从立创eda官方网站或合法的软件分发渠道下载适用于操作系统的安装文件。根据提示选择希望安装的组件、语言选项等。选择是否安装示例项目、文档和其他附加内容。
+
+车辆基本参数和总结
+4.1模型车主要技术参数
+基本信息
+车模总重量 1375g 
+无人机长、宽、高 42、36、20 
+麦轮车长、宽、高 30、30、30
+电池总电压 12V 
+电路功耗 310.W 
+传感器种类 
+512编码器 x4
+MT9V03X灰度摄像头 x2
+IMU660RC六轴IMU x1
+
+IMU963RA九轴IMU x1
+UPFLOW302光流模块 x1
+DL1B TOF激光测距 x1
+
+4.2总结
+在本次比赛中我们还有很多不足需要去完善、改进。这份技术报告中，我们主要从硬件电路设计、软件设计以及算法等方面进行详解。在制作报告的过程中，我们也发现了诸多问题，从发现问题到解决问题的过程受益良多。正如我们的智能车之路，从最初的单独地面车模到空地协同系统，再到飞机悬停、信标识别、全向灭灯等等，对于飞跃雷区这一路的成长，我们的各项技能也随着成长。到今天为止，我们的系统能够实现飞机稳定悬停、摄像头识别信标灯并引导地面车自主规划路线熄灭信标灯，但其中也存在不少问题，例如飞机悬停时受线缆拉扯的姿态扰动、高速运动时空地通信延迟的影响、光流在低纹理地面的漂移等一系列问题还需要我们去解决。
+在对空地协同系统的研究中还有许多改进和探索的地方。通过对飞跃雷区系统的制作，我们学到了很多实践能力，从方案选择、更改、重新设计到实施方案，细调参数，机械和硬件制作，软件编写，各方面都有深刻的体会。每一个细致的工作都会为整个系统的稳定性带来正面影响，而每个疏漏，都会导致空地协同的不协调。在制作过程中，我们苦恼过，也因为飞机稳稳悬停、小车精准灭灯而开心地笑过。我相信所有的智能车爱好者在制作过程中，体会到的不仅仅是制作的乐趣，还有队友们的齐心协力。为了系统跑得好，我们熬过无数夜，翻阅各种资料，也曾在睡梦中无数次梦到飞机完美悬停、小车完美压灯。如今回头看，欣喜地发现，在这个过程中，我们收获的不是一点两点说得完的，不论是学知识，还是学做人，都是一次非常值得的经历。我们感谢主办方提供了如此一个好的平台来让我们展现自我，飞机在空中的翱翔与小车在赛道上的驰骋，无疑也是我们那颗年轻的心的驰骋！
+
+
+
+
+
+
+
+
+
+第五章 电路板详细设计原理图与核心算法子程序
+5.1 核心算法子程序
+5.1.1 IMU姿态解算（Mahony互补滤波+四元数）
+/*************************************************************************
+IMU姿态解算 - Mahony互补滤波 + 四元数（飞机端 driver_imu.c）
+作用：加速度一阶卡尔曼去噪，动态检测机体运动状态；
+陀螺积分四元数，加速度重力向量做误差修正（带动态/模长置信权重），
+静止时才允许积分累积；最后输出ZYX顺规欧拉角。
+**************************************************************************/
+
+// 一阶标量卡尔曼滤波（加速度去噪）
+static void run_kalman_scalar(ekf_filter_t *ekf, float input)
+{
+    ekf->now_p = ekf->last_p + ekf->q;                     // 先验协方差
+    ekf->kg = ekf->now_p / (ekf->now_p + ekf->r);          // 卡尔曼增益
+    ekf->out = ekf->out + ekf->kg * (input - ekf->out);    // 状态更新
+    ekf->last_p = (1.0f - ekf->kg) * ekf->now_p;           // 后验协方差
+}
+
+// 快速开方倒数（四元数归一化用，牛顿迭代一次）
+static float inv_sqrt(float x)
+{
+    float xhalf = 0.5f * x;
+    union { float f; uint32_t i; } u;
+    u.f = x; u.i = 0x5f3759df - (u.i >> 1);
+    u.f = u.f * (1.5f - xhalf * u.f * u.f);
+    return u.f;
+}
+
+// 置信度权重：0~1光滑过渡，value越小越信任
+static float imu_confidence_weight(float value, float scale)
+{
+    if (value >= scale) return 0.0f;
+    if (value <= 0.0f) return 1.0f;
+    return 1.0f - value / scale;
+}
+
+// 积分项仅在静止且加速度可信时更新（防机动时积分发散）
+static float imu_integral_step(float integral, float error,
+                               float dt, uint8_t update_enable)
+{
+    if (update_enable) integral += error * dt;
+    else integral *= 0.95f;                               // 不更新时缓慢衰减
+    return integral;
+}
+
+// ================= 单步姿态解算（每周期调用） =================
+static void imu_solve_step(imu_context_t *ctx,
+    float ax, float ay, float az,
+    float gx_deg, float gy_deg, float gz_deg,
+    float dt, float yaw_gain)
+{
+    (void)yaw_gain;
+    // 1. 加速度一阶卡尔曼滤波
+    run_kalman_scalar(&ctx->kalman_acc_x, ax);
+    run_kalman_scalar(&ctx->kalman_acc_y, ay);
+    run_kalman_scalar(&ctx->kalman_acc_z, az);
+    float acc_x = ctx->kalman_acc_x.out;
+    float acc_y = ctx->kalman_acc_y.out;
+    float acc_z = ctx->kalman_acc_z.out;
+
+    // 2. 帧间加速度变化率 -> 动态运动检测
+    float delta_ax = fabsf(acc_x - ctx->acc_x_prev);
+    float delta_ay = fabsf(acc_y - ctx->acc_y_prev);
+    float delta_az = fabsf(acc_z - ctx->acc_z_prev);
+    float acc_delta = delta_ax;
+    if (delta_ay > acc_delta) acc_delta = delta_ay;
+    if (delta_az > acc_delta) acc_delta = delta_az;
+    ctx->acc_x_prev = acc_x; ctx->acc_y_prev = acc_y; ctx->acc_z_prev = acc_z;
+
+    // 3. 陀螺零偏扣除 + 一阶低通（IMU_GYRO_LPF_ALPHA=0.73）
+    float gx = (gx_deg - ctx->gyro_x_offset) * IMU_GYRO_LPF_ALPHA
+             + (1.0f - IMU_GYRO_LPF_ALPHA) * ctx->gyro_x_filtered;
+    float gy = (gy_deg - ctx->gyro_y_offset) * IMU_GYRO_LPF_ALPHA
+             + (1.0f - IMU_GYRO_LPF_ALPHA) * ctx->gyro_y_filtered;
+    float gz = (gz_deg - ctx->gyro_z_offset) * IMU_GYRO_LPF_ALPHA
+             + (1.0f - IMU_GYRO_LPF_ALPHA) * ctx->gyro_z_filtered;
+    ctx->gyro_x_filtered = gx; ctx->gyro_y_filtered = gy; ctx->gyro_z_filtered = gz;
+
+    // 4. 严苛静止判定（模长≈1g + 各轴变化小 + 角速度小）
+    float acc_norm = sqrtf(acc_x*acc_x + acc_y*acc_y + acc_z*acc_z);
+    float acc_err = fabsf(acc_norm - 1.0f);
+    ctx->is_static = (delta_ax < IMU_ACC_DYNAMIC_THRESHOLD) &&
+                     (delta_ay < IMU_ACC_DYNAMIC_THRESHOLD) &&
+                     (delta_az < IMU_ACC_DYNAMIC_THRESHOLD) &&
+                     (acc_err  < IMU_STATIC_ACC_NORM_THR_G) &&
+                     (fabsf(gx) < IMU_STATIC_GYRO_THR_DPS) &&
+                     (fabsf(gy) < IMU_STATIC_GYRO_THR_DPS) &&
+                     (fabsf(gz) < IMU_STATIC_GYRO_THR_DPS);
+    gx *= DEG2RAD; gy *= DEG2RAD; gz *= DEG2RAD;          // deg/s -> rad/s
+
+    // 5. 由当前四元数计算重力参考向量 v=(vx,vy,vz)
+    float q0=ctx->q.q0, q1=ctx->q.q1, q2=ctx->q.q2, q3=ctx->q.q3;
+    float vx = 2.0f * (q1*q3 - q0*q2);
+    float vy = 2.0f * (q0*q1 + q2*q3);
+    float vz = q0*q0 - q1*q1 - q2*q2 + q3*q3;
+
+    // 6. 叉积求误差，加速度方向 e = a x v
+    float ex=0, ey=0, ez=0, acc_weight=0;
+    float acc_norm_sq = acc_x*acc_x + acc_y*acc_y + acc_z*acc_z;
+    if (acc_norm_sq > 1.0e-6f) {
+        float norm = inv_sqrt(acc_norm_sq);
+        float axn=acc_x*norm, ayn=acc_y*norm, azn=acc_z*norm;
+        ex = (ayn*vz - azn*vy);
+        ey = (azn*vx - axn*vz);
+        ez = (axn*vy - ayn*vx);
+        // 模长可信度 x 动态可信度
+        float norm_w = imu_confidence_weight(acc_err, IMU_ACC_FUSION_ERR_G);
+        float dyn_w  = imu_confidence_weight(acc_delta, IMU_ACC_DYNAMIC_THRESHOLD);
+        acc_weight = norm_w * dyn_w;
+    }
+
+    // 7. 误差积分（静止才积分）
+    uint8_t up_int = (ctx->is_static &&
+        acc_weight >= IMU_INTEGRAL_ACC_WEIGHT_MIN) ? 1U : 0U;
+    ctx->err.exInt = imu_integral_step(ctx->err.exInt, ex, dt, up_int);
+    ctx->err.eyInt = imu_integral_step(ctx->err.eyInt, ey, dt, up_int);
+    ctx->err.ezInt = imu_integral_step(ctx->err.ezInt, ez, dt, up_int);
+
+    // 8. 陀螺角速度 + PI修正（IMU_KP=2.75）
+    gx += IMU_KP * acc_weight * ex + ctx->err.exInt;
+    gy += IMU_KP * acc_weight * ey + ctx->err.eyInt;
+5.1.2 飞控级联PID与光流IMU融合
+/*************************************************************************
+飞控级联PID - 通用位置式PID（I带抗饱和Anti-Windup）飞机端 pid.c
+角度环->角速度环串级，误差±180度归一化，油门低于基础值自动清积分。
+**************************************************************************/
+float pid_position_calc(pid_param_t *pid, float current_error,
+                        float dt, uint8 clear_i)
+{
+    float derivative;
+    pid->err = current_error;
+    if (clear_i) {                          // 清积分
+        pid->integrator = 0.0f;
+        pid->out_i = 0.0f;
+    } else {
+        pid->integrator += pid->err;        // 误差累加
+    }
+    pid->out_i = pid->ki * pid->integrator;
+    // 积分限幅 + 反算回integrator（Anti-Windup）
+    if (pid->out_i >= pid->imax) {
+        pid->out_i = pid->imax;
+        if (pid->ki != 0.0f) pid->integrator = pid->imax / pid->ki;
+    } else if (pid->out_i <= -pid->imax) {
+        pid->out_i = -pid->imax;
+        if (pid->ki != 0.0f) pid->integrator = -pid->imax / pid->ki;
+    }
+    pid->out_p = pid->kp * pid->err;        // P
+    derivative = (pid->err - pid->last_error);  // D
+    pid->out_d = pid->kd * derivative;
+    pid->out = pid->out_p + pid->out_i + pid->out_d;
+    pid->last_error = pid->err;
+    return pid->out;
+}
+
+// ================= 俯仰：角度环（外环） =================
+float pitch_balance_Angle(float Angle, float Target_Angle)
+{
+    float err = (act_Fly_Pitch_Zero + Target_Angle) - Angle;
+    uint8 clear_i = (Oil_n < Oil_n_Basic) ? 1 : 0;  // 油门不足清积分
+    if (err > 180.0f) err -= 360.0f;     // 角度±180归一
+    if (err < -180.0f) err += 360.0f;
+    act_pitch_angle_pid.imax = Angle_IMAX;
+    return pid_position_calc(&act_pitch_angle_pid, err, PID_DT, clear_i);
+}
+
+// ================= 俯仰：角速度环（内环） =================
+float pitch_balance_Gyro(float PID_Angle_Out, float Gyro)
+{
+    float err = PID_Angle_Out - Gyro;
+    uint8 clear_i = (Oil_n < Oil_n_Basic) ? 1 : 0;
+    act_pitch_gyro_pid.imax = Gyro_IMIN;
+    return pid_position_calc(&act_pitch_gyro_pid, err, PID_DT, clear_i);
+}
+
+// ================= 横滚：角度环 / 角速度环 =================
+float roll_balance_Angle(float Angle, float Target_Angle)
+{
+    float err = (act_Fly_Roll_Zero + Target_Angle) - Angle;
+    uint8 clear_i = (Oil_n < Oil_n_Basic) ? 1 : 0;
+    if (err > 180.0f) err -= 360.0f;
+    if (err < -180.0f) err += 360.0f;
+    act_roll_angle_pid.imax = Angle_IMAX;
+    return pid_position_calc(&act_roll_angle_pid, err, PID_DT, clear_i);
+}
+float roll_balance_Gyro(float PID_Angle_Out, float Gyro)
+{
+    float err = PID_Angle_Out - Gyro;
+    uint8 clear_i = (Oil_n < Oil_n_Basic) ? 1 : 0;
+    act_roll_gyro_pid.imax = Gyro_IMIN;
+    return pid_position_calc(&act_roll_gyro_pid, err, PID_DT, clear_i);
+}
+
+// ================= 偏航：角度环 / 角速度环 =================
+float yaw_balance_Angle(float Angle, float Target_Angle)
+{
+    float err = Target_Angle - Angle;
+    uint8 clear_i = (Oil_n < Oil_n_Basic) ? 1 : 0;
+    if (err > 180.0f) err -= 360.0f;
+    if (err < -180.0f) err += 360.0f;
+    act_yaw_angle_pid.imax = Angle_IMAX;
+    return pid_position_calc(&act_yaw_angle_pid, err, PID_DT, clear_i);
+}
+float yaw_balance_Gyro(float PID_Angle_Out, float Gyro)
+{
+    float err = PID_Angle_Out - Gyro;
+    uint8 clear_i = (Oil_n < Oil_n_Basic) ? 1 : 0;
+    act_yaw_gyro_pid.imax = 15;
+    return pid_position_calc(&act_yaw_gyro_pid, err, PID_DT, clear_i);
+}
+
+// ================= 滑动窗口中值滤波（3点，无循环排序） =================
+float gyro_median_filter_update(gyro_median_filter_t *f, float raw)
+{
+    f->buf[f->idx] = raw;
+    f->idx = (f->idx + 1) % 3;
+    if (f->cnt < 3) f->cnt++;
+    if (f->cnt < 3) return raw;             // 窗口未满直接返回
+    float a=f->buf[0], b=f->buf[1], c=f->buf[2];
+    if (a > b) { float t=a; a=b; b=t; }
+    if (b > c) { float t=b; b=c; c=t; }
+    if (a > b) { float t=a; a=b; b=t; }
+    return b;                               // 中值
+}
+
+/*************************************************************************
+光流+IMU融合 - opticalflow_fusion.c
+光流原始角速度换算水平速度（乘高度），扣除机体旋转分量
+（陀螺补偿、死区+限幅），再与加速度积分互补融合；
+光流失效时靠加速度维持/衰减，输出平滑水平速度与位置。
+**************************************************************************/
+
+// 低通系数：由截止频率与采样周期换算
+static float lpf_alpha(float cutoff_hz, float dt)
+{
+    float x = 2.0f * 3.1415926f * cutoff_hz * dt;
+    return x / (1.0f + x);
+}
+
+// 姿态投影提取水平加速度（去除重力分量），单位 cm/s2
+static void calc_horizontal_acc(float *acc_right, float *acc_forward)
+{
+    float roll_rad  = g_imu_control.roll  * DEG2RAD;
+    float pitch_rad = g_imu_control.pitch * DEG2RAD;
+    *acc_right  = (Original_imu.acc_y * cosf(roll_rad)
+                 - Original_imu.acc_z * sinf(roll_rad)) * 980.0f;
+    *acc_forward= (Original_imu.acc_x * cosf(pitch_rad)
+                 + Original_imu.acc_z * sinf(pitch_rad)) * 980.0f;
+}
+
+// 旋转补偿：陀螺角速度产生的光流假速度扣除，带回差死区与限幅
+static void rotational_compensation(float raw_forward, float raw_right,
+    float dt_flow, float *flow_forward, float *flow_right)
+{
+    float wf = LIMIT(fabsf(raw_forward)/FLOW_ANG_DEADZONE_RAD_S,0.0f,1.0f);
+    float wr = LIMIT(fabsf(raw_right)  /FLOW_ANG_DEADZONE_RAD_S,0.0f,1.0f);
+    raw_forward *= wf;                    // 角速度死区软抑制
+    raw_right   *= wr;
+    float alpha_gyro = lpf_alpha(GYRO_COMP_LPF_CUTOFF_HZ, dt_flow);
+    gyro_lpf_roll  += (imu_gyro.roll  - gyro_lpf_roll)  * alpha_gyro;
+    gyro_lpf_pitch += (imu_gyro.pitch - gyro_lpf_pitch) * alpha_gyro;
+    float gr = LIMIT(gyro_lpf_roll *DEG2RAD,-FLOW_ANG_LIMIT_RAD_S,FLOW_ANG_LIMIT_RAD_S);
+    float gp = LIMIT(gyro_lpf_pitch*DEG2RAD,-FLOW_ANG_LIMIT_RAD_S,FLOW_ANG_LIMIT_RAD_S);
+    *flow_forward = raw_forward + GYRO_COMP_GAIN * gp;   // 前向配pitch
+    *flow_right   = raw_right   + GYRO_COMP_GAIN * gr;   // 右向配roll
+}
+
+// 互补融合核心：光流速度与加速度积分互相修正
+static void fuse_with_acc(float dt, uint8 flow_new_valid,
+    float flow_vx, float flow_vy, float acc_right, float acc_forward)
+{
+    acc_int_vx += acc_right * dt;         // 加速度积分
+    acc_int_vy += acc_forward * dt;
+    if (fabsf(acc_right) < ACC_STILL_THR_CM_S2)
+        acc_int_vx *= flow_new_valid?ACC_DECAY_WITH_FLOW:ACC_DECAY_NO_FLOW;
+    if (fabsf(acc_forward) < ACC_STILL_THR_CM_S2)
+        acc_int_vy *= flow_new_valid?ACC_DECAY_WITH_FLOW:ACC_DECAY_NO_FLOW;
+    if (flow_new_valid) {
+        float err_x = flow_vx - acc_int_vx;   // 光流与加速度积分之差
+        float err_y = flow_vy - acc_int_vy;
+        fused_vx = acc_int_vx + FLOW_BETA * err_x;         // 速度互补输出
+        fused_vy = acc_int_vy + FLOW_BETA * err_y;
+        acc_int_vx += FLOW_BETA * ACC_PULL_GAIN * err_x;   // 加速度积分被拉回
+        acc_int_vy += FLOW_BETA * ACC_PULL_GAIN * err_y;
+    } else if (flow_timeout_cnt <= FLOW_TIMEOUT_MAX) {
+        fused_vx = acc_int_vx;             // 短时丢失用纯加速度
+        fused_vy = acc_int_vy;
+    } else {
+        fused_vx *= FLOW_LOST_VEL_DECAY;   // 长时丢失速度衰减
+        fused_vy *= FLOW_LOST_VEL_DECAY;
+        acc_int_vx = fused_vx;
+        acc_int_vy = fused_vy;
+    }
+}
+
+// ================= 周期更新入口（ISR或定时调用） =================
+void opticalflow_update(float dt)
+{
+    float use_height = height_est;         // 当前融合高度
+    float raw_forward=0, raw_right=0;
+    uint8 flow_new_valid = 0;
+    if (flow_valid) {                      // 光流有数据
+        rotational_compensation(flow_raw_forward, flow_raw_right, dt,
+                                &raw_forward, &raw_right);
+        float alpha_flow = lpf_alpha(FLOW_RAW_LPF_CUTOFF_HZ, dt);
+        flow_forward_lpf += (raw_forward - flow_forward_lpf)*alpha_flow;
+        flow_right_lpf   += (raw_right   - flow_right_lpf)  *alpha_flow;
+        speed_obs_x = LIMIT(use_height*flow_forward_lpf,
+                            -FLOW_SPEED_LIMIT_CM_S, FLOW_SPEED_LIMIT_CM_S);
+        speed_obs_y = LIMIT(use_height*flow_right_lpf,
+                            -FLOW_SPEED_LIMIT_CM_S, FLOW_SPEED_LIMIT_CM_S);
+        flow_timeout_cnt = 0;
+        flow_new_valid = 1;
+    } else {
+        if (flow_timeout_cnt < 65535) flow_timeout_cnt++;
+    }
+    float acc_right=0, acc_forward=0;
+    calc_horizontal_acc(&acc_right, &acc_forward);
+    fuse_with_acc(dt, flow_new_valid, speed_obs_y, speed_obs_x,
+                  acc_right, acc_forward);
+    float spd_x = fused_vx, spd_y = fused_vy;
+    if (fabsf(spd_x) < 1.0f) spd_x = 0.0f;
+    if (fabsf(spd_y) < 1.0f) spd_y = 0.0f;
+    opt_fusion.speed_x = spd_x;            // 输出融合速度
+    opt_fusion.speed_y = spd_y;
+    opt_fusion.position_x += spd_x * dt;   // 位置积分
+    opt_fusion.position_y += spd_y * dt;
+    opt_fusion.valid = (flow_timeout_cnt<=FLOW_TIMEOUT_MAX) ? 1 : 0;
+}
+5.1.3 视觉识别与连通域检测
+// 光斑检测主函数
+int16 detect_blobs(void) {
+    uint16 label = 0;
+    uint16 label_matrix[HEIGHT][WIDTH] = {0};
+    UnionFind uf = {0}; 
+    uint16 neighbors[5] = {0};
+    uint16 count = 0;
+    uint8 dy[] = {-1, -1, -1, 0};
+    uint8 dx[] = {-1,  0, 1, -1};
+    uint8 ny ;
+    uint8 nx ;
+    for (uint8 y = 0; y < HEIGHT; y++) {
+        for (uint8 x = 0; x < WIDTH; x++) {
+            if (mt9v03x_image_BandW[y][x] == 255) {
+                neighbors[1] = 0;neighbors[2] = 0;neighbors[3] = 0;neighbors[4] = 0;
+                count = 0;
+                for (uint8 i = 0; i < 4; i++) {
+                     ny = y + dy[i];
+                     nx = x + dx[i];
+                    if (ny >= 0 && nx >= 0 && nx < WIDTH&&ny<HEIGHT) {
+                        if (label_matrix[ny][nx] > 0) {
+                            neighbors[count++] = label_matrix[ny][nx];
+                        }
+                    }
+                }
+
+                if (count == 0) {
+                    if (label + 1 >= MAX_LABELS) {
+                       // printf("错误：标签数量超过最大值 %d\n", MAX_LABELS);
+                        return -1;
+                  }
+                    label++;
+                    uf.parent[label] = label;  // 初始化父节点
+                    uf.rank[label] = 0;
+                    label_matrix[y][x] = label;
+                } else {
+                    uint16 min_label = neighbors[0];
+                    for (int i = 1; i < count; i++) {
+                        if (neighbors[i] < min_label) {
+                            min_label = neighbors[i];
+                        }
+                    }
+                    label_matrix[y][x] = min_label;
+                    for (int i = 1; i < count; i++) {
+                        if (neighbors[i] != min_label) {
+                            union_sets(&uf, min_label, neighbors[i]);
+                        }
+                    }
+                }
+            }
+
+        }
+    }
+    for (int y = 0; y < HEIGHT; y++) {
+          for (int x = 0; x < WIDTH; x++) {
+            if (label_matrix[y][x] > 0) {
+                label_matrix[y][x] = find(&uf, label_matrix[y][x]);
+            }
+        }
+    }
+    typedef struct {
+        int area;
+        int sum_x;
+        int sum_y;
+    } Blob;
+    Blob blobs[MAX_LABELS] = {0};
+    for (int y = 0; y < HEIGHT; y++) {
+        for (int x = 0; x < WIDTH; x++) {
+            int lbl = label_matrix[y][x];
+            if (lbl > 0) {
+                if (lbl >= MAX_LABELS) {
+                   // printf("错误：标签 %d 超出范围\n", lbl);
+                    return -1;
+                }
+                blobs[lbl].area++;
+                blobs[lbl].sum_x += x;
+                blobs[lbl].sum_y += y;
+            }
+        }
+    }
+    uint16 blob_count = 0;
+    int kk=0;
+    for (int i = 1; i <= label; i++) {
+        if (blobs[i].area >= area && blob_count < MAX_BLOBS) {
+            centers[blob_count][0] = (uint8)(blobs[i].sum_x / blobs[i].area);
+            centers[blob_count][1] = (uint8)(blobs[i].sum_y / blobs[i].area);
+            area_blob[kk]=blobs[i].area;
+            kk++;
+            blob_count++;
+        }
+    }
+
+    return blob_count;
+ //   return count;
+}
+uint8 otsuThreshold_fast(uint8 *image)
+{
+#define GrayScale 256
+    int Pixel_Max=0;
+    int Pixel_Min=255;
+    uint16 width = MT9V03X_W;  
+    uint16 height = MT9V03X_H;
+    int pixelCount[GrayScale]; 
+    float pixelPro[GrayScale];
+    int i, j, pixelSum = width * height/4; 
+    uint8 threshold = 0;
+//    uint8 last_threshold = 0;
+    uint8* data = image;
+    for (i = 0; i < GrayScale; i++)
+    {
+        pixelCount[i] = 0;
+        pixelPro[i] = 0;
+    }
+    uint32 gray_sum=0;  
+    for (i = 0; i < height; i+=2)  
+    {
+        for (j = 0; j < width; j+=2) 
+        {
+            pixelCount[(int)data[i * width + j]]++;  
+            gray_sum+=(int)data[i * width + j];   
+            if(data[i * width + j]>Pixel_Max)   Pixel_Max=data[i * width + j];
+            if(data[i * width + j]<Pixel_Min)   Pixel_Min=data[i * width + j];
+        }
+    }
+    for (i = Pixel_Min; i < Pixel_Max; i++)
+    {
+        pixelPro[i] = (float)pixelCount[i] / pixelSum;
+    }
+5.1.4 地面车视觉伺服与运动控制
+/*************************************************************************
+地面车视觉伺服减速曲线 - MotorCtrl.c 的 Arrive_at_Target
+视觉外环50Hz。error_x/error_y合成距离，「死区->线性->sqrt曲线」
+平滑输出目标速度，分解回XY命令交给内环执行。
+**************************************************************************/
+void Arrive_at_Target(void)
+{
+    float err_dis, target_speed, err_angle;
+    float v_x_out=0, v_y_out=0;
+    float err_lat = error_x;                // 侧向误差
+    float err_fwd = error_y;                // 前向误差
+    err_dis = sqrtf(err_lat*err_lat + err_fwd*err_fwd);
+    if (err_dis < 3.0f)                     // 0~3死区（到达停车）
+        target_speed = 0.0f;
+    else if (err_dis < 10.0f)               // 3~10线性接续
+        target_speed = 4.517f * (err_dis - 3.0f);
+    else {                                  // 10+ sqrt曲线限幅50
+        target_speed = 10.0f * sqrtf(err_dis);
+        if (target_speed > 50.0f) target_speed = 50.0f;
+    }
+    if (target_speed > 0.1f) {
+        err_angle = atan2f(err_fwd, err_lat);
+        v_x_out = target_speed * cosf(err_angle);
+        v_y_out = target_speed * sinf(err_angle);
+    }
+    cmd_vx = v_x_out; cmd_vy = v_y_out;     // 外环只写目标速度
+}
+
+/*************************************************************************
+麦轮运动学逆解 - MoveBase.c
+LF=vy+vx-vz; LB=vy-vx-vz; RF=vy-vx+vz; RB=vy+vx+vz
+**************************************************************************/
+void calc_wheelSpd(MoveBase *move, float v_x, float v_y, float v_z)
+{
+    if (!move) return;
+    move->SpeedLF = v_y + v_x - v_z;
+    move->SpeedLB = v_y - v_x - v_z;
+    move->SpeedRF = v_y - v_x + v_z;
+    move->SpeedRB = v_y + v_x + v_z;
+}
+
+/*************************************************************************
+轮速环执行 - PID+PWM输出（MotorCtrl.c）
+**************************************************************************/
+void updateCtrl(MotorCtrl *ctrl, float tar_wheelSpeed)
+{
+    if(!ctrl||!ctrl->_motor||!ctrl->_encoder||!ctrl->_controller) return;
+    ctrl->output = (int32)speedCtrl(ctrl->_controller,
+                        ctrl->_encoder->spd, tar_wheelSpeed);
+    setPWM(ctrl->_motor, ctrl->output);
+}
+void applyMotorCtrl(MoveBase *move)
+{
+    if (!move) return;
+    updateCtrl(&motorCtrlLF, move->SpeedLF);
+    updateCtrl(&motorCtrlLB, move->SpeedLB);
+    updateCtrl(&motorCtrlRF, move->SpeedRF);
+    updateCtrl(&motorCtrlRB, move->SpeedRB);
+}
+
+/*************************************************************************
+轮速环PID - 前馈(Kv*v+Ka*Dv) + 增量式PI（PID.c）
+前馈先占额度，剩余限幅分配给PI积分项，抗饱和。
+**************************************************************************/
+float speedCtrl(SpeedPID *pid, const float actual_speed, const float tar_spd)
+{
+    pid->Kp=tune_speed_kp; pid->Ki=tune_speed_ki;
+    pid->Kv=tune_speed_kv; pid->Ka=tune_speed_ka;
+    pid->err = tar_spd - actual_speed;
+    float a_plan = tar_spd - pid->tar_spd_last;   // 目标加速度
+    float ff_out = pid->Kv*tar_spd + pid->Ka*a_plan; // 前馈
+    float pi_inc = pid->Kp*(pid->err-pid->err_last) + pid->Ki*pid->err;
+    pid->pi_output += pi_inc;                      // 增量式PI
+    float max_pi = pid->max_output - fabsf(ff_out); // PI额度=限幅-前馈
+    if (max_pi < 0) max_pi = 0;
+    pid->pi_output = constrain(pid->pi_output, -max_pi, max_pi);
+    float out = ff_out + pid->pi_output;
+    out = constrain(out, -pid->max_output, pid->max_output);
+    pid->tar_spd_last = tar_spd; pid->err_last = pid->err;
+    return (pid->output = out);
+}
+5.2 电路板详细设计原理图
+5.2.1主板原理图
+
+图5.1 主板原理图
+5.2.2驱动原理图
+
+图5.2 驱动原理图
+
+
+参考文献
+肖冬.电力电子技术（第三版）[M]. 冶金工业出版社,2017 年.
+康华光. 电子技术基础:数字部分(第四版)[M]. 高等教育出版社, 2000.
+阎石.数字电子技术基础[M].北京:高等教育出版社,1998.
+胡寿松.自动控制原理(第六版)[M].科学出版社,2014.
+邵贝贝.单片机嵌入式应用的在线开发方法[M].北京:清华大学出版社,2004.
+邵贝贝. 嵌入式实时操作系统[LC／OS-Ⅱ(第2版)[M]. 北京．清华大学出版社．2004.
+张军．AVR 单片机应用系统开发典型实例．北京：中国电力出版社，2005.
+
+
+
+
+
+
+附录A 源代码及其推理公式
+/******************空地协同状态机控制***********************************************************************************/
+    switch(System_State)
+    {
+        case idle:          //待机状态
+            if(KEY_Get(KEY1) == 0)       //按键启动
+            {
+                Key_F = 1;
+            }
+            if(Key_F == 1 && KEY_Get(KEY1))
+            {
+                Key_F = 0;
+                System_State = takeoff;   //转入起飞
+            }
+            break;
+
+        case takeoff:       //飞机起飞悬停
+            Fly_Target_Height = 80;      //目标高度80cm
+            if(fabs(Fly_Current_Height - 80) < 5 && Fly_Stable_Count > 100)
+            {
+                System_State = search;    //高度稳定后转入搜索
+            }
+            break;
+
+        case search:        //搜索信标灯
+            if(beacon_detected == 1)
+            {
+                System_State = approach;  //发现信标，转入接近
+                Fly_Track_Beacon = 1;
+            }
+            break;
+
+        case approach:      //引导地面车接近信标
+            //飞机端计算信标相对地面车的前向/侧向误差并下发
+            Send_To_Car(beacon_err_fwd, beacon_err_lat, 0x01);
+            //飞机保持在地面车正上方
+            if(Car_Reach_Beacon == 1)
+            {
+                System_State = crush;     //地面车到达，转入压灯
+            }
+            if(beacon_detected == 0)
+            {
+                System_State = search;    //信标丢失，重新搜索
+            }
+            break;
+
+        case crush:         //压灯灭灯
+            Car_Speed_Forward = 30;       //低速压过
+            if(beacon_extinguished == 1)
+            {
+                Extinguished_Count++;
+                System_State = search;    //灭灯成功，继续搜索下一个
+                Car_Reach_Beacon = 0;
+            }
+            break;
+
+        case land:          //任务完成降落
+            Fly_Target_Height = 0;
+            if(Fly_Current_Height < 5)
+            {
+                Fly_Start_Flag = 0;
+                System_State = idle;
+            }
+            break;
+
+        default: break;
+    }
+
+    /******************飞机端飞控主循环***************************************************************************/
+    if(Fly_Start_Flag == 1)
+    {
+        // 1. 读取传感器
+        ICM42688_Read_Gyro_Accel();      //读取陀螺仪加速度计
+        ToF_Read_Height();                //读取ToF高度
+        Flow_Read_Velocity();             //读取光流速度
+
+        // 2. 姿态解算（互补滤波）
+        Attitude_Update(dt);
+
+        // 3. 位置环 -> 角度环 -> 角速度环 串级PID
+        if(Fly_Track_Beacon == 1)
+        {
+            // 追踪信标：将信标偏差转化为位置环输入
+            pos_err_x = beacon_img_dx * Fly_Current_Height * 0.001f;
+            pos_err_y = beacon_img_dy * Fly_Current_Height * 0.001f;
+        }
+        else
+        {
+            // 定点悬停：光流速度闭环
+            pos_err_x = 0; pos_err_y = 0;
+        }
+        pitch_target = Position_PID_X(pos_err_x, flow_vx);
+        roll_target  = Position_PID_Y(pos_err_y, flow_vy);
+
+        // 4. 角度环
+        pitch_out = Pitch_Angle_PID(Pitch, pitch_target, gyro[0]);
+        roll_out  = Roll_Angle_PID(Roll, roll_target, gyro[1]);
+        yaw_out   = Yaw_Angle_PID(Yaw, 0, gyro[2]);
+
+        // 5. 定高环
+        throttle_base = Altitude_PID(Fly_Current_Height, Fly_Target_Height, tof_vz);
+
+        // 6. 混控输出
+        Quad_Motor_Mix(throttle_base + HOVER_THR, pitch_out, roll_out, yaw_out);
+
+        // 7. 电机输出
+        Set_Motor_PWM(0, Motor[0]);
+        Set_Motor_PWM(1, Motor[1]);
+        Set_Motor_PWM(2, Motor[2]);
+        Set_Motor_PWM(3, Motor[3]);
+    }
+
+    /******************地面车主循环***************************************************************************/
+    if(Car_Start_Flag == 1 && Car_Price.data_valid == 1)
+    {
+        // 1. 接收飞机端误差数据（串口中断已解析）
+        // 2. 将前向/侧向误差转化为期望速度
+        target_vx = Car_Price.err_fwd * Car_Price.pos_gain;   //前后
+        target_vy = Car_Price.err_lat * Car_Price.pos_gain;   //左右
+        target_wz = 0;                                         //保持航向
+
+        // 3. 限幅
+        target_vx = constrain_float(target_vx, -100, 100);
+        target_vy = constrain_float(target_vy, -100, 100);
+
+        // 4. 麦轮运动学解算
+        Mecanum_Kinematics(target_vx, target_vy, target_wz);
+
+        // 5. 四轮速度PID闭环
+        for(int w = 0; w < 4; w++)
+        {
+            current_wheel_idx = w;
+            Motor_PWM[w] = Wheel_Velocity_PID(Encoder[w], wheel_speed[w]);
+            Set_Wheel_PWM(w, Motor_PWM[w]);
+        }
+
+        // 6. 到达判断
+        if(fabs(Car_Price.err_fwd) < 10 && fabs(Car_Price.err_lat) < 10)
+        {
+            Car_Reach_Beacon = 1;
+        }
+
+        Car_Price.data_valid = 0;  //清除有效标志，等待下一帧
+    }
+
+    /******************保护机制********************************************************************/
+    // 飞机倾斜角度过大保护
+    if(fabs(Pitch) > 35 || fabs(Roll) > 35)
+    {
+        Fly_Start_Flag = 0;        //紧急停车
+        All_Motor_Stop();
+    }
+    // 电池低压保护
+    if(Battery_Voltage < 10.5f)
+    {
+        Fly_Target_Height = 0;     //低压降落
+    }
+    // 通信超时保护
+    if(Comm_Timeout_Count > 50)
+    {
+        Car_Start_Flag = 0;        //通信丢失，地面车停车
+    }
+}

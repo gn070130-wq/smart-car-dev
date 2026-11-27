@@ -1,0 +1,847 @@
+第二十一届全国大学生
+智能汽车竞赛
+
+技 术 报 告
+
+学    校：北京科技大学
+队伍名称：北京科技大学智能模型组
+参赛队员：郭惠佳
+          孔晴
+          刘春旭
+韩耀宇
+孙善迪
+带队教师：赵鑫鑫
+胡松	                     
+
+
+摘 要
+全国大学生智能汽车竞赛是以智能汽车为研究对象的创意性科技竞赛，是面向全国大学生的一种具有探索性的工程实践活动，是教育部倡导的大学生科技竞赛之一。
+本篇技术报告的智能车采用C型车模，香橙派5为控制核心，MCU为TC264D-40F200W的最小系统为下位机，通过在机械系统、硬件系统、软件系统的精细设计与调整，本篇技术报告给出的智能车设计方案能够较好的完成赛规要求的运行任务。 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+引    言
+全国大学生智能汽车竞赛是一项面向大学生的探索性工程实践活动，以“立足培养、重在参与、鼓励探索、追求卓越”为指导思想。参赛队伍围绕智能车这一复杂工程对象，自主完成机械结构、电子线路、环境感知、运动控制、决策算法以及开发调试工具等环节的设计、制作与验证，在真实工程约束下综合运用自动控制、嵌入式系统、计算机视觉和人工智能等多学科知识。竞赛不仅考查车辆完成任务的速度和稳定性，也强调学生发现问题、分析问题、协同解决问题以及将理论转化为可复现系统的能力。
+第二十一届竞赛的人工智能模型组面向未来智能驾驶关键能力培养。依据组委会发布的人工智能模型组细则，该组别以现实赛道为基础，通过增强现实系统叠加虚拟行人、道路标识、障碍物和金币等对象，形成虚实融合的驾驶环境；车辆需要建立从视觉感知、语义理解、策略决策到运动执行的完整闭环。规则强调以纯视觉方案完成外部环境感知，并将飞桨目标检测、OCR、文心大模型以及 RK3588 边缘部署等技术纳入任务体系。与仅依靠固定位置或固定时序触发的控制方式相比，该组别更关注模型对动态场景的识别、理解和泛化能力。
+本队以香橙派 RK3588 平台作为上位计算单元，以摄像头图像作为主要环境信息来源，构建目标检测、道路语义分割、OCR 文字识别、文心语义推理、路径提取与车辆控制相结合的软件系统。目标检测与道路分割模型在服务器端使用 PaddlePaddle 完成训练和验证，随后转换为 RKNN 模型部署至板端 NPU；OCR 采用 PaddleOCR 检测与识别双模型，语义推理调用 ERNIE-4.5-Turbo-128K。开发阶段通过 Visual Studio Code 的 Remote-SSH 功能远程连接香橙派进行代码编写、编译和运行，并使用自研上位机软件同步观察摄像头图像、识别结果和电机波形，从而完成感知、决策与控制参数的联合调试。
+
+
+第一章 系统方案设计概述
+1.1系统介绍
+为了充分利用赛事版卡的多核心优势，我们的程序以多线程方式并行运算，将OV13850摄像头图像采集，AI元素识别，传统赛道识别三项任务分开处理，并最终在主线程合并得到舵机转角与控制速度，之后与下位机进行通信，通过PID控制算法使得智能车在赛道上以较好的姿态快速运行[1]。 
+第二章 车模整体结构设计
+智能汽车各系统的控制都是在机械结构的基础上实现的，因此在设计整个软件架构和算法之前一定要对整个模型车的机械结构有一个全面清晰的认识，然后建立相应的数学模型，从而再针对具体的设计方案来调整赛车的机械结构，并在实际的调试过程中不断的改进优化和提高结构的稳定性。本章将主要介绍智能汽车模型车型车的机械结构和调整方案。
+2.1基础车模介绍
+C车模具有出色的对称性，便于安装舵机，且具备快速灵敏、高精度、快速响应、强劲动力、卓越抓地力、充足刚性和恰到好处的重心等多重优势。车模的尺寸为310 × 180 × 80mm，轮胎尺寸为27 × 64mm。经过适当打磨处理，车模的轮胎具备良好的减震性，从而提供更强的摩擦力。C车模采用后轮单驱方式提供动力，而前轮的舵机则用于转向控制。驱动电机选用了型号为 RS-380，额定电压为7.2V，空载转速为15000rpm，重量为60g。舵机方面，采用了 K7361 型号，供电电压为6.0V 时，额定扭矩可达24kg·cm；而在8.4V 供电时，额定扭矩则可增至30kg·cm。此外，舵机的动作速度为每60°动作0.050秒。
+2.2传感器的选择  
+为保证车模可以及时获取赛道信息、进行AI识别并及时作出响应，我们采用香橙派1300万像素OV13850摄像头作为寻迹传感器，配合编码器速度传感器，完成“智能模型组”的基础寻迹任务。 
+2.3电池的选择  
+电池方面我们选择了格氏ACE电池，型号为GS24003S30，额定电压为11.1V，放电倍率为30C，容量2400mAh足够日常调车需求，重量200g更好的分布了全车重心。
+2.4小车机械结构设计 
+2.4.1自制车模重心高度调整 
+重心高度是影响 C 车模行驶稳定性的关键因素。若整车重心过高，车辆转弯时容易出现车轮抬升，极端情况下会发生侧翻。因此为提升 C 车模行驶稳定性，整车设计中需要尽可能压低重心，保障车辆运行可靠。
+为兼顾车辆高速性能，本设计将负压模块紧贴后桥布置，使底盘及电机等大质量部件相对于车辆中心轴对称安放。该布局让主要重物尽可能贴近底盘地面，减小车辆转弯时的倾覆力矩，提升转向响应灵敏度。 
+2.4.2编码器的安装
+为了更为精确的获得电机转速的返回值，本次车模上安装的是龙邱4096线编码器。最终 综合考虑了读数精准和重心分布两大因素，用定制加工件和齿轮进行了安装配合，尽量使得传动齿轮轴保持平行，传动部分轻松、流畅，不存在过大噪音和丢数情况。如图 2.2 所示。
+
+
+图 2.1编码器安装
+2.4.3四轮车模前轮倾角的调整
+调试过程中发现，C 车模原厂前轮轴与车轮存在较大装配间隙，该间隙会显著改变车辆高速状态下的实际转向中心，引发高速过弯时的转向不足问题。
+前轮定位用于保障车辆直线行驶稳定性、降低舵机转向负荷并减少轮胎磨损。C 车模阿克曼转向机构的前轮定位包含主销内倾、主销后倾、前轮外倾、前轮前束四项可调参数，以此确定转向轮、主销与前轴相对于底盘的装配位置关系。
+实际调试表明，适当增大主销内倾角，能够提升转弯过程中轮胎与地面的接触面积，增大车轮与地面的摩擦力，改善转向响应特性，缓解因地面摩擦力不足带来的转向不足现象。
+2.4.4底盘高度的调整
+在保证顺利完赛的前提下，底盘尽量降低，从整体上降低模型车的重
+心，可使模型车转弯时更加稳定、高速。
+2.4.5舵机安装结构的安装
+考虑到主板的安装方便以及车模转向性能，我们对舵机安装结构进行了较 大的调整。比赛车模的转向是通过舵机带动左右横拉杆实现。舵机的转动速度 和功率是一定，要想加快转向机构的响应速度，唯一的办法就是优化舵机的安 装位置及其力矩延长杆的长度。由于功率是速度与力矩乘积的函数，过分追求速度，必然要损失力矩，力矩太小也会造成转向迟钝，因此设计时就要综合考虑转向机构响应速度与舵机力矩之间的关系，通过优化得到一个最佳的转向效果。利用实际参数经计算，我们得出了一套可以稳定高效工作的参数及结构。
+最终，我们设计了一套舵机连片(转向拉杆)，综合考虑了速度与力矩的关系， 并根据模型车底盘的具体结构，简化了安装方式，实现了预期目标。
+
+
+图 2.2 舵机安装及自制连片设计
+2.4.6摄像头的安装
+为了降低整车重心，需要严格控制摄像头的安装位置和重量，我们自行设计了轻巧的夹持组件并采用了碳纤维管作为安装 摄像头的主桅，这样可以获得最大的刚度质量比，整套装置具有很高的定位精度和刚度，使摄像头便于拆卸和维修，具有赛场快速保障能力。摄像头的安装如图 所示。
+
+图 2.3 摄像头的安装
+
+2.4.7其他机械结构的安装
+在 C 车模机械结构层面仍存在多处优化空间，例如车轮可靠性、传感器防护等方面。C 车模采用后轮驱动方案，车辆行驶过程中，轮胎与轮毂之间容易产生相对滑移，会造成加速过程中的驱动力损耗，进而导致整车运行状态不稳定。针对该问题，调试阶段对后轮车轮做粘胎加固处理，有效避免轮胎与轮毂发生错位，减少驱动力损失，提升动力输出的稳定性。
+2.4.8系统电路板的固定及连接
+主板与驱动板均以M3*6螺丝固定在车模后桥部分，TC264直插在主板上，主板与驱动板之间以杜邦线进行连接。键盘作为人机交互模块通过杜邦线与主板进行连接。
+
+图 2.3 系统电路板的安装
+
+
+2.5车整体图片  
+本次智能车大赛设计的智能车的外形侧视图和俯视图分别如图 2.3和 2.4所示。 
+ 
+图 2.4 侧视图
+
+图 2.5正视图
+
+
+第三章 硬件电路设计
+硬件部分是实现智能汽车各种功能的基础。比如，电机驱动部分可以控制车辆的速度和方向；电源管理部分可以保证电池的正常工作；主控部分可以协调各个部件的工作等等。没有良好的硬件支持，智能汽车就无法实现各种智能化的功能。同时，它也是提高智能汽车性能的关键。通过选用高性能的电子元器件、优化电路设计等手段，可以提高智能汽车的速度、灵敏度、稳定性等指标，从而使其更具竞争力。
+在整个小车硬件系统设计过程中，我们始终遵循规范进行操作，以可靠、高效为原则，同时注重让电路板整洁美观，在确保传感器和执行器的要求得到满足的前提下，尽可能地采用原理简单、能耗低的电路
+3.1单片机系统设计
+单片机系统是一种集成电路芯片，是采用超大规模集成电路技术把具有数据处理能力的中央处理器CPU、随机存储器RAM只读存储器ROM、多种I/O口和中断系统、定时器计数器等功能集成到一块硅片上构成的一个小而完善的微型计算机系统。
+我们采用的是MCU为TC264D-40F200W，设计的最小系统效果图3.1如下：
+
+图 3.1 单片机系统
+3.2主板设计 
+主板电路设计参考了SASU开源方案和逐飞科技开源方案，主要负责接收电池提供的电压电流并将它们合理的分配至所有模块，包括电源驱动模块（提供稳定5V，3.3V），电机驱动模块，舵机驱动模块，ADC电量计模块，串口转USB模块，人机互动模块，主板效果如下。
+
+图 3.2 主板电路
+3.2.1 电源驱动模块 
+电源模块负责为系统提供稳定压降，在设计中要考虑每个元器件的电压范围，电流容量，还需要考虑电路复杂程度以及干扰屏蔽等等，如何在接收到电池电源后进行有效分配成为小车稳步运行基础。
+我们所采用电池为格氏ACE 3s锂电池，额定电压为 11.1V、满电电压为 12.6V，放电倍率为30C，效果如图3.3所示：
+
+图 3.3 电源
+电源地分割
+分离电机供电和主板部分供电。由于我们选择的C车模电机功率大，需求电流大，传导的高频脉冲大电流会产生传导干扰和辐射干扰。因此采用分割地方法并加入MOS用于隔离GND，并加入小电容和共模电感用于通直阻交起到滤波作用，保证供给DCDC芯片的为无波动的直流12V，香橙派供电同理。
+
+图 3.4 电源地分割
+
+
+图3.5 香橙派供电与主板和电机供电分割
+5V稳压
+采用芯片为TPS54302DDCR（4.5V-28V 3A），TPS54302是TI公司推出的一款DC/DC开关电源转换芯片。它是一个高输出电流PWM转换器，集成了低电阻、高侧N沟道MOSFET。基板上包括一个高性能电压误差放大器，在瞬态条件下提供严密的电压调节精度；一个欠压锁定电路，以防止启动，直到输入电压达到5.5 V;一个内部设置的缓慢启动电路，以限制浪涌电流；以及电压前馈电路，以改善瞬态响应。
+
+图 3.5 12V转5V原理图
+
+图 3.6 官方外围电路如下：
+通过外部电阻分压网络，将分压节点电压反馈至 TPS54302 的 VSENSE 引脚，以此设置电源输出电压。稳态工作条件下，VSENSE 引脚的反馈电压等于芯片内部基准电压 0.8 V。输出电压计算公式：
+
+式中R1 为上分压电阻（接输出端），R2 为下分压电阻（接 GND）。
+
+3.3V稳压
+采用芯片为ME6211C33M5G-N（2V-6V 500mA），ME6211C33M5G-N是一款由MICRONE设计生产的低压差稳压器(LDO)芯片。它是一个高输出电流PWM转换器，集成了低电阻、高侧N沟道MOSFET。输出电压精度为±1%,输出电流为500mA,工作电流为40μA,输出电压为3.3V 。原理图如下，具体实现原理较为简单，与市面常见3.3V稳压芯片类似，此处不过多介绍。
+
+
+图 3.7 3.3v稳压供电原理图：
+
+3.2.2 电机驱动模块 
+电机驱动采用4个EG2184（10-20V 1.9A）与8个KND3306B （60V 80A）大功率mos组成2组H桥。EG2184 是一款高性价比的带SD功能的 MOS 管、IGBT 管栅极驱动专用芯片，内部集成了逻辑信号输入处理电路、死区时控制电路、欠压保护、电平位移电路、脉冲滤波电路及输出驱动电路，工作电压可达 600V，低端 VCC 的电源电压范围宽 10V～20V。该芯片输入通道 IN 内 建了一个 200K 下拉电阻，SD内建了一个 200K 下拉电阻,在输入悬空时使上、下功率 MOS 管处于关闭状 态,输出电流能力 IO+/- 1.9/2.3A，采用 SOP8 封装。
+3.2.3 舵机驱动模块
+我们所使用的是K7361舵机工作电压为6.0-8.4V，脉宽500-2500usec，默认中点脉宽 1520 μs，角度0-180°，控制精度为3usec，标称工作频率333Hz，我们设计的电路输出电压实测大致为7.9V，采用50HZ作为控制频率。
+原理图如下：
+ 
+ 
+同样采用TPS54302DDCR供给电压与电流，参考计算公式设计了相应阻值，其余电路与前置5V稳压一致。
+ 
+3.2.4串口转USB模块
+采用常用的FT232RL-REEL作为串口转USB功能芯片，FT232RL-REEL是一款USB转串口控制芯片，它内部集成了USB通信接口和串口通信接口，可实现USB信号与串口信号的双向转换。同时，该芯片自带USB转TTL电平的功能，无需额外电路即可完成 5V 到 TTL 电平的转换 原理图如下：
+
+串口通信的TX与RX和USB通信用到的差分信号线D+，D-均加入10Ω电阻进行隔离，旁接地的100nf电容的作用是为了使电源(或者是信号)对地的交流阻抗在很宽的频率范围内都很小，这样交流成分可以被滤除得更干净 。
+ 
+3.2.5 人机互动模块
+包括外接OLED按键模块，BUZZER蜂鸣器模块。
+。
+第四章 软件系统设计
+高效的软件程序是智能车高速平稳自动寻线的基础我们设计的智能车系统采用 USB 摄像头进行赛道识别， 图像采集及校正处理就成了整个软件的核心内容。
+在智能车的转向和速度控制方面，我们使用了鲁棒性很好的经典 PID 控制算法， 配合使用理论计算和实际参数补偿的办法， 使智能车能够稳定快速寻线。
+4.1 图像初步处理
+在语义分割模型提取赛道掩膜后，我们需要对其进行处理以得到赛道特征，提供尽可能多的赛道信息供决策算法使用。
+4.1.1 赛道边沿提取
+边沿提取算法的基本思想如下：
+算法输入是分割网络输出的二值掩膜图像，赛道为白、背景为黑，阈值判定即像素值是否大于零。扫描从图像近底端的第220行开始，自下而上逐行推进。每行从左到右遍历所有列，比较相邻像素：由黑变白处记录为色块起点，由白变黑处记录为色块终点，从而将每行白色区域切分为若干色块并统计数量；对图像左右边界处的色块做单独处理，防止边界色块丢失。色块区间按行存入缓冲区，每行最多64个。此步只提取"色块区间"这一中间信息，真正的边沿在后续步骤中筛选确定。
+在起始行，若存在两个宽度均不低于约20像素的色块，视为面临岔路选择，按外部给定的优先方向取左侧或右侧色块作为赛道起点；否则取最宽色块为起点，宽度不足则跳过本行继续向上寻找，直至找到有效色块。后续行中，唯一连通色块要求宽度不低于16像素，多色块择优时选中色块不低于13像素。这些最小宽度阈值用于滤除分割噪声与碎片。此外，算法记录边沿落在图像左右边缘两列内的"贴边点"供后续修正使用；在岔路真伪验证中，还会将色块映射到俯视矫正域测量真实宽度，超过65像素的"超长色块"用于排除宽路面的岔路误判。宽度信息贯穿起点选择、噪声过滤、贴边检测与岔路验证全流程。
+基于赛道空间连续的先验，算法要求本行色块必须与上一行已确认的边沿区间存在横向重叠。无连通色块则判定搜索结束；只有一个连通色块则直接取其端点作为本行新边沿；出现多个连通色块时，计算各色块中心与滑动窗口中心平均值的距离，选取最近者，滑动窗口保存最近十行有效中心并取平均，避免历史信息产生惰性。重搜索模式下还会以岔路点水平位置为分界施加方向偏好惩罚，防止误选另一侧岔路色块。选中色块不满足宽度下限则跳过本行。每确认一行后更新滑动窗口并检查是否贴边，边沿点按由近及远顺序累积，为控制中心计算提供有序中线信息。
+当一行出现多个连通色块且与前一行边沿的重叠长度分别达到32和40像素以上时，记录两色块交界中点为岔路点，每帧只取首个。交汇点检测在扫描完成后从远向近回溯：寻找与上一行选定边沿重叠超过20像素、且向下连续三层均有宽度不低于13像素连通区域的色块，一行存在多个时记录交界中点；右转弯场景下远端右边界连续贴边或整体偏右会诱发远端误判，据此过滤靠近远端且位于图像右侧的交汇点。若岔路点与交汇点之间存在超长色块，说明只是宽路面，清空岔路点。另有隐含交汇的识别，通过近处与中部的赛道宽度对比及近处贴边比例两阶段判断，两侧使用不同阈值。补线环节中，岔路点以下区域以可靠边沿为基准，映射到俯视域后按近端20像素到远端实测宽度线性过渡生成另一侧边沿；交汇点以上区域则以实测道路宽度做等宽偏移生成缺失边沿，参考边沿贴边段先做锚点插值修正以保证与下方边沿无缝衔接；隐含交汇则用固定20像素宽度在俯视域整体等距偏移替换另一侧边沿。这些补线手段保证了进出岔路、交汇区域及终点段边沿的连续完整，为后续规划和控制提供稳定输入。
+各种情况下的赛道边界结果如图。
+
+
+
+
+
+
+
+
+
+
+4.1.2 图像透视变换
+透视变换主要用于将一个平面从视角A变换的视角B。即从平面在视角A的图片中，生成一张“假”的图片，这张“假”图片中的平面正好和视角B下的图片相同。注意，这里提到了“一个平面”，这意味着不在同一个平面上的点是不满足这个变换的。使用透视变换，我们可以将相机得到的赛道图像变换成近乎完全的俯视图。由于虚拟赛道正好在贴合在地平面上，满足同一平面的要求，所以可以使用透视变换完成。
+在AR系统中的配置页面中，我们可以配置摄像头的参数，配置好后，我们可以将该参数写入程序，通过算法得到虚拟赛道的俯视图。
+4.2 AI视觉感知与语义理解
+人工智能模型组的赛道由真实道路和增强现实任务元素共同构成，仅依靠传统的颜色阈值或固定位置判断难以稳定完成比赛任务。因此，本系统将道路语义分割、目标检测、文字识别和大模型语义理解组合为一套视觉感知方案，使车辆能够从摄像头画面中同时获得“道路在哪里”“出现了什么目标”以及“路牌表达了什么含义”等信息。各类模型在服务器上完成训练和验证，转换为 RKNN 格式后部署到香橙派 RK3588 的 NPU 上运行。
+道路识别采用轻量级 PP-LiteSeg 语义分割模型，将摄像头画面中的可行驶区域与背景分离。相较于只搜索固定颜色边线的方式，语义分割能够利用道路的整体纹理和形状信息，对背景变化及局部干扰具有更好的适应性。程序对分割结果进行边界搜索、中线拟合和岔路分析，为基础循迹、避障和目标收集提供路径依据。
+
+
+
+AI元素识别采用基于 PaddlePaddle 框架训练的 YOLO26n 轻量目标检测模型。结合比赛任务建立并标注数据集，模型主要识别车辆、行人、金币、红绿灯、引导牌、限速牌和终点标志等元素。训练过程中通过扩充不同距离、光照和背景下的样本提高模型适应性，训练完成后将模型导出并进行量化部。推理结果包含目标类别、置信度和位置，程序再结合道路区域、目标在图像中的相对位置及连续多帧结果进行判断，以减少单帧误检对车辆控制的影响。
+
+对于引导牌等包含文字信息的任务，目标检测首先定位路牌区域，随后调用 PP-OCRv4 检测与识别模型提取文字。OCR 的板端部署参考 rknn_model_zoo，使用独立的文字检测模型、文字识别模型及字符字典。识别出的文字进一步通过 API 调用，交由 ERNIE-4.5-Turbo-128K 进行语义理解，将自然语言指令转化为明确的方向或动作信息。程序仅在确认出现引导牌后触发 OCR 与大模型请求，既减少不必要的计算与网络访问，也避免无关画面对语义判断造成干扰。
+系统通过多线程流水线并行执行图像读取、道路分割、目标检测和文字识别，并在资源融合环节将同一时刻的感知结果统一交给场景状态机。车辆遇到行人或其他车辆时优先执行安全避让；识别交通信号后调整通行状态；检测到金币时在保证基础循迹安全的前提下修正目标路径；发现引导牌时等待文字与语义结果后选择道路分支。通过这种由多模型感知到任务决策的组合方式，系统能够较完整地适应人工智能模型组的虚实融合场景。
+4.3 PID 控制算法介绍 
+我们使用传统PID算法控制左右电机稳定在目标速度，使用PD算法控制舵机方向。
+在工程实际中，应用最为广泛的调节器控制规律为比例、积分、微分控制，简称 PID 控制，又称 PID 调节。PID 控制器问世至今已有近 70 年历史，它以其结构简单、稳定性好、工作可靠、调整方便而成为工业控制的主要技术之一。当被控对象的结构和参数不能完全掌握，或得不到精确的数学模型时，控制理论的其它技术难以采用时，系统控制器的结构和参数必须依靠经验和现场调试来确定，这时应用 PID 控制技术最为方便。即当我们不完全了解一个系统和被控对象，或不能通过有效的测量手段来获得系统参数时，最适合用 PID 控制技术。
+PID 控制，实际中也有 PI 和 PD 控制。 
+PID 控制器是一种线性控制器，它根据给定值与实际输出值构成控制偏差。将偏差的比例(P)、积分(I)和微分(D)通过线性组合构成控制量，对被控对象进行控制，故称 PID 控制器，原理框图如图 4.12 所示。 
+图 4.13 PID 控制器原理框图
+简单说来，PID 控制器各校正环节的作用如下： 
+比例环节：及时成比例地反映控制系统的偏差信号，偏差一旦产生，控制器立即产生控制作用，以减少偏差。积分环节：主要用于消除静差，提高系统的无差度。积分作用的强弱取决于积分时间常数，越大，积分作用越弱，反之则越强。 
+微分环节：能反映偏差信号的变化趋势(变化速率)，并能在该偏差信号变得太大之前，在系统中引入一个有效的早期修正信号，从而加快系统的动作速度，减小调节时间。 
+数字 PID 控制算法通常分为位置式 PID 控制算法和增量式 PID 控制算法。 
+4.3.1 位置式PID 
+位置式PID是最基础的PID控制算法，直接根据当前误差计算控制量的绝对输出值。它的离散公式为：u(k) = Kp·e(k) + Ki·∑e(j) + Kd·[e(k)-e(k-1)]，其中Kp比例项负责快速响应误差，Ki积分项消除稳态误差，Kd微分项抑制超调、预测变化趋势。
+它的特点是输出直接对应执行机构的位置（比如舵机转角、阀门开度），结构直观，但积分项存在累积效应，遇到突发停机或设定值大幅跳变时容易产生积分饱和，导致超调或震荡，因此多用于执行机构不带积分特性的场景，比如舵机控制、温度调节等。
+4.3.2 增量式PID 
+增量式PID输出的是控制量的变化值，而非绝对位置。它的离散公式由位置式PID推导而来，最终形式为：
+Δu(k) = Kp·[e(k)-e(k-1)] + Ki·e(k) + Kd·[e(k)-2e(k-1)+e(k-2)]
+其中，Δu(k) 表示本次控制量相对于上一次的增量。它的核心特点与优势如下：
+只关注误差的变化，即使系统因突发情况停机或设定值大幅跳变，也不会产生积分饱和，系统恢复时更平稳；在需要切断控制（如故障保护）时，只需停止计算增量，执行机构会保持在当前位置，不会像位置式那样直接归零或跳变到危险位置；执行机构要求：通常需配合带积分记忆功能的执行机构（如步进电机、伺服电机），通过不断累加 Δu 来更新当前位置。常应用在电机速度、位置控制等需要高安全性的工业执行器。
+4.3.3 PID参数整定 
+PID参数整定本质上是在系统响应速度、稳态精度与抗干扰能力之间寻找最优解。在实际工程中，整定思路远不止于传统的理论计算与经验试凑，更多时候需要结合控制对象的物理特性进行“量体裁衣”。
+对于像智能车这类受物理环境干扰极大的嵌入式系统，参数整定往往遵循一种“数据驱动+物理直觉”的混合策略。由于车辆在不同速度区间和不同赛道曲率下的动力学特性差异巨大，单纯依赖一组固定的PID参数很难在全赛道保持最优表现。因此，我们的整定工作并没有局限于基础的Ziegler-Nichols方法，而是将重点放在了动态参数映射上。
+我们摒弃了依赖精确数学模型的思路，转而采用基于关键特征点的工程整定法。具体操作中，不再追求全系统的理论建模，而是先通过开环测试获取执行机构（如舵机与电机）的基础响应特性，随后在实车运行中引入误差反馈机制。针对直道高速与弯道低速两种截然不同的工况，我们建立了参数与车速、偏差的映射关系表，使PID参数能够根据实时运行状态在多维空间中动态寻优。此外，为了解决积分项在跨越赛道元素时容易引发的“打滑积分累积”问题，我们在整定过程中引入了积分分离与抗积分饱和机制，确保车辆在遭遇突发扰动后能迅速回归稳定。
+4.3.4转向舵机的 PID 控制算法 
+本车的舵机转向控制由姿态 PD 控制器实现。整个算法的输入来自控制中心模块：系统首先对赛道分割图像提取赛道中线，其中加权控制中心以距离越近权重越大的原则对中线点横向坐标加权求和，并限制在零到639的范围内，同时限制其单帧变化量不超过一定的像素，以抑制检测结果的瞬时跳变。
+舵机控制的核心环节是姿态 PD 控制器。它以控制中心相对图像中心（320）的横向偏差作为比例误差，偏差左偏为负、右偏为正；微分项则通过本帧误差减去上一帧误差得到。为防止检测偶发误检导致误差突变，算法对误差变化量做了限幅处理：当一帧内误差变化超过200像素时，将本帧误差强制修正为上一帧误差加减200像素，等效于对误差施加了变化率限制。之后根据当前场景选择不同的参数组：普通赛道、高速模式、躲车场景、金币场景和行人场景各自拥有独立的比例系数和微分系数，其中高速模式下微分系数被大幅调低，以避免高速行驶时微分项放大抖动。比例系数本身还包含一个动态分量，它与与赛道弯曲程度成正比，意味着弯道被探测得越早、距离越远，比例增益就越大，从而实现提前转向。将比例项与微分项相加后，对输出做正负250的限幅，再叠加到舵机中点值1500上，最终把结果限制在1250至1750的舵机硬件量程内，PD输出限幅与舵机满量程恰好对应。
+该算法在主线程中每帧调用，调用后还会叠加引导偏移并再次限幅，在行人避障场景下则允许直接覆盖舵机值执行安全起步动作，最终与左右轮速度一起通过串口下发到下位机。整体来看，这套舵机控制方案具备场景自适应、动态前馈和多级限幅等优点，鲁棒性较好，运算量小，适合嵌入式平台；同时我们的算法也存在一些值得改进之处，例如控制器按值传参导致转向行设置无法回传且每帧拷贝点集带来开销、微分项对原始误差直接差分缺乏滤波、动态增益作用范围偏小、缺少积分环节可能产生稳态偏差，以及舵机输出没有斜率限制等，不过针对目前的场景，该算法已经能取得较好的效果。
+
+第五章	开发工具、制作、安装、调试过程说明
+5.1 Visual Studio Code 开发工具
+5.1.1板端开发环境与 Remote-SSH
+上位机视觉与控制程序运行在香橙派 RK3588 的 Linux aarch64 环境中，采用 C++17 编写并由 CMake 管理。日常开发在 Windows 计算机上使用 Visual Studio Code，通过 Remote-SSH 扩展连接香橙派：先在本机配置 SSH 主机地址、用户名和密钥或密码，再从 VS Code 打开板端工程目录。此方式可直接在目标 Linux 文件系统中编辑源码、调用终端编译和查看运行日志，避免在 Windows 与 ARM 环境之间反复复制代码。
+工程配置完成后，在项目根目录创建 build 目录，执行 CMake Release 配置并使用多核 make 编译，生成 car 可执行程序。运行前检查共享内存视频源、模型相对路径、RKNN Runtime、摄像头输入和 /dev/ttyUSB0 串口权限；程序启动后依次观察图像连接、各模型初始化、线程启动及发车确认日志，任何关键模块初始化失败均停止发车，防止车辆在感知链路不完整时误动作。
+工具、项目工程管理器、C 交叉编译器、汇编器、链接器以及调试器如图 5.1 所示。 
+ 
+图 5.1 VSCODE 界面
+安装远程连接 ssh 的拓展包如图 5.2.
+
+图 5.2 安装远程连接 ssh 的拓展包
+5.1.2服务器模型训练与转换环境 
+目标检测与道路语义分割在服务器上分别建立独立 Conda 环境，以隔离 Python 和框架依赖。检测环境使用 Python 3.12，分割环境使用 Python 3.10，均安装与服务器 CUDA 驱动匹配的 PaddlePaddle GPU 版本；本次工程记录的训练服务器为 Ubuntu 22.04、RTX 4090 24 GB、PaddlePaddle 3.3.1 cu130。模型转换使用 Python 3.10 与 rknn-toolkit2 2.3.2，ONNX 版本需与该工具链保持兼容。
+环境安装完成后，先通过小规模训练或单张图像预测验证 Paddle 环境，再执行 ONNX 导出与输出一致性检查；RKNN 转换后使用同一组测试图比较 PC 与板端结果。此分阶段验证方法可快速判断问题来自数据与训练、模型导出、量化转换还是板端预处理/后处理，避免直接在整车系统中混合排查。
+
+
+5.1.3模型制作、安装与整车部署流程
+目标检测模型的制作流程为：采集增强现实与真实赛道图像，完成 10 类目标框标注，转换并检查 YOLO 格式数据，划分训练集和验证集，加载预训练权重训练，依据验证结果补充难例并迭代，最终导出 Paddle 权重和 ONNX 模型。道路分割模型则使用多边形标注道路区域，经 PaddleSeg 数据转换工具生成分割数据集，采用 PP-LiteSeg 进行二分类训练。当前分割配置使用 STDC1 骨干网络，采用交叉熵与 Dice 组合损失，并配置辅助监督，以兼顾道路主体完整性和边界质量。
+模型安装时，将转换后的 RKNN 文件复制到板端工程自创的 model 目录，随后重新编译或直接运行程序，检查模型文件权限与相对路径。配置调试开关、控制参数、API Key 以及选择调用的文心模型和接口超时等信息。完成单模块测试后，再依次接入视频源、串口与下位机，最后进行低速整车联调。
+5.2 自研上位机调试软件
+为提高整车调试效率，本队开发了配套上位机软件。当车辆出现偏航或任务误触发时，首先利用图像显示区判断道路掩膜、检测框和轨迹是否正确；若视觉正确而执行异常，再检查串口数据、舵机输出和电机波形；若仅在高负载时出现卡顿，则结合线程耗时、队列长度、CPU/NPU 占用和帧序列检查资源竞争。工程还将 USB 串口 latency_timer 调低，以减小通信等待时间。通过“视觉—决策—控制—执行”分层排查，可显著缩短整车问题定位周期。
+
+第六章  模型车的主要技术参数说明
+
+结论与感悟
+本报告围绕第二十一届全国大学生智能汽车竞赛人工智能模型组的任务特点，介绍了本队在虚实融合驾驶环境下构建智能车系统的总体思路。系统以香橙派 RK3588 为边缘计算平台，以摄像头为环境感知入口，将 YOLO26n 目标检测、PP-LiteSeg 道路语义分割、PP-OCRv4 文字识别和 ERNIE-4.5-Turbo-128K 语义理解有机结合，并通过多线程流水线、视觉资源融合和场景状态机将模型输出转化为车辆轨迹与速度控制指令。服务器训练、ONNX/RKNN 转换、板端 NPU 推理以及下位机执行形成了完整的工程闭环。
+备赛过程中我们逐渐认识到，智能车性能并不取决于某一个模型或某一组控制参数，而取决于数据、模型、部署、实时软件、通信、机械与控制之间的整体匹配。离线验证中表现良好的模型，在真实赛道上仍会受到光照、背景、运动模糊、目标尺度和增强现实叠加效果的影响；单帧识别正确也不等同于车辆能够稳定完成任务，还需要通过时间连续性、状态约束和安全优先级把感知结果转化为可靠决策。正是在一次次误检、延迟、波形振荡和路径偏差的排查中，我们形成了分层验证、保留数据、控制变量和版本回溯的工程习惯。
+Visual Studio Code Remote-SSH 与自研上位机软件显著提高了团队协作和调试效率。前者使代码能够直接在目标平台上编写、编译和运行，后者把图像、识别结果和电机波形放在同一界面中，使抽象的算法状态变得可观察、可比较。团队成员围绕数据标注、模型训练、板端部署、控制策略和车辆调试进行分工，又在接口和整车测试中不断交叉协作。这段经历让我们更加深刻地理解了人工智能系统从“模型可用”到“整车可靠”之间的距离，也体会到严谨记录、主动沟通和持续迭代的重要性。
+感谢学校、学院、指导教师和历届队员在场地、设备、经验与组织方面给予的支持，感谢竞赛组委会、飞桨与相关技术社区提供规则、平台和参考资料。面向全国总决赛，我们将继续以安全、稳定和可复现为前提，补充复杂场景与困难样本，完善异常处理和降级策略，进一步降低感知与通信时延，并通过更多整车测试验证系统的泛化能力。无论最终成绩如何，本次备赛中获得的工程实践能力、团队协作经验和对智能驾驶技术的系统认识，都将成为我们继续学习与探索的重要基础。
+
+
+
+参考文献
+[1]卓晴,黄开胜,邵贝贝.学做智能车 [M] 北京 :北京航空航天大学出版社，2007. 
+
+附录A：电路板原理图
+ 
+图A-1 主板原理图
+
+
+图A-2    电机驱动板原理图
+
+
+图A-3舵机管理原理图
+
+
+
+图A-4人机互动通讯原理图
+
+
+图A-5 上下位机通讯原理图
+
+图A-6  MCU原理图
+
+附录B：程序源代码
+
+#include "../include/getImage.hpp"
+#include "../include/resource.hpp"
+#include "../include/socket.hpp"
+#include "../include/uart.hpp"
+#include "../include/tracking.hpp"
+#include "../include/ocr.hpp"
+#include "../include/motion.hpp"
+#include "../include/controlCenter.hpp"
+#include "../include/task.hpp"
+#include "../include/mapping.hpp"
+#include <cstdio>
+
+using namespace std;
+using namespace cv;
+
+//逆透视变换类
+Size origSize(COLSIMAGE, ROWSIMAGE);
+Rect roadRegion(0, 240, 640, 240);
+Mat camera_matrix = (cv::Mat_<double>(3, 3) << 
+        272.86589772, 0, 307.30361019,
+        0, 271.61038474, 237.17914159,
+        0, 0, 1);
+Size dst_size(160, 240);
+Mapping mapping(origSize, roadRegion, camera_matrix, 0.15f, dst_size);
+// 线程池
+shared_ptr<deque<ThreadRes>> threadPool = make_shared<deque<ThreadRes>>();
+shared_ptr<ThreadRes> loggingThread = make_shared<ThreadRes>();
+std::atomic<int> ocr_waiting{0};
+std::atomic<int> roadSignDir{0};
+std::atomic<bool> spurroad_stop(false);
+std::atomic<bool> turnRight(false);
+std::atomic<bool> spurroadCancel(false);
+std::atomic<bool> gold_no_left(false);   // 右转岔路阶段禁止金币边界修正向左偏移
+std::atomic<bool> guide_right_edge(false);   // 路牌右贴边信号，舵机值叠加 guide_offset
+
+int main(){
+    // 单例模式
+    Params params;                      // 参数类
+    MileageCounter mileageCounter;      // 里程计类
+    Taxi taxi(params);                  // 车辆躲避类
+    Person person(params);              // 行人躲避类
+    Gold gold(params);                  // 金币收集类
+    EndSingle endSingle;                // 停止标志停车
+    TrafficLight trafficlight;          // 红绿灯类
+    ControlCenter ctrlCenter;           // 控制中心类
+    Motion motion;                      // 电机、舵机设置类
+    Scene scene = Scene::NormalScene;             // 初始化场景：常规道路
+    Scene sceneLast = Scene::NormalScene;         // 记录上一次场景状态
+
+    // 基本参数
+    vector<PredictResult> AIResult;                 // 保存上一次AI识别结果
+    int frameID = 0;                                // 当前帧的ID
+    int AICnt = 0;                                  // 有AI资源的帧的数量
+    deque<pair<long, Tracking>> historicalTrack;    // 历史搜线结果
+    optional<Tracking> AITrack;                     // AI对应的搜线结果
+
+    long sumTime = 0;                               // 总耗时（ms)
+    //long time;                                      // 主线程单帧耗时
+    long avgTime;                                   // 平均耗时
+    long AIAvgTime = 0;                             // 目标检测平均耗时
+    long AISumTime = 0;                             // 目标检测总耗时
+    int stopCnt = 0;
+    int edgeOffset = 0;                             // 边界偏移量（像素）
+    long duration = 0;
+
+    float endMileage = 0;                           // 结束标志后需要走的里程
+    float spurroadMileage = 0;                      // 向右进入岔路后的里程
+    bool isFirstLap = true;                         // 是否为第一圈
+    int ocrNoSignCnt = 0;                           // OCR减速时，连续无路牌异步帧计数
+    bool canStart = false;
+    long hasStarted = false;
+    long time1 = 0;
+
+    string RKNNDetectorPath = params.global.RKNNDetectorModel;         // 目标检测模型
+    string RoadSegmenterPath = params.global.RoadSegmenterModel;   // 语义分割模型
+
+    // 共享内存读取指针
+    shared_ptr<ShmImageReader> reader = make_shared<ShmImageReader>("shm_ar_video",false);
+    if (!reader->connect()) {
+        std::cerr << "无法连接到共享内存" << std::endl;
+        return -1;
+    }
+
+    // AI推理初始化
+    // 目标识别模型
+    shared_ptr<RKNNDetector> detector = make_shared<RKNNDetector>();
+    shared_ptr<RKNNDetector> detectorAssist1 = make_shared<RKNNDetector>();
+    shared_ptr<RKNNDetector> detectorAssist2 = make_shared<RKNNDetector>();
+    vector<string> labels = {"car", "person", "gold", "red", "guide", "green", "limit", "end", "light", "yellow"};
+    if (!detector->init(RKNNDetectorPath, labels) 
+        || !detectorAssist1->init(RKNNDetectorPath, labels)
+        || !detectorAssist2->init(RKNNDetectorPath, labels)
+    ) {
+        cerr<<"detector初始化失败"<<endl;
+        return -1;
+    }
+    // 道路分割模型
+    shared_ptr<RoadSegmenter1> roadDetector = make_shared<RoadSegmenter1>();
+    shared_ptr<RoadSegmenter1> roadDetectorAssist1 = make_shared<RoadSegmenter1>();
+    shared_ptr<RoadSegmenter1> roadDetectorAssist2 = make_shared<RoadSegmenter1>();
+    if(!roadDetector->init(RoadSegmenterPath) 
+        || !roadDetectorAssist1->init(RoadSegmenterPath)
+        || !roadDetectorAssist2->init(RoadSegmenterPath)
+    ){
+        cerr<<"roadDetector初始化失败"<<endl;
+        return -1;
+    }
+
+     // OCR 初始化（det + rec + dict）
+    shared_ptr<ocr::PPOCREngine> ocrEngine = make_shared<ocr::PPOCREngine>();
+    if(!ocrEngine->init("../model/OCR/ppocrv4_det.rknn", "../model/OCR/ppocrv4_rec.rknn", "../model/OCR/ppocr_keys_v1.txt"))
+    {
+        cerr<<"ocrEngine初始化失败"<<endl;
+        return -1;
+    }
+    shared_ptr<ocr::ErnieInference> ernieSemantic;
+    {
+
+        string key = params.global.api_key;
+        string model = params.global.model;
+        long timeout_sec = params.global.timeout;
+
+        const bool placeholder = (key.find("你的") != string::npos || key.find("YOUR_API") != string::npos);
+        if (!key.empty() && !placeholder) 
+        {
+            auto ep = make_shared<ocr::ErnieInference>();
+            if (ep->init(key, model, timeout_sec))
+                ernieSemantic = ep;
+        } 
+        else 
+        {
+            cout << "[ERNIE] api_key 为空或为示例占位，已跳过文心语义"<< endl;
+        }
+
+    }
+
+    // 串口通信初始化
+    shared_ptr<Uart> uart = make_shared<Uart>("/dev/ttyUSB0");
+    if(!params.global.debug || (params.global.debug && params.debug.vehicleMode))
+    {
+        int ret = uart->open();
+        if(ret != 0)
+        {
+            cerr << "串口通信线程启动失败!" << endl;
+            exit(-1);
+        }
+        uart->startReceive(); // 启动数据接收子线程
+    }
+
+    //注册信号处理函数
+    signal(SIGSEGV, signalHandler);
+    signal(SIGINT, signalHandler);
+
+    //线程池
+    //[1] 图像接收线程
+    threadPool->emplace_back(ThreadType::imageReceive);
+    threadPool->at(ThreadType::imageReceive).taskThread = thread(ThreadFunction::imageReceive, threadPool, reader, ref(params));
+    this_thread::sleep_for(chrono::milliseconds(60));
+
+    //[2] 预处理线程
+    threadPool->emplace_back(ThreadType::AIPreprocess);
+    threadPool->at(ThreadType::AIPreprocess).taskThread = thread(ThreadFunction::AIPreprocess, threadPool, detector);
+    this_thread::sleep_for(chrono::milliseconds(60));
+    threadPool->emplace_back(ThreadType::roadPreprocess);
+    threadPool->at(ThreadType::roadPreprocess).taskThread = thread(ThreadFunction::roadPreprocess, threadPool, roadDetector);
+    this_thread::sleep_for(chrono::milliseconds(60));
+
+    //[2] AI推理线程
+    threadPool->emplace_back(ThreadType::AIDetection);
+    threadPool->at(ThreadType::AIDetection).taskThread = thread(ThreadFunction::AIDetection, threadPool, detector);
+    this_thread::sleep_for(chrono::milliseconds(60));
+
+    //[3] AI辅助推理线程
+    threadPool->emplace_back(ThreadType::AIDetectionAssist1);
+    threadPool->at(ThreadType::AIDetectionAssist1).taskThread = thread(ThreadFunction::AIDetectionAssist1, threadPool, detectorAssist1);
+    this_thread::sleep_for(chrono::milliseconds(60));
+    threadPool->emplace_back(ThreadType::AIDetectionAssist2);
+    threadPool->at(ThreadType::AIDetectionAssist2).taskThread = thread(ThreadFunction::AIDetectionAssist2, threadPool, detectorAssist2);
+    this_thread::sleep_for(chrono::milliseconds(60));
+
+    //[4] 道路分割推理线程
+    threadPool->emplace_back(ThreadType::roadDetection);
+    threadPool->at(ThreadType::roadDetection).taskThread = thread(ThreadFunction::roadDetection, threadPool, roadDetector);
+    this_thread::sleep_for(chrono::milliseconds(60));
+
+    //[5] 道路分割辅助推理线程
+    threadPool->emplace_back(ThreadType::roadDetectionAssist1);
+    threadPool->at(ThreadType::roadDetectionAssist1).taskThread = thread(ThreadFunction::roadDetectionAssist1, threadPool, roadDetectorAssist1);
+    this_thread::sleep_for(chrono::milliseconds(60));
+    threadPool->emplace_back(ThreadType::roadDetectionAssist2);
+    threadPool->at(ThreadType::roadDetectionAssist2).taskThread = thread(ThreadFunction::roadDetectionAssist2, threadPool, roadDetectorAssist2);
+    this_thread::sleep_for(chrono::milliseconds(60));
+
+    //[6] OCR 推理线程
+    threadPool->emplace_back(ThreadType::ocrInference);
+    threadPool->at(ThreadType::ocrInference).taskThread = thread(ThreadFunction::ocrInference, threadPool, ocrEngine, ernieSemantic, ref(params));
+    this_thread::sleep_for(chrono::milliseconds(60));
+
+    //[6] 资源综合处理线程
+    threadPool->emplace_back(ThreadType::resFusion);
+    threadPool->at(ThreadType::resFusion).taskThread = thread(ThreadFunction::resFusion, threadPool,uart, ref(params));
+    this_thread::sleep_for(chrono::milliseconds(60));
+
+    //[7] 日志
+    loggingThread->maxQueueSize = 255;
+    loggingThread->taskThread = thread(ThreadFunction::logging, loggingThread, ref(params));
+    loggingThread->taskThread.detach();
+    this_thread::sleep_for(chrono::milliseconds(250));
+
+    cout<<"串口通信线程启动"<<endl;
+
+    // 发车确认
+    string confirm;
+    cout << "\033[35m是否发车? (q/Q 发车，其他取消): \033[0m";
+    getline(cin, confirm);
+    if (confirm != "q" && confirm != "Q")
+    {
+      cout << "------------------[ 发车取消! ]-----------------------" << endl;
+      exit(ThreadFunction::safeExit(threadPool));  // 程序退出
+    }
+    // 初始化完毕
+    cout << "--------------[ 准备就绪，即将发车! ]-------------------" << endl;
+
+    // 崩溃监听器
+    CrashMonitor crashMonitor;
+
+    // 主循环
+    while(true){
+        
+        // [01] 计算帧率-始
+       long startTime = chrono::duration_cast<chrono::milliseconds>(chrono::system_clock::now().time_since_epoch()).count();
+        VisionRes visionres;
+        // [02] 视觉资源更新
+        {
+            unique_lock<mutex> unique_lock(threadPool->at(ThreadType::resFusion).mutexLock);
+            threadPool->at(ThreadType::resFusion).conVar.wait(unique_lock, []
+            {
+                return !threadPool->at(ThreadType::resFusion).resultQueue.empty();
+            }); 
+            visionres = move(any_cast<VisionRes>(threadPool->at(ThreadType::resFusion).resultQueue.front()));
+            threadPool->at(ThreadType::resFusion).resultQueue.pop();
+        }
+
+        // 对于起步时的几帧，增加底部切行，重新进行搜索与交汇点判断
+        if(frameID < 30)
+        {
+            int rowStart = TRACKING_ROWS - 80;
+            visionres.track.pointsEdgeLeft.clear();
+            visionres.track.pointsEdgeRight.clear();
+            visionres.track.trackRecognition(rowStart, false, false, true);
+            if(!visionres.track.junctionroad.empty())
+            {
+                visionres.track.junctionroadEdgeFitting(visionres.track.junctionroad.back(), false);
+            }
+        }
+
+        historicalTrack.emplace_back(visionres.inquireID().road.value(), visionres.track);
+        while(historicalTrack.size() > 20)
+        {
+            historicalTrack.pop_front();
+        }
+
+            
+        // [03] 传感器资源更新
+        // 计算里程
+        float speed = (visionres.sensorRes.realSpeedLeft + visionres.sensorRes.realSpeedRight) / 2;
+        int spurroadRow = visionres.track.spurroad.empty() ? 0 : visionres.track.spurroad.back().x;
+        mileageCounter.updateMileage(speed, duration, spurroadRow, roadSignDir.load());
+        // 里程超过阈值，则认为完成第一圈
+        if(mileageCounter.mileage >= params.global.first_lap_distance)
+            isFirstLap = false;
+        // 右转进入岔路后的一定范围内不进行岔路点补线
+        if(turnRight.load())
+        {
+            spurroadMileage += speed * duration / 1000.0f;
+            if(spurroadMileage >= 1.7 && spurroadMileage <= 5)
+                spurroadCancel.store(true);
+            else
+                spurroadCancel.store(false);
+        }
+
+        // [04] AI推理结果处理
+        bool isAsync = visionres.inquireResType() == ResType::AsyncVision;
+        if(isAsync)  // 异步资源则直接使用
+        {
+            AICnt++;
+            AISumTime+=visionres.detectionTime;
+            // 获取AI推理结果
+            AIResult = visionres.AIResult;
+            // 匹配搜线结果
+            AITrack.reset();
+            for(const auto& track : historicalTrack)
+            {
+                if(visionres.inquireID().AI == track.first)
+                {
+                    AITrack = track.second;
+                    break;
+                }
+            }
+        }
+        else // 仅有道路资源则需要使用之前的AI资源
+        {
+            if(!AIResult.empty())
+            {
+                // 置信度衰减
+                for(auto it = AIResult.begin(); it != AIResult.end(); )
+                {
+                    it->score -= 0.02;
+                    if(it->score < params.global.score)
+                        it = AIResult.erase(it);
+                    else
+                        it++;
+                }
+            }
+
+        }
+ 
+        Tracking& trackForState = (isAsync && AITrack.has_value()) ? AITrack.value() : visionres.track;
+
+        // taxi状态机的exit状态下，若当前需要停车，则停止偏移量衰减
+        bool suspend = person.person_waiting || (ocr_waiting.load() == 1 && spurroad_stop.load() == true);
+        // 当前场景
+        scene = Scene::NormalScene;       
+        // 停车标志（用于启动停车计数）
+        bool finished = false;  
+        // 红绿灯停车标志
+        bool trafficLight_stop = false;
+
+        // 元素状态机
+        if(params.global.carEnable)
+            taxi.taxiStateSet(AIResult, trackForState, person.person_waiting, isAsync, suspend, mileageCounter);
+
+        if(params.global.personEnable)
+        {
+            // 传入图像采集时间戳（AI资源的原始图像时刻），用于行人位置的时间加权回归
+            long long imageTs = 0;
+            if (isAsync && visionres.inquireID().AI.has_value())
+                imageTs = visionres.inquireID().AI.value();
+            else if (visionres.inquireID().road.has_value())
+                imageTs = visionres.inquireID().road.value();
+            person.personStateSet(AIResult, trackForState, taxi, isAsync, mileageCounter, imageTs);
+        }
+
+        if(params.global.goldEnable)
+            gold.goldStateSet(AIResult, trackForState, taxi, person);
+
+        if(params.global.trafficLightEnable)
+            trafficLight_stop = trafficlight.trafficLightStop(trackForState, AIResult);
+            
+        if(params.global.endSingle)
+            finished = endSingle.stopJudge(AIResult, mileageCounter.mileage);
+        
+        // 停车检查
+        if(finished)
+        {
+            stopCnt++;
+        }
+        if(stopCnt>0)
+        {
+            endMileage += speed * duration / 1000.0f;
+            if(endMileage > 1.6)
+            {
+                cout<<"比赛结束"<<endl;
+                uart->carControl(0, 0, MID_SERVO_VALUE);
+                return ThreadFunction::safeExit(threadPool);
+            }
+        }
+
+        // 进行元素边界修正
+        // taxi、person内部无论左右均使用正数偏移量，gold内部左右使用正负偏移量，表示方法不同
+        edgeOffset = 0;
+
+        // 车辆躲避
+        if(taxi.taxi_state == Taxi::TaxiState::TaxiAvoiding ||
+           taxi.taxi_state == Taxi::TaxiState::TaxiExit)
+        {
+            if(taxi.fitting_2(visionres.track))
+            {
+                scene = Scene::TaxiScene;
+                edgeOffset = taxi.edgeOffset;
+            }
+        }
+
+        // 行人躲避
+        if(person.person_state == Person::PersonAvoiding ||
+            person.person_state == Person::PersonExit)
+        {
+            if(person.fitting(visionres.track, taxi, ctrlCenter.controlCenter))
+            {
+                edgeOffset += person.edgeOffset;
+                if(taxi.taxi_state != Taxi::TaxiState::TaxiAvoiding)
+                    scene = Scene::PersonScene;
+            }
+        }
+
+        // taxi、person对边界处理完毕后，根据修正方向改为正负偏移量，以便传递给gold进行边界拟合
+        if (person.person_state == Person::PersonAvoiding || person.person_state == Person::PersonExit)
+        {
+            if(person.isLeft)
+                edgeOffset = -edgeOffset;
+        }
+        else if (taxi.taxi_state == Taxi::TaxiState::TaxiAvoiding || taxi.taxi_state == Taxi::TaxiState::TaxiExit)
+        {
+            if(!taxi.onLeft)
+                edgeOffset = -edgeOffset;
+        }
+
+        // 收集金币（GoldCollecting 和 GoldExit 都进行边界拟合）,若处于路牌减速状态则不修正，防止路牌识别失败
+        if((gold.gold_state == Gold::GoldState::GoldCollecting || gold.gold_state == Gold::GoldState::GoldExit) && ocr_waiting.load() != 1 && !guide_right_edge.load())
+        {
+            if(gold.fitting(visionres.track, taxi, person, edgeOffset, gold_no_left.load()))
+            {
+                scene = Scene::GoldScene;
+            }
+        }
+
+        // 计算控制中心
+        ctrlCenter.fitting(visionres.track, params);
+        ctrlCenter.controlCenterCalculate(params, scene,isFirstLap);
+
+        bool fasterStop = false;
+        
+        // 计算控制量
+        motion.poseCtrl(ctrlCenter, scene, params, isFirstLap);
+
+        float targetSpeed = params.control.speed_high;
+        if(scene == Scene::TaxiScene)
+        {
+            targetSpeed = params.control.speed_taxi;
+            if(taxi.dangerFront)
+            {
+                targetSpeed *= 0.5;
+                fasterStop = true;
+            }
+        }
+
+        if(scene == Scene::PersonScene)
+        {
+            if (person.personTaxiConflict)
+                targetSpeed = params.control.speed_taxi * 0.5;   // 人车方向冲突，降速通过
+            else
+                targetSpeed = person.near ? params.control.speed_person_over : params.control.speed_person;
+            fasterStop = person.near;
+        }
+        
+
+        // 进入OCR语义识别，降速停车等待
+        if(ocr_waiting.load() == 1 && person.person_state != Person::PersonAvoiding && person.person_state != Person::PersonExit)
+        {
+            targetSpeed = std::min(targetSpeed * 0.75f, 0.75f);
+            scene = Scene::StopScene;
+        }
+        
+        // 停车场景
+        if( (ocr_waiting.load() == 1 && spurroad_stop.load() == true) 
+            || trafficLight_stop || person.person_waiting )
+        {
+            // 停车距离修正：修正期间用修正速度代替停车
+            if (person.person_waiting && person.correctionActive)
+            {
+                targetSpeed = max(-0.5f, min(person.correctionSpeed, 0.5f));
+                // 倒车时将舵机设为中值，防止舵机打角导致撞击
+                if(targetSpeed<0) 
+                        motion.servoPwm = MID_SERVO_VALUE;
+
+            }
+            else
+            {
+                targetSpeed = 0;
+            }
+            fasterStop = true;
+            scene = Scene::StopScene;
+        }
+        
+        if(params.global.debug)
+        {
+            if(params.debug.speedDebugEnable)
+            {
+                targetSpeed = params.debug.speedDebug;
+                scene = Scene::DebugScene;
+            }
+            if (params.debug.servoDebugEnable)
+            {
+                motion.servoPwm = params.debug.servoDebug;
+                scene = Scene::DebugScene;
+            }
+        }
+
+        // 速度设置
+        if((scene == Scene::NormalScene || scene == Scene::GoldScene) && frameID >= 15)
+        {
+            if(person.preSlowDown == 1)
+            {
+                targetSpeed = params.control.speed_safe;
+                fasterStop = true;
+                motion.speedTargetSet(targetSpeed, params, fasterStop);
+            }
+            else if(person.preSlowDown == 2)
+            {
+                targetSpeed = params.control.speed_person_over;
+                fasterStop = false;
+                motion.speedTargetSet(targetSpeed, params, fasterStop);
+            }
+            else
+                motion.speedCtrl(ctrlCenter, params, isFirstLap);
+        }
+        else
+        {
+            motion.speedTargetSet(targetSpeed, params, fasterStop);
+        }
+        // 差速计算
+        motion.speedDiffer_1(params);
+        
+        // 串口通信
+        if(!params.global.debug || (params.global.debug && params.debug.vehicleMode))
+        {
+            
+            // 发送舵机值和速度值
+            uart->carControl(motion.speedLeft, motion.speedRight, motion.servoPwm);
+            // 场景切换处理
+            if(scene != sceneLast)
+            {
+                uart->PIDOption(scene);
+            }
+        }
+
+        sceneLast = scene;
+        
+    }
+    return 0;
+}
+
+附录C：车模照片与PCB照片
+一、车模照片
+1、车模外观照片
+  车模平放时，三视图照片.
+2、电路板PCB图
+  车模中所有电路板正反面照片。对于自制电路板，需要使用红色方框标出队伍独自LOGO所在处。
+
+ 
+      
+
+3、电路板原理图
+  请在生成电路板图形需要足够的分辨率，能够分辨出电路图元器件、引线、标注文字等信息。如果电路图过大，请将电路图拆成若干小的电路图分别生成图片。
+ 
+
+
+
+
+===== TABLE 1 =====
+环节 | 主要环境 | 输出
+目标检测训练 | Ubuntu 22.04；Python 3.12；PaddlePaddle 3.3.1；RTX 4090 | best.pdparams / ONNX
+语义分割训练 | Ubuntu 22.04；Python 3.10；PaddlePaddle 2.6.2；RTX 4090 | PP-LiteSeg 权重 / ONNX
+RKNN 转换 | Python 3.10；rknn-toolkit2；代表性校准集 | INT8 RKNN 模型
+板端推理 | 香橙派 RK3588；Linux aarch64 | 检测框、道路掩膜、OCR 文本
+
+===== TABLE 2 =====
+模型车基本参数 | 长 | 310mm
+模型车基本参数 | 宽 | 200mm
+模型车基本参数 | 高 | 159mm
+模型车基本参数 | 车重 | 1300g
+模型车基本参数 | 带载 | 大于 12W
+电路板参数 | 电容总容量 | 3720uF
+传感器 | OV13850摄像头 | 1 个
+传感器 | 龙邱4096线编码器 | 2 个
+除了车模原有的驱动电机、舵机之外伺服电机个数 | 除了车模原有的驱动电机、舵机之外伺服电机个数 | 0
+赛道信息检测 | 检测精度 | 1.65cm
+赛道信息检测 | 检测频率 | 60Hz
+
+===== TABLE 3 =====
+
+

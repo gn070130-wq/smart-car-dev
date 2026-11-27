@@ -1,0 +1,1890 @@
+
+
+
+
+第二十一届全国大学生
+智能汽车竞赛
+
+
+
+
+技 术 报 告
+
+
+
+
+
+
+
+
+
+
+关于技术报告和研究论文使用授权的说明
+本人完全了解全国大学生智能汽车竞赛关于保留、使用技术报告和研究论文的规定，即：参赛作品著作权归参赛者本人，比赛组委会可以在相关主页上收录并公开参赛作品的设计方案、技术报告以及参赛模型车的视频、图像资料，并将相关内容编纂收录在组委会出版论文集中。
+
+
+参赛队员签名：___________
+___________
+___________
+___________
+带队教师签名：___________
+日期：__2026年8月18____
+
+摘要
+本系统针对第二十一届全国大学生智能汽车竞赛“人工智能视觉”赛题，设计并实现了一款基于麦克纳姆轮的全向移动智能车，完成了“识别地图—规划路径—推动箱子至目标点”的完整任务。系统由机械结构、硬件电路、下位机控制与视觉感知四大子系统构成，形成了从环境感知、决策规划到运动执行、机械增稳的完整闭环。
+机械结构方面，采用麦克纳姆轮底盘实现全向移动，独立设计了负压增稳机构与碳纤维加强板，分别提升高速行驶稳定性与底盘承载能力；视觉模块通过磁吸遮光罩与碳素杆实现双摄像头并排固定，保障复杂光照条件下识别的稳定性。硬件电路以NXP i.MX RT1064为主控，采用SCT2450 DC-DC与RT9013 LDO两级电源架构，配合有刷与无刷两类电机驱动板，整机具备完善的过流过压保护，保障系统长时间运行可靠性。
+下位机控制以RT1064为核心，驱动四麦克纳姆轮实现全向运动，通过正交编码器与IMU660RB陀螺仪分别实现转速闭环与角度闭环，并与视觉模块构成最外层视觉位置闭环。软件采用“前台+后台+中断”结构，运动控制采用“速度环+角度环+位置环”三层串级PID，路径规划方面在12×16栅格地图上实现推箱求解引擎，支持炸弹炸墙开路与字母标签配对等竞赛扩展机制。
+视觉感知采用双Openart Plus架构分工协作。子系统一通过LAB颜色空间检测赛道外框并划分为12×16网格，车辆定位采用红蓝色块识别与自适应卡尔曼滤波（精度约3像素），路径跟踪采用视觉伺服控制器配合“区域进入-精确稳定”两级判据。子系统二搭载前向摄像头，使用NXP eIQ训练MobileNet_v2分类模型（20类，验证准确率96%），以int8量化TFLite格式部署，推理耗时80ms，采用置信度阈值与投票滤波机制将有效识别率提升至98%。
+系统通过双Openart Plus并行工作、三层PID运动控制、推箱求解引擎与多状态机架构的紧密配合，实现了从环境感知、任务决策到运动执行、机械增稳的全链路闭环，在竞赛场景下展现出良好的稳定性与任务完成效率。
+关键词： 全向移动；视觉导航；PID控制；推箱子求解；图像分类；嵌入式系统；多状态机；
+
+目录
+第一章 系统概述	1
+1.1 系统概述	1
+1.1.1 机械结构	1
+1.1.2 硬件电路	1
+1.1.3 下位机控制	1
+1.1.4 视觉感知	2
+1.1.5 系统工作流程	2
+第二章 机械结构设计	3
+2.1 视觉模块及屏幕安装结构设计	3
+2.2 负压结构设计	3
+2.3 底盘加固设计	5
+第三章 电路硬件设计	6
+3.1 RT1064主板	6
+3.2 有刷驱动板	7
+3.3 无刷驱动板	8
+第四章 上位机核心控制算法与软件设计	10
+4.1 子系统一：视觉导航与地图规划	10
+4.1.1 系统软件架构	10
+4.1.2 视觉感知与地图构建	10
+4.1.3 导航决策与运动控制	11
+4.1.4 车辆定位与跟踪	11
+4.1.5 地图发送与数据交互	11
+4.2 子系统二：目标卡片模型识别	12
+4.2.1 硬件配置与工作流程	12
+4.2.2 数据集构建	12
+4.2.3 开发工具与模型训练	12
+4.2.4 核心算法与投票滤波机制	13
+4.2.5 实验效果	13
+4.2.6 串口通信协议	15
+第五章 下位机核心控制算法与软件设计	16
+5.1 微处理器选型	16
+5.2 开发工具	16
+5.3 传感器种类及个数	16
+5.4 软件总体架构	17
+5.4.1 模块划分	17
+5.4.2 系统运行流程	18
+5.5 代码设计介绍	18
+5.6 主要理论与算法	19
+5.6.1 麦克纳姆轮运动学	19
+5.6.2 PID 控制算法（三层闭环）	20
+5.6.3 编码器测速与双重滤波	21
+5.6.4 陀螺仪航向角解算	22
+5.6.5 Mahony 互补滤波姿态解算	22
+5.6.6 坐标旋转（世界坐标 → 车体坐标）	23
+5.6.7 无线串口 PID 调参协议	23
+5.6.8 路径规划算法	24
+5.7 制作、安装与调试过程说明	26
+第六章 总结	28
+
+
+第一章 系统概述
+1.1 系统概述
+本系统是一款基于麦克纳姆轮的全向移动智能车，针对第二十一届全国大学生智能汽车竞赛“人工智能视觉”赛题设计，旨在完成“识别地图—规划路径—推动箱子至目标点”的完整任务。系统由机械结构、硬件电路、下位机控制与视觉感知四大子系统构成，各子系统协同工作，形成了从环境感知、决策规划到运动执行、机械增稳的完整闭环。
+1.1.1 机械结构
+车模以麦克纳姆轮为底盘，具备全向移动能力，无需转向机构即可实现前后、左右平移、斜向移动和原地自转，运动极其灵活。为增强高速行驶与急停急起时的稳定性，独立设计了负压增稳机构，通过高速电机驱动桨叶向下排风形成负压区，为车体提供额外下压力以增强车轮附着力，有效抑制打滑、侧倾与漂移。针对原装底盘负载能力偏小的问题，采用碳纤维加强板进行整体加固，显著提升抗弯刚度与承载能力。视觉模块安装采用环形磁吸遮光罩设计，实现免螺丝快速拆装，同时两块OpenART视觉模块通过碳素杆并排刚性固定，形成完整无遮挡的成像视野，遮光片有效屏蔽外界杂散光干扰，保障复杂光照条件下识别的稳定性与一致性。
+1.1.2 硬件电路
+主板采用高集成度设计，将主控、电源、电机驱动及各类外设接口集成于一体。主控选用NXP i.MX RT1064高性能跨界处理器，基于Cortex-M7内核，主频600MHz，具备强大的运算能力与丰富的外设资源。电源方案采用SCT2450 DC-DC与RT9013 LDO两级架构，兼顾供电效率与电源纯净度。电机驱动分为有刷与无刷两类：有刷驱动板基于DRV8701配合外部N沟道MOSFET，可扩展至数十安培电流，满足大功率有刷电机驱动需求；无刷驱动板采用STC32G12K128制作，支持无感FOC控制，满足无刷电机实时换相需求。整机电源拓扑合理分配电池电能，配合过流、过压、反接等保护措施，保障系统长时间运行的可靠性与安全性。
+1.1.3 下位机控制
+以RT1064为核心，驱动四个麦克纳姆轮电机实现全向运动，通过四路正交编码器实现转速闭环，通过IMU660RB六轴陀螺仪解算航向角实现角度闭环，并通过串口与OpenART视觉模块通信获取目标位置偏差与地图数据，构成最外层的视觉位置闭环。软件采用“前台+后台+中断”的经典结构：前台主循环以10ms为周期负责按键扫描、屏幕显示与路径求解调度；PIT定时器以5ms周期触发中断，集中完成编码器采集、陀螺仪解算及三层PID运动控制；各类串口中断负责视觉数据、无线调参指令和扫描标签的实时接收。运动控制采用“速度环+角度环+位置环”三层串级PID结构，通过麦克纳姆轮运动学将位置环输出的X、Y轴偏差合成为四轮转速。路径规划方面，系统接收地图数据后调用推箱求解引擎，在12×16栅格地图上规划推箱动作序列，支持炸弹炸墙开路与字母标签配对等竞赛扩展机制，求解得到的路线经串口下发至视觉层执行闭环导航。
+1.1.4 视觉感知
+系统采用双Openart Plus架构分工协作。子系统一搭载负责地图识别与视觉导航，通过LAB颜色空间检测赛道外框，采用连续稳定判据锁定地图区域并划分为12×16网格，识别墙壁、箱子、炸弹、目标点等元素，设计扫描前稳定等待机制消除画面延迟影响；车辆定位通过红蓝色块识别与自适应卡尔曼滤波实现，定位精度约3像素；路径跟踪采用基于像素偏差的视觉伺服控制器，配合“区域进入-精确稳定”两级到达判据和差异化策略（扫描点严格、普通点宽松），平衡精度与效率。子系统二搭载前向摄像头，独立负责卡通数字卡片识别，使用NXP eIQ工具训练MobileNet_v2分类模型（20类，验证准确率96%），以int8量化TFLite格式部署至Openart Plus，推理耗时80ms，采用置信度阈值与投票滤波机制将有效识别率提升至98%。
+1.1.5 系统工作流程
+上电后视觉模块识别赛道外框并锁定地图区域，车辆导航至初始目标点，稳定等待后扫描地图并发送给下位机；下位机接收地图后调用推箱求解引擎生成路径序列，通过串口下发至视觉层；视觉层解析路径点并执行视觉伺服控制，依次跟踪各路径点，遇到扫描指令时控制车模旋转至目标角度完成扫描；完成一个关卡后车辆返回结束点并发送复位信号，进入下一关卡循环，共完成三个关卡后任务结束。整个系统通过双OpenART并行工作、三层PID运动控制、推箱求解引擎与多状态机架构的紧密配合，实现了从环境感知、任务决策到运动执行、机械增稳的全链路闭环，在竞赛场景下展现出良好的稳定性与任务完成效率。
+
+第二章 机械结构设计
+麦克纳姆轮车模的核心优势是全向移动：无需转向机构即可实现前后、左右平移、斜向移动和原地自转，运动极其灵活。对人工智能视觉组而言，这正好契合任务需求——识别目标后可直接横向或原地微调姿态对准，便于抓取、投放和精准停车；同时路径规划更简单，避障、绕行更机动。相比 Y 车模、来福轮等传统差速或转向车模，麦轮虽在负载和越障上略弱，但换来的是高机动性与定位精度，视觉组场地平整、任务偏重识别与操作，麦轮的灵活性优势更突出。
+2.1 视觉模块及屏幕安装结构设计
+遮光罩内部设计了环形凹槽结构，槽内嵌入圆形磁铁，通过磁力吸附将共享屏幕牢牢固定，既保证了屏幕安装的稳固性，又实现了免螺丝、可快速拆装的便捷性，便于比赛现场调试与更换。同时，两块 OPENART视觉模块采用并排放置的方式，通过碳素杆进行刚性固定，使其正对整块屏幕，形成完整、无遮挡的成像视野，保证对屏幕全区域目标的同时采集与识别。遮光片则环绕在镜头与屏幕周围，形成相对封闭的暗箱环境，有效屏蔽外界杂散光和屏幕反光的干扰，显著提升视觉识别在复杂光照条件下的稳定性和鲁棒性，确保识别结果的一致性与可靠性。
+图2.1 遮光罩
+2.2 负压结构设计
+为提升小车运动控制的精确性与速度，我们在原有车模的基础上独立设计了一套负压增稳机构。该机构通过高速电机驱动桨叶向下排风，在车底形成负压区，为车体额外提供下压力，从而增强车轮与地面间的附着力。这一设计使小车在急停、急起、高速过弯及循迹变向时，能够有效抑制打滑、侧倾与漂移现象，显著缩短加减速响应时间、提高转向的精准度，最终在保证高速行驶的同时，实现更稳定、更精准的运动控制，为视觉组复杂任务的可靠完成提供坚实的底盘基础。
+图2.2 车模前视图
+图2.3 车模俯视图
+2.3 底盘加固设计
+针对车模原装底盘负载能力偏小、承载重物后中间易下凹变形等问题，我们特制了碳纤维加强板对车模进行整体加固。该加强板采用高模量碳纤维板材定制加工，贴合车模底盘结构，覆盖承重与受力集中区域，显著提升底盘的抗弯刚度与承载能力，有效消除中间下凹现象，保证车体在搭载负压机构、视觉模块及电池等设备后的平整性与结构稳定性。同时，碳纤维材料密度低、强度高，在增强结构刚性的同时几乎不增加整车重量，避免了对运动灵活性和加速性能的影响，使车模在满载状态下仍能保持良好的底盘几何精度与稳定的行驶姿态。
+图2.4车模底板
+第三章 电路硬件设计
+小车硬件系统的设计重点在于以电源拓扑、稳压滤波、电机驱动及相关保护电路为核心。具体而言，电源拓扑负责合理分配电池电能，为不同电压等级的负载提供稳定供电；稳压滤波环节则通过稳压芯片与滤波电容的组合，抑制电源纹波与高频干扰，确保各模块工作在干净、稳定的电源环境下；电机驱动电路作为动力核心，需满足大电流、快速响应的控制需求；此外，还配套设计了过流、过压、反接等保护措施，全面提升系统在长时间运行下的可靠性与安全性
+3.1 RT1064主板
+主板采用高集成度设计，将主控、电源、电机驱动及各类外设接口集成于一体，具有多外设、通用性强的特点，便于功能扩展与后期调试维护。主控选用 NXP 的 RT1064 高性能跨界处理器，其基于 Cortex-M7 内核，主频高、运算能力强，并内置大容量 Flash与丰富的通信外设，能够满足视觉图像处理、运动控制及多传感器数据融合的实时性需求。
+电源方案采用 SCT2450 与 RT9013 两级架构：SCT2450 作为 DC-DC降压芯片，将电池电压高效转换为稳定的中间电压，具备大电流输出能力与较高转换效率，适合为电机驱动及大功率负载供电；RT9013作为 LDO 线性稳压器，负责将电压进一步稳压至主控及模拟电路所需的低纹波电压，其噪声低、稳定性好，可有效保障 RT1064及传感器的供电质量。二者配合，兼顾了供电效率与电源纯净度，为整机稳定运行奠定了坚实基础。
+图3.1 主板
+
+
+图3.2 RT1064拓展板原理图
+3.2 有刷驱动板
+DRV8701，配合外部 N 沟道 MOSFET，可轻松扩展至数十安培电流，满足大功率有刷电机的驱动需求。内置集成电流检测放大器，完备的保护机制，外围电路简单，便于高集成度主板设计。
+图3.3 有刷驱动板
+
+
+
+
+图3.4 DRV8701电机驱动
+3.3 无刷驱动板
+采用 STC32G12K128 制作无刷电调，凭借其 C251 内核的 32 位高性能与高速运算能力，可满足无刷电机实时换相与 FOC算法的需求；内置多路高级 PWM 与比较器，便于实现三相桥驱动及反电动势过零检测，适合无感换相方案；同时拥有 128KB大容量 Flash、充足 RAM，且国产芯片成本低、兼容 Keil 开发环境，兼顾性能、可靠性与开发便利性。
+图3.5 无刷驱动板正面
+图3.6 无刷驱动板反面
+图3.7STC32G12K128无刷电调
+
+
+
+
+
+
+第四章 上位机核心控制算法与软件设计
+4.1 子系统一：视觉导航与地图规划
+该子系统以Openart Plus为主控，负责赛道环境感知与路径导航。
+4.1.1 系统软件架构
+系统软件采用多状态机模型作为顶层架构，以60Hz的帧率循环执行图像采集与处理、状态机任务调度、控制指令输出三大任务。
+系统定义了以下核心运行状态：等待到达初始目标点、扫描前稳定等待、发送地图、等待路径指令、路径导航（含扫描动作）、等待第二段路径、第二段导航（无扫描）、返回结束目标点、等待复位确认、全部完成。状态机在主循环每一帧中执行当前状态对应的处理逻辑，状态转移条件满足时切换至下一状态，将复杂的多关卡任务拆解为独立的状态处理单元。系统通过关卡计数变量管理一至三关的循环流程，每关完成后发送复位信号，重置运行时状态但保留已稳定的地图网格数据，实现关卡的快速衔接。
+串口通信采用自定义协议，包括位置控制指令Dx{dx}y{dy}E、旋转指令A{angle}E、地图数据M{level}m{row}E、扫描确认BidE、复位信号RST!E。系统在主循环帧首尾均进行非阻塞串口读取，并对原始数据实时过滤，移除自发自收指令，确保路径解析的准确性。
+4.1.2 视觉感知与地图构建
+地图区域识别：系统通过识别赛道外框的LAB颜色阈值来定位地图区域。LAB空间将亮度与颜色分离，对光照变化具有较强鲁棒性。为避免单帧误检，采用连续稳定判据：仅当连续10帧检测到的外框ROI面积变化小于5%、位置变化小于5像素、且面积不小于35000像素²时，才锁定地图区域。锁定后不再更新，保证地图坐标系的全局一致性。
+网格划分：在地图ROI锁定后，系统将其划分为12行×16列的规则网格。每个格子的中心像素坐标由缩进后的ROI等分计算得出。为消除镜头畸变和透视偏差，系统集成了径向畸变校正、整体旋转校正（-0.5°）以及单点手动偏移补偿三项机制。
+地图元素识别：系统采用LAB颜色空间进行元素识别，对每个网格点取5×5邻域的LAB模式值进行判定。元素包括墙壁（#）、目标点（.）、箱子（$）、炸弹（*）、空区域（-）、车辆（@）。对于识别失败的未知格（?），采用8邻域众数修正法进行后处理，利用地图元素的空间连续性提升识别完整率。
+扫描前稳定等待：车辆到达初始目标点后，由于画面传输延迟，立即扫描地图会导致位置偏移。系统设计了扫描前稳定等待状态：在到达初始点后持续发送停车指令，等待30帧（0.5秒），待画面完全稳定后再执行地图扫描，有效保证了地图扫描精度。
+4.1.3 导航决策与运动控制
+路径解析与路径点生成：系统接收S{指令序列}E格式的路径指令，有效指令包括移动指令（U/D/L/R）和扫描指令（Q/A/W/Z）。路径点生成时，连续同方向的移动指令自动合并为一个路径点，大幅减少停车次数、提升导航流畅度。
+路径跟踪控制：系统采用基于像素坐标偏差的视觉伺服控制。每一帧计算车辆位置与目标路径点的像素偏差（Δx = u - x，Δy = v - y），直接通过串口发送给下位机驱动板。控制器利用图像与物理空间的近似线性映射关系，结构简洁、计算开销极低。为避免目标点附近振荡，对偏差乘以0.3的衰减系数。
+多级到达判定：系统采用"区域进入-精确稳定"两级判据：车辆进入目标点10像素半径区域后开始计数，仅当进入2像素精确半径且连续稳定达到要求帧数后才判定为"已到达"。其中扫描路径点采用严格标准，普通路径点采用宽松标准，平衡了精度与效率。
+扫描动作控制：当路径点对应Q/A/W/Z扫描指令时，系统发送相应旋转指令（W→0°、Q→90°、Z→180°、A→-90°）。旋转到位采用角度检测为主（角度差<15°且稳定3帧）、超时兜底为辅（120帧强制退出）的双重保障。旋转完成后发送BidE确认指令。同时，对最后一个扫描点前一步设置额外精度约束，确保关键扫描动作的定位精度。
+4.1.4 车辆定位与跟踪
+车辆定位通过识别车头和车尾色块实现，取两者中心连线的中点作为车辆位置，连线方向计算车头朝向角。为提高跟踪稳定性，对车头和车尾坐标分别应用自适应卡尔曼滤波器，根据运动速度动态调整过程噪声协方差Q（快速变化时Q=0.2提高响应，缓慢变化时Q=0.01增强平滑）。在导航状态下若连续180帧无法检测到车辆，自动发送停车指令防止失控。车辆像素坐标通过相对于ROI的偏移量除以格子尺寸转换为网格坐标，供路径决策使用。
+4.1.5 地图发送与数据交互
+地图数据以M{level}m{row}E格式发送，发送前将车辆位置标注为@。系统对串口数据实时过滤，移除Dx...y...E、A...E、BidE、RST!E等自发自收指令。路径提取支持超时自动完成（300ms无新字符）和S...E格式检测两种方式，在等待路径状态中紧密循环接收数据，防止缓冲区溢出。
+4.2 子系统二：目标卡片模型识别
+该子系统以另一块Openart Plus为核心，负责识别赛道上的卡通数字卡片。该子系统与导航子系统相互独立，通过串口接收触发指令并返回识别结果。
+4.2.1 硬件配置与工作流程
+该子系统独立运行于第二块Openart Plus开发板，专门拍摄模拟系统卡片区域。系统启动后进入等待状态，板载绿色LED点亮表示就绪。当通过串口接收到上位机下发的"id"指令时，触发一次识别流程，识别完成后自动停止并等待下一次触发。
+这一独立硬件设计的好处在于：卡片识别与地图导航互不干扰，两者可并行工作，避免单摄像头在地图和卡片之间切换视野的机械延迟和图像畸变问题。
+4.2.2 数据集构建
+数据集来源于竞赛赛道上的卡通数字卡片，共包含20个类别。每张卡片在多种条件下采集，包括不同光照强度（强光、正常、弱光）、不同拍摄角度（正对、倾斜约15°、倾斜约30°）以及不同距离（15cm、20cm、25cm），以增强模型泛化能力。每类卡片采集约250张图像，总计约5000张。数据集按8:2划分为训练集和验证集，确保类别分布均衡。数据集文件夹按eIQ工具要求的结构化目录格式组织，即主文件夹下包含train和test两个子文件夹，各自按类别名称建立子文件夹存放对应图像。
+4.2.3 开发工具与模型训练
+模型训练采用NXP eIQ Toolkit完成。该工具是专为嵌入式场景设计的端到端机器学习开发环境，提供图形化操作界面，集成了数据导入、数据增强、模型选择、训练、验证和导出等功能，能够有效简化模型开发流程。训练时，在eIQ Portal中创建分类项目，导入按结构化文件夹整理的卡通数字卡片数据集，选择Mobilenet_v2作为基础模型，该网络通过深度可分离卷积大幅减少参数量，适合嵌入式设备部署。模型输入尺寸设置为128×128×3，权重视为imagenet预训练权重，学习率配置为0.0001，共训练50个epoch。训练过程中实时记录Loss曲线和Accuracy曲线，用于监控模型收敛情况。
+训练完成后，在VALIDATE页面使用验证集对模型进行评估。最终模型以int8量化TFLite格式导出，模型大小约180KB，适配Openart Plus的存储和推理限制。
+4.2.4 核心算法与投票滤波机制
+系统上电后等待串口命令，收到"id"指令后触发识别流程。摄像头在固定ROI区域内采集图像，每两帧执行一次推理以降低计算负载。推理时，将ROI区域图像输入TFLite模型，输出20维置信度向量，取最大值对应类别作为单帧预测结果。
+为提高识别可靠性，设计了三重滤波机制：首先，单帧推理置信度需达到98%以上才纳入投票，低置信度结果直接丢弃；其次，同一类别连续两帧稳定输出后，才判定为有效识别；最后，识别完成后通过串口发送对应字符，并立即停止识别等待下一次触发。任意帧出现类别不一致或置信度下降，投票计数器自动清零重新累计。
+4.2.5 实验效果
+在标准光照条件下，单帧识别准确率约94%。经投票滤波后，连续两帧一致的有效识别率提升至约98%，误识别率降至2%以下。在逆光和阴影等复杂光照条件下，单帧准确率下降至约85%，滤波后仍可保持约92%的准确率。单次识别平均耗时约80ms（含图像预处理和推理），满足竞赛场景实时性要求。
+图4.1训练Loss曲线
+图4.1展示了训练过程中训练损失与验证损失随Epoch的变化趋势。经历了两次训练，蓝色线为训练损失，黄色点为验证损失。从曲线可以看出，模型收敛良好、未见明显过拟合。
+图4.2训练Accuracy曲线
+图4.2展示了训练过程中训练准确率与验证准确率随Epoch的变化趋势。验证准确率随训练轮次逐步上升并趋于稳定，最终验证准确率约96%，与训练准确率差距在2%以内，验证了模型具有良好的泛化能力。
+图4-3 模型验证混淆矩阵
+该混淆矩阵展示了模型在验证集上对各类别的识别效果。横轴为预测类别，纵轴为真实类别，对角线上的数值代表各类别被正确识别的比例。从矩阵可以看出，大部分类别的识别准确率较高。个别易混淆类别的误判情况通过投票滤波机制得到有效抑制。
+4.2.6 串口通信协议
+该子系统与下位机的串口通信协议如下：
+表4.1 串口通信协议
+
+识别流程为：上位机发送id，子系统开始识别；识别完成后自动发送结果字符并停止；上位机可再次发送id触发下一次识别。若需中途取消，可发送stop指令。
+
+第五章 下位机核心控制算法与软件设计
+5.1 微处理器选型
+系统选用 NXP i.MX RT1064（型号 RT1064DVL6A）作为主控芯片。该芯片基于 ARM Cortex-M7 内核，系统主频通过逐飞库的 clock_init(SYSTEM_CLOCK_600M) 配置为 600MHz，内部集成 4MB 片上 Flash，并可通过 FlexSPI 接口外接 NOR Flash，足以承载较大的程序固件。芯片外设资源十分丰富，能够同时满足多路 PWM 输出、多路正交解码、多路 UART 与 SPI 通信以及 PIT 定时中断的并行需求，非常适合作为本次智能车的多路传感器与多路执行器协同工作的运动控制核心。底层开发基于逐飞科技（SeekFree）发布的 RT1064 开源库 V3.11.1 版本，该库封装了 SDK 驱动层与常用外设的设备层，使软件开发减少了大量重复工作，能将更多精力投入到算法研发之中。
+5.2 开发工具
+本项目的开发环境为 Keil MDK 5 集成开发环境，采用 ARM Compiler V6 编译器进行编译。底层依赖逐飞科技的 RT1064 开源库，其内部按层次划分为 NXP 官方 SDK、zf_driver 驱动层与 zf_device 设备层，为 GPIO、PWM、UART、SPI、PIT、正交解码、屏幕、按键、IMU 等外设提供了统一的接口。在调试手段上，系统同时使用了 UART1 调试串口（115200bps）打印运行信息、IPS200 屏幕实时显示各类状态量、以及 UART8 无线串口把编码器速度、PID 输出等数据回传到上位机，再配合虚拟示波器绘制响应曲线；同时借助无线串口实现了 PID 参数的在线调参，避免了反复下载烧录，显著提高了调试效率。
+5.3 传感器种类及个数
+表5.1 传感器种类及个数
+
+除上述外设外，系统还通过 UART1（B12/B13）作为调试串口以及车载无刷电调，但由于实际运行效果较好，因此未开启无刷电机。第二个 OpenART 视觉模块经 UART5（C28/C29）与主控相连，在扫描求解模式下负责扫描地图上的字母标签并返回给下位机，供求解引擎使用。
+5.4 软件总体架构
+5.4.1 模块划分
+工程代码整体分为用户层与功能模块层两大部分，底层逐飞库位于 libraries 目录且未做修改。用户层包含程序入口 user/src/main.c 与中断服务 user/src/isr.c，其中 main.c 负责系统初始化与 10ms 主循环，isr.c 集中实现了 PIT 定时中断、各 UART 中断以及 GPIO 中断的服务函数。功能模块层位于 code 目录，按职责划分为若干相互独立的模块：Sys.c 负责外设初始化的统一编排；Task.c 负责按键控制、视觉导航与发车流程等任务调度；Motor.c 与 Encoder.c 分别完成四路直流电机的 PWM 方向控制与四路编码器的采集滤波和运动学速度分配；PID.c 实现了六组 PID 控制器，覆盖速度环、角度环与位置环三个层次；Gyro.c 与 Mahony.c 分别负责 IMU660RB 的驱动、零偏校准、角速度积分求角度，以及 Mahony 互补滤波的姿态解算；Wireless.c 实现无线串口 PID 在线调参协议；Key.c、LCD.c、brushless.c 分别处理按键、屏幕显示与负压风扇驱动；OpenART.c 负责与视觉模块的 UART4 通信及协议解析；MapPlan.c 作为地图接收与求解引擎之间的桥接模块。
+5.4.2 系统运行流程
+系统上电后首先进入 System_Init() 完成一次性初始化，其顺序为：先把系统主时钟配置到 600MHz 并初始化 UART1 调试串口，随后依次初始化蜂鸣器与 LED 等 GPIO、IPS200 屏幕、按键、任务结构体与无线串口，再初始化 OpenART 的 UART4 通信，接着初始化六组 PID 参数、四路电机 PWM（17kHz）与四路编码器（正交解码模式），然后初始化 IMU660RB 陀螺仪——若初始化成功则直接套用预设的零偏值，否则通过蜂鸣器报警但不阻塞系统运行，最后初始化 PIT 定时器通道 0（5ms 周期）、地图规划模块并开启全局中断。
+初始化完成后，主程序进入无限主循环，以 10ms 为节拍依次执行按键扫描处理、屏幕状态刷新，并在检测到新地图到来时调用地图求解，最后延时 10ms 维持 100Hz 的循环频率。与此同时，PIT 中断每 5ms 触发一次，在中断服务中先读取四路编码器并滤波，再读取 IMU660RB 的加速度与角速度、完成物理量转换和角速度积分得到航向角，然后根据视觉闭环是否使能，分别执行发车流程（含与 OpenART 的"GO"握手与视觉导航）或直接执行角度环与速度环 PID。UART 中断则按通道各司其职：LPUART1 处理调试串口，LPUART4 接收 OpenART 发来的 D/A/B/M 消息，LPUART5 接收第二个 OpenART 扫描返回的标签，LPUART8 接收无线串口的 PID 调参命令。
+5.5 代码设计介绍
+系统初始化部分集中在 Sys.c 的 System_Init() 中，按"时钟、调试串口、GPIO、屏幕、按键、任务、无线、摄像头、PID、电机、编码器、陀螺仪、PIT、地图、中断使能"的顺序一次性配置所有外设，并对陀螺仪初始化失败做了蜂鸣报警但不阻塞运行的容错处理。任务调度部分由 Task.c 承担，其中 Task_CarControl() 实现"先转角度到位、再按目标速度行驶、最后执行角度环与速度环"的控制时序；Task_KeyControlCar() 在按键确认后按时间倒计时执行定时定角度的行走，用于手动调试；Task_OpenARTControl() 在角度锁定后执行视觉位置环；Task_CarGotoStart() 则完成发车流程——当视觉偏差趋于稳定（最近四次偏差全为零、当前偏差非零）时，通过 UART4 向 OpenART 发送一次 "GO" 指令启动视觉导航。
+Motor.c 完成四路电机的底层控制，17kHz 的 PWM 为正时方向引脚置高实现正转，为负时置低实现反转，为零时占空比清零实现停车；Encoder.c 在完成采集滤波之外，还提供了 Encoder_CarSpeedAndDirection_Set() 作为高层运动意图到四轮转速的运动学翻译层。PID.c 提供三类控制器——增量式速度环 PID_Inc()、位置式角度环 PID_Pos_Angle() 和位置式位置环 PID_Pos_Location_Single()，并对全部输出做了限幅处理，PID_Angle_Control() 负责差速转向、PID_MotorControl() 负责四轮速度环下发 PWM。OpenART.c 在 UART4 上以 FIFO 环形缓冲加帧尾 'E' 定界的字符串协议解析四类消息：D 消息（"Dx<值>y<值>E"）为坐标偏差并维护最近五次历史用于稳定判定且 Y 轴取反，A 消息（"A<角度>E"）直接设定目标航向角，B 消息（"BidE"）为扫描就绪通知并回发 "id"，M 消息（"M<模式><16字符>…E"）为 12×16 的地图数据、解析后交由地图模块触发求解。
+5.6 主要理论与算法
+5.6.1 麦克纳姆轮运动学
+小车采用四个独立的麦克纳姆轮驱动，每个轮子的辊子与轮轴成 45° 夹角，通过控制四个轮子转速的大小与方向组合，即可在不改变车身朝向的前提下实现平面内的任意方向平移，这是全向运动的基础。代码在 Encoder_CarSpeedAndDirection_Set() 中把"前进、后退、左移、右移"四种高层运动意图翻译为四轮的具体转速：前进时四轮同向正转，后退时四轮同向反转；左移时左前轮与右后轮正转、右前轮与左后轮反转，右移时则恰好相反。可以看出，前后运动时四个轮子方向一致，而左右平移时呈对角轮同向、另一对角轮反向的规律。在视觉位置环中，X 轴与 Y 轴的速度输出同样遵循这一合成规律，即左前轮与右后轮的速度等于 Y 轴输出加 X 轴输出，右前轮与左后轮的速度等于 Y 轴输出减 X 轴输出，从而让位置环的纵向与横向修正叠加成一条对角线运动，使小车能够直接斜向逼近目标点。
+void Encoder_CarSpeedAndDirection_Set(int16 Speed, uint8 Direction)
+{
+    switch (Direction)
+    {
+    case CarDirection_Front:                 /* 前进: 四轮同向正转 */
+        Encoder_LeftFront.TargetSpeed = Speed;   Encoder_LeftFront.BasicSpeed = Speed;
+        Encoder_RightFront.TargetSpeed = Speed;  Encoder_RightFront.BasicSpeed = Speed;
+        Encoder_LeftRear.TargetSpeed = Speed;    Encoder_LeftRear.BasicSpeed = Speed;
+        Encoder_RightRear.TargetSpeed = Speed;   Encoder_RightRear.BasicSpeed = Speed;
+        break;
+ 
+    case CarDirection_Left:                  /* 左移: 对角轮正转, 另一对角反转 */
+        Encoder_LeftFront.TargetSpeed = Speed;    Encoder_LeftFront.BasicSpeed = Speed;
+        Encoder_RightFront.TargetSpeed = -Speed;  Encoder_RightFront.BasicSpeed = -Speed;
+        Encoder_LeftRear.TargetSpeed = -Speed;    Encoder_LeftRear.BasicSpeed = -Speed;
+        Encoder_RightRear.TargetSpeed = Speed;    Encoder_RightRear.BasicSpeed = Speed;
+        break;
+ 
+    /* 右移、后退、停止等其余分支略 */
+    }
+}
+5.6.2 PID 控制算法（三层闭环）
+系统的运动控制采用"位置环 → 角度环 → 速度环"三层串级结构，最终都落实到四个轮子的转速上。
+速度环是最内层，采用增量式 PID。它以编码器实测转速与目标转速之差作为误差，对每个轮子独立计算 PWM 增量。增量式 PID 的递推公式为 Δu(k) = Kp·[e(k) − e(k−1)] + Ki·e(k) + Kd·[e(k) − 2e(k−1) + e(k−2)]，输出为 u(k) = u(k−1) + Δu(k)。增量式算法输出的是控制量的变化量而非控制量本身，因此对积分饱和不敏感，也不会在参数切换时产生控制量突变，非常适合电机调速。四个轮子的速度环参数统一为 Kp=18.0、Ki=5.7、Kd=8.0，输出限幅为 ±3000，防止 PWM 占空比超出合理范围。
+int16 PID_Inc(Encoder_t *e, PID_t *p)
+{
+    p->Error[0] = e->TargetSpeed - e->MotorSpeed;    /* 误差 = 目标速度 - 实际速度 */
+ 
+    /* 增量式 PID 三项 */
+    p->P_Out = p->Kp * (p->Error[0] - p->Error[1]);                    /* 比例: Kp×误差变化 */
+    p->I_Out = p->Ki * p->Error[0];                                    /* 积分: Ki×当前误差 */
+    p->D_Out = p->Kd * (p->Error[0] - 2*p->Error[1] + p->Error[2]);    /* 微分: Kd×误差加速度 */
+ 
+    p->Error[2] = p->Error[1];                        /* 移位: 上上次 ← 上一次 */
+    p->Error[1] = p->Error[0];                        /* 移位: 上一次 ← 当前 */
+ 
+    p->PID_Out += p->P_Out + p->I_Out + p->D_Out;     /* 累加增量: u(k) = u(k-1) + Δu */
+ 
+    if (p->PID_Out >  p->Limit) p->PID_Out =  p->Limit;   /* 输出限幅 */
+    if (p->PID_Out < -p->Limit) p->PID_Out = -p->Limit;
+ 
+    return (int16)p->PID_Out;                         /* 返回 PWM 值 */
+}
+角度环是中间层，采用位置式 PID。它以陀螺仪航向角与目标航向角之差作为输入，输出一个差速修正量 Gyro_Amend，并将其叠加到左右两侧车轮的基础速度上——左侧车轮减该修正量、右侧车轮加该修正量，利用左右轮的速度差实现原地转向。由于角度是一个周期性量，代码先把角度偏差归一化到 [−180°, 180°] 区间，避免出现"绕远路"式的错误转向。角度环参数为 Kp=2.65、Ki=0.0、Kd=1.0，修正量限幅为 ±30；当修正量为零时判定角度已锁定（置位 Angle_LockOK_Flag），为外层的视觉位置环提供"方向已经对准"的先决条件。
+int16 PID_Pos_Angle(Gyro_t *g, PID_t *p)
+{
+    p->Error[0] = g->Angle_Z_Target - g->Angle_Z;      /* 偏差 = 目标角度 - 当前角度 */
+ 
+    /* 角度偏差归一化到 [-180, 180]，避免绕远路转向 */
+    while (p->Error[0] >  180.0f) p->Error[0] -= 360.0f;
+    while (p->Error[0] < -180.0f) p->Error[0] += 360.0f;
+ 
+    p->P_Out = p->Kp * p->Error[0];
+    p->I_Out += p->Ki * p->Error[0];
+    p->D_Out = p->Kd * (p->Error[0] - p->Error[1]);    /* 微分项抑制振荡 */
+ 
+    p->PID_Out = p->P_Out + p->I_Out + p->D_Out;
+ 
+    p->Error[2] = p->Error[1];
+    p->Error[1] = p->Error[0];
+    return p->PID_Out;                                 /* 返回差速修正量 */
+}
+位置环是最外层，采用位置式 PID，构成视觉闭环。它以 OpenART 传来的 X、Y 两个方向的目标偏差为输入，分别对两轴独立做位置式 PID，再将两轴的输出通过麦克纳姆轮运动学合成为四轮速度。位置环参数为 Kp=1.3、Ki=0.0、Kd=1.04，输出限幅为 ±50，积分项限幅为 ±8，以避免积分累积造成过冲。当 X、Y 偏差同时为零时，视觉模块认为目标已经到达，位置环随即复位并停车。
+void PID_Pos_Location_Single(int16 deviation, PID_t *p)
+{
+    p->Error[0] = deviation;
+ 
+    p->P_Out = p->Kp * p->Error[0];
+    p->I_Out += p->Ki * p->Error[0];
+    p->D_Out = p->Kd * (p->Error[0] - p->Error[1]);
+ 
+    if (p->I_Out >  8) p->I_Out =  8;                  /* 积分限幅 */
+    if (p->I_Out < -8) p->I_Out = -8;
+ 
+    p->PID_Out = p->P_Out + p->I_Out + p->D_Out;
+ 
+    p->Error[2] = p->Error[1];
+    p->Error[1] = p->Error[0];
+ 
+    if (p->PID_Out >  50) p->PID_Out =  50;            /* 输出限幅 */
+    if (p->PID_Out < -50) p->PID_Out = -50;
+}
+5.6.3 编码器测速与双重滤波
+四个轮子各配有一个正交编码器，工作在正交解码模式下，PIT 中断每 5ms 读取一次增量脉冲计数并在读取后清零，从而得到该时间段内的转速。由于电机振动、齿轮间隙和电磁干扰会给原始脉冲引入噪声，代码对编码器数据做了两级滤波：先做一阶低通滤波，公式为 out = α·新值 + (1−α)·旧值，α 取 0.8 以在响应速度与平滑度之间取得平衡；再做五点加权移动平均，权重分别为 0.5、0.5、2.0、3.0、4.0（除以 10 归一化），越新的数据权重越大；移动平均的结果最后再经过一次 α=0.7 的低通滤波。最终 PID 实际采用第一步低通的结果，因为它响应更快，而加权平均结果则作为备选的更平滑数据保留。这种双重滤波在抑制噪声的同时尽量不损失速度信号的动态特性，保证了速度环的稳定。
+/* 一阶低通滤波: output = α·新值 + (1-α)·旧值 */
+float Encoder_LowPassFilter(float LastData, float NewData, float Alpha)
+{
+    return (Alpha * NewData + (1.0f - Alpha) * LastData);
+}
+ 
+/* 5 点加权移动平均: (最新×4 + 次新×3 + 中间×2 + 次旧×0.5 + 最旧×0.5) / 10 */
+Encoder_LeftFront.WeightedAvg[0] = (Encoder_LeftFront_Data[4] * 0.5f +
+                                    Encoder_LeftFront_Data[3] * 0.5f +
+                                    Encoder_LeftFront_Data[2] * 2.0f +
+                                    Encoder_LeftFront_Data[1] * 3.0f +
+                                    Encoder_LeftFront_Data[0] * 4.0f) / 10.0f;
+5.6.4 陀螺仪航向角解算
+航向角是角度环与坐标旋转的基准，由 IMU660RB 的 Z 轴角速度积分得到。陀螺仪在静止时输出并非严格为零，因此必须先做零偏校准：工程在开机时通过采集 1000 次静止角速度取平均得到零偏；为节省调试时间，当前代码直接使用预设的零偏值（X=0.182、Y=9.668、Z=0.313）。原始角速度数据乘以灵敏度系数（±250dps 量程下为 0.07 dps/LSB，并再乘一个标定修正系数 GYRO_SCALE_CORRECT）换算成以度/秒为单位的物理量，然后以 5ms 为积分周期累加：Angle += ω × 0.005。为抑制静止状态下的微小漂移，代码设置了死区——当角速度绝对值小于 1°/s 时强制置零；积分得到的角度最后归一化到 [−180°, 180°] 区间，保证角度始终可用。此外，PIT 中断中还会周期性地对零点漂移做秒级微调修正，进一步抑制长时间运行下积分角度的缓慢漂移。
+void Gyro_AngularVelocity_To_Angle(void)
+{
+    if (abs(Gyro.Gyro_Z) < 1.0f)             /* 死区: 角速度太小, 强制为 0 */
+        Gyro.Gyro_Z = 0.0f;
+ 
+    Gyro.Gyro_Z_Integral += Gyro.Gyro_Z * 0.005f;   /* 角速度积分: ω × dt, dt=5ms */
+ 
+    Gyro.Angle_Z = Gyro_Angle_Normalize_180(Gyro.Gyro_Z_Integral);  /* 归一化到 [-180,180] */
+}
+5.6.5 Mahony 互补滤波姿态解算
+除直接对角速度积分外，工程还内置了 Mahony AHRS 姿态解算算法，以四元数形式融合加速度计与陀螺仪的数据。其核心思想是：陀螺仪短时精度高但长时间积分会漂移，加速度计长期稳定但容易受运动加速度干扰，二者互补即可得到更稳健的姿态。算法先对加速度计向量做归一化，估计出当前姿态下的重力方向，再与实测重力方向做叉乘得到姿态误差；用该误差对陀螺仪角速度进行比例修正后更新四元数，最后对四元数归一化，并通过 getYawFromQuaternion() 提取航向角。本工程特别使用了自适应增益：根据加速度计模长偏离 1g 的程度动态调整 Kp——当小车静止、加速度接近纯重力时信任度高、采用较大 Kp 以快速收敛；当剧烈运动、加速度模长明显偏离 1g 时减小 Kp，避免把运动加速度误当作姿态误差，从而降低陀螺仪漂移的影响。
+float acc_norm = sqrtf(ax*ax + ay*ay + az*az);
+float deviation = fabsf(acc_norm - 1.0f);     /* 静止时加速度模长 = 1.0g */
+float trust = 1.0f - deviation / DEV_THRESH;
+if (trust < 0.0f) trust = 0.0f;
+if (trust > 1.0f) trust = 1.0f;
+float Kp_current = KP_MIN + (KP_MAX - KP_MIN) * trust;   /* 自适应 Kp */
+ 
+recipNorm = 1.0f / acc_norm;                  /* 归一化加速度计 */
+ax *= recipNorm;  ay *= recipNorm;  az *= recipNorm;
+ 
+halfvx = q.q1 * q.q3 - q.q0 * q.q2;           /* 由四元数估计重力方向 */
+halfvy = q.q0 * q.q1 + q.q2 * q.q3;
+halfvz = q.q0 * q.q0 - 0.5f + q.q3 * q.q3;
+ 
+halfex = (ay * halfvz - az * halfvy);         /* 叉乘得到姿态误差 */
+halfey = (az * halfvx - ax * halfvz);
+halfez = (ax * halfvy - ay * halfvx);
+ 
+gx += Kp_current * halfex;                    /* 用误差比例修正角速度 */
+gy += Kp_current * halfey;
+gz += Kp_current * halfez;
+5.6.6 坐标旋转（世界坐标 → 车体坐标）
+视觉模块采集固定于天花板的摄像头返回的地图，其给出的 X、Y 偏差定义在世界坐标系中；而驱动机轮所需的却是车体坐标系下的量。当车身存在偏航角 θ 时，二者并不重合，若直接用世界偏差驱动车轮会导致修正方向错误。为此，代码在 PID_Location_Control() 中通过旋转矩阵把世界坐标偏差转换到车体坐标系：x_body = x_world·cosθ − y_world·sinθ，y_body = x_world·sinθ + y_world·cosθ。经过这一变换后，无论车身当前朝向如何，位置环都能沿着正确的车体方向进行修正，从而实现了真正意义上的全向视觉闭环。
+const float kDegToRad = 0.01745329252f;
+float theta_rad = Gyro.Angle_Z * kDegToRad;
+float cos_theta = cosf(theta_rad);
+float sin_theta = sinf(theta_rad);
+float x_world = (float)OpenARTA.X_Deviation;
+float y_world = (float)OpenARTA.Y_Deviation;
+ 
+/* 旋转矩阵: 世界坐标 → 车体坐标 */
+float x_body = (x_world * cos_theta) - (y_world * sin_theta);
+float y_body = (x_world * sin_theta) + (y_world * cos_theta);
+5.6.7 无线串口 PID 调参协议
+为了便于现场快速整定 PID 参数，系统通过 UART8 无线串口自定义了一套文本调参协议。单轮调参时，上位机发送形如 "STA LF P18.0 I5.7 D8.0 G40 END" 的命令，即可把左前轮的 Kp/Ki/Kd 设为 18.0/5.7/8.0 并设定目标速度 40；四轮批量调参则分两帧发送，第一帧 "STA ALL1 LF P… RF P… G… END" 设置前两轮与目标速度，第二帧 "STA ALL2 LR P… RR P… M… END" 设置后两轮与测试时长，两帧都收到后才统一生效。下位机解析命令后更新对应 PID 结构体，并进入一个状态机测试模式：先等待电机稳定，再记录零速基线数据，随后施加目标速度并持续把实际速度回传（格式为 "channel_data:速度1,速度2,速度3,速度4"），供上位机绘制速度阶跃响应曲线，测试结束后自动停车复位。这套机制使得参数整定可以完全脱离烧录环节，大幅缩短了调参周期。
+5.6.8 路径规划算法
+路径规划是系统收到地图后"上层决策"的核心，负责在 12×16 的栅格地图上规划出一条"把全部箱子推到目标点"的动作序列，必要时借助炸弹炸墙开路。算法本质上是求解推箱子（Sokoban）问题，并针对"炸弹炸墙""字母标签配对"两类竞赛扩展做了专门处理。整体采用"分层求解"架构：上层负责任务级决策——决定哪个箱子推到哪个目标点、是否以及如何使用炸弹；下层负责动作级规划——给定"从一个位置把一个箱子/炸弹推到另一个位置"的子任务，用 A搜索规划出一条最短且转弯最少的路线。核心代码位于 `solver.c`（组合搜索与炸弹递归）、`pb_core.c`（A 寻路与炸弹评估）、pb_scanner.c（扫描模式）与 MapPlan.c（串口桥接）中。
+地图由 OpenART 经 UART4 以 M 消息下发，pb_parse_map() 把每个字符翻译为内部状态：# 为墙、- 为空地、$ 为箱子、. 为目标点、* 为炸弹、@ 为玩家，合法输入要求箱子数与目标点数相等且均大于 0。
+/* 地图符号解析：每个字符对应一种内部状态 */
+switch (symbol) {
+    case '#': ctx->blocks[row][col] = 1; break;                                  /* 墙 */
+    case '$': ctx->start_crates[ctx->crate_cnt++] = (GridCoord){col, row}; break; /* 箱子 */
+    case '.': ctx->start_trgs[ctx->trg_cnt++]   = (GridCoord){col, row}; break;   /* 目标点 */
+    case '*': ctx->start_bombs[ctx->bomb_cnt++] = (GridCoord){col, row}; break;   /* 炸弹 */
+    case '@': ctx->start_hero = (GridCoord){col, row}; break;                     /* 玩家 */
+}
+下层核心是 route_object()，解决"把单个箱子/炸弹从起点推到终点"的子问题。它把"玩家位置 + 物体位置"二元组作为状态（因为物体被推后会改变位置），用二叉最小堆维护开放表，按 f = g + h 弹出最优节点。扩展时区分"空走"与"推物体"两种动作：玩家走到物体所在格即为推动，需继续检查物体前进方向是否有障碍。
+/* A* 核心：扩展四个方向，区分空走与推物体 */
+for (int v = 0; v < 4; v++) {
+    MoveVector mv = PB_VECS[v];
+    int nh_col = (int)top->hero.col + mv.d_col, nh_row = (int)top->hero.row + mv.d_row;
+    if (nh_row < 0 || nh_row >= GRID_MAX_H || nh_col < 0 || nh_col >= GRID_MAX_W) continue;
+    if (env_mask[nh_row][nh_col]) continue;                                /* 撞墙跳过 */
+ 
+    GridCoord next_hero = {nh_col, nh_row}, next_obj = top->crate;
+    if (nh_col == top->crate.col && nh_row == top->crate.row) {            /* 推向物体 */
+        int no_col = (int)top->crate.col + mv.d_col, no_row = (int)top->crate.row + mv.d_row;
+        if (no_row < 0 || no_row >= GRID_MAX_H || no_col < 0 || no_col >= GRID_MAX_W) continue;
+        if (env_mask[no_row][no_col]) continue;                            /* 物体被挡住 */
+        if (prune_dead_corners && is_dead_corner(env_mask, no_col, no_row, goal)) continue; /* 死区剪枝 */
+        next_obj = (GridCoord){no_col, no_row};                            /* 物体前移一格 */
+    }
+    if (check_visited(ws, next_hero, next_obj)) continue;                  /* 状态去重 */
+    mark_visited(ws, next_hero, next_obj);
+    /* 计算 g/h/f，插入开放表 */
+}
+启发式取物体到目标的曼哈顿距离，再叠加"玩家距物体距离减 1"这一接近补偿，并乘以 5/4 权重构成加权 A*，以牺牲少量理论最优性换取显著更快的搜索速度。代价函数上，单步移动代价为 64、一次转弯附加代价 20，使总长相近的多条路线中优先选择转弯更少的一条，从而生成对麦克纳姆轮小车更友好的平滑轨迹。此外，is_dead_corner() 会识别"上下有墙且左右有墙"的角落并在推动时剪枝，避免箱子被推入死角后无法再移出。
+上层需回答"哪个箱子推到哪个目标点"的组合问题。箱子数较少时用带置换表与下界剪枝的 DFS（dfs_boxes()）穷举配对；箱子数较多时改用宽度为 3 的宏束搜索（pb_execute_macro_beam_search()），逐箱子扩展并保留评分最优的前 3 个状态。为尽早剪枝，remaining_assignment_lower_bound() 用位掩码 DP 求剩余箱子到剩余目标的最小曼哈顿距离和，作为真实推动代价的可采纳下界：
+/* DP 求剩余箱子到剩余目标的最小曼哈顿距离和（可采纳下界） */
+for (int mask = 0; mask < (1 << remaining); mask++) {
+    if (dp[mask] == NONE) continue;
+    int crate_index = /* mask 中已用箱子数 */;
+    for (int t = 0; t < remaining; t++) {
+        if (mask & (1 << t)) continue;
+        uint16_t cand = dp[mask] + pb_manhattan(crates[crate_index], targets[t]);
+        if (cand < dp[mask | (1 << t)]) dp[mask | (1 << t)] = cand;
+    }
+}
+当墙体阻隔导致直接求解失败时，进入 pb_bomb_deep_search() 递归搜索。它先由 evaluate_wall() 对每个"炸弹—墙体"组合打分（综合墙到炸弹/目标/箱子的距离、四周开放度与阻挡数），选出排名靠前的候选墙，再用 pb_route_bomb_to_wall() 规划推炸弹路线，复制状态后执行 pb_trigger_explosion() 炸开 3×3 墙体、移除炸弹，随后在新地图上递归求解。
+/* 3x3 爆炸：清除以 (c,r) 为中心的邻域墙体 */
+void pb_trigger_explosion(uint8_t env[GRID_MAX_H][GRID_MAX_W], int c, int r) {
+    for (int dr = -1; dr <= 1; dr++)
+        for (int dc = -1; dc <= 1; dc++) {
+            int nr = r + dr, nc = c + dc;
+            if (nr > 0 && nr < GRID_MAX_H - 1 && nc > 0 && nc < GRID_MAX_W - 1)
+                env[nr][nc] = 0;                                          /* 墙体被炸开 */
+        }
+}
+在"可推八个箱子"版本中，箱子与目标点带字母标签（a–j），箱子必须推到字母匹配的目标点上。pb_execute_scan_mode() 先贪心地规划一条"边走边扫"的路线——反复选择离玩家最近、尚未扫描的箱子或目标点，走到其相邻格完成一次扫描；执行时逐个阻塞等待字母标签输入，再利用标签一一对应的性质推断最后一对，最后在"箱子只能推往同字母目标"的约束下用 execute_paired_push_search() 完成配对搜索。为保证下位机实时有界，整套搜索内置了确定性节点预算：求解前设定节点数上限（直接求解默认 800 万），每生成一个节点、每访问一个状态都计数，耗尽即提前返回并标记为预算耗尽；机制不依赖墙钟时间，配合节点池 16000、开放表 4096 的静态内存池，实现了"求解时间可预测、内存有上界"。求解得到的路线最终经 MapPlan_OutputRouteCallback() 把 MoveVector 转成 R/L/U/D（移动）与 Q/A/W/Z（扫描）字符，通过 UART4 下发给视觉控制层，由 7.1 节的运动学模块翻译为四轮转速执行。
+5.7 制作、安装与调试过程说明
+在制作与安装阶段，首先依据逐飞官方开源库的推荐引脚分配表规划所有外设引脚，使电机 PWM 与编码器正交解码使用独立的定时器通道以避免资源冲突；随后装配四个麦克纳姆轮电机，并逐一根据实际接线在 Motor.c 中校准各轮方向引脚的极性；IMU660RB 陀螺仪安装于车体重心附近并使 Z 轴对准车身竖直方向；OpenART 视觉模块固定在合适高度后通过 UART4 与主控连接；负压风扇与无刷电调接至对应的 PWM 输出口。
+调试阶段采取自底向上的策略。首先逐项验证底层驱动，LED、蜂鸣器、按键、四路电机 PWM、四路编码器正交解码、无线串口与陀螺仪均已实现并在 System_Init() 中完成初始化，此时可通过按键控制小车前后左右行走以及 90°、−90°、180°、−180° 转向，用于初步验证驱动与接线。接着整定 PID 参数，速度环最终确定为 Kp=18.0、Ki=5.7、Kd=8.0（四轮一致），角度环为 Kp=2.65、Kd=1.0，位置环为 Kp=1.3、Kd=1.04，并对各环分别加入输出限幅（速度环 ±3000、角度环 ±30、位置环 ±50）和位置环积分 ±8 限幅，以防超调与打滑。系统联调阶段主要解决了三个问题：修正了视觉偏差坐标系旋转矩阵的符号错误；采用"低通加加权移动平均"的双重滤波抑制编码器噪声；为陀螺仪角速度设置死区、将角度归一化到 [−180°, 180°] 并在中断中按秒修正零点漂移，抑制积分角度的长期漂移。
+
+第六章 总结
+本作品针对第二十一届全国大学生智能汽车竞赛“智能视觉”赛题，成功设计并实现了一套基于麦克纳姆轮的全向移动智能车系统。在机械结构方面，采用麦克纳姆轮底盘实现全向移动，独立设计的负压增稳机构有效抑制了高速行驶时的打滑与侧倾，碳纤维加强板解决了原装底盘承载变形问题，磁吸遮光罩与双摄像头并排固定方案保障了视觉模块的快速拆装与成像一致性。在硬件电路方面，以RT1064为核心的高集成度主板配合两级电源架构兼顾了供电效率与电源纯净度，有刷与无刷两类驱动板满足不同电机控制需求，整机具备完善的保护措施。在下位机控制方面，基于“前台+后台+中断”软件结构实现了三层串级PID运动控制，通过麦克纳姆轮运动学将位置环偏差合成为四轮转速，路径规划引擎在栅格地图上实现了推箱问题求解，支持炸弹炸墙开路与字母标签配对等竞赛扩展机制。在视觉感知方面，双Openart Plus架构实现了地图识别与卡片识别的并行工作，子系统一通过LAB颜色空间、连续稳定判据、自适应卡尔曼滤波与视觉伺服控制器完成稳定的地图构建与路径跟踪，子系统二使用eIQ训练MobileNet_v2模型并部署至OpenMV，置信度阈值与投票滤波机制将有效识别率提升至98%。
+尽管系统在竞赛场景下整体表现稳定，但仍存在可改进之处：极端光照条件下地图元素识别准确率有所下降，部分复杂推箱场景求解时间偶有波动，简单比例控制器在高速过弯时存在一定偏差。未来可从以下方向改进：引入自适应曝光或深度学习目标检测方法提升极端光照下的识别鲁棒性，优化A*搜索的启发式函数与剪枝策略，在控制器中加入模型预测控制提升高速跟踪精度，增加IMU辅助定位实现视觉短暂丢失时的航位推算，并引入异常检测与重试机制提升系统容错能力。
+最后感谢全国大学生智能汽车竞赛组委会提供的竞技平台与学习机会，感谢指导老师的悉心指导，感谢队友们的通力协作。本作品所有设计、调试与实现工作均由参赛队员独立完成。
+
+
+
+
+
+
+
+
+附录A  上位机核心子程序代码
+1.1地图元素识别函数
+def identify_element_lab(img, x, y):
+    """通过LAB颜色识别单个格子的地图元素"""
+    stats = img.get_statistics(roi=(x-2, y-2, 5, 5))
+    if stats is None:
+        return '?'
+    l = stats.l_mode()
+    a = stats.a_mode()
+    b = stats.b_mode()
+    if (in_range_with_tolerance(l, THRESH_HEAD[0], THRESH_HEAD[1], TOLERANCE) and
+        in_range_with_tolerance(a, THRESH_HEAD[2], THRESH_HEAD[3], TOLERANCE) and
+        in_range_with_tolerance(b, THRESH_HEAD[4], THRESH_HEAD[5], TOLERANCE)):
+        return '@'
+    if (in_range_with_tolerance(l, THRESH_TAIL[0], THRESH_TAIL[1], TOLERANCE) and
+        in_range_with_tolerance(a, THRESH_TAIL[2], THRESH_TAIL[3], TOLERANCE) and
+        in_range_with_tolerance(b, THRESH_TAIL[4], THRESH_TAIL[5], TOLERANCE)):
+        return '@'
+    if (in_range_with_tolerance(l, LAB_TARGET[0], LAB_TARGET[1], TOLERANCE) and
+        in_range_with_tolerance(a, LAB_TARGET[2], LAB_TARGET[3], TOLERANCE) and
+        in_range_with_tolerance(b, LAB_TARGET[4], LAB_TARGET[5], TOLERANCE)):
+        return '.'
+    if (in_range_with_tolerance(l, LAB_BOX[0], LAB_BOX[1], TOLERANCE) and
+        in_range_with_tolerance(a, LAB_BOX[2], LAB_BOX[3], TOLERANCE) and
+        in_range_with_tolerance(b, LAB_BOX[4], LAB_BOX[5], TOLERANCE)):
+        return '$'
+    if (in_range_with_tolerance(l, LAB_BOMB[0], LAB_BOMB[1], TOLERANCE) and
+        in_range_with_tolerance(a, LAB_BOMB[2], LAB_BOMB[3], TOLERANCE) and
+        in_range_with_tolerance(b, LAB_BOMB[4], LAB_BOMB[5], TOLERANCE)):
+        return '*'
+    if (in_range_with_tolerance(l, LAB_WALL[0], LAB_WALL[1], TOLERANCE) and
+        in_range_with_tolerance(a, LAB_WALL[2], LAB_WALL[3], TOLERANCE) and
+        in_range_with_tolerance(b, LAB_WALL[4], LAB_WALL[5], TOLERANCE)):
+        return '#'
+    if (in_range_with_tolerance(l, LAB_EMPTY[0], LAB_EMPTY[1], TOLERANCE) and
+        in_range_with_tolerance(a, LAB_EMPTY[2], LAB_EMPTY[3], TOLERANCE) and
+        in_range_with_tolerance(b, LAB_EMPTY[4], LAB_EMPTY[5], TOLERANCE)):
+        return '-'
+    return '?'
+1.2自适应卡尔曼滤波器
+class AdaptiveKalmanFilter:
+    def __init__(self, Q_min=0.01, Q_max=0.2, R=0.2):
+        self.Q_min = Q_min
+        self.Q_max = Q_max
+        self.R = R
+        self.x = None
+        self.p = 1
+        self.first = True
+        self.last_measurement = None
+
+    def update(self, measurement):
+        if self.first:
+            self.x = measurement
+            self.first = False
+            self.last_measurement = measurement
+            return measurement
+        speed = abs(measurement - self.last_measurement)
+        self.last_measurement = measurement
+        if speed > 5:
+            Q = self.Q_max
+        elif speed > 2:
+            Q = (self.Q_min + self.Q_max) / 2
+        else:
+            Q = self.Q_min
+        self.p = self.p + Q
+        self.k = self.p / (self.p + self.R)
+        self.x = self.x + self.k * (measurement - self.x)
+        self.p = (1 - self.k) * self.p
+        return self.x
+1.3 路径生成与跟踪控制
+def generate_waypoints(start_row, start_col, path_list):
+    global waypoint_steps
+    waypoints = []
+    waypoint_steps = []
+    row, col = start_row, start_col
+    prev_step = None
+    for i, step in enumerate(path_list):
+        if step == 'U':
+            row -= 1
+        elif step == 'D':
+            row += 1
+        elif step == 'L':
+            col -= 1
+        elif step == 'R':
+            col += 1
+        row = max(0, min(row, GRID_ROWS - 1))
+        col = max(0, min(col, GRID_COLS - 1))
+        if step != prev_step or step in SCAN_CHARS:
+            waypoints.append((row, col))
+            waypoint_steps.append(step)
+        else:
+            waypoints[-1] = (row, col)
+        prev_step = step
+    return waypoints
+
+def update_to_next_waypoint():
+    global current_waypoint_index, TARGET_GRID_ROW, TARGET_GRID_COL, path_complete
+    if current_waypoint_index < len(waypoint_queue):
+        TARGET_GRID_ROW, TARGET_GRID_COL = waypoint_queue[current_waypoint_index]
+        current_waypoint_index += 1
+        return True
+    else:
+        path_complete = True
+        return False
+附录B  下位机核心子程序代码
+1. 麦克纳姆轮运动学（Encoder.c）
+void Encoder_CarSpeedAndDirection_Set(int16 Speed, uint8 Direction)
+{
+    switch (Direction)
+    {
+    case CarDirection_Front:                 /* 前进: 四轮同向正转 */
+        Encoder_LeftFront.TargetSpeed = Speed;   Encoder_LeftFront.BasicSpeed = Speed;
+        Encoder_RightFront.TargetSpeed = Speed;  Encoder_RightFront.BasicSpeed = Speed;
+        Encoder_LeftRear.TargetSpeed = Speed;    Encoder_LeftRear.BasicSpeed = Speed;
+        Encoder_RightRear.TargetSpeed = Speed;   Encoder_RightRear.BasicSpeed = Speed;
+        break;
+
+    case CarDirection_Back:                  /* 后退: 四轮同向反转 */
+        Encoder_LeftFront.TargetSpeed = -Speed;   Encoder_LeftFront.BasicSpeed = -Speed;
+        Encoder_RightFront.TargetSpeed = -Speed;  Encoder_RightFront.BasicSpeed = -Speed;
+        Encoder_LeftRear.TargetSpeed = -Speed;    Encoder_LeftRear.BasicSpeed = -Speed;
+        Encoder_RightRear.TargetSpeed = -Speed;   Encoder_RightRear.BasicSpeed = -Speed;
+        break;
+
+    case CarDirection_Left:                  /* 左移: 对角轮正转, 另一对角反转 */
+        Encoder_LeftFront.TargetSpeed = Speed;    Encoder_LeftFront.BasicSpeed = Speed;
+        Encoder_RightFront.TargetSpeed = -Speed;  Encoder_RightFront.BasicSpeed = -Speed;
+        Encoder_LeftRear.TargetSpeed = -Speed;    Encoder_LeftRear.BasicSpeed = -Speed;
+        Encoder_RightRear.TargetSpeed = Speed;    Encoder_RightRear.BasicSpeed = Speed;
+        break;
+
+    case CarDirection_Right:                 /* 右移: 对角轮反转, 另一对角正转 */
+        Encoder_LeftFront.TargetSpeed = -Speed;   Encoder_LeftFront.BasicSpeed = -Speed;
+        Encoder_RightFront.TargetSpeed = Speed;   Encoder_RightFront.BasicSpeed = Speed;
+        Encoder_LeftRear.TargetSpeed = Speed;     Encoder_LeftRear.BasicSpeed = Speed;
+        Encoder_RightRear.TargetSpeed = -Speed;   Encoder_RightRear.BasicSpeed = -Speed;
+        break;
+
+    default:                                 /* 未知方向: 全部停止 */
+        Encoder_LeftFront.TargetSpeed = 0;  Encoder_LeftFront.BasicSpeed = 0;
+        Encoder_RightFront.TargetSpeed = 0; Encoder_RightFront.BasicSpeed = 0;
+        Encoder_LeftRear.TargetSpeed = 0;   Encoder_LeftRear.BasicSpeed = 0;
+        Encoder_RightRear.TargetSpeed = 0;  Encoder_RightRear.BasicSpeed = 0;
+        break;
+    }
+}
+2. PID 控制算法（PID.c）
+2.1　增量式速度环
+int16 PID_Inc(Encoder_t *e, PID_t *p)
+{
+    p->Error[0] = e->TargetSpeed - e->MotorSpeed; /* 误差 = 目标速度 - 实际速度 */
+
+    /* 增量式 PID 三项: Δu = Kp×Δe + Ki×e(k) + Kd×(Δe(k)-Δe(k-1)) */
+    p->P_Out = p->Kp * (p->Error[0] - p->Error[1]);                    /* 比例: Kp×误差变化 */
+    p->I_Out = p->Ki * p->Error[0];                                    /* 积分: Ki×当前误差 */
+    p->D_Out = p->Kd * (p->Error[0] - 2*p->Error[1] + p->Error[2]);    /* 微分: Kd×误差加速度 */
+
+    p->Error[2] = p->Error[1];                        /* 移位: 上上次 ← 上一次 */
+    p->Error[1] = p->Error[0];                        /* 移位: 上一次 ← 当前 */
+
+    p->PID_Out += p->P_Out + p->I_Out + p->D_Out;     /* 累加增量: u(k) = u(k-1) + Δu */
+
+    if (p->PID_Out >  p->Limit) p->PID_Out =  p->Limit;   /* 输出限幅 */
+    if (p->PID_Out < -p->Limit) p->PID_Out = -p->Limit;
+
+    p->Pwm_Add = (int16)p->PID_Out;              /* 转为 PWM 增量值 */
+    return p->Pwm_Add;
+}
+2.2　位置式角度环
+int16 PID_Pos_Angle(Gyro_t *g, PID_t *p)
+{
+    p->Error[0] = g->Angle_Z_Target - g->Angle_Z; /* 偏差 = 目标 - 当前 */
+
+    /* 角度偏差归一化到 [-180, 180] */
+    while (p->Error[0] > 180.0f)  p->Error[0] -= 360.0f;
+    while (p->Error[0] < -180.0f) p->Error[0] += 360.0f;
+
+    p->P_Out = p->Kp * p->Error[0];                  /* 比例项 */
+    p->I_Out += p->Ki * p->Error[0];                 /* 积分项(当前 Ki=0) */
+    p->D_Out = p->Kd * (p->Error[0] - p->Error[1]);  /* 微分项: 抑制振荡 */
+
+    p->PID_Out = p->P_Out + p->I_Out + p->D_Out;
+
+    p->Error[2] = p->Error[1];
+    p->Error[1] = p->Error[0];
+
+    return p->PID_Out;                               /* 返回角度修正量 */
+}
+2.3　位置式位置环（单轴）
+void PID_Pos_Location_Single(int16 deviation, PID_t *p)
+{
+    p->Error[0] = deviation;
+
+    p->P_Out = p->Kp * p->Error[0];
+    p->I_Out += p->Ki * p->Error[0];
+    p->D_Out = p->Kd * (p->Error[0] - p->Error[1]);
+
+    if (p->I_Out > 8)  p->I_Out = 8;   /* 积分限幅 */
+    if (p->I_Out < -8) p->I_Out = -8;
+
+    p->PID_Out = p->P_Out + p->I_Out + p->D_Out;
+
+    p->Error[2] = p->Error[1];
+    p->Error[1] = p->Error[0];
+
+    if (p->PID_Out > 50)  p->PID_Out = 50;   /* 输出限幅 [-50, 50] */
+    if (p->PID_Out < -50) p->PID_Out = -50;
+}
+2.4　角度环控制（差速转向）
+void PID_Angle_Control(void)
+{
+    int16 Gyro_Amend = PID_Pos_Angle(&Gyro, &PID_Gyro); /* 角度环 PID 得到修正量 */
+
+    if (Gyro_Amend == 0)
+    {
+        Gyro.Angle_LockOK_Flag = true;           /* 修正量为 0 → 角度已锁定 */
+    }
+    else if (abs(Gyro.Angle_Z_Target - Gyro.Angle_Z) > 18.0f)
+    {
+        Gyro.Angle_LockOK_Flag = false;          /* 大角度转动中 → 未锁定 */
+    }
+
+    if (Gyro_Amend > 30)  Gyro_Amend = 30;       /* 修正量限幅 [-30, 30] */
+    if (Gyro_Amend < -30) Gyro_Amend = -30;
+
+    /* 差速转向: 左侧轮减修正量, 右侧轮加修正量 */
+    Encoder_LeftFront.TargetSpeed = Encoder_LeftFront.BasicSpeed - Gyro_Amend;
+    Encoder_RightFront.TargetSpeed = Encoder_RightFront.BasicSpeed + Gyro_Amend;
+    Encoder_LeftRear.TargetSpeed = Encoder_LeftRear.BasicSpeed - Gyro_Amend;
+    Encoder_RightRear.TargetSpeed = Encoder_RightRear.BasicSpeed + Gyro_Amend;
+}
+3. 编码器采集与双重滤波（Encoder.c）
+float Encoder_LowPassFilter(float LastData, float NewData, float Alpha)
+{
+    return (Alpha * NewData + (1.0f - Alpha) * LastData);  /* out = α·新值 + (1-α)·旧值 */
+}
+
+void Encoder_GetData(void)
+{
+    static int16 Encoder_LeftFront_Data[5] = {0}, Encoder_RightFront_Data[5] = {0},
+                 Encoder_LeftRear_Data[5] = {0}, Encoder_RightRear_Data[5] = {0};
+
+    /* 第 1 步: 读取原始脉冲数(5ms 内增量), 然后清零计数器 */
+    Encoder_LeftFront.OriginalData[1] = Encoder_LeftFront.OriginalData[0];
+    Encoder_LeftFront.OriginalData[0] = -1 * encoder_get_count(ENCODER_2);
+    encoder_clear_count(ENCODER_2);
+
+    Encoder_RightFront.OriginalData[1] = Encoder_RightFront.OriginalData[0];
+    Encoder_RightFront.OriginalData[0] = encoder_get_count(ENCODER_1);
+    encoder_clear_count(ENCODER_1);
+
+    Encoder_LeftRear.OriginalData[1] = Encoder_LeftRear.OriginalData[0];
+    Encoder_LeftRear.OriginalData[0] = -1 * encoder_get_count(ENCODER_3);
+    encoder_clear_count(ENCODER_3);
+
+    Encoder_RightRear.OriginalData[1] = Encoder_RightRear.OriginalData[0];
+    Encoder_RightRear.OriginalData[0] = encoder_get_count(ENCODER_4);
+    encoder_clear_count(ENCODER_4);
+
+    /* 第 2 步: 一阶低通滤波(α=0.8, 响应较快) */
+    Encoder_LeftFront.Lowpass_Speed = Encoder_LowPassFilter(
+        Encoder_LeftFront.Lowpass_Speed, Encoder_LeftFront.OriginalData[0], 0.8f);
+    Encoder_RightFront.Lowpass_Speed = Encoder_LowPassFilter(
+        Encoder_RightFront.Lowpass_Speed, Encoder_RightFront.OriginalData[0], 0.8f);
+    Encoder_LeftRear.Lowpass_Speed = Encoder_LowPassFilter(
+        Encoder_LeftRear.Lowpass_Speed, Encoder_LeftRear.OriginalData[0], 0.8f);
+    Encoder_RightRear.Lowpass_Speed = Encoder_LowPassFilter(
+        Encoder_RightRear.Lowpass_Speed, Encoder_RightRear.OriginalData[0], 0.8f);
+
+    /* 第 3~4 步: 5 点加权移动平均(以左前轮为例, 其余三轮同理) */
+    Encoder_LeftFront_Data[4] = Encoder_LeftFront_Data[3];
+    Encoder_LeftFront_Data[3] = Encoder_LeftFront_Data[2];
+    Encoder_LeftFront_Data[2] = Encoder_LeftFront_Data[1];
+    Encoder_LeftFront_Data[1] = Encoder_LeftFront_Data[0];
+    Encoder_LeftFront_Data[0] = Encoder_LeftFront.OriginalData[0];
+    Encoder_LeftFront.WeightedAvg[1] = Encoder_LeftFront.WeightedAvg[0];
+    /* 加权: (最旧×0.5 + 次旧×0.5 + 中×2 + 次新×3 + 最新×4) / 10 */
+    Encoder_LeftFront.WeightedAvg[0] = (Encoder_LeftFront_Data[4] * 0.5f +
+                                        Encoder_LeftFront_Data[3] * 0.5f +
+                                        Encoder_LeftFront_Data[2] * 2.0f +
+                                        Encoder_LeftFront_Data[1] * 3.0f +
+                                        Encoder_LeftFront_Data[0] * 4.0f) / 10.0f;
+    Encoder_LeftFront.WeightedAvg_LowPass = Encoder_LowPassFilter(
+        Encoder_LeftFront.WeightedAvg[1], Encoder_LeftFront.WeightedAvg[0], 0.7f);
+
+    /* (右前轮、左后轮、右后轮流程与此相同, 略) */
+
+    /* 第 5 步: 选择滤波后的速度值(PID 使用) */
+    Encoder_LeftFront.MotorSpeed = Encoder_LeftFront.Lowpass_Speed;
+    Encoder_RightFront.MotorSpeed = Encoder_RightFront.Lowpass_Speed;
+    Encoder_LeftRear.MotorSpeed = Encoder_LeftRear.Lowpass_Speed;
+    Encoder_RightRear.MotorSpeed = Encoder_RightRear.Lowpass_Speed;
+
+    Encoder_LeftFront.EncoderIntegral += Encoder_LeftFront.MotorSpeed;
+    Encoder_RightFront.EncoderIntegral += Encoder_RightFront.MotorSpeed;
+    Encoder_LeftRear.EncoderIntegral += Encoder_LeftRear.MotorSpeed;
+    Encoder_RightRear.EncoderIntegral += Encoder_RightRear.MotorSpeed;
+}
+4. 陀螺仪航向角解算（Gyro.c）
+void Gyro_MyUpData_Physics(void)
+{
+    Gyro.Gyro_Z_LastLast = Gyro.Gyro_Z_Last;
+    Gyro.Gyro_Z_Last = Gyro.Gyro_Z;
+
+    /* 角速度: 原始值 + 零偏补偿, 再乘灵敏度系数 */
+    Gyro.Gyro_X = (imu660rb_gyro_x + Gyro.OffSet_Gyro_X) * 0.07f * GYRO_SCALE_CORRECT;
+    Gyro.Gyro_Y = (imu660rb_gyro_y + Gyro.OffSet_Gyro_Y) * 0.07f * GYRO_SCALE_CORRECT;
+    Gyro.Gyro_Z = (imu660rb_gyro_z + Gyro.OffSet_Gyro_Z) * 0.07f * GYRO_SCALE_CORRECT;
+
+    Gyro.Acc_X = imu660rb_acc_x * 0.000244f;
+    Gyro.Acc_Y = imu660rb_acc_y * 0.000244f;
+    Gyro.Acc_Z = imu660rb_acc_z * 0.000244f;
+}
+
+float Gyro_Angle_Normalize_180(float angle)
+{
+    float normalized = fmodf(angle, 360.0f);
+    if (normalized > 180.0f)       normalized -= 360.0f;
+    if (normalized <= -180.0f)     normalized += 360.0f;
+    return normalized;
+}
+
+void Gyro_AngularVelocity_To_Angle(void)
+{
+    if (abs(Gyro.Gyro_Z) < 1.0f)             /* 死区: 角速度太小, 强制为 0 */
+    {
+        Gyro.Gyro_Z = 0.0f;
+    }
+
+    Gyro.Gyro_Z_Integral += Gyro.Gyro_Z * 0.005f; /* 角速度积分: ω×dt, dt=5ms=0.005s */
+    Gyro.Angle_Z = Gyro_Angle_Normalize_180(Gyro.Gyro_Z_Integral);
+}
+
+void Gyro_Offset_Directly(void)
+{
+    Gyro.OffSet_Gyro_X = 0.182f;
+    Gyro.OffSet_Gyro_Y = 9.668f;
+    Gyro.OffSet_Gyro_Z = 0.313f;
+}
+5. Mahony 互补滤波姿态解算（Mahony.c）
+void MahonyAHRSupdate(float gx, float gy, float gz,
+                      float ax, float ay, float az, float dt)
+{
+    float recipNorm, halfvx, halfvy, halfvz;
+    float halfex, halfey, halfez;
+    float qa, qb, qc;
+
+    /* ── 自适应 Kp（基于 g 单位）── */
+    float acc_norm = sqrtf(ax*ax + ay*ay + az*az);
+    float deviation = fabsf(acc_norm - 1.0f);       /* 静止模长 = 1.0 */
+    float trust = 1.0f - deviation / DEV_THRESH;
+    if (trust < 0.0f) trust = 0.0f;
+    if (trust > 1.0f) trust = 1.0f;
+    float Kp_current = KP_MIN + (KP_MAX - KP_MIN) * trust;
+
+    if (!((ax == 0.0f) && (ay == 0.0f) && (az == 0.0f)))
+    {
+        /* 归一化加速度计 */
+        recipNorm = 1.0f / acc_norm;
+        ax *= recipNorm;  ay *= recipNorm;  az *= recipNorm;
+
+        /* 估计重力方向 */
+        halfvx = q.q1 * q.q3 - q.q0 * q.q2;
+        halfvy = q.q0 * q.q1 + q.q2 * q.q3;
+        halfvz = q.q0 * q.q0 - 0.5f + q.q3 * q.q3;
+
+        /* 叉乘误差 */
+        halfex = (ay * halfvz - az * halfvy);
+        halfey = (az * halfvx - ax * halfvz);
+        halfez = (ax * halfvy - ay * halfvx);
+
+        /* 用动态 Kp 做比例修正 */
+        gx += Kp_current * halfex;
+        gy += Kp_current * halfey;
+        gz += Kp_current * halfez;
+    }
+
+    /* 四元数更新 */
+    gx *= (0.5f * dt);  gy *= (0.5f * dt);  gz *= (0.5f * dt);
+    qa = q.q0; qb = q.q1; qc = q.q2;
+    q.q0 += (-qb * gx - qc * gy - q.q3 * gz);
+    q.q1 += ( qa * gx + qc * gz - q.q3 * gy);
+    q.q2 += ( qa * gy - qb * gz + q.q3 * gx);
+    q.q3 += ( qa * gz + qb * gy - qc * gx);
+
+    /* 四元数归一化 */
+    recipNorm = invSqrt(q.q0*q.q0 + q.q1*q.q1 + q.q2*q.q2 + q.q3*q.q3);
+    q.q0 *= recipNorm;  q.q1 *= recipNorm;
+    q.q2 *= recipNorm;  q.q3 *= recipNorm;
+}
+
+float getYawFromQuaternion(void)
+{
+    float yaw = atan2f(2.0f * (q.q1 * q.q2 + q.q0 * q.q3),
+                       q.q0*q.q0 + q.q1*q.q1 - q.q2*q.q2 - q.q3*q.q3);
+    return yaw * 180.0f / M_PI;
+}
+6. 坐标旋转与视觉位置环（PID.c）
+void PID_Location_Control(void)
+{
+    const float kDegToRad = 0.01745329252f;
+    float theta_rad = Gyro.Angle_Z * kDegToRad;
+    float cos_theta = cosf(theta_rad);
+    float sin_theta = sinf(theta_rad);
+    float x_world = (float)OpenARTA.X_Deviation;
+    float y_world = (float)OpenARTA.Y_Deviation;
+
+    /* 旋转矩阵: 世界坐标 → 车体坐标 */
+    float x_body_f = (x_world * cos_theta) - (y_world * sin_theta);
+    float y_body_f = (x_world * sin_theta) + (y_world * cos_theta);
+    int16 x_body = (int16)((x_body_f >= 0.0f) ? (x_body_f + 0.5f) : (x_body_f - 0.5f));
+    int16 y_body = (int16)((y_body_f >= 0.0f) ? (y_body_f + 0.5f) : (y_body_f - 0.5f));
+
+    if (OpenARTA.Control_Flag == OpenARTA_Control_Complete_Flag)
+    {
+        /* 目标已到达: 复位位置环并停车 */
+        PID_Init(&PID_Location_X, Location_Kp, Location_Ki, Location_Kd);
+        PID_Init(&PID_Location_Y, Location_Kp, Location_Ki, Location_Kd);
+        Encoder_LeftFront.TargetSpeed = 0;   Encoder_LeftFront.BasicSpeed = 0;
+        Encoder_RightFront.TargetSpeed = 0;  Encoder_RightFront.BasicSpeed = 0;
+        Encoder_LeftRear.TargetSpeed = 0;    Encoder_LeftRear.BasicSpeed = 0;
+        Encoder_RightRear.TargetSpeed = 0;   Encoder_RightRear.BasicSpeed = 0;
+    }
+    else
+    {
+        PID_Pos_Location_Single(x_body, &PID_Location_X);
+        PID_Pos_Location_Single(y_body, &PID_Location_Y);
+
+        int16 x_speed = (int16)PID_Location_X.PID_Out;
+        int16 y_speed = (int16)PID_Location_Y.PID_Out;
+
+        /* 麦克纳姆轮合成: 左前/右后 = Y+X, 右前/左后 = Y-X */
+        Encoder_LeftFront.TargetSpeed  = y_speed + x_speed;
+        Encoder_LeftFront.BasicSpeed   = y_speed + x_speed;
+        Encoder_RightFront.TargetSpeed = y_speed - x_speed;
+        Encoder_RightFront.BasicSpeed  = y_speed - x_speed;
+        Encoder_LeftRear.TargetSpeed   = y_speed - x_speed;
+        Encoder_LeftRear.BasicSpeed    = y_speed - x_speed;
+        Encoder_RightRear.TargetSpeed  = y_speed + x_speed;
+        Encoder_RightRear.BasicSpeed   = y_speed + x_speed;
+    }
+}
+7. 无线串口 PID 调参协议（Wireless.c）
+7.1　单轮调参命令解析
+void Wireless_PID_Testing(void)
+{
+    system_delay_ms(10);
+
+    static int16 count = 0;
+    int8 read_text_len = 0;
+    char read_Motor[3] = {0};
+    float read_Kp = 0.0f, read_Ki = 0.0f, read_Kd = 0.0f;
+
+    read_text_len = wireless_uart_read_buffer(read_text, 64);
+
+    sprintf((char *)send_text, (char *)read_text);          /* 原样回发确认 */
+    wireless_uart_send_buffer(send_text, strlen((char *)send_text));
+
+    /* 解析 "STA LF P.. I.. D.. G.. END" 格式 */
+    if (strncmp((char *)read_text, "STA ", 4) == 0
+        && strncmp((char *)read_text, "ALL", 3) != 0
+        && read_text_len >= 4
+        && strncmp((char *)read_text + read_text_len - 4, " END", 4) == 0)
+    {
+        read_Motor[0] = read_text[4];
+        read_Motor[1] = read_text[5];
+        read_Motor[2] = read_text[6];
+
+        char *p_pos = strchr((char *)read_text, 'P');
+        char *i_pos = strchr((char *)read_text, 'I');
+        char *d_pos = strchr((char *)read_text, 'D');
+        char *target_pos = strchr((char *)read_text, 'G');
+
+        if (p_pos && i_pos && d_pos)
+        {
+            read_Kp = strtof(p_pos + 1, NULL);
+            read_Ki = strtof(i_pos + 1, NULL);
+            read_Kd = strtof(d_pos + 1, NULL);
+            if (target_pos)
+                Wireless_targetSpeed = (int16)strtof(target_pos + 1, NULL);
+        }
+
+        if (strncmp(read_Motor, "LF", 2) == 0)
+        {
+            PID_LeftFront.Kp = read_Kp;  PID_LeftFront.Ki = read_Ki;  PID_LeftFront.Kd = read_Kd;
+            PID_Change_flag = 1;
+        }
+        else if (strncmp(read_Motor, "RF", 2) == 0)
+        {
+            PID_RightFront.Kp = read_Kp; PID_RightFront.Ki = read_Ki; PID_RightFront.Kd = read_Kd;
+            PID_Change_flag = 2;
+        }
+        else if (strncmp(read_Motor, "LR", 2) == 0)
+        {
+            PID_LeftRear.Kp = read_Kp;   PID_LeftRear.Ki = read_Ki;   PID_LeftRear.Kd = read_Kd;
+            PID_Change_flag = 3;
+        }
+        else if (strncmp(read_Motor, "RR", 2) == 0)
+        {
+            PID_RightRear.Kp = read_Kp;  PID_RightRear.Ki = read_Ki;  PID_RightRear.Kd = read_Kd;
+            PID_Change_flag = 4;
+        }
+        if (read_Motor[2] == 'A')                            /* 标识后跟 'A'(如 LFA) */
+            PID_Change_flag = 5;
+    }
+    Read_flag = 0;
+}
+7.2　四轮批量调参（两帧）
+void Wireless_PID_Testing_All(void)
+{
+    static float lf_kp = 0.0f, lf_ki = 0.0f, lf_kd = 0.0f;
+    static float rf_kp = 0.0f, rf_ki = 0.0f, rf_kd = 0.0f;
+    static float lr_kp = 0.0f, lr_ki = 0.0f, lr_kd = 0.0f;
+    static float rr_kp = 0.0f, rr_ki = 0.0f, rr_kd = 0.0f;
+    static bool got_all1 = false, got_all2 = false;
+
+    int8 read_text_len = 0;
+    float kp = 0.0f, ki = 0.0f, kd = 0.0f;
+
+    system_delay_ms(10);
+    read_text_len = wireless_uart_read_buffer(read_text, 127);
+    if (read_text_len > 0 && read_text_len < 127)
+        read_text[read_text_len] = '\0';
+
+    sprintf((char *)send_text, (char *)read_text);
+    wireless_uart_send_buffer(send_text, strlen((char *)send_text));
+
+    if (read_text_len <= 0) { Read_flag = 0; return; }
+
+    if (strncmp((char *)read_text, "STA ALL1", 8) != 0 &&
+        strncmp((char *)read_text, "STA ALL2", 8) != 0)
+    { Read_flag = 0; return; }
+
+    if (strstr((char *)read_text, " END") == NULL)
+    { Read_flag = 0; return; }
+
+    if (strncmp((char *)read_text, "STA ALL1", 8) == 0)     /* 帧1: 前轮 + 目标速度 */
+    {
+        char *g_pos = strchr((char *)read_text, 'G');
+        if (g_pos) Wireless_targetSpeed = (int16)strtof(g_pos + 1, NULL);
+
+        char *segment = strstr((char *)read_text, "LF");
+        if (segment && Wireless_Parse_PID_Segment(segment + 2, &kp, &ki, &kd))
+        { lf_kp = kp; lf_ki = ki; lf_kd = kd; }
+
+        segment = strstr((char *)read_text, "RF");
+        if (segment && Wireless_Parse_PID_Segment(segment + 2, &kp, &ki, &kd))
+        { rf_kp = kp; rf_ki = ki; rf_kd = kd; }
+
+        got_all1 = true;
+    }
+
+    if (strncmp((char *)read_text, "STA ALL2", 8) == 0)     /* 帧2: 后轮 + 测试时间 */
+    {
+        char *segment = strstr((char *)read_text, "LR");
+        if (segment && Wireless_Parse_PID_Segment(segment + 2, &kp, &ki, &kd))
+        { lr_kp = kp; lr_ki = ki; lr_kd = kd; }
+
+        segment = strstr((char *)read_text, "RR");
+        if (segment && Wireless_Parse_PID_Segment(segment + 2, &kp, &ki, &kd))
+        { rr_kp = kp; rr_ki = ki; rr_kd = kd; }
+
+        char *m_pos = strchr((char *)read_text, 'M');
+        if (m_pos) Wireless_testTime = strtof(m_pos + 1, NULL);
+
+        got_all2 = true;
+    }
+
+    if (got_all1 && got_all2)                                /* 两帧齐 → 应用全部参数 */
+    {
+        PID_LeftFront.Kp = lf_kp;   PID_LeftFront.Ki = lf_ki;   PID_LeftFront.Kd = lf_kd;
+        PID_RightFront.Kp = rf_kp;  PID_RightFront.Ki = rf_ki;  PID_RightFront.Kd = rf_kd;
+        PID_LeftRear.Kp = lr_kp;    PID_LeftRear.Ki = lr_ki;    PID_LeftRear.Kd = lr_kd;
+        PID_RightRear.Kp = rr_kp;   PID_RightRear.Ki = rr_ki;   PID_RightRear.Kd = rr_kd;
+
+        PID_Change_flag = 5;
+        got_all1 = false;
+        got_all2 = false;
+    }
+
+    Read_flag = 0;
+}
+8. 任务调度（Task.c）
+8.1　底层 PID 调度（角度环 + 速度环）
+void Task_CarControl(void)
+{
+    if (Gyro.Angle_Z_Target - Gyro.Angle_Z >= 1)                 /* 角度未到位: 先转角度 */
+        Encoder_CarSpeedAndDirection_Set(0, Task_Key.Car_Direction);
+    else if (Task_Key.Car_RunTime > 0 && Task_Key.SetOK_Flag == true)
+        Encoder_CarSpeedAndDirection_Set(Task_Key.Car_Speed, Task_Key.Car_Direction);
+
+    PID_Angle_Control();                     /* 角度环: 根据偏差调整四轮差速 */
+    PID_MotorControl();                      /* 速度环: 控制四轮转速 */
+}
+8.2　OpenART 视觉导航控制
+void Task_OpenARTControl(void)
+{
+    if (Gyro.Angle_LockOK_Flag == true)      /* 角度已锁定 → 执行视觉位置环 */
+    {
+        PID_Location_Control();
+    }
+    PID_Angle_Control();                     /* 角度环: 保持目标角度 */
+    PID_MotorControl();                      /* 速度环: 控制四轮转速 */
+}
+8.3　发车流程（发送 "GO" 指令）
+void Task_CarGotoStart(void)
+{
+    Task_OpenARTControl();
+
+    if (Task1.Frist_TargetOK_Flag == false)  /* 还没发过 "GO" */
+    {
+        /* 条件: 最近一次偏差非 0, 且前 4 次偏差均为 0(小车已稳定在起始位置) */
+        if ((OpenARTA.X_LastDeviation[4] != 0 || OpenARTA.Y_LastDeviation[4] != 0)
+            && OpenARTA.X_LastDeviation[3] == 0
+            && OpenARTA.X_LastDeviation[2] == 0
+            && OpenARTA.X_LastDeviation[1] == 0
+            && OpenARTA.X_LastDeviation[0] == 0
+            && OpenARTA.Y_LastDeviation[3] == 0
+            && OpenARTA.Y_LastDeviation[2] == 0
+            && OpenARTA.Y_LastDeviation[1] == 0
+            && OpenARTA.Y_LastDeviation[0] == 0)
+        {
+            uart_write_string(OpenARTA_UART_INDEX, "GO");
+            wireless_uart_send_buffer((uint8_t*)"GO", 2);
+            Task1.Frist_TargetOK_Flag = true; /* 只发送一次 */
+        }
+    }
+}
+9. OpenART 视觉协议解析（OpenART.c）
+void OpenARTA_UART_RxData_Handler(void)
+{
+    float read_x = 0.0f, read_y = 0.0f;
+
+    if (OpenARTA_GetData == 'E')             /* 帧尾 'E': 完整数据包到达 */
+    {
+        OpenARTA_FIFO_DataCount = fifo_used(&OpenARTA_RxFIFO);
+        {
+            uint32 cnt = OpenARTA_FIFO_DataCount;
+            if (cnt > sizeof(g_fifo_read_temp)) cnt = sizeof(g_fifo_read_temp);
+            fifo_read_buffer(&OpenARTA_RxFIFO, g_fifo_read_temp, &cnt, FIFO_READ_AND_CLEAN);
+            OpenARTA_FIFO_DataCount = cnt;
+        }
+
+        if (OpenARTA_FIFO_DataCount > 0
+            && OpenARTA_FIFO_DataCount < sizeof(OpenARTA_RxBuffer))
+        {
+            memcpy(OpenARTA_RxBuffer, g_fifo_read_temp, OpenARTA_FIFO_DataCount);
+            OpenARTA_RxBuffer[OpenARTA_FIFO_DataCount] = '\0';
+        }
+
+        if (OpenARTA_FIFO_DataCount > 0)
+        {
+            wireless_uart_send_buffer(g_fifo_read_temp, OpenARTA_FIFO_DataCount);
+            wireless_uart_send_buffer((uint8_t*)"E\r\n", 3);
+
+            if (OpenARTA_RxBuffer[0] == 'D')          /* D 消息: 坐标偏差 */
+            {
+                char *x_pos = strchr((char *)OpenARTA_RxBuffer, 'x');
+                char *y_pos = strchr((char *)OpenARTA_RxBuffer, 'y');
+                read_x = strtof(x_pos + 1, NULL);
+                read_y = strtof(y_pos + 1, NULL);
+
+                OpenARTA.X_Deviation = (int16)read_x;
+                OpenARTA.X_LastDeviation[4] = OpenARTA.X_LastDeviation[3];
+                OpenARTA.X_LastDeviation[3] = OpenARTA.X_LastDeviation[2];
+                OpenARTA.X_LastDeviation[2] = OpenARTA.X_LastDeviation[1];
+                OpenARTA.X_LastDeviation[1] = OpenARTA.X_LastDeviation[0];
+                OpenARTA.X_LastDeviation[0] = OpenARTA.X_Deviation;
+
+                OpenARTA.Y_Deviation = -1 * (int16)read_y;  /* Y 轴取反 */
+                OpenARTA.Y_LastDeviation[4] = OpenARTA.Y_LastDeviation[3];
+                OpenARTA.Y_LastDeviation[3] = OpenARTA.Y_LastDeviation[2];
+                OpenARTA.Y_LastDeviation[2] = OpenARTA.Y_LastDeviation[1];
+                OpenARTA.Y_LastDeviation[1] = OpenARTA.Y_LastDeviation[0];
+                OpenARTA.Y_LastDeviation[0] = OpenARTA.Y_Deviation;
+
+                if (abs(OpenARTA.X_Deviation) == 0 && abs(OpenARTA.Y_Deviation) == 0)
+                    OpenARTA.Control_Flag = OpenARTA_Control_Complete_Flag;
+                else
+                    OpenARTA.Control_Flag = OpenARTA_Control_Active_Flag;
+            }
+            else if (OpenARTA_RxBuffer[0] == 'A')     /* A 消息: 角度控制 */
+            {
+                float angle = strtof((char *)&OpenARTA_RxBuffer[1], NULL);
+                Gyro.Angle_Z_Target = angle;
+                Gyro.Angle_LockOK_Flag = false;
+            }
+            else if (OpenARTA_RxBuffer[0] == 'B')     /* B 消息: 扫描就绪 */
+            {
+                uart_write_string(UART_1, "id");
+                uart_write_byte(UART_1, '\r');
+                uart_write_byte(UART_1, '\n');
+            }
+            else if (OpenARTA_RxBuffer[0] == 'M')     /* M 消息: 地图数据 */
+            {
+                if (OpenARTA_FIFO_DataCount >= 3 + 12 * 17)
+                {
+                    extern uint8 g_solve_mode;
+                    g_solve_mode = (uint8)(OpenARTA_RxBuffer[1] - '0');
+                    uart_write_byte(OpenARTA_UART_INDEX, g_solve_mode + '0');
+
+                    for (uint8 i = 0; i < 12; i++)
+                    {
+                        uint16_t start = (uint16_t)(3 + i * 17);
+                        memcpy(OpenARTA_ReturnMap[i], &OpenARTA_RxBuffer[start], 16);
+                        OpenARTA_ReturnMap[i][16] = '\0';
+                    }
+                    MapPlan_ReceiveMap(OpenARTA_ReturnMap);
+                }
+            }
+            else if (OpenARTA_RxBuffer[0] == 'R')     /* R 消息: 复位命令 */
+            {
+                if (strstr((char *)OpenARTA_RxBuffer, "RST!") != NULL)
+                    NVIC_SystemReset();
+            }
+
+            memset(OpenARTA_RxBuffer, 0, sizeof(OpenARTA_RxBuffer));
+            memset(OpenARTA_ReturnMap, 0, sizeof(OpenARTA_ReturnMap));
+            OpenARTA_FIFO_DataCount = 0;
+        }
+    }
+}
+10. PIT 定时中断服务（isr.c）
+void PIT_IRQHandler(void)
+{
+    if (pit_flag_get(PIT_CH0))
+    {
+        volatile static uint32 PIT0_Time = 0;
+        PIT0_Time++;
+        extern void Encoder_handler(void);
+        if (PIT0_Time % 1 == 0)                     /* 每 5ms 执行一次 */
+        {
+            Encoder_handler();
+            if (Gyro.InitReady_Flag == true)
+            {
+                imu660rb_get_acc();
+                imu660rb_get_gyro();
+                Gyro_MyUpData_Physics();
+                Gyro_AngularVelocity_To_Angle();
+                if (OpenARTA.ControlFlag == true)
+                {
+                    Task_CarGotoStart();            /* 视觉闭环使能 → 发车/视觉导航 */
+                }
+                else
+                {
+                    PID_Angle_Control();
+                    PID_MotorControl();
+                }
+            }
+        }
+        if (PIT0_Time % 200 == 0)                   /* 每秒修正陀螺仪零点漂移 */
+        {
+            if (abs(Encoder_LeftFront.TargetSpeed) + abs(Encoder_RightFront.TargetSpeed)
+                + abs(Encoder_LeftRear.TargetSpeed) + abs(Encoder_RightRear.TargetSpeed) != 0)
+            {
+                Gyro.Gyro_Z_Integral -= 0.046;
+            }
+        }
+        pit_flag_clear(PIT_CH0);
+    }
+    /* ... 其余通道标志清除 ... */
+    __DSB();
+}
+11. 电机驱动（Motor.c）
+void Motor_Init(void)
+{
+    gpio_init(MOTOR1_DIR, GPO, GPIO_HIGH, GPO_PUSH_PULL);
+    pwm_init(MOTOR1_PWM, 17000, 0);
+    gpio_init(MOTOR2_DIR, GPO, GPIO_HIGH, GPO_PUSH_PULL);
+    pwm_init(MOTOR2_PWM, 17000, 0);
+    gpio_init(MOTOR3_DIR, GPO, GPIO_HIGH, GPO_PUSH_PULL);
+    pwm_init(MOTOR3_PWM, 17000, 0);
+    gpio_init(MOTOR4_DIR, GPO, GPIO_HIGH, GPO_PUSH_PULL);
+    pwm_init(MOTOR4_PWM, 17000, 0);
+}
+
+void Motor_LeftFront_Set(int16 pwm)
+{
+    if (pwm > 0)                              /* 正转 */
+    {
+        gpio_set_level(MOTOR2_DIR, GPIO_HIGH);
+        pwm_set_duty(MOTOR2_PWM, pwm);
+    }
+    else if (pwm < 0)                         /* 反转 */
+    {
+        gpio_set_level(MOTOR2_DIR, GPIO_LOW);
+        pwm_set_duty(MOTOR2_PWM, -pwm);
+    }
+    else                                      /* 停止 */
+    {
+        pwm_set_duty(MOTOR2_PWM, 0);
+    }
+}
+附录C  推箱子路径规划核心源码
+1. 常量与数据结构（solver.h / pb_core.h）
+/* ==================== 地图与数量上限 ==================== */
+#define GRID_MAX_H 12            /* 地图最大行数 */
+#define GRID_MAX_W 16            /* 地图最大列数 */
+#define LIMIT_BOX  10            /* 箱子数量上限 */
+#define LIMIT_TRG  10            /* 目标点数量上限 */
+#define LIMIT_BOMB 5             /* 炸弹数量上限 */
+
+/* ==================== 搜索资源上限（静态内存，无动态分配） ==================== */
+#define POOL_CAPACITY      16000     /* A* 节点池容量（历史峰值 ~13k，预留余量） */
+#define QUEUE_CAPACITY     4096      /* 开放表（二叉堆）容量 */
+#define TRACE_MAX_STEPS    800       /* 最长路线长度，防止被截断 */
+#define PB_SEARCH_NODE_BUDGET 8000000u /* 直接求解的确定性节点预算 */
+
+/* ==================== 基本类型 ==================== */
+typedef struct { int8_t d_col; int8_t d_row; } MoveVector;  /* 移动向量：行列增量 */
+typedef struct { uint8_t col; uint8_t row; } GridCoord;      /* 栅格坐标 */
+
+/* 四方向：上、下、左、右 */
+const MoveVector PB_VECS[4] = { {0,-1}, {0,1}, {-1,0}, {1,0} };
+
+/* A* 搜索节点：状态 = (玩家位置, 被推物体位置) */
+typedef struct {
+    GridCoord hero;          /* 玩家当前位置 */
+    GridCoord crate;         /* 被推物体（箱子/炸弹）当前位置 */
+    uint32_t cost_g;         /* 起点到当前节点的实际代价 */
+    uint32_t cost_h;         /* 当前节点到目标的启发式估计 */
+    uint32_t cost_f;         /* f = g + h，优先队列排序依据 */
+    uint16_t parent_idx;     /* 父节点在节点池中的索引 */
+    int8_t move_c;           /* 从父节点走到当前节点的列方向移动 */
+    int8_t move_r;           /* 从父节点走到当前节点的行方向移动 */
+} PathSearchNode;
+
+/* 求解上下文：一张地图的完整状态 */
+typedef struct {
+    uint8_t blocks[GRID_MAX_H][GRID_MAX_W];   /* 墙体占位图，非 0 表示墙 */
+    GridCoord start_crates[LIMIT_BOX];        /* 箱子坐标数组 */
+    GridCoord start_trgs[LIMIT_TRG];          /* 目标点坐标数组 */
+    GridCoord start_bombs[LIMIT_BOMB];        /* 炸弹坐标数组 */
+    GridCoord start_hero;                     /* 玩家初始坐标 */
+    uint8_t crate_cnt, trg_cnt, bomb_cnt;     /* 各类物体数量 */
+    MoveVector* optimal_route;                /* 最优路线缓存 */
+    uint16_t optimal_route_len;               /* 路线长度 */
+    uint16_t min_steps;                       /* 当前最短步数记录（剪枝用） */
+    uint32_t search_budget_limit;             /* 确定性节点预算 */
+    PbTerminationReason termination_reason;   /* 终止原因 */
+} PushBoxContext;
+
+/* 炸弹搜索帧：递归每一层使用独立一帧 */
+typedef struct {
+    WallCandidate candidates[WALL_CANDIDATE_CAP];  /* 筛选后的候选墙 */
+    PushBoxContext next_state;                     /* 递归的下一状态副本 */
+    bool bomb_env[GRID_MAX_H][GRID_MAX_W];         /* 炸弹推运时的障碍掩码 */
+    MoveVector bomb_route[TRACE_MAX_STEPS];        /* 当前炸弹路线缓存 */
+    MoveVector collect_route[TRACE_MAX_STEPS];     /* 收集候选时的临时路线 */
+    bool trg_mask[GRID_MAX_H][GRID_MAX_W];         /* 目标点掩码 */
+} BombSearchFrame;
+2. 地图解析（solver.c）
+/**
+ * 解析固定尺寸的地图，把字符翻译为内部状态。
+ * 合法输入要求：箱子数与目标点数相等，且箱子数 > 0。
+ */
+bool pb_parse_map(PushBoxContext* ctx, const char* raw_map[], int h) {
+    if (!ctx || h != GRID_MAX_H) return false;
+    memset(ctx->blocks, 0, sizeof(ctx->blocks));
+    ctx->crate_cnt = ctx->trg_cnt = ctx->bomb_cnt = 0;
+    ctx->start_hero = (GridCoord){DEFAULT_HERO_COL, DEFAULT_HERO_ROW};
+    ctx->optimal_route_len = 0;
+    ctx->min_steps = ROUTE_PARENT_NONE;
+
+    for (int row = 0; row < h; row++) {
+        if ((int)strlen(raw_map[row]) < GRID_MAX_W) return false;
+        for (int col = 0; col < GRID_MAX_W; col++) {
+            char symbol = raw_map[row][col];
+            switch (symbol) {
+                case '#': ctx->blocks[row][col] = 1; break;                        /* 墙 */
+                case '-': break;                                                    /* 空地 */
+                case '$': ctx->start_crates[ctx->crate_cnt++] = (GridCoord){col,row}; break;
+                case '.': ctx->start_trgs[ctx->trg_cnt++]     = (GridCoord){col,row}; break;
+                case '*': ctx->start_bombs[ctx->bomb_cnt++]   = (GridCoord){col,row}; break;
+                case '@': ctx->start_hero = (GridCoord){col,row}; break;
+                default:  return false;                       /* 非法字符 */
+            }
+        }
+    }
+    return (ctx->crate_cnt == ctx->trg_cnt) && (ctx->crate_cnt > 0);
+}
+3. 代价与启发式（pb_core.c）
+#define PB_ROUTE_STEP_COST 64u    /* 单步移动代价 */
+#define PB_ROUTE_TURN_COST 20u    /* 转弯附加代价 */
+
+/* 加权启发式：h = 曼哈顿距离 × 步进代价 × 5/4 */
+#define PB_ROUTE_HEURISTIC_COST(dist) \
+    (((uint32_t)(dist) * PB_ROUTE_STEP_COST * 5u) / 4u)
+
+/* 曼哈顿距离 */
+uint16_t pb_manhattan(GridCoord a, GridCoord b) {
+    return (uint16_t)(abs((int)a.col - (int)b.col) + abs((int)a.row - (int)b.row));
+}
+
+/* 启发式距离 = 物体到目标的曼哈顿距离 + 玩家接近物体的补偿 */
+static inline uint16_t calc_route_h(GridCoord hero, GridCoord object,
+                                    GridCoord goal, RouteGoalMode mode) {
+    uint16_t dist = pb_manhattan(object, goal);
+    if (mode == ROUTE_GOAL_WALL_COLLISION && dist > 0) dist--;  /* 撞墙模式少算一格 */
+    uint16_t hero_dist = pb_manhattan(hero, object);
+    if (hero_dist > 1) dist = (uint16_t)(dist + hero_dist - 1);  /* 玩家未贴近，补接近路程 */
+    return dist;
+}
+
+/* 死区判断：上下有墙 且 左右有墙（目标点除外）即为死角落 */
+static inline bool is_dead_corner(bool env[GRID_MAX_H][GRID_MAX_W], int c, int r, GridCoord trg) {
+    if (c == trg.col && r == trg.row) return false;
+    bool wall_up = (r - 1 < 0) || env[r - 1][c];
+    bool wall_dn = (r + 1 >= GRID_MAX_H) || env[r + 1][c];
+    bool wall_lt = (c - 1 < 0) || env[r][c - 1];
+    bool wall_rt = (c + 1 >= GRID_MAX_W) || env[r][c + 1];
+    return (wall_up || wall_dn) && (wall_lt || wall_rt);
+}
+4. 单物体 A* 推运核心（pb_core.c 的 route_object）
+/**
+ * 通用推物寻路：把物体从 start_obj 推到 goal（或推到与墙碰撞）。
+ * 状态为 (玩家位置, 物体位置)，用二叉最小堆维护开放表，按 f 升序弹出。
+ */
+static bool route_object(GridCoord start_h, GridCoord start_obj, GridCoord goal,
+                         bool env_mask[GRID_MAX_H][GRID_MAX_W],
+                         bool trg_mask[GRID_MAX_H][GRID_MAX_W],
+                         RouteGoalMode goal_mode, bool prune_dead_corners,
+                         MoveVector* out_route, uint16_t* route_size,
+                         GridCoord* out_final_hero) {
+    RouteWorkspace* ws = &g_route_ws;
+    reset_workspace(ws);                      /* 会话号自增，免清零访问表 */
+    if (!consume_search_node_budget()) return false;
+
+    /* 根节点：起始 (玩家, 物体) */
+    uint16_t root_idx = ws->pool_count++;
+    PathSearchNode* root = &ws->node_pool[root_idx];
+    root->hero = start_h;
+    root->crate = start_obj;
+    root->cost_g = 0;
+    root->cost_h = PB_ROUTE_HEURISTIC_COST(calc_route_h(start_h, start_obj, goal, goal_mode));
+    root->cost_f = root->cost_g + root->cost_h;
+    root->parent_idx = ROUTE_PARENT_NONE;
+    root->move_c = root->move_r = 0;
+
+    insert_pq(ws, root_idx);                  /* 入堆 */
+    mark_visited(ws, start_h, start_obj);
+
+    while (ws->open_count > 0) {
+        uint16_t top_idx = extract_pq(ws);    /* 取 f 最小节点 */
+        if (top_idx == ROUTE_PARENT_NONE) break;
+        PathSearchNode* top = &ws->node_pool[top_idx];
+
+        /* 物体到达目标：重建路线并平滑 */
+        if (goal_mode == ROUTE_GOAL_EXACT &&
+            top->crate.col == goal.col && top->crate.row == goal.row) {
+            MoveVector no_extra = {0, 0};
+            if (!reconstruct_route(ws, top_idx, out_route, route_size, no_extra, false)) return false;
+            smooth_object_route(start_h, start_obj, env_mask, out_route, route_size);
+            if (out_final_hero) *out_final_hero = top->hero;
+            return true;
+        }
+
+        if (ws->pool_count >= POOL_CAPACITY - 4) continue;   /* 节点池保护 */
+
+        /* 扩展四个方向 */
+        for (int v = 0; v < 4; v++) {
+            MoveVector mv = PB_VECS[v];
+            int nh_col = (int)top->hero.col + mv.d_col;
+            int nh_row = (int)top->hero.row + mv.d_row;
+            if (nh_row < 0 || nh_row >= GRID_MAX_H || nh_col < 0 || nh_col >= GRID_MAX_W) continue;
+            if (env_mask[nh_row][nh_col]) continue;                          /* 撞墙 */
+
+            GridCoord next_hero = {(uint8_t)nh_col, (uint8_t)nh_row};
+            GridCoord next_obj = top->crate;
+
+            if (nh_col == top->crate.col && nh_row == top->crate.row) {      /* 推向物体 */
+                int no_col = (int)top->crate.col + mv.d_col;
+                int no_row = (int)top->crate.row + mv.d_row;
+                if (no_row < 0 || no_row >= GRID_MAX_H || no_col < 0 || no_col >= GRID_MAX_W) continue;
+
+                /* 撞墙模式：物体紧贴目标墙即视为完成（用于炸弹） */
+                if (goal_mode == ROUTE_GOAL_WALL_COLLISION &&
+                    no_col == goal.col && no_row == goal.row && env_mask[no_row][no_col]) {
+                    if (!reconstruct_route(ws, top_idx, out_route, route_size, mv, true)) return false;
+                    smooth_object_route(start_h, start_obj, env_mask, out_route, route_size);
+                    if (out_final_hero) *out_final_hero = next_hero;
+                    return true;
+                }
+
+                if (env_mask[no_row][no_col]) continue;                       /* 物体被挡住 */
+                if (trg_mask && trg_mask[no_row][no_col]) {
+                    if (goal_mode != ROUTE_GOAL_EXACT || no_col != goal.col || no_row != goal.row)
+                        continue;                                             /* 不可占用他人目标 */
+                }
+                if (prune_dead_corners && is_dead_corner(env_mask, no_col, no_row, goal)) continue;
+                next_obj.col = (uint8_t)no_col;                               /* 物体前移一格 */
+                next_obj.row = (uint8_t)no_row;
+            }
+
+            if (check_visited(ws, next_hero, next_obj)) continue;             /* 状态去重 */
+            mark_visited(ws, next_hero, next_obj);
+
+            /* 计算代价：直行 64，转弯 +20 */
+            uint32_t step_cost = PB_ROUTE_STEP_COST;
+            if (top->move_c != 0 || top->move_r != 0)
+                if (top->move_c != mv.d_col || top->move_r != mv.d_row)
+                    step_cost += PB_ROUTE_TURN_COST;
+
+            if (!consume_search_node_budget()) return false;
+            uint16_t child_idx = ws->pool_count++;
+            PathSearchNode* child = &ws->node_pool[child_idx];
+            child->hero = next_hero;
+            child->crate = next_obj;
+            child->cost_g = top->cost_g + step_cost;
+            child->cost_h = PB_ROUTE_HEURISTIC_COST(calc_route_h(next_hero, next_obj, goal, goal_mode));
+            child->cost_f = child->cost_g + child->cost_h;
+            child->parent_idx = top_idx;
+            child->move_c = mv.d_col;
+            child->move_r = mv.d_row;
+            insert_pq(ws, child_idx);
+        }
+    }
+    return false;
+}
+
+/* 三个对外接口都复用 route_object，仅目标模式与剪枝不同 */
+bool pb_route_single_crate(...) {   /* 推箱子到目标点：精确到达 + 死区剪枝 */
+    return route_object(..., ROUTE_GOAL_EXACT, true, ...);
+}
+bool pb_route_bomb_to_wall(...) {   /* 推炸弹到墙边：撞墙触发，不剪死区 */
+    return route_object(..., ROUTE_GOAL_WALL_COLLISION, false, ...);
+}
+bool pb_route_hero_only(...) {      /* 玩家空走到目标：单状态 A*，无物体 */
+    /* 状态只有玩家坐标，启发式为纯曼哈顿距离 × 步进代价 */
+}
+5. 路线平滑（pb_core.c）
+/* 把相邻两次"推动"之间的空走片段，用玩家纯寻路替换成最短绕障路径 */
+static void smooth_object_route(GridCoord start_h, GridCoord start_obj,
+                                bool env_mask[GRID_MAX_H][GRID_MAX_W],
+                                MoveVector* route, uint16_t* route_size) {
+    uint16_t original_len = *route_size;
+    GridCoord hero = start_h, object = start_obj;
+    GridCoord walk_start = start_h;
+    uint16_t smooth_len = 0;
+
+    for (uint16_t i = 0; i < original_len; i++) {
+        MoveVector mv = route[i];
+        GridCoord next_hero = {(uint8_t)(hero.col + mv.d_col), (uint8_t)(hero.row + mv.d_row)};
+        bool pushing = coord_equal(next_hero, object);
+
+        if (pushing) {                                            /* 遇到一次推动 */
+            if (!append_smooth_walk(walk_start, hero, object, env_mask, &smooth_len)) return;
+            g_smooth_route[smooth_len++] = mv;                    /* 保留推动动作本身 */
+            object.col += mv.d_col;  object.row += mv.d_row;      /* 更新物体位置 */
+            hero = next_hero;
+            walk_start = hero;
+        } else {
+            hero = next_hero;                                     /* 空走，暂不记录 */
+        }
+    }
+    if (!append_smooth_walk(walk_start, hero, object, env_mask, &smooth_len)) return;
+    if (smooth_len > original_len) return;                        /* 平滑后不能更长 */
+
+    if (smooth_len > 0) memcpy(route, g_smooth_route, smooth_len * sizeof(MoveVector));
+    *route_size = smooth_len;
+}
+6. 分配下界（solver.c）
+/**
+ * 剩余分配下界：用位掩码 DP 求"剩余箱子 → 剩余目标"的最小曼哈顿距离和。
+ * 忽略墙体与玩家移动，是真实推动代价的可采纳下界（admissible）。
+ */
+static uint16_t remaining_assignment_lower_bound(const PushBoxContext* ctx,
+                                                 const bool* c_used, const bool* t_used) {
+    GridCoord crates[LIMIT_BOX], targets[LIMIT_TRG];
+    int remaining = 0;
+    for (int c = 0; c < ctx->crate_cnt; c++) if (!c_used[c]) crates[remaining++] = ctx->start_crates[c];
+    int target_count = 0;
+    for (int t = 0; t < ctx->trg_cnt; t++) if (!t_used[t]) targets[target_count++] = ctx->start_trgs[t];
+
+    if (remaining != target_count) return ROUTE_PARENT_NONE;
+    if (remaining == 0) return 0;
+
+    int state_count = 1 << remaining;
+    for (int mask = 0; mask < state_count; mask++) g_assignment_lb_dp[mask] = ROUTE_PARENT_NONE;
+    g_assignment_lb_dp[0] = 0;
+
+    for (int mask = 0; mask < state_count; mask++) {
+        uint16_t cost = g_assignment_lb_dp[mask];
+        if (cost == ROUTE_PARENT_NONE) continue;
+        int crate_index = 0;
+        for (int bits = mask; bits != 0; bits >>= 1) crate_index += bits & 1;  /* 已用箱子数 */
+        if (crate_index >= remaining) continue;
+        for (int t = 0; t < remaining; t++) {
+            if (mask & (1 << t)) continue;
+            uint16_t cand = cost + pb_manhattan(crates[crate_index], targets[t]);
+            if (cand < g_assignment_lb_dp[mask | (1 << t)])
+                g_assignment_lb_dp[mask | (1 << t)] = cand;
+        }
+    }
+    return g_assignment_lb_dp[state_count - 1];
+}
+7. 箱子—目标分配：DFS（solver.c 的 dfs_boxes）
+/* 递归穷举箱子到目标的配对，带多重剪枝 */
+static bool dfs_boxes(PushBoxContext* ctx, bool* c_used, bool* t_used,
+                      GridCoord current_hero, MoveVector* current_route,
+                      uint16_t current_len, int depth) {
+    if (pb_core_search_budget_exhausted()) return false;
+    if (current_len > ctx->min_steps) return false;                              /* 剪枝：超过已知最短 */
+    if (dfs_tt_dominated(ctx, c_used, t_used, current_hero, current_len)) return false; /* 置换表支配剪枝 */
+
+    /* 下界剪枝：当前长度 + 剩余分配下界 > 已知最短 → 放弃 */
+    if (ctx->min_steps != ROUTE_PARENT_NONE) {
+        uint16_t lb = remaining_assignment_lower_bound(ctx, c_used, t_used);
+        if (lb == ROUTE_PARENT_NONE || (uint32_t)current_len + lb > ctx->min_steps) return false;
+    }
+
+    if (depth == ctx->crate_cnt) {                                               /* 全部箱子已分配 */
+        uint16_t turns = count_route_turns(current_route, current_len);
+        if (current_len < ctx->min_steps || turns < g_dfs_best_turns) {
+            ctx->min_steps = current_len;
+            ctx->optimal_route_len = current_len;
+            g_dfs_best_turns = turns;
+            memcpy(ctx->optimal_route, current_route, current_len * sizeof(MoveVector));
+            return true;
+        }
+        return false;
+    }
+
+    /* 构建当前层的目标掩码（未被占用的目标点） */
+    DfsFrame* frame = &g_dfs_frames[depth];
+    memset(frame->trg_mask, 0, sizeof(frame->trg_mask));
+    for (int t = 0; t < ctx->trg_cnt; t++)
+        if (!t_used[t]) { GridCoord tc = ctx->start_trgs[t]; frame->trg_mask[tc.row][tc.col] = true; }
+
+    /* 按"玩家到箱子距离"对未用箱子排序，优先试近的 */
+    uint8_t c_order[LIMIT_BOX]; int c_count = 0;
+    for (int c = 0; c < ctx->crate_cnt; c++) if (!c_used[c]) c_order[c_count++] = c;
+    /* ...插入排序（按曼哈顿距离）... */
+
+    for (int i = 0; i < c_count; i++) {
+        int c = c_order[i];
+
+        /* 构造本箱子的障碍掩码：墙 + 炸弹 + 其他未推箱子 */
+        pb_load_block_mask(ctx, frame->env_mask);
+        pb_add_bombs_to_mask(ctx, frame->env_mask, -1);
+        for (int m = 0; m < ctx->crate_cnt; m++)
+            if (!c_used[m] && m != c) { GridCoord cc = ctx->start_crates[m]; frame->env_mask[cc.row][cc.col] = true; }
+
+        /* 按"箱子到目标距离"对未用目标排序，优先试近的 */
+        uint8_t t_order[LIMIT_TRG]; int t_count = 0;
+        for (int t = 0; t < ctx->trg_cnt; t++) if (!t_used[t]) t_order[t_count++] = t;
+        /* ...插入排序（按曼哈顿距离）... */
+
+        for (int k = 0; k < t_count; k++) {
+            int t = t_order[k];
+            uint16_t sub_len = 0;
+            if (pb_route_single_crate(current_hero, ctx->start_crates[c], ctx->start_trgs[t],
+                                      frame->env_mask, frame->trg_mask, frame->sub_route, &sub_len)) {
+                if (current_len + sub_len <= TRACE_MAX_STEPS && current_len + sub_len <= ctx->min_steps) {
+                    c_used[c] = true; t_used[t] = true;
+                    GridCoord next_hero = pb_apply_route(current_hero, frame->sub_route, sub_len);
+                    memcpy(&current_route[current_len], frame->sub_route, sub_len * sizeof(MoveVector));
+                    if (dfs_boxes(ctx, c_used, t_used, next_hero, current_route,
+                                  current_len + sub_len, depth + 1)) { /* 递归 */ }
+                    c_used[c] = false; t_used[t] = false;               /* 回溯 */
+                }
+            }
+        }
+    }
+    return false;
+}
+8. 箱子—目标分配：宏束搜索（solver.c，箱子多时用）
+/* 束宽 3 的束搜索：逐箱子扩展，每层保留评分最优的前 3 个状态 */
+static bool pb_execute_macro_beam_search(PushBoxContext* ctx) {
+    const int beam_width = PB_APPROX_BEAM_WIDTH;    /* = 3 */
+    MacroBeamState* beam = g_macro_beam_a;
+    MacroBeamState* next_beam = g_macro_beam_b;
+
+    int beam_count = 1;
+    beam[0].hero = ctx->start_hero;
+    beam[0].score = macro_beam_score(ctx, &beam[0]);
+
+    for (int depth = 0; depth < ctx->crate_cnt; depth++) {
+        int next_count = 0;
+        for (int si = 0; si < beam_count; si++) {
+            const MacroBeamState* state = &beam[si];
+            /* ...构建目标掩码、障碍掩码，与 dfs_boxes 一致... */
+            for (int c = 0; c < ctx->crate_cnt; c++) {
+                if (state->crate_mask & (1 << c)) continue;    /* 已推的箱子跳过 */
+                for (int t = 0; t < ctx->trg_cnt; t++) {
+                    if (state->target_mask & (1 << t)) continue;
+                    uint16_t sub_len = 0;
+                    if (!pb_route_single_crate(state->hero, ctx->start_crates[c], ctx->start_trgs[t],
+                                               frame->env_mask, frame->trg_mask, frame->sub_route, &sub_len))
+                        continue;
+                    /* 生成候选状态：更新掩码、路线、位置、评分 */
+                    MacroBeamState* cand = &g_macro_candidate;
+                    *cand = *state;
+                    cand->crate_mask  |= (1 << c);
+                    cand->target_mask |= (1 << t);
+                    memcpy(&cand->route[cand->route_len], frame->sub_route, sub_len * sizeof(MoveVector));
+                    cand->route_len += sub_len;
+                    cand->hero = pb_apply_route(state->hero, frame->sub_route, sub_len);
+                    cand->score = macro_beam_score(ctx, cand);
+                    macro_beam_add_top_candidate(next_beam, &next_count, beam_width, cand); /* 保留前 3 */
+                }
+            }
+        }
+        if (next_count == 0) return false;
+        /* 交换前后束，进入下一层 */
+        MacroBeamState* swap = beam; beam = next_beam; next_beam = swap;
+        beam_count = next_count;
+    }
+    /* 取最优束作为结果 */
+    ctx->optimal_route_len = beam[0].route_len;
+    ctx->min_steps = beam[0].route_len;
+    memcpy(ctx->optimal_route, beam[0].route, beam[0].route_len * sizeof(MoveVector));
+    return true;
+}
+
+/* 束状态评分：已走长度 + 剩余分配下界×2 + 到最近箱子距离 */
+static uint32_t macro_beam_score(const PushBoxContext* ctx, const MacroBeamState* state) {
+    /* ...把 state->crate_mask/target_mask 转成 c_used/t_used... */
+    uint16_t remaining_lb = remaining_assignment_lower_bound(ctx, c_used, t_used);
+    uint16_t nearest_crate = /* 玩家到最近未推箱子的曼哈顿距离 */;
+    return state->route_len + remaining_lb * 2u + nearest_crate;
+}
+9. 炸弹候选墙评估（pb_core.c）
+/* 对候选墙打分：综合距离、开放度、阻挡数等多因素 */
+static int32_t evaluate_wall(uint8_t env[GRID_MAX_H][GRID_MAX_W],
+                             GridCoord wall, GridCoord bomb, PushBoxContext* ctx) {
+    int32_t score = 0;
+
+    int dist_to_bomb = abs(wall.col - bomb.col) + abs(wall.row - bomb.row);
+    score += (520 - dist_to_bomb * 16);          /* 离炸弹越近分越高 */
+
+    int min_trg_dist = 999;
+    for (int i = 0; i < ctx->trg_cnt; i++)
+        min_trg_dist = min(min_trg_dist, 墙到 start_trgs[i] 的曼哈顿距离);
+    score += (180 - min_trg_dist * 18);          /* 离目标点越近分越高 */
+
+    int min_crate_dist = 999;
+    for (int i = 0; i < ctx->crate_cnt; i++)
+        min_crate_dist = min(min_crate_dist, 墙到 start_crates[i] 的曼哈顿距离);
+    score += (140 - min_crate_dist * 14);        /* 离箱子越近分越高 */
+
+    int hero_to_bomb = abs(hero.col - bomb.col) + abs(hero.row - bomb.row);
+    score -= (hero_to_bomb * 12);                /* 玩家离炸弹越远越扣分 */
+
+    /* 墙四周的开放格数与阻挡格数 */
+    bool up_empty = 上方无墙, dn_empty = 下方无墙, lt_empty = 左方无墙, rt_empty = 右方无墙;
+    int open_cnt  = up_empty + dn_empty + lt_empty + rt_empty;
+    score += open_cnt * 90;                      /* 开放格越多分越高 */
+    int block_cnt = (!up_empty) + (!dn_empty) + (!lt_empty) + (!rt_empty);
+    score += block_cnt * 25;                     /* 阻挡格越多分越高 */
+    return score;
+}
+
+/* 收集候选墙：遍历所有炸弹 × 所有墙，评分排序后只保留可推到的 */
+int pb_collect_bomb_candidates(PushBoxContext* state, BombSearchFrame* frame) {
+    /* 1. 预筛：对每个 (炸弹, 墙) 组合算 est_score */
+    /* 2. 按 est_score 降序排序 */
+    /* 3. 对每个预筛候选，调用 pb_route_bomb_to_wall 验证可达，
+          可达则 score = est_score - 推运长度×2，写入候选集 */
+    sort_wall_candidates(frame->candidates, candidate_count);
+    return candidate_count;
+}
+
+/* 3x3 爆炸：清除以 (c,r) 为中心的邻域墙体（不含边界） */
+void pb_trigger_explosion(uint8_t env[GRID_MAX_H][GRID_MAX_W], int c, int r) {
+    for (int dr = -1; dr <= 1; dr++)
+        for (int dc = -1; dc <= 1; dc++) {
+            int nr = r + dr, nc = c + dc;
+            if (nr > 0 && nr < GRID_MAX_H - 1 && nc > 0 && nc < GRID_MAX_W - 1)
+                env[nr][nc] = 0;
+        }
+}
+
+/* 移除一颗已使用的炸弹（数组前移） */
+void pb_remove_bomb(PushBoxContext* ctx, uint8_t bomb_idx) {
+    for (uint8_t i = bomb_idx; i + 1 < ctx->bomb_cnt; i++)
+        ctx->start_bombs[i] = ctx->start_bombs[i + 1];
+    ctx->bomb_cnt--;
+}
+10. 炸弹递归搜索（solver.c 的 pb_bomb_deep_search）
+static bool pb_bomb_deep_search(PushBoxContext* current_state, int depth,
+                                bool allow_optional_bomb_improvement) {
+    if (pb_core_search_budget_exhausted()) return false;
+
+    /* 先尝试不用炸弹直接求解 */
+    if (pb_execute_direct_search(current_state)) {
+        /* 若允许，且路线足够长，尝试用剩余炸弹进一步缩短路线 */
+        if (PB_APPROX_SKIP_OPTIONAL_BOMBS || !allow_optional_bomb_improvement ||
+            current_state->bomb_cnt == 0 ||
+            current_state->optimal_route_len < PB_ROOT_BOMB_IMPROVE_MIN_STEPS)
+            return true;
+        return pb_try_improve_with_remaining_bombs(current_state, depth);
+    }
+
+    if (current_state->bomb_cnt == 0 || depth >= LIMIT_BOMB) return false;
+
+    BombSearchFrame* frame = pb_get_bomb_frame(depth);       /* 按层取静态帧 */
+    int candidate_count = pb_collect_bomb_candidates(current_state, frame);
+    if (candidate_count == 0) return false;
+    int top_n = min(candidate_count, BOMB_SEARCH_TOP_N);    /* 只试排名靠前的 */
+
+    /* 第一遍：每个候选墙试"炸开后直接求解"，若可行记最短直接路线 */
+    uint16_t best_direct_len = ROUTE_PARENT_NONE;
+    for (int i = 0; i < top_n; i++) {
+        WallCandidate cand = frame->candidates[i];
+        /* 构造炸弹推运环境：墙 + 其他箱子 + 其他炸弹 */
+        pb_load_block_mask(current_state, frame->bomb_env);
+        for (int m = 0; m < current_state->crate_cnt; m++)
+            frame->bomb_env[start_crates[m]] = true;
+        pb_add_bombs_to_mask(current_state, frame->bomb_env, cand.bomb_idx);
+
+        uint16_t bomb_route_len = 0; GridCoord final_hero;
+        if (!pb_route_bomb_to_wall(current_state->start_hero, current_state->start_bombs[cand.bomb_idx],
+                                   cand.pos, frame->bomb_env, frame->trg_mask,
+                                   frame->bomb_route, &bomb_route_len, &final_hero)) continue;
+
+        /* 复制状态 → 炸墙 → 移除炸弹 → 直接求解 */
+        memcpy(&frame->next_state, current_state, sizeof(PushBoxContext));
+        frame->next_state.start_hero = final_hero;
+        pb_trigger_explosion(frame->next_state.blocks, cand.pos.col, cand.pos.row);
+        pb_remove_bomb(&frame->next_state, cand.bomb_idx);
+
+        if (pb_execute_direct_search(&frame->next_state)) {
+            uint16_t total = bomb_route_len + frame->next_state.optimal_route_len;
+            if (total < best_direct_len) { /* 记录最短 */ }
+        }
+    }
+
+    /* 若找到足够短的直接路线，或只剩 1 颗炸弹，直接接受 */
+    if (best_direct_len != ROUTE_PARENT_NONE &&
+        (current_state->bomb_cnt <= 1 || best_direct_len <= (GRID_MAX_W * GRID_MAX_H) / 3)) {
+        memcpy(current_state->optimal_route, frame->collect_route, best_direct_len * sizeof(MoveVector));
+        current_state->optimal_route_len = current_state->min_steps = best_direct_len;
+        return true;
+    }
+
+    /* 第二遍：递归深搜，用更多炸弹继续炸 */
+    for (int i = 0; i < top_n; i++) {
+        /* ...同样推炸弹、炸墙、移除炸弹... */
+        if (pb_bomb_deep_search(&frame->next_state, depth + 1, false)) {
+            /* 把炸弹路线接到递归结果前面 */
+            memmove(&current_state->optimal_route[bomb_route_len],
+                    current_state->optimal_route, tail_len * sizeof(MoveVector));
+            memcpy(current_state->optimal_route, frame->bomb_route, bomb_route_len * sizeof(MoveVector));
+            current_state->optimal_route_len = bomb_route_len + tail_len;
+            return true;
+        }
+    }
+
+    /* 兜底：接受第一遍找到的最短直接路线 */
+    if (best_direct_len != ROUTE_PARENT_NONE) { /* ... */ }
+    return false;
+}
+11. 求解总入口（solver.c）
+bool pb_execute_search(PushBoxContext* ctx) {
+    if (!ctx || !ctx->optimal_route) return false;
+    PB_DIAG_RESET();
+    pb_core_begin_search_budget(ctx->search_budget_limit);   /* 开始确定性预算 */
+    ctx->optimal_route_len = 0;
+    ctx->min_steps = ROUTE_PARENT_NONE;
+    ctx->termination_reason = PB_TERMINATION_NOT_STARTED;
+
+    /* 主流程：先炸弹深搜（内部先试直接求解），失败再试"先推箱后炸弹"的交叉前缀 */
+    bool solved = pb_bomb_deep_search(ctx, 0, true);
+    if (!solved && !pb_core_search_budget_exhausted())
+        solved = pb_try_box_prefix_before_bombs(ctx);
+
+    /* 记录终止原因 */
+    if (pb_core_search_budget_exhausted())      ctx->termination_reason = PB_TERMINATION_BUDGET_EXHAUSTED;
+    else if (solved)                            ctx->termination_reason = PB_TERMINATION_SOLVED;
+    else                                        ctx->termination_reason = PB_TERMINATION_NO_SOLUTION;
+    return solved;
+}
+
+/* 路线转字符串：r/l/w/d（与 MapPlan 的 R/L/U/D 同义） */
+char* pb_fetch_result_str(PushBoxContext* ctx, uint16_t* out_steps) {
+    uint16_t len = ctx->optimal_route_len;
+    *out_steps = len;
+    if (len == 0) return NULL;
+    char* buf = malloc(len + 1);
+    for (uint16_t i = 0; i < len; i++) {
+        int8_t dc = ctx->optimal_route[i].d_col, dr = ctx->optimal_route[i].d_row;
+        if (dc == 0 && dr == 0) buf[i] = 's';     /* 扫描 */
+        else if (dc == -1)      buf[i] = 'l';     /* 左 */
+        else if (dc ==  1)      buf[i] = 'r';     /* 右 */
+        else if (dr == -1)      buf[i] = 'w';     /* 上 */
+        else                    buf[i] = 'd';     /* 下 */
+    }
+    buf[len] = '\0';
+    return buf;
+}
+12. 搜索预算机制（pb_core.c）
+static uint32_t g_search_budget_limit;      /* 预算上限 */
+static uint32_t g_search_budget_used;       /* 已消耗 */
+static bool     g_search_budget_exhausted;  /* 是否耗尽 */
+
+void pb_core_begin_search_budget(uint32_t node_limit) {
+    g_search_budget_limit = node_limit;
+    g_search_budget_used = 0;
+    g_search_budget_exhausted = false;
+}
+
+/* 每生成一个节点/访问一个状态都调用；耗尽即置位，所有搜索据此提前返回 */
+static inline bool consume_search_node_budget(void) {
+    if (g_search_budget_limit != 0 && g_search_budget_used >= g_search_budget_limit) {
+        g_search_budget_exhausted = true;
+        return false;
+    }
+    g_search_budget_used++;
+    return true;
+}
+13. 路线输出桥接（MapPlan.c）
+/* 求解器每产出一段路线就回调此函数，把 MoveVector[] 转成字符从 UART4 下发 */
+void MapPlan_OutputRouteCallback(const char* label, const MoveVector* route, uint16_t len) {
+    if (len == 0 || len > TRACE_MAX_STEPS) return;
+    char buf[128]; uint16_t pos = 0;
+
+    for (uint16_t i = 0; i < len && pos < sizeof(buf) - 2; i++) {
+        int8_t dc = route[i].d_col, dr = route[i].d_row;
+
+        /* 扫描动作：方向 ×2 编码，与普通移动区分 */
+        if ((dc == 0 && dr == 0) || abs((int)dc) >= 2 || abs((int)dr) >= 2) {
+            int8_t dir_c = (dc == 0) ? 0 : (dc > 0 ? 1 : -1);
+            int8_t dir_r = (dr == 0) ? 0 : (dr > 0 ? 1 : -1);
+            if (dir_c ==  1) buf[pos++] = 'Q';   /* 向右扫描 */
+            else if (dir_c == -1) buf[pos++] = 'A'; /* 向左扫描 */
+            else if (dir_r == -1) buf[pos++] = 'W'; /* 向上扫描 */
+            else if (dir_r ==  1) buf[pos++] = 'Z'; /* 向下扫描 */
+            else buf[pos++] = 'S';               /* 旧式无方向扫描 */
+        }
+        else if (dc ==  1) buf[pos++] = 'R';     /* 右 */
+        else if (dc == -1) buf[pos++] = 'L';     /* 左 */
+        else if (dr == -1) buf[pos++] = 'U';     /* 上（w→U，小车坐标系上=前进） */
+        else if (dr ==  1) buf[pos++] = 'D';     /* 下 */
+    }
+    buf[pos] = '\0';
+
+    /* S...E 包格式，便于 OpenART 从混杂数据中提取；同时镜像到 UART8 无线串口 */
+    uart_write_byte(UART_4, 'S');
+    uart_write_string(UART_4, buf);
+    uart_write_byte(UART_4, 'E');
+    wireless_uart_send_buffer((uint8_t*)"S", 1);
+    wireless_uart_send_buffer((uint8_t*)buf, pos);
+    wireless_uart_send_buffer((uint8_t*)"E", 1);
+}
+
+===== TABLE 1 =====
+指令方向 | 格式 | 说明
+接收触发 | id | 上位机下发，触发一次识别
+接收停止 | stop | 上位机下发，停止识别
+发送结果 | a-j 或 0-9 | 识别完成后发送单个字符
+
+===== TABLE 2 =====
+序号 | 名称 | 数量 | 接口/引脚 | 用途
+1 | 麦克纳姆轮直流电机 | 4 | PWM+DIR（C8/C9、C6/C7、D3/D2、C11/C10），PWM 频率 17kHz | 整车全向驱动
+2 | 正交编码器 | 4 | QTIMER 正交解码（C0/C1、C2/C24、C3/C4、C5/C25） | 四轮转速反馈
+3 | IMU660RB 六轴陀螺仪 | 1 | SPI | 航向角/角速度/加速度解算
+4 | OpenART 视觉模块 | 2 | UART4（C16/C17）、UART5（C28/C29），115200bps | UART4：目标偏差、地图、角度指令；UART5：扫描并返回标签
+5 | 无线串口模块 | 1 | UART8（TX=D16、RX=D17、RTS=D26） | 在线 PID 调参与数据回传
+6 | IPS200 显示屏 | 1 | SPI | 运行状态实时显示
+7 | 机械按键 | 4 | 逐飞库 key_init 管理 | 模式切换、参数设置、任务确认
+8 | 蜂鸣器 / LED | 各 1 | GPIO（B11 / B9） | 状态提示、报警

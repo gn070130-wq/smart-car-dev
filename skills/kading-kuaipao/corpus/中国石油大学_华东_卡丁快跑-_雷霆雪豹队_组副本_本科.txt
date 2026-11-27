@@ -1,0 +1,437 @@
+
+第二十一届全国大学生智能汽车竞赛
+
+
+技 术 报 告
+
+二〇二六年八月
+关于技术报告和研究论文使用授权的说明
+本人完全了解全国大学生智能汽车竞赛关于保留、使用技术报告和研究论文的规定，即：参赛作品著作权归参赛者本人，比赛组委会可以在相关主页上收录并公开参赛作品的设计方案、技术报告以及参赛模型车的视频、图像资料，并将相关内容编辑收录在组委会出版论文集中。
+参赛队员签名：
+
+带队教师签名：
+日　期：2026 年8月19日
+
+摘　要
+本技术报告介绍雷霆雪豹队面向第二十一届全国大学生智能汽车竞赛“卡丁快跑”组研制的智能卡丁车。系统以北京科宇一号 T 型卡丁车为机械平台，以英飞凌 TC264D 为主控制器，集成逐飞高帧率凌瞳摄像头、IMU963RA 惯性传感器、欧姆龙转向正交编码器、欧姆龙计米轮差分编码器、TLD7002 灯板驱动和 CI1303 语音模块。
+面向全国总决赛的备赛方案采用双核视觉与路径记忆协同架构。CPU0 负责图像采集、车辆控制、惯导与路径记录，CPU1 负责色块检测；两核通过帧指针状态机和序列计数器交换数据，避免跨核二次整帧复制和互斥等待。启动时将目标色块置于摄像头中央，系统在自动曝光基础上累计 50 帧 HSV 直方图，自适应生成强、弱阈值；运行中通过形态学闭运算、连通域和几何置信度筛选获得目标位置与距离，并采用分段转向增益、低通与斜率限制完成跟随。
+路径记忆部分继承并重新梳理山东省赛区冠军程序。针对高速时驱动轮打滑导致双轮编码器里程失真的问题，团队采用独立计米轮与 IMU 航向进行二维航迹推算；路径按约 2 cm 空间间隔记录，并用局部最近点搜索、跳跃预瞄、Puresuit 路径跟踪控制、曲率限速和电子差速实现快速小半径绕桩。该方案在省赛以最高约 80% 驱动占空比完成比赛，并领先第二名约 10 s。当前备赛程序拟将“视觉跟随色块—同步记录路径—反向自动回放”组织为完整任务流程，尚待整车联调和赛场验证。
+关键词：双核视觉；色块跟踪；路径记忆；计米轮；惯性导航；Puresuit 算法
+
+目　录
+第一章　引言与系统总体方案	1
+1.1　竞赛任务与设计目标	1
+1.2　系统总体架构	1
+1.3　核心创新点	4
+第二章　科宇 T 型卡丁车与机械改造	6
+2.1　基础车模参数	6
+2.2　前轮转向与编码器	7
+2.3　后轮驱动与独立计米轮	8
+2.4　传感器与电控安装	9
+第三章　硬件电路设计	11
+3.1　主控、电源与存储	11
+3.2　编码器接口	12
+3.3　电机驱动	13
+3.4　摄像头、IMU 与交互	14
+3.5　TLD7002 灯光与 CI1303 语音	15
+第四章　全国总决赛备赛视觉感知	17
+4.1　图像采集与双核并行	17
+4.2　启动自适应标定	17
+4.3　鲁棒色块分割	18
+4.4　目标定位与距离估计	19
+4.5　视觉跟随控制与失目标保护	19
+第五章　省赛路径记忆与惯导控制	21
+5.1　计米轮方案与高速优势	21
+5.2　姿态解算与航迹推算	21
+5.3　路径记录与存储	21
+5.4　高效预瞄搜索	21
+5.5　Puresuit 绕桩控制	22
+5.6　曲率限速与电子差速	22
+5.7　反向回放与终点控制	22
+第六章　全国总决赛备赛任务流程与软件实现	23
+6.1　视觉引导录路	23
+6.2　路径回放	23
+6.3　多速率实时调度	23
+6.4　人机交互与安全	24
+第七章　调试方法与试验结果	25
+7.1　ADS 开发、烧录与在线调试	25
+7.2　蓝牙实时路径拟合与参数调整	25
+7.3　蜂鸣器辅助视觉识别确认	25
+7.4　高占空比下编码器电磁干扰测试	26
+7.5　备赛阶段测试结果与待验证项目	26
+第八章　主要参数与总结	28
+8.1　主要技术参数	28
+8.2　总结与展望	29
+参考文献	30
+附录 A　完整电路原理图	31
+附录 B　核心程序节选	37
+B.1　启动标定参数	37
+B.2　视觉跟随录路与返程入口	37
+B.3　计米轮航迹递推	37
+B.4　曲率限速与电子差速	37
+B.5　双核帧状态机与序列锁	37
+B.6　CPU1视觉检测任务	39
+B.7　启动HSV自适应标定	39
+B.8　强弱阈值与3×3闭运算	41
+B.9　连通域生长与候选筛选	45
+B.10　目标定位、距离估计与结果输出	47
+B.11　视觉跟随、PID与失目标保护	50
+B.12　Puresuit预瞄搜索与路径跟踪	53
+B.13　反向回放与终点处理	57
+第一章　引言与系统总体方案
+1.1　竞赛任务与设计目标
+“卡丁快跑”组使用成人尺度卡丁车完成自动行驶任务。相较小型车模，车辆质量、转动惯量、转向回差和功率等级显著增加；高速轮胎打滑、长线缆干扰和视场变化会直接影响定位与控制。因此设计目标不是单点追求最高速度，而是在可解释、可复现的状态估计基础上同时提高速度上限、弯道通过能力和任务鲁棒性。
+本报告以面向全国总决赛准备的摄像头工程为当前软件基线，并把山东省赛冠军工程作为已经赛场验证的路径记忆基础。备赛代码新增视觉跟随及双核并行，同时保留独立计米轮惯导、Puresuit 路径跟踪、电子差速和反向回放。报告严格区分“已在省赛验证”“备赛代码中已实现”和“待整车及赛场验证”三类结论。
+表 1.1　设计目标与验证状态
+
+1.2　系统总体架构
+机械平台采用北京科宇一号 T 型卡丁车，前轮由减速转向电机驱动，左右后轮分别驱动。TC264D 的 CPU0 负责 SCC8660 图像采集、IMU/编码器采样、路径记录和执行控制，CPU1 专职处理色块。摄像头给出目标横向位置与距离，IMU963RA 和独立计米轮给出航向与位移，前轮普通正交编码器闭合转向角环，后轮差分编码器仅安装在独立计米轮上。
+表 1.2　系统分层组成
+
+
+图 1.1（a）　车辆正视图
+图 1.1（b）　车辆侧视图
+
+图 1.1（c）　车辆俯视图
+1.3　核心创新点
+•　独立计米轮替代双驱动轮编码器：高速驱动轮打滑不会直接写入里程，解决“速度越高、惯导越失真”的根本矛盾，使省赛能够把驱动上限提升到约 80% 占空比。
+•　上电即自适应目标色：将色块放到摄像头中央，50帧统计主色相及饱和度、亮度分布，配合硬件自动曝光生成运行阈值，降低不同场馆光照下人工调阈值的工作量。
+•　双核跨核不二次复制：CPU0 先将 DMA 完成帧复制到稳定工作缓冲区，再向 CPU1 发布该缓冲区指针；CPU1 忙时跳过新帧而不堆积，避免两核之间再次复制整帧。结果使用奇偶序列计数器保证快照一致，控制线程既不等待互斥锁，也不读取半更新数据。
+•　强弱阈值滞回分割：强像素作为连通域种子、弱像素补全阴影和反光区域，再通过 3×3 闭运算与几何置信度筛选，提高色块边缘连续性。
+•　面向卡丁车惯量的控制整形：视觉转向采用分段增益、2 px 死区、低通和角度步进限制；纵向控制设距离死区、PWM 斜率限制、快速起步旁路和抗积分饱和。
+•  Puresuit 工程化优化：最近点局部窗口搜索，预瞄点先按 2 cm 平均点距跳转再细查；配合 Menger 曲率限速、实际转角电子差速和正反向复用，降低计算量并缩小绕桩半径。
+第二章　科宇 T 型卡丁车与机械改造
+2.1　基础车模参数
+基础平台为北京科宇科技一号 T 型卡丁车。厂家资料给出的前轮直径为 20 cm、轮宽 8.5 cm，后轮直径为 24 cm、轮宽 8 cm，前后轮距均为 50 cm；前转向减速器传动比 1∶192，后驱减速器传动比 1∶18。上述数据用于安装设计，最终控制模型仍以改装后实车的有效滚动半径、轴距和轮距复测值为准。
+表 2.1　科宇 T 型卡丁车基础参数
+
+
+图 2.1　科宇 T 型卡丁车厂家资料首页与转向电机资料
+2.2　前轮转向与编码器
+前轮共用转向电机并保留原车转向连杆。转向电机轴安装欧姆龙普通 A/B 两相正交编码器，信号直接进入 TC264D 正交解码通道；它与后部计米轮的差分编码器用途和接口不同。程序以累计脉冲代表实际转角，按约 1000 count/° 将目标角换算为编码器目标，并依据误差幅值改变比例与阻尼参数，输出限幅约 ±7000，以抑制大惯量机构的过冲。
+
+图 2.2　前轮转向电机及欧姆龙普通正交编码器
+2.3　后轮驱动与独立计米轮
+左右后轮由独立直流电机驱动。早期考虑用两侧驱动轮编码器估计里程，但大占空比起步、急弯和制动时轮胎滑移严重，轮速积分会把打滑误判为车体位移，进一步破坏 IMU 航向投影后的二维坐标。团队因此放弃双轮编码器里程方案，在车体后部增加独立、轻载、持续压紧地面的计米轮。
+计米轮使用欧姆龙差分编码器，A+/A−、B+/B− 经 AM26C32 接收后送入 TC264D。计米轮不传递驱动扭矩，显著降低纵向滑移；软件以 0.021722 cm/count 作为当前标度并在 200 Hz 周期读取增量。该结构是省赛高速惯导仍能工作的关键，也是 80% 占空比方案得以落地的基础。
+
+图 2.3　独立计米轮及欧姆龙差分编码器
+2.4　传感器与电控安装
+IMU963RA 刚性安装并尽量靠近车辆运动参考点，避免车架局部振动和线束拉扯；摄像头支架保证目标色块进入中央标定区且高速振动下视场不明显摆动。电池、驱动板和主控板低位、对称布置，功率线与编码器/摄像头线分束走线。灯板置于易观察位置，CI1303 语音板与扬声器避开电机强磁场。
+
+图 2.4　 IMU963RA安装
+图 2.5　 整体布局
+图 2.6　摄像头安装
+第三章　硬件电路设计
+3.1　主控、电源与存储
+主控采用英飞凌 SAK-TC264D-40F200N BC。主板完成电池输入保护、3.3 V/5 V 电源、外部 Flash、相机、IMU、显示、串口和电机驱动接口连接。摄像头连续 DMA 与控制中断并行运行，因此电源去耦、时钟稳定和跨核共享区的内存一致性同样重要。路径数据按页写入片内 Flash，外部存储用于扩展参数和调试数据。
+
+图 3.1　TC264D 核心板
+
+图 3.2　主板
+3.2　编码器接口
+前轮转向编码器为普通单端正交输出，接入 TIM3 的 A/B 相输入；后部欧姆龙计米轮编码器为差分输出，主板用 AM26C32 完成 A+/A−、B+/B− 差分接收，并配置 120 Ω 端接和 RC 滤波后接入 TIM4。报告明确区分两种编码器，避免把前轮接口误写成差分。
+
+图 3.3　编码器接口与差分接收电路
+3.3　电机驱动
+双后轮驱动板采用两路 DRV8701E 与外置 MOSFET 全桥，单驱板承担转向电机功率级。PWM 频率配置为 17 kHz，程序分别提供左右后轮和转向输出限幅。电子差速不依赖左右轮速反馈，而是读取前轮实际转角编码器，按车辆几何计算内外轮占空比，避免转向执行误差直接转化为差速误差。
+
+图 3.4　双后轮电机驱动板
+
+图 3.5　转向电机单驱板原理图
+3.4　摄像头、IMU 与交互
+逐飞高帧率凌瞳摄像头在当前备赛代码配置下输出 160×120 RGB565 图像，顶配帧率配置为30，PCLK 经分频后接入 DMA 采集。硬件自动曝光开启，软件曝光控制关闭。IMU963RA 在 5 ms 周期执行六轴 Madgwick 姿态解算；IPS200 与按键用于显示二值图、目标框、编码器和任务状态。上述功能均属于备赛代码与实验室联调内容，尚未经过全国总决赛赛场验证。
+
+图 3.6　主板处理器与摄像头、IMU 接口
+3.5　TLD7002 灯光与 CI1303 语音
+灯板采用英飞凌 TLD7002-16 驱动 16 个占空比通道，控制范围映射为 0～10000，并通过 2 Mbit/s 高速串行链路广播同步更新；驱动代码还保留诊断读回和 OTP 仿真接口。语音模块型号为 CI1303，通过 UART3 向主控发送命令字，程序据此触发灯光组合、蜂鸣或任务状态。
+
+图 3.7　英飞凌 TLD7002 灯板驱动
+
+图 3.8　CI1303 语音板
+第四章　全国总决赛备赛视觉感知
+4.1　图像采集与双核并行
+SCC8660 通过 DMA 采集 RGB565 帧。CPU0 在帧完成后先将 DMA 图像复制到稳定工作缓冲区，再把该缓冲区地址发布到共享区，状态由 FREE 变为 READY；CPU1 作为单一消费者确认 READY 后将状态置为 BUSY，处理完再归还 FREE。CPU1 忙时 CPU0 直接跳过当前帧，不建立等待队列，保证控制使用“较新结果”而不是迟到的旧帧。
+视觉结果包含中心坐标、包围框、距离和置信度。写端更新时先把序列号置为奇数，完成所有字段后再置为偶数；读端仅在两次读取序列号相同且为偶数时接受快照。这种顺序锁式交换无需互斥等待，也避免 CPU0 读取到半更新结构体。
+程序 4.1　CPU1 视觉任务的无锁处理框架（节选）
+
+4.2　启动自适应标定
+当前模式为 VISION_COLOR_MODE_YELLOW_ONLY，AprilTag 解码宏 VISION_TAG_DECODE_ENABLE=0。因此车辆跟踪满足筛选条件的黄色色块，而不是依赖标签 ID。启动跟随前，操作人员将黄色目标置于图像中央 40×30 ROI；系统连续统计 50 帧，要求至少获得 600 个有效像素。
+标定过程把 RGB565 转换为整数 HSV，累计色相、饱和度和亮度直方图，求主色相、色相扩展范围以及 S、V 的低分位数，并把结果限制在安全范围内，生成运行时强、弱阈值。硬件自动曝光先稳定总体亮度，HSV 标定再吸收目标材质和环境色温差异，两级自适应减少不同赛场重新手调阈值的时间。蜂鸣器在标定期间提示状态，标定完成后由按键确认进入跟随。
+
+图 4.1　启动时将目标色块置于摄像头中央进行自动标定
+4.3　鲁棒色块分割
+每个像素先用乘法与移位完成 RGB565 到 HSV 的整数近似，降低浮点开销。强阈值像素作为可靠种子，弱阈值允许阴影、反光和轻微曝光漂移造成的颜色偏差；3×3 形态学闭运算连接一像素裂缝并填补小孔。二值掩膜按位压缩保存，减小 160×120 全帧中间缓冲。
+随后使用洪泛连通域扫描，最多保留面积最大的 10 个候选，再按宽高、面积、填充密度、强像素比例和边界条件计算置信度。黄色目标中心还使用种子点和四向十字扩展进行局部细化，在不申请第二张全帧缓冲的前提下削弱毛刺边缘对中心的影响。
+表 4.1　色块检测流水线
+
+4.4　目标定位与距离估计
+筛选后的包围框中心作为横向观测。距离采用针孔近似，由目标宽度的倒数估算；当前标定常数对应 500 mm 距离下目标宽度 36 px，即 d≈500×36/w。该方法计算量小，适合闭环跟随，但对目标实际宽度、姿态和镜头畸变敏感，提交前应使用多距离实测重新拟合。
+4.5　视觉跟随控制与失目标保护
+横向控制依据像素误差分三段设定增益：小误差优先抑制抖动，中误差提高纠偏速度，大误差使用较强比例并减小微分影响；2 px 死区过滤中心噪声，目标角再经 α=0.35 低通和单周期 20° 步进限制，最终限制在 ±25°。纵向控制以 500 mm 为目标距离，设置 15 mm 死区、PD 校正、α=0.20 低通与 500 PWM/周期斜率限制，并在起步时旁路部分限速以避免响应过慢。
+失目标后程序短时间保持最近一次有效转向和速度，并按丢失时间衰减；目标位于画面边缘时采用专门保持逻辑，避免一出视场立即反向打舵。普通丢失超过约 500 ms 后停车；估计距离小于 200 mm 时紧急停止并蜂鸣提示。PID 更新包含积分限幅和输出限幅，防止长时间饱和后恢复时突变。
+
+图 4.2　备赛色块跟踪与二值图显示
+第五章　省赛路径记忆与惯导控制
+5.1　计米轮方案与高速优势
+省赛阶段的首要难题不是控制公式，而是高速下里程是否可信。双驱动轮编码器在低速看似充分，但大占空比时轮胎纵向滑移、左右轮差速和急弯侧滑会把轮速积分污染；错误里程一旦与 IMU 航向相乘，坐标误差会沿整条路径积累。独立计米轮不输出驱动力，接地载荷小而稳定，使位移观测与驱动滑移解耦。
+在此基础上团队才敢继续提高速度上限。最终山东省赛程序以最高约 80% 驱动占空比运行，并领先第二名约 10 s 获得赛区冠军。该成绩说明“先保证测量真实性，再提高控制带宽”比单纯堆叠控制器增益更有效。
+5.2　姿态解算与航迹推算
+CCU6 每 5 ms 读取 IMU963RA 并执行六轴 Madgwick 姿态解算，同时读取计米轮增量。以偏航角 ψ 和计米轮增量 Δn 递推平面坐标：
+xₖ=xₖ₋₁−0.021722Δn·cosψ，　yₖ=yₖ₋₁−0.021722Δn·sinψ
+式中 0.021722 的单位为 cm/count，符号由编码器安装方向决定。与基于后轮轮速的航迹推算相比，独立计米轮显著减小驱动打滑误差；与单独陀螺积分相比，位移尺度由编码器提供。系统仍会受 IMU 零偏和计米轮偶发离地影响，因此起步前必须静态校零并检查预紧。
+5.3　路径记录与存储
+示教阶段先保存起点，随后当累计里程变化达到约 2 cm 时写入一个二维路径点，使不同车速下空间采样密度保持一致。缓存按页写入 TC264D 片内 Flash，使用有效标志和写后校验；退出录制时强制保存尾部不足一页的数据，防止路径末段丢失。
+5.4　高效预瞄搜索
+最近点搜索只在上一 target_index 前后各约 40 点的窗口内进行，既允许小范围脱线恢复，又避免每个周期遍历全部路径。预瞄搜索先根据 L/2 cm 估算跳跃点，再在跳跃点两侧的窄区间细查，最大前向搜索约 100 点。该“局部最近点 + 跳跃预瞄 + 局部细查”策略把计算量集中到真正可能成为目标的路径段。
+5.5　Puresuit 绕桩控制
+车辆到预瞄点的方位角与当前航向之差记为 η，轴距 Lw=63.5 cm，车辆到预瞄点实际距离为 Ld，Puresuit 目标转角为 δh=atan(2Lw sinη/Ld)。程序还保留由带符号 Menger 曲率生成的前馈接口 δff=atan(Lwκ)，但省赛实际配置 GAIN_FF=0，主要依靠 Puresuit 航向反馈。
+绕桩性能来自反复优化后的整套 Puresuit 工程实现：预瞄点不能过近导致摆振，也不能过远切弯；转向目标需受机械极限约束；实际转角闭环必须在小误差区抑制抖动；弯前速度要提前下降。团队通过逐圈观察目标索引、航向误差和转角，使车辆在不明显甩尾的前提下缩小绕桩圆并提高出弯速度。
+程序 5.1　Puresuit 目标转角计算（节选）
+
+5.6　曲率限速与电子差速
+路径曲率采用 Menger 三点法。Velocity_Init 按 v_max≈√(a_y/|κ|) 生成各路径点允许占空比，使直线加速、弯前降速。电子差速读取前轮实际转角而非命令角，当前代码暂按 R≈64/tan|δ| 及半轮距 30 cm 的调参值计算内外轮比例，并对外轮施加适度增益，降低紧弯中的轮胎拖拽。
+5.7　反向回放与终点控制
+系统支持路径逆序和反向航向处理，使记录路径能够从终点倒序回到起点。终点判定综合末点距离与路径索引，接近终点逐步降低驱动并关闭左右后轮和转向输出；前进、反向分别初始化曲率速度表，但共用同一套最近点与 Puresuit 框架。
+第六章　全国总决赛备赛任务流程与软件实现
+6.1　视觉引导录路
+当前备赛程序的任务入口依次调用 CameraTrack_Start、dot_2、CameraTrack_Stop 和 subject_1_r。车辆首先完成色块标定并启动视觉跟随，在跟随移动目标的同时，dot_2 以独立计米轮和 IMU 记录行驶路径。这样视觉只负责“带车走出一条任务路线”，路径记忆模块同步把路线固化为与后轮打滑弱相关的空间轨迹。
+6.2　路径回放
+视觉跟随阶段结束后关闭摄像头控制，subject_1_r 读取并逆序处理路径，按曲率初始化速度上限，再使用省赛验证的 Puresuit 与电子差速回放。视觉与惯导分阶段承担职责：前者解决“目标在哪里”，后者解决“刚才走过的路线如何稳定重现”，避免视觉短时遮挡直接破坏返程。
+6.3　多速率实时调度
+表 6.1　双核多速率任务安排
+
+6.4　人机交互与安全
+IPS200 显示原始图、二值掩膜、候选框、目标中心和距离，按键完成标定确认、模式选择和急停。CI1303 语音命令与 TLD7002 灯光用于提示准备、运行、失目标和结束状态。软件保护包括转向角限幅、驱动限幅、斜率限制、目标过近急停、失目标超时停车和蜂鸣提示；实车还需配合独立机械急停、保险与防反插连接器。
+第七章　调试方法与试验结果
+7.1　ADS 开发、烧录与在线调试
+程序开发、编译、烧录与在线调试均在 Infineon AURIX Development Studio（ADS）中完成。工程分别配置 CPU0 与 CPU1 任务，利用 ADS 完成程序构建、目标文件下载和运行状态检查，使视觉处理、惯导与执行控制能够按既定核分工协同运行。
+调试时先完成电源、主控、编码器、IMU 和电机驱动等基础模块检查，再逐步接入摄像头、路径记录与反向回放。通过 ADS 观察任务标志、编码器累计值、IMU 航向、视觉结果及控制输出，结合串口诊断信息定位初始化、双核交接和控制状态异常，避免在整车运行阶段同时排查多个模块。
+7.2　蓝牙实时路径拟合与参数调整
+路径记录与 Puresuit 调试阶段通过蓝牙串口实时发送车辆二维坐标、航向、路径点索引、预瞄目标索引及转向输出等变量，在上位机端绘制并拟合车辆航迹。与仅在运行结束后读取 Flash 相比，实时曲线能够直接显示轨迹漂移、路径点疏密和目标索引跳变。
+调试人员将拟合路径与车辆实际运动过程对应，检查计米轮系数、约 2 cm 的空间采样间隔、最近点搜索窗口和动态预瞄距离。蓝牙链路只承担诊断数据传输，不参与闭环控制；正式运行时可降低输出频率或关闭调试打印，避免通信占用影响实时控制节拍。
+
+图 7.1 实时路径拟合
+7.3　蜂鸣器辅助视觉识别确认
+为便于在不持续观察 IPS200 屏幕的情况下确认摄像头状态，程序将蜂鸣器与视觉标定和目标检测结果联动。启动标定尚未完成、当前帧未检测到有效色块或目标丢失超时时，蜂鸣器给出提示；检测结果有效后取消提示，从而形成直观的声响状态反馈。
+该方法用于快速检查目标色块是否进入视场、HSV 标定是否成功以及运行中是否发生失目标。蜂鸣器反馈与屏幕显示的目标框、中心坐标和距离信息相互校验，可减少单独依赖图像界面造成的判断延迟，并为现场反复调整摄像头位置和识别阈值提供辅助。
+7.4　高占空比下编码器电磁干扰测试
+针对后轮电机占空比升高后编码器累计值可能异常的问题，使用示波器在 TC264D 接收端附近测量编码器 A、B 相信号，并分别记录电机未启动、低占空比和高占空比运行时的波形。测试重点包括高低电平幅值、边沿完整性、窄脉冲毛刺及两相信号相位关系。
+对比结果表明，高占空比下电机开关电流带来的干扰更加明显，并与编码器累计计数偏移现象相对应。团队据此检查功率线与信号线分束、编码器地回路、屏蔽和接口滤波，并以示波器波形与静止回零后的累计计数共同评价改进效果，使抗干扰处理从经验判断转为可观测、可复核的调试过程。
+7.5　备赛阶段测试结果与待验证项目
+整车采用“ADS 烧录与变量检查—单模块验证—蓝牙实时路径拟合—蜂鸣器识别确认—示波器干扰排查—低速整车联调—逐步提高占空比”的顺序开展调试。现阶段结果及仍需量化的项目汇总见表 7.1。
+表 7.1　全国总决赛备赛视觉与整车阶段测试记录
+
+第八章　主要参数与总结
+8.1　主要技术参数
+表 8.1　整车主要技术参数
+
+8.2　总结与展望
+本车不是简单把摄像头叠加到省赛程序，而是以赛场验证的计米轮惯导和 Puresuit 为底座，重新组织面向全国总决赛的备赛视觉链路。独立计米轮解决高速驱动轮打滑对里程的污染；启动自适应 HSV 标定降低场馆光照差异；双核帧指针与序列计数器减少复制和阻塞；强弱阈值、局部中心细化及多级安全控制提高色块跟踪的工程鲁棒性；视觉引导录路与惯导反向回放把两套能力串成完整任务。
+后续工作将以实车数据闭环：重新标定相机距离模型、计米轮系数和转向几何；补充不同照度与遮挡条件的成功率；统一 Puresuit 轴距、差速轴距和实际轮距；评估动态预瞄及曲率前馈在拟定任务路线中的收益；完成热稳定、急停和电磁兼容测试。
+参考文献
+[1] 全国大学生智能汽车竞赛组委会. 第二十一届全国大学生智能汽车竞赛技术报告要求[EB/OL]. 2026.
+[2] 北京科宇科技有限公司. 科宇科技 T 型卡丁车资料合集 V1.2[Z].
+[3] Infineon Technologies AG. AURIX™ TC26xB User’s Manual[Z].
+[4] Madgwick S O H. An Efficient Orientation Filter for Inertial and Inertial/Magnetic Sensor Arrays[R]. 2010.
+[5] Coulter R C. Implementation of the Pure Pursuit Path Tracking Algorithm[R]. Carnegie Mellon University, 1992.
+[6] Texas Instruments. AM26C32 Quadruple Differential Line Receiver Datasheet[Z].
+[7] Texas Instruments. DRV8701 Brushed DC Motor Full-Bridge Gate Driver Datasheet[Z].
+[8] Infineon Technologies AG. TLD7002-16ES LED Driver Datasheet[Z].
+[9] 逐飞科技. IMU963RA 与高帧率凌瞳摄像头使用资料[Z].
+附录 A　完整电路原理图
+本附录收录上传原理图压缩包中的全部图纸，便于审阅和制造核对。正文已引用的图纸仍在此完整列出。
+
+附图 A.1　核心板原理图（1/3）
+
+附图 A.2　核心板原理图（2/3）
+
+附图 A.3　核心板原理图（3/3）
+
+附图 A.4　主板原理图（1/3）
+
+附图 A.5　主板原理图（2/3）
+
+附图 A.6　主板原理图（3/3）
+
+附图 A.7　单路电机驱动板
+
+
+附图 A.8　双路电机驱动板
+
+附图 A.9　灯板
+
+
+附图 A.10　TLD7002 灯板驱动
+
+
+附图 A.11　CI1303 语音板
+附录 B　核心程序节选
+B.1　启动标定参数
+
+B.2　视觉跟随录路与返程入口
+
+B.3　计米轮航迹递推
+
+B.4　曲率限速与电子差速
+
+B.5　双核帧状态机与序列锁
+源文件：code/vision_shared.c（帧指针交接与结果一致性快照）
+
+B.6　CPU1视觉检测任务
+源文件：user/cpu1_main.c（CPU1取帧、检测、发布与释放）
+
+B.7　启动HSV自适应标定
+源文件：code/vision_tag16h5.c（中央ROI的50帧直方图标定）
+
+B.8　强弱阈值与3×3闭运算
+源文件：code/vision_tag16h5.c（HSV滞回阈值、弱掩膜与闭运算）
+
+B.9　连通域生长与候选筛选
+源文件：code/vision_tag16h5.c（8邻域生长、强像素计数与几何门限）
+
+B.10　目标定位、距离估计与结果输出
+源文件：code/vision_tag16h5.c（候选质心、距离代理、置信度与最优目标）
+
+B.11　视觉跟随、PID与失目标保护
+源文件：code/cameratrack.c（抗积分饱和、控制节拍、丢帧保持与安全停车）
+
+B.12　Puresuit预瞄搜索与路径跟踪
+源文件：山东省赛冠军工程 code/control.c（局部最近点、跳跃预瞄与Puresuit转角）
+
+B.13　反向回放与终点处理
+源文件：山东省赛冠军工程 code/control.c（路径反转、末端延长与安全停机）
+
+
+===== TABLE 1 =====
+学        校： | 中国石油大学（华东）
+队伍名称： | 雷霆雪豹队
+参赛队员： | 牛泽昊　栗敏宇
+ | 崔智诚　王子萌
+ | 刘海阳
+带队教师： | 宋继志
+
+===== TABLE 2 =====
+目标 | 实现方法 | 证据状态
+高速稳定定位 | 独立计米轮 + IMU963RA 航向递推 | 省赛实战验证
+小半径快速绕桩 | Puresuit 预瞄 + 分段转向闭环 + 电子差速 | 省赛实战验证
+环境自适应识别 | 启动色块采样、自动曝光、HSV 双阈值 | 备赛代码中已实现，待实车验证
+实时视觉控制 | CPU0/CPU1 无锁交换、丢帧不排队 | 备赛代码中已实现，待实车验证
+完整备赛任务流程 | 视觉跟随录路后反向回放 | 程序入口已贯通，待整车联调和赛场验证
+
+===== TABLE 3 =====
+层级 | 器件/模块 | 功能
+机械执行 | 科宇 T 型底盘、转向电机、双后轮电机 | 承载、转向与驱动
+视觉感知 | 逐飞高帧率凌瞳 SCC8660 | 色块位置、宽度与距离
+惯导里程 | IMU963RA、欧姆龙差分计米轮编码器 | 航向与独立里程
+转向反馈 | 欧姆龙普通正交编码器 | 前轮实际转角
+主控交互 | TC264D、IPS200、按键、CI1303 | 双核调度、显示和语音
+灯光执行 | 英飞凌 TLD7002-16 | 16 通道同步灯光控制
+
+===== TABLE 4 =====
+项目 | 厂家资料值 | 用途
+前轮 | 直径 20 cm，宽 8.5 cm | 转向几何与安装校核
+后轮 | 直径 24 cm，宽 8 cm | 驱动与离地间隙校核
+前/后轮距 | 均为 50 cm | 电子差速初始参数
+转向减速比 | 1∶192 | 转向力矩与编码器标定
+后驱减速比 | 1∶18 | 速度—转矩匹配
+
+===== TABLE 5 =====
+if (vision_try_acquire_frame(&frame)) {     vision_detect_tag16h5(frame, &result);     vision_publish_result(&result);   // odd/even sequence snapshot     vision_release_frame(); }
+
+===== TABLE 6 =====
+环节 | 关键做法 | 工程收益
+色彩空间 | RGB565 整数 HSV | 减少浮点运算
+阈值 | 强/弱双阈值 | 兼顾可靠种子与阴影连续性
+形态学 | 3×3 闭运算 | 连接裂缝、填小孔
+候选筛选 | 连通域 + 几何/密度/强像素 | 抑制背景小色块
+中心细化 | 局部十字扩展与重心修正 | 低内存下提高中心稳定性
+
+===== TABLE 7 =====
+float delta_h = atanf(2.0f * sinf(heading_error * deg2rad)                     * WHEELBASE / L_actual) * rad2deg * GAIN_H; float control_out = delta_ff + delta_h; motor_control(control_out);
+
+===== TABLE 8 =====
+周期/事件 | CPU | 任务 | 设计意图
+5 ms | CPU0 | Madgwick、编码器、CameraTrack_ControlTick | 确定性控制节拍
+相机帧完成 | CPU0 | DMA 交接、发布帧指针 | 不阻塞控制中断
+空闲循环 | CPU1 | HSV、形态学、连通域、结果发布 | 充分利用第二核心
+100 ms | CPU0 | 按键扫描与界面状态 | 降低人机任务占用
+串口事件 | CPU0 | CI1303 命令、TLD7002 更新 | 异步交互
+
+===== TABLE 9 =====
+试验 | 变量 | 记录量 | 当前结果与待验证项
+启动标定 | 不同照度/色温 | 运行 HSV 阈值、成功率 | 约 50 帧完成，当前测试未见明显误检
+静态定位 | 0.3～2.0 m、多方位 | 中心误差、距离误差 | 当前环境最远约 1.5 m 可识别
+动态跟随 | 直线、S 弯、遮挡 | 丢帧率、失目标时间、最小距离 | 当前环境最远约 1.3 m 可识别
+录路返程 | 不同速度与路径 | 完成率、返程耗时、终点误差 | 已完成实验室联调
+热稳定性 | 连续运行 20 min | 芯片/驱动温度、重启次数 | 连续运行温度正常、未见异常重启
+ADS 烧录调试 | CPU0/CPU1 工程及关键状态 | 编译下载状态、任务标志与关键变量 | 工程可正常构建和烧录，关键运行状态可在线检查
+蓝牙路径拟合 | 不同速度与路径 | 实时坐标、航向、目标索引与转向输出 | 可实时绘制、拟合航迹，用于调整采样与 Puresuit 参数
+视觉声响确认 | 标定、识别与失目标状态 | 视觉结果与蜂鸣器状态 | 可不依赖屏幕辅助确认标定和识别状态
+编码器抗干扰 | 后轮电机不同占空比 | A/B 相波形、毛刺与累计计数 | 高占空比干扰更明显，为线束、接地和滤波改进提供依据
+
+===== TABLE 10 =====
+类别 | 参数 | 当前值/型号
+车模 | 基础平台 | 北京科宇一号 T 型卡丁车
+主控 | MCU | SAK-TC264D-40F200N BC
+视觉 | 摄像头 | 逐飞高帧率凌瞳 SCC8660，160×120 RGB565
+视觉 | 采集配置 | 顶配30帧，PCLK 分频 2
+惯性 | IMU | 逐飞 IMU963RA
+转向 | 编码器 | 欧姆龙普通正交编码器
+里程 | 编码器 | 欧姆龙差分编码器 + AM26C32
+里程 | 计米轮标度 | 0.021722 cm/count
+控制 | 姿态/编码器周期 | 5 ms（200 Hz）
+路径 | 采样间距 | 约 2 cm（可调）
+控制 | Puresuit 轴距参数 | 63.5 cm
+控制 | 省赛最高驱动 | 约 80% 占空比
+灯光 | 驱动 | Infineon TLD7002-16，2 Mbit/s
+语音 | 模块 | CI1303，UART3
+机械 | 前/后轮 | 20 cm×8.5 cm / 24 cm×8 cm
+机械 | 转向/后驱减速比 | 1∶192 / 1∶18
+电路 | 总功率 | 最高约340W，最大电流约14A
+车模 | 长度 | 130cm
+车模 | 宽度 | 70cm
+传感器 | 数量 | 4
+驱动电机 | 数量 | 2
+转向电机 | 数量 | 1
+其他电机 | 数量 | 0
+电路 | 电容总容量 | 1.55mF
+
+===== TABLE 11 =====
+#define VISION_CALIBRATION_FRAMES      (50U) #define VISION_CALIBRATION_ROI_W       (40U) #define VISION_CALIBRATION_ROI_H       (30U) #define VISION_CALIBRATION_MIN_PIXELS  (600U) #define VISION_COLOR_MODE              VISION_COLOR_MODE_YELLOW_ONLY #define VISION_TAG_DECODE_ENABLE       (0)
+
+===== TABLE 12 =====
+CameraTrack_Start(); dot_2();               // visual following and odometry path recording CameraTrack_Stop(); subject_1_r();         // reverse replay with Puresuit
+
+===== TABLE 13 =====
+float ds = encoder_delta * 0.021722f; dot_x_6 -= ds * cosf(IMU.angle.yaw_a * deg2rad); dot_y_6 -= ds * sinf(IMU.angle.yaw_a * deg2rad);
+
+===== TABLE 14 =====
+float curve = path_curvature(i, 10); float v_max = sqrtf(500.0f / (curve + 1e-6f)); velocity_buffer[i] = MIN(v_max * 20.0f, MAX);  float R = 64.0f / tanf(fabsf(actual_angle) * deg2rad); float ratio = (R - 30.0f) / (R + 30.0f);
+
+===== TABLE 15 =====
+uint8 vision_frame_publish(const uint16 image[SCC8660_H][SCC8660_W]) {     if(VISION_FRAME_FREE != g_vision_frame_state)     {         return 0;     }      g_vision_frame_ptr = image;     __dsync();     g_vision_frame_id ++;     g_vision_frame_state = VISION_FRAME_READY;     __dsync();     return 1; }  const uint16 (*vision_frame_acquire(uint32 *frame_id))[SCC8660_W] {     if(NULL == frame_id)     {         return NULL;     }      if(VISION_FRAME_READY != g_vision_frame_state)     {         return NULL;     }      g_vision_frame_state = VISION_FRAME_BUSY;     __dsync();     *frame_id = g_vision_frame_id;     return g_vision_frame_ptr; }  void vision_frame_release(void) {     __dsync();     g_vision_frame_state = VISION_FRAME_FREE;     __dsync(); }  uint8 vision_frame_is_free(void) {     __dsync();     return (VISION_FRAME_FREE == g_vision_frame_state) ? 1U : 0U; }  void vision_result_publish(const vision_result_t *result) {     if(NULL == result)     {         return;     }      g_vision_result_seq ++;     __dsync();     g_vision_result = *result;     __dsync();     g_vision_result_seq ++;     __dsync(); }  uint8 vision_result_snapshot(vision_result_t *result) {     uint32 seq_before;     uint32 seq_after;      if(NULL == result)     {         return 0;     }      do     {         seq_before = g_vision_result_seq;         if(seq_before & 1U)         {             return 0;         }         __dsync();         *result = g_vision_result;         __dsync();         seq_after = g_vision_result_seq;     }while(seq_before != seq_after);      return (seq_after != 0U); }
+
+===== TABLE 16 =====
+void core1_main(void) {     disable_Watchdog();                     // 关闭看门狗     interrupt_global_enable(0);             // 打开全局中断     // 此处编写用户代码 例如外设初始化代码等        // 此处编写用户代码 例如外设初始化代码等     cpu_wait_event_ready();                 // 等待所有核心初始化完毕     while (TRUE)     {         uint32 frame_id;         const uint16 (*frame)[SCC8660_W] = vision_frame_acquire(&frame_id);          if(NULL != frame)         {             vision_result_t result;             vision_tag16h5_detect(frame, frame_id, &result);             vision_result_publish(&result);             vision_frame_release();         }     } }
+
+===== TABLE 17 =====
+void vision_calibration_reset(void) {     memset(s_cal_hue_hist, 0, sizeof(s_cal_hue_hist));     memset(s_cal_s_hist, 0, sizeof(s_cal_s_hist));     memset(s_cal_v_hist, 0, sizeof(s_cal_v_hist));     s_cal_frames = 0U;     s_cal_pixels = 0U;     s_cal_done = 0U;     s_cal_valid = 0U;     s_runtime_yellow_hue = VISION_HSV_YELLOW_HUE;     s_runtime_yellow_hue_tol = VISION_HSV_YELLOW_HUE_TOL;     s_runtime_yellow_s_min = VISION_HSV_YELLOW_S_MIN;     s_runtime_yellow_v_min = VISION_HSV_YELLOW_V_MIN;     s_runtime_yellow_hue_tol_weak = VISION_HSV_YELLOW_HUE_TOL_WEAK;     s_runtime_yellow_s_min_weak = VISION_HSV_YELLOW_S_MIN_WEAK;     s_runtime_yellow_v_min_weak = VISION_HSV_YELLOW_V_MIN_WEAK; }  void vision_calibration_update_center(const uint16 image[SCC8660_H][SCC8660_W]) { #if VISION_CALIBRATION_ENABLE     uint16 x;     uint16 y;     uint16 x_min;     uint16 x_max;     uint16 y_min;     uint16 y_max;      if(s_cal_done || NULL == image)     {         return;     }      x_min = (uint16)((SCC8660_W - VISION_CALIBRATION_ROI_W) / 2U);     x_max = (uint16)(x_min + VISION_CALIBRATION_ROI_W);     y_min = (uint16)((SCC8660_H - VISION_CALIBRATION_ROI_H) / 2U);     y_max = (uint16)(y_min + VISION_CALIBRATION_ROI_H);      for(y = y_min; y < y_max; y++)     {         for(x = x_min; x < x_max; x++)         {             uint8 h;             uint8 v;             uint8 delta;             uint16 s;              rgb565_to_hv_delta(image[y][x], &h, &v, &delta);             if(v < 15U) continue;             s = (v > 0U) ? (uint16)((uint16)delta * 255U / v) : 0U;             if(s < 20U) continue;             if(hue_distance(h, VISION_HSV_YELLOW_HUE) > 50U) continue;              s_cal_hue_hist[h]++;             s_cal_s_hist[(uint8)s]++;             s_cal_v_hist[v]++;             s_cal_pixels++;         }     }      s_cal_frames++;     if(s_cal_frames >= VISION_CALIBRATION_FRAMES)     {         uint16 i;         uint8 peak_hue = VISION_HSV_YELLOW_HUE;         uint16 peak_count = 0U;         int32 offset_sum = 0;         uint32 offset_abs_sum = 0U;         uint32 local_count = 0U;         uint8 s_p20;         uint8 v_p20;         uint8 avg_abs;         int32 hue;          s_cal_done = 1U;         if(s_cal_pixels < VISION_CALIBRATION_MIN_PIXELS)         {             return;         }          for(i = 0U; i <= VISION_HSV_HUE_MAX; i++)         {             if(s_cal_hue_hist[i] > peak_count)             {                 peak_count = s_cal_hue_hist[i];                 peak_hue = (uint8)i;             }         }          for(i = 0U; i <= VISION_HSV_HUE_MAX; i++)         {             int16 offset = hue_signed_offset((uint8)i, peak_hue);             uint16 count = s_cal_hue_hist[i];             int16 abs_offset = (offset < 0) ? (int16)(-offset) : offset;              if(count == 0U || abs_offset > 24) continue;             offset_sum += (int32)offset * count;             offset_abs_sum += (uint32)abs_offset * count;             local_count += count;         }          if(local_count < VISION_CALIBRATION_MIN_PIXELS)         {             return;         }          avg_abs = (uint8)(offset_abs_sum / local_count);         if(avg_abs > 14U)         {             return;         }          hue = (int32)peak_hue + (offset_sum / (int32)local_count);         while(hue < 0) hue += ((int32)VISION_HSV_HUE_MAX + 1);         while(hue > VISION_HSV_HUE_MAX) hue -= ((int32)VISION_HSV_HUE_MAX + 1);          s_p20 = histogram_percentile_u8(s_cal_s_hist, s_cal_pixels, 20U);         v_p20 = histogram_percentile_u8(s_cal_v_hist, s_cal_pixels, 20U);          s_runtime_yellow_hue = (uint8)hue;         s_runtime_yellow_hue_tol = clamp_u8((int32)avg_abs * 2 + 4, 6U, 18U);         s_runtime_yellow_hue_tol_weak = clamp_u8((int32)s_runtime_yellow_hue_tol + 15, 12U, 32U);//识别不到时改大         s_runtime_yellow_s_min = clamp_u8((int32)s_p20 - 5, 25U, 120U);         s_runtime_yellow_s_min_weak = clamp_u8((int32)s_runtime_yellow_s_min - 25, 18U, 100U);//识别不到时改宽         s_runtime_yellow_v_min = clamp_u8((int32)v_p20 - 5, 15U, 120U);         s_runtime_yellow_v_min_weak = clamp_u8((int32)s_runtime_yellow_v_min - 25, 10U, 100U);//识别不到时改宽         s_cal_valid = 1U;     } #else     (void)image; #endif }  uint8 vision_calibration_is_done(void) {     return s_cal_done; }  uint8 vision_calibration_is_valid(void) {     return s_cal_valid; }
+
+===== TABLE 18 =====
+static uint8 color_hsv_ok(     uint16 pixel,     uint8 target_hue,     uint8 hue_tol,     uint8 s_min,     uint8 v_min) {     uint8 h;     uint8 v;     uint8 delta;      rgb565_to_hv_delta(pixel, &h, &v, &delta);     if(v < v_min) return 0;     if((uint16)delta * 255U < (uint16)v * s_min) return 0;     if(hue_distance(h, target_hue) > hue_tol) return 0;     return 1; }  static uint8 pixel_is_yellow(uint16 pixel) { #if VISION_COLOR_HYSTERESIS_ENABLE     return color_hsv_ok(pixel, s_runtime_yellow_hue,                         s_runtime_yellow_hue_tol_weak,                         s_runtime_yellow_s_min_weak,                         s_runtime_yellow_v_min_weak); #else     return color_hsv_ok(pixel, s_runtime_yellow_hue,                         s_runtime_yellow_hue_tol,                         s_runtime_yellow_s_min,                         s_runtime_yellow_v_min); #endif }  static uint8 pixel_is_yellow_strong(uint16 pixel) {     return color_hsv_ok(pixel, s_runtime_yellow_hue,                         s_runtime_yellow_hue_tol,                         s_runtime_yellow_s_min,                         s_runtime_yellow_v_min); }  static void mask_close_3x3(uint8 *mask) {     uint8 *scratch = (uint8 *)s_flood_queue; #if !VISION_TAG_ROI_ENABLE && ((VISION_GRID_W & 7U) == 0U)     uint16 byte_x;     uint16 y;      // Packed fast path: each operation processes eight adjacent pixels. The     // old per-pixel 3x3 loops cost hundreds of thousands of bitmap accesses     // per frame at 160x120.     for(y = 0U; y < VISION_GRID_H; y++)     {         uint16 row = (uint16)(y * VISION_MASK_ROW_BYTES);         for(byte_x = 0U; byte_x < VISION_MASK_ROW_BYTES; byte_x++)         {             uint16 index = (uint16)(row + byte_x);             uint8 vertical = mask[index];             uint8 left;             uint8 right;              if(y > 0U) vertical |= mask[index - VISION_MASK_ROW_BYTES];             if(y + 1U < VISION_GRID_H) vertical |= mask[index + VISION_MASK_ROW_BYTES];              left = (uint8)(vertical << 1U);             if(byte_x > 0U)             {                 uint16 side = (uint16)(index - 1U);                 uint8 carry = mask[side];                 if(y > 0U) carry |= mask[side - VISION_MASK_ROW_BYTES];                 if(y + 1U < VISION_GRID_H) carry |= mask[side + VISION_MASK_ROW_BYTES];                 left |= (uint8)(carry >> 7U);             }              right = (uint8)(vertical >> 1U);             if(byte_x + 1U < VISION_MASK_ROW_BYTES)             {                 uint16 side = (uint16)(index + 1U);                 uint8 carry = mask[side];                 if(y > 0U) carry |= mask[side - VISION_MASK_ROW_BYTES];                 if(y + 1U < VISION_GRID_H) carry |= mask[side + VISION_MASK_ROW_BYTES];                 right |= (uint8)(carry << 7U);             }              scratch[index] = (uint8)(vertical | left | right);         }     }      for(y = 0U; y < VISION_GRID_H; y++)     {         uint16 row = (uint16)(y * VISION_MASK_ROW_BYTES);         for(byte_x = 0U; byte_x < VISION_MASK_ROW_BYTES; byte_x++)         {             uint16 index = (uint16)(row + byte_x);             uint8 vertical = scratch[index];             uint8 left;             uint8 right;              // Missing image-border neighbours are neutral for erosion, which             // preserves the edge behaviour of the original implementation.             if(y > 0U) vertical &= scratch[index - VISION_MASK_ROW_BYTES];             if(y + 1U < VISION_GRID_H) vertical &= scratch[index + VISION_MASK_ROW_BYTES];              left = (uint8)(vertical << 1U);             if(byte_x > 0U)             {                 uint16 side = (uint16)(index - 1U);                 uint8 carry = scratch[side];                 if(y > 0U) carry &= scratch[side - VISION_MASK_ROW_BYTES];                 if(y + 1U < VISION_GRID_H) carry &= scratch[side + VISION_MASK_ROW_BYTES];                 left |= (uint8)(carry >> 7U);             }             else             {                 left |= 0x01U;             }              right = (uint8)(vertical >> 1U);             if(byte_x + 1U < VISION_MASK_ROW_BYTES)             {                 uint16 side = (uint16)(index + 1U);                 uint8 carry = scratch[side];                 if(y > 0U) carry &= scratch[side - VISION_MASK_ROW_BYTES];                 if(y + 1U < VISION_GRID_H) carry &= scratch[side + VISION_MASK_ROW_BYTES];                 right |= (uint8)(carry << 7U);             }             else             {                 right |= 0x80U;             }              mask[index] = (uint8)(vertical & left & right);         }     } #else     uint16 x;     uint16 y;      memset(scratch, 0, VISION_MASK_BYTES);      // Dilation: bridge one-cell gaps in the weak-threshold mask.     for(y = 0U; y < VISION_GRID_H; y++)     {         for(x = 0U; x < VISION_GRID_W; x++)         {             int16 nx;             int16 ny;             uint8 set = 0U;              if(!mask_cell_in_tag_roi(x, y)) continue;             for(ny = (int16)y - 1; ny <= (int16)y + 1 && !set; ny++)             {                 for(nx = (int16)x - 1; nx <= (int16)x + 1; nx++)                 {                     if(nx < 0 || ny < 0 || nx >= VISION_GRID_W || ny >= VISION_GRID_H) continue;                     if(bitmap_get(mask, (uint16)nx, (uint16)ny))                     {                         set = 1U;                         break;                     }                 }             }             if(set) bitmap_set(scratch, x, y, 1U);         }     }      memset(mask, 0, VISION_MASK_BYTES);      // Erosion: restore the frame thickness after dilation.     for(y = 0U; y < VISION_GRID_H; y++)     {         for(x = 0U; x < VISION_GRID_W; x++)         {             int16 nx;             int16 ny;             uint8 keep = 1U;              if(!mask_cell_in_tag_roi(x, y)) continue;             for(ny = (int16)y - 1; ny <= (int16)y + 1 && keep; ny++)             {                 for(nx = (int16)x - 1; nx <= (int16)x + 1; nx++)                 {                     // Outside the image/ROI is neutral for erosion. This keeps                     // edge-touching blobs on the edge so the candidate gate can                     // still reject them instead of shrinking them inward.                     if(nx < 0 || ny < 0 || nx >= VISION_GRID_W || ny >= VISION_GRID_H) continue;                     if(!mask_cell_in_tag_roi((uint16)nx, (uint16)ny)) continue;                     if(!bitmap_get(scratch, (uint16)nx, (uint16)ny))                     {                         keep = 0U;                         break;                     }                 }             }             if(keep) bitmap_set(mask, x, y, 1U);         }     } #endif }  static void build_primary_mask(     const uint16 image[SCC8660_H][SCC8660_W],     uint8 primary_yellow) {     uint16 gy;      for(gy = 0U; gy < VISION_GRID_H; gy++)     {         uint16 byte_x;         uint16 row = (uint16)(gy * VISION_MASK_ROW_BYTES);         uint16 py = (uint16)(gy * VISION_DS + (VISION_DS / 2U));          for(byte_x = 0U; byte_x < VISION_MASK_ROW_BYTES; byte_x++)         {             uint8 color_bits = 0U;             uint8 bit;              for(bit = 0U; bit < 8U; bit++)             {                 uint16 gx = (uint16)(byte_x * 8U + bit);                 uint16 px;                  if(gx >= VISION_GRID_W || !mask_cell_in_tag_roi(gx, gy)) continue;                 px = (uint16)(gx * VISION_DS + (VISION_DS / 2U));                 color_bits |= (uint8)((primary_yellow ? pixel_is_yellow(image[py][px])                                                        : pixel_is_cyan(image[py][px])) << bit);             }              s_cyan_mask[row + byte_x] = color_bits;         }     }  #if VISION_MASK_CLOSE_ENABLE     mask_close_3x3(s_cyan_mask); #endif }
+
+===== TABLE 19 =====
+static void component_init(color_component_t *component, uint8 x, uint8 y) {     component->count = 0;     component->strong_count = 0;     component->sum_x = 0U;     component->sum_y = 0U;     component->min_x = x;     component->max_x = x;     component->min_y = y;     component->max_y = y;     component->corner_x[0] = x;     component->corner_y[0] = y;     component->corner_x[1] = x;     component->corner_y[1] = y;     component->corner_x[2] = x;     component->corner_y[2] = y;     component->corner_x[3] = x;     component->corner_y[3] = y; }  static void component_add(color_component_t *component, uint8 x, uint8 y) {     int16 sum = (int16)x + (int16)y;     int16 difference = (int16)x - (int16)y;     int16 old_value;      component->count ++;     component->sum_x += x;     component->sum_y += y;     if(x < component->min_x) component->min_x = x;     if(x > component->max_x) component->max_x = x;     if(y < component->min_y) component->min_y = y;     if(y > component->max_y) component->max_y = y;      old_value = (int16)component->corner_x[0] + (int16)component->corner_y[0];     if(sum < old_value)     {         component->corner_x[0] = x;         component->corner_y[0] = y;     }     old_value = (int16)component->corner_x[1] - (int16)component->corner_y[1];     if(difference > old_value)     {         component->corner_x[1] = x;         component->corner_y[1] = y;     }     old_value = (int16)component->corner_x[2] + (int16)component->corner_y[2];     if(sum > old_value)     {         component->corner_x[2] = x;         component->corner_y[2] = y;     }     old_value = (int16)component->corner_x[3] - (int16)component->corner_y[3];     if(difference < old_value)     {         component->corner_x[3] = x;         component->corner_y[3] = y;     } }  static void flood_component(     const uint16 image[SCC8660_H][SCC8660_W],     uint8 start_x,     uint8 start_y,     uint8 use_color_target,     uint8 primary_yellow,     color_component_t *component) {     uint16 head = 0;     uint16 tail = 0;  #if !VISION_COLOR_HYSTERESIS_ENABLE     (void)image;     (void)use_color_target;     (void)primary_yellow; #endif      component_init(component, start_x, start_y);     s_flood_queue[tail ++] = (uint16)((uint16)start_y * VISION_GRID_W + start_x);     cyan_mask_set(start_x, start_y, 0);      while(head < tail)     {         uint16 index = s_flood_queue[head ++];         uint8 x = (uint8)(index % VISION_GRID_W);         uint8 y = (uint8)(index / VISION_GRID_W);         int16 nx;         int16 ny;          component_add(component, x, y); #if VISION_COLOR_HYSTERESIS_ENABLE         if(use_color_target && color_cell_matches(image, x, y, primary_yellow, 1U))         {             component->strong_count++;         } #endif         for(ny = (int16)y - 1; ny <= (int16)y + 1; ny ++)         {             for(nx = (int16)x - 1; nx <= (int16)x + 1; nx ++)             {                 if(nx < 0 || ny < 0 || nx >= VISION_GRID_W || ny >= VISION_GRID_H) continue;                 if(cyan_mask_get((uint16)nx, (uint16)ny))                 {                     if(tail < VISION_FLOOD_QUEUE_CAP)                     {                         cyan_mask_set((uint16)nx, (uint16)ny, 0);                         s_flood_queue[tail ++] = (uint16)((uint16)ny * VISION_GRID_W + (uint16)nx);                     }                 }             }         }     } }  static uint8 component_is_candidate(     const color_component_t *component,     uint8 use_color_target,     uint8 primary_yellow) {     uint16 width = (uint16)(component->max_x - component->min_x + 1U);     uint16 height = (uint16)(component->max_y - component->min_y + 1U);     uint32 area = (uint32)width * (uint32)height;     uint32 density_x100;     uint16 min_component = use_color_target ? VISION_CYAN_MIN_COMPONENT : VISION_DARK_MIN_COMPONENT;     uint16 min_box = use_color_target ? VISION_CYAN_MIN_BOX : VISION_DARK_MIN_BOX;      if(component->count < min_component) return 0; #if VISION_COLOR_HYSTERESIS_ENABLE     if(use_color_target)     {         uint16 strong_min = primary_yellow ? VISION_YELLOW_STRONG_MIN_PIXELS                                            : VISION_CYAN_STRONG_MIN_PIXELS;         if(component->strong_count < strong_min) return 0;     } #else     (void)primary_yellow; #endif     if(width < min_box || height < min_box) return 0;     if(width > height * 3U || height > width * 3U) return 0;     if(area == 0U) return 0;     density_x100 = (uint32)component->count * 100U;     if(density_x100 < area * 8U) return 0;     if(use_color_target)     {         if(primary_yellow)         {             if(density_x100 < area * VISION_YELLOW_DENSITY_MIN) return 0; #if VISION_COLOR_HYSTERESIS_ENABLE             if((uint32)component->strong_count * 100U <                (uint32)component->count * VISION_YELLOW_STRONG_RATIO_MIN) return 0; #endif         }         else if(density_x100 < area * VISION_CYAN_DENSITY_MIN)         {             return 0;         }         // The cyan target is a frame around yellow, while a yellow-only target         // is expected to be a solid component and may fill its whole bbox.         if(!primary_yellow &&            density_x100 > area * VISION_CYAN_DENSITY_MAX) return 0;     } #if VISION_TAG_ROI_ENABLE     {         uint16 roi_grid_x_min = (VISION_TAG_ROI_X_MIN + VISION_DS - 1U) / VISION_DS;         uint16 roi_grid_y_min = (VISION_TAG_ROI_Y_MIN + VISION_DS - 1U) / VISION_DS;         uint16 roi_grid_x_max = (VISION_TAG_ROI_X_MAX - (VISION_DS - 1U)) / VISION_DS;         uint16 roi_grid_y_max = (VISION_TAG_ROI_Y_MAX - (VISION_DS - 1U)) / VISION_DS;          if(component->min_x <= roi_grid_x_min || component->min_y <= roi_grid_y_min ||            component->max_x >= roi_grid_x_max || component->max_y >= roi_grid_y_max) return 0;     } #endif     if(component->min_x == 0U || component->min_y == 0U ||        component->max_x == (VISION_GRID_W - 1U) || component->max_y == (VISION_GRID_H - 1U)) return 0;     return 1; }
+
+===== TABLE 20 =====
+static uint8 evaluate_component_frame_only(     const uint16 image[SCC8660_H][SCC8660_W],     const color_component_t *component,     vision_result_t *candidate) {     uint16 target_cx;     uint16 target_cy;     uint16 secondary_count = 0U;     uint16 px_min_x;     uint16 px_max_x;     uint16 px_min_y;     uint16 px_max_y;  #if (VISION_COLOR_MODE == VISION_COLOR_MODE_CYAN_YELLOW)     if(!check_yellow_interior(image, component,                               &target_cx, &target_cy, &secondary_count)) return 0; #elif (VISION_COLOR_MODE == VISION_COLOR_MODE_YELLOW_ONLY)     if(component->count == 0U) return 0;     target_cx = (uint16)(((component->sum_x * VISION_DS) +                           (component->count / 2U)) / component->count +                          (VISION_DS / 2U));     target_cy = (uint16)(((component->sum_y * VISION_DS) +                           (component->count / 2U)) / component->count +                          (VISION_DS / 2U)); #else     (void)image; #endif      px_min_x = (uint16)(component->min_x * VISION_DS);     px_max_x = (uint16)(component->max_x * VISION_DS + (VISION_DS - 1U));     px_min_y = (uint16)(component->min_y * VISION_DS);     px_max_y = (uint16)(component->max_y * VISION_DS + (VISION_DS - 1U));  #if (VISION_COLOR_MODE == VISION_COLOR_MODE_CYAN_ONLY)     target_cx = (uint16)(((uint32)px_min_x + px_max_x) / 2U);     target_cy = (uint16)(((uint32)px_min_y + px_max_y) / 2U); #elif VISION_YELLOW_REFINE_ENABLE     yellow_seed_refine(image, px_min_x, px_max_x, px_min_y, px_max_y,                        &target_cx, &target_cy); #endif      candidate->detected = 1;     candidate->tag_id   = 0U;     candidate->rotation = 0;     candidate->hamming  = 0;      candidate->corner_x[0] = px_min_x; candidate->corner_y[0] = px_min_y;     candidate->corner_x[1] = px_max_x; candidate->corner_y[1] = px_min_y;     candidate->corner_x[2] = px_max_x; candidate->corner_y[2] = px_max_y;     candidate->corner_x[3] = px_min_x; candidate->corner_y[3] = px_max_y;      candidate->center_x = target_cx;     candidate->center_y = target_cy;     candidate->tag_width  = (uint16)(px_max_x - px_min_x + 1U);     candidate->tag_height = (uint16)(px_max_y - px_min_y + 1U);     candidate->lateral_error_q15 = (int16)(((int32)candidate->center_x - (SCC8660_W / 2)) * 32767 / (SCC8660_W / 2));     candidate->distance_proxy_q10 = (candidate->tag_width > 0U) ? (uint16)(1024U * 64U / candidate->tag_width) : 0U;     if(candidate->tag_width > 0U)     {         uint32 calibration_k = (uint32)VISION_DISTANCE_CALIBRATION_DISTANCE_MM *                                (uint32)VISION_DISTANCE_CALIBRATION_WIDTH_PX;         uint32 distance_mm = calibration_k / (uint32)candidate->tag_width;         candidate->distance_mm = (distance_mm > 65535U) ? 65535U : (uint16)distance_mm;     }     else     {         candidate->distance_mm = 0U;     }     {         uint32 area = (uint32)(component->max_x - component->min_x + 1U) *                       (uint32)(component->max_y - component->min_y + 1U);         uint32 density = (area > 0U) ? ((uint32)component->count * 100U / area) : 0U;         uint32 strong_ratio = (component->count > 0U) ?                               ((uint32)component->strong_count * 100U / component->count) : 0U;         uint32 confidence = density * 8U + strong_ratio * 4U +                             component->count / 8U + secondary_count;          candidate->confidence = (confidence > 1000U) ? 1000U : (uint16)confidence;     }     candidate->magenta_pixels = component->count;     return 1; }  void vision_tag16h5_detect(     const uint16 image[SCC8660_H][SCC8660_W],     uint32 frame_id,     vision_result_t *result) {     color_component_t candidates[VISION_MAX_CANDIDATES];     uint16 x;     uint16 y;     uint8 candidate_count = 0;     uint8 i;     uint8 use_color_target = VISION_COLOR_TARGET_ENABLE ? 1U : 0U;     uint8 primary_yellow = (VISION_COLOR_MODE == VISION_COLOR_MODE_YELLOW_ONLY) ? 1U : 0U;      memset(result, 0, sizeof(*result));     result->tag_id = 0xFFU;     result->frame_id = frame_id;      if(use_color_target) build_primary_mask(image, primary_yellow);     else                 build_dark_mask(image);      for(y = 0; y < VISION_GRID_H; y ++)     {         for(x = 0; x < VISION_GRID_W; x ++)         {             if(cyan_mask_get(x, y))             {                 color_component_t component;                 flood_component(image, (uint8)x, (uint8)y,                                 use_color_target, primary_yellow, &component);                 if(component_is_candidate(&component, use_color_target, primary_yellow))                 {                     if(candidate_count < VISION_MAX_CANDIDATES)                     {                         candidates[candidate_count ++] = component;                     }                     else                     {                         uint8 smallest = 0;                         for(i = 1; i < VISION_MAX_CANDIDATES; i ++)                         {                             if(candidates[i].count < candidates[smallest].count) smallest = i;                         }                         if(component.count > candidates[smallest].count) candidates[smallest] = component;                     }                 }             }         }     }      for(i = 0; i < candidate_count; i ++)     {         vision_result_t candidate;         memset(&candidate, 0, sizeof(candidate));         candidate.frame_id = frame_id; #if VISION_TAG_DECODE_ENABLE         if(evaluate_component(image, &candidates[i], use_color_target, &candidate)) #else         if(evaluate_component_frame_only(image, &candidates[i], &candidate)) #endif         {             if(!result->detected || candidate.confidence > result->confidence)             {                 *result = candidate;             }         }     }      result->detect_us = system_getval_us() - detect_start_us; }
+
+===== TABLE 21 =====
+static void apply_lost_frame_hold(void) {     float speed_scale = s_last_target_too_far ?                         CAMERA_TRACK_LOST_FAR_SPEED_SCALE :                         CAMERA_TRACK_LOST_SPEED_SCALE;     float wheel_target_pwm = s_last_valid_wheel_pwm * speed_scale;     float wheel_pwm;      wheel_target_pwm = clamp_float(wheel_target_pwm, CAMERA_TRACK_MAX_WHEEL_PWM);     wheel_pwm = filter_wheel_pwm(wheel_target_pwm);     camera_track_set_rear_wheel_pwm(wheel_pwm);     s_last_wheel_pwm = wheel_pwm;     s_debug_wheel_target = (int32)wheel_target_pwm;     s_debug_wheel_pwm = (int32)wheel_pwm; }  static float pid_update(camera_track_pid_t *pid, float error) {     float derivative = error - pid->previous_error;     float candidate_integral = pid->integral + error;     float output;      candidate_integral = clamp_float(candidate_integral, pid->integral_limit);     output = pid->kp * error +              pid->ki * candidate_integral +              pid->kd * derivative;      // Do not continue integrating while the output is saturated in the     // direction of the error.     if((output < pid->output_limit && output > -pid->output_limit) ||        (output >= pid->output_limit && error < 0.0F) ||        (output <= -pid->output_limit && error > 0.0F))     {         pid->integral = candidate_integral;     }     output = clamp_float(output, pid->output_limit);     pid->previous_error = error;     return output; }  void CameraTrack_ControlTick(void) {     if(!s_tracking_enabled)     {         return;     }      if(camera_track_calibration_pending())     {         camera_track_buzzer_set(1U);         stop_tracking_motion();         return;     }      if(camera_track_x_stop_triggered())     {         camera_track_exit_tracking_now();         return;     }      if(camera_track_start_confirm_pending())     {         if(camera_track_start_confirm_pressed())         {             s_wait_start_confirm = 0U;             s_last_valid_tick = stime;             pid_reset(&s_steering_pid);             pid_reset(&s_distance_pid);             s_wheel_fast_start = 1U;         }         else         {             camera_track_buzzer_set(0U);             stop_tracking_motion();             return;         }     }      if(stop_flag || !s_has_valid_result)     {         if(stop_flag)         {             stop_tracking_motion();             pid_reset(&s_steering_pid);             pid_reset(&s_distance_pid);         }         else         {             stop_steering_motor();         }         return;     }      if(!s_last_target_at_edge &&        (stime - s_last_valid_tick) > CAMERA_TRACK_LOST_TIMEOUT_TICKS)     {         camera_track_buzzer_set(1U);         stop_steering_motor();         return;     }      motor_control(s_last_steering_target_deg); }  void CameraTrack_Process(void) {     vision_result_t result;     uint32 now_tick;     uint32 lost_ticks;     float lateral_error_px;     float distance_error_mm;     float steering_target_deg;     float distance_correction_pwm;     float wheel_target_pwm;     float wheel_pwm;      if(!s_tracking_enabled) return;     if(stop_flag)     {         s_has_valid_result = 0U;         pid_reset(&s_steering_pid);         pid_reset(&s_distance_pid);         stop_tracking_motion();         return;     }      if(camera_track_calibration_pending())     {         camera_track_buzzer_set(1U);         s_has_valid_result = 0U;         s_last_steering_target_deg = 0.0F;         s_steering_lpf_deg = 0.0F;         pid_reset(&s_steering_pid);         pid_reset(&s_distance_pid);         stop_tracking_motion();         return;     }      if(camera_track_x_stop_triggered())     {         camera_track_exit_tracking_now();         return;     }      if(camera_track_start_confirm_pending())     {         if(camera_track_start_confirm_pressed())         {             s_wait_start_confirm = 0U;             s_last_frame_id = 0U;             s_last_valid_tick = stime;             pid_reset(&s_steering_pid);             pid_reset(&s_distance_pid);             s_wheel_fast_start = 1U;             camera_track_buzzer_set(0U);         }         else         {             s_has_valid_result = 0U;             s_last_steering_target_deg = 0.0F;             s_steering_lpf_deg = 0.0F;             pid_reset(&s_steering_pid);             pid_reset(&s_distance_pid);             camera_track_buzzer_set(0U);             stop_tracking_motion();             return;         }     }      now_tick = stime;     if(s_has_valid_result)     {         lost_ticks = now_tick - s_last_valid_tick;         if(lost_ticks > CAMERA_TRACK_LOST_TIMEOUT_TICKS &&            !s_last_target_at_edge &&            !s_last_target_too_far)         {             camera_track_buzzer_set(1U);             s_has_valid_result = 0U;             stop_tracking_motion();             pid_reset(&s_steering_pid);             pid_reset(&s_distance_pid);             return;         }     }      if(!vision_result_snapshot(&result))     {         return;     }     if(result.frame_id == s_last_frame_id)     {         return;     }     s_last_frame_id = result.frame_id;      if(!result.detected || #if VISION_TAG_DECODE_ENABLE        result.tag_id != CAMERA_TRACK_TARGET_TAG_ID || #endif        result.distance_mm == 0U)     {         camera_track_buzzer_set(1U);         if(s_has_valid_result) apply_lost_frame_hold();         else stop_tracking_motion();         return;     }      camera_track_buzzer_set(0U);     // Positive error means the tag is to the right of the camera center.     lateral_error_px = (float)result.center_x - ((float)SCC8660_W * 0.5F);     if(fabsf(lateral_error_px) < CAMERA_TRACK_STEERING_DEADBAND_PX)     {         lateral_error_px = 0.0F;     }     camera_track_select_steering_pid(lateral_error_px);     steering_target_deg = CAMERA_TRACK_STEERING_SIGN *                           pid_update(&s_steering_pid, lateral_error_px);     steering_target_deg = filter_steering_target(steering_target_deg);     steering_target_deg = clamp_float(steering_target_deg,                                       CAMERA_TRACK_STEERING_MAX_DEG);      if(result.distance_mm < CAMERA_TRACK_EMERGENCY_STOP_DISTANCE_MM)     {         s_has_valid_result = 0U;         pid_reset(&s_steering_pid);         pid_reset(&s_distance_pid);         stop_tracking_motion();         return;     }      // Positive distance error means the car is too far away. The rear-facing     // camera tracks by reversing, so CAMERA_TRACK_DRIVE_SIGN is negative.     distance_error_mm = (float)result.distance_mm - CAMERA_TRACK_TARGET_DISTANCE_MM;     if(fabsf(distance_error_mm) <= CAMERA_TRACK_DISTANCE_DEADBAND_MM)     {         pid_reset(&s_distance_pid);         distance_correction_pwm = 0.0F;     }     else     {         distance_correction_pwm = CAMERA_TRACK_DRIVE_SIGN *                                   pid_update(&s_distance_pid, distance_error_mm);     }      wheel_target_pwm = CAMERA_TRACK_BASE_WHEEL_PWM + distance_correction_pwm;     wheel_target_pwm = clamp_float(wheel_target_pwm, CAMERA_TRACK_MAX_WHEEL_PWM);     wheel_pwm = filter_wheel_pwm(wheel_target_pwm);     camera_track_set_rear_wheel_pwm(wheel_pwm);     s_debug_distance_error = (int32)distance_error_mm;     s_debug_wheel_target = (int32)wheel_target_pwm;     s_debug_wheel_pwm = (int32)wheel_pwm;     s_last_steering_target_deg = steering_target_deg;     s_last_wheel_pwm = wheel_pwm;     s_last_valid_wheel_pwm = wheel_pwm;     s_last_target_at_edge = camera_track_target_at_edge(&result);     s_last_target_too_far =         (uint8)(result.distance_mm >= CAMERA_TRACK_LOST_FAR_DISTANCE_MM);     s_last_valid_tick = now_tick;     s_has_valid_result = 1U; }
+
+===== TABLE 22 =====
+void find_lookahead_index(float L){     float min_distance = 1000.f;       // 搜索范围：以当前目标点为中心，前后LOOKAHEAD_SEARCH_RANGE个点     // 适应车辆偏离路径的情况，同时控制计算量     int search_start = target_index - LOOKAHEAD_SEARCH_RANGE;     int search_end = target_index + LOOKAHEAD_SEARCH_RANGE;      // 边界检查：防止索引越界，确保安全范围内搜索     if (search_start < 0)         search_start = 0;     if (search_end >= track_point_count)         search_end = track_point_count - 1;     for (int i = search_start; i <= search_end; i++)     {         // 计算当前点到路径的欧几里得距离         float dx = track_buffer[i].x - dot_x_6; // X方向差值         float dy = track_buffer[i].y - dot_y_6; // Y方向差值         float dist = sqrtf(dx * dx + dy * dy);  // 欧几里得距离          // 找最近点：记录搜索范围内距离最小的点         if (dist < min_distance)         {             min_distance = dist;             closest_index = i;         }     }      // 更新定位点为最近点（相当于小车在路径上的投影点）     locate_index = closest_index;      /**      * 步骤2：跳跃式前向搜索      */     // 计算前向搜索范围：从最近点往前LOOKAHEAD_MAX_STEPS个点     // 长路径时快速到达终点，提高效率     int search_limit = closest_index + LOOKAHEAD_MAX_STEPS;     if (search_limit >= track_point_count)         search_limit = track_point_count - 1;      // 粗略计算跳跃步数：预瞄距离除以平均点间距     // 快速接近预瞄点位置，减少后续精确搜索范围     int jump_steps = (int)(L / LOOKAHEAD_AVG_DIST);     if (jump_steps < 1)         jump_steps = 1; // 确保至少跳跃1步      // 计算跳跃目标点：从最近点往前跳     int jump_target = closest_index + jump_steps;     if (jump_target > search_limit)         jump_target = search_limit; // 确保不超出搜索范围      // 计算跳跃点到当前位置的实际距离     float jump_dx = track_buffer[jump_target].x - dot_x_6;     float jump_dy = track_buffer[jump_target].y - dot_y_6;     float jump_dist = sqrtf(jump_dx * jump_dx + jump_dy * jump_dy);     /**      * 步骤3：确定精确搜索范围      */     // 根据跳跃距离确定需要精确搜索的范围     int fine_search_start, fine_search_end;      if (jump_dist < L)     {         // 情况1：跳跃后距离仍小于预瞄距离         // 说明预瞄点在跳跃点之后，从跳跃点开始往前搜         fine_search_start = jump_target;         fine_search_end = search_limit;     }     else     {         // 情况2：跳跃后距离已经大于预瞄距离         // 说明预瞄点在最近点和跳跃点之间，缩小搜索范围         fine_search_start = closest_index;         fine_search_end = jump_target;     }      /**      * 步骤4：确定预瞄点      */     // 在精确搜索范围内，找到第一个距离大于等于L的点     for (int i = fine_search_start; i <= fine_search_end; i++)     {         float dx = track_buffer[i].x - dot_x_6;         float dy = track_buffer[i].y - dot_y_6;         float dist = sqrtf(dx * dx + dy * dy);          // 找到第一个距离大于等于预瞄距离L的点作为预瞄点         if (dist >= L)         {             target_index = i; // 记录目标点（预瞄点）             return;           // 找到合适点后立即返回         }     }      // 边界处理：遍历完都没找到合适点（已接近路径终点）     // 使用搜索范围的最后一个点作为预瞄点     target_index = fine_search_end;  }  float L_predict(float velocity,float curve,float lateral_error){     float pp_v = 0.4f;     float pp_c = 0.3f;     float pp_l = 1.0f;     float lateral_error_ld = 0.0f;     if (abs(lateral_error) >= 10) {         lateral_error_ld = fabs(pp_l * lateral_error);     }     float L = pp_v*velocity-pp_c*curve + lateral_error_ld;     if (L <= 0.8)L=0.8;     return L; }  float compute_lateral_error(void) {     float dx = track_buffer[closest_index].x - dot_x_6;     float dy = track_buffer[closest_index].y - dot_y_6;     // 投影到车身横向方向: (-sin(yaw), cos(yaw)) 即车头方向的+90°旋转     float lateral = -dx * sinf(IMU.angle.yaw_r) + dy * cosf(IMU.angle.yaw_r);     return lateral; }  void track_control(void){     //ble_printf("IMU = %.2f     X = %.2f    Y =8 %.2f\n",IMU.angle.yaw_a,dot_x_6,dot_y_6);     static float le_flag = false;     static float tc_flag = false;     float control_out;     float kd=0.8;     int print_count = 0;      while(1){          // === 终点判定：双重条件 + 平滑降速 ===         float dx_end = track_buffer[track_point_count-1].x - dot_x_6;         float dy_end = track_buffer[track_point_count-1].y - dot_y_6;         float dist_to_end = sqrtf(dx_end*dx_end + dy_end*dy_end);         static int dc_flag = 0;          // 终点停车：直接停         if (stop_flag == 1 || (dist_to_end < 25.0f && closest_index + 20 >= track_point_count) || dist_to_end < 100.0                 ) {             while(1)             {                 motor_control(0);                 motor_set_L1(0);                 motor_set_R1(0);                 stop_flag = 1;                 motor_set_L2(0);             }              break;         }          static float prev_heading_error = 0;         static float heading_error_rate = 0;         // Autoware式动态预瞄距离：L = k_v×v - k_c×|κ| (+ k_e×|e_lat|)         float curva = path_curvature(target_index, 10);   // 1/cm         float vel_term   = 0.5f * fabs(now_velocity);             // cm: 速度越大L越长         float curve_term = -14000.0f * fabsf(curva);         // cm: 曲率越大L越短         float L_distance_raw = vel_term + curve_term;         if (L_distance_raw < 120.0f)  L_distance_raw = 120.0f;//120_150开四川省赛道         if (L_distance_raw > 150.0f) L_distance_raw = 150.0f;         if(le_flag) L_distance_raw = 150;         // 平滑过渡         float L_distance = L_distance_raw;          // 使用动态前视距离搜索前视点         find_lookahead_index(L_distance);          // 计算前视点到当前位置的实际距离         float dx = track_buffer[target_index].x - dot_x_6;         float dy = track_buffer[target_index].y - dot_y_6;         float L_actual = sqrtf(dx * dx + dy * dy);         float heading_to_target = atan2f(dy, dx) * 180.0f / 3.1415926f;         float heading_error = heading_to_target - IMU.angle.yaw_a;         /*******************************信息提示*****************************************/         if (heading_error > 180.0f) {                     heading_error -= 360.0f;                 } else if (heading_error < -180.0f) {                     heading_error += 360.0f;                 }          print_count ++;         // 累计一定值再打印数据，不让打印拖慢循环速度         heading_error_rate = heading_error - prev_heading_error;  // deg per loop         prev_heading_error = heading_error;         //if(fabs(heading_error_rate) > 40.0f && closest_index + 200 > track_point_count) dc_flag = 1;          if(dc_flag){             motor_set_L1(-1500);             motor_set_R1(-1500);             clearBeforePosition(target_index);             if(heading_error > 0)             {                 heading_error = 180.0f - heading_error;             }             else{                 heading_error = -180.0f - heading_error;             }         }          //if(dist_to_end < 200.0 || closest_index - stop_index >= track_point_count) tc_flag = true;         int duty;         static int duty_target = 7000;         if(!tc_flag){             static float duty_smooth = 7000.0f;              duty_smooth = 0.8f * duty_smooth + 0.2f * (float)duty_target;             duty = (int)duty_smooth;              Velocity_Control(closest_index);             control_out =  atan2f(2.0f * sinf(heading_error * 3.1415926f / 180.0f) * WHEELBASE, L_actual) * 180.0f / 3.1415926f;         }         else{             int p0 = track_point_count - 11; if (p0 < 0) p0 = 0;             int p1 = track_point_count - 1;             float rdx = track_buffer[p1].x - track_buffer[p0].x;             float rdy = track_buffer[p1].y - track_buffer[p0].y;             float rlen = sqrtf(rdx*rdx + rdy*rdy) + 0.001f;              // 有符号横向误差（法向左侧为正）             float s_e_lat = ((dot_x_6 - track_buffer[p0].x) * (-rdy)                            + (dot_y_6 - track_buffer[p0].y) *  rdx) / rlen;              // 航向误差             float ref_angle = atan2f(rdy, rdx) * 180.0f / 3.1415926f;             float align_err = ref_angle - IMU.angle.yaw_a;             if (align_err > 180.0f)       align_err -= 360.0f;             else if (align_err < -180.0f) align_err += 360.0f;              // 航向修正：K随横向误差递减，上限0.5             float K_align = 0.3f / (1.0f + 0.1f * fabsf(s_e_lat));             // 横向修正：固定小增益             float K_lat   = 0.0f;             Velocity_Control(closest_index);             control_out = -K_align * align_err - K_lat   * s_e_lat;   // 航向修正         }            // 限幅：前轮最大偏转角 ±23°         if (control_out > 24.0f)  control_out = 24.0f;         if (control_out < -24.0f) control_out = -24.0f;         if(target_index >= track_point_count)control_out = heading_error;         motor_control(control_out);           //横向误差计算          float lateral_error = L_actual * sinf(heading_error * 3.1415926f / 180.0f);         if(lateral_error > 30.0)   le_flag = 1;         else    le_flag = 0;           if(print_count > 1000)                {                    print_count = 0; //                   ble_printf("now_v = %.2f,curva = %.7f,L_distance = %.2f,L_distance_raw = %.2f\n",now_velocity,curva,L_distance,L_distance_raw); //                   ble_printf("heading_error = %.2f,tangent_error = %.2f\n",heading_error,1.0); //                   ble_printf("now_x = %.2f   now_y = %.2f    next_x = %.2f   next_y = %.2f   control_out = %.2f   heading_erro = %.2f\n",dot_x_6,dot_y_6,track_buffer[target_index].x,track_buffer[target_index].y,control_out,heading_error); //                   //ble_printf(" target_index = %d   %.2f  %.2f  %.2f  %.2f  %.2f\n",target_index,dot_x_6,dot_y_6,track_buffer[target_index].x,track_buffer[target_index].y,heading_error); //                   ble_printf("lateral_error = %.2f\n",lateral_error); // //                   //ble_printf("dist_to_end = %.2f     closest_index = %d     track_point_count = %d\n",dist_to_end,closest_index,track_point_count);                }      }     //ble_printf("STOP!!!\n"); }
+
+===== TABLE 23 =====
+void subject_1_r(void) {             closest_index = 0;             target_index = 0;             stop_flag = 0;             Velocity_Init_r();             IMU.angle.yaw_r += 3.1415926;             //encoder_flag = -1;             int half = track_point_count / 2;             for (int i = 0; i < half; i++) {                 POINT temp = track_buffer[i];                 track_buffer[i] = track_buffer[track_point_count - 1 - i];                 track_buffer[track_point_count - 1 - i] = temp;                 int temp_v = velocity_buffer[i];                 velocity_buffer[i] = velocity_buffer[track_point_count - 1 - i];                 velocity_buffer[track_point_count - 1 - i] = temp_v;             }              int i;              //r版本             int l_v = velocity_buffer[track_point_count - 5];             float l_x = track_buffer[track_point_count - 1].x;             for(i = 0; i < 50; i ++)             {                 track_buffer[track_point_count - 1 + i].x = l_x - (float)i*2.0;                 velocity_buffer[track_point_count - 1 + i] = l_v;             }             track_point_count += 50;              for(i = 1; i < track_point_count; i++)             {                   //ble_printf("v_max = %.2f    x = %.2f    y = %.2f\n",velocity_buffer[i],track_buffer[i].x,track_buffer[i].y);             }             track_point_count += stop_index;             //             dot_x_6 = track_buffer[0].x;             dot_y_6 = track_buffer[0].y; //            print_dot(); //            while(1);             track_control_new_r(); }  void Is_Stop(void){          set_duty(0,0);   }  void Scheduled_Shutdown(int num){     static int cnt = 0;     cnt ++;     if(cnt >= num)         stop_flag = 1; }

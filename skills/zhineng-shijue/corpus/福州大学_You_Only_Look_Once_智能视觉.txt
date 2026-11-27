@@ -1,0 +1,479 @@
+第二十一届全国大学生
+智能汽车竞赛
+
+技 术 报 告
+
+      
+
+
+
+
+
+关于技术报告和研究论文使用授权的说明
+	 本人完全了解全国大学生智能汽车竞赛关保留、使用技术报告和研究论文的规定，即：参赛作品著作权归参赛者本人，比赛组委会可以在相关主页上收录并公开参赛作品的设计方案、技术报告以及参赛模型车的视频、图像资料，并将相关内容编纂收录在组委会出版论文集中。
+
+参赛队员签名：  
+带队教师签名：
+日期：              
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+目录
+第二十一届全国大学生	1
+智能汽车竞赛	1
+关于技术报告和研究论文使用授权的说明	1
+目录	1
+第一章 引言	2
+1.1全国大学生智能汽车竞赛简介	2
+第二章 机械结构设计	3
+2.1 车模简介	3
+2.2车模整体机械结构设计	3
+2.3标识牌结构设计	5
+2.4编码器安装	6
+第三章 硬件电路系统设计	7
+3.1主板电路设计	7
+3.2电机驱动模块设计	10
+3.3成果展示	12
+3.4传感器选择	13
+3.5模型车主要技术参数	14
+第四章 软件程序编写设计	15
+4.2全局地图识别（左摄像头）	16
+4.3神经网络部署（右摄像头）	19
+4.4路径规划[1]	22
+4.5运动控制	24
+4.6任务策略与状态机	29
+4.7串口通信协议	30
+第五章 系统的调试与运行	31
+5.1 OpenMV IDE调试软件	31
+5.2 Python charm调试软件	31
+5.3 EIQ Portal	32
+5.4 Altium Designer	33
+第六章 总结	34
+参考文献	35
+附录	36
+
+第一章 引言
+1.1全国大学生智能汽车竞赛简介
+全国大学生智能汽车竞赛是一项以“立足培养、重在参与、鼓励探索、追求卓越”为指导思想，面向全国大学生开展的具有探索性的工程实践活动。它以设计制作在特定赛道上能自主行驶且具有优越性能的智能模型汽车这类复杂工程问题为任务，鼓励大学生组成团队，综合运用多学科知识，提出、分析、设计、开发并研究智能汽车的机械结构、电子线路、运动控制和开发与调试工具等问题，激发大学生从事工程技术开发和科学研究探索的兴趣和潜能，倡导理论联系实际、求真务实的学风和团队协作的人文精神。
+智能视觉组需以RT1064芯片为主控芯片，利用M车模作为平台，配合编码器、姿态传感器控制车体，协同OpenART Plus视觉模块，构建一辆具备自主运动能力，并且能够执行赛场虚拟推箱子任务的识别、分类及精准推送等任务的智能模型车。在此报告中，我们将通过对机械结构、硬件制作、软件控制、视觉算法等方面的介绍，来阐述我们在本次竞赛中所进行的学习、探索与创新。
+第二章 机械结构设计
+2.1 车模简介
+本次比赛采用的车模为博思威龙M车模，整车搭载四轮麦克纳姆轮结构；麦克纳姆轮由轮毂与斜向辊子组合而成，轮毂两侧辊子交错排布，辊子轴线与轮毂轴线呈45°夹角，电机输出转矩带动轮毂纵向主动滚动，与之垂直的辊子受地面外力作用可产生横向被动位移，二者相互配合即可实现车体任意方向的全向运动。驱动电机选用4台380有刷直流电机，搭配模数0.6、齿数70的齿轮减速结构，动力输出平顺稳定，震动幅度小；车模底盘预留mini编码器专用安装孔位，无需额外改装便可加装测速器件。实物图如图2.1所示。
+
+图2.1 M车模示意图
+2.2车模整体机械结构设计
+本设计采用了M车模作为小车的底盘，主控芯片则选用了NXP公司研发的i.MXRT1064。为了确保车轮速度的精确控制，我们为四个电机均配备了编码器，以实现实时的速度闭环控制。主控板安置在车模的前部，而后方则是与屏幕底座相连的摄像头外壳，用来固定识别使用的OpenART Plus视觉传感器，可以让识别视角是垂直于屏幕，防止识别的图片畸变影响识
+
+图2.2.1 车模实拍俯视图
+车模的前端装配了一个配有沉头结构的突起的四方桌，保证主控板的水平，同时用于固定陀螺仪，使其位于中部水平放置。而在其后端底部则装配了由碳素杆贯穿，并以多枚螺丝辅助固定的摄像头外框，使OpenART Plus相对屏幕位置绝对固定。我们配置了2个OpenART Plus模块分别识别屏幕地图与第一视角两个部分，二者协同工作以完成识别分类及规划推箱的任务。
+
+图2.2.2 车模3D建模图
+
+图2.2.3 车模实拍侧面图
+在屏幕支架下的平台恰好能放置电池，并且不会遮挡屏幕。这种布局设计不仅方便了接线与调试工作，还使得发车过程、识别结果核验过程更为顺畅，同时也加快了电池更换的速度。此外，为了确保视觉传感器光线稳定，我们在四周盖上了遮光纸。
+整体来看，本车的设计主要由以下核心组件构成：一块主控板、两块驱动板、稳压模块、两个OpenART Plus、四个编码器、四个电机、一个陀螺仪模块、轻质碳素杆以及外接电源等。
+2.3标识牌结构设计
+我们采用碳素杆以及磁铁作为标识牌的稳固支撑吸附结构。在连接碳素杆时，我们选用自行绘制结构件通过3D打印来生产，并严格测量了连接件的高度，以确保整体车身高度在14.5-15.5cm之间。
+此外，为了增强识别装置的稳定性，我们从车身上固定的是两个碳素杆，这两根碳素杆与中部的屏幕通过结构件的固定，从而以一根横梁贯穿车体，缓解了底盘弯折的现象，提高了整体的稳定性。
+
+
+图2.3 车模整装图与实拍
+2.4编码器安装
+在安装编码器的过程中，务必确保齿轮咬合达到适宜标准。此标准的核心在于：维持两传动齿轮轴线的平行状态，同时精确调控齿轮间的配合间隙，以避免间隙过大导致齿轮损坏或间隙过小增加传动阻力。传动系统应实现轻松、流畅的运转，确保无阻碍转动。
+评估齿轮传动调整效果的一个重要指标是，通过监听电机驱动后轮空转时产生的声音。若声音尖锐且响亮，则表明齿轮间配合间隙偏大，可能伴随传动过程中的撞齿现象；反之，若声音沉闷并伴有迟滞感，则可能意味着齿轮间配合间隙过小，咬合过紧，或两齿轮轴未保持平行，进而造成电机负载增加。理想的齿轮传动调整状态应表现为噪音水平低，且无碰撞类杂音的产生。
+针对M车的具体结构特点，我们采取直接安装方式，将编码器固定于M车预设的孔位上。
+
+图2.4 编码器安装示意图
+
+第三章 硬件电路系统设计
+3.1主板电路设计
+稳定严谨的硬件系统设计，是保障视觉小车平稳行驶、嵌入式控制程序可靠运行的根本保障。本车硬件整体架构完善，包含主控核心、分级电源管理模块、电机驱动电路以及车载显示外设等组成部分。后文将依次介绍主控芯片硬件配置、电源电路设计、车载外设以及电机驱动模块的硬件方案。
+本次赛事采用全局视觉定位与虚实融合的运行模式，小车需要在赛场内自主完成路径规划、虚拟交互等系列任务，运行环境复杂，同时赛事对车体外形尺寸、定位标识装配、整机运行稳定性均设有统一规范。因此硬件设计始终以成熟可靠为首要原则，选用经过实践验证的电路架构，规避硬件扰动、上电异常等问题，充分满足赛事运行需求，为整车运动控制与视觉交互系统搭建扎实稳定的硬件基础。
+
+
+
+图3.1 整车电源电路设计及原理图
+
+3.1.1主控芯片
+本设备采用的主控芯片为NXP公司制造的I.MX RT1064，该芯片基于高性能的Cortex-M7内核设计，主频峰值可达600MHz，确保了CPU运算速度的卓越表现。这一特性在运行路径规划算法时，展现出强大的运算能力，为执行大量复杂计算任务提供了坚实的算力支持，显著提升了数据处理速度。
+此外，I.MX RT1064芯片还配备了1M的片内SRAM，这一设计优化了数据处理流程，允许将复杂程序中的中间变量存储于专用内存中，进一步提高了数据处理的速率和效率。
+
+图3.1.1 RT1064核心板原理图
+3.1.2 5V稳压模块
+5V电源模块主要为单片机、OpenART Plus等外设供电，同时作为后端3.3V 稳压模块的输入电源；TPS54560是一款大电流降压型开关电源管理集成芯片，电源转换性能优异，可输出大电流且电压纹波控制水平优秀，能够持续输出平稳电压，十分适配嵌入式系统对电源稳定性要求较高的工作场景。该芯片具备出色
+的线性调整率与负载调整率，即便输入电压出现波动、后端负载电流大小发生变化，都可以牢牢稳住输出电压，保障整机供电平稳。
+为提升整套电源系统的可靠性与抗故障能力，TPS54560芯片内部集成全套电源保护机制，包含过热关断保护、过流限流保护、输出短路保护等多重防护；一旦出现过温、过载、短路等异常工况，芯片会迅速启动保护逻辑，避免芯片本体与后端单片机、外设等外部电路被烧毁损坏。除此之外，该开关电源芯片外围电路架构成熟简洁，仅搭配少量阻容、电感、二极管元器件即可搭建完整高效的降压稳压回路，大幅缩减硬件布局面积，降低电源电路的设计、调试难度。该芯片支持分压电阻灵活配置输出电压，本次通过反馈电阻精准配置固定5V输出，省去电压调试步骤，进一步简化硬件开发流程。
+考虑到RT1064核心主控芯片电源输入端耐压有限、供电较为脆弱，设计阶段额外增设防护设计：在单片机5V供电输入端串联过压过流保护芯片PW1515，最终规划两路相互独立的5V供电支路：第一路专属供给RT1064单片机内核，借助防护芯片隔绝浪涌、过压冲击，保障主控芯片稳定持续运行；第二路5V电压输出，专门作为下级3.3V降压电路的供电输入源。完整电源电路设计原理图如图3.1.2所示。
+
+图3.1.2 5V稳压模块原理图
+3.1.3 3.3V稳压模块
+在整套供电电路中，3.3V电压主要为编码器、陀螺仪、蜂鸣器等传感器与外设器件提供高精度稳定供电。本模块以前级TPS54560稳压电路输出的5V电压作为输入电源，选用RT9013线性稳压芯片实现5V至3.3V的电压转换；为严格把控整机上电时序，避免上电紊乱造成硬件异常，电路搭载RY2121电源负载开关进行供电管控，两路3.3V供电均受主控时序统一调度。
+
+RT9013属于高集成度低压差线性稳压器（LDO），稳压性能优异，可稳定输出最大500mA电流，固定输出电压为3.3V，输入电压范围2.2V~5.5V，能够完美适配前级5V供电输出条件。该芯片电源抑制比（PSRR）表现出色，压差损耗极低，可大幅抑制电源扰动与高频噪声，输出电压平稳纯净，十分适配陀螺仪这类对供电质量敏感的传感元器件；同时芯片体积小巧、外围电路精简，兼顾了供电性能与PCB紧凑布局的设计需求。
+为保障RT1064主控芯片安全可靠启动，本设计增设上电时序控制机制：RY2121负载开关与RT9013的使能引脚共同受RT1064主控输出的CR电平信号控制。整机上电初期，5V电压率先建立，但3.3V支路处于关闭状态；待RT1064主控完成上电自检与初始化工作后，主控输出有效电平打开RY2121，同步开启RT9013稳压回路，3.3V电压才开始向外设供电。该时序设计规避了外设先于主控上电引发的浪涌冲击、传感器初始化失败、主控寄存器紊乱等故障，极大提升系统运行稳定性
+
+图3.1.3 3.3V稳压模块原理图
+3.2电机驱动模块设计
+驱动芯片我们采用的是DRV8701。DRV8701是一款单H桥栅极驱动器，使用四个外部N沟道MOSFET来驱动12-V至24-V双向有刷直流电机。
+PH/EN（DRV8701E）接口允许与控制器进行简单的接口连接电路。内部感应放大器允许可调节的电流控制。栅极驱动器包括使用固定关断时PWM电流斩波来调节绕组电流的电路。具体原理图如下所示。
+
+  图3.2.1 电机驱动模块原理图
+在驱动板与单片机接口与驱动芯片之间增加缓冲芯片SN74HC125PWR，防止单片机被烧坏。
+图3.2.2 缓冲模块原理图
+
+3.3成果展示
+3.3.1主控板
+
+图3.3.1主控板实拍图
+3.3.2驱动板
+
+
+
+图3.3.2驱动板实拍图
+3.3.3降压模块
+
+图3.3.3降压模块实拍图
+3.4传感器选择
+识别所用传感器为OpenART Plus。OpenART Plus是在NXP的OpenART套件的基础上，去除非视觉部分而制作出来的版本。它不仅可以很轻松的完成机器视觉应用，还可以完成OpenMV不能完成的神经网络模型的部署和训练。
+角度传感器为ICM42688陀螺仪。ICM42688为六轴陀螺仪，分别是三轴加速度计数据、三轴陀螺仪数据（角速度数据）。IMU的工作原理是通过其中包含的加速度计来测量X、Y、Z三个移动方向上的加速度，通过一重积分得到速度，通过二重积分得到位置，通过包含的陀螺仪测量Roll、Pitch、Yaw三个旋转方向上的角速度，通过一重积分得到姿态。
+定位所用的传感器为1024线方向编码器。是通过两个信号线的脉冲输出来进行数据处理，一个输出脉冲信号就对应于一个增量位移，编码器每转动固定的位移，就会产生一个脉冲信号，通过读取单位时间脉冲信号的数量，便可以达到测速的效果（v=s/t）；通过对脉冲信号的累加，和编码器的码盘的周长（转一圈对应距离），便可以达到计算行走距离的效果（s=n·d）。
+
+3.5模型车主要技术参数
+3.5.1整车机械参数
+表 3-1整车机械参数
+3.5.2电气系统参数
+表 3-2电气系统参数
+
+3.5.3传感器配置参数
+表 3-3传感器配置
+
+ 3-4执行机构配置
+
+第四章 软件程序编写设计
+4.1视觉系统总体设计
+    本组赛题为虚拟推箱子任务，场地是一张俯视的14×10网格地图。小车需要同时知道两件事：自己在地图上的绝对位置，以及箱子、目的地贴图上的类别编号。这两件事对视觉的要求完全不同——前者需要"看的准"，后者需要"算的对"，任何单一摄像头都难以兼顾。为兼顾小车实时视觉位置追踪与车辆实时控制需求，系统采用“双摄像头上位机+下位机”的分层式架构。
+因此本车采用两个OpenART Plus视觉模块分工协作：
+•左摄像头：固定在车模碳素杆左端，负责识别蓝色底板、围墙、箱子、目的地、炸弹等元素并给出小车全局坐标。它要求视野广、定位准，因此采用传统视觉（LAB颜色阈值分割+几何校正）而非神经网络，以保证帧率和鲁棒性。
+•右摄像头：固定在车模碳素杆右端，负责小车"第一视角"，在车头对准箱子/目的地后，识别其侧面贴图上的卡通人物类别（0-9）或数字（0-9）。它需要区分10类细粒度图案，因此部署轻量级TFLite分类神经网络。
+两个摄像头通过两条独立串口与下位机主控RT1064通信，由主控统一调度。这样的分工让"定位"与"识别"各司其职，互不拖慢。大致框架图4.1所示。
+
+
+图4.1 整车执行框架图
+4.2全局地图识别（左摄像头）
+左摄像头是整个系统"看得见地图"的眼睛，它的识别结果直接决定路径规划和推箱子的成败。左摄像头面临的难点有三：一是安装角度导致地图在画面中产生透视畸变；二是灯光不均匀、反光、色差使颜色分割不稳定；三是多个物体相邻时连通域粘连。本系统针对这三点逐一设计了对策。能保证左摄像头帧率稳定在20帧上下。
+4.2.1颜色阈值分割
+图像先转换为LAB色彩空间（该空间亮度L与颜色A/B分离，对光照变化更鲁棒）。对地图上的六类元素——蓝色底板、灰色围墙、绿色小车、红色炸弹、黄色箱子、紫色目的地——分别设定颜色阈值，其中箱子、炸弹、目的地等易受色差影响的元素各配置两套阈值，覆盖不同光照与打印色差。分割后通过连通域分析find_blobs()提取目标。
+BLUE_BG_THRESHOLD    = (28, 51, 25, 127, -128, -56)   # 蓝色地图底板
+GRAY_WALL_THRESHOLD  = (14, 100, -15, 66, -74, 10)    # 灰色围墙
+GREEN_CAR_THRESHOLD  = (0, 100, -128, -49, -128, 84)  # 绿色小车
+RED_BOMB_THRESHOLD   = (37, 75, -2, 102, -8, 81)      # 红色炸弹(1)
+YELLOW_BOX_THRESHOLD = (49, 100, -39, -2, 30, 127)    # 黄色箱子(1)
+PINK_TARGET_THRESHOLD= (47, 73, 62, 102, -93, -47)    # 紫色目的地(1)
+4.2.2底板定位与透视校正
+这是左摄像头最核心的几何处理。由于摄像头安装角并非绝对垂直，地图在画面中是一块倾斜的四边形，若直接按像素等分网格，远处的格子会被压缩、识别会错位。因此必须先找到蓝色底板的四边形边界，再做透视校正拉正。
+定位流程estimate_blue_quad()为：
+1. 边缘扫描：在蓝色掩码上，沿行从两侧向中间扫、沿列从上下向中间扫，找到底板的左右边与上下边，并要求边缘内侧有连续白色像素
+has_inner_white_run()以确认是底板内边界而非噪点。
+2. 包络点提取：对扫描到的边缘点按分箱取外轮廓包络点，抑制局部毛刺。
+3. 鲁棒直线拟合robust_fit_line()：先用最小二乘拟合一条直线，按残差排序后只保留残差最小的70%点再次拟合，从而剔除被灯光、阴影污染的离群点——普通最小二乘对单个离群点都敏感，而鲁棒拟合能保证四边稳定。
+4. 求交：左右边线与上下边线两两求交，得到四边形四角quad=(tl,tr,br,bl)，经面积校验（≥2000）后作为透视校正的锚点。
+def robust_fit_line(points, fit_func, residual_func):
+    if len(points) < 4:
+        return fit_func(points)
+    line = fit_func(points)
+    ranked = sorted(((residual_func(line, p), p) for p in points))
+    keep = int(len(ranked) * EDGE_FIT_KEEP)   # 保留残差最小的 70%
+    kept = [p for r, p in ranked[:max(keep, 4)]]
+    refined = fit_func(kept)
+    return refined if refined is not None else line
+得到四角后，调用img.rotation_corr(corners=quad)把透视变形的地图拉正为320×240的规则网格rectified_map_image()。
+4.2.3逐格扫描与元素识别
+透视校正后，把320×240的画面划分成14×10=140个格子。对于地图上的物品，可根据是否可移动而分成两类。不可移动的物品：墙壁和目的地；可移动的物品：小车，箱子和炸弹。
+1.对于墙壁和目的地，可以根据逐个在划分的320×240个格子内用item_in_roi()按像素占比阈值判定是否为墙或目的地。
+2.对于小车、箱子和炸弹这类可移动的物品，为防止可移动物品介于划分的格子之间，从而导致像素占比阈值法判定错误，因此不可直接需要采用方法如下：
+在全局地图内框选色块—>通过逆映射计算色块覆盖的地图的格子—>对色块框覆盖的格子进行像素占比阈值法判定—>获得箱子、炸弹、小车的位置。
+3.由于底盘需要使用小车的视觉轨迹进行编码器修正，使用小车的坐标必须实时且精细。在游戏系统中的小车是由半个蓝色色块(车头)和绿色色块(车尾)组成的。受光线与摄像头镜头影响，拍摄的画面呈现中间亮，四周暗的特性。导致蓝色色块的识别不够稳定，因此我们采用识别车尾绿色色块并结合底盘当前Yaw角，通过简单的数学计算来解算小车坐标(小车的左上角)。解算方法详见car_blob_to_fine_xy()
+ 
+图4.2.1小车视觉坐标解算示意图
+4.2.4地图稳定与紧凑编码上传
+单帧识别可能因瞬时抖动出错，故系统要求连续3帧地图签名map_signature不变才判定地图稳定，之后才组帧上传。140格的围墙位图被打包成35个十六进制字符（每4位一位），箱子/目的地/炸弹坐标用"行×14+列"的紧凑编码发送，显著缩短串口传输时间。各物品帧格式如图所示：
+
+图4.2.2地图发送帧格式
+4.3神经网络部署（右摄像头）
+4.3.1模型选择
+任务要求区分箱子上0-9十类卡通人物与目的地上0-9十个数字。这类"整幅小图属于哪一类"的问题本质是图像分类，而非目标检测——贴图在画面中的位置相对固定（车头对准后贴图基本居中），不需要先框出目标再识别，用分类模型直接输出类别即可，体积更小、推理更快。
+本系统部署两个基于MobileNetV2骨干的轻量分类模型，通过宽度乘子alpha与输入分辨率控制模型规模：
+看重推理速度故数字模型alpha取0.35。经INT8量化后模型体积仅0.5~2MB，可在OpenART Plus上实时推理。模型加载到帧缓冲tf.load(...,load_to_fb=True)，用滑动窗口tf.classify()推理。
+4.3.2数据集的制作与训练
+1. 数据集构成
+卡通人物模型的数据集为10类动漫角色——米老鼠、皮卡丘、海绵宝宝、喜羊羊、唐老鸭、哪吒、大头儿子、猪猪侠、葫芦娃、灰太狼，每类约700张、共约7000张；数字模型为0-9十个数字，数据量相对较少。鉴于实拍样本有限，数据集采用"部分实拍+部分合成"的方式制作：一部分为运行过程中OpenARTPlus实拍采集，另一部分则把箱子贴图合成到真实的场地背景图（背景板）上，模拟摄像头在比赛中实际看到的"背景+箱子"画面并实拍采集，从而在不增加拍摄成本的前提下扩充样本的多样性与真实性。
+2.训练平台的选择
+官方推荐的 eIQ Toolkit 虽提供了 GUI 训练入口，但其核心训练循环被封装在编译后的.pyd文件中，无法修改源码，且可能冻结了MobileNetV2底层、默
+认仅使用alpha=0.35的轻量配置，数据增强参数也不会持久化。为获得对训练过程的完全掌控，本队改用eIQ Toolkit自带的Python环境（TensorFlow2.8+Keras2.8+Albumentations1.0.3）配合纯Python脚本训练，从而能够自由解冻网络、调整宽度乘子与增强策略。
+3. 域差距问题与全网络解冻
+ImageNet预训练权重针对的是真实照片，而比赛贴图是二次元平涂风格的动漫角色，两者的底层特征分布差异很大（即"域差距"）。若沿用迁移学习常见的"冻结底层、只训练分类头"做法，会因底层特征提取器不匹配而欠拟合。因此本队采用全网络解冻base_model.trainable=True，让底层卷积核也随二次元数据微调，显著提升了对平涂风格图案的识别能力[9]。
+4. 数据增强
+数据增强复刻eIQ Toolkit的参数，使用Albumentations库构建：随机模糊Blur、高斯噪声GaussNoise、随机亮度对比度RandomBrightnessContrast、小角度随机旋转Rotate±5°、随机缩放RandomScale0.6~1.7倍与色相饱和度明度抖动HueSaturationValue，最后统一缩放到128×128。这些增强模拟了实车运行中常见的模糊、光照变化与拍摄角度偏差，提升了模型的泛化能力。
+5. 差异化训练策略
+两个模型因数据量不同采用了不同的训练策略：人物模型数据充足，用Adam优化器、学习率1e-4、批量32、最大100轮、Dropout0.3；数字模型数据量较少，为防止过拟合，采用更保守的配置——学习率降至5e-5、批量减至16、Dropout提高至0.4、最大轮数增至150。训练均配合EarlyStopping（监控验证损失、耐心10/15轮）与ReduceLROnPlateau学习率衰减回调，训练完成后将最优权重导出为INT8量化的TFLite模型部署到OpenART。
+4.3.3 多帧投票识别流程
+单帧分类在贴图轻微反光、角度偏差下可能误判。为提升识别可靠性与提高时间利用率，右摄像头采用连拍多帧+投票策略run_request：
+1. 收到主控拍摄命令{CAP,seq,type}后，先延时300ms等车身完全停稳；
+2. 连拍6帧存入预分配的帧缓冲；
+
+3. 对每帧做tf.classify推理，取最大概率类别classify_top1；
+4. 6帧结果投票，票数最多者胜；平票时比较概率和裁决select_winner，最终把类别编号回传主控。
+以上流程相较于传统的拍摄一帧等待推理完成连续多次拍摄与推理回传编号底盘前往下一个路径点，提高了时间利用率，底盘不必等收到回传的编号再移动，转为可以在移动的过程中收到编号，大致流程如下所示：
+def classify_top1(network, frame):
+    for prediction in tf.classify(network, frame,
+                                  min_scale=1, scale_mul=0.95):
+        values = [float(v) for v in prediction.output()]
+        return max(range(len(values)), key=values.__getitem__), values
+ 
+def select_winner(votes, probability_sums):
+    winner = 0
+    for c in range(1, len(votes)):
+        if votes[c] > votes[winner]:
+            winner = c
+        elif votes[c] == votes[winner] and probability_sums[c] > probability_sums[winner]:
+            winner = c
+    return winner
+
+
+图4.3 右摄像头状态机流程图
+4.4路径规划[1]
+本组赛题是一道推箱子寻路问题：小车要在带围墙的网格地图上，把多个箱子逐个推入目的地。推箱子是经典的NP难问题，难点在于：推动箱子会改变地图状态，一步推错就可能把箱子推到死角永远无法复原；多个箱子之间还存在先后顺序和相互挡路的耦合。本系统针对这一难题，构建了从地图建模、基础搜索到启发式求解、死锁剪枝的完整路径规划体系。
+4.4.1地图建模
+地图用game_map_t结构表示：14列×10行网格（共140格，每格20cm），walls[10][14]记录静态围墙，箱、目标、炸弹分别用坐标数组存储（上限各6个），另有小车网格坐标与亚格坐标。网格坐标向物理坐标换算时做了y轴反转（物理X对应网格纵向、物理Y对应网格横向）。
+4.4.2 BFS基础搜索与拉箱距离
+底层寻路统一采用四邻域广度优先搜索（BFS）[5]，用于计算小车从一个格子走到另一个格子的最短步数。任务1求解前对全图每个非墙格预计算全源最短步数表build_static_dist_table。
+更关键的是"拉箱距离"预计算build_pull_dist_table：从每个目标点反向BFS，枚举箱子被推入该格的前一格prev与小车站位stand，得到"把箱子推到该目标最少需要几步"。这张表是整个A*启发式的基础——它回答的是"某个箱子离某个目标
+还差几步能推到"，是推箱问题最自然的乐观估计。
+4.4.3 A*多状态推箱搜索（任务1）
+任务1的核心求解器采用A*状态空间搜索task1_multi_build_plan。搜索状态定义为「小车位置+各箱子位置+存活目标掩码」，状态上限40000、哈希表65536项。每个状态的动作是"推某箱子朝某方向一步"：对每个箱子枚举四个推动方向，要求小车站位stand=box−DIR[d]与箱子新位置new_box=box+DIR[d]都合法，再用BFS计算小车绕行到站位的步数作为该步代价。
+启发式函数[8]f=g+h由两部分组成：
+• 匹配启发式task1_multi_matching_heuristic：用位掩码动态规划求"箱子到目标的最小总拉箱步数"（基于拉箱距离表），是A*的主启发式[7]；
+• 接近启发式task1_multi_car_approach_heuristic：小车到最近可推站位的最短距离。
+搜索中配合多种剪枝加速收敛：上界剪枝（已有解后f值更高者不再扩展）、状态支配剪枝（task1_multi_has_dominator，被更优状态支配者剪掉）、以及下文详述的死锁剪枝，并支持贪婪扩展（限16步、权重2）快速逼近目标。
+4.4.4死角与冻结死锁检测[7]
+推箱问题最致命的错误是把箱子推入无法复原的死角。系统实现了两类死锁检测并集成进搜索剪枝，任何导致死锁的候选动作在搜索时就被剪除：
+1. 2×2死角task1_multi_has_2x2_deadlock：箱子与相邻墙/箱构成2×2满块且块内无目标，则该箱被卡死、永不可达。
+2. 冻结死锁task1_multi_has_freeze_deadlock：某格在所有存活目标的拉箱距离表中均不可达cell_dead_for_live_targets，或箱子在X/Y两轴都被堵死axis_blocked，通过迭代不动点求出所有被"冻结"的箱子。推箱后（_after_push 变体）增量复用该检测，避免重复计算。
+// 静态障碍 = 围墙 + 炸弹（炸弹在任务3中也视为障碍，需先炸掉才能通过）
+static void build_static_blocked(const game_map_t *map, uint8 blocked[CELL_COUNT])
+{
+    for(y = 0; y < GAME_MAP_ROWS; y++)
+
+        for(x = 0; x < GAME_MAP_COLS; x++)
+            if(map->walls[y][x])
+                blocked[y * GAME_MAP_COLS + x] = 1u;
+    for(i = 0; i < map->bomb_count; i++)
+        if(game_coord_valid(map->bombs[i]))
+            blocked[game_coord_to_index(map->bombs[i])] = 1u;
+}
+4.4.5轨迹平滑（L折线与Z变道）
+A*输出的是离散折线点，若直接沿直角拐弯会浪费里程、拐角处还易撞箱。系统设计了两类轨迹平滑模块：L折线把拐角平滑成"贴近内角"的L形轨迹（沿第一条腿探测内切安全点，支持双L链式合并）；Z变道把"同向两段直线+一段横向短直线"平滑成S形连续变道轨迹（在主线可滑动窗口内选全空窗口，含入口墙角保护与安全评分）。二者实现完整、参数齐全，通过宏开关按需启用，以适应不同地图的稳定性需求。
+4.5运动控制
+4.5.1麦克纳姆轮运动学
+M车模采用四轮麦克纳姆轮，其核心特性是：轮毂绕自身轴转动时，辊子绕垂直于轮毂轴的小轴自由滚动，仅垂直于轮毂轴的方向提供驱动力，而辊子轴线与轮毂轴呈45°排布，使驱动力方向与轮毂轴呈45°夹角。通过四轮转速组合，即可在不改变车头朝向的情况下实现任意方向平移与原地旋转。[11]
+设质心为原点，x轴纵向、y轴横向、绕z轴角速度ω；四轮编号A（左前）、B（右前）、C（左后）、D（右后），半轴距L/2、半轮距W/2。给定车体目标速度(vx,vy,ω)，由逆运动学解算[10]各轮线速度：
+v_A = vx − vy − ω·(L/2 + W/2)
+v_B = vx + vy + ω·(L/2 + W/2)
+
+v_C = vx + vy − ω·(L/2 + W/2)
+v_D = vx − vy + ω·(L/2 + W/2)
+其运动本质是轮子驱动速度的矢量合成：平移速度分量(vx,vy)与旋转速度分量ω在各轮上按方向叠加，麦克纳姆轮的辊子自由转动特性释放了无关方向的速度分量，只保留驱动方向的有效贡献。三种基本运动（前移、横移、原地转）都可由上式退化得到。反过来，由四个编码器测得轮速后，可通过正运动学解算车体实际速度：
+vx = (v_A + v_B + v_C + v_D) / 4
+vy = (−v_A + v_B + v_C − v_D) / 4
+ω  = (−v_A + v_B − v_C + v_D) / (4·(L/2 + W/2))
+void mecanum_inverse_kinematics(const car_speed_t *vel, wheel_speed_t *wheel_speed)
+{
+    float wz_rad = vel->wz * PI / 180.0f;
+    float rotation_factor = wz_rad * (MECANUM_L_HALF + MECANUM_W_HALF);
+    wheel_speed->v_A = vel->vx - vel->vy - rotation_factor;
+    wheel_speed->v_B = vel->vx + vel->vy + rotation_factor;
+    wheel_speed->v_C = vel->vx + vel->vy - rotation_factor;
+    wheel_speed->v_D = vel->vx - vel->vy + rotation_factor;
+}
+当某一轮速解算结果超出电机能力时，采用等比例缩放mecanum_limit_wheel_speed统一限幅，保证速度配比不变、避免饱和失真。
+4.5.2速度环与位置环（PID）
+车模的底层控制采用速度环+位置环两级PID：
+•四轮速度环：位置式PID，以编码器脉冲增量作速度反馈，四个轮子各一套参
+数（Kp≈30、Ki≈3.2、Kd≈30），输出PWM占空比。积分项按输出上限动态限幅防饱和；微分采用"微分先行"结构−Kd·(current−last_current)，对测量值差分而非对误差差分，避免目标阶跃引起微分冲击。针对有刷电机低速死区，输出前做死区补偿，保证低占空比也能平稳起步。
+•位置环：位置式PID，分别作用于x、y方向。误差大于0.2cm时累加积分，进入死区后积分按0.95逐步衰减防止抖动；输出经加速度限制max_accel，避免速度指令突变冲击车体。
+
+图4.5.1 三环控制器示意图
+4.5.3 Yaw 角修正控制
+麦克纳姆轮在运动中因四轮转速差异与地面摩擦不均，会产生偏航角（Yaw）漂移，若不修正，误差累积会直接破坏推箱子的对准精度。为此专门设计了Yaw角闭环修正控制器yaw_control_*，其中针对推箱任务做了多项针对性优化：
+1. 误差归一化与半转弯锁定：Yaw角归一化到−180°~180°yaw_normalize_angle，避免跨±180°跳变。推箱常需180°掉头，传统归一化在±180°附近会因方向符号临界翻转产生抖动甚至原地振荡。引入半转弯锁定标志 yaw_half_turn_sign：目标转角≥175°时锁定转向方向，沿同一方向连续转过180°，直到剩余转角<90°才解锁，彻底消除掉头抖动。
+2. 条件积分抗饱和：仅当误差处于积分区（|error|≤10°）才允许积分增长；且当输出接近饱和时，只有误差方向有助于退出饱和才更新积分，避免积分被"憋死"在饱和区。
+3. 最小输出阈值与死区衰减：输出绝对值小于yaw_min_output时强制输出该阈值（方向随误差），克服低速静摩擦；误差进入0.35°死区后积分按0.95衰减，使车模稳定停在目标航向而不来回摆动。
+4. 停车保持航向：推箱前对准、任务间切换等停车状态仍执行Yaw闭环，令
+车模以目标航向持续微调，避免停车期间航向漂移。
+float yaw_control_calculate(void)
+{
+    current_yaw = yaw_normalize_angle(Yaw);
+    yaw_error = yaw_control_resolve_error(current_yaw);
+    if(fabsf(yaw_error) <= YAW_ERROR_DEADZONE) {
+        yaw_integral *= YAW_DEADZONE_INTEGRAL_DECAY;   // 死区积分衰减
+        return 0.0f;
+    }
+    p_out = yaw_kp * yaw_error;
+    d_out = yaw_kd * (yaw_error - yaw_last_error);
+    if(fabsf(yaw_error) <= YAW_INTEGRAL_ZONE) {
+        candidate_integral = yaw_integral + yaw_error;   // 条件积分 + 限幅
+        candidate_output = p_out + yaw_ki * candidate_integral + d_out;
+        if(/* 未饱和，或误差方向有助于退出饱和 */)
+            yaw_integral = candidate_integral;
+    }
+    yaw_output = p_out + yaw_ki * yaw_integral + d_out;
+    // 输出限幅 + 最小输出阈值
+    return yaw_output;
+}
+4.5.4姿态解算（Mahony互补滤波）
+航向角来自六轴陀螺仪ICM42688。陀螺仪积分短期精度高但会漂移，加速度计测姿态无漂移但易受加减速干扰。本系统采用Mahony互补滤波融合二者，姿态以四元数表示，陀螺仪积分更新四元数、加速度计测重力方向与当前估计做
+叉积得到误差、经PI环节修正漂移。针对推箱任务频繁加减速的特点做了多项优化：加速度计幅值验证（模长超出0.85g~1.15g时跳过修正，避免小车加减速冲击污染姿态）、积分限幅（±2.0）、角速度死区（0.5°/s）、连续航向角（处理±180°跳变）、Yaw角速度输出（供转弯稳定性判断）、快速平方根倒数。
+static void gyro_attitude_mahony_correct(float *gx, float *gy, float *gz, float period_s)
+{
+    acc_magnitude = sqrtf(acc_norm);
+    if(acc_magnitude < GYRO_ATTITUDE_ACC_NORM_MIN_G ||
+       acc_magnitude > GYRO_ATTITUDE_ACC_NORM_MAX_G)
+        return;                    // 幅值异常，跳过修正
+    // 重力叉积误差 → PI 修正陀螺仪，积分项限幅 ±2.0
+    *gx += kp * error_x + ki * gyro_attitude_integral_x;
+    ...
+}
+4.5.5视觉—编码器融合定位
+定位采用"编码器+视觉"两级融合：编码器（1024线）提供5ms高频局部位移，精度高但随距离累积误差；左摄像头提供低频全局坐标，消除累积误差但存在延迟。融合的核心处理包括：长短距离分档标定（x/y方向分别标定换算系数，长距离≥80cm用不同倍率补偿比例误差）、视觉延迟补偿（记录视觉延迟周期，把视觉修正回放到对应时刻的编码器轨迹上，消除延迟跳变）、多档融合模式（长距离辅助修正/短距离提前修正/末端精修）、转弯冻结视觉（旋转时冻结视觉更新，避免视角跳变）、越界保护（独立编码器坐标越界即闭环急停并告警）。
+
+
+图4.5.2 视觉补偿编码器示意图
+4.6任务策略与状态机
+比赛模式下由competition_runner统一调度，依次执行任务1→任务2→任务3，任务间自动切换并留出地图稳定延时。三个任务共享"收地图→规划→执行→回发车区"的框架，随规则递进叠加复杂度。
+4.6.1任务1：传统推箱子
+任务1只有围墙、箱子、目的地，箱与目的地无编号、可任意匹配。流程：请求并接收地图→A*多状态求解最优推箱顺序→标记推箱段→逐段执行（直线连续段尽量直行，推箱段限速、接触前先停稳）→返回发车区。执行中可选请求视觉精定位校正（误差超2.8cm时微调）。
+4.6.2任务2：按图片分类推箱子
+任务2要求箱子与目的地按编号匹配，故比任务1多出"搜索识别"阶段：先规划观察站位（走到箱/目标旁一格），原地转向对准→稳定后请求右摄像头拍照识别编号，把编号写回对应箱子/目的地。识别完所有（或用少量已知信息自动补全）编号后，进入带编号匹配的推箱阶段，依次把每个箱子推到对应目的地。
+4.6.3任务3：升级版（带炸弹）
+任务3引入炸弹：炸弹被推入墙格后，以该格为中心的3×3九宫格内所有墙被
+清除（炸弹同时消失）。这带来"先炸墙、再探索/推箱"的联合决策难题。系统采用分级决策plan_next_search_action：优先直接观察（代价≤3）；否则评估公共炸墙（枚举可行匹配，找对多个箱子都有利的一堵公共墙，一次炸墙打通多条路径）；再不行则前瞻炸墙（对每个炸弹枚举候选墙，模拟炸墙后地图并递归前瞻下一颗炸弹，直到箱/目标可达）。炸墙动作执行后更新本地地图并等待500ms（裁判系统刷新），再重新规划。推箱过程中若顺路把炸弹推进墙，也在对应路径点插入等待，实现"边推边炸"。
+4.7串口通信协议
+主控与两个OpenARTPlus通过两条独立UART通信：左摄像头走UART8（115200，经无线串口桥接），右摄像头走UART4（115200）。所有消息为ASCII文本，用{}包裹、逗号分隔。
+为避免数据"乱窜"，系统采取三重防护：
+1. 物理隔离：两路UART各有一条独立FIFO与中断服务，左路只认地图命令集、右路只认拍摄/结果命令，互不干扰。
+2. 序号校验：地图帧与拍摄帧都携带递增seq序号（1~255回绕），主控端序号不匹配即丢弃，防旧帧/重放。
+3. 应答与重传：
+• 左路（地图）：主控发Init→左摄像头稳定地图后依次发地图头帧MS、围墙紧凑位图MZ、目标物列表MO→主控解析通过回MA确认，之后左摄像头每帧上报小车位姿VP。收到MA前每10帧重发一轮，失败则主控回TE+错误码。
+• 右路（贴图）：主控发CAP（type=0箱子/1目的地）→右摄像头连拍6帧后回CAPDONE→投票完回RESULT（含类别编号）。主控侧用owner+seq+type三重校验，全匹配才取走结果。
+
+
+第五章 系统的调试与运行
+5.1 OpenMV IDE调试软件
+Open MV IDE是用于Open MV Cam的首要集成开发环境。它具有强大的文本编辑器、调试终端和带直方图显示的帧缓冲区查看器。Open MV IDE使您可以轻松地对Open MV Cam进行编程。它成本低易拓展，开发环境友好，除了用于图像处理外，还可以用Python调用其硬件资源，进行I/O控制，与现实世界进行交互。
+图5.1 Open MV IDE 页面
+5.2 Python charm调试软件
+Python charm是一种PythonIDE（Integrated Development Environment，集成开发环境），带有一整套可以帮助用户在使用Python语言开发时提高其效率的工具，比如调试、语法高亮、项目管理、代码跳转、智能提示、自动完成、单元测试、版本控制
+
+图5.2 PY charm页面
+
+5.3 EIQ Portal 
+	EIQ Portal 是与 Au-Zone Technologies 独家合作开发的，它是一个直观 的图形用户界面(GUI)，简化了 ML 开发。开发人员可以创建、优化、调试和导 出 ML 模型，以及导入数据集和模型，快速训练并部署神经网络模型和 ML 工作 负载。EIQ Portal 提供的输出软件，可无缝输出到 Deep View RT™、 TensorFlow™Lite、TensorFlow Lite Micro、Glow、Arm NN和 ONNX 运行时推 理引擎。
+
+
+图5.3 EIQ页面
+5.4 Altium Designer
+Altium Designer是原Protel软件开发商Altium公司推出的一体化的电子产品开发系统，主要运行在Windows操作系统。这套软件通过把原理图设计、电路仿真、PCB绘制编辑、拓扑逻辑自动布线、信号完整性分析和设计输出等技术的完美融合，为设计者提供了全新的设计解决方案，使设计者可以轻松进行设计，熟练使用这一软件使电路设计的质量和效率大大提高。
+
+图5.4 Altium Designer页面
+
+第六章 总结
+智能车竞赛犹如一段漫长的跋涉，考验着每一位参与者的执着与坚守，唯有脚踏实地、久久为功，方能抵达理想的终点。回首备赛的这段时光，团队成员从零起步、步步为营，历经数月的打磨与积淀，最终在华南赛区选拔赛中荣获一等奖，成功拿到通往全国总决赛的入场券。这段旅程中的每一次进步，都镌刻着团队脚踏实地的印记，凝聚着每位成员对卓越的不懈追求。
+这项竞技最动人之处，在于软件与硬件之间水乳交融般的默契配合——二者相辅相成、缺一不可，唯有让硬件性能与软件算法同频共振、彼此成就，方能打造出真正出色的智能车作品。自参赛以来，我们展开了一场环环相扣的全链条攻坚：从硬件电路的精心设计、PCB板的绘制与制作，到车模的装配与机械结构的反复调校，处处都倾注着工程思维的心血；与此同时，软件团队在算法层面深耕细作，逐一攻克了麦克纳姆轮全向移动控制、Yaw角修正、姿态融合、视觉—编码器融合定位等运动控制难题，并针对推箱子赛题构建了基于BFS与A*状态空间搜索的路径规划体系，配合死角与冻结死锁检测、炸弹机制的联合决策，实现了三个任务的全流程自动执行；视觉上则采用传统视觉与MobileNetV2分类网络协同，完成了地图的鲁棒定位与贴图的精准识别。在代码的字里行间，在无数次调试的试错与修正中，团队曾面对层出不穷的挑战，但正是这些磨砺，让我们的能力一次次跃升。
+备赛的日日夜夜里，团队成员始终怀揣着并肩作战、共同进退的信念。每当难题浮现，大家总是第一时间聚到一起，畅所欲言、集思广益，在观点的碰撞中寻得最优解。一路走来的成长与收获，离不开每一位成员的心血——有人挑灯夜战只为几行代码的稳定，有人反复拆装只为机械结构的一分精准，有人四处奔走只为资源的及时到位……正是这份无私的团队精神与永不言弃的执着，支撑着我们稳步前行，从最初的青涩摸索，到如今意气风发地站上全国赛事的舞台。
+
+
+
+
+
+参考文献
+Bertozz M, Broggi A, Fascioli A. Stereo inverse perspective mapping: theory and applications[J]. Image and vision computing, 1998, 16(8): 585-590.
+Oliveira M, Santos V, Sappa A D. Multimodal inverse perspective mapping[J]. Information Fusion, 2015, 24: 108-121.
+Banerjee N, Chakraborty S, Raman V, et al. Space efficient linear time algorithms for BFS, DFS and applications[J]. Theory of Computing Systems, 2018, 62(8): 1736-1762.
+Banerjee N, Chakraborty S, Raman V. Improved space efficient algorithms for BFS, DFS and applications[C]//International Computing and Combinatorics Conference. Cham: Springer International Publishing, 2016: 119-130.
+Awerbuch B, Gallager R G. Distributed BFS algorithms[C]//26th Annual Symposium on Foundations of Computer Science (sfcs 1985). IEEE, 1985: 250-256.
+Feng D, Gomes C P, Selman B. A novel automated curriculum strategy to solve hard sokoban planning instances[J]. Advances in Neural Information Processing Systems, 2020, 33: 3141-3152.
+Junghanns A, Schaeffer J. Sokoban: Enhancing general single-agent search methods using domain knowledge[J]. Artificial Intelligence, 2001, 129(1-2): 219-251.
+Tang G, Tang C, Claramunt C, et al. Geometric A-star algorithm: An improved A-star algorithm for AGV path planning in a port environment[J]. IEEE access, 2021, 9: 59196-59210.
+Sandler M, Howard A, Zhu M, et al. Mobilenetv2: Inverted residuals and linear bottlenecks[C]//2018 IEEE/CVF conference on computer vision and pattern recognition. Ieee, 2018: 4510-4520.
+Gfrerrer A. Geometry and kinematics of the Mecanum wheel[J]. Computer Aided Geometric Design, 2008, 25(9): 784-791.
+Burkacki M, Łysy I, Suchoń S, et al. Systematic review of Mecanum and Omni wheel technologies for motor impairments[J]. Applied Sciences, 2025, 15(9): 4
+附录
+
+
+
+
+
+===== TABLE 1 =====
+学校： | 福州大学
+队伍名称： | You Only Look Once
+参赛队员: | 林翔锴、薛博尹、高建涛、李皓阳
+指导老师： | 王武、蔡逢煌
+
+===== TABLE 2 =====
+参数 | 数值
+车模 | M车模
+整车长度 | 30cm
+整车宽度 | 21cm
+整车高度 | 15cm
+
+===== TABLE 3 =====
+参数 | 数值
+电池类型 | 3s航模电池
+电池容量 电路功耗 电容 | 2200mAh 24W 1000μF
+
+===== TABLE 4 =====
+传感器 | 数量 | 作用
+ICM42688 六轴陀螺仪 OpenART Plus 1024线方向编码器 | 1 2 4 | 姿态解算 获取全局信息 / 识别类别 获取四轮速度反馈
+
+===== TABLE 5 =====
+执行机构 | 数量 | 作用
+RS380驱动电机 | 4 | 提供车辆动力
+
+===== TABLE 6 =====
+模型 | 骨干 | alpha | 输入尺寸 | 部署文件
+卡通人物（10类） | MobileNetV2 | 0.35 | 128×128 | `modeldetectlxk.tflite`
+数字（10类） | MobileNetV2 | 0.35 | 128×128 | `numberdetectlxk.tflite`
+
+===== TABLE 7 =====
+麦克纳姆轮控制主要源码
+static void mecanum_mix_target_speeds(float targets[4]) {     targets[0] = target_velocity.vx + target_velocity.wz + target_velocity.vy;     targets[1] = target_velocity.vx - target_velocity.wz - target_velocity.vy;     targets[2] = target_velocity.vx + target_velocity.wz - target_velocity.vy;     targets[3] = target_velocity.vx - target_velocity.wz + target_velocity.vy; }  void mecanum_velocity_control_loop(void) {     float target_wheel_speeds[4];     float target_encoder_speeds[4];     mecanum_mix_target_speeds(target_wheel_speeds);     for (int i = 0; i < 4; i++)     {         target_encoder_speeds[i] = cm_s_to_encoder_delta(target_wheel_speeds[i]);     }      for (int i = 0; i < 4; i++) {target_encoder_speeds[i] *= motor_calibration[i];}      float max_speed = 0.0f;     for (int i = 0; i < 4; i++) {         float abs_speed = (target_encoder_speeds[i] >= 0.0f) ? target_encoder_speeds[i] : -target_encoder_speeds[i];         if (abs_speed > max_speed) {max_speed = abs_speed;}     }      if (max_speed > 5000.0f) {         float scale = 5000.0f / max_speed;         for (int i = 0; i < 4; i++) {target_encoder_speeds[i] *= scale;}     }      mecanum_apply_l_curve_wheel_guard(target_encoder_speeds);      float current_encoder_speeds[4];     current_encoder_speeds[0] = motorA_speed;     current_encoder_speeds[1] = motorB_speed;     current_encoder_speeds[2] = motorC_speed;     current_encoder_speeds[3] = motorD_speed;      int16 pwm_outputs[4] = {0, 0, 0, 0};      if (debug_wheel_index >= 0 && debug_wheel_index < 4) {         int i = debug_wheel_index;         float pid_output = pid_calculate_duty(&wheel_speed_pid[i], target_encoder_speeds[i], current_encoder_speeds[i]);         pwm_outputs[i] = (int16)pid_output;     } else {         for (int i = 0; i < 4; i++) {             float pid_output = pid_calculate_duty(&wheel_speed_pid[i], target_encoder_speeds[i], current_encoder_speeds[i]);             pwm_outputs[i] = (int16)pid_output;         }     }      motor_set_duty(MOTOR_A, deadzone_compensate(pwm_outputs[0]));     motor_set_duty(MOTOR_B, deadzone_compensate(pwm_outputs[1]));     motor_set_duty(MOTOR_C, deadzone_compensate(pwm_outputs[2]));     motor_set_duty(MOTOR_D, deadzone_compensate(pwm_outputs[3])); }
+
+===== TABLE 8 =====
+视觉补偿编码器主要源码
+void displacement_update_vision_pose(float x, float y, uint16 seq) {     float delayed_x;     float delayed_y;     uint32 latency_ticks = (uint32)displacement_get_effective_vision_latency_ticks();     uint32 target_tick;     float new_bias_x;     float new_bias_y;     float bias_error;     float alpha;      (void)seq;     if(!vision_enabled || vision_updates_frozen) { return; }     if(vision_drop_next)     {         vision_drop_next = 0u;         return;     }      target_tick = (odom_tick > latency_ticks) ? (odom_tick - latency_ticks) : 0u;     if(!displacement_find_history(target_tick, &delayed_x, &delayed_y))     {         return;     }      new_bias_x = x - delayed_x;     new_bias_y = y - delayed_y;     bias_error = max_float_local(abs_float_local(new_bias_x - vision_bias_x),                                  abs_float_local(new_bias_y - vision_bias_y));      if(vision_bias_valid && bias_error > VISION_BIAS_GATE_CM)     {         return;     }      if(vision_mode == VISION_FUSION_FINAL)     {         alpha = VISION_BIAS_ALPHA_FINAL;     }     else if(vision_mode == VISION_FUSION_ASSIST)     {         alpha = VISION_BIAS_ALPHA_ASSIST;     }     else     {         alpha = VISION_BIAS_ALPHA_FAR;     }      if(!vision_bias_valid)     {         vision_bias_x = new_bias_x;         vision_bias_y = new_bias_y;         vision_bias_valid = 1u;     }     else     {         vision_bias_x = vision_bias_x * (1.0f - alpha) + new_bias_x * alpha;         vision_bias_y = vision_bias_y * (1.0f - alpha) + new_bias_y * alpha;     }     last_vision_tick = odom_tick; }
+
+===== TABLE 9 =====
+整车状态机主要源码
+void control_loop_5ms(void) {     uint8 legacy_arrive_action_active;      if(motion_map_boundary_stop_latched || motion_map_boundary_exceeded())     {         motion_map_boundary_stop_step();         return;     }      if(motion_stop_hold)     {         mecanum_set_target_velocity(0.0f, 0.0f, 0.0f);         mecanum_velocity_control_loop();         return;     }      float wz = yaw_control_calculate();     float current_x = displacement_get_fused_x();     float current_y = displacement_get_fused_y();      if(curve_l_active)     {         position_l_polyline_control_step(wz, current_x, current_y);     }     else     if(curve_s_active)     {         position_s_curve_control_step(wz, current_x, current_y);     }     else     {         position_loop_control_step(wz, current_x, current_y);     }     mecanum_velocity_control_loop();      legacy_arrive_action_active =         (((waiting_flag == 1) && (Init_flag == 0)) || (Send_ok_flag == 1)) ? 1u : 0u;      if (legacy_arrive_action_active &&         segment_mode != MOTION_MODE_ENCODER_FAST &&         check_arrived_and_stable()) {         position_pid_reset_all();         mecanum_closed_loop_stop();         mecanum_set_target_velocity(0.0f, 0.0f, wz);         mecanum_velocity_control_loop();         arrive_stable_count = 0;         goto_command_reset();          if (waiting_flag == 1 && Init_flag == 0) {             waiting_flag = 2;             target_x = current_x;             target_y = current_y;             position_pid_reset_all();             motion_segment_reset();         } else if (Send_ok_flag == 1) {             RT1064_uart_write("is_ok");             Send_ok_flag = 0;             tft180_show_int(0, 0, 1, 1);             target_x = Target_Location[0] * 20;             target_y = Target_Location[1] * 20;             position_pid_reset_all();             motion_segment_begin_current(target_x, target_y);         }     } }
+
+===== TABLE 10 =====
+底盘地图坐标转换主要源码
+void displacement_get(int16 delta1, int16 delta2, int16 delta3, int16 delta4) {     float filtered1 = rc_filter_output(&encoder_filter[0], (float)delta1);     float filtered2 = rc_filter_output(&encoder_filter[1], (float)delta2);     float filtered3 = rc_filter_output(&encoder_filter[2], (float)delta3);     float filtered4 = rc_filter_output(&encoder_filter[3], (float)delta4);      RC_encoder1 = (int32)filtered1;     RC_encoder2 = (int32)filtered2;     RC_encoder3 = (int32)filtered3;     RC_encoder4 = (int32)filtered4;      float body_delta_x_ticks = ((float)delta1 + (float)delta2 + (float)delta3 + (float)delta4) / 4.0f;     float body_delta_y_ticks = ((float)delta1 - (float)delta2 - (float)delta3 + (float)delta4) / 4.0f;     float filtered_delta_x_ticks = (filtered1 + filtered2 + filtered3 + filtered4) / 4.0f;     float filtered_delta_y_ticks = (filtered1 - filtered2 - filtered3 + filtered4) / 4.0f;      float scale_x = (long_distance_enabled ? long_calib_scale_x : short_calib_scale_x) *                     transient_body_scale_x;     float scale_y = (long_distance_enabled ? long_calib_scale_y : short_calib_scale_y) *                     transient_body_scale_y;     float up_positive_x_scale = long_distance_enabled ?                                 ODOM_LONG_UP_POSITIVE_X_SCALE :                                 ODOM_SHORT_UP_POSITIVE_X_SCALE;     float down_negative_x_scale = long_distance_enabled ?                                   ODOM_LONG_DOWN_NEGATIVE_X_SCALE :                                   ODOM_SHORT_DOWN_NEGATIVE_X_SCALE;     float right_positive_y_scale = long_distance_enabled ?                                    ODOM_LONG_RIGHT_POSITIVE_Y_SCALE :                                    ODOM_SHORT_RIGHT_POSITIVE_Y_SCALE;     float left_negative_y_scale = long_distance_enabled ?                                   ODOM_LONG_LEFT_NEGATIVE_Y_SCALE :                                   ODOM_SHORT_LEFT_NEGATIVE_Y_SCALE;     float body_delta_x = body_delta_x_ticks * CALIB_X_CM_PER_TICK * scale_x;     float body_delta_y = body_delta_y_ticks * CALIB_Y_CM_PER_TICK * scale_y;     float filtered_body_delta_x = filtered_delta_x_ticks * CALIB_X_CM_PER_TICK * scale_x;     float filtered_body_delta_y = filtered_delta_y_ticks * CALIB_Y_CM_PER_TICK * scale_y;     float boundary_body_delta_x = body_delta_x;     float boundary_body_delta_y = body_delta_y;      if (body_delta_x > 0.0f)     {         body_delta_x *= up_positive_x_scale;     }     if (filtered_body_delta_x > 0.0f)     {         filtered_body_delta_x *= up_positive_x_scale;     }     if (body_delta_x < 0.0f)     {         body_delta_x *= down_negative_x_scale;     }     if (filtered_body_delta_x < 0.0f)     {         filtered_body_delta_x *= down_negative_x_scale;     }     if (body_delta_y > 0.0f)     {         body_delta_y *= right_positive_y_scale;     }     if (filtered_body_delta_y > 0.0f)     {         filtered_body_delta_y *= right_positive_y_scale;     }     if (body_delta_y < 0.0f)     {         body_delta_y *= left_negative_y_scale;     }     if (filtered_body_delta_y < 0.0f)     {         filtered_body_delta_y *= left_negative_y_scale;     }      float yaw_rad = Yaw * DEG_TO_RAD;     float cos_yaw = cosf(yaw_rad);     float sin_yaw = sinf(yaw_rad);      // 越界保护独立积分，不应用长距离方向补偿和视觉偏差。     boundary_odom_x += boundary_body_delta_x * cos_yaw - boundary_body_delta_y * sin_yaw;     boundary_odom_y += boundary_body_delta_x * sin_yaw + boundary_body_delta_y * cos_yaw;      vx_1 = body_delta_x * cos_yaw - body_delta_y * sin_yaw;     vy_1 = body_delta_x * sin_yaw + body_delta_y * cos_yaw;      distx += vx_1;     disty += vy_1;      vx = (filtered_body_delta_x * cos_yaw - filtered_body_delta_y * sin_yaw) / DISPLACEMENT_DT_SEC;     vy = (filtered_body_delta_x * sin_yaw + filtered_body_delta_y * cos_yaw) / DISPLACEMENT_DT_SEC;      odom_tick++;     displacement_record_history(); }

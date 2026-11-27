@@ -1,0 +1,1115 @@
+基于RT1021的三轮全向搬运车模控制系统设计
+技术文档
+基于 NXP RT1021 微控制器
+三轮全向底盘 + 视觉伺服 + 主从协同
+2026年8月
+摘  要
+本文详细介绍了基于恩智浦NXP RT1021微控制器的三轮全向搬运车模控制系统的设计与实现。系统采用主从双车协同架构，主车负责视觉目标识别、路径规划与物体搬运，从车通过红外视觉跟踪与无线通信实现协同跟随。底盘采用三轮全向布局，通过编码器反馈与IMU姿态解算实现精确的速度闭环控制和航向保持。主车搭载摄像头模块，基于OpenMV平台实现网球、沙袋、小熊等多类目标的实时检测与位置估计；从车通过摄像头观测主车侧边红外灯板，利用两个红外灯中心点的像素距离与连线斜率计算相对位姿，结合无线串口接收的主车运动状态，实现传感器融合跟踪。控制算法上，底层采用PID速度环，上层采用状态机调度整个比赛流程，包括出发、搜索、对齐、推送、转场、返回等环节。本文从硬件选型、运动学建模、控制算法设计、软件架构实现、通信协议定义、系统调试方法等方面进行了全面阐述，并给出了完整的参数配置表和状态转换逻辑图，为同类全向移动机器人控制系统的设计提供参考。
+关键词：
+RT1021；三轮全向底盘；PID控制；视觉伺服；主从协同；红外跟踪；状态机
+目  录
+<w:tab w:val="right" w:leader="dot" w:pos="9746"/></w:tabs></w:pPr><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve">TOC \o &quot;1-3&quot; \h \u </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> HYPERLINK \l _Toc2159 </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/></w:rPr><w:t>摘  要
+</w:r><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> PAGEREF _Toc2159 \h </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>2
+<w:tab w:val="right" w:leader="dot" w:pos="9746"/></w:tabs></w:pPr><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> HYPERLINK \l _Toc16163 </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/></w:rPr><w:t>目  录
+</w:r><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> PAGEREF _Toc16163 \h </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>3
+<w:tab w:val="right" w:leader="dot" w:pos="9746"/></w:tabs></w:pPr><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> HYPERLINK \l _Toc14828 </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/></w:rPr><w:t>第一章  比赛任务与系统方案设计
+</w:r><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> PAGEREF _Toc14828 \h </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>6
+<w:tab w:val="right" w:leader="dot" w:pos="9746"/></w:tabs></w:pPr><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> HYPERLINK \l _Toc20627 </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:rFonts w:ascii="黑体" w:hAnsi="黑体" w:eastAsia="黑体"/></w:rPr><w:t>1.1 比赛任务介绍
+</w:r><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> PAGEREF _Toc20627 \h </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>6
+<w:tab w:val="right" w:leader="dot" w:pos="9746"/></w:tabs></w:pPr><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> HYPERLINK \l _Toc3212 </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:rFonts w:ascii="黑体" w:hAnsi="黑体" w:eastAsia="黑体"/></w:rPr><w:t>1.2 比赛场地与规则分析
+</w:r><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> PAGEREF _Toc3212 \h </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>6
+<w:tab w:val="right" w:leader="dot" w:pos="9746"/></w:tabs></w:pPr><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> HYPERLINK \l _Toc23045 </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:rFonts w:ascii="黑体" w:hAnsi="黑体" w:eastAsia="黑体"/></w:rPr><w:t>1.3 系统总体方案
+</w:r><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> PAGEREF _Toc23045 \h </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>7
+<w:tab w:val="right" w:leader="dot" w:pos="9746"/></w:tabs></w:pPr><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> HYPERLINK \l _Toc10716 </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:rFonts w:ascii="黑体" w:hAnsi="黑体" w:eastAsia="黑体"/></w:rPr><w:t>1.4 技术路线选择
+</w:r><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> PAGEREF _Toc10716 \h </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>8
+<w:tab w:val="right" w:leader="dot" w:pos="9746"/></w:tabs></w:pPr><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> HYPERLINK \l _Toc7232 </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/></w:rPr><w:t>第二章  硬件平台
+</w:r><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> PAGEREF _Toc7232 \h </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>9
+<w:tab w:val="right" w:leader="dot" w:pos="9746"/></w:tabs></w:pPr><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> HYPERLINK \l _Toc16207 </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:rFonts w:ascii="黑体" w:hAnsi="黑体" w:eastAsia="黑体"/></w:rPr><w:t>2.1 RT1021 BTB核心板
+</w:r><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> PAGEREF _Toc16207 \h </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>9
+<w:tab w:val="right" w:leader="dot" w:pos="9746"/></w:tabs></w:pPr><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> HYPERLINK \l _Toc18339 </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:rFonts w:ascii="黑体" w:hAnsi="黑体" w:eastAsia="黑体"/></w:rPr><w:t>2.2 三轮全向移动底盘
+</w:r><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> PAGEREF _Toc18339 \h </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>10
+<w:tab w:val="right" w:leader="dot" w:pos="9746"/></w:tabs></w:pPr><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> HYPERLINK \l _Toc31122 </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:rFonts w:ascii="黑体" w:hAnsi="黑体" w:eastAsia="黑体"/></w:rPr><w:t>2.3 电机驱动与编码器
+</w:r><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> PAGEREF _Toc31122 \h </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>10
+<w:tab w:val="right" w:leader="dot" w:pos="9746"/></w:tabs></w:pPr><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> HYPERLINK \l _Toc25775 </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:rFonts w:ascii="黑体" w:hAnsi="黑体" w:eastAsia="黑体"/></w:rPr><w:t>2.4 IMU姿态传感器
+</w:r><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> PAGEREF _Toc25775 \h </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>11
+<w:tab w:val="right" w:leader="dot" w:pos="9746"/></w:tabs></w:pPr><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> HYPERLINK \l _Toc15241 </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:rFonts w:ascii="黑体" w:hAnsi="黑体" w:eastAsia="黑体"/></w:rPr><w:t>2.5 摄像头视觉模块
+</w:r><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> PAGEREF _Toc15241 \h </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>12
+<w:tab w:val="right" w:leader="dot" w:pos="9746"/></w:tabs></w:pPr><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> HYPERLINK \l _Toc23958 </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:rFonts w:ascii="黑体" w:hAnsi="黑体" w:eastAsia="黑体"/></w:rPr><w:t>2.6 红外灯板与无线通信
+</w:r><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> PAGEREF _Toc23958 \h </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>12
+<w:tab w:val="right" w:leader="dot" w:pos="9746"/></w:tabs></w:pPr><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> HYPERLINK \l _Toc30226 </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:rFonts w:ascii="黑体" w:hAnsi="黑体" w:eastAsia="黑体"/></w:rPr><w:t>2.7 电源管理系统
+</w:r><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> PAGEREF _Toc30226 \h </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>13
+<w:tab w:val="right" w:leader="dot" w:pos="9746"/></w:tabs></w:pPr><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> HYPERLINK \l _Toc6501 </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/></w:rPr><w:t>第三章  底盘运动控制系统
+</w:r><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> PAGEREF _Toc6501 \h </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>14
+<w:tab w:val="right" w:leader="dot" w:pos="9746"/></w:tabs></w:pPr><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> HYPERLINK \l _Toc28419 </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:rFonts w:ascii="黑体" w:hAnsi="黑体" w:eastAsia="黑体"/></w:rPr><w:t>3.1 全向轮运动学模型
+</w:r><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> PAGEREF _Toc28419 \h </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>14
+<w:tab w:val="right" w:leader="dot" w:pos="9746"/></w:tabs></w:pPr><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> HYPERLINK \l _Toc23959 </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:rFonts w:ascii="黑体" w:hAnsi="黑体" w:eastAsia="黑体"/></w:rPr><w:t>3.2 速度环PID控制
+</w:r><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> PAGEREF _Toc23959 \h </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>15
+<w:tab w:val="right" w:leader="dot" w:pos="9746"/></w:tabs></w:pPr><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> HYPERLINK \l _Toc30977 </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:rFonts w:ascii="黑体" w:hAnsi="黑体" w:eastAsia="黑体"/></w:rPr><w:t>3.3 航向角PD控制
+</w:r><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> PAGEREF _Toc30977 \h </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>16
+<w:tab w:val="right" w:leader="dot" w:pos="9746"/></w:tabs></w:pPr><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> HYPERLINK \l _Toc4357 </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:rFonts w:ascii="黑体" w:hAnsi="黑体" w:eastAsia="黑体"/></w:rPr><w:t>3.4 里程计解算
+</w:r><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> PAGEREF _Toc4357 \h </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>16
+<w:tab w:val="right" w:leader="dot" w:pos="9746"/></w:tabs></w:pPr><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> HYPERLINK \l _Toc27422 </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:rFonts w:ascii="黑体" w:hAnsi="黑体" w:eastAsia="黑体"/></w:rPr><w:t>3.5 速度斜坡与前馈补偿
+</w:r><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> PAGEREF _Toc27422 \h </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>17
+<w:tab w:val="right" w:leader="dot" w:pos="9746"/></w:tabs></w:pPr><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> HYPERLINK \l _Toc5012 </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/></w:rPr><w:t>第四章  主车软件设计
+</w:r><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> PAGEREF _Toc5012 \h </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>18
+<w:tab w:val="right" w:leader="dot" w:pos="9746"/></w:tabs></w:pPr><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> HYPERLINK \l _Toc24164 </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:rFonts w:ascii="黑体" w:hAnsi="黑体" w:eastAsia="黑体"/></w:rPr><w:t>4.1 主程序架构
+</w:r><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> PAGEREF _Toc24164 \h </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>18
+<w:tab w:val="right" w:leader="dot" w:pos="9746"/></w:tabs></w:pPr><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> HYPERLINK \l _Toc14348 </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:rFonts w:ascii="黑体" w:hAnsi="黑体" w:eastAsia="黑体"/></w:rPr><w:t>4.2 状态机设计
+</w:r><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> PAGEREF _Toc14348 \h </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>18
+<w:tab w:val="right" w:leader="dot" w:pos="9746"/></w:tabs></w:pPr><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> HYPERLINK \l _Toc10423 </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:rFonts w:ascii="黑体" w:hAnsi="黑体" w:eastAsia="黑体"/></w:rPr><w:t>4.3 视觉目标检测
+</w:r><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> PAGEREF _Toc10423 \h </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>21
+<w:tab w:val="right" w:leader="dot" w:pos="9746"/></w:tabs></w:pPr><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> HYPERLINK \l _Toc6659 </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:rFonts w:ascii="黑体" w:hAnsi="黑体" w:eastAsia="黑体"/></w:rPr><w:t>4.4 视觉对齐控制
+</w:r><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> PAGEREF _Toc6659 \h </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>22
+<w:tab w:val="right" w:leader="dot" w:pos="9746"/></w:tabs></w:pPr><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> HYPERLINK \l _Toc1963 </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:rFonts w:ascii="黑体" w:hAnsi="黑体" w:eastAsia="黑体"/></w:rPr><w:t>4.5 推送控制策略
+</w:r><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> PAGEREF _Toc1963 \h </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>22
+<w:tab w:val="right" w:leader="dot" w:pos="9746"/></w:tabs></w:pPr><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> HYPERLINK \l _Toc6078 </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:rFonts w:ascii="黑体" w:hAnsi="黑体" w:eastAsia="黑体"/></w:rPr><w:t>4.6 航向保持系统
+</w:r><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> PAGEREF _Toc6078 \h </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>23
+<w:tab w:val="right" w:leader="dot" w:pos="9746"/></w:tabs></w:pPr><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> HYPERLINK \l _Toc17229 </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:rFonts w:ascii="黑体" w:hAnsi="黑体" w:eastAsia="黑体"/></w:rPr><w:t>4.7 搜索策略设计
+</w:r><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> PAGEREF _Toc17229 \h </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>24
+<w:tab w:val="right" w:leader="dot" w:pos="9746"/></w:tabs></w:pPr><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> HYPERLINK \l _Toc14454 </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/></w:rPr><w:t>第五章  从车软件设计
+</w:r><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> PAGEREF _Toc14454 \h </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>25
+<w:tab w:val="right" w:leader="dot" w:pos="9746"/></w:tabs></w:pPr><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> HYPERLINK \l _Toc4078 </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:rFonts w:ascii="黑体" w:hAnsi="黑体" w:eastAsia="黑体"/></w:rPr><w:t>5.1 从程序架构
+</w:r><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> PAGEREF _Toc4078 \h </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>25
+<w:tab w:val="right" w:leader="dot" w:pos="9746"/></w:tabs></w:pPr><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> HYPERLINK \l _Toc18785 </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:rFonts w:ascii="黑体" w:hAnsi="黑体" w:eastAsia="黑体"/></w:rPr><w:t>5.2 状态机设计
+</w:r><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> PAGEREF _Toc18785 \h </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>25
+<w:tab w:val="right" w:leader="dot" w:pos="9746"/></w:tabs></w:pPr><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> HYPERLINK \l _Toc28518 </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:rFonts w:ascii="黑体" w:hAnsi="黑体" w:eastAsia="黑体"/></w:rPr><w:t>5.3 红外视觉跟踪
+</w:r><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> PAGEREF _Toc28518 \h </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>27
+<w:tab w:val="right" w:leader="dot" w:pos="9746"/></w:tabs></w:pPr><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> HYPERLINK \l _Toc4207 </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:rFonts w:ascii="黑体" w:hAnsi="黑体" w:eastAsia="黑体"/></w:rPr><w:t>5.4 传感器融合策略
+</w:r><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> PAGEREF _Toc4207 \h </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>28
+<w:tab w:val="right" w:leader="dot" w:pos="9746"/></w:tabs></w:pPr><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> HYPERLINK \l _Toc5494 </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:rFonts w:ascii="黑体" w:hAnsi="黑体" w:eastAsia="黑体"/></w:rPr><w:t>5.5 无线盲跟机制
+</w:r><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> PAGEREF _Toc5494 \h </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>29
+<w:tab w:val="right" w:leader="dot" w:pos="9746"/></w:tabs></w:pPr><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> HYPERLINK \l _Toc10664 </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:rFonts w:ascii="黑体" w:hAnsi="黑体" w:eastAsia="黑体"/></w:rPr><w:t>5.6 绕行跟踪算法
+</w:r><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> PAGEREF _Toc10664 \h </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>29
+<w:tab w:val="right" w:leader="dot" w:pos="9746"/></w:tabs></w:pPr><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> HYPERLINK \l _Toc12334 </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:rFonts w:ascii="黑体" w:hAnsi="黑体" w:eastAsia="黑体"/></w:rPr><w:t>5.7 推送同步控制
+</w:r><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> PAGEREF _Toc12334 \h </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>30
+<w:tab w:val="right" w:leader="dot" w:pos="9746"/></w:tabs></w:pPr><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> HYPERLINK \l _Toc3190 </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/></w:rPr><w:t>第六章  主从协同与通信协议
+</w:r><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> PAGEREF _Toc3190 \h </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>31
+<w:tab w:val="right" w:leader="dot" w:pos="9746"/></w:tabs></w:pPr><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> HYPERLINK \l _Toc15487 </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:rFonts w:ascii="黑体" w:hAnsi="黑体" w:eastAsia="黑体"/></w:rPr><w:t>6.1 无线通信架构
+</w:r><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> PAGEREF _Toc15487 \h </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>31
+<w:tab w:val="right" w:leader="dot" w:pos="9746"/></w:tabs></w:pPr><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> HYPERLINK \l _Toc24690 </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:rFonts w:ascii="黑体" w:hAnsi="黑体" w:eastAsia="黑体"/></w:rPr><w:t>6.2 主车指令协议
+</w:r><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> PAGEREF _Toc24690 \h </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>31
+<w:tab w:val="right" w:leader="dot" w:pos="9746"/></w:tabs></w:pPr><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> HYPERLINK \l _Toc4194 </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:rFonts w:ascii="黑体" w:hAnsi="黑体" w:eastAsia="黑体"/></w:rPr><w:t>6.3 摄像头通信协议
+</w:r><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> PAGEREF _Toc4194 \h </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>32
+<w:tab w:val="right" w:leader="dot" w:pos="9746"/></w:tabs></w:pPr><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> HYPERLINK \l _Toc17770 </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:rFonts w:ascii="黑体" w:hAnsi="黑体" w:eastAsia="黑体"/></w:rPr><w:t>6.4 通信可靠性设计
+</w:r><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> PAGEREF _Toc17770 \h </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>33
+<w:tab w:val="right" w:leader="dot" w:pos="9746"/></w:tabs></w:pPr><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> HYPERLINK \l _Toc20284 </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/></w:rPr><w:t>第七章  控制算法与参数整定
+</w:r><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> PAGEREF _Toc20284 \h </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>34
+<w:tab w:val="right" w:leader="dot" w:pos="9746"/></w:tabs></w:pPr><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> HYPERLINK \l _Toc4277 </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:rFonts w:ascii="黑体" w:hAnsi="黑体" w:eastAsia="黑体"/></w:rPr><w:t>7.1 PID控制原理
+</w:r><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> PAGEREF _Toc4277 \h </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>34
+<w:tab w:val="right" w:leader="dot" w:pos="9746"/></w:tabs></w:pPr><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> HYPERLINK \l _Toc25196 </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:rFonts w:ascii="黑体" w:hAnsi="黑体" w:eastAsia="黑体"/></w:rPr><w:t>7.2 速度环参数整定
+</w:r><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> PAGEREF _Toc25196 \h </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>34
+<w:tab w:val="right" w:leader="dot" w:pos="9746"/></w:tabs></w:pPr><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> HYPERLINK \l _Toc21013 </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:rFonts w:ascii="黑体" w:hAnsi="黑体" w:eastAsia="黑体"/></w:rPr><w:t>7.3 航向控制参数整定
+</w:r><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> PAGEREF _Toc21013 \h </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>35
+<w:tab w:val="right" w:leader="dot" w:pos="9746"/></w:tabs></w:pPr><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> HYPERLINK \l _Toc7964 </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:rFonts w:ascii="黑体" w:hAnsi="黑体" w:eastAsia="黑体"/></w:rPr><w:t>7.4 视觉伺服参数
+</w:r><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> PAGEREF _Toc7964 \h </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>36
+<w:tab w:val="right" w:leader="dot" w:pos="9746"/></w:tabs></w:pPr><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> HYPERLINK \l _Toc17588 </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/></w:rPr><w:t>第八章  系统调试与测试
+</w:r><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> PAGEREF _Toc17588 \h </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>38
+<w:tab w:val="right" w:leader="dot" w:pos="9746"/></w:tabs></w:pPr><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> HYPERLINK \l _Toc19408 </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:rFonts w:ascii="黑体" w:hAnsi="黑体" w:eastAsia="黑体"/></w:rPr><w:t>8.1 单模块调试
+</w:r><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> PAGEREF _Toc19408 \h </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>38
+<w:tab w:val="right" w:leader="dot" w:pos="9746"/></w:tabs></w:pPr><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> HYPERLINK \l _Toc13570 </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:rFonts w:ascii="黑体" w:hAnsi="黑体" w:eastAsia="黑体"/></w:rPr><w:t>8.2 底盘运动测试
+</w:r><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> PAGEREF _Toc13570 \h </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>38
+<w:tab w:val="right" w:leader="dot" w:pos="9746"/></w:tabs></w:pPr><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> HYPERLINK \l _Toc2892 </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:rFonts w:ascii="黑体" w:hAnsi="黑体" w:eastAsia="黑体"/></w:rPr><w:t>8.3 视觉识别测试
+</w:r><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> PAGEREF _Toc2892 \h </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>39
+<w:tab w:val="right" w:leader="dot" w:pos="9746"/></w:tabs></w:pPr><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> HYPERLINK \l _Toc27257 </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:rFonts w:ascii="黑体" w:hAnsi="黑体" w:eastAsia="黑体"/></w:rPr><w:t>8.4 主从联调测试
+</w:r><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> PAGEREF _Toc27257 \h </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>39
+<w:tab w:val="right" w:leader="dot" w:pos="9746"/></w:tabs></w:pPr><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> HYPERLINK \l _Toc8134 </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/></w:rPr><w:t>第九章  比赛策略与优化
+</w:r><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> PAGEREF _Toc8134 \h </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>41
+<w:tab w:val="right" w:leader="dot" w:pos="9746"/></w:tabs></w:pPr><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> HYPERLINK \l _Toc23699 </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:rFonts w:ascii="黑体" w:hAnsi="黑体" w:eastAsia="黑体"/></w:rPr><w:t>9.1 比赛流程规划
+</w:r><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> PAGEREF _Toc23699 \h </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>41
+<w:tab w:val="right" w:leader="dot" w:pos="9746"/></w:tabs></w:pPr><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> HYPERLINK \l _Toc20605 </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:rFonts w:ascii="黑体" w:hAnsi="黑体" w:eastAsia="黑体"/></w:rPr><w:t>9.2 参数优化策略
+</w:r><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> PAGEREF _Toc20605 \h </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>41
+<w:tab w:val="right" w:leader="dot" w:pos="9746"/></w:tabs></w:pPr><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> HYPERLINK \l _Toc29823 </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:rFonts w:ascii="黑体" w:hAnsi="黑体" w:eastAsia="黑体"/></w:rPr><w:t>9.3 异常处理机制
+</w:r><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> PAGEREF _Toc29823 \h </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>41
+<w:tab w:val="right" w:leader="dot" w:pos="9746"/></w:tabs></w:pPr><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> HYPERLINK \l _Toc19752 </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/></w:rPr><w:t>第十章  总结与展望
+</w:r><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> PAGEREF _Toc19752 \h </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>43
+<w:tab w:val="right" w:leader="dot" w:pos="9746"/></w:tabs></w:pPr><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> HYPERLINK \l _Toc26958 </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:rFonts w:ascii="黑体" w:hAnsi="黑体" w:eastAsia="黑体"/></w:rPr><w:t>10.1 工作总结
+</w:r><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> PAGEREF _Toc26958 \h </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>43
+<w:tab w:val="right" w:leader="dot" w:pos="9746"/></w:tabs></w:pPr><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> HYPERLINK \l _Toc1511 </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:rFonts w:ascii="黑体" w:hAnsi="黑体" w:eastAsia="黑体"/></w:rPr><w:t>10.2 创新点
+</w:r><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> PAGEREF _Toc1511 \h </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>43
+<w:tab w:val="right" w:leader="dot" w:pos="9746"/></w:tabs></w:pPr><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> HYPERLINK \l _Toc29359 </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:rFonts w:ascii="黑体" w:hAnsi="黑体" w:eastAsia="黑体"/></w:rPr><w:t>10.3 不足与展望
+</w:r><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> PAGEREF _Toc29359 \h </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>44
+<w:tab w:val="right" w:leader="dot" w:pos="9746"/></w:tabs></w:pPr><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> HYPERLINK \l _Toc25487 </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/></w:rPr><w:t>附录A  主要参数汇总表
+</w:r><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> PAGEREF _Toc25487 \h </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>45
+<w:tab w:val="right" w:leader="dot" w:pos="9746"/></w:tabs></w:pPr><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> HYPERLINK \l _Toc11896 </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/></w:rPr><w:t>附录B  逻辑图与状态图
+</w:r><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> PAGEREF _Toc11896 \h </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>47
+<w:tab w:val="right" w:leader="dot" w:pos="9746"/></w:tabs></w:pPr><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> HYPERLINK \l _Toc27534 </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:rFonts w:ascii="黑体" w:hAnsi="黑体" w:eastAsia="黑体"/></w:rPr><w:t>B.1 主车程序主循环逻辑图
+</w:r><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> PAGEREF _Toc27534 \h </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>47
+<w:tab w:val="right" w:leader="dot" w:pos="9746"/></w:tabs></w:pPr><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> HYPERLINK \l _Toc14221 </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:rFonts w:ascii="黑体" w:hAnsi="黑体" w:eastAsia="黑体"/></w:rPr><w:t>B.2 从车程序主循环逻辑图
+</w:r><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> PAGEREF _Toc14221 \h </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>47
+<w:tab w:val="right" w:leader="dot" w:pos="9746"/></w:tabs></w:pPr><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> HYPERLINK \l _Toc29626 </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:rFonts w:ascii="黑体" w:hAnsi="黑体" w:eastAsia="黑体"/></w:rPr><w:t>B.3 传感器融合决策逻辑图
+</w:r><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> PAGEREF _Toc29626 \h </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>48
+<w:tab w:val="right" w:leader="dot" w:pos="9746"/></w:tabs></w:pPr><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> HYPERLINK \l _Toc8421 </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:rFonts w:ascii="黑体" w:hAnsi="黑体" w:eastAsia="黑体"/></w:rPr><w:t>B.4 速度环PID控制逻辑图
+</w:r><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> PAGEREF _Toc8421 \h </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>48
+<w:tab w:val="right" w:leader="dot" w:pos="9746"/></w:tabs></w:pPr><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> HYPERLINK \l _Toc28100 </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:rFonts w:ascii="黑体" w:hAnsi="黑体" w:eastAsia="黑体"/></w:rPr><w:t>B.5 主车完整状态转换图
+</w:r><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> PAGEREF _Toc28100 \h </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>49
+<w:tab w:val="right" w:leader="dot" w:pos="9746"/></w:tabs></w:pPr><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> HYPERLINK \l _Toc23988 </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:rFonts w:ascii="黑体" w:hAnsi="黑体" w:eastAsia="黑体"/></w:rPr><w:t>B.6 从车完整状态转换图
+</w:r><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> PAGEREF _Toc23988 \h </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>49
+<w:tab w:val="right" w:leader="dot" w:pos="9746"/></w:tabs></w:pPr><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> HYPERLINK \l _Toc20271 </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/></w:rPr><w:t>附录C  代码模块说明
+</w:r><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText xml:space="preserve"> PAGEREF _Toc20271 \h </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r><w:r><w:t>51
+第一章  比赛任务与系统方案设计
+1.1 比赛任务介绍
+本系统为「
+蚂蚁搬家
+」组别的搬运车模比赛而设计。比赛要求两辆搬运车模从发车区域出发，进入场地中心的目标区域，识别并搬运指定物品，完成任务后返回发车区。比赛场地为一块矩形区域，尺寸为3.2米×2.4米，场地内外铺设蓝色背景布，边界由宽度为5厘米的黄色胶带标识。被搬运物品放置在场地中心不大于1米×1米的区域内，物品之间保持10厘米以上的最小间距。
+除搬运车模外，系统还可配置不超过2台的辅助车模（工兵）或导引信标，分别用于目标发现、辅助路径规划、搬运位置确认、发车区域导航等功能。用于计算成绩的车模重量仅对两辆搬运车模进行称重相加后除以2，即取两辆搬运车模的平均重量，不累加辅助车模的重量。
+本系统未设置辅助车模。
+比赛成绩（时间）从车模从发车区出发到返回出发区之间的时间间隔决定。若遗漏搬运物品，将按照比赛裁判员手册中给出的罚时标准进行加时。辅助车模在比赛期间不允许参与物品的搬运，即不允许触碰到被搬运的物品。
+1.2 比赛场地与规则分析
+根据比赛规则，场地布置具有以下关键特征：
+（1）场地尺寸：正式比赛时场地尺寸固定为3.2米×2.4米，发车区域位于场地左下角，宽度约为0.5米，搬运车模从该区域出发并最终返回该区域。
+（2）目标区域：被搬运物品放置于场地中心，摆放区域不大于1米×1米。目标物品种类包括标准网球、沙袋、小熊玩偶等，不同物品具有不同的外形特征和推送距离要求。
+（3）边界约束：场地边界由宽度为5厘米的黄色胶带铺设，车模在运动过程中应避免触碰边界。场地内外均为蓝色背景布，为视觉识别提供了统一的背景环境。
+（4）推杆限制：用于搬运物品的推杆水平方向尺寸不超过10厘米，垂直方向高度不超过5厘米，推杆必须为直杆，不允许带有弧度或夹角。推杆与车模的夹角没有限制，但推杆个数只能为一个。
+（5）控制方式：使用NXP-MicroPython作为搬运车模的控制器，比赛开始后仅允许按一次发射键，不允许人为给小车输入信息。
+图注：3.2m×2.4m矩形场地，含发车区、搬运物品摆放区域、边界胶带位置标注
+1.3 系统总体方案
+本系统采用主从双车协同架构，两车均基于NXP RT1021 BTB核心板构建，运行MicroPython固件。主车负责整个比赛流程的决策与执行，从车负责协同跟随主车完成搬运任务。
+主车配置如下：搭载OpenMV摄像头模块，用于目标物体的识别与定位；安装IMU姿态传感器，用于航向角解算与里程计融合；配置无线通信模块，用于向从车发送运动状态与指令；采用三轮全向底盘，具备前后左右及斜向平移能力。
+从车配置如下：搭载OpenMV摄像头模块，用于观测主车侧边的红外灯板；安装IMU姿态传感器，用于自身航向控制；配置无线通信模块，用于接收主车发送的状态与指令；同样采用三轮全向底盘，保持与主车一致的运动学特性。
+两车协同工作逻辑为：主车通过摄像头识别目标物体，运动到物体前方进行视觉对齐，然后向前推送物体到指定位置。从车通过摄像头实时观测主车侧边的两个红外灯板，计算两车之间的相对距离和方位角，同时接收主车通过无线串口发送的速度和航向信息，融合红外视觉数据和无线数据，实现高精度的跟随控制。
+1.4 技术路线选择
+（1）控制器选型：选用NXP RT1021 BTB核心板作为主控制器。RT1021基于Arm Cortex-M7内核，主频高达500MHz，具备丰富的外设接口，包括多路PWM、UART、SPI、I2C等，能够满足三路电机控制、多路传感器通信和图像处理的需求。
+（2）底盘构型：选用三轮全向底盘（Three-Wheel Omnidirectional Chassis）。全向轮（Omni Wheel）的特殊结构使得底盘可以在不改变朝向的情况下实现任意方向的平移运动，极大地提高了在狭窄场地中的机动性。三个全向轮以120度间隔均匀分布，通过合理的速度分配即可实现整车的前进、后退、左右横移、斜向运动以及原地旋转。
+（3）视觉方案：主车采用OpenMV摄像头进行目标检测，利用颜色特征和形状特征识别网球、沙袋、小熊等物体；从车采用OpenMV摄像头配合红外滤光片观测主车侧边的红外灯板，通过检测两个红外灯在图像中的像素坐标，计算相对位姿。
+（4）姿态感知：采用IMU（惯性测量单元）进行航向角解算。IMU提供高精度的偏航角（Yaw）输出，结合编码器的速度信息，通过运动学模型实现底盘的里程计估计。
+（5）控制策略：底层采用PID速度环对三个轮子进行独立闭环控制，确保每个轮子的实际转速快速准确地跟踪目标转速；上层采用PD控制进行航向角保持，在直线运动时自动修正航向偏差；顶层采用状态机管理整个比赛流程，实现任务的有序切换。
+（6）通信方案：主从车之间采用无线串口模块进行通信。主车周期性地向从车广播自身的目标速度（vx, vy, vw）和相对航向角偏差，同时发送指令（PUSH、TURN、RETURN、STOP等）控制从车的工作模式。
+第二章  硬件平台
+2.1 RT1021 BTB核心板
+RT1021是恩智浦半导体推出的 crossover 微控制器，基于Arm Cortex-M7内核，主频最高可达500MHz，内置1MB SRAM和16MB Hyper Flash（可选配外部Flash扩展）。本系统采用BTB（Board-to-Board）封装的核心板形式，通过排针与底板连接，便于系统集成和调试。
+RT1021核心板在本系统中的主要功能包括：
+（1）电机控制：利用芯片内部的FlexPWM模块生成三路独立的PWM信号，分别控制三个直流减速电机的转速和方向。PWM频率设置为13kHz，在确保控制精度的同时降低电机运行噪声。
+（2）编码器采集：通过正交编码器接口（QEI）读取三路增量式编码器的脉冲信号，实时获取每个轮子的转动位移和转速信息，为速度闭环控制提供反馈。
+（3）传感器通信：通过UART接口连接OpenMV摄像头模块和无线串口模块，通过I2C或SPI接口连接IMU姿态传感器，实现多传感器数据的并行采集。
+（4）定时器中断：利用PIT（Periodic Interrupt Timer）实现固定周期的控制中断，本系统的控制周期设置为50ms（20Hz），在每次中断中完成编码器读取、速度计算、PID运算和PWM输出。
+图注：
+RT1021核心板
+2.2 三轮全向移动底盘
+全向移动底盘（Omnidirectional Mobile Robot）是一种能够在平面内实现任意方向瞬时速度的特殊移动机构。本系统采用三轮全向布局，三个全向轮以120度间隔均匀分布在圆周上，轮子的安装方向指向底盘中心。
+全向轮（Omni Wheel）的结构特点是在主轮辋的周向布置有多排小滚子，这些小滚子的轴线与主轮辋的轴线垂直。当轮子绕主轴旋转时，小滚子可以被动地沿轴向滚动，从而使轮子具备两个方向的自由度：沿轮辋切线方向的主动驱动和沿轮辋轴线方向的被动滑动。
+图注：
+底盘
+2.3 电机驱动与编码器
+本系统采用直流减速电机作为驱动单元，配合双路H桥电机驱动芯片实现转速和方向的控制。每个电机由两路互补PWM信号驱动，通过调节PWM占空比控制电机平均电压，从而调节转速；通过改变两路PWM的极性关系控制电机转向。
+电机驱动的主要参数如下：PWM频率13kHz，PWM限幅值9000（对应10位或12位分辨率下的最大占空比），电机符号系数为(-1, -1, -1)，表示三个电机的正转方向与理论定义相反，在软件中通过符号修正保证运动方向正确。
+编码器采用
+1024线
+增量式
+方向
+编码器，分辨率10
+24
+脉冲/转（PPR）。编码器输出两路脉冲信号（A相和
+dir
+相），接入RT1021的编码器接口。
+在每次控制中断中，软件读取三个编码器的脉冲增量，除以编码器分辨率（10
+24
+）和控制周期（0.05秒），得到每个轮子的实际转速（转/秒）。该转速作为速度环PID控制的反馈量，与目标转速进行比较后计算控制输出。
+2.4 IMU姿态传感器
+IMU（Inertial Measurement Unit，惯性测量单元）是本系统实现航向感知和里程计解算的核心传感器。本系统选用的IMU模块集成了三轴加速度计和三轴陀螺仪，通过内置的传感器融合算法（通常为互补滤波或扩展卡尔曼滤波）输出高精度的姿态角，包括俯仰角（Pitch）、横滚角（Roll）和偏航角（Yaw）。
+在本系统中，主要使用IMU的偏航角（Yaw）输出。偏航角定义为绕垂直轴（Z轴）的旋转角度，顺时针增大，范围0°~360°。在软件中，偏航角被转换到±180°范围内，便于角度差计算。
+IMU的偏航角存在零偏（Offset）问题，即上电时的初始角度不一定为零。为此，系统在初始化阶段进行零偏校准：记录上电时的初始偏航角作为基准，后续所有角度测量均减去该基准值，从而得到相对于启动时刻的相对航向角。此外，系统还支持运行时重置里程计功能，将当前IMU读数设为新的角度基准。
+IMU与编码器融合构成里程计系统。编码器提供高精度的短期位移估计，IMU提供航向角信息，两者结合可以计算底盘在全局坐标系中的位置和姿态。具体融合方式见第三章里程计解算部分。
+图注：
+IMU660RA
+2.5 摄像头视觉模块
+本系统主从两车均搭载OpenMV摄像头模块作为视觉传感器。主车的OpenMV摄像头用于目标物体检测。摄像头朝向前方，视野覆盖车模前方的目标区域。图像处理算法在OpenMV上运行，识别场地中的网球（绿色）、沙袋（米色/棕色）、小熊（棕色）等目标物体，并输出目标在图像中的归一化坐标（x, y）和类别编号（1=沙袋, 2=网球, 3=小熊）。识别结果通过UART串口以文本协议的形式发送到RT1021主控板。
+从车的OpenMV摄像头用于观测主车侧边的红外灯板。摄像头朝向右方（主车位于从车右侧），镜头前加装红外滤光片，仅允许红外光通过，从而在可见光环境下也能清晰地识别红外灯板。图像处理算法检测图像中两个最亮的红外斑点，计算它们的中心坐标和连线斜率，输出到RT1021主控板。
+摄像头与核心板之间通过UART接口通信，波特率设置为115200。通信协议采用简单的文本格式，以帧号或标识符开头，数据字段以逗号分隔，以感叹号或换行符结束。详见第六章通信协议部分。
+2.6 红外灯板与无线通信
+红外灯板是主从车协同跟踪的关键硬件。主车侧边安装有两个红外LED灯板，两个灯板沿车身纵向排列，间距固定。灯板发射波长在850nm或940nm附近的红外光，人眼不可见但可被从车的红外摄像头清晰捕捉。
+从车的摄像头通过检测两个红外灯斑在图像中的位置，可以获得以下信息：
+（1）两灯中心点的x坐标差（像素）：反映从车相对于主车的前后距离。当从车距离主车较远时，两灯在图像中显得较近；当从车靠近主车时，两灯在图像中显得较远。通过像素距离与实际距离的标定关系，可以估算两车的实际间距。
+（2）两灯中心点的y坐标差（像素）：反映从车相对于主车的左右偏移。当从车正对主车侧边时，两灯中心点的y坐标相等；当从车偏前或偏后时，y坐标出现差异。
+（3）两灯连线的斜率：反映主车与从车之间的相对方位角。当两车朝向一致且并排行驶时，连线接近水平；当主车相对于从车有转向动作时，连线斜率发生变化。
+无线通信模块采用2.4GHz频段的串口透传模块，主从车各配置一个。模块工作于透明传输模式，将UART数据通过无线信道发送到对方。通信距离在室内环境下可达20米以上，满足比赛场地的通信需求。主车周期性地发送运动状态数据和指令，从车接收后用于融合跟踪。
+图注：
+主车红外灯板
+2.7 电源管理系统
+系统电源由
+3S
+锂电池提供。锂电池通过DC-DC降压
+电路
+转换为5V，为RT1021核心板、OpenMV摄像头、无线模块等数字电路供电；同时通过电机驱动芯片直接为直流电机供电。
+第三章  底盘运动控制系统
+3.1 全向轮运动学模型
+全向轮底盘的运动学建模是实现精确运动控制的基础。本系统采用的三轮全向布局中，三个全向轮以120度间隔均匀分布，轮子的安装方向指向底盘几何中心。设三个轮子编号为1、2、3，其安装角度分别为0°、120°、240°（相对于底盘局部坐标系的+X轴）。
+在局部坐标系中，设底盘的目标速度为(vx, vy, vw)，其中：vx为横向速度（右为正），vy为纵向速度（前为正），
+vw为旋转角速度（逆时针为正，单位：转/秒）。三个轮子的目标转速w1、w2、w3（单位：转/秒）由以下逆运动学公式计算：
+w1 = -0.5 * vx + 0.866 * vy + vw
+w2 = -0.5 * vx - 0.866 * vy + vw
+w3 = 1.0 * vx + 0.0 * vy + vw
+上述公式的推导基于三个轮子与底盘中心的距离相等、安装角度互为120度的几何约束。当底盘仅有纵向速度vy时，三个轮子的转速大小相等，方向使得底盘向前运动；当底盘仅有横向速度vx时，轮1和轮2的转速相同且与轮3相反，实现横向平移；当底盘仅有旋转角速度vw时，三个轮子同向旋转，实现原地旋转。
+正运动学公式用于从三个轮子的实际转速反解底盘的运动速度，在里程计解算中用于计算底盘的实际位移。正运动学公式为：
+vx_body = (-w1 - w2 + 2*w3) / 3
+    vy_body = (w1 - w2) / sqrt(3)
+    vw_body = (w1 + w2 + w3) / 3
+底盘速度在局部坐标系和全局坐标系之间的转换需要用到航向角。设航向角为theta（相对于全局坐标系的+X轴，逆时针为正），则：
+vx_world = cos(theta) * vx_body - sin(theta) * vy_body
+vy_world = sin(theta) * vx_body + cos(theta) * vy_body
+上述坐标转换在里程计更新和全局路径规划中使用。
+3.2 速度环PID控制
+PID控制是工业控制中最常用的闭环控制方法，由比例（P）、积分（I）、微分（D）三个环节组成。在本系统中，每个轮子独立配置一个速度环PID控制器，共三个PID控制器分别控制三个轮子的转速。
+PID控制器的离散形式如下：
+    u(k) = Kp * e(k) + Ki * sum(e(i)*dt) + Kd * (e(k) - e(k-1)) / dt
+其中，e(k)为第k个控制周期的速度误差（目标转速 - 实际转速），u(k)为PID控制器的输出（PWM占空比），dt为控制周期（0.05秒）。
+本系统的PID参数经过逐飞助手（逐飞科技提供的PID调试工具）整定，最终参数如下：
+轮1：Kp = 500.0, Ki = 2.0, Kd = 0.0
+轮2：Kp = 500.0, Ki = 2.0, Kd = 0.0
+轮3：Kp = 500.0, Ki = 2.0, Kd = 0.0
+参数整定过程中，首先单独调试轮1和轮3（对称位置的两个轮子），使其在空载和负载条件下均能快速稳定地跟踪阶跃速度指令。由于轮2位于底盘后方，其负载特性与轮1、轮3略有不同，但在本系统中采用相同的PID参数，通过实际测试验证其控制效果满足要求。
+为防止积分饱和，系统设置了积分限幅值8000。当积分项累积超过该限幅时，将其钳制在限幅范围内，避免积分饱和导致系统响应超调过大或恢复缓慢。
+为防止速度突变对电机和机械结构的冲击，系统实现了目标速度斜坡功能。当目标速度发生阶跃变化时，实际跟踪的目标值以固定加速度（10转/秒²）逐步逼近最终目标值，而不是立即跳变。 ramp函数的数学表达为：
+    step = WHEEL_ACCEL * CONTROL_DT = 10 * 0.05 = 0.5 转/秒
+    若目标 &gt; 当前 + step: 当前 += step
+    若目标 &lt; 当前 - step: 当前 -= step
+    否则: 当前 = 目标
+3.3 航向角PD控制
+航向控制是确保底盘直线运动精度的关键。在直线运动过程中，由于左右轮摩擦力差异、地面不平等因素，底盘会逐渐偏离预定航向。为此，系统引入了航向角PD控制器。
+航向控制的输入为目标航向角（target_yaw）和当前航向角（current_yaw），输出为旋转角速度vw（用于修正航向偏差）。由于航向角具有周期性（360度循环），角度差的计算需要特殊处理：
+error = target_yaw - current_yaw
+    if error &gt; 180: error -= 360
+    if error &lt; -180: error += 360
+上述处理将角度差映射到[-180, +180]区间，避免了360度跳变问题。例如，当目标航向为350°、当前航向为10°时，直接相减得340°，处理后变为-20°，表示需要逆时针旋转20度。
+PD控制器的输出为：
+    output = Kp * error + Kd * (error - last_error)
+本系统的航向PD参数为：Kp = 0.1, Kd = 0.0（初始值）。在直线运动模式下，当航向偏差超过5度时进入修正状态，PD控制器输出一个较小的旋转角速度（限制在±0.5转/秒以内），使底盘在前进的同时缓慢修正航向。当航向偏差缩小到3度以内时退出修正状态，恢复正常直线运动。
+航向控制通过独立的定时器中断实现，中断周期为30ms，与50ms的主控制周期错开，避免控制任务过于集中。
+3.4 里程计解算
+里程计（Odometry）是估计底盘在全局坐标系中位姿（位置+姿态）的算法。本系统采用编码器-IMU融合里程计，综合利用编码器的高精度位移测量和IMU的航向角信息。
+里程计更新流程如下：
+（1）在每次控制中断中，读取三个编码器的脉冲增量delta1、delta2、delta3，累加到总位移计数器total_delta1、total_delta2、total_delta3中。
+（2）计算每个轮子的实际转速：speed_i = delta_i / ENCODER_PPR / CONTROL_DT，其中ENCODER_PPR = 1000脉冲/转，CONTROL_DT = 0.05秒。实际转速单位为转/秒。
+（3）通过正运动学公式将三个轮子的转速转换为底盘在局部坐标系中的速度：vx_body、vy_body、vw_body。
+（4）读取IMU的偏航角作为当前航向角global_theta，将局部速度转换到全局坐标系：vx_world、vy_world。
+（5）根据当前运动方向（move_dir）更新全局位置：若move_dir为MOVE_X，则仅更新global_x；若move_dir为MOVE_Y，则仅更新global_y；若move_dir为MOVE_XY，则同时更新global_x和global_y。
+里程计的精度受多种因素影响：编码器分辨率、轮子打滑、IMU零偏漂移等。在本系统中，里程计主要用于短距离运动的闭环控制（如前进指定距离、横移指定距离），长距离运动时误差会逐渐累积，因此需要配合视觉伺服进行修正。
+3.5 速度斜坡与前馈补偿
+在实际电机控制中，存在静摩擦力和库仑摩擦力，当目标速度较小时，PID控制器的输出可能不足以克服静摩擦力，导致电机无法启动或响应迟缓。为解决这一问题，系统引入了固定前馈补偿。
+前馈补偿的基本思想是：根据目标速度的方向，在PID输出基础上叠加一个与速度方向相同的固定偏置量，确保电机在低速时也能获得足够的驱动电压。
+前馈量的计算公式为：
+scale = min(abs(target_speed) / SPEED_FF_FULL, 1.0)
+    mag = SPEED_FF_MIN + (SPEED_KF - SPEED_FF_MIN) * scale
+    ff = mag if target_speed &gt; 0 else -mag
+当目标速度为0时，前馈量为0，PID控制器也复位，电机自由滑行。当目标速度从0开始增大时，前馈量从4000线性增长到5000，确保电机能够迅速启动并克服静摩擦。
+速度斜坡与前馈补偿的联合作用使得底盘的运动更加平滑，启动和停止时的冲击明显减小，高速运行时的跟踪精度也得到保证。
+第四章  主车软件设计
+4.1 主程序架构
+主车软件（main.py）是整个系统的决策中心，负责比赛流程的控制、目标识别、路径规划、运动控制、从车协同等全部高层功能。程序采用模块化设计，各功能模块之间通过全局变量和函数调用进行交互。
+主程序的整体架构可分为以下几个层次：
+（1）硬件抽象层：包括m.py（底盘控制模块）、imu_jianhua.py（IMU驱动）、my_wireless.py（无线通信驱动）。这些模块封装了底层硬件操作，向上层提供简洁的函数接口。
+（2）传感器处理层：包括摄像头数据解析（parse_cam、read_cam）、无线数据发送（send_msg、send_motion、send_slave、poll_slave）。该层负责与外部传感器和通信模块的交互，解析原始数据并提取有效信息。
+（3）运动执行层：包括move、stop、act_move_axis、act_move_diag、act_move_fwd、act_turn_to、act_search_fwd、act_search_axis_diag、act_search_zigzag、act_align_xy、act_push等动作函数。这些函数封装了各类基本运动操作，每个动作函数内部维护自身的状态机（act_init标志），实现非阻塞式的顺序执行。
+（4）决策调度层：master_act函数作为顶层状态机，根据当前状态调用相应的动作函数，并根据动作函数的返回值进行状态切换。整个比赛流程由状态机统一管理。
+（5）主循环：在__main__中，初始化所有硬件模块后，进入无限循环，依次执行read_cam（读取摄像头）、read_test_cmd（读取测试命令）、poll_slave（轮询从车指令发送）、master_act（主状态机执行）。
+4.2 状态机设计
+主车的比赛流程采用有限状态机（Finite State Machine, FSM）进行建模和管理。状态机定义了比赛过程中所有可能的状态以及状态之间的转换条件，确保比赛流程按预定顺序执行，并能在异常情况下进行适当处理。
+主车状态机的状态定义如下：
+S_APPROACH = 1     — 初始接近阶段
+    S_SEARCH_FWD = 2   — 向前搜索目标
+    S_ALIGN_XY = 3     — 视觉对齐目标
+    S_PUSH = 4         — 推送目标物体
+    S_NAV_NEXT = 5     — 导航到下一个目标
+    S_SEARCH_RIGHT = 6 — 向右搜索目标（第一个物体后）
+    S_SEARCH_ZIGZAG = 7— 之字形搜索目标（第二个物体后）
+    S_RETURN = 8       — 返回发车区
+    S_DONE = 99        — 任务完成
+状态转换流程如下：
+（1）S_APPROACH：系统上电初始化后进入此状态。主车先向前移动一段距离（APPROACH_FWD = 2.5），然后向右前方斜向移动（向右10，向前3.2），到达第一个搜索起点。此阶段完成后，加载第一个任务目标，转入S_SEARCH_FWD。
+（2）S_SEARCH_FWD：主车以SEARCH_SPD = 3.8的速度向前搜索，同时通过摄像头检测目标物体。若在SEARCH_FWD_MAX = 10.0的距离内检测到目标，转入S_ALIGN_XY；若搜索超时或到达最大距离仍未发现目标，转入S_DONE。
+（3）S_ALIGN_XY：主车根据摄像头反馈的目标位置，通过视觉伺服控制向目标中心点靠近。当目标在图像中的位置与预设中心点（CENTER_TX = 0.65, CENTER_TY = 0.7）的偏差均在阈值（CAM_DX = 0.08, CAM_DY = 0.08）以内，且连续满足ALIGN_OK = 5帧时，认为对齐完成，转入S_PUSH。
+（4）S_PUSH：主车以PUSH_SPD = 4.8的速度向前推送目标物体，推送距离根据目标类型自动选择：网球8.0、沙袋14.0、小熊13.0。推送完成后，更新任务索引，若有下一个目标则转入S_NAV_NEXT，否则转入S_RETURN。
+（5）S_NAV_NEXT：根据已完成的任务数量选择导航方式。第一个物体推送完成后（nav_type = 1），先右转90度，再向右横移NAV_FIRST_RIGHT_DIST = 1.0；第二个及以后物体推送完成后（nav_type = 2），先右转90度，再向右横移同时向后移动（NAV_RIGHT_DIST = 13.0, NAV2_BACK_DIST = 2.0），然后再右转90度（不再原地转180度）。导航完成后，根据nav_type转入S_SEARCH_RIGHT或S_SEARCH_ZIGZAG。
+（6）S_SEARCH_RIGHT：向右搜索的同时向后漂移NAV_DIAG_BACK_DIST = 1，搜索参数与S_SEARCH_FWD类似。
+（7）S_SEARCH_ZIGZAG：采用之字形搜索策略，在x方向上左右交替移动（左移1.0、右移2.0），同时在y方向上持续前进，覆盖更大的搜索区域。
+（8）S_RETURN：推送完最后一个物体后，先后退RETURN_BACK_DIST = 2.0，静止等待RETURN_HOLD_MS = 800ms，再左移RETURN_LEFT_DIST = 13.0返回发车区。
+（9）S_DONE：所有任务完成，停车。
+状态转换说明：
+<w:tblPr><w:tblStyle w:val="35"/><w:tblW w:w="0" w:type="auto"/><w:jc w:val="center"/><w:tblBorders><w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/></w:tblBorders><w:tblLayout w:type="autofit"/><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPr><w:tblGrid><w:gridCol w:w="2771"/><w:gridCol w:w="2771"/><w:gridCol w:w="2771"/></w:tblGrid><w:tr w14:paraId="244C95F8"><w:tblPrEx><w:tblBorders><w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/></w:tblBorders><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="570BFC1C"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:b/><w:sz w:val="20"/></w:rPr><w:t>状态名
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="698B2263"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:b/><w:sz w:val="20"/></w:rPr><w:t>状态码
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="1A4187A8"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:b/><w:sz w:val="20"/></w:rPr><w:t>功能说明
+<w:tblPrEx><w:tblBorders><w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/></w:tblBorders><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="18232A29"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>APPROACH
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="0916200F"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>1
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="525EA826"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>初始接近：前进+斜向移动到搜索起点
+<w:tblPrEx><w:tblBorders><w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/></w:tblBorders><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="01604DB3"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>SEARCH_FWD
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="1FA66689"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>2
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="16D46E26"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>向前搜索：摄像头检测目标
+<w:tblPrEx><w:tblBorders><w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/></w:tblBorders><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="152E5E77"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>ALIGN_XY
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="240276E4"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>3
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="0D47DE3D"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>视觉对齐：调整位置使目标居中
+<w:tblPrEx><w:tblBorders><w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/></w:tblBorders><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="280ACBEC"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>PUSH
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="72048817"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>4
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="722D1128"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>推送物体：向前推动目标到指定位置
+<w:tblPrEx><w:tblBorders><w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/></w:tblBorders><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="3DF13FF2"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>NAV_NEXT
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="3F98C768"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>5
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="2C1E22B8"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>转场导航：移动到下一个搜索区域
+<w:tblPrEx><w:tblBorders><w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/></w:tblBorders><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="4FE06201"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>SEARCH_RIGHT
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="5EDA1FEE"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>6
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="2D77D789"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>向右搜索：带后漂的横向搜索
+<w:tblPrEx><w:tblBorders><w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/></w:tblBorders><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="199A403D"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>SEARCH_ZIGZAG
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="64F8315E"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>7
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="333BE08F"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>之字搜索：左右交替覆盖搜索
+<w:tblPrEx><w:tblBorders><w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/></w:tblBorders><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="3628DF7D"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>RETURN
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="00E8EB2E"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>8
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="6ACC42D2"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>返回发车区：后退+左移
+<w:tblPrEx><w:tblBorders><w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/></w:tblBorders><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="36ECCD81"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>DONE
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="24ABB173"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>99
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="4CF4D302"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>任务完成：停车
+表：主车状态机状态定义
+状态转换条件：
+  • APPROACH -&gt; SEARCH_FWD：到达搜索起点
+  • SEARCH_FWD -&gt; ALIGN_XY：摄像头检测到目标
+  • SEARCH_FWD -&gt; DONE：搜索超时或超距
+  • ALIGN_XY -&gt; PUSH：视觉对齐完成（连续5帧达标）
+  • PUSH -&gt; NAV_NEXT：推送完成且还有目标
+  • PUSH -&gt; RETURN：推送完成且无剩余目标
+  • NAV_NEXT -&gt; SEARCH_RIGHT：第一个物体后的导航
+  • NAV_NEXT -&gt; SEARCH_ZIGZAG：第二个及以后物体的导航
+  • SEARCH_RIGHT -&gt; ALIGN_XY：检测到目标
+  • SEARCH_RIGHT -&gt; DONE：搜索失败
+  • SEARCH_ZIGZAG -&gt; ALIGN_XY：检测到目标
+  • SEARCH_ZIGZAG -&gt; DONE：搜索失败
+  • RETURN -&gt; DONE：回到发车区
+4.3 视觉目标检测
+主车的视觉目标检测由OpenMV摄像头模块独立完成，RT1021主控板通过UART串口接收检测结果。检测算法在OpenMV上运行，采用颜色阈值分割和连通域分析，识别场地中的目标物体并输出其类别和位置。
+目标物体的类别定义如下：
+OBJ_NONE = 0 — 无目标
+    类别1 — 沙袋（Sandbag）
+    类别2 — 网球（Tennis）
+    类别3 — 小熊（Bear）
+比赛任务序列定义为MISSION_SEQ = [2, 3, 1, 0, 0]，表示依次搬运网球（2）、小熊（3）、沙袋（1），后两个0表示无任务。系统按照该序列依次识别和搬运目标物体。
+摄像头通信协议格式如下：
+（1）帧结束标记：FRM: — 表示一帧图像处理完成，触发主控板将当前识别结果生效。
+（2）目标数据：CAM:id,x,y 或 OBJ:id,x,y 或 RED:id,x,y — 其中id为目标类别编号，x和y为目标在图像中的归一化坐标（0.0~1.0范围）。
+为提高识别的可靠性，系统采用了多帧确认机制（DETECT_CONFIRM = 3）。只有当同一目标连续3帧被识别到时，才认为目标检测有效，避免误识别导致的错误动作。若目标连续丢失超过DETECT_LOST_MS = 2000ms，则重置检测状态。
+目标检测函数target_detected实现了上述确认逻辑：每收到一帧数据，检查目标类别是否与当前任务目标一致；若一致则累加确认计数，达到阈值后返回True；若不一致则重置计数并开始计时丢失时间。
+4.4 视觉对齐控制
+视觉对齐（Visual Alignment）是确保底盘精确对准目标物体的关键环节。在检测到目标后，主车需要调整自身位置，使目标位于推杆的正前方，并保持在合适的距离上，以便后续推送。
+对齐的目标位置定义为图像坐标系中的预设中心点：CENTER_TX = 0.65（水平方向），CENTER_TY = 0.7（垂直方向）。水平坐标0.65略偏右，是因为推杆安装在底盘右侧，需要对齐到推杆的中心线而非底盘中心线。垂直坐标0.7表示目标应在图像中下方区域，即距离底盘较近的位置。
+对齐误差的计算方式为：
+ex = CENTER_TX - cam_obj_x    （水平误差）
+    ey = CENTER_TY - cam_obj_y    （垂直误差）
+对齐控制采用比例控制策略，将像素误差映射为底盘运动速度：
+    vx = clamp(ALIGN_SPD_X * ex / CAM_DX, -ALIGN_SPD_X, ALIGN_SPD_X)
+    vy = clamp(ALIGN_SPD_Y * ey / CAM_DY, -ALIGN_SPD_Y, ALIGN_SPD_Y)
+其中ALIGN_SPD_X = 1.5，ALIGN_SPD_Y = 2.2，CAM_DX = 0.08，CAM_DY = 0.08。当误差在阈值范围内（|ex| &lt;= CAM_DX 且 |ey| &lt;= CAM_DY）时，认为对齐完成，累加确认计数；连续ALIGN_OK = 5次对齐达标后，正式确认对齐完成。
+对于第一个目标（mission_idx == 0），采用分阶段对齐策略：先仅调整y方向（前后距离），待y方向达标后再调整x方向（左右位置）。这种策略避免了两个方向同时调整时可能产生的耦合振荡，提高了对齐的稳定性和精度。
+4.5 推送控制策略
+推送控制是将目标物体从初始位置推动到指定位置的核心动作。推送过程需要保证推送方向的准确性和推送距离的充分性，同时避免过度推送导致物体出界。
+推送开始时，系统记录当前位置作为推送起点（push_sx, push_sy），并根据目标类型确定推送距离：
+ 网球（2）：PUSH_DIST_TENNIS = 8.0
+    沙袋（1）：PUSH_DIST_SANDBAG = 14.0
+    小熊（3）：PUSH_DIST_BEAR = 13.0
+推送过程中，底盘以PUSH_SPD = 4.8的速度向前运动，同时航向控制保持推送方向不变（align_hdg）。推送距离通过里程计计算：
+    traveled = sqrt((global_x - push_sx)^2 + (global_y - push_sy)^2)
+当traveled &gt;= push_dist时，认为推送完成，停止运动。同时设置了最大推送距离PUSH_MAX_DIST = 200和推送超时PUSH_TIMEOUT_MS = 15000，作为安全保护措施。
+推送开始前有一个静止等待阶段PUSH_HOLD_MS = 500ms，这是为了确保底盘在对齐完成后充分稳定，再开始推送，避免因底盘晃动导致推送方向偏差。
+4.6 航向保持系统
+航向保持系统确保底盘在直线运动和搜索过程中始终维持正确的朝向。系统采用独立的定时器中断（ticker 3，周期30ms）执行航向控制，与主控制周期（50ms）错开，降低单次中断的计算负载。
+航向保持有两种工作模式：
+（1）直线模式（YAW_LINE）：在直线运动时，目标航向角为运动开始时的航向角（或指定的对齐航向角）。当航向偏差超过LINE_ENTER = 5度时，进入修正状态，PD控制器输出限幅在±LINE_VW = 0.5范围内的旋转修正速度；当偏差缩小到LINE_EXIT = 3度时，退出修正状态。这种带滞环的切换机制避免了航向在阈值附近频繁抖动。
+（2）转向模式（YAW_TURN）：在需要转向时（如原地旋转90度），目标航向角设为目标角度，底盘以TURN_VW = 0.8的角速度旋转，当航向偏差小于TURN_TOL = 8度时认为转向完成。对于大角度转向（&gt;=135度），降低旋转速度到TURN_180_VW_CUT = 0.5，避免因惯性导致过冲。
+航向角的基准管理是航向保持的关键。系统上电时记录当前IMU偏航角作为base_yaw，后续所有航向角计算均以base_yaw为基准。base_yaw对应底盘出发时的朝前方向（hdg_up），hdg_dn = base_yaw + 180对应朝后方向，hdg_lt = base_yaw + 90对应朝左方向，hdg_rt = base_yaw - 90对应朝右方向。
+4.7 搜索策略设计
+搜索策略决定了主车如何在场地中寻找目标物体。本系统根据比赛流程设计了三种搜索模式：向前搜索、向右搜索、之字形搜索。
+（1）向前搜索（act_search_fwd）：以SEARCH_SPD = 3.8的速度沿当前航向前进，最大搜索距离SEARCH_FWD_MAX = 10.0，搜索超时SEARCH_TIMEOUT_MS = 60000。搜索过程中持续检测目标，若发现目标则立即停止并返回found=True；若到达最大距离或超时时仍未发现目标，返回found=False。
+（2）向右搜索（act_search_axis_diag）：在向右横移搜索的同时，沿y方向向后漂移NAV_DIAG_BACK_DIST = 1，漂移速度为NAV_DIAG_BACK_SPD = 1。这种斜向搜索策略可以在横向扫描的同时逐渐后退，覆盖更大的搜索区域，适用于第一个物体推送完成后的搜索。
+（3）之字形搜索（act_search_zigzag）：在x方向上左右交替移动，左移距离ZIGZAG_LEFT_DIST = 1.0，右移距离ZIGZAG_RIGHT_DIST = 2.0，移动速度ZIGZAG_SPD = 3.5，同时在y方向上持续前进。之字形搜索可以覆盖一个扇形区域，适用于在较大范围内搜索分布不均的目标物体。
+所有搜索模式都集成了目标检测确认机制，确保只有在稳定识别到目标后才停止搜索，避免因短暂误识别导致的搜索中断。
+第五章  从车软件设计
+5.1 从程序架构
+从车软件（main_slave.py）负责跟随主车运动，协助完成搬运任务。从车与主车具有相似的硬件配置和底层驱动，但软件功能侧重于传感器融合跟踪和协同动作执行。
+从车程序的主要模块包括：
+（1）传感器输入模块：摄像头数据读取（read_cam）解析红外灯板位置，无线数据读取（read_wrl）接收主车状态。
+（2）传感器融合模块：fused_velocity综合红外视觉和无线数据，计算从车的目标运动速度（vx, vy, vw）。
+（3）红外视觉修正模块：ir_center_vy、ir_center_vx、ir_slope_vw等函数，根据红外灯板的像素位置计算修正速度。
+（4）状态机模块：slave_ctrl调度从车的不同工作模式，包括跟随（FOLLOW）、推送同步（PUSH_SYNC）、掉头同步（TURN_SYNC）、返回（RETURN）等。
+（5）主循环：依次执行read_cam、read_wrl、slave_ctrl。
+5.2 状态机设计
+从车的状态机比主车简单，主要响应主车的指令切换工作模式。状态定义如下：
+    S_INIT = 0    — 初始化等待
+    S_FOLLOW = 1  — 融合跟随（默认模式）
+    S_PUSH = 2    — 推送同步
+    S_TURN = 3    — 掉头/绕行同步
+    S_RETURN = 4  — 返回发车区
+    S_DONE = 5    — 任务完成
+状态转换逻辑：
+（1）S_INIT：系统上电后进入此状态，停车等待。当红外或无线任一传感器有效时，自动转入S_FOLLOW。
+（2）S_FOLLOW：默认的融合跟随模式。从车根据fused_velocity的输出运动，实时跟踪主车。当收到主车发送的PUSH指令时，转入S_PUSH；当收到TURN指令时，转入S_TURN；当收到RETURN指令时，转入S_RETURN。
+（3）S_PUSH：推送同步模式。从车锁定运动方向，以融合速度向前推送。推送速度有方向约束：根据TRI_FLIP的值，正向推送时vy限制在[TR_MIN, 3.5]，反向推送时vy限制在[-3.5, -TR_MIN]。推送开始后的前PUSH_STRAIGHT = 400ms内，旋转速度vw强制为0，确保推送方向的稳定性。收到STOP指令后返回S_FOLLOW。
+（4）S_TURN：绕行同步模式。从车启用绕行速度叠加（enable_orbit=True），在主车旋转时自动绕主车做圆周运动，保持相对位置。收到STOP指令后返回S_FOLLOW；收到PUSH指令后转入S_PUSH；收到RETURN指令后转入S_RETURN。
+（5）S_RETURN：返回模式。从车继续融合跟随主车，直到收到STOP指令后转入S_DONE。
+（6）S_DONE：任务完成，停车。
+状态转换说明：
+<w:tblPr><w:tblStyle w:val="35"/><w:tblW w:w="0" w:type="auto"/><w:jc w:val="center"/><w:tblBorders><w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/></w:tblBorders><w:tblLayout w:type="autofit"/><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPr><w:tblGrid><w:gridCol w:w="2771"/><w:gridCol w:w="2771"/><w:gridCol w:w="2771"/></w:tblGrid><w:tr w14:paraId="6944FC1A"><w:tblPrEx><w:tblBorders><w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/></w:tblBorders></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="3F6605CE"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:b/><w:sz w:val="20"/></w:rPr><w:t>状态名
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="56CA7A7E"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:b/><w:sz w:val="20"/></w:rPr><w:t>状态码
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="0CEF6997"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:b/><w:sz w:val="20"/></w:rPr><w:t>功能说明
+<w:tblPrEx><w:tblBorders><w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/></w:tblBorders><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="6E7A0E8D"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>INIT
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="325DD570"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>0
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="6A421E36"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>初始化等待：停车，等待传感器有效
+<w:tblPrEx><w:tblBorders><w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/></w:tblBorders><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="74A15616"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>FOLLOW
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="2200F97E"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>1
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="6A10C8CC"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>融合跟随：红外+无线融合跟踪主车
+<w:tblPrEx><w:tblBorders><w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/></w:tblBorders><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="73FADBA9"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>PUSH
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="48A19DDF"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>2
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="16EB7692"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>推送同步：锁定方向，融合前推
+<w:tblPrEx><w:tblBorders><w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/></w:tblBorders><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="684D641B"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>TURN
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="69BCC535"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>3
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="75AA6859"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>绕行同步：绕行跟踪主车旋转
+<w:tblPrEx><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="73B0C3E0"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>RETURN
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="31C4C665"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>4
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="6EED1041"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>返回发车区：跟随主车返回
+<w:tblPrEx><w:tblBorders><w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/></w:tblBorders><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="783D0FF8"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>DONE
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="0F600131"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>5
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="305F3455"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:sz w:val="20"/></w:rPr><w:t>任务完成：停车
+表：从车状态机状态定义
+状态转换条件：
+  • INIT -&gt; FOLLOW：红外或无线有效
+  • FOLLOW -&gt; PUSH：收到CMD:PUSH
+  • FOLLOW -&gt; TURN：收到CMD:TURN
+  • FOLLOW -&gt; RETURN：收到CMD:RETURN
+  • PUSH -&gt; FOLLOW：收到CMD:STOP
+  • TURN -&gt; FOLLOW：收到CMD:STOP
+  • TURN -&gt; PUSH：收到CMD:PUSH
+  • TURN -&gt; RETURN：收到CMD:RETURN
+  • RETURN -&gt; DONE：收到CMD:STOP
+5.3 红外视觉跟踪
+红外视觉跟踪是从车实现精确定位的核心。从车摄像头朝向右方，观测主车侧边的两个红外灯板。通过图像处理算法提取两个红外灯斑的中心坐标和连线斜率，据此计算从车相对于主车的位姿偏差，并生成修正速度。
+摄像头数据格式为：IR:mx,my,sl，其中：mx为两灯中心点的x坐标（像素），my为y坐标（像素），sl为两灯连线的斜率。当mx &lt; 0时，表示红外灯未检测到。
+从车预设的红外跟踪目标点为：CAM_TARGET_X = 175.0，CAM_TARGET_Y = 83.0。这两个值表示从车期望两灯中心点在图像中的位置。误差计算为：
+    fx = mx - CAM_TARGET_X    （x方向误差，像素）
+    fy = my - CAM_TARGET_Y    （y方向误差，像素）
+    fa = sl                   （斜率）
+为提高数据的稳定性，系统对误差进行一阶低通滤波：
+    fx = FLT_A * fx + (1 - FLT_A) * new_fx    （FLT_A = 0.40）
+根据滤波后的误差，系统生成三个方向的修正速度：
+（1）前后修正（ir_center_vy）：由x误差fx控制。当fx &gt; IR_DX_PX = 8.2时，表示主车在前方较远，需要前进；当fx &lt; -IR_DX_PX时，表示主车在前方较近，需要后退。修正速度大小为IR_DX_SPD = 1.2，方向由IR_DX_DIR = -TRI_FLIP决定。
+（2）左右修正（ir_center_vx）：由y误差fy控制。当fy &gt; IR_DY_PX = 8.2时，表示从车偏左，需要右移；当fy &lt; -IR_DY_PX时，表示从车偏右，需要左移。修正速度大小为IR_DY_SPD = 1.4，方向由IR_DY_DIR = -SIDE_FLIP决定。
+（3）旋转修正（ir_slope_vw）：由斜率fa控制。当fa &gt; IR_SLOPE_DEADZONE = 0.1时，表示需要转向修正；修正速度大小为IR_VW_SPD = 0.4，方向由IR_ANG_DIR = -SIDE_FLIP决定。
+方向开关TRI_FLIP和SIDE_FLIP用于适配不同的安装方向：TRI_FLIP控制前后方向（1=正常，-1=掉头），SIDE_FLIP控制左右方向（1=从车在主车左侧，-1=左右镜像）。
+5.4 传感器融合策略
+从车同时具有红外视觉和无线通信两种感知手段，传感器融合策略决定了如何综合两种信息源生成最终的运动指令。本系统设计了四级融合策略，覆盖所有传感器状态组合：
+（1）两者都有效（最优融合）：这是最理想的情况，红外视觉提供精确的相对位姿修正，无线通信提供主车的运动状态（速度、航向）。融合方式为：无线速度打底 + 红外视觉修正。具体公式为：
+    vx = MASTER_SPD_GAIN * mvx + dst_vx()
+    vy = MASTER_SPD_GAIN * mvy + ir_x_vy()
+    vw = match_vw()
+其中MASTER_SPD_GAIN = 1.02为主车速度的缩放系数，略大于1以确保从车能够跟上主车。若主车正在旋转（|mvw| &gt; TURN_THR），则叠加绕行速度orb_velocity()。
+（2）仅红外有效（纯视觉跟踪）：当无线通信丢失但红外视觉仍正常工作时，从车完全依靠红外视觉进行跟踪。此时：vx = dst_vx(), vy = ir_x_vy(), vw = ir_slope_vw()。纯视觉跟踪的精度略低于融合跟踪，但仍能保证从车不丢失主车。
+（3）仅无线有效（盲跟）：当红外视觉短暂丢失（如主车被遮挡）但无线通信正常时，从车进入盲跟模式，复制主车的平移速度，维持当前航向。盲跟速度有折扣：BLIND_GAIN = 1，超过BLIND_TIMEOUT = 2000ms后逐渐减速直到停车。这种策略避免了红外短暂丢失时从车立即刹停，提高了系统的容错性。
+（4）两者都丢失（停车）：当红外和无线均丢失超过安全阈值时，从车立即停车，等待传感器恢复。
+5.5 无线盲跟机制
+无线盲跟机制是从车在红外视觉短暂丢失时的安全保护策略。该机制的设计目标是：在红外丢失的短时间内，从车能够根据主车的无线数据继续运动，避免因短暂遮挡导致的跟踪中断。
+盲跟机制的核心参数如下：
+    BLIND_GAIN = 1          — 盲跟速度增益
+    BLIND_TIMEOUT = 2000    — 盲跟最大持续时间（ms）
+盲跟状态的管理：当红外丢失且无线有效时，若此前未进入盲跟状态，则记录当前时间blind_start_ms；若已进入盲跟状态，则计算已持续时间blind_elapsed。
+盲跟速度的衰减策略：在盲跟前70%时间内（0~1400ms），速度保持完整（gain = 1）；在最后30%时间内（1400~2000ms），速度按线性衰减：
+    fade = remaining / (BLIND_TIMEOUT * 0.3)
+    gain = BLIND_GAIN * max(fade, 0.0)
+超过2000ms后，盲跟状态结束，从车停车。这种渐进式减速策略避免了突然停车对机械结构的冲击，同时给出了明确的故障指示。
+5.6 绕行跟踪算法
+绕行跟踪（Orbit Tracking）是当主车原地旋转时，从车绕主车做圆周运动以保持相对位置的策略。该策略在TURN_SYNC模式下启用。
+绕行速度的计算基于主车的旋转角速度mvw：
+    s = clamp(abs(ORB_GAIN * mvw), ORB_MIN, ORB_MAX)
+    vy = ORB_DIR * s  if mvw &gt; 0
+    vy = -ORB_DIR * s if mvw &lt; 0
+其中ORB_GAIN = 2.5为绕行增益，ORB_MAX = 2.5和ORB_MIN = 0.05为速度限幅，ORB_DIR = SIDE_FLIP为方向系数。当主车逆时针旋转（mvw &gt; 0）时，从车前进绕行（vy &gt; 0）；当主车顺时针旋转（mvw &lt; 0）时，从车后退绕行（vy &lt; 0）。
+绕行速度叠加在融合速度之上：
+    vx += ovx
+    vy += ovy
+最终通过vlim函数进行速度限幅，确保合成速度不超过安全范围。
+5.7 推送同步控制
+推送同步控制确保从车在主车推送物体时能够协同前推，协助将物体推到目标位置。
+推送同步的实现要点：
+（1）方向锁定：推送模式下禁用绕行（enable_orbit=False），避免绕行运动干扰推送方向。
+（2）速度约束：推送速度被限制在单向范围内。TRI_FLIP &gt; 0时（倒三角安装），vy限制为正值（正向推送）；TRI_FLIP &lt; 0时（正三角安装），vy限制为负值（反向推送）。推送速度上限为3.5，下限为TR_MIN = 0.05。
+（3）纯红外保底：若推送过程中无线丢失（仅红外有效），且前后修正速度vy接近0时，强制设置vy = TRI_FLIP * PUSH_SPD，确保从车仍然向前运动。
+（4）初始直行：推送开始后的前PUSH_STRAIGHT = 400ms内，旋转速度vw强制为0，确保推送起步方向的稳定性。
+推送同步的实现使得主从两车可以协同推动较重的物体，或在推送过程中保持队列稳定，提高搬运效率。
+第六章  主从协同与通信协议
+6.1 无线通信架构
+主从车之间的无线通信采用点对点透传模式。主车通过无线模块周期性地广播自身状态，从车接收后用于传感器融合和状态切换。通信链路为单向广播（主车-&gt;从车），从车不向主车回传数据。
+通信架构特点：
+（1）单向广播：主车作为发送端，从车作为接收端。这种设计简化了通信协议，避免了双向握手带来的延迟和复杂度。
+（2）周期发送：主车以MOTION_PERIOD_MS = 20ms的周期发送运动状态，确保从车能够及时获取主车的最新运动信息。
+（3）指令重发：对于状态切换指令（PUSH、TURN、RETURN、STOP等），主车采用重复发送机制（SLAVE_CMD_REPEAT = 3次，间隔SLAVE_CMD_MS = 80ms），确保从车能够可靠接收，避免指令丢失导致的动作不同步。
+（4）超时检测：从车通过时间戳检测主车数据的新鲜度。MASTER_TIMEOUT = 350ms，超过该时间未收到新数据则认为无线丢失。
+6.2 主车指令协议
+主车发送的数据分为两类：运动状态广播和指令发送。
+（1）运动状态广播（MASTER协议）：
+    格式：MASTER:vx,vy,vw,ryaw!
+    示例：MASTER:2.50,0.00,0.30,15.2!
+    字段说明：
+    vx — 主车横向速度（右为正）
+    vy — 主车纵向速度（前为正）
+    vw — 主车旋转角速度（逆时针为正）
+    ryaw — 主车当前航向相对于base_yaw的偏差角
+从车在接收端对速度进行坐标变换：mvx = SIDE_FLIP * vx, mvy = TRI_FLIP * vy, mvw = SIDE_FLIP * vw。航向角变换为：myaw = ns(SIDE_FLIP * TRI_FLIP * ryaw + (180 if TRI_FLIP &lt; 0 else 0))。
+（2）运动状态广播（MOVE协议，兼容旧版本）：
+    格式：MOVE:vx,vy,vw!
+（3）指令发送（CMD协议）：
+CMD:PUSH    — 切换到推送同步模式
+    CMD:STOP    — 停止当前模式，返回跟随模式
+    CMD:RETURN  — 切换到返回模式
+    CMD:TURN:deg— 切换到绕行模式，指定目标转向角度
+    C2_TURN:180 — 兼容指令，让从车掉头180度
+所有指令均以感叹号（!）结束，以回车换行（
+）作为帧分隔。
+6.3 摄像头通信协议
+主车和从车均通过UART接口与各自的OpenMV摄像头通信。通信协议为简单的文本行格式，便于解析和调试。
+主车摄像头协议：
+    FRM:       — 帧结束标记
+    CAM:id,x,y — 目标检测结果（id=1沙袋, 2网球, 3小熊）
+    OBJ:id,x,y — 同上，兼容格式
+    RED:id,x,y — 同上，兼容格式
+从车摄像头协议：
+    IR:mx,my,sl — 红外灯板检测结果
+    mx &lt; 0      — 表示未检测到红外灯
+所有数据帧均以感叹号（!）或换行符（
+）结束。接收端采用循环缓冲区方式解析，支持数据分包和粘包处理。
+6.4 通信可靠性设计
+无线通信在比赛环境中可能受到电磁干扰、多径效应、遮挡等影响，为此系统设计了多重可靠性保障机制：
+（1）指令重复发送：状态切换指令重复发送3次，间隔80ms，大幅提高指令到达概率。
+（2）数据超时检测：从车通过时间戳检测数据新鲜度，无线数据超时350ms、红外数据超时300ms即认为丢失。
+（3）渐进降级：传感器丢失时不立即停车，而是进入低一级的融合模式（融合-&gt;纯视觉-&gt;盲跟-&gt;停车），给系统恢复留出时间窗口。
+（4）盲跟衰减：盲跟超过2000ms后逐渐减速，避免长时间错误运动导致碰撞或丢失。
+（5）缓冲区管理：UART接收采用循环缓冲区，缓冲区超过256字节时丢弃旧数据，防止内存溢出。
+第七章  控制算法与参数整定
+7.1 PID控制原理
+PID控制是比例-积分-微分控制的简称，是工程应用中最广泛的闭环控制方法。其基本原理是根据被控量与目标值之间的误差，通过比例、积分、微分三个环节的线性组合生成控制量，驱动执行机构使被控量趋近于目标值。
+PID控制器的连续域表达式为：
+    u(t) = Kp * e(t) + Ki * integral(e(t)dt) + Kd * de(t)/dt
+其中，e(t)为误差信号，u(t)为控制输出，Kp、Ki、Kd分别为比例、积分、微分增益。
+在本系统中，PID控制器采用离散化实现，控制周期为50ms：
+    integral += e(k) * dt
+    integral = clamp(integral, -INTEGRAL_LIMIT, INTEGRAL_LIMIT)
+    derivative = (e(k) - e(k-1)) / dt
+    u(k) = Kp * e(k) + Ki * integral + Kd * derivative
+各参数的作用如下：
+（1）比例项Kp：与当前误差成正比，提供主要的控制作用。Kp越大，响应越快，但过大会导致超调和振荡。
+（2）积分项Ki：与误差的累积值成正比，用于消除稳态误差。Ki越大，稳态误差消除越快，但过大会导致积分饱和和响应迟缓。
+（3）微分项Kd：与误差的变化率成正比，用于预测误差趋势，抑制超调，提高系统稳定性。但Kd对测量噪声敏感，在编码器信号存在量化噪声时不宜过大。
+7.2 速度环参数整定
+速度环PID参数整定是底盘控制的基础。本系统采用逐飞助手进行在线调参，整定过程如下：
+步骤一：参数初始化。将三个轮子的Kp、Ki、Kd均设为0，使系统处于开环状态，验证电机和编码器的基本功能。
+步骤二：比例环节整定。给一个轮子的Kp赋值100，发送阶跃速度指令（如2转/秒），观察速度响应曲线。若响应缓慢，逐步增大Kp；若出现明显振荡，适当减小Kp。最终确定Kp = 500，在该参数下响应快速且无明显振荡。
+步骤三：积分环节整定。在Kp = 500的基础上，给Ki赋值0.5，观察稳态误差。若稳态误差较大，逐步增大Ki；若出现超调和振荡，适当减小Ki。最终确定Ki = 2.0，在该参数下稳态误差可在约200ms内消除。
+步骤四：微分环节整定。由于本系统编码器分辨率有限，微分环节对量化噪声敏感，因此Kd保持为0。实际测试表明，Kd = 0时系统的动态性能已满足要求。
+步骤五：负载测试。在底盘上安装电池、电路板等负载后，重复上述测试，验证参数在负载条件下的鲁棒性。若负载导致响应变慢，可适当增大Kp；若负载导致振荡，可适当减小Kp。
+步骤六：三个轮子统一测试。由于三个轮子的安装位置不同，轮2位于底盘后方，其负载特性与轮1、轮3略有差异。但在本系统中，三个轮子采用相同的PID参数，通过实际运行验证其控制效果的一致性。
+7.3 航向控制参数整定
+航向控制采用PD控制（比例-微分），参数为Kp = 0.1，Kd = 0.0（初始值）。航向控制的整定重点在于平衡修正速度和稳定性。
+航向控制参数整定要点：
+（1）比例增益Kp：Kp = 0.1意味着每1度的航向偏差产生0.1转/秒的旋转修正速度。该增益较小，使得航向修正过程平缓，不会引起底盘的剧烈摆动。
+（2）微分增益Kd：初始设为0，因为IMU的偏航角输出已经经过内部滤波，变化较为平滑，微分环节的作用不明显。
+（3）修正速度限幅：LINE_VW = 0.5，将航向修正的旋转速度限制在±0.5转/秒以内，避免修正动作对直线运动产生过大干扰。
+（4）滞环切换：LINE_ENTER = 5度，LINE_EXIT = 3度，当航向偏差超过5度时开始修正，缩小到3度时停止修正。2度的滞环宽度避免了修正状态在阈值附近频繁切换。
+（5）转向速度：TURN_VW = 0.8，用于原地转向；大角度转向时降为TURN_180_VW_CUT = 0.5，避免过冲。
+7.4 视觉伺服参数
+视觉伺服（Visual Servoing）是通过视觉反馈控制机器人运动的技术。本系统中，主车的视觉对齐和从车的红外跟踪均属于视觉伺服范畴。
+主车视觉对齐参数：
+    CENTER_TX = 0.65    — 目标水平位置（归一化坐标）
+    CENTER_TY = 0.70    — 目标垂直位置
+    CAM_DX = 0.08       — 水平对齐阈值
+    CAM_DY = 0.08       — 垂直对齐阈值
+    ALIGN_SPD_X = 1.5   — 水平对齐速度
+    ALIGN_SPD_Y = 2.2   — 垂直对齐速度
+    ALIGN_OK = 5        — 对齐确认帧数
+从车红外跟踪参数：
+    CAM_TARGET_X = 175.0 — 目标x像素坐标
+    CAM_TARGET_Y = 83.0  — 目标y像素坐标
+    IR_DX_PX = 8.2       — x方向误差阈值（像素）
+    IR_DY_PX = 8.2       — y方向误差阈值（像素）
+    IR_DX_SPD = 1.2      — x方向修正速度
+    IR_DY_SPD = 1.4      — y方向修正速度
+    IR_VW_SPD = 0.4      — 旋转修正速度
+    IR_SLOPE_DEADZONE = 0.1 — 斜率死区
+视觉伺服参数的整定方法：
+（1）目标点标定：将底盘放置在理想位置，记录此时目标在图像中的坐标，作为CENTER_TX/Y或CAM_TARGET_X/Y。
+（2）阈值标定：在目标点附近小幅移动底盘，观察图像坐标的变化范围，选择适当的阈值使得正常晃动不触发修正，但位置偏差能被及时纠正。
+（3）速度标定：从较小的速度值开始测试，逐步增大直到底盘在修正过程中出现振荡，然后回退到振荡前的安全值。
+（4）确认帧数：根据摄像头的帧率和识别稳定性确定。帧率30fps时，5帧约167ms，足以排除瞬时误识别。
+第八章  系统调试与测试
+8.1 单模块调试
+系统调试按照模块化、分层化的原则进行，先调试单个模块，再逐步集成，最后进行系统联调。
+（1）电机驱动调试：单独测试每个电机的正转、反转、调速功能，验证PWM信号的正确性和电机驱动芯片的工作状态。使用示波器观察PWM波形，确认频率为13kHz，占空比与设定值一致。
+（2）编码器调试：手动旋转每个轮子，观察编码器脉冲计数是否正确增加。正转时计数增加，反转时计数减少（或根据符号配置正确变化）。验证编码器分辨率（1000脉冲/转）和方向一致性。
+（3）IMU调试：静止放置底盘，观察IMU输出的俯仰角、横滚角、偏航角。俯仰角和横滚角应接近0度（底盘水平放置时），偏航角在上电时可能有任意初始值。执行zero校准后，偏航角应从0开始变化。缓慢旋转底盘360度，观察偏航角是否连续变化且回到0附近。
+（4）摄像头调试：连接OpenMV IDE，观察实时图像。主车摄像头应能清晰看到目标物体，从车摄像头应能清晰看到红外灯板（安装红外滤光片后）。调整曝光、增益等参数，使目标在场地光照条件下具有良好的对比度。
+（5）无线通信调试：将两个无线模块靠近放置，一方发送测试数据，另一方接收并打印。验证通信距离、波特率设置、数据完整性。逐步拉开距离，测试最大有效通信距离。
+8.2 底盘运动测试
+底盘运动测试验证三轮全向底盘的基本运动能力和控制精度。
+（1）单轮速度测试：给每个轮子发送不同的目标速度，通过逐飞助手观察实际速度与目标速度的跟踪曲线。验证速度环PID的响应速度、稳态误差和抗干扰能力。
+（2）直线运动测试：发送vy = 3.0的指令，观察底盘是否沿直线前进。记录起点和终点的坐标，计算实际运动距离和航向偏移。理想情况下，前进1米后横向偏移应小于2厘米，航向偏移应小于3度。
+（3）横向运动测试：发送vx = 3.0的指令，观察底盘是否沿横向平移。验证全向轮的横向运动能力。
+（4）旋转运动测试：发送vw = 1.0的指令，观察底盘是否原地旋转。记录旋转360度后的航向角，计算旋转精度。
+（5）斜向运动测试：同时发送vx和vy指令，观察底盘是否沿45度方向运动。验证运动学逆解的正确性。
+（6）里程计精度测试：让底盘沿正方形路径运动（前进1米、右移1米、后退1米、左移1米），回到起点后观察坐标偏差。里程计误差应小于5%。
+8.3 视觉识别测试
+视觉识别测试验证摄像头对目标物体的检测能力和识别精度。
+（1）目标检测测试：将网球、沙袋、小熊分别放置在场地中，观察OpenMV是否能正确识别并输出类别和坐标。记录不同距离、不同角度下的识别成功率。
+（2）识别距离测试：从近到远逐步移动目标物体，记录最大可识别距离。本系统的有效识别距离约为0.5~1.5米。
+（3）识别角度测试：将目标物体放置在不同角度，观察摄像头在视野边缘的识别能力。有效视野角度约为±30度。
+（4）抗干扰测试：在场地中放置非目标物体（如纸片、水瓶等），观察系统是否会产生误识别。调整颜色阈值和面积阈值，降低误识别率。
+（5）红外跟踪测试：将主车的红外灯板点亮，从车摄像头在不同距离和角度观察，记录红外灯斑的检测稳定性和坐标精度。
+8.4 主从联调测试
+主从联调测试验证两车协同工作的整体性能。
+（1）跟随精度测试：主车以不同速度直线运动，观察从车是否能够稳定跟随，保持相对位置。测量两车的横向间距和纵向间距，计算跟随误差。
+（2）转向协同测试：主车原地旋转90度或180度，观察从车是否能够正确绕行，保持相对位置。
+（3）推送协同测试：主车推送一个物体，观察从车是否同步前推，协同完成搬运。
+（4）通信可靠性测试：在两车之间放置遮挡物，观察红外丢失时从车是否能正确进入盲跟模式，红外恢复后是否能正确回到融合模式。
+（5）全流程测试：模拟完整比赛流程，从发车区出发，依次搬运三个目标物体，最后返回发车区。记录总用时和每个环节的执行时间，分析瓶颈环节。
+第九章  比赛策略与优化
+9.1 比赛流程规划
+比赛流程规划是确保系统在规定时间内高效完成搬运任务的关键。本系统按照MISSION_SEQ = [2, 3, 1]的顺序依次搬运网球、小熊、沙袋，该顺序的确定基于以下考虑：
+（1）网球体积最小、重量最轻，推送距离最短（8.0），适合作为第一个搬运目标，快速建立比赛节奏。
+（2）小熊体积中等，推送距离13.0，安排在
+第二个推
+，使比赛流程张弛有度。
+（3）沙袋体积最大、重量最重，推送距离最长（14.0），安排在最后，此时主从两车已经完成了协同磨合，能够更好地协同推动重物。
+9.2 参数优化策略
+参数优化是提高系统性能和可靠性的重要手段。本系统涉及的参数众多，需要分类管理和优化。
+（1）运动速度参数：在确保控制精度的前提下，尽可能提高运动速度。MOVE_SPD、SEARCH_SPD、PUSH_SPD等速度参数需要在测试场地反复测试，找到速度与稳定性的最佳平衡点。
+（2）搜索范围参数：SEARCH_FWD_MAX、SEARCH_X_MAX等搜索范围参数需要根据目标摆放的实际位置进行调整。范围过小可能导致搜索不到目标，范围过大则浪费时间。
+（3）对齐阈值参数：CAM_DX、CAM_DY对齐阈值直接影响对齐精度。阈值过小会导致对齐时间过长，阈值过大则推送方向不准。
+（4）推送距离参数：不同物体的推送距离需要单独标定。推送距离应根据目标重量、地面摩擦系数、推送速度等因素综合确定，确保物体能够被推到目标区域且不超出边界。
+（5）通信参数：MOTION_PERIOD_MS、MASTER_TIMEOUT、IR_TIMEOUT等通信相关参数需要在实际比赛环境中测试，确保在场地电磁环境下通信稳定可靠。
+9.3 异常处理机制
+比赛过程中可能出现各种异常情况，系统需要具备相应的容错和恢复能力。
+（1）目标丢失：搜索过程中若未找到目标，系统进入S_DONE状态停车。在正式比赛中，可通过调整搜索策略（如扩大搜索范围、改变搜索方向）进行恢复。
+（2）对齐超时：视觉对齐过程中若目标持续丢失或无法对齐，ALIGN_XY_TIMEOUT_MS = 1000000ms的超时机制可以防止系统无限等待。超时后转入推送状态，以当前位置进行推送。
+（3）推送超时：推送过程中若因障碍物或轮子打滑导致无法前进，PUSH_TIMEOUT_MS = 15000ms的超时机制可以防止电机长时间堵转。
+（4）通信中断：从车在通信中断时进入盲跟或停车模式，避免盲目运动导致碰撞或丢失。
+（5）传感器故障：IMU或编码器故障时，系统降级到开环模式或停车，等待人工干预。
+第十章  总结与展望
+10.1 工作总结
+本文详细介绍了一种基于NXP RT1021微控制器的三轮全向搬运车模控制系统的设计与实现。系统采用主从双车协同架构，主车负责目标识别、路径规划和物体搬运，从车通过红外视觉跟踪和无线通信实现协同跟随。
+主要完成的工作包括：
+（1）硬件平台搭建：完成了基于RT1021 BTB核心板的控制板设计，包括三轮全向底盘、电机驱动、编码器采集、IMU姿态感知、OpenMV摄像头、红外灯板和无线通信模块的集成。
+（2）运动控制系统开发：实现了三轮全向底盘的运动学建模、PID速度环闭环控制、航向角PD控制、里程计解算、速度斜坡与前馈补偿等功能，通过逐飞助手完成了PID参数的在线整定。
+（3）主车软件设计：采用有限状态机管理比赛流程，实现了目标检测与确认、视觉对齐、推送控制、航向保持、多种搜索策略和转场导航等功能。
+（4）从车软件设计：实现了红外视觉跟踪、传感器融合（红外+无线）、无线盲跟机制、绕行跟踪、推送同步等功能，确保从车在各种情况下都能稳定跟随主车。
+（5）通信协议设计：定义了主从车之间的无线通信协议和摄像头数据协议，实现了指令重复发送、超时检测和渐进降级等可靠性机制。
+（6）系统调试与测试：完成了单模块调试、底盘运动测试、视觉识别测试和主从联调测试，验证了系统的功能正确性和性能指标。
+10.2 创新点
+本系统的创新点主要体现在以下几个方面：
+（1）红外-无线融合跟踪：从车同时利用红外视觉和无线通信两种信息源，设计了四级渐进融合策略，在传感器部分丢失时仍能保持跟踪，显著提高了系统的鲁棒性。
+（2）非阻塞动作函数：所有运动动作采用非阻塞式状态机实现，主循环以固定周期轮询执行，避免了阻塞等待导致的系统响应迟缓。
+（3）模块化软件架构：底盘控制、传感器处理、运动执行、决策调度层次分明，各模块之间接口清晰，便于调试和维护。
+（4）自适应推送策略：根据目标类型自动选择推送距离，推送前进行静止等待确保方向稳定，提高了推送精度。
+10.3 不足与展望
+本系统仍存在一些不足之处，有待后续改进：
+（1）里程计累积误差：纯编码器-IMU里程计在长距离运动后误差累积明显，未来可考虑引入场地边界检测或视觉里程计进行修正。
+（2）视觉识别鲁棒性：当前的颜色阈值分割方法对光照变化较为敏感，未来可引入机器学习模型（如YOLO）提高识别的鲁棒性和泛化能力。
+（3）路径规划优化：当前采用预设的搜索路径，未来可引入动态路径规划算法（如A*、Dijkstra），根据目标位置实时规划最优路径。
+（4）多车协同增强：当前从车仅被动跟随主车，未来可设计更智能的协同策略，如从车主动绕到目标另一侧进行夹推。
+（5）自动参数学习：当前参数依赖人工整定，未来可引入自动调参算法（如遗传算法、贝叶斯优化），实现参数的自适应优化。
+附录A  主要参数汇总表
+本附录汇总了系统中使用的主要参数，便于查阅和调试。
+A.1 底盘硬件参数
+<w:tblPr><w:tblStyle w:val="35"/><w:tblW w:w="0" w:type="auto"/><w:jc w:val="center"/><w:tblBorders><w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/></w:tblBorders><w:tblLayout w:type="autofit"/><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPr><w:tblGrid><w:gridCol w:w="2771"/><w:gridCol w:w="2771"/><w:gridCol w:w="2771"/></w:tblGrid><w:tr w14:paraId="5E2F4028"><w:tblPrEx><w:tblBorders><w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/></w:tblBorders><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="600F0865"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:b/><w:sz w:val="20"/></w:rPr><w:t>参数名
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="70C4BC0D"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:b/><w:sz w:val="20"/></w:rPr><w:t>数值
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="695152D1"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:b/><w:sz w:val="20"/></w:rPr><w:t>说明
+<w:tblPrEx><w:tblBorders><w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/></w:tblBorders><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="385DF41D"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>PWM_FREQ
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="7D414C2D"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>13000 Hz
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="180E83FD"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>PWM输出频率
+<w:tblPrEx><w:tblBorders><w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/></w:tblBorders><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="523C2B5E"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>PWM_LIMIT
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="54C4ECE6"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>9000
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="215C2750"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>PWM占空比限幅
+<w:tblPrEx><w:tblBorders><w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/></w:tblBorders><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="45CEB9D1"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>ENCODER_PPR
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="55234461"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>1000
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="5026802D"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>编码器分辨率（脉冲/转）
+<w:tblPrEx><w:tblBorders><w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/></w:tblBorders><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="1517013F"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>CONTROL_DT
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="75EC67F5"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>0.05 s
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="7BAD924E"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>控制周期（50ms）
+<w:tblPrEx><w:tblBorders><w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/></w:tblBorders><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="3E2150CC"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>MOTOR_SIGN
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="588D2A21"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>(-1,-1,-1)
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="53DEDEC2"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>电机方向符号
+<w:tblPrEx><w:tblBorders><w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/></w:tblBorders><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="1B28FCFA"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>ENCODER_SIGN
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="154ED82E"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>(-1,-1,1)
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="0F7BECF6"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>编码器方向符号
+<w:tblPrEx><w:tblBorders><w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/></w:tblBorders><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="39BE66D6"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>MAX_WHEEL_SPEED
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="4F4E9A11"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>6.0 r/s
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="6AFF1308"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>最大轮速
+<w:tblPrEx><w:tblBorders><w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/></w:tblBorders><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="293C1FC7"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>WHEEL_ACCEL
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="0C72093A"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>10.0 r/s²
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="6DFE58B2"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>轮速加速度（斜坡用）
+表A.1 底盘硬件参数
+A.2 PID控制参数
+<w:tblPr><w:tblStyle w:val="35"/><w:tblW w:w="0" w:type="auto"/><w:jc w:val="center"/><w:tblBorders><w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/></w:tblBorders><w:tblLayout w:type="autofit"/><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPr><w:tblGrid><w:gridCol w:w="2771"/><w:gridCol w:w="2771"/><w:gridCol w:w="2771"/></w:tblGrid><w:tr w14:paraId="628A3399"><w:tblPrEx><w:tblBorders><w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/></w:tblBorders><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="488DBC66"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:b/><w:sz w:val="20"/></w:rPr><w:t>参数名
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="676FBAE0"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:b/><w:sz w:val="20"/></w:rPr><w:t>数值
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="3ACDAC51"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:b/><w:sz w:val="20"/></w:rPr><w:t>说明
+<w:tblPrEx><w:tblBorders><w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/></w:tblBorders><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="63ABB820"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>速度环Kp
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="6A4876B4"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>500.0
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="189B5C95"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>三轮统一比例增益
+<w:tblPrEx><w:tblBorders><w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/></w:tblBorders><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="6282443F"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>速度环Ki
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="075DF647"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>2.0
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="5EBCC4D4"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>三轮统一积分增益
+<w:tblPrEx><w:tblBorders><w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/></w:tblBorders><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="6B032AD8"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>速度环Kd
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="42BAEE90"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>0.0
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="5D070FD3"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>三轮统一微分增益
+<w:tblPrEx><w:tblBorders><w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/></w:tblBorders><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="22B3642C"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>INTEGRAL_LIMIT
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="7B951DC7"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>8000.0
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="535FFC33"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>积分限幅
+<w:tblPrEx><w:tblBorders><w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/></w:tblBorders><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="4FCFE2C6"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>航向PD Kp
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="69DFB907"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>0.1
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="1FFE62CD"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>航向比例增益
+<w:tblPrEx><w:tblBorders><w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/></w:tblBorders><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="7EF3AD2C"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>航向PD Kd
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="2DFAC8E4"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>0.0
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="282997C8"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>航向微分增益
+表A.2 PID控制参数
+A.3 前馈与滤波参数
+<w:tblPr><w:tblStyle w:val="35"/><w:tblW w:w="0" w:type="auto"/><w:jc w:val="center"/><w:tblBorders><w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/></w:tblBorders><w:tblLayout w:type="autofit"/><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPr><w:tblGrid><w:gridCol w:w="2771"/><w:gridCol w:w="2771"/><w:gridCol w:w="2771"/></w:tblGrid><w:tr w14:paraId="23AD2C2D"><w:tblPrEx><w:tblBorders><w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/></w:tblBorders><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="274B80D8"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:b/><w:sz w:val="20"/></w:rPr><w:t>参数名
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="3689E3BA"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:b/><w:sz w:val="20"/></w:rPr><w:t>数值
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="6D4580A5"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:b/><w:sz w:val="20"/></w:rPr><w:t>说明
+<w:tblPrEx><w:tblBorders><w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/></w:tblBorders><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="7A7A4EDD"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>SPEED_KF
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="14EE3DE9"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>5000.0
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="6BB46BCB"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>满速前馈值
+<w:tblPrEx><w:tblBorders><w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/></w:tblBorders><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="1B1DBBBA"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>SPEED_FF_MIN
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="2552AB09"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>4000.0
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="51DF1429"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>最小前馈值
+<w:tblPrEx><w:tblBorders><w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/></w:tblBorders><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="1C200CD1"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>SPEED_FF_FULL
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="47DEE42B"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>1.0 r/s
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="250DCEDE"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>满速前馈阈值
+<w:tblPrEx><w:tblBorders><w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/></w:tblBorders><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="50A2A9DD"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>FILTER_ALPHA
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="1A8AB273"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>0.35
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="4D056FEA"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>速度滤波系数（一阶低通）
+表A.3 前馈与滤波参数
+A.4 主车运动参数
+<w:tblPr><w:tblStyle w:val="35"/><w:tblW w:w="0" w:type="auto"/><w:jc w:val="center"/><w:tblBorders><w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/></w:tblBorders><w:tblLayout w:type="autofit"/><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPr><w:tblGrid><w:gridCol w:w="2771"/><w:gridCol w:w="2771"/><w:gridCol w:w="2771"/></w:tblGrid><w:tr w14:paraId="4E886673"><w:tblPrEx><w:tblBorders><w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/></w:tblBorders><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="1D5FAF4D"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:b/><w:sz w:val="20"/></w:rPr><w:t>参数名
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="1920FA97"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:b/><w:sz w:val="20"/></w:rPr><w:t>数值
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="30880E16"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:b/><w:sz w:val="20"/></w:rPr><w:t>说明
+<w:tblPrEx><w:tblBorders><w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/></w:tblBorders><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="3E0A3080"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>SPD_MAX
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="2939D1DC"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>7.0
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="0803AF20"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>最大运动速度
+<w:tblPrEx><w:tblBorders><w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/></w:tblBorders><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="1D6F555F"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>SPD_MIN
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="5083AB2A"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>1.0
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="1886A0D8"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>最小运动速度
+<w:tblPrEx><w:tblBorders><w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/></w:tblBorders><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="09F04DBA"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>APPROACH_FWD
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="4E861CCA"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>2.5
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="689D48E7"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>初始前进距离
+<w:tblPrEx><w:tblBorders><w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/></w:tblBorders><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="36515A84"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>APPROACH_RIGHT
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="4C4B21FD"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>10.0
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="640D96C7"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>初始右移距离
+<w:tblPrEx><w:tblBorders><w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/></w:tblBorders><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="13AAC87A"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>MOVE_SPD
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="40426459"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>3.9
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="49D82204"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>常规运动速度
+<w:tblPrEx><w:tblBorders><w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/></w:tblBorders><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="60340480"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>SEARCH_SPD
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="16E30C1C"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>3.8
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="77C168ED"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>搜索速度
+<w:tblPrEx><w:tblBorders><w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/></w:tblBorders><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="48DF3DB9"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>PUSH_SPD
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="42CE8077"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>4.8
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="51E51E7C"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>推送速度
+<w:tblPrEx><w:tblBorders><w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/></w:tblBorders><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="1E87600D"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>NAV_SPD
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="0509ACCE"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>3.9
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="37E0612D"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>导航速度
+<w:tblPrEx><w:tblBorders><w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/></w:tblBorders><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="7F753F80"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>POS_TOL
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="3BCFE849"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>0.10
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="3B9375E1"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>位置误差容限
+<w:tblPrEx><w:tblBorders><w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/></w:tblBorders><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="4C4F6745"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>ACT_TIMEOUT_MS
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="1A88823F"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>200000
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="59B97E4C"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>动作超时时间
+表A.4 主车运动参数
+A.5 主车视觉参数
+<w:tblPr><w:tblStyle w:val="35"/><w:tblW w:w="0" w:type="auto"/><w:jc w:val="center"/><w:tblBorders><w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/></w:tblBorders><w:tblLayout w:type="autofit"/><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPr><w:tblGrid><w:gridCol w:w="2771"/><w:gridCol w:w="2771"/><w:gridCol w:w="2771"/></w:tblGrid><w:tr w14:paraId="7D259672"><w:tblPrEx><w:tblBorders><w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/></w:tblBorders><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="56DF248E"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:b/><w:sz w:val="20"/></w:rPr><w:t>参数名
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="36A47E81"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:b/><w:sz w:val="20"/></w:rPr><w:t>数值
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="54F97495"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:b/><w:sz w:val="20"/></w:rPr><w:t>说明
+<w:tblPrEx><w:tblBorders><w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/></w:tblBorders><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="0F7F15C5"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>CENTER_TX
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="5DABF279"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>0.65
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="62161270"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>对齐目标水平坐标
+<w:tblPrEx><w:tblBorders><w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/></w:tblBorders><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="56A870FB"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>CENTER_TY
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="0F9EB38A"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>0.70
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="359F4F3E"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>对齐目标垂直坐标
+<w:tblPrEx><w:tblBorders><w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/></w:tblBorders><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="64E8F384"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>CAM_DX
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="43C46C7B"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>0.08
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="4B6B9E43"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>水平对齐阈值
+<w:tblPrEx><w:tblBorders><w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/></w:tblBorders><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="730FD352"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>CAM_DY
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="466452E2"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>0.08
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="30181BBC"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>垂直对齐阈值
+<w:tblPrEx><w:tblBorders><w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/></w:tblBorders><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="489C6478"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>ALIGN_SPD_X
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="5BC299DA"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>1.5
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="5363AF05"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>水平对齐速度
+<w:tblPrEx><w:tblBorders><w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/></w:tblBorders><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="3BFA9AA1"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>ALIGN_SPD_Y
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="63C66C97"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>2.2
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="7EE43C55"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>垂直对齐速度
+<w:tblPrEx><w:tblBorders><w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/></w:tblBorders><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="0975E71D"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>ALIGN_OK
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="3FEBF5E5"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>5
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="4FE00514"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>对齐确认帧数
+<w:tblPrEx><w:tblBorders><w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/></w:tblBorders><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="779DA100"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>DETECT_CONFIRM
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="1036B9B8"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>3
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="7DCF1700"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>检测确认帧数
+表A.5 主车视觉参数
+A.6 从车红外跟踪参数
+<w:tblPr><w:tblStyle w:val="35"/><w:tblW w:w="0" w:type="auto"/><w:jc w:val="center"/><w:tblBorders><w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/></w:tblBorders><w:tblLayout w:type="autofit"/><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPr><w:tblGrid><w:gridCol w:w="2771"/><w:gridCol w:w="2771"/><w:gridCol w:w="2771"/></w:tblGrid><w:tr w14:paraId="1A760317"><w:tblPrEx><w:tblBorders><w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/></w:tblBorders><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="2DC1CFC9"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:b/><w:sz w:val="20"/></w:rPr><w:t>参数名
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="4EA62778"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:b/><w:sz w:val="20"/></w:rPr><w:t>数值
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="7E0FD0A5"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:b/><w:sz w:val="20"/></w:rPr><w:t>说明
+<w:tblPrEx><w:tblBorders><w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/></w:tblBorders><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="5990207C"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>CAM_TARGET_X
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="01D1984B"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>175.0
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="089DAED1"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>红外目标x像素坐标
+<w:tblPrEx><w:tblBorders><w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/></w:tblBorders><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="23F3CD13"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>CAM_TARGET_Y
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="30445BE7"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>83.0
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="385E0876"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>红外目标y像素坐标
+<w:tblPrEx><w:tblBorders><w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/></w:tblBorders><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="0031724D"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>IR_DX_PX
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="10E99AE1"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>8.2
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="2D631D1F"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>x方向误差阈值（像素）
+<w:tblPrEx><w:tblBorders><w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/></w:tblBorders><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="7602D28D"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>IR_DY_PX
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="6A78E4D1"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>8.2
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="7E672F76"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>y方向误差阈值（像素）
+<w:tblPrEx><w:tblBorders><w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/></w:tblBorders><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="34EF1566"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>IR_DX_SPD
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="2B5379C1"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>1.2
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="7D999791"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>x方向修正速度
+<w:tblPrEx><w:tblBorders><w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/></w:tblBorders><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="70274982"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>IR_DY_SPD
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="5376F761"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>1.4
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="660B5E63"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>y方向修正速度
+<w:tblPrEx><w:tblBorders><w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/></w:tblBorders><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="5B0A3083"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>IR_VW_SPD
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="73C78EAD"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>0.4
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="21A215D6"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>旋转修正速度
+<w:tblPrEx><w:tblBorders><w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/></w:tblBorders><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="3643B53F"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>IR_SLOPE_DEADZONE
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="63A403BE"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>0.1
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="5C3EE372"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>斜率死区
+<w:tblPrEx><w:tblBorders><w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/></w:tblBorders><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="29B3C0AE"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>FLT_A
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="54542D2A"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>0.40
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="78100494"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>红外数据滤波系数
+表A.6 从车红外跟踪参数
+A.7 通信参数
+<w:tblPr><w:tblStyle w:val="35"/><w:tblW w:w="0" w:type="auto"/><w:jc w:val="center"/><w:tblBorders><w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/></w:tblBorders><w:tblLayout w:type="autofit"/><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPr><w:tblGrid><w:gridCol w:w="2771"/><w:gridCol w:w="2771"/><w:gridCol w:w="2771"/></w:tblGrid><w:tr w14:paraId="1B76FCCC"><w:tblPrEx><w:tblBorders><w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/></w:tblBorders><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="59DABB1B"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:b/><w:sz w:val="20"/></w:rPr><w:t>参数名
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="49254E0F"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:b/><w:sz w:val="20"/></w:rPr><w:t>数值
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="14E90F1E"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:b/><w:sz w:val="20"/></w:rPr><w:t>说明
+<w:tblPrEx><w:tblBorders><w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/></w:tblBorders><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="1F5C4F99"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>MOTION_PERIOD_MS
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="1F2086F5"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>20
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="1C524ED4"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>运动状态发送周期
+<w:tblPrEx><w:tblBorders><w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/></w:tblBorders><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="64EE6CDE"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>MASTER_TIMEOUT
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="1F665DF5"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>350 ms
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="74DA92C2"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>主车数据超时
+<w:tblPrEx><w:tblBorders><w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/></w:tblBorders><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="00F65E33"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>IR_TIMEOUT
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="04BED06A"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>300 ms
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="273B176F"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>红外数据超时
+<w:tblPrEx><w:tblBorders><w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/></w:tblBorders><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="2F77B419"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>SLAVE_CMD_REPEAT
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="0DD8FFB7"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>3
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="7EF66714"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>指令重复发送次数
+<w:tblPrEx><w:tblBorders><w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/></w:tblBorders><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="6AD564D8"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>SLAVE_CMD_MS
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="699B8667"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>80 ms
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="08288969"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>指令重发间隔
+<w:tblPrEx><w:tblBorders><w:top w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:left w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:bottom w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:right w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideH w:val="single" w:color="auto" w:sz="4" w:space="0"/><w:insideV w:val="single" w:color="auto" w:sz="4" w:space="0"/></w:tblBorders><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="108" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="108" w:type="dxa"/></w:tblCellMar></w:tblPrEx><w:trPr><w:jc w:val="center"/></w:trPr><w:tc><w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="223EF37B"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>BLIND_TIMEOUT
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="6BF8722D"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>2000 ms
+<w:tcPr><w:tcW w:w="2771" w:type="dxa"/></w:tcPr><w:p w14:paraId="23960395"><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:rFonts w:ascii="宋体" w:hAnsi="宋体" w:eastAsia="宋体"/><w:sz w:val="20"/></w:rPr><w:t>盲跟最大持续时间
+表A.7 通信参数
+附录B  逻辑图与状态图
+本附录以文本框和表格形式给出了系统的主要逻辑图和状态转换图。
+B.1 主车程序主循环逻辑图
+    +------------------+
+    |   系统上电初始化  |
+    +--------+---------+
+             |
+             v
+    +--------+---------+
+    | 初始化电机(m.init)|
+    | IMU零偏校准       |
+    | 启动航向定时器    |
+    | 发送MASTER_READY |
+    +--------+---------+
+             |
+             v
+    +--------+---------+
+    |  主循环(while)    |&lt;-------------------+
+    +--------+---------+                    |
+             |                              |
+    +--------v---------+                    |
+    | read_cam()       | 读取摄像头数据      |
+    +--------+---------+                    |
+             |                              |
+    +--------v---------+                    |
+    | read_test_cmd()  | 读取测试命令        |
+    +--------+---------+                    |
+             |                              |
+    +--------v---------+                    |
+    | poll_slave()     | 轮询从车指令发送    |
+    +--------+---------+                    |
+             |                              |
+    +--------v---------+                    |
+    | master_act()     | 执行主状态机        |
+    +--------+---------+                    |
+             |                              |
+             +------------------------------+
+图B.1 主车程序主循环逻辑图
+B.2 从车程序主循环逻辑图
+    +------------------+
+    |   系统上电初始化  |
+    +--------+---------+
+             |
+             v
+    +--------+---------+
+    | 初始化电机(m.init)|
+    | IMU零偏校准       |
+    | 记录初始航向y0    |
+    | 停车等待          |
+    +--------+---------+
+             |
+             v
+    +--------+---------+
+    |  主循环(while)    |&lt;-------------------+
+    +--------+---------+                    |
+             |                              |
+    +--------v---------+                    |
+    | read_cam()       | 读取红外摄像头数据  |
+    +--------+---------+                    |
+             |                              |
+    +--------v---------+                    |
+    | read_wrl()       | 读取无线数据        |
+    +--------+---------+                    |
+             |                              |
+    +--------v---------+                    |
+    | slave_ctrl()     | 执行从车状态机      |
+    +--------+---------+                    |
+             |                              |
+             +------------------------------+
+图B.2 从车程序主循环逻辑图
+B.3 传感器融合决策逻辑图
+                     +----------------+
+                     | 传感器状态检测  |
+                     +--------+-------+
+                              |
+            +----------------+
+            |                |                |
+    +-------v------+ +-------v------+ +-------v------+ +-------v------+
+    | 红外OK+无线OK | | 红外OK无线丢  | | 红外丢无线OK  | | 红外丢无线丢  |
+    +-------+------+ +-------+------+ +-------+------+ +-------+------+
+            |                |                |                |
+    +-------v------+ +-------v------+ +-------v------+ +-------v------+
+    | 最优融合模式  | | 纯视觉跟踪    | | 无线盲跟模式  | | 立即停车      |
+    | vx=mvx+ir_vx | | vx=ir_vx      | | vx=mvx*gain  | | vx=vy=vw=0   |
+    | vy=mvy+ir_vy | | vy=ir_vy      | | vy=mvy*gain  | |              |
+    | vw=match_vw  | | vw=ir_vw      | | vw=match_vw  | |              |
+    | +绕行(若转向)| |               | | 超时渐变减速  | |              |
+    +--------------+ +--------------+ +--------------+ +--------------+
+图B.3 从车传感器融合决策逻辑图
+B.4 速度环PID控制逻辑图
+    目标速度 cmd --&gt;[+]&lt;-- 反馈速度 speed --&gt; 编码器读取
+                   |
+                   v 误差 err
+         +--------+--------+--------+
+         |        |        |        |
+    +----v----+ +--v---+ +--v---+  |
+    | Kp*err  | |Ki*∫  | |Kd*de |  |
+    +----+----+ +--+---+ +--+---+  |
+         |         |        |      |
+         +---------+--------+      |
+                   |               |
+              +----v----+          |
+              | 前馈 ff |&lt;---------+
+              +----+----+
+                   |
+              +----v----+
+              | PWM输出 |--&gt; 电机驱动
+              +---------+
+图B.4 速度环PID控制逻辑图
+B.5 主车完整状态转换图
+                              +--------+
+                         +---&gt;| SEARCH |---+ 找到目标
+                         |    |_RIGHT   |   |
+                         |    +--------+   v
+                         |                  +--------+
+                         |                  | ALIGN  |
+    +--------+    +------+------+   +-----&gt;|  _XY   |---+ 对齐完成
+    |APPROACH|---&gt;|SEARCH_FWD   |   |      +--------+   |
+    +--------+    +------+------+   |                     v
+                         |          |      +--------+   +------+
+                         | 未找到   +-----&gt;|SEARCH  |   | PUSH |
+                         |          找到   |ZIGZAG  |   +---+--+
+                         v                 +--------+       |
+                    +---------+               ^            |
+                    |  DONE   |               |            | 推送完成
+                    +---------+               |            v
+                                              |      +---------+
+                                              |      | NAV_NEXT|--+
+                                              |      +---------+  |
+                                              |                   |
+                                              |   第一个物体      | 后续物体
+                                              +-------------------+
+                                              |                   |
+                                              | 无剩余目标        |
+                                              v                   |
+                                         +--------+               |
+                                         | RETURN |---------------+
+                                         +---+----+               |
+                                             |                    |
+                                             v                    |
+                                        +---------+               |
+                                        |  DONE   |&lt;--------------+
+                                        +---------+
+图B.5 主车完整状态转换图
+B.6 从车完整状态转换图
+         +------+   传感器有效
+         | INIT |----------------&gt;+--------+
+         +------+                 | FOLLOW |&lt;----------------------+
+                                  +---+----+                       |
+                                      |                           |
+            +--------------------------+----------------------+   |
+            | CMD:PUSH             | CMD:TURN              |    | CMD:STOP
+            v                      v                       |    |
+       +---------+            +---------+                  |    |
+       |  PUSH   |            |  TURN   |                  |    |
+       +---+-----+            +---+-----+                  |    |
+           | CMD:STOP             | CMD:STOP               |    |
+           +----------------------+-----------------------&gt;|    |
+                                  | CMD:RETURN             |    |
+                                  v                        |    |
+                             +---------+                   |    |
+                             | RETURN  |-------------------|----+
+                             +---+-----+    CMD:STOP       |
+                                 |                         |
+                                 v                         |
+                            +---------+                    |
+                            |  DONE   |&lt;-------------------+
+                            +---------+
+图B.6 从车完整状态转换图
+附录C  代码模块说明
+C.1 m.py — 底盘运动控制模块
+m.py是底盘运动控制的核心模块，封装了电机驱动、编码器读取、PID速度环、航向控制、里程计解算、全向运动学等功能。该模块以函数接口的形式向上层提供运动控制服务，上层模块只需调用set_wheel_speed()、omni_move()、stop()等函数即可控制底盘运动。
+关键函数说明：
+    init_motor() — 初始化电机、编码器和控制定时器
+    set_wheel_speed(v1,v2,v3) — 设置三个轮子的目标转速（速度环模式）
+    omni_move(vx,vy,vw) — 整车运动，vx/vy互斥（基本模式）
+    omni_move_xy(vx,vy,vw) — 整车运动，vx/vy可同时使用（视觉伺服模式）
+    stop() — 立即停车并复位PID
+    reset_pose(x,y,theta) — 重置里程计和航向基准
+    pdcalculate(pid,target,current) — 航向角PD计算（自动处理±180°）
+    get_wheel_state() — 获取轮子状态（目标速、实际速、PWM、编码器增量）
+    get_pose() — 获取全局位姿(x,y,theta)
+    get_velocity() — 获取速度（局部和全局）
+C.2 main.py — 主车控制程序
+main.py是主车的顶层控制程序，负责比赛流程管理、目标识别、运动控制、从车协同等全部高层功能。程序采用状态机架构，通过master_act函数调度各状态的执行。
+关键函数说明：
+    master_act() — 主状态机调度函数
+    read_cam() / parse_cam() — 摄像头数据读取与解析
+    send_motion(vx,vy,vw) — 发送运动状态到从车
+    send_slave(cmd) / poll_slave() — 从车指令发送与轮询
+    act_move_axis() — 单轴移动指定距离
+    act_move_diag() — 双轴斜向移动
+    act_search_fwd() — 向前搜索目标
+    act_search_axis_diag() — 带漂移的横向搜索
+    act_search_zigzag() — 之字形搜索
+    act_align_xy() — 视觉对齐
+    act_push() — 推送物体
+    act_nav_next() — 转场导航
+    act_return_home() — 返回发车区
+    target_detected() — 目标检测确认
+    yaw_cb() — 航向定时器回调
+C.3 main_slave.py — 从车控制程序
+main_slave.py是从车的顶层控制程序，负责红外视觉跟踪、传感器融合、状态切换和协同动作执行。
+关键函数说明：
+    slave_ctrl() — 从车状态机调度函数
+    read_cam() / parse_ircam() — 红外摄像头数据读取与解析
+    read_wrl() / parse_wcmd() — 无线数据读取与解析
+    fused_velocity() — 传感器融合速度计算
+    ir_center_vy() / ir_center_vx() — 红外前后/左右修正
+    ir_slope_vw() — 红外旋转修正
+    match_vw() — 综合旋转速度
+    corr_hdg() — 航向校正
+    orb_velocity() — 绕行速度计算
+    do_follow() — 跟随模式执行
+    do_push() — 推送同步执行
+    do_turn() — 绕行同步执行
+附录
+D
+  
+车模图片

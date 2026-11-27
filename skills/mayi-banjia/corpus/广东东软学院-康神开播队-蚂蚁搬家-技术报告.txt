@@ -1,0 +1,463 @@
+
+
+
+第二十一届全国大学生
+智能汽车竞赛
+
+技 术 报 告
+
+
+学    校：广东东软学院          
+队伍名称：康神开播队          
+参赛队员：胡浩铭 吴堃鑫 沈宝涛 兰稀  
+指导教师：林亚辉 王兴凡
+
+关于技术报告和研究论文使用授权的说明
+本人完全了解全国大学生智能汽车竞赛关于保留、使用技术报告和研究论文的规定，即：参赛作品著作权归参赛者本人，比赛组委会可以在相关主页上收录并公开参赛作品的设计方案、技术报告以及参赛模型车的视频、图像资料，并将相关内容编纂收录在组委会出版论文集中。
+
+参赛队员签名：   
+                                                                    带队教师签名：
+                                                                     日               期： 2026年8月16日                                      
+
+
+目  录
+第一章  引言	6
+1.1 大赛背景	6
+1.2 蚂蚁搬家组比赛规则	6
+1.3 本文结构	7
+第二章  系统整体设计	8
+2.1 整体设计思路	8
+2.2 系统方案框图	8
+第三章  机械结构设计与优化	9
+3.1 车模整体结构	9
+3.2 全向轮底盘设计	10
+图3.2 全向轮底盘设计	10
+3.3 传感器安装与布局	10
+3.4 电路板固定与连接	10
+图3.4  电路板固定	11
+3.5 搬运推杆设计	11
+图3.5 搬运推杆设计	11
+第四章  电路系统设计	12
+4.1 硬件设计整体方案	12
+4.2 主控系统电路	12
+4.3电源电路设计	13
+图 4.3.1 电源电路设计	14
+4.4 电机驱动电路	15
+图4.4 电机驱动电路	15
+4.5 传感器模块电路	15
+（1）IMU模块	15
+（2）编码器模块	16
+图4.5 传感器模块电路	16
+4.6 无线通信模块	16
+4.7 OpenART视觉模块	16
+4.8 显示屏模块	16
+第五章  软件控制设计	17
+5.1 软件整体架构	17
+5.2 图像处理与目标识别	17
+5.3 运动控制算法	17
+5.4 姿态与航向参考系统	17
+5.5 双车协同搬运策略	17
+5.6 状态机设计	18
+第六章  开发工具与调试过程	19
+6.1 开发环境	19
+（1）软件开发环境	19
+（2）硬件开发工具	19
+6.2 调试工具与方法	19
+6.3 制作与调试过程	19
+第七章 总结	20
+附录A：电路原理图与版图	23
+附录B：软件源代码	31
+
+
+第一章  引言
+1.1 大赛背景
+全国大学生智能汽车竞赛是从2006年开始，由教育部高等教育司委托高等学校自动化类教学指导委员会举办的旨在加强学生实践、创新能力和培养团队精神的一项创意性科技竞赛，至今已经成功举办了二十届。竞赛以"立足培养，重在参与，鼓励探索，追求卓越"为指导思想，旨在促进高等学校素质教育，培养大学生的综合知识运用能力、基本工程实践能力和创新意识，激发大学生从事科学研究与探索的兴趣和潜能。
+第二十一届全国大学生智能汽车竞赛在继承和总结前二十届比赛实践的基础上，拓展新的竞赛内涵，设计新的竞赛内容，创造新的比赛模式。竞赛分为三个赛道子类：缩微赛道、室内赛道、室外赛道。其中，蚂蚁搬家组属于缩微赛道，要求参赛队伍自制车模，完成多车协同搬运任务，进一步激发大学生的想象力和创造力。
+1.2 蚂蚁搬家组比赛规则
+蚂蚁搬家组是第二十一届竞赛新设立的创意组别，其核心任务如下：
+（1）车模要求：参赛队伍需制作两辆搬运车模（步兵），根据搬运目标种类，将目标物体从场地中央搬运到场地四周。搬运车模要求使用基于NXP RT1021微控制器的MicroPython开发板作为主控。除了搬运车模外，还允许自行设置不超过2台的辅助车模（工兵）或导引信标，辅助车模的MCU允许使用STC单片机。
+（2）搬运物体：包括网球、排球、小熊多种类型。搬运物品需两个或两个以上车模协同推动，物体在搬运过程中不得离开地面。
+（3）车模约束：参与搬运过程的车模之间不允许有物理连接，但允许通过无线方式进行通信。搬运推杆长度不超过10cm（水平方向），高度不超过5cm（垂直方向），每台车模只允许安装一个推杆。车模外形尺寸（含推杆）需小于30cm×30cm。
+（4）比赛场地：场地为3.2m×2.4m的矩形区域，铺设蓝色背景布，边界由5cm宽黄色胶带标识。被搬运物品放置在场地中心1m×1m区域内，物品之间保持10cm最小间距。
+（5）计分规则：车模重量（含电池）参与成绩计算：重量超出100g的部分，除以20换算成秒数叠加到最终比赛成绩上。对两辆搬运车模的称重结果取平均值。
+（6）图像处理平台：含MCU的图像处理平台限定使用基于NXP公司微控制器的OpenART、OpenART Plus、MCXVision、MV5-RT模块。
+1.3 本文结构
+本文将从机械结构、电路系统、软件控制三个维度，详细介绍本队蚂蚁搬家车模的整体设计思路与实现方案。全文共分为七章：第一章为引言，介绍比赛背景与规则；第二章阐述系统整体设计方案；第三章介绍机械结构设计与优化；第四章详述电路系统设计；第五章论述软件控制算法；第六章介绍开发工具与调试过程；第七章总结车模技术指标与改进方向。
+
+
+第二章  系统整体设计
+2.1 整体设计思路
+本队蚂蚁搬家车模系统本着轻量化、模块化的设计理念，采用双车协同方案完成搬运任务。每台搬运车模均采用三轮全向轮底盘结构（Y车模），以实现灵活的全向移动能力，便于在狭小空间内完成对目标物体的协同搬运。
+系统以NXP RT1021微控制器为核心，运行MicroPython固件，使用Python语言进行软件开发。视觉感知方面，采用OpenART视觉模块进行目标识别与定位；姿态感知方面，集成六轴IMU惯性测量单元和电机编码器获取车身姿态与运动状态；双车之间通过无线串口模块实现实时通信与协同控制。
+控制算法采用基于PID的闭环控制策略，结合状态机架构实现搜索目标、协同搬运、返航等任务的可靠执行。
+2.2 系统方案框图
+
+图2.1 系统方案框图
+系统主要由以下模块组成：主控模块（NXP RT1021核心板）、视觉模块（OpenART）、显示屏模块（OLED/LCD显示屏，用于实时显示车模运行状态、调试信息与传感器数据）、姿态传感模块（六轴IMU）、运动执行模块（全向轮电机+编码器）、无线通信模块（无线串口）、电源模块。
+
+第三章  机械结构设计与优化
+3.1 车模整体结构
+本车模采用三轮全向轮底盘结构，即Y车模。三个全向轮呈120°均匀分布，每个轮子由独立的直流电机驱动。全向轮的设计使得车模可以在不改变朝向的情况下实现任意方向的平移运动，这为搬运过程中精确调整位置和姿态提供了极大的灵活性。车模整体结构分为三层：底层为电机与全向轮安装层，中层为电池与驱动板安装层，上层为主控板与传感器安装层。
+
+图3.1 车模整体结构
+表3.1 车模主要技术参数
+
+3.2 全向轮底盘设计
+全向轮底盘是本车模机械结构的核心。三个全向轮以120°间隔均匀分布，底盘呈等边三角形布局。每个全向轮由独立的直流减速电机驱动，通过电机编码器反馈转速信息，实现精确的速度闭环控制。
+
+图3.2 全向轮底盘设计
+
+3.3 传感器安装与布局
+OpenART摄像头安装于车体前上方，通过支架固定，俯视角度可调；IMU模块安装于车体中心位置，尽量靠近重心以减少振动影响；电机编码器安装于各驱动电机尾部，与电机轴直接连接。
+3.4 电路板固定与连接
+电路板采用多层堆叠结构，通过铜柱和尼龙柱固定于车体框架上。主控板与OpenART模块通过排线连接，电机驱动板通过大电流导线与电池和电机相连，各传感器模块通过杜邦线或FPC排线与主控板连接。所有连接器均采用防松设计。
+
+图3.4  电路板固定
+3.5 搬运推杆设计
+根据比赛规则，每台搬运车模只能安装一个推杆，推杆长度不超过10cm（水平方向），高度不超过5cm（垂直方向）。推杆必须是直的，不允许带有弧度、夹角或针刺等变形结构。本队的推杆采用PLA材料制作，安装于车体前端。
+
+图3.5 搬运推杆设计
+
+
+第四章  电路系统设计
+4.1 硬件设计整体方案
+稳定的硬件电路是智能车平稳可靠运行的基础。本系统电路设计遵循模块化、小型化的原则。电路设计使用嘉立创EDA完成，电路板由嘉立创工厂生产。主控核心板采用竞赛指定的NXP RT1021 MicroPython开发板，主频高达500MHz，外设资源丰富。
+4.2 主控系统电路
+RT1021核心板作为整个系统的主控制器，承担运行MicroPython解释器、与OpenART通信、IMU数据读取、编码器信号采集、PWM电机控制、无线通信、PID控制算法等核心功能。
+表4.2 主控引脚分配表
+
+
+4.3电源电路设计
+本系统采用300mAh3s供电，通过DC-DC降压模块为各子系统提供所需电压。电机供电由电池直接供给；主控系统通过DC-DC降压至5V为外设供电，再通过LDO降压为3.3V为主控以及OpenART模块独立稳压供电；设计中考虑了大电容滤波、过流保护和反接保护。
+图 4.3.1 电源电路设计
+图4.3.2 电源电路设计
+4.4 电机驱动电路
+三个全向轮由三个独立的直流电机驱动，每路采用一片 DRV8701E 栅极驱动器（单 H 桥，需外接 4 颗 N-MOSFET 构成功率级），三路共三片。DRV8701E 为 PH/EN 接口，PH 引脚控制正反转、EN 引脚输入 PWM 实现调速。PWM 频率选择在 20kHz 以上（该芯片最高约 40kHz），避免落入人耳可听范围产生啸叫。此外，MCU 与三路 DRV8701E 之间的 6 路控制信号（3 路 PH 方向 + 3 路 EN 调速）经一片 SN74HC365 六路三态总线缓冲器隔离驱动，两个低有效输出使能脚 /OE 作为总使能开关——上电时默认高阻关断，待 MCU 初始化完成后拉低 /OE 才使能电机驱动，防止上电误动作。
+
+图4.4 电机驱动电路
+
+4.5 传感器模块电路
+（1）IMU模块
+采用六轴IMU芯片LSM6DSV16XTR，通过I2C/SPI接口与RT1021主控通信，提供三轴加速度和三轴角速度数据，用于解算车体姿态角。
+（2）编码器模块
+每个驱动电机配备增量式编码器，用于实时测量电机转速和转角，实现电机速度的闭环PID控制。
+图4.5 传感器模块电路
+4.6 无线通信模块
+双车之间的协同搬运依赖于可靠的无线通信。本系统采用逐飞2.4G频段的无线串口模块，实现双车之间的实时数据交互。通信内容包括目标物体识别信息共享、双车协同状态同步、搬运策略协调指令等。
+4.7 OpenART视觉模块
+OpenART是NXP官方推出的基于i.MX RT系列MCU的机器视觉模块，本系统使用OpenART模块完成场地边界线识别、目标搬运物体颜色与形状识别、目标物体相对位置估计、发车区域识别等视觉任务。
+4.8 显示屏模块
+显示屏模块用于实时显示车模的运行状态和关键调试信息。本系统采用[请填写显示屏型号，如：0.96寸OLED（SSD1306）]作为显示模块，通过I2C/SPI接口与RT1021主控相连。显示内容包括：当前状态机状态、目标物体识别结果、双车通信状态、电池电量、传感器数据等。
+
+第五章  软件控制设计
+5.1 软件整体架构
+本系统使用MicroPython进行软件开发，整体软件架构采用分层设计，分为应用层（任务调度/状态机管理/搬运策略）、算法层（图像处理/PID控制/姿态解算/路径规划）、驱动层（电机驱动/传感器读取/通信协议/GPIO控制）和硬件层。程序运行流程：系统上电→各模块初始化→主循环（环境感知→状态决策→运动控制→通信同步）。
+5.2 图像处理与目标识别
+OpenART视觉模块负责图像采集与处理。场地边界识别通过RGB颜色空间设定黄色阈值范围，提取边界线位置；目标物体识别通过颜色识别和形状分析区分不同搬运目标；发车区域识别通过识别特定颜色或图案引导车模返航。图像处理流程：摄像头采集→图像预处理→颜色空间转换→颜色阈值分割→形态学处理→轮廓提取→目标特征分析→输出识别结果。
+5.3 运动控制算法
+根据期望的车体运动速度，通过全向轮运动学逆解算，计算出各轮的目标转速。采用增量式PID控制算法对电机转速进行闭环控制，PID控制器的输入为编码器测量的实际转速与目标转速之间的偏差，输出为PWM占空比调整量。路径跟踪采用基于视觉偏差的横向PID控制。
+5.4 姿态与航向参考系统
+利用IMU提供的三轴加速度和三轴角速度数据，通过低通滤波算法融合加速度计和陀螺仪数据，解算车体的实时姿态角。姿态信息主要用于保持车体航向稳定性、辅助精确转向控制和保持搬运过程中车体姿态平稳。
+5.5 双车协同搬运策略
+双车协同搬运是蚂蚁搬家组的核心任务。本系统采用主从协同策略，一台车模作为主车负责目标搜索、路径规划和任务分配；另一台车模作为从车接收指令配合完成搬运。协同搬运流程分为目标搜索、任务分配、协同搬运和返航四个阶段。
+表5.1 无线通信帧格式
+
+5.6 状态机设计
+整个搬运任务通过有限状态机（FSM）进行管理，确保各阶段逻辑清晰、转换可靠。
+表5.2 状态机设计
+
+
+
+第六章  开发工具与调试过程
+6.1 开发环境
+（1）软件开发环境
+编程语言采用MicroPython，开发工具使用Thonny IDE，固件版本为竞赛指定的RT1021 MicroPython固件，代码管理使用Git版本控制。
+（2）硬件开发工具
+电路设计使用嘉立创EDA，PCB生产使用嘉立创PCB打样，机械设计使用SolidWorks进行3D建模。
+6.2 调试工具与方法
+串口调试：通过USB转串口模块连接RT1021核心板，使用串口调试助手实时查看程序运行日志和传感器数据。
+OpenART调试：OpenART模块提供配套的IDE工具，可以实时预览摄像头图像、调整颜色阈值参数、查看识别结果。
+无线通信调试：使用两块无线串口模块配合PC端串口工具，模拟双车通信场景，验证通信协议的可靠性和实时性。
+参数在线调节：将PID参数、颜色阈值、速度等关键变量设计为可通过串口命令在线调整，便于在比赛现场快速优化参数。
+6.3 制作与调试过程
+第一阶段：方案设计与验证完成系统方案设计，采购关键元器件，搭建原型验证平台，验证各模块的基本功能。
+第二阶段：电路板设计与制作使用嘉立创EDA完成电路原理图和PCB版图设计，委托嘉立创工厂生产PCB板，手工焊接完成电路板制作。
+第三阶段：机械结构组装完成3D打印结构件的设计与打印，组装全向轮底盘，安装电机、传感器和电路板，完成整车装配。
+第四阶段：软件调试编写MicroPython控制程序，逐模块调试：电机驱动→编码器读取→IMU数据采集→OpenART图像识别→无线通信→双车协同。
+第五阶段：整车联调在模拟比赛场地中进行整车联调，反复测试和优化各项参数，确保系统稳定性和可靠性。
+
+ 总结
+7.1 总结
+本次比赛中，本队围绕"蚂蚁搬家"组的任务要求，对双车协同搬运系统进行了多轮论证、调试与改进，逐步解决了轻量化设计、视觉目标识别、双车无线协同、全向运动控制以及搬运策略优化等问题，使车模在机械结构、硬件电路和软件控制等方面达到了预期设计目标。
+在机械结构方面，本队以轻量化和灵活性为主要目标，采用三轮全向轮Y车模底盘，合理规划车体三层布局，并对传感器支架、电路板堆叠方式及搬运推杆进行优化设计。在满足比赛推杆尺寸约束和整车重量限制的前提下，兼顾了车模的结构强度与全向运动灵活性，为双车协同搬运提供了可靠的机械平台。
+在硬件设计方面，本队以NXP RT1021为核心控制器，运行MicroPython固件，结合赛题特点完成了电源、电机驱动（DRV8701）、OpenART视觉模块、OLED显示屏、IMU姿态传感器、编码器及无线串口通信等模块的设计。通过对器件选型、电路布局和信号完整性的持续优化，提高了硬件系统的可靠性，为车模稳定运行和双车协同提供了基础。
+在软件控制方面，本队基于MicroPython完成了OpenART图像处理与目标识别、全向轮运动学逆解算与PID速度控制、IMU姿态解算、双车无线通信协议以及有限状态机任务调度等功能。针对不同搬运目标类型和场地条件，调整视觉识别阈值和控制策略，使双车能够较为稳定地完成目标搜索、协同搬运和返航任务。
+通过本次比赛，团队成员进一步提高了工程实践、问题分析和协作配合能力。比赛现场环境复杂多变，需要临场冷静分析、随机应变，根据实际光照和场地条件快速调整参数。相信自己和队友长期打磨的车模，相信代码的鲁棒性，保持自信是取得好成绩的关键。通过本次竞赛，我们也加深了对嵌入式系统设计、机器视觉、多机协同控制和MicroPython开发的理解。今后，我们将继续总结调试经验，改进现有方案，不断提升车模的稳定性和整体性能。
+
+参考文献
+[1] 第二十一届全国大学生智能汽车竞赛比赛规则 [EB/OL]. 全国大学生智能汽车竞赛组委会, 2026.
+[2] 第21届智能车竞赛蚂蚁搬家组搬运任务说明 [EB/OL]. 全国大学生智能汽车竞赛组委会, 2026.
+[3] 第二十一届全国大学生智能汽车竞赛技术报告要求细则 [EB/OL]. 全国大学生智能汽车竞赛组委会, 2026.
+[4] 第二十一届全国大学生智能汽车竞赛蚂蚁搬家组细则及MicroPython开发板相关说明 [EB/OL]. 全国大学生智能汽车竞赛组委会, 2026.
+[5] 何牧天, 傅敏康, 何毅, 等. 基于IMXRT1021嵌入式竞速智能车设计[J]. 计算机系统应用, 2021, 30(8): 50-59.
+[6] i.MX RT1020 Processor Reference Manual [EB/OL]. NXP Semiconductors, 2020.
+
+
+附  录
+附录A：电路原理图与版图
+以下为本车模系统的电路原理图和PCB版图：
+副车：
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+主车：
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+附录B：软件源代码
+以下为本车模系统的核心软件源代码，完整代码见随附的代码文件。
+# main.py - 蚂蚁搬家车模主程序
+import gc
+import sys
+import time
+from machine import Pin
+
+import battery_protect
+import config
+import hardware
+import imu_heading
+import vision_uart
+
+ticker_flag = False
+
+key_back = Pin("C15", Pin.IN, pull=Pin.PULL_UP_47K)
+gc_ms = 0
+camera_mode_ms = 0
+master_motion_ms = 0
+
+def is_pressed(pin):
+    if pin.value() == 0:
+        time.sleep_ms(20)
+        return pin.value() == 0
+    return False
+
+def time_pit_handler(time_inst):
+    global ticker_flag
+    ticker_flag = True
+
+if __name__ == "__main__":
+    gc.collect()
+    import mission
+    import sub_ack
+    import telemetry
+    gc.collect()
+
+    led2 = Pin('D1', Pin.OUT, value=True)
+    import startup_menu
+    hardware.pit1.capture_list(
+        hardware.encoder1,
+        hardware.encoder2,
+        hardware.encoder3,
+    )
+    hardware.pit1.callback(time_pit_handler)
+    hardware.pit1.start(10)
+
+    startup_menu.run(
+        config,
+        vision_uart.send_camera_exposure_target,
+        vision_uart.send_camera_options,
+        vision_uart.process_uart_data,
+        vision_uart.get_exposure_status,
+        lambda: (
+            hardware.encoder1.get(),
+            hardware.encoder2.get(),
+            hardware.encoder3.get(),
+        ),
+    )
+    hardware.pit1.stop()
+    ticker_flag = False
+    del startup_menu
+    for module_name in ("startup_menu", "menu_storage", "display"):
+        sys.modules.pop(module_name, None)
+    del module_name
+    gc.collect()
+
+    led = Pin('C8', Pin.OUT, value=True)
+    imu_heading.calibrate_gyro(500)
+
+    hardware.pit1.capture_list(
+        hardware.imu,
+        hardware.encoder1,
+        hardware.encoder2,
+        hardware.encoder3,
+    )
+    hardware.pit1.callback(time_pit_handler)
+    hardware.pit1.start(10)
+
+    time.sleep_ms(50)
+    imu_heading.update_imu_yaw(capture=False)
+    imu_heading.hold_yaw = imu_heading.current_yaw
+    mission.start()
+
+    for _ in range(3):
+        hardware.led.value(False)
+        time.sleep_ms(100)
+        hardware.led.value(True)
+        time.sleep_ms(100)
+
+    while True:
+        (
+            cx, cy, area, target_class,
+            yellow_area, yellow_type, yellow_line_x, yellow_angle_x10,
+            push_block_type, push_block_cx, push_block_area,
+        ) = vision_uart.process_uart_data()
+        mission.update_vision(
+            cx, cy, area, target_class,
+            yellow_area, yellow_type, yellow_line_x, yellow_angle_x10,
+            push_block_type, push_block_cx, push_block_area,
+        )
+
+        sub_ack.update()
+
+        if ticker_flag:
+            ticker_flag = False
+
+            battery_protect.update()
+            if battery_protect.low_voltage_latched:
+                mission.emergency_stop()
+            else:
+                if is_pressed(key_back):
+                    mission.stop()
+
+            imu_heading.update_imu_yaw(capture=False)
+            yaw_hold = imu_heading.calc_hold_z_speed()
+            mission.tick(yaw_hold)
+
+            now_ms = time.ticks_ms()
+            if time.ticks_diff(now_ms, camera_mode_ms) >= config.CAMERA_MODE_SEND_INTERVAL_MS:
+                camera_mode_ms = now_ms
+                vision_uart.send_camera_mode(mission.get_camera_mode())
+                vision_uart.send_completed_class_mask(
+                    mission.get_completed_class_mask()
+                )
+                vision_uart.send_camera_options(
+                    config.WHITE_BEAR_ENABLE,
+                    config.ORDERED_TARGET_SEARCH_ENABLE,
+                    config.BLUE_SANDBAG_ENABLE,
+                    vision_uart.build_map_filter_mask(
+                        config.MAP_FILTER_TENNIS_ENABLE,
+                        config.MAP_FILTER_RED_SANDBAG_ENABLE,
+                        config.MAP_FILTER_BLUE_SANDBAG_ENABLE,
+                        config.MAP_FILTER_BROWN_BEAR_ENABLE,
+                        config.MAP_FILTER_WHITE_BEAR_ENABLE,
+                    ),
+                )
+                vision_uart.send_camera_exposure_target(
+                    config.CAMERA_EXPOSURE_TARGET_MEAN
+                )
+
+            if (
+                config.MASTER_MOTION_ENABLE and
+                time.ticks_diff(now_ms, master_motion_ms) >= config.MASTER_MOTION_SEND_INTERVAL_MS
+            ):
+                master_motion_ms = now_ms
+                telemetry.send_master_motion_packet(*mission.get_master_motion_data())
+
+            telemetry.update_led_status()
+
+            if mission.run_state in (mission.STATE_WAIT_START, mission.STATE_STOP):
+                if time.ticks_diff(time.ticks_ms(), gc_ms) > 500:
+                    gc_ms = time.ticks_ms()
+                    gc.collect()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+本技术报告由康神开播队全体队员共同完成。
+
+===== TABLE 1 =====
+参数 | 数值
+车模总体重量（含电池） | 220 g
+外形尺寸（长×宽×高） | 210mm × 170 mm × 200 mm
+推杆长度（水平方向） | 90mm（≤100mm）
+推杆高度（垂直方向） | 20mm（≤50mm）
+
+===== TABLE 2 =====
+引脚 | 功能 | 连接模块
+D21 D20 | UART通信 | OpenART视觉模块
+C10 C11 C12 C13 | I2C/SPI | IMU姿态传感器
+C28 C29 D4 D5 D6 D7 | PWM输出 | 电机驱动
+D13 D14 D15 D16 C2 C3 | Encoder输入 | 电机编码器
+C6 C7 | UART通信 | 无线串口模块
+C14 C15 C18 C19 D9 | GPIO | 按键/LED指示
+
+===== TABLE 3 =====
+帧头 | 数据长度 | 指令类型 | 数据内容 | 校验位
+2字节 | 1字节 | 1字节 | N字节 | 1字节
+
+===== TABLE 4 =====
+状态 | 描述 | 转换条件
+初始化 | 系统上电，各模块初始化 | 初始化完成→搜索目标
+搜索目标 | 在场地中搜索待搬运物体 | 发现目标→接近目标
+接近目标 | 双车协同接近目标物体 | 到达目标位置→搬运
+搬运 | 双车协同向边界推动物体 | 物体出界→返航
+返航 | 返回发车区域 | 到达发车区→搜索目标
+异常处理 | 处理通信中断/丢失目标等 | 异常恢复→搜索目标

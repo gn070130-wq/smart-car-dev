@@ -1,0 +1,785 @@
+第二十一届全国大学生
+智能汽车竞赛
+
+技术报告
+
+
+
+学    校：湖北文理学院
+队伍名称：湖文致远九队
+参赛队员：李海涛、周昊、蒋浩然、阮伟杰、杨情
+带队教师：安忙忙、王正强
+关于技术报告和研究论文使用授权的说明
+本人完全了解全国大学生智能汽车竞赛关保留、使用技术报告和研究论文的规定，即：参赛作品著作权归参赛者本人，比赛组委会可以在相关主页上收录并公开参赛作品的设计方案、技术报告以及参赛模型车的视频、图像资料，并将相关内容编纂收录在组委会出版论文集中。
+
+参赛队员签名：                                                            
+
+带队教师签名：
+日        期：2026年8月15日
+
+摘要
+
+本系统设计了一款基于英飞凌TC264D微控制器的卡丁快跑智能车系统，旨在满足卡丁快跑赛道的自主循迹需求。系统以T型载人卡丁车（卡丁1）为基本车模平台，采用英飞凌TC264D双核处理器（主频200MHz）作为整车主控单元，配合IMU660RA六轴陀螺仪模块、GPS双频卫星定位模块、方向编码器、凌瞳摄像头等多源传感器，构建组合导航方案，实现智能车实时位置与目标点方位角的高精度解算。控制层采用PID算法架构：航向环基于目标点角度偏差结合陀螺仪与GPS组合导航信号控制电机转向，速度环通过方向编码器反馈构成速度闭环控制，驱动系统采用BTN7971B半桥驱动芯片组成全桥驱动电路，实现电机转速的精准调节。系统还集成色块识别、语音识别、WiFi无线调试、TFT屏幕实时显示等功能。本文从系统设计、机械结构、硬件电路、控制算法、开发调试等方面对该车模进行系统性介绍。
+
+关键词：TC264D；IMU660RA；GPS定位；PID控制；组合导航
+
+
+
+
+
+
+
+目录
+第一章 引言	1
+第二章 系统设计	2
+2.1系统设计概述	2
+2.2微控制器选择	2
+2.3传感器选择	2
+2.4电机及驱动方案选择	3
+2.5摄像头选择	3
+2.6硬件系统设计方案	3
+2.7软件系统设计方案	3
+第三章 机械结构设计	5
+3.1 GPS的安装	5
+3.2陀螺仪的安装	5
+3.3摄像头安装	6
+3.4方向编码器及转向电机角度传感器的安装	6
+3.5系统电路板的安装	7
+第四章 硬件电路设计	8
+4.1单片机系统设计	8
+4.2电源部分	8
+4.3电机驱动电路	10
+4.4 LED灯板驱动电路	11
+4.5硅麦驱动电路	12
+第五章 控制算法	13
+5.1总体设计框架	13
+5.2姿态解算	13
+5.3导航算法	15
+5.4控制策略	16
+5.5赛道信息检索频率	17
+第六章 系统开发工具	18
+6.1 AURIX Development Stdio	18
+6.2逐飞助手	18
+6.3调试过程	19
+第七章 车模主要技术参数	20
+参考文献	21
+附录A  程序源码	22
+附录B  车模及电路板详细信息	43
+
+第一章 引言
+全国大学生智能汽车竞赛是面向全国高校学生开展的探索性工程实践活动，始终秉持“立足培养、重在参与、鼓励探索、追求卓越”的指导思想。竞赛以智能汽车系统为载体，要求参赛者综合运用机械设计、电子线路、嵌入式开发、智能感知与运动控制等多学科知识，协同完成硬件搭建、系统集成与算法优化调试，旨在激发青年学子的工程创新潜能，培养理论联系实际与求真务实的学风、解决复杂工程问题的能力以及团队攻坚精神。
+自2006年创办以来，全国大学生智能汽车竞赛不断推动赛题体系、技术内容与竞赛平台创新，持续引入新的车辆形态、技术手段和任务场景。第二十一届竞赛首次设置“卡丁快跑”项目，将大型卡丁车引入全国大学生智能汽车竞赛。相较于传统小型车模，T型卡丁车（卡丁1）具有车身尺寸更大、整车质量更高、运动惯性更明显等特点，其动力、转向、制动与安全控制也更加接近真实车辆。因此，该项目对机械结构、环境感知、运动控制、系统稳定性和运行安全性提出了更高要求，进一步拓展了智能汽车竞赛的工程实践深度。
+在省赛阶段，卡丁快跑组设置三个比赛科目：科目一为“自动驾驶”，要求车辆自动绕行锥桶并完成倒车入库；科目二为“战场救护”，主要通过自然语言指令完成灯光、鸣笛、门洞通行及指定动作等人车交互任务；科目三为“如影随形”，要求车辆完成引导员跟随、迷宫穿越、路径记录和自主返回。进入国赛阶段后，竞赛取消科目一，并将原科目二与科目三融合为新的卡丁快跑综合科目。比赛中，车辆需要按照规定的必经路径以及现场抽取的特殊路径绕行锥桶，完成行驶任务并返回发车区，随后根据语音指令执行灯光和鸣笛任务。赛制的调整将自主行驶、路径规划与语音交互进一步融合，更加全面地考查大型智能卡丁车的环境感知、运动控制、任务决策和功能执行能力。
+本文以“卡丁快跑”T型卡丁车车模（卡丁1）的设计与开发为主线，从系统总体方案、机械结构、硬件组成、软件架构、控制算法及开发调试环境等方面展开介绍，系统阐述整车的设计原理、实现方法和工作流程。
+
+
+
+第二章 系统设计
+2.1系统设计概述
+根据本届“卡丁快跑”比赛要求，省赛设置三个科目：科目一为自动驾驶，要求车辆自主绕行锥桶并倒车入库；科目二为战场救护，要求车辆识别语音指令，完成灯光、鸣笛、门洞通行及指定动作；科目三为如影随形，要求车辆完成视觉跟随、迷宫穿越、路径记录与自主返回。国赛取消科目一，并将科目二、三融合为综合科目，要求车辆沿必经路径及现场抽取的特殊路径绕行锥桶，返回发车区后根据语音指令完成灯光和鸣笛响应。本项目采用T车模（卡丁1），以Infineon单片机为核心控制器，结合摄像头、GPS和IMU等传感器，实现环境感知、车辆定位、路径规划与运动控制。基于比赛要求与设计指标，本团队自主设计了一套完整解决方案。
+2.2微控制器选择
+微控制器采用TC264型号单片机作为整车主控单元。该型号微控制器采用双核处理器架构，融合了精简指令集计算机（RISC）、复杂指令集计算机（CISC）及数字信号处理器（DSP）的技术特性，具备卓越的计算效能与高效的指令执行能力。TC264系列微控制器的主频可达200MHz，借助多级流水线架构与高速总线体系，实现了指令执行与数据传输的高效协同。同时，其内置浮点运算单元（FPU），可支持高性能浮点运算操作，满足复杂数值计算需求。此外，TC264集成了大容量闪存（Flash）与随机存取存储器（RAM），能够为复杂应用程序提供充足的存储载体，完全适配本次开发的技术要求。
+2.3传感器选择
+系统核心传感器配置为GPS模块、IMU模块与摄像头模块，通过多源传感器融合实现智能车的稳定定位、姿态感知与视觉跟随。其中，GPS单元选用逐飞双频卫星定位模块，兼容GPS、BDS和GLONASS等多星座信号接收，静态定位精度可达亚米级，支持10 Hz数据更新率及115200 bps波特率的数据传输。IMU单元采用逐飞IMU660RA六轴运动传感器，内部集成加速度计与陀螺仪，支持I²C和SPI通信，硬件SPI总线速率可达10 Mbps，能够实时获取车辆的运动姿态信息。视觉单元选用逐飞高帧率凌瞳彩色摄像头，采用SCC8660芯片，支持RGB565和YUV422图像格式，在TC系列微处理器上最高帧率接近30帧/秒，能够为目标识别与视觉跟随提供连续、稳定的图像信息。
+2.4电机及驱动方案选择
+驱动系统采用原T车模（卡丁1）配置的KY7750型直流电机（额定电压DC24V）2个，分别驱动两个后轮；转向系统采用原T车模（卡丁1）配置的RS380型直流电机（电压DC24V）1个，控制车辆转向。驱动电路采用多个BTN7971B半桥驱动芯片全桥驱动电路用于控制电机运动，BTN7971B芯片集成度高，具备过流、过热等保护功能，满足驱动需求。
+2.5摄像头选择
+为提高科目三“如影随形”任务中目标识别与视觉跟随的稳定性，系统采用逐飞高帧率凌瞳彩色摄像头。该摄像头采用SCC8660芯片，内置ISP图像处理单元，可直接输出RGB565或YUV422格式的彩色图像，并支持图像参数调节。其成像灵敏度较高，在不同光照环境下仍能保持较好的色彩与图像细节，满足智能车动态目标识别和视觉跟随的图像采集需求。
+2.6硬件系统设计方案
+外部能源系统采用24 V大容量铅酸蓄电池作为核心供能单元，通过配电模块为整车各功能电路提供能源。电源系统采用TPS54560开关降压芯片，将24 V输入电压分别转换为5 V和6.8 V，为GPS模块、WiFi模块、灯板驱动及其他外设供电；同时利用RT9013低压差线性稳压芯片，将前级电压进一步转换为3.3 V，为TFT显示屏、硅麦克风、摄像头等低压模块提供稳定电源。该分级降压架构能够满足不同功能模块的电压需求，并通过稳压与滤波电路抑制电源纹波和负载波动，提高整车供电系统的稳定性与可靠性。
+2.7软件系统设计方案
+系统总体设计框架如图2.1所示。该系统围绕TC264D主控芯片构建，其中，GPS模块负责采集设备所处位置的坐标信息，为系统提供地理空间定位；IMU（惯性测量单元）借助内置传感器，实时输出设备的角速度、加速度等角度运动数据，让系统掌握自身姿态状态；Flash模块则预先存储赛道的坐标等关键信息，作为设备运行的“地图”依据。这些来自不同模块的感知数据，有序传输至TC264D主控芯片，主控基于内置算法对数据进行融合处理，一方面通过1.8寸TFT显示屏，将设备的姿态参数、位置信息、运行状态等内容可视化呈现，方便调试与监测；另一方面，主控生成精准控制指令，利用PWM（脉冲宽度调制）技术输出可变电信号，驱动电机按需求调整转速、扭矩，同时向转向电机发送角度控制指令，协同实现设备沿预设赛道的稳定行驶、转向等动作，保障系统按预期完成运行任务。
+
+图2.1系统总体设计框架
+
+
+
+
+
+
+第三章 机械结构设计
+3.1 GPS的安装
+GPS模块主要用于获取车辆的绝对位置与运动方向信息，作为本惯性导航的辅助定位手段，并对长时间运行过程中产生的累计误差进行修正。为保证卫星信号接收质量，GPS模块通过3D打印支架架设在车体上方，使天线保持水平并具有良好的对空视野。GPS模块的安装位置如图3.1所示。
+
+图3.1 GPS安装示意图
+3.2陀螺仪的安装
+陀螺仪主要用于获取车辆的角速度与姿态变化信息，作为本惯性导航系统的主要测量单元，为车辆航向估计与运动控制提供依据。为保证姿态数据的准确性，陀螺仪保持水平安装，并使其X轴方向与车辆前进方向平行，并与车体保持牢固连接，避免机械松动、车身振动对测量结果造成影响。如图3.2所示。
+
+图3.2陀螺仪安装示意图
+3.3摄像头安装
+摄像头模块作为视觉跟随功能的核心传感器，摄像头模块通过3D打印支架稳固安装到适当高度，使镜头保持适宜的平视视角，从而确保在跟随过程中具有良好的前方视野覆盖，如图3.3所示。
+
+ 图3.3摄像头模块安装示意图
+3.4方向编码器及转向电机角度传感器的安装
+方向编码器通过齿轮啮合分别与两个后轮连接，用于测量车轮转速；角度传感器以同样的齿轮啮合方式与转向电机相连，用于获取转向角度信息。齿轮啮合需确保到位并可靠卡紧，如图3.4和图3.5所示。
+
+图3.4方向编码器安装示意图
+
+图3.5转向电机角度传感器示意图
+3.5系统电路板的安装
+车模电路板包括主板（核心板扩展板）、驱动板（驱动电机）、硅麦板（采集声音）、灯板（显示指定灯光）、灯板驱动板（驱动灯板）等多块电路板，均为自制电路板。电路板安装需考虑整车重心分布和行驶稳定性，合理布局固定，安装位置如图3.6所示。
+3.6系统电路板示意图
+
+
+第四章 硬件电路设计
+4.1单片机系统设计
+单片机最小系统是整个系统的核心控制部件，采用逐飞科技英飞凌TC264D核心板。该核心板集成了TC264D芯片所需的最小外围电路，包括时钟电路、复位电路、电源滤波电路等。考虑到组委会已提供核心MCU电路板的情况，此处不对其内部电路进行详述，原理图如图4.1所示。
+
+图4.1单片机系统原理图
+4.2电源部分
+电源部分作为整个智能车系统的能量中枢，采用24 V大容量铅酸蓄电池供电，并通过XT60接口接入主板。系统采用两路TPS54560开关降压电路，将24 V输入分别转换为5 V和约6.8 V；其中5 V电源再经RT9013-33低压差线性稳压芯片转换为3.3 V，并为摄像头设置独立供电支路。电源输入端配置反接保护与瞬态电压抑制电路，各级输出端配有滤波及去耦网络，可有效降低电源纹波和负载波动，为主控板、摄像头、GPS、IMU及TFT显示屏等功能模块提供稳定可靠的电能供应。
+（1）电源开关：考虑到智能车上电瞬间，后级大容量电容充电及电机等负载启动可能产生较大的浪涌电流，若由普通拨动开关直接承载主回路电流，容易造成触点打火、发热。因此，本设计采用PMOS与拨动开关相结合的电源控制电路，由拨动开关控制PMOS的通断，并通过稳压二极管抑制栅源极之间的瞬态过电压，从而提高电源开关的可靠性。原理图如图4.2-1所示
+
+图4.2-1电源开关
+（2）使用降压芯片TPS54560DDAR，将电池电源24V降压置5V，用于单片机、GPS、WIFI模块等供电。原理图如图4.2-2所示。
+
+图4.2-2 5V电源
+（3）使用降压芯片RT9013-33GB，将5V降至3.3V，用于TFT屏幕、姿态传感器（陀螺仪）、硅麦等供电。原理图如图4.2-3所示。
+
+图4.2-3 3.3V电源
+（4）使用降压芯片TPS54560DDAR，将电池电源24V降压置6.8V，为LED点阵屏及扬声器供电。原理图如图4.2-4所示。
+
+图4.2-3 8V电源
+（5）摄像头供电：由于驱动摄像头的电流较大，因此单独采用一块RT9013-33GB芯片将5V降压置3.3V供摄像头使用。原理图如图4.2-4所示。
+
+图4.2-4摄像头电源
+4.3电机驱动电路
+驱动系统共采用4片BTN7971B半桥驱动芯片，其中每2片组成一路全桥驱动电路，分别用于控制左、右两侧电机。BTN7971B具有较宽的工作电压范围，并集成过流、过温等保护功能，可在减少外围器件数量的同时提高驱动电路的可靠性。主控输出的PWM信号经隔离电路后输入电机驱动模块，配合使能开关实现左右电机的启停、正反转及转速调节。原理图如图4.3所示。
+
+图4.3电机驱动电路
+4.4 LED灯板驱动电路
+根据比赛要求，本系统采用英飞凌提供的TLD7002 LED驱动芯片，完成LED灯板驱动电路的设计与制作。该驱动电路主要由TLD7002芯片、LMV321运算放大器、AO3401 MOS管和S8050三极管组成。原理图如图4.4所示。
+
+图4.4 LED灯板驱动电路
+4.5硅麦驱动电路
+采用英飞凌IM68A130A数字MEMS硅麦克风，设计高性能、低噪声的音频采集系统。该麦克风采用PDM（脉冲密度调制）数字输出，具有64dB SNR和超低功耗（150µA），适用于嵌入式音频采集与语音识别应用。原理图如图4.5所示。
+
+
+图4.5硅麦驱动电路
+
+
+
+
+
+
+
+
+
+第五章 控制算法
+5.1总体设计框架
+首先，系统完成主控、传感器及电机等模块的初始化。随后进入循环流程，通过IMU和编码器获取车辆姿态及运动信息，并利用GPS辅助修正车辆位置；同时根据视觉跟随、路径复现计算目标转角与速度，对转向电机和左右驱动轮进行闭环PID控制，并实时监测各模块状态，确保系统安全稳定运行。之后判断任务是否完成，若未完成则继续循环控制，若完成则停车并返回待机状态。
+
+
+图5.1系统总体设计框架示意图
+
+5.2姿态解算
+本系统采用四元数法进行车模姿态解算，通过在每个采样周期内循环迭代，将更新后的四元数转换为直观的欧拉角信息。由于车体在三维空间中的运动状态连续变化，四元数 Q(q0,q1,q2,q3)表现为关于时间的函数。系统通过构建四元数微分方程，并采用一阶龙格-库塔（Runge-Kutta）法进行离散化求解，从而实时推演车体的姿态变化。
+在姿态数据融合阶段，我们引入了互补滤波算法。陀螺仪虽具有极佳的短期动态响应且不易受高频振动影响，但长时间积分会导致明显的零漂误差累积；而加速度计在短期内易受车体机械振动干扰，但其提供的长期低频重力基准是绝对可靠的。基于两者的频域互补特性，本系统在短期高信赖陀螺仪的积分数据，在长期则利用加速度计的重力矢量来持续修正陀螺仪的漂移误差，最终实现了小车空间姿态的高精度、高稳定解算。
+在欧拉角旋转顺序为yaw-picth-roll,四元数装转换为欧拉角公式为：
+
+
+
+四元数使用陀螺仪的数据进行积分，积分迭代公式为：
+
+
+
+
+其中，，为陀螺仪的x，y，z轴数据，t为程序设定的控制周期。
+
+5.3导航算法
+本系统采用基于航位推算（Dead Reckoning）并辅以 GPS 全局校准的寻点式导航策略。在路径采集阶段，为解决纯惯性推算初始绝对朝向未知的问题，系统会先记录起步位置的“起点 GPS 锚点”，并在驶出一定距离后自动抓取“方向 GPS 锚点”，通过两点连线解算出轨迹的绝对方位角以完成坐标系的初始对齐。随后，主控 MCU 将编码器提供的位移增量与 IMU 实时解算的航向角进行积分，推算出车模当前的局部平面坐标 (x,y)。当满足特定步长时，坐标信息会被写入数组并烧录于 TC264 的片内 Flash 中，实现掉电非易失性保存。
+在实际循迹阶段，系统同样以 IMU 和编码器为核心数据源进行高频、实时的自身坐标推算，并依靠 GPS 辅助消除长时间运行带来的累积漂移误差。基于预存的路径坐标集，系统采用逐点跟踪机制，通过空间距离函数精确计算车模当前位置与目标局部坐标之间的欧氏距离。当实测距离小于预设阈值时，算法自动切换至下一目标点；同时，利用当前位置与目标点的连线解算出期望行驶方位角，进而对车辆进行平滑的转向引导。这种融合策略不仅允许系统初始化时车头可任意朝向，更完美兼顾了局部高频跟踪的平滑性与全局方向的准确性。
+
+图5.2基础导航算法
+5.4控制策略
+PID 控制算法是一种经典的闭环反馈调节机制，依托比例、积分与微分三者的协同配合，引导受控量平稳收敛至设定目标。其中，比例单元（P）立足当前误差，偏差越显著纠偏力度越强，动作敏捷但过猛易引发震荡；积分单元（I）着眼历史累积，通过叠加过往残差彻底消除静态偏差、确保精准达标，却可能拖慢动态响应；微分单元（D）则聚焦未来趋势，依据误差变化率提前预判以抑制波动、改善过渡平稳度。三者参数有机组合，可在响应速率、系统稳定与控制精度间达成最佳平衡，因而广泛应用于温控、转速及精密定位等工程场景中。
+
+图5.3经典PID框图
+PID计算公式：
+
+其中表示控制输出，、、分别表示比例系数，积分系数，微分系数，表示第k次的偏差值。
+转向电机的精准控制是保障转向性能的核心。采用位置式PID算法对转向电机进行闭环调节，既能通过比例环节快速修正角度偏差，借助积分环节消除静态误差，又能依靠微分环节抑制动态震荡，有效应对负载波动带来的干扰，为车模稳定行驶提供可靠转向支撑。
+
+图5.4转向电机PID算法
+驱动电机采用增量式 PID 控制，通过比例快速纠偏、积分消除静差、微分抑制超调，有效抗击负载扰动，显著提升了车模速度闭环控制的动态响应与平稳度尤其适用于对动力输出精度要求高的场景，如自动驾驶车模的速度闭环控制。
+
+图5.5驱动电机PID算法
+5.5赛道信息检索频率
+IMU:1MS/次；编码器：5ms/次；GPS:5ms/次
+摄像头：30FPS
+第六章 系统开发工具
+6.1 AURIX Development Stdio
+程序的开发是在Aurix Development下进行的，包括源程序的编写、编译、链接和在线仿真调试，并最终生成可执行文件。
+
+图6.1 Aurix Development软件界面
+6.2逐飞助手
+在TC264的串口通信功能验证阶段，采用逐飞助手作为测试工具，通过构建单片机与上位机（计算机）之间的双向数据交互链路，对代码实现的功能完整性及通信可靠性进行验证。具体通过监测上下位机间的数据传输时序、帧结构完整性及指令响应准确性，完成对串口通信模块功能的合规性校验。
+
+图6.2逐飞助手软件界面
+6.3调试过程
+系统调试过程中，依次完成了硬件电路的基本功能验证、各传感器的数据采集校验、PID参数的逐步整定、导航算法的功能测试以及整车联调。通过WiFi模块和上位机软件实时监控运行数据，持续优化控制参数，最终实现车模的稳定自主循迹行驶。
+
+
+
+
+
+
+
+
+
+
+第七章 车模主要技术参数
+如表1为车模主要技术参数表格。
+表1车模技术参数表
+
+
+参考文献
+[1] 全国大学生智能汽车竞赛组委会. 第二十一届全国大学生智能汽车竞赛技术报告规范要求[R]. 2026.
+[2] Infineon Technologies. TC264D 32-Bit Single-Chip Microcontroller User's Manual[R]. Munich: Infineon Technologies AG, 2021.
+[3] 逐飞科技. IMU660RA六轴运动传感器数据手册[R]. 2021.
+[4] Infineon Technologies. High Current PN Half Bridge BTN7971B Datasheet[R]. Munich: Infineon Technologies AG, 2011.
+[5] Texas Instruments. TPS54560 60V, 5A, Step Down DC-DC Converter with Eco-mode Data Sheet[R]. Dallas: Texas Instruments Incorporated, 2017.
+[6] Richtek Technology. RT9013 500mA, Low Dropout, Low Noise Ultra-Fast LDO Regulator Datasheet[R]. Hsinchu: Richtek Technology Corporation, 2014.
+[7] Infineon Technologies. IM68A130A High Performance Digital XENSIV™ MEMS Microphone Data Sheet[R]. Munich: Infineon Technologies AG, 2022.
+
+
+
+
+
+
+
+
+附录A  程序源码
+主函数代码
+int core0_main(void)
+{
+clock_init(); // 获取时钟频率<务必保留>
+debug_init(); // 初始化默认调试串口
+// 1. 基础硬件与外设初始化
+tft180_init();
+Hardware_Init(); // 初始化 PWM、编码器等引脚
+
+move_init(); // 初始化 PID 参数、Flash 缓存分配
+imu660ra_init(); // 初始化 IMU 硬件
+balance_cascade_init();
+// 2. 通信模块初始化
+custom_receiver_init(); // 串口接收初始化
+GPS_init();
+// 科目三摄像头倒车记录：凌瞳 SCC8660 初始化（返回 0 表示成功）
+{
+uint8_t camera_init_result = scc8660_init();
+Visual_Follow_Init((camera_init_result == 0) ? 1 : 0);
+tft180_show_string(0, 16 * 5,
+(camera_init_result == 0) ? "Cam OK" : "Cam NG");
+}
+PID_Serial_Tuner_Init(); // 被动调试串口 PID 调参
+
+// 3. 定时器中断分配（关键点）
+pit_init(CCU60_CH0, 1000); // 5ms 定时器：核心控制环 (IMU + PID)
+pit_init(CCU60_CH1, 1000); // 1ms 定时器：按键、LED状态矩阵
+pit_init(CCU61_CH1, 1000); // 1ms 定时器：按键、LED状态矩阵
+
+cpu_wait_event_ready(); // 等待所有核心初始化完毕
+last_filtered_l = 0.0f;
+last_filtered_r = 0.0f;
+while (TRUE)
+{
+GPS_data_get();
+// 1. 菜单与状态机切换 (非阻塞式处理)
+Process_Logic();
+PID_Serial_Tuner_Process();
+// 2. 摄像头色块识别（科目三记录中才输出目标，其余时刻只处理图像）
+Visual_Follow_Update();
+}}
+四元数主要解算代码
+//初始化
+void quaternion_module_init(cascade_value_struct *cascade_value)
+{
+// 初始化四元数为单位四元数 (w=1, x=y=z=0)
+cascade_value->quaternion.pro.qua[0] = 1.0f;
+cascade_value->quaternion.pro.qua[1] = 0.0f;
+cascade_value->quaternion.pro.qua[2] = 0.0f;
+cascade_value->quaternion.pro.qua[3] = 0.0f;
+// 初始化姿态角为 0 度
+cascade_value->posture_value.yaw = 0.0f;
+cascade_value->posture_value.rol = 0.0f;
+cascade_value->posture_value.pit = 0.0f;
+// 初始化加速度滤波值为当前加速度数据 (g 为单位)
+cascade_value->quaternion.pro.acc_filtered[0] = (float)ACC_DATA_X / ACC_TRANSITION_FACTOR;
+cascade_value->quaternion.pro.acc_filtered[1] = (float)ACC_DATA_Y / ACC_TRANSITION_FACTOR;
+cascade_value->quaternion.pro.acc_filtered[2] = (float)ACC_DATA_Z / ACC_TRANSITION_FACTOR;
+// 初始化误差积分为 0
+cascade_value->quaternion.parameter.acc_err[0] = 0.0f;
+cascade_value->quaternion.parameter.acc_err[1] = 0.0f;
+cascade_value->quaternion.parameter.acc_err[2] = 0.0f;
+}
+void quaternion_module_calculate(cascade_value_struct *cascade_value)
+{
+imu660ra_get_gyro();
+imu660ra_get_acc();
+static float first_count_time = 0; // 首次计算时间计数器 (用于快速收敛)
+float length; // 四元数模长 (用于归一化)
+float x, y, z; // 陀螺仪角速度 (弧度/秒)
+// 先扣除标定零偏，再将原始采样转换为度每秒。
+float gyro_raw_x = (float)GYRO_DATA_X;
+float gyro_raw_y = (float)GYRO_DATA_Y;
+float gyro_raw_z = (float)GYRO_DATA_Z;
+float gyro_factor = imu660ra_transition_factor[1];
+float gyro_x_dps = (gyro_raw_x - cascade_value->quaternion.pro.gyro_bias[0]) / gyro_factor;
+float gyro_y_dps = (gyro_raw_y - cascade_value->quaternion.pro.gyro_bias[1]) / gyro_factor;
+float gyro_z_dps = (gyro_raw_z - cascade_value->quaternion.pro.gyro_bias[2]) / gyro_factor;
+// 加速度计数据转换: 原始数据 -> g 为单位 (1g ≈ 9.8 m/s2)
+float ax_g = (float)ACC_DATA_X / ACC_TRANSITION_FACTOR;
+float ay_g = (float)ACC_DATA_Y / ACC_TRANSITION_FACTOR;
+float az_g = (float)ACC_DATA_Z / ACC_TRANSITION_FACTOR;
+car_acc_z = az_g * ACC_GRAVITY;
+bool static_candidate = is_static_state(ax_g, ay_g, az_g,
+gyro_x_dps, gyro_y_dps, gyro_z_dps);
+if (static_candidate)
+{
+if (cascade_value->quaternion.pro.gyro_static_count < IMU_STATIC_CONFIRM_SAMPLES)
+{
+cascade_value->quaternion.pro.gyro_static_count++;
+}
+}
+else
+{
+cascade_value->quaternion.pro.gyro_static_count = 0U;
+}
+
+bool static_state = cascade_value->quaternion.pro.gyro_static_count >= IMU_STATIC_CONFIRM_SAMPLES;
+if (static_state)
+{
+cascade_value->quaternion.pro.gyro_bias[0] +=
+(gyro_raw_x - cascade_value->quaternion.pro.gyro_bias[0]) * IMU_GYRO_BIAS_TRACK_ALPHA;
+cascade_value->quaternion.pro.gyro_bias[1] +=
+(gyro_raw_y - cascade_value->quaternion.pro.gyro_bias[1]) * IMU_GYRO_BIAS_TRACK_ALPHA;
+cascade_value->quaternion.pro.gyro_bias[2] +=
+(gyro_raw_z - cascade_value->quaternion.pro.gyro_bias[2]) * IMU_GYRO_BIAS_TRACK_ALPHA;
+gyro_x_dps = 0.0f;
+gyro_y_dps = 0.0f;
+gyro_z_dps = 0.0f;
+}
+x = gyro_x_dps * DEG_TO_RAD;
+y = gyro_y_dps * DEG_TO_RAD;
+z = gyro_z_dps * DEG_TO_RAD;
+
+float acc_alpha = static_state ? 0.8f : 0.5f; // 静止时滤波系数更大 (平滑效果更好)
+// 加速度计数据低通滤波
+acc_lowpass_filter(&ax_g, &ay_g, &az_g, &cascade_value->quaternion.pro.acc_filtered[0],
+&cascade_value->quaternion.pro.acc_filtered[1],
+&cascade_value->quaternion.pro.acc_filtered[2], acc_alpha);
+// 取滤波后的加速度数据
+float ax = cascade_value->quaternion.pro.acc_filtered[0];
+float ay = cascade_value->quaternion.pro.acc_filtered[1];
+float az = cascade_value->quaternion.pro.acc_filtered[2];
+acc_normalize(&ax, &ay, &az); // 加速度数据归一化
+// 取出当前四元数 (w, x, y, z)
+float q0 = cascade_value->quaternion.pro.qua[0];
+float q1 = cascade_value->quaternion.pro.qua[1];
+float q2 = cascade_value->quaternion.pro.qua[2];
+float q3 = cascade_value->quaternion.pro.qua[3];
+// 根据当前四元数计算重力向量在机体坐标系中的投影 (用于与加速度计数据对比)
+float gx = 2 * (q1 * q3 - q0 * q2);
+float gy = 2 * (q0 * q1 + q2 * q3);
+float gz = q0 * q0 - q1 * q1 - q2 * q2 + q3 * q3;
+
+// 计算加速度计与重力投影的误差 (梯度误差)
+float ex = ay * gz - az * gy;
+float ey = az * gx - ax * gz;
+float ez = ax * gy - ay * gx;
+// 根据静止状态调整校正系数 (运动时减弱校正，避免引入噪声) KI不衰减，保证积分校正力度
+float kp = static_state ? cascade_value->posture_value.correct_kp : cascade_value->posture_value.correct_kp * 0.8f;
+float ki = cascade_value->posture_value.correct_ki;
+// 首次计算的前 0.1 秒，使用大比例系数加速收敛
+if (first_count_time < 0.5f)
+{
+first_count_time += cascade_value->posture_value.call_cycle; // 累加时间
+kp = 100.0f; // 强比例校正，快速收敛
+}
+// 动态时积分力度降为1/10
+float integral_gain = static_state ? 1.0f : 0.1f;
+cascade_value->quaternion.parameter.acc_err[0] += (ex * cascade_value->posture_value.call_cycle) * integral_gain;
+cascade_value->quaternion.parameter.acc_err[1] += (ey * cascade_value->posture_value.call_cycle) * integral_gain;
+cascade_value->quaternion.parameter.acc_err[2] += (ez * cascade_value->posture_value.call_cycle) * integral_gain;
+// 积分限幅: 防止饱和
+float acc_err_limit = 1.0f;
+cascade_value->quaternion.parameter.acc_err[0] = (cascade_value->quaternion.parameter.acc_err[0] > acc_err_limit) ? acc_err_limit :
+(cascade_value->quaternion.parameter.acc_err[0] < -acc_err_limit) ? -acc_err_limit :
+cascade_value->quaternion.parameter.acc_err[0];
+
+cascade_value->quaternion.parameter.acc_err[1] = (cascade_value->quaternion.parameter.acc_err[1] > acc_err_limit) ? acc_err_limit :
+(cascade_value->quaternion.parameter.acc_err[1] < -acc_err_limit) ? -acc_err_limit :
+cascade_value->quaternion.parameter.acc_err[1];
+cascade_value->quaternion.parameter.acc_err[2] = (cascade_value->quaternion.parameter.acc_err[2] > acc_err_limit) ? acc_err_limit :
+(cascade_value->quaternion.parameter.acc_err[2] < -acc_err_limit) ? -acc_err_limit :
+cascade_value->quaternion.parameter.acc_err[2];
+// 用误差校正陀螺仪数据 (比例+积分校正)
+x += kp * ex + ki * cascade_value->quaternion.parameter.acc_err[0];
+y += kp * ey + ki * cascade_value->quaternion.parameter.acc_err[1];
+z += kp * ez + ki * cascade_value->quaternion.parameter.acc_err[2];
+// 四元数微分方程更新 (根据陀螺仪角速度)
+cascade_value->quaternion.pro.qua[0] += ((-q1 * x - q2 * y - q3 * z) * cascade_value->posture_value.call_cycle / 2.0f);
+cascade_value->quaternion.pro.qua[1] += (( q0 * x + q2 * z - q3 * y) * cascade_value->posture_value.call_cycle / 2.0f);
+cascade_value->quaternion.pro.qua[2] += (( q0 * y - q1 * z + q3 * x) * cascade_value->posture_value.call_cycle / 2.0f);
+cascade_value->quaternion.pro.qua[3] += (( q0 * z + q1 * y - q2 * x) * cascade_value->posture_value.call_cycle / 2.0f);
+// 取出当前四元数 (w, x, y, z)
+q0 = cascade_value->quaternion.pro.qua[0];
+q1 = cascade_value->quaternion.pro.qua[1];
+q2 = cascade_value->quaternion.pro.qua[2];
+q3 = cascade_value->quaternion.pro.qua[3];
+
+// 计算四元数各分量平方 (减少重复计算)
+float q0_2 = q0 * q0;
+float q1_2 = q1 * q1;
+float q2_2 = q2 * q2;
+float q3_2 = q3 * q3;
+// 四元数归一化 (避免数值漂移)
+length = sqrt(q0_2 + q1_2 + q2_2 + q3_2); // 计算模长
+if (length > 0.001f) // 模长有效时才归一化
+{
+cascade_value->quaternion.pro.qua[0] /= length;
+cascade_value->quaternion.pro.qua[1] /= length;
+cascade_value->quaternion.pro.qua[2] /= length;
+cascade_value->quaternion.pro.qua[3] /= length;
+}
+// 根据四元数计算旋转矩阵 (用于后续姿态角计算)
+cascade_value->quaternion.data.rot_mat[0][0] = q0_2 + q1_2 - q2_2 - q3_2;
+cascade_value->quaternion.data.rot_mat[0][1] = 2 * (q1 * q2 + q0 * q3);
+cascade_value->quaternion.data.rot_mat[0][2] = 2 * (q1 * q3 - q0 * q2);
+cascade_value->quaternion.data.rot_mat[1][0] = 2 * (q1 * q2 - q0 * q3);
+cascade_value->quaternion.data.rot_mat[1][1] = q0_2 - q1_2 + q2_2 - q3_2;
+cascade_value->quaternion.data.rot_mat[1][2] = 2 * (q2 * q3 + q0 * q1);
+cascade_value->quaternion.data.rot_mat[2][0] = 2 * (q1 * q3 + q0 * q2);
+cascade_value->quaternion.data.rot_mat[2][1] = 2 * (q2 * q3 - q0 * q1);
+cascade_value->quaternion.data.rot_mat[2][2] = q0_2 - q1_2 - q2_2 + q3_2;
+// 根据旋转矩阵计算姿态角 (横滚角、俯仰角、偏航角)
+cascade_value->posture_value.rol = arctan2(cascade_value->quaternion.data.rot_mat[2][2], cascade_value->quaternion.data.rot_mat[1][2]); // 横滚角
+cascade_value->posture_value.pit = -arcsin(cascade_value->quaternion.data.rot_mat[0][2]); // 俯仰角
+cascade_value->posture_value.yaw = arctan2(cascade_value->quaternion.data.rot_mat[0][0], cascade_value->quaternion.data.rot_mat[0][1]); // 偏航角
+Yaw = cascade_value->posture_value.yaw ;
+}
+//快速收敛
+void IMU_Wait_Stable(uint16_t wait_ms)
+{
+uint16_t i;
+for (i = 0; i < wait_ms; i++)
+{
+quaternion_module_calculate(&yaw_balance_cascade);
+system_delay_ms(1);
+}}
+摄像头解算主要代码
+#include "visual_follow_hsv_core.h"
+/* HSV范围均为0~240。 */
+#define HSV_H_MIN              (170)
+#define HSV_H_MAX              (200)
+#define HSV_S_MIN              (90)
+#define HSV_S_MAX              (240)
+#define HSV_V_MIN              (140)
+#define HSV_V_MAX              (240)
+#define SEARCH_STEP            (3)
+#define SEED_OFFSET            (2)
+#define SEED_MATCH_MIN         (3)
+#define EDGE_MISS_MAX          (3)
+#define EXPAND_TIMES           (2)
+#define TARGET_HEIGHT          (15)
+#define STOP_HEIGHT            (25)
+#define IMAGE_CENTER_X         (HSV_IMAGE_W / 2)
+typedef struct
+{
+    uint8_t h;
+    uint8_t s;
+    uint8_t v;
+} HsvColor_t;
+static uint8_t s_filter_ready;
+static int16_t s_filtered_x;
+static int16_t s_filtered_height;
+static int32_t Min3(int32_t a, int32_t b, int32_t c)
+{
+    int32_t value = (a < b) ? a : b;
+    return (value < c) ? value : c;
+}
+
+static int32_t Max3(int32_t a, int32_t b, int32_t c)
+{
+    int32_t value = (a > b) ? a : b;
+    return (value > c) ? value : c;
+}
+
+/* SCC8660图像数据需要先交换RGB565高低字节。 */
+static void Rgb565ToHsv(uint16_t source, HsvColor_t *hsv)
+{
+    uint16_t color = (uint16_t)((source << 8) | (source >> 8));
+    int32_t r = (int32_t)((color & 0xF800U) >> 8);
+    int32_t g = (int32_t)((color & 0x07E0U) >> 3);
+    int32_t b = (int32_t)((color & 0x001FU) << 3);
+    int32_t max_value = Max3(r, g, b);
+    int32_t min_value = Min3(r, g, b);
+    int32_t difference = max_value - min_value;
+    int32_t hue = 0;
+    int32_t saturation = 0;
+    if(difference != 0)
+    {
+        if(max_value == r)
+        {
+            hue = 40 * (g - b) / difference;
+            if(g < b) hue += 240;
+        }
+        else if(max_value == g)
+        {
+            hue = 40 * (b - r) / difference + 80;
+        }
+        else
+        {
+            hue = 40 * (r - g) / difference + 160;
+        }
+        if(max_value != 0)
+        {
+            saturation = difference * 240 / max_value;
+        }
+    }
+    if(hue < 0) hue = 0;
+    if(hue > 240) hue = 240;
+    if(saturation < 0) saturation = 0;
+    if(saturation > 240) saturation = 240;
+    hsv->h = (uint8_t)hue;
+    hsv->s = (uint8_t)saturation;
+    hsv->v = (uint8_t)(max_value * 240 / 255);
+}
+static uint8_t PixelMatch(
+    const uint16_t image[HSV_IMAGE_H][HSV_IMAGE_W],
+    uint16_t x,
+    uint16_t y)
+{
+    HsvColor_t hsv;
+    if(x >= HSV_IMAGE_W || y >= HSV_IMAGE_H)
+    {
+        return 0U;
+    }
+    Rgb565ToHsv(image[y][x], &hsv);
+    return (uint8_t)(hsv.h >= HSV_H_MIN && hsv.h <= HSV_H_MAX &&
+                     hsv.s >= HSV_S_MIN && hsv.s <= HSV_S_MAX &&
+                     hsv.v >= HSV_V_MIN && hsv.v <= HSV_V_MAX);
+}
+/* 中心、左、右、上、下五点中至少三点匹配才作为种子。 */
+static uint8_t SeedConfirmed(
+    const uint16_t image[HSV_IMAGE_H][HSV_IMAGE_W],
+    uint16_t x,
+    uint16_t y)
+{
+    uint8_t count = 0U;
+
+    count += PixelMatch(image, x, y);
+    count += PixelMatch(image, (uint16_t)(x - SEED_OFFSET), y);
+    count += PixelMatch(image, (uint16_t)(x + SEED_OFFSET), y);
+    count += PixelMatch(image, x, (uint16_t)(y - SEED_OFFSET));
+    count += PixelMatch(image, x, (uint16_t)(y + SEED_OFFSET));
+    return (count >= SEED_MATCH_MIN) ? 1U : 0U;
+}
+static int32_t ScanEdge(
+    const uint16_t image[HSV_IMAGE_H][HSV_IMAGE_W],
+    int32_t start,
+    int32_t fixed,
+    int32_t limit,
+    int32_t direction,
+    uint8_t horizontal)
+{
+    int32_t position = start;
+    int32_t last_match = start;
+    uint8_t miss_count = 0U;
+    while((direction < 0 && position >= limit) ||
+          (direction > 0 && position <= limit))
+    {
+        uint8_t matched = horizontal ?
+            PixelMatch(image, (uint16_t)position, (uint16_t)fixed) :
+            PixelMatch(image, (uint16_t)fixed, (uint16_t)position);
+
+        if(matched)
+        {
+            last_match = position;
+            miss_count = 0U;
+        }
+        else if(++miss_count >= EDGE_MISS_MAX)
+        {
+            break;
+        }
+        position += direction;
+    }
+    return last_match;
+}
+/* 从种子向四个方向扩展，得到色块外接框。 */
+static uint8_t ExpandFromSeed(
+    const uint16_t image[HSV_IMAGE_H][HSV_IMAGE_W],
+    uint16_t seed_x,
+    uint16_t seed_y,
+    HsvFollowResult_t *result)
+{
+    int32_t center_x = seed_x;
+    int32_t center_y = seed_y;
+    int32_t left = seed_x;
+    int32_t right = seed_x;
+    int32_t top = seed_y;
+    int32_t bottom = seed_y;
+    uint8_t i;
+    for(i = 0U; i < EXPAND_TIMES; i++)
+    {
+        left = ScanEdge(image, center_x, center_y, 2, -1, 1U);
+        right = ScanEdge(image, center_x, center_y, HSV_IMAGE_W - 3, 1, 1U);
+        center_x = (left + right) / 2;
+        top = ScanEdge(image, center_y, center_x, 8, -1, 0U);
+        bottom = ScanEdge(image, center_y, center_x, HSV_IMAGE_H - 3, 1, 0U);
+        center_y = (top + bottom) / 2;
+    }
+    result->x = (uint16_t)center_x;
+    result->y = (uint16_t)center_y;
+    result->width = (uint16_t)(right - left + 1);
+    result->height = (uint16_t)(bottom - top + 1);
+    result->area = (uint32_t)result->width * result->height;
+    result->valid = (uint8_t)(result->width >= 3U && result->width <= 150U &&
+                              result->height >= 3U && result->height <= 110U);
+    return result->valid;
+}
+uint8_t HsvFollow_Detect(
+    const uint16_t image[HSV_IMAGE_H][HSV_IMAGE_W],
+    HsvFollowResult_t *result)
+{
+    HsvFollowResult_t candidate;
+    uint16_t x;
+    uint16_t y;
+    if(image == 0 || result == 0)
+    {
+        return 0U;
+    }
+    result->valid = 0U;
+    result->area = 0U;
+    for(y = 8U; y <= HSV_IMAGE_H - 3U; y = (uint16_t)(y + SEARCH_STEP))
+    {
+        for(x = 2U; x <= HSV_IMAGE_W - 3U; x = (uint16_t)(x + SEARCH_STEP))
+        {
+            if(SeedConfirmed(image, x, y) &&
+               ExpandFromSeed(image, x, y, &candidate) &&
+               (!result->valid || candidate.area > result->area))
+            {
+                *result = candidate;
+            }
+}
+}
+    return result->valid;
+}
+void HsvFollow_Init(void)
+{
+    s_filter_ready = 0U;
+    s_filtered_x = IMAGE_CENTER_X;
+    s_filtered_height = TARGET_HEIGHT;
+}
+uint8_t HsvFollow_CalculateControl(
+    const HsvFollowResult_t *result,
+    HsvFollowControl_t *control)
+{
+    int32_t error;
+    int32_t abs_error;
+    float steer;
+    float speed;
+    if(result == 0 || control == 0 || !result->valid)
+    {
+        return 0U;
+    }
+    if(!s_filter_ready)
+    {
+        s_filtered_x = (int16_t)result->x;
+        s_filtered_height = (int16_t)result->height;
+        s_filter_ready = 1U;
+    }
+    
+else
+    {
+        s_filtered_x = (int16_t)((3 * s_filtered_x + result->x) / 4);
+        s_filtered_height = (int16_t)((3 * s_filtered_height + result->height) / 4);
+    }
+    error = s_filtered_x - IMAGE_CENTER_X;
+    abs_error = (error < 0) ? -error : error;
+    if(abs_error <= 2)
+    {
+        steer = 0.0f;
+    }
+    else if(abs_error <= 25)
+    {
+        steer = (float)(abs_error - 2) * 0.8f;
+    }
+    else
+    {
+        steer = 23.0f * 0.8f + (float)(abs_error - 25) * 1.2f;
+    }
+    control->steer_angle_deg = (error < 0) ? -steer : steer;
+   
+
+ if(s_filtered_height >= STOP_HEIGHT)
+    {
+        control->speed_cm_s = 0.0f;
+}
+
+    else
+    {
+        speed = 50.0f + (TARGET_HEIGHT - s_filtered_height) * 0.9f -
+                abs_error * 0.15f;
+        if(speed < 6.0f) speed = 6.0f;
+        if(speed > 40.0f) speed = 40.0f;
+        control->speed_cm_s = -speed;
+    }
+    return 1U;
+}
+
+
+
+
+
+
+附录B  车模及电路板详细信息
+二、车模照片
+1、车模外观照片
+  车模平放时，俯视照片，前视图，左或右（任选）视图照片.
+
+图1.1 车模照片示例
+2、电路板PCB图
+
+图2.1 硅麦PCB
+
+图2.2 灯板驱动PCB
+
+图2.3 灯板PCB
+
+图2.4 转向电机驱动PCB
+
+图2.5 驱动电机驱动PCB
+
+图2.6 主板PCB
+3、电路板原理图
+
+图3.1 驱动电机驱动原理图
+
+图3.2 转向电机驱动原理图
+
+
+
+图3.3 主板原理图
+
+图3.4 灯板原理图
+
+图3.5 灯板驱动原理图
+
+图3.6 硅麦电路原理图
+
+
+===== TABLE 1 =====
+车模类型 | T车模（卡丁1）
+车模重量 | 约22kg
+车模尺寸：长*宽*高(mm) | 1300*670*470
+车轮尺寸 | 后轮直径10吋、前轮直径8吋
+传感器种类及个数 | 种类：7 个数：8 硅麦模块(IM68A130A)*1、陀螺仪(IMU660RA)*1、GPS模块*1、WIFI模块*1、、凌瞳摄像头*1、方向编码器*2、角度位置传感器*1
+伺服电机个数(个) | 0
+驱动电机型号 | KY7750 DC24V ×2
+转向电机型号 | RS380 DC24V ×1
+电路功耗 | 约300w
+电容总容量 | 2.5mF
+使用电池 | 原装铅酸电池（12FM14） 14Ah 1个
+电路板数量 | 6

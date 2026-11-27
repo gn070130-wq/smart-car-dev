@@ -1,0 +1,387 @@
+
+第二十届全国大学生智能汽车竞赛
+
+技 术 报 告
+
+
+
+	
+
+
+学    校：    哈尔滨工业大学（深圳）
+队伍名称：       南工绝影三队
+参赛队员：  唐海驭 李鸿杰 潘锐杰 贺炜峰
+带队教师：       葛亚明 刘瑞
+
+
+
+
+关于技术报告和研究论文使用授权的说明
+
+本人完全了解全国大学生智能汽车竞赛关保留、使用技术报告和研究论文的规定，即：参赛作品著作权归参赛者本人，比赛组委会可以在相关主页上收录并公开参赛作品的设计方案、技术报告以及参赛模型车的视频、图像资料，并将相关内容编纂收录在组委会出版论文集中。
+
+参赛队员签名：                                   
+
+带队教师签名：                              
+
+日        期：  2026年8月11日  
+
+
+	
+
+
+
+
+模型车设计制作主要思路及实现技术方案概要
+任务需求与设计目标
+智能汽车竞赛“飞跃雷区”组别的核心是四旋翼无人机与地面车模协同运动、熄灭信标。在具体工作上，无人机从场地上方获得全局视野，识别车模与目标信标并解算二者位置；车模依据无人机下传的坐标和状态信息完成全向追踪。系统设计重点是在视觉定位连续和通信可靠的前提下，使车模快速、平稳地接近目标，并让无人机稳定跟踪快速移动的车模，以及当目标丢失、无人机停机或链路中断时及时介入，以防危险发生。
+围绕上述目标，整套方案重点解决三类问题：一是四旋翼平台的姿态、高度与运动控制；二是俯视图像中的车体、信标识别及地面坐标换算；三是麦轮底盘的全向运动控制以及无人机与车模之间的实时双向通讯。设计中将高频姿态控制、较低频视觉处理和地面运动控制分配到不同处理器与任务周期中，以降低模块间相互干扰。
+总体方案
+系统采用“空中感知、地面决策执行、状态回传飞控”的分层架构。
+无人机采用逐飞科技飞行器机架配以RS2205无感无刷电机，主控为英飞凌 CYT4BB7 双核 Cortex-M7 平台，传感器包括IMU惯性测量单元、配以全景红外镜头的总钻风、dToF传感器VL53L8CX等。无人机平台主要处理传感器采集、姿态与高度控制、目标分割选择、坐标解算和板间通讯等任务。
+车模采用经过改造的弹簧悬挂车模，配以JGA25直流减速电机和直径97mm麦克纳姆轮，顶部安装约20厘米长直线型红外灯条作为视觉参考，主控为英飞凌 CYT2BL3 Cortex-M4 平台，传感器包括IMU惯性测量单元和编码器等。车模平台主要处理传感器采集、追踪状态机、麦轮控制和板间通讯等任务。
+工作流上，无人机通过摄像头识别、矫正和解算车模和信标的坐标，将目标按一定优先级排序后把计算所得信息发送给车模；车模接收信息并选取策略下最优跟踪方向，回传自身姿态和决策至无人机，供无人机及时响应车模的快速机动。
+主要特征
+系统主要技术路线经过了论证和实践。
+PID控制
+自制车模在安装精度、控制和环境影响等方面存在相当的不确定性，随着调试进行，车模负载和接触特性也可能存在差异，叠加上系留缆绳扰动影响，建立高精度空间模型的成本较高，LQR模型效果并不明朗。相较之下，结构简单、适应性强、参数物理意义明确的PID控制器成为本系统的选择。
+由于光流传感器效果不稳定，核心阶段系统PID主要包括无人机飞控视觉环-角度环-角速度环三环结构，高度环-垂直速度环双环结构；车模底盘速度环-角速度环双环结构。出于工程实际需要，部分PID控制器配以额外的非线性项和微分项低通滤波。
+图像处理和稳定优先的控制决策
+出于降低系统复杂度的考虑，核心环境传感器为单一全景摄像头，环境细节会被压缩进极小的像素内，边缘区域较难定标，矫正图像所得空间射线误差较大，不利于全局导航；系留缆绳和无人机自身结构也时常对车模和信标识别造成干扰。此种情况下，我们对原始图像进行动态阈值和形态学处理，尽可能保证目标的完整和消除杂光的干扰，然后提取特征、筛选区分车模和信标。
+我们认为任务的最根本需求是车模行进方向的正确和稳定。因此我们为每一次下发的多个可能目标坐标计算方向和有效期，合并与当前方向相近的方向并延长有效期，在熄灭一个信标后立刻确立最近的信标为新的方向。经测试，该系统能稳定完成实际任务需求。
+基于MAX3485的半双工通信
+由于无人机飞控和车模底盘控制均工作在1khz左右的频率上，逐飞库阻塞式通讯带来的影响较大，提升波特率可以有效简化问题但在无人机工作的环境下，通过uart跨1.5m以高波特率传输并不现实。我们选择使用MAX3485转RS-485差分信号进行传输，在1Mbps的通信波特率下能稳定发送和接收信息。
+
+机械结构设计
+车模机械设计
+车模底盘采用四轮麦克纳姆轮结构，大致分为三层空间，最底层为底盘向下延伸的电机和电池固定区域；第二层为铝合金底盘，盘面固定车模主板和有刷驱动，一块IMU660RA直接与主板相接；第三层为底盘通过立柱向上拓展的边长29厘米方形平台，布置有分电板、20厘米长850nm红外灯条（与信标一致）及线束套筒。从方形平台边缘向下设置有挡线框架，用于防止线束挂在方形平台上。
+车模采用的电机为JGA25-370，减速比1：34，额定电压12V，额定力矩2.2kgf.cm，额定电流260mA，堵转力矩11kgf.cm，堵转电流4700mA，提供236rpm约1.7m/s的负载转速。实践证明这一转速不尽如人意，是进一步提速的掣肘。
+四个97mm直径麦轮分布在车体四角，轮面上的斜向辊子按对称方式布置。车轮转动时，滚子方向上的分力相互组合，使底盘实现全向移动，直接响应二维目标方向。
+为提高在信标凸起上的通过性，车模采用弹簧悬挂。弹簧为车轮提供一定的上下浮动余量，当地面存在轻微起伏或四轮安装高度有小幅差异时，悬挂能够通过弹性变形补偿高度误差，使各轮保持接地。稳定的接地压力有利于减少麦轮打滑的发生，并减小底盘振动或悬空对编码器测速和车载 IMU 姿态测量的影响。
+车体内部按照低重心、对称、安全和便于维护的原则布置：电池等质量较大的部件尽量靠近底盘中心并降低安装高度，主板、分电板和调试接口布置在便于观察与插拔的位置；线缆布置有序且互不干扰，预留适当活动余量并避开轮组和悬架运动范围；对电路板、连接器和传感器进行绝缘等基本防护，降低碰撞或松动对系统运行的影响。
+
+图 2-1 弹簧悬挂结构
+
+图2-2 第三层空间的灯条、分电板和线束套筒
+
+图 2-3 主板、驱动板和电池布置
+无人机机械设计
+无人机采用六叶四旋翼结构，四个无刷电机围绕机体中心对称布置。四个机臂及电机安装座具有足够的刚度，并保持几何对称，使各旋翼的升力作用点与机体中心关系一致。四旋翼结构组成清晰、控制关系明确，改变电机的转速即可调节总升力，成对计算控制量并叠加即可形成横滚、俯仰和偏航方向的控制力矩。
+机体布局以重心靠近几何中心为基本原则。主板、驱动板和缆绳等质量影响较大的部件沿机体中心区域布置，避免单侧载荷过大；安装后检查和调整静态重心位置，减少飞控为抵消结构偏载而长期输出额外姿态修正。部件之间保留必要的散热和检修空间，并采用可靠的紧固方式，防止振动造成连接器松动或板卡位移。
+在无人机底板上固定有焦距1.1mm的全景红外摄像头、dToF VL53L8CX、光流模块UP-FLOW-302、IMU660RA、主板和无刷驱动板。dToF 的安装位置直接影响高度测量，尽量靠近机体中心并朝向地面固定。传感器除惯性测量单元配置缓冲垫外均采用打印件与底板刚性固定，并在装配完成后结合静止画面和姿态变化等检查安装误差，并进行必要补偿。
+上行电源线和信号线在中央位置固定连接，其余无人机上的电源线、电机线和信号线沿机臂或机体边缘分类固定，避免进入桨叶旋转区域，并采取措施减少线间串扰的发生。旋翼周围留出足够空间，安装保护罩防止发生安全事故；主板与驱动板的调试接口保持裸露，便于完成烧录、检查和维护。
+
+
+图 2-4 无人机正面
+
+图 2-5 无人机背面
+
+电池选型与安装
+经实测，无人机飞行时供电电流在20A级别，系统整体耗电功率可能接近300w，需要放电倍率大、电池容量大且安全可靠的电池。经调查，选择往届ROS组别采纳过的 TCB 16000mAh 3S 放电倍率25~35c的航模锂电池，能够符合高功率、长续航的比赛需求。比赛中，电池使用魔术贴固定在车模底部支架上。
+
+
+图 2-5 采用的电池示意图
+硬件设计
+无人机硬件设计
+无人机电气系统由飞控主板和四路无刷驱动板组成。飞控主板集成处理器、传感器、视觉接口、通信接口和控制信号接口；无刷驱动板负责电池母线处理、栅极驱动、三相功率变换、无感换相检测以及电压、电流和温度监测。
+无人机主板设计
+电池输入与主电源开关：系统采用 3S 电池和 XT60 接口。电池输入端使用 HY19P03D P 沟道 MOSFET 构建主电源开关，SW1 控制栅极电位；BZT52C16-E3-08 稳压二极管限制栅源电压，R1 提供栅极下拉通路，从而兼顾低导通损耗与开关可靠性。
+
+图3-1 无人机主板电源接口
+稳压供电：主板电源包含 5 V、系统 3.3 V、摄像头独立 3.3 V 和 5 V 外设时序控制四个支路。SCT2450 将电池电压降至 5 V，为后级稳压与外设供电；RT9013-33GB-MS 将 5 V 转换为系统 3.3 V，为屏幕、姿态传感器、ToF、信息收发装置和无刷控制装置供电。
+
+图3-2 无人机 5 V 电源电路
+
+图3-3 无人机 3.3 V 电源电路
+摄像头在采集和高速传输过程中会产生明显的瞬态电流与高频噪声，因此单独使用 RT9013-33GB-MS 生成 VCCCAM，降低摄像头电源波动对主控及其他敏感电路的耦合。无线串口的 5 V 支路采用 SY6280AAC 负载开关进行限流和通断控制，以实现外设独立上电。
+
+图3-4 无人机摄像头电源电路
+
+图3-5 无人机 5 V 外设上电时序控制电路
+信息收发与无刷控制接口：板间信息收发装置采用 MAX3485EESA+T，将主控 TTL/CMOS 串口电平转换为 RS-485 差分信号，提高无人机与车模之间通信的抗干扰能力。主控与无刷驱动板之间使用 SN74LVC2G125DCUR 双路三态缓冲器，对 UART 收发信号进行缓冲和通断控制。
+
+图3-6 无人机信息收发装置
+
+图3-7 无人机无刷控制装置
+无刷驱动板设计
+驱动主控：无刷驱动板使用 CYT2BL3CAAQ0AZEGS 微控制器。主控接收飞控指令，产生四组三相互补 PWM 信号，完成无刷电机换相、转速与转矩调节；同时采集换相状态、温度、电池电压及总电流，为过流、过温、欠压和堵转保护提供依据。
+
+图3-8 无人机无刷驱动主控
+母线与稳压电源：VBAT 母线使用大容量电容及多组并联电容进行储能和滤波，并以 TVS 管吸收瞬态电压尖峰。驱动板首先通过 SCT2450STER 生成 12 V 栅极驱动电源，再由 RY9121E 将 12 V 转换为 3.3 V，为主控和数字电路供电。
+
+图3-9 无刷驱动板电池母线供电电路
+
+图3-10 无刷驱动板 12 V 电源电路
+
+图3-11 无刷驱动板 3.3 V 电源电路
+三相栅极与功率驱动：每路电机使用 FD6288T 三相半桥栅极驱动芯片接收三组互补 PWM，并产生高、低桥 MOSFET 栅极信号。后级使用 AON6354-MS N 沟道 MOSFET 构成三相桥式逆变器，每路由六个功率 MOSFET 组成，四组功率桥彼此独立，对四个旋翼电机分别控制。
+
+图3-12 无刷三相栅极驱动电路
+
+图3-13 无刷 MOS 三相功率桥
+无感换相检测：各电机 A、B、C 三相端电压经电阻分压和电容滤波形成三路反电动势采样信号，并由电阻网络生成虚拟中性点。GS8632-SR 双通道运算放大器以比较方式检测反电动势过零，主控根据过零顺序估计转子位置和下一次换相时刻，实现无位置传感器换相控制。
+
+图3-14 无刷换向检测电路
+
+图3-15 无刷反电动势比较及过零检测电路
+通讯与状态检测：驱动板通过 UART 接收主板下发的电机转速指令。温度检测由 10 kΩ NTC 与固定电阻构成分压；电池电压经 10 kΩ 与 1 kΩ 分压后送入 ADC；总电流信号由 LMV321DBVR 放大调理后送入主控，用于运行监测与保护。
+
+图3-16 无刷驱动板通讯接口
+
+图3-17 无刷驱动板温度检测电路
+
+图3-18 无刷驱动板电压检测电路
+
+图3-19 无刷驱动板电流检测电路
+车模硬件设计
+车模硬件系统由主板、驱动板和分电板组成。主板负责核心控制、姿态检测及板间通信；驱动板完成直流电机功率驱动、数字信号缓冲和编码器接口；分电板集中完成 3S 电池输入、12 V/5 V 电源分配及支路开关控制。设计遵循可靠、高效和简洁的原则，在满足供电、控制与通信需求的同时，尽量降低电源噪声和布线复杂度。以下内容依据现有《硬件技术报告》整理。
+车模主板设计
+主控最小系统：单片机最小系统是车模系统的核心控制部件，采用 CYT2BL3 芯片，集中完成姿态数据、通信数据和运动控制信息的处理。核心板引脚分配如图所示。
+
+图3-20 车模主板 CYT2BL3 核心板引脚分配
+稳压供电：电源模块为主板各功能单元提供所需电压。主板由分电板输入 5 V：一路经输入电容滤除电压尖峰后为单片机供电；另一路由 RT9013-33GB 稳压芯片转换为 3.3 V，为 IMU660RA 姿态传感器和 MAX3485EESA+T 通信芯片供电。设计同时兼顾电压范围、电流容量、转换效率、噪声抑制和电路简洁性。
+
+图3-21 车模主板外部 5 V 电源接口与总开关
+
+图3-22 车模主板 3.3 V LDO 电路
+姿态传感器：主板采用基于 BMI270 的 IMU660RA 模块。该器件的温漂和零漂小于传统模块，可为车模姿态解算与闭环控制提供稳定、准确的惯性数据。
+
+图3-23 车模主板姿态传感器接口
+信息收发装置：采用 MAX3485EESA+T 构建 RS-485 通信接口电路，实现主控侧 TTL/CMOS 电平与 RS-485 差分信号之间的转换，以提高无人机与车模之间远距离通信的抗干扰能力和可靠性。
+
+图3-24 车模主板 RS-485 通信接口
+车模驱动板设计
+驱动板供电：驱动板由分电板输入 12 V，为电机功率驱动芯片供电；同时采用 LR8341A-T33 稳压芯片生成 3.3 V，为驱动使能信号和编码器供电。
+电机功率驱动：每片 DRV8701 可驱动高端和低端 N 沟道 MOSFET，并提供较大的栅极驱动电流及硬件死区，避免同一桥臂上下管同时导通。两片 DRV8701 分别构成两路 MOS 全桥驱动电路，为左右电机提供双向调速能力。
+
+图3-25 车模驱动板双路电机驱动电路
+数字信号缓冲：采用 SN74HC125PWR 接收主板输出的 PWM 与 DIR 信号，实现主板与驱动板之间的逻辑缓冲和电气隔离，并对数字控制信号进行重新驱动。
+
+图3-26 车模驱动板数字信号缓冲电路
+编码器与电机接口：选用带磁编码器的 JGA25-370 电机，减少外露齿轮数量，降低车模与无人机之间的供电线、信号线卷入齿轮的风险，提高机械与电气系统的鲁棒性。
+
+图3-27 车模驱动板电机与编码器接口
+分电板设计
+分电板功能：分电板将电池输入、滤波、电压转换和支路开关集中布置，便于统一管理车模主板、驱动板和 LED 灯条的供电。
+电池输入与滤波：系统采用 3S 电池作为总电源，输入端配置大容量电解电容进行储能与滤波，以抑制负载变化引起的母线波动和电压尖峰。
+
+图3-28 分电板 3S 电池输入与滤波电路
+12 V 驱动支路：12 V 电池母线经板载开关直接送往驱动板，为电机功率级供电，使驱动支路能够独立通断。
+
+图3-29 分电板 12 V 驱动支路开关电路
+5 V 降压与支路供电：选用 TPS54202DDCR 降压芯片将 12 V 转换为 5 V，再通过独立开关分别向车模主板和 LED 灯条供电。将 12 V 至 5 V 的功率转换布置在分电板上，可减少降压电路功率地噪声对主板敏感信号的干扰。
+
+图3-30 分电板 5 V 降压电路
+
+软件控制设计
+图像识别、排序和分类
+本赛题的精髓在于图像识别方法的设计，即如何在高动态和系留线缆遮挡的情况下做出准确、连续的识别，并以此为依据引导车模按照预期移动。出于降低识别难度和晃动线缆干扰、有效补盲的目的，较为常见的是采用多颗摄像头扩大视野，或是利用不同波长光来分辨目标。但 CYT4BB7 没有图像接收单元，通常只能接收一颗摄像头数据，鉴于我们组成员大体没有相关经验，无论是采纳多颗mcu还是从底层重新配置，对软硬件都是不小的压力。基于这个事实，我们决定采用单颗摄像头，但为了在摄像头垂直向下时获取至少6米处的视野，我们安装了1/3英寸尺寸、焦距1.1mm的全景摄像头，将整个视野圆完整投影到总钻风MT9V034摄像头的感光单元之内，实现全域感知。
+图像原始特征的提取
+图像处理始于二值化。为适应全景摄像头的暗角衰减效应，二值化阈值从视野中心至视野边缘按距离视野中心的距离增加而递减，使得近处不会识别杂点、远处不会漏掉信标。
+使用合适的阈值上下界进行二值化处理后，由于线缆的遮挡可能造成车模灯条和信标被分割，我们对初步的二值化图像采用形态学闭运算处理，修复一些小间隙。一步闭运算较为保守，既不会让灯条和信标产生融合，也可以有效修复大部分情况的连通域分割，以利于后续识别。由于边缘处光照情况难以预测，我们为形态学处理设置了外边界（图4-1绿色区域），确保只为合适的对象进行处理。
+为提高处理性能，我们采取了一些措施。由于视野圆仅占据摄像头画面的一小部分，所有的处理都设计在视野圆内进行，节约遍历时间（图4-1红色区域不进行处理）；动态空间阈值的计算在初始化阶段即预计算并存储，后续使用时查表即可。
+
+图4-1 图像初步处理的范围示例
+之后，系统通过深度优先搜索遍历并标记连通域，记录连通域的面积特征、质心位置和长宽比特征。长宽比的计算来源于连通域像素坐标的二阶中心矩协方差矩阵，通过解析求解其主轴与次轴特征值的比值获得。
+车模和信标位置的提取
+车模的红外灯条采用“一”字形布置，其与信标最大的特征区别在于长宽比。由于车模位置更可预测，且丢失车模位置的后果更加严重，我们设计了“先选车模，后选信标”的连通域识别逻辑。
+结合高度、姿态角等信息，将连通域质心较为准确投影至水平面，排除部分面积不合理、距离过远的连通域后，按如下公式排序并取最高分者，也就是面积和长宽比都较高的连通域作为车模：
+
+在剔除车模的剩余连通域中，排除长宽比大的，按由近及远排序剩余连通域。由于准确确定车模移动方向需要车模的航向角，为节约通信时延，此处取出最近的前3个候选信标下发给车模处理。图4-2为调试屏幕示意，上方摄像头区域中红色十字代表识别的车模位置，绿色、蓝色、黄色十字代表距离由近即远的三个信标，下方打印了阈值上限、特征连通域的面积与长宽比等信息。
+
+图 4-2 目标识别示例
+运动方向计算、采纳和候补
+基于无人机下发的车模坐标、由近及远的三个候选信标坐标，以及无人机的航向角，读取车模当前的航向角，利用旋转矩阵即可将信标相对车模的位移向量旋转至车体系，进而完成方位角生成。
+adopted_angle是车模最终采纳的唯一合法方向。当新合成的三个方向有至少一个与该方向相近，即刷新adopted_angle，并重置其有效期。初始时由于跟踪不稳定，有效期设置较长，随着跟踪时间的增加，有效期相应地缩减，以便后续快速地退出追踪。
+随着跟踪的进行，对于未被吸收进adopted_angle的方向，以距离近的为优先，维护一个pending_angle作为方向的备选，以便在adopted_angle失效的瞬间接管，顺滑转向下一个信标。pending_angle的维护仿照adopted_angle的进行，同样具有同方向吸收、有效期重置等功能。
+为了响应多目标亮起等实际场景，减少车模舍近求远的情况，在采纳两个角度的初期都可被更近信标抢占位置。
+无人机和车模的控制
+为降低参数整定的难度，令参数具有明确物理意义，同时结合自制车模带来的建模困难问题，无人机与车模均采用PID这一经典控制算法。为了提高控制性能，部分控制器辅以非线性项参数和微分滤波参数。无人机上的所有控制路径和车模的航向环采用位置式PID，车模的电机控制采用增量式PID，具体公式按下不表。
+无人机的PID设计
+传统上，无人机是图像环-速度环-加速度环-角度环-角速度环五串级结构，带来的问题是调参困难，调出一架好的飞机更困难。我们结合赛项实际，即无需准确控制无人机速度，只需定点在车模上，删除了高高度上光流速度在控制串级中的作用，简化无人机至三串级闭环：视觉位置误差首先转换为目标横滚角和目标俯仰角；姿态角外环根据目标角与当前角的偏差生成目标角速度；角速度内环根据陀螺仪反馈生成四路电机修正量。
+光流传感器在低高度、无法看到车模时发挥作用，此时构建一个简易的速度环替代原有的图像环，在低高度时稳定位置，当无人手扶时能够稳定地起飞和降落。
+我们根据调参值确定一个平飞油门，依靠高度环-垂直速度环双串级PID对油门向目标高度1.3m（叠加无人机高度后约1.45m）做出修正，并与姿态角的控制输出叠加，形成最后的控制pwm值。
+得益于无线参数调试和简化的控制路线，无人机的控制参数调试很顺利。只需将外环输出角度上限提高几度，无人机的极限性能便会好几分。
+前馈设计
+前馈是高速状态下无人机稳定跟踪的来源。初始前馈方向是由车模向无人机发送的，当一个新的方向建立满一定时间后，若跟踪方向与上一次初始前馈方向不同，则向无人机发送初始前馈方向。
+在无人机端，将收到的方向按一定比例减去当前光流传感器得到的无人机速度后，以合成的角度作为无人机采纳的前馈方向。为减小设计和调试难度，前馈采用偏移车模坐标的方法进行，即将车模坐标向采纳的前馈方向移动一个较大的距离，移动的程度接着随时间衰减。过程中，无人机先大角度向前馈方向移动并修正先前速度，再随着前馈减弱将控制重心交给误差积分项，实现稳定跟踪。
+车模的PID设计
+增量式PID天然抗积分饱和，对于麦轮底盘这种需要精确的控制和方向稳定，又在运动过程中定位精度不错的被控对象，我们对轮速控制采用增量式PID，并辅以航向环位置式PID进行稳定修正。
+车模相较于无人机，部分物理量更容易确定，采用的参数与理论整定值偏差不大。
+其它系统层面设计
+dToF VL53L8CX的处理
+VL53L8CX是意法半导体（ST）推出的一款优秀的多区域ToF测距传感器，可以提供至多8×8区域的测距信息，天然在面对本赛题中无人机安装的传感器可能被线缆遮挡这一情况时具有处理的优越性。为兼顾信息获取效率和抗遮挡能力，我们最终采用4×4区域测距模式，使用8Mhz SPI接口与主板通信。
+在测距信息处理方面，我们简单地舍弃了测量值偏小的一半信息，并对剩下的一半求均值，并基于当前姿态角向垂直方向投影，作为最终采纳的高度值。
+IMU数据合成
+我们对无人机和车模上的姿态传感器信息采用同样的思路进行利用。在读取三轴加速度和角速度后，进行零偏校准、安装轴映射、卡尔曼滤波，再使用 Mahony 四元数算法融合加速度方向和角速度，获得横滚角、俯仰角及角速度。经测试融合的偏航角误差较大，因此该角采用机体系角速度换算后的连续积分，以减少横滚、俯仰加速度修正对偏航通道的耦合。
+校准设计
+IMU的校准在上电后进行，收集六轴数据后将其扣除。
+IMU的安装误差和无人机的推力分布不均校准在无人机达到目标高度平飞后进行，收集1s内姿态角和四个电机各自的PWM的读数。姿态角均值被认为是安装误差，后续在角度环等地扣除；PWM读数后续作为各个电机的平飞油门，以利于控制。
+无人机和车模的通讯
+稳定的双向通讯是实现对车模精准控制和前馈传递的基石，这一点经过较长时间的调试和信息重发机制，已经较为完善。为提高线路抗干扰能力，提高传输速率，系统利用MAX3485，将UART转为RS-485半双工通信，波特率为 1 Mbps。为了解决半双工通信的发送接收模式切换导致的丢包问题，将无人机作为主机，在完成一帧视觉处理时发送一次请求；车模作为从机，收到并校验请求后返回应答，请求与应答通过序号判断应答是否属于当前请求。
+通信两端还做了一些防御性校验，确保不会采纳非法数据帧。具体设计详见后方表格。
+安全设计
+无人机是危险的造物，本赛项作为竞速赛项要求无人机快速机动，在调试和比赛时都存在不可忽视的风险。为减小这一风险，我们在软件方面做了一些措施：
+无人机在倾角过大时会停机，连带车模停车；
+无人机会响应上位机的两档急停命令，一档停车，二档停机停车；
+无人机低于一定高度时，会触发车模停车；
+无人机通信丢失时，会触发车模停车。
+
+开发工具、制作、安装、调试过程说明
+开发软件的使用
+无人机与车模程序均使用 IAR Embedded Workbench for Arm 9.40.1 开发，底层驱动基于逐飞科技英飞凌开源库。无人机工程面向 CYT4BB 双核平台，分别编译 CM7_0 和 CM7_1；车模工程面向 CYT2BL3 Cortex-M4。工程调试遵循先传感器、后执行器、再闭环的顺序：先检查时钟、串口、IMU、ToF、摄像头和编码器，再验证电机方向与通道映射，最后逐级开启姿态、位置和追踪闭环。
+联调时通过有线调试串口输出关键状态，通过计数器和周期统计检查中断是否按预期执行。无人机重点观察姿态角、角速度、高度、四路电机输出、视觉锁定状态和通信往返时间；车模重点观察编码器速度、车体姿态、目标距离、锁停原因及通信间隔。参数修改后先进行离地或架空测试，再逐步扩大运动范围。
+图 5-1 IAR示意图
+无线串口的使用
+逐飞无线串口主要用于连接上位机进行参数下发和数据观察，与其它通信线路相互独立。上位机通过多个参数通道在线修改视觉环、姿态角环、角速度环和高度环的 PID 参数，也可下发解锁、降落、急停及调试数据发送指令。
+飞控的运行期间打印由 CM7_0 主循环完成，图像核和中断服务仅更新共享数据或设置待打印标志；车模也将通信质量打印放在主循环并默认低频或关闭。调参时一次只改变少量参数，并保存能够稳定复现的组合。
+图 5-2 上位机示波器
+屏幕显示与按键调参
+IPS200 屏幕用于现场显示传感器、控制与视觉状态，便于在不连接电脑时快速判断系统是否完成初始化、姿态是否稳定、目标是否被识别以及通信是否正常。显示内容应以少量关键量为主，避免高频刷新占用控制时间。
+按键用于本地页面切换和台架调试，可配合无线串口完成参数选择、功能触发及状态确认。正式运行时，解锁、降落和急停指令均须经过统一状态机的安全门控，不能绕过 IMU 校准、飞行模式和电机锁定条件。为减少误操作，按键主要承担页面切换与调试触发功能，具体控制参数由无线串口统一管理。
+
+
+
+
+
+
+图 5-3 调试屏幕部分内容示意。左：图像识别，中：原图对比，右：实时光流
+系统主要技术参数说明
+无人机平台参数
+车模平台参数
+实时性参数
+
+结论
+自去年末确定参与本届全国大学生智能汽车车竞赛的“飞跃雷区”赛题，我们经历了许多艰辛试错，过程中不断解决遇到的问题，并多次对不合理之处进行重构，终于形成了逻辑自洽、表现稳定的运行系统。
+当前车模能稳定运行的峰值速度在1.7m/s左右，斜向45度运行时的最小速度在1.2m/s。过程中依赖前馈，无人机得以借助1.5m线缆提供的裕度定高1.3m（最高点约1.45m）并及时响应、紧密跟踪车模，顺利完成比赛。这一速度的达成有赖光流速度模块，但即便环境极度糟糕而光流无法按预期工作，降级使用无光流控制也能有至少1.2m/s的均速，具备相当的环境适应性。我们还调试了全流程的自动化处理，如有需要只需上电，即可完成起飞、完赛、降落全流程。
+备赛过程中我们团队精诚合作，两位硬件两位软件的成员布局合理可靠，面对大部分困难时都能游刃有余地予以解决。
+任务中还是面临一些问题。在软件方面，这体现为在复杂度控制和功能解耦上的不作为，使得代码复杂性呈滚雪球形式增长，多次在代码可读性大幅降低后不得不进行重构，至今维护难度较大；在硬件方面，这体现为需求的前瞻性偏弱，多次需求的增加导致了额外的制板过程。
+任务中最大的遗憾莫过于我们的最终速度被车模所限制：我们意识到电机无法满足我们需求的时间太晚了，无法得知我们设计的系统极限何在，大家都很惋惜。
+
+参考文献
+[1] 王盼宝．智能车制作：从元器件、机电系统、控制算法到完整的智能车设计 [M]．北京：清华大学出版社．2018.
+
+附录 A：通信帧设计说明
+双向板间通讯采用小端 float 载荷。帧头为 0xAA、0x55，主机请求命令字为 0x10，从机应答命令字为 0x20，帧尾为 0x7F。序号由无人机逐帧递增，车模在应答中原样回显。
+
+下行载荷索引如下。坐标单位为 cm，角度单位为 deg；locked_state 为 0、1、2、3 时分别表示全部丢失、仅车模、仅信标、车与信标均有效。
+
+上行载荷索引如下。角度单位为 deg。
+
+附录 B：核心程序源代码
+无人机端核心程序
+图像阈值、边界预处理和特征提取
+无人机与车模的分类和排序
+Scaramuzza 全向折反射模型 3D 地面光线反求与倾角补偿
+PID位置和姿态控制
+车模端核心程序
+方向角和距离解算
+方向生命周期管理
+加速度矢量限幅的速度平滑
+
+PID麦轮控制
+
+附录 C：整机及电路板照片
+
+图 C-1 系统全貌
+
+图 C-2 无人机主板
+
+图 C-3 车模分电板
+
+图 C-4 车模主板
+
+图 C-5 车模驱动板
+
+===== TABLE 1 =====
+ |  | 
+
+===== TABLE 2 =====
+无人机基本参数 | 长 | 285mm
+无人机基本参数 | 宽 | 285mm
+无人机基本参数 | 高 | 110mm
+无人机基本参数 | 线长 | 小于1500mm
+无人机基本参数 | 质量 | 900g
+功耗 | 空载 | 不高于10W
+功耗 | 带载 | 高于200W
+电容总容量 | 电容总容量 | 2244.7uF
+传感器 | 总钻风摄像头 | 1个
+传感器 | 陀螺仪IMU660RA | 1个
+传感器 | dTOF VL53L8CX | 1个
+传感器 | 光流UP-FLOW-302 | 1个
+赛道信息检测 | 视野范围 | 约600cm
+赛道信息检测 | 精度 | 近处20cm，远处仅作指示
+赛道信息检测 | 频率 | 100Hz
+
+===== TABLE 3 =====
+车模基本参数 | 长 | 290mm
+车模基本参数 | 宽 | 290mm
+车模基本参数 | 高 | 277mm
+车模基本参数 | 质量 | 3800g（带电池）
+功耗 | 空载 | 不高于10W
+功耗 | 带载 | 不高于40W
+电容总容量 | 电容总容量 | 1762.1uF
+传感器 | 陀螺仪IMU660RA | 1个
+
+===== TABLE 4 =====
+无人机控制周期 | 1.25 ms | 与IMU周期相同
+车模控制周期 | 1ms | 
+图像刷新率 | 100Hz | 
+dToF刷新率 | 50Hz | 
+
+===== TABLE 5 =====
+字段 | 下行请求 | 上行应答
+帧头 | 0xAA 0x55 | 0xAA 0x55
+命令字 | 0x10 | 0x20
+序号 | 1 字节，自增 | 1 字节，回显请求序号
+载荷 | 13 × float，小端 | 4 × float，小端
+校验和 | cmd + seq + 数据区，模 256 | cmd + seq + 数据区，模 256
+帧尾 | 0x7F | 0x7F
+整帧长度 | 58 字节 | 22 字节
+
+===== TABLE 6 =====
+索引 | 变量 | 含义
+0 | car_body_pos.x | 车模相对无人机的机体系 X 坐标
+1 | car_body_pos.y | 车模相对无人机的机体系 Y 坐标
+2 | target_body_pos.x | 主信标相对无人机的机体系 X 坐标
+3 | target_body_pos.y | 主信标相对无人机的机体系 Y 坐标
+4 | drone_yaw | 无人机在固定地面系中的偏航角，顺时针为正
+5 | locked_state | 目标锁定状态
+6 | car_en | 车模安全使能：0 停止，1 正常
+7 | car_target_dist | 车模与主信标的地面距离
+8 | target2_body_pos.x | 第二信标机体系 X 坐标
+9 | target2_body_pos.y | 第二信标机体系 Y 坐标
+10 | target3_body_pos.x | 第三信标机体系 X 坐标
+11 | target3_body_pos.y | 第三信标机体系 Y 坐标
+12 | ff_ack | 前馈接收反馈
+
+===== TABLE 7 =====
+索引 | 变量 | 含义
+0 | imu_car_data.roll | 车模横滚角
+1 | imu_car_data.pitch | 车模俯仰角
+2 | imu_car_data.yaw | 车模偏航角
+3 | feedforward_deg | 前馈方向角
+
+===== TABLE 8 =====
+// 预生成空间径向阈值衰减查表 (LUT) void update_threshold_lut(CameraObject *cam) {     cam->threshold_max = THRESHOLD_MAX;     uint8_t th_max = cam->threshold_max;     uint8_t th_min = THRESHOLD_MIN;     float inv_r2 = 1.0f / (FOV_RADIUS * FOV_RADIUS);     for (uint32_t rho2 = 0; rho2 < MAX_RHO2; rho2++) {         if (rho2 >= (uint32_t)(FOV_RADIUS * FOV_RADIUS)) {             thresh_by_rho2[rho2] = th_min;         } else {             // 空间二次方平滑递减：T(r) = T_max - (T_max - T_min) * (r^2 / R_fov^2)             thresh_by_rho2[rho2] = (uint8_t)(th_max - (th_max - th_min) * (rho2 * inv_r2));         }     } } // 块加速动态二值化与圆形 FOV 掩膜滤波 void binarize_and_morph(CameraObject *cam) {     uint8_t *src = cam->raw_image;     uint8_t *dst = cam->binarized_image;     memset(dst, 0, cam->width * cam->height);     for (uint16_t r = 0; r < cam->height; r++) {         uint16_t c_start = fov_left_bound[r];         uint16_t c_end   = fov_right_bound[r];         for (uint16_t c = c_start; c < c_end; c++) {             uint32_t idx = r * cam->width + c;             uint32_t rho2 = dist_to_center_sq_table[idx];             uint8_t threshold = thresh_by_rho2[rho2];             dst[idx] = (src[idx] >= threshold) ? 1 : 0;         }     } } //单遍 DFS 连通域二阶矩与协方差长宽比提取 static void extract_components(CameraObject *cam, uint8_t *visited) {     memset(visited, 0, cam->width * cam->height);     uint8_t label = 1;     uint8_t valid_idx = 0;     for (uint16_t r = 0; r < cam->height; r++) {         for (uint16_t c = fov_left_bound[r]; c < fov_right_bound[r]; c++) {             uint32_t idx = r * cam->width + c;             if (cam->binarized_image[idx] == 1 && visited[idx] == 0) {                 BlobStats stats;                 dfs_iterative(cam, visited, label++, r, c, &stats);                 if (stats.dot_num >= BASE_MIN_AREA && valid_idx < MAX_LIGHTS) {                     float cy = (float)stats.sum_r / stats.dot_num; // Row 质心 (Y)                     float cx = (float)stats.sum_c / stats.dot_num; // Col 质心 (X)                     cam->centers[valid_idx][0] = cy;                     cam->centers[valid_idx][1] = cx;                     cam->dot_num[valid_idx] = stats.dot_num;                     // 计算二阶中心矩与协方差矩阵                     float mu20 = (float)stats.sum_cc / stats.dot_num - cx * cx;                     float mu02 = ((float)stats.sum_rr / stats.dot_num - cy * cy) * (K_Y * K_Y);                     float mu11 = ((float)stats.sum_rc / stats.dot_num - cx * cy) * K_Y;                     // 解析求解协方差矩阵主轴特征值 (λ1, λ2)                     float delta = sqrtf((mu20 - mu02) * (mu20 - mu02) + 4.0f * mu11 * mu11);                     float lambda1 = (mu20 + mu02 + delta) * 0.5f;                     float lambda2 = (mu20 + mu02 - delta) * 0.5f;                     // 计算长宽比 (主轴/次轴散布程度比值)                     cam->aspect_ratio[valid_idx] = (lambda2 > 0.1f) ? (lambda1 / lambda2) : 80.0f;                     valid_idx++;                 }             }         }     }     cam->light_number = valid_idx; }
+
+===== TABLE 9 =====
+static void sort_lights(CameraObject *cam) {     cam->car_valid = 0;     cam->target_valid = 0;     cam->target_count = 0;     int car_idx = -1;     float max_car_score = -1.0f;     // 【第一阶段：锁定小车 (长条灯)】     for (int i = 0; i < cam->light_number; i++) {         if (cam->dot_num[i] < CAR_MIN_AREA) continue;         if (phys_dist_sq[i] > CAR_MAX_DISTANCE * CAR_MAX_DISTANCE) continue;         float dist_sq = (cam->centers[i][1] - CAM_CX) * (cam->centers[i][1] - CAM_CX) +                         (cam->centers[i][0] - CAM_CY) * (cam->centers[i][0] - CAM_CY);         float dynamic_car_min_ratio = CAR_BASE_MIN_RATIO + (dist_sq * CAR_RATIO_COMP_COEF);         if (cam->aspect_ratio[i] > dynamic_car_min_ratio && dist_sq < CAR_MAX_CENTER_DIST_SQ) {             float eff_ratio = (cam->aspect_ratio[i] > CAR_IDEAL_MAX_RATIO) ? CAR_IDEAL_MAX_RATIO : cam->aspect_ratio[i];             float score = (float)cam->dot_num[i] * sqrtf(eff_ratio);             if (score > max_car_score) {                 max_car_score = score;                 car_idx = i;             }         }     }     if (car_idx != -1) {         cam->car_valid = 1;         cam->car_center_y = cam->centers[car_idx][0];         cam->car_center_x = cam->centers[car_idx][1];     }     // 【第二阶段：信标筛选与距离排序】     int target_indices[TARGET_CANDIDATE_COUNT] = {-1, -1, -1};     float target_sort_dist[TARGET_CANDIDATE_COUNT] = {1e9f, 1e9f, 1e9f};     for (int i = 0; i < cam->light_number; i++) {         if (i == car_idx) continue;         float car_dist_sq = phys_dist_sq[i];         if (car_idx != -1) {             float dx = ground_x[i] - car_plane_x, dy = ground_y[i] - car_plane_y;             car_dist_sq = dx * dx + dy * dy;         }         if (car_dist_sq > TARGET_MAX_DISTANCE * TARGET_MAX_DISTANCE) continue;         // 动态形变补偿：越靠边缘允许长宽比越大         float dx_c = cam->centers[i][1] - CAM_CX, dy_c = cam->centers[i][0] - CAM_CY;         float dynamic_target_max_ratio = TARGET_BASE_MAX_RATIO + ((dx_c * dx_c + dy_c * dy_c) * TARGET_RATIO_COMP_COEF);         if (cam->dot_num[i] <= SMALL_BLOB_DIRECT_AREA || cam->aspect_ratio[i] < dynamic_target_max_ratio) {             float sort_dist = sqrtf(car_dist_sq);             // 插入排序维护前 3 最近候选             for (int rank = 0; rank < TARGET_CANDIDATE_COUNT; rank++) {                 if (sort_dist < target_sort_dist[rank]) {                     for (int k = TARGET_CANDIDATE_COUNT - 1; k > rank; k--) {                         target_sort_dist[k] = target_sort_dist[k - 1];                         target_indices[k] = target_indices[k - 1];                     }                     target_sort_dist[rank] = sort_dist;                     target_indices[rank] = i;                     break;                 }             }         }     }     if (target_indices[0] != -1) {         cam->target_valid = 1;         for (int rank = 0; rank < TARGET_CANDIDATE_COUNT; rank++) {             if (target_indices[rank] == -1) break;             cam->target_centers[rank][0] = cam->centers[target_indices[rank]][0];             cam->target_centers[rank][1] = cam->centers[target_indices[rank]][1];             cam->target_count++;         }         // 缺位复制填充最后一个有效目标         for (int rank = cam->target_count; rank < TARGET_CANDIDATE_COUNT; rank++) {             cam->target_centers[rank][0] = cam->target_centers[cam->target_count - 1][0];             cam->target_centers[rank][1] = cam->target_centers[cam->target_count - 1][1];         }     } }
+
+===== TABLE 10 =====
+static Vector3D pixelTo3DRay(double u, double v) {     Vector3D ray;     double x = u - CAM_CX;     double y = v - CAM_CY;     double rho = sqrt(x * x + y * y);     double rho2 = rho * rho;     double z_poly = CAM_A0 + CAM_A2 * rho2 + CAM_A3 * rho2 * rho + CAM_A4 * rho2 * rho2;     ray.x = x;     ray.y = y;     ray.z = -z_poly; // 指向地面 (Z为负)     return ray; } // 2. 姿态旋转 (Pitch / Roll 倾角去耦) static Vector3D cameraToBody(const Vector3D *cam, double sinp, double cosp, double sinr, double cosr) {     Vector3D body;     // 映射到标准物理系 (xb=Forward, yb=Right, zb=Down)     double xb = cam->y, yb = cam->x, zb = -cam->z;     // Roll 逆向旋转 (绕 X 轴)     double yt = yb * cosr - zb * sinr;     double zt = yb * sinr + zb * cosr;     // Pitch 逆向旋转 (绕 Y 轴)     double xw = xb * cosp + zt * sinp;     double zw = -xb * sinp + zt * cosp;     body.x = yt;  // Right     body.y = xw;  // Forward     body.z = -zw; // Up (Negative)     return body; } // 3. 射线与水平地面求交 (高度尺度缩放) static GroundPoint projectToGround(Vector3D ray, double height) {     GroundPoint pt;     if (ray.z > -0.01) ray.z = -0.01; // 防除零与水平奇异点     double scale = -height / ray.z;     pt.x = ray.y * scale; // Forward (cm)     pt.y = ray.x * scale; // Right (cm)     return pt; }
+
+===== TABLE 11 =====
+static void Flight_Hover_Position_Control(float car_pos_x, float car_pos_y, float *out_roll, float *out_pitch) {     // 1. 将曝光瞬间的小车坐标转换到地球系     float snapshot_yaw = vision_snap[S1_SNAPSHOT_YAW];     float yaw_rad = VISION_EARTH_YAW_DEG(snapshot_yaw) * (M_PI / 180.0f);     float earth_err_x = car_pos_x * cosf(yaw_rad) - car_pos_y * sinf(yaw_rad);     float earth_err_y = car_pos_x * sinf(yaw_rad) + car_pos_y * cosf(yaw_rad);     if (fabsf(earth_err_x) < MIN_ERROR) earth_err_x = 0.0f;     if (fabsf(earth_err_y) < MIN_ERROR) earth_err_y = 0.0f;     // 2. 地球系非线性 PID 控制器解算     float dt_sec = real_dt_ang / 1000.0f;     if (dt_sec < 0.005f) dt_sec = 0.005f;     if (dt_sec > 0.05f)  dt_sec = 0.05f;     float target_earth_accel_x = Nonline_PID_Calculate(&pid_image_x, earth_err_x, dt_sec);     float target_earth_accel_y = Nonline_PID_Calculate(&pid_image_y, earth_err_y, dt_sec);     // 3. 将地球系加速度按【当前即时航向】旋回机体系     float cur_yaw_rad = VISION_EARTH_YAW_DEG(imu_data.yaw) * (M_PI / 180.0f);     float target_body_accel_x =  target_earth_accel_x * cosf(cur_yaw_rad) + target_earth_accel_y * sinf(cur_yaw_rad);     float target_body_accel_y = -target_earth_accel_x * sinf(cur_yaw_rad) + target_earth_accel_y * cosf(cur_yaw_rad);     *out_pitch = -target_body_accel_x; // 前倾为正加速度     *out_roll  =  target_body_accel_y; // 右倾为正加速度 } void Flight_Control_Loop(void) {     // 1. 姿态外环：角度误差 -> 期望角速度     float roll_err  = flight_target.target_roll  - imu_data.roll;     float pitch_err = flight_target.target_pitch - imu_data.pitch;     float yaw_err   = flight_target.target_yaw   - imu_data.yaw;     if (yaw_err > 180.0f)  yaw_err -= 360.0f;     if (yaw_err < -180.0f) yaw_err += 360.0f;     float roll_rate_target  = PID_Calculate(&pid_angle_roll,  roll_err,  CTRL_DT_CTLOOP);     float pitch_rate_target = PID_Calculate(&pid_angle_pitch, pitch_err, CTRL_DT_CTLOOP);     float yaw_rate_target   = PID_Calculate(&pid_angle_yaw,   yaw_err,   CTRL_DT_CTLOOP);     // 2. 姿态内环：角速度误差 -> 电机力矩分量     float roll_out  = PID_Calculate(&pid_rate_roll,  roll_rate_target  - imu_data.roll_rate,  CTRL_DT_CTLOOP);     float pitch_out = PID_Calculate(&pid_rate_pitch, pitch_rate_target - imu_data.pitch_rate, CTRL_DT_CTLOOP);     float yaw_out   = PID_Calculate(&pid_rate_yaw,   yaw_rate_target   - imu_data.yaw_rate,   CTRL_DT_CTLOOP);     // 3. 电机混控分配与输出 (X型四旋翼，LF/RB为CW，RF/LB为CCW)     float base_throttle = flight_target.throttle;     motor_out.lf = base_throttle + pitch_out + roll_out - yaw_out;     motor_out.rf = base_throttle + pitch_out - roll_out + yaw_out;     motor_out.lb = base_throttle - pitch_out + roll_out + yaw_out;     motor_out.rb = base_throttle - pitch_out - roll_out - yaw_out;     motor_pwm_set(motor_out.lf, motor_out.rf, motor_out.lb, motor_out.rb); }
+
+===== TABLE 12 =====
+static void latest_angles_update(uint32_t now) {     // 小车当前航向与无人机航向差值     float delta = (imu_car_data.yaw - uart_data[4]) * (M_PI / 180.0f);     float cos_delta = cosf(delta);     float sin_delta = sinf(delta);      for (uint8_t i = 0; i < TARGET_CANDIDATE_COUNT; i++) {         latest_angle[i].valid = 0;         if (!position_slot_check(&car_slot) || !position_slot_check(&target_slot[i])) continue;          // 无人机机体系相对位移向量         float dx = target_slot[i].x - car_slot.x;         float dy = target_slot[i].y - car_slot.y;          // 旋转投影至小车车体坐标系 (X=前, Y=右)         float dx_car = dx * cos_delta + dy * sin_delta;         float dy_car = dx * sin_delta - dy * cos_delta;         float raw_distance = sqrtf(dx * dx + dy * dy);          latest_angle[i].angle = atan2f(dy_car, dx_car);         latest_angle[i].distance = (i == 0U && uart_data[7] > 0.01f) ? uart_data[7] : raw_distance;         latest_angle[i].expire_ms = now + ANGLE_VALID_MS;         latest_angle[i].valid = 1;     } }
+
+===== TABLE 13 =====
+static uint8_t target_filter_update(uint8_t locked_state) {     uint32_t now = sys_time_ms;     if (locked_state == 1 || locked_state == 3) position_slot_refresh(&car_slot, uart_data[0], uart_data[1], now, CAR_VALID_MS);     if (locked_state == 2 || locked_state == 3) {         for (uint8_t i = 0; i < TARGET_CANDIDATE_COUNT; i++)             position_slot_refresh(&target_slot[i], uart_data[target_x_uart_index[i]], uart_data[target_y_uart_index[i]], now, TARGET_VALID_MS);     }     latest_angles_update(now);      uint8_t adopted_ok = direction_slot_check(&adopted_angle);     uint8_t pending_ok = direction_slot_check(&pending_angle);     int8_t first_latest = latest_first_valid_index();      if (first_latest >= 0) {         int8_t replacement = pending_ok ? latest_match_index(pending_angle.angle) : -1;         if (replacement < 0) replacement = pending_ok ? latest_nearest_index(pending_angle.angle) : first_latest;         pending_angle = latest_angle[replacement];         pending_ok = 1;     }      if (adopted_ok) {         int8_t adopted_match = latest_match_index(adopted_angle.angle);         if (adopted_match >= 0) {             uint8_t did_override = 0;             // 采纳初期 150ms 内允许更近的候选信标抢占覆盖             if (adopted_angle_stable_ms < ADOPTED_OVERRIDE_WINDOW_MS) {                 for (int8_t i = 0; i < adopted_match; i++) {                     if (!direction_slot_check(&latest_angle[i]) || angle_matches(latest_angle[i].angle, adopted_angle.angle)) continue;                     uint8_t is_large = (cosf(latest_angle[i].angle - adopted_angle.angle) < ADOPTED_OVERRIDE_LARGE_TURN_COS) ? 1U : 0U;                     adopted_angle_replace(&latest_angle[i], is_large);                     did_override = 1;                     break;                 }             }             if (!did_override) {                 adopted_angle_refresh(&latest_angle[adopted_match], now);                 pending_angle_reset();             }         }     } else {         adopted_angle_stable_ms = 0;         if (pending_ok) {             adopted_angle_replace(&pending_angle, 1U);             adopted_ok = 1;         }     }      if (adopted_ok) {         visual_last_vx = TARGET_SPEED * cosf(adopted_angle.angle);         visual_last_vy = TARGET_SPEED * sinf(adopted_angle.angle);         return 1;     }     return 0; }
+
+===== TABLE 14 =====
+// 核心一：矢量加速度模长斜坡平滑 if (armed) {     float delta_vx = target_vel.vx - smooth_vx;     float delta_vy = target_vel.vy - smooth_vy;     float delta_speed = sqrtf(delta_vx * delta_vx + delta_vy * delta_vy);     float max_delta_speed = MAX_ACCEL_LINEAR * CONTROL_DT;      if (large_turn_accel_state != 0U) {         max_delta_speed *= LARGE_TURN_ACCEL_SCALE; // 大角度换向减速度     }      if (delta_speed > max_delta_speed) {         float scale = max_delta_speed / delta_speed;         delta_vx *= scale;         delta_vy *= scale;     }     smooth_vx += delta_vx;     smooth_vy += delta_vy; }
+
+===== TABLE 15 =====
+// 核心二：航向串级双环 PID float final_wz = smooth_wz; if (armed) {     float current_rate_rad = imu_car_data.yaw_rate * (M_PI / 180.0f);      if (fabsf(smooth_wz) < 0.05f) { // 纯平移模式：启动航向死锁         // 外环：角度误差 -> 期望自转角速度         float yaw_error = 0.0f - imu_car_data.yaw_total;         if (fabsf(yaw_error) < 1.5f) yaw_error = 0.0f; // 1.5° 死区防发热抖动         float target_yaw_rate = PID_Calculate(&pid_yaw_hold, yaw_error, CONTROL_DT);          // 内环：角速度误差 -> 旋转差速补偿量         float rate_error = target_yaw_rate - current_rate_rad;         final_wz = PID_Calculate(&pid_yaw_rate, rate_error, CONTROL_DT);     } else {         PID_Reset(&pid_yaw_hold);         float rate_error = smooth_wz - current_rate_rad;         final_wz = PID_Calculate(&pid_yaw_rate, rate_error, CONTROL_DT);     } } // 核心三：45° 麦轮几何逆解算 float center_v = final_wz * (CAR_L + CAR_W); target_vel.v_lf = smooth_vx - smooth_vy + center_v; // 左前 target_vel.v_rf = smooth_vx + smooth_vy - center_v; // 右前 target_vel.v_lb = smooth_vx + smooth_vy + center_v; // 左后 target_vel.v_rb = smooth_vx - smooth_vy - center_v; // 右后  // 核心四：底层增量 PID 与 PWM 等比例缩放抗饱和 if (armed) {     motor_output.lf = PID_Calculate_Incremental(&pid_lf, target_vel.v_lf - encoder_data.lf, CONTROL_DT);     motor_output.rf = PID_Calculate_Incremental(&pid_rf, target_vel.v_rf - encoder_data.rf, CONTROL_DT);     motor_output.lb = PID_Calculate_Incremental(&pid_lb, target_vel.v_lb - encoder_data.lb, CONTROL_DT);     motor_output.rb = PID_Calculate_Incremental(&pid_rb, target_vel.v_rb - encoder_data.rb, CONTROL_DT);      // PWM 等比例压缩 (Anti-Saturation)     float max_pwm = fabsf(motor_output.lf);     if (fabsf(motor_output.rf) > max_pwm) max_pwm = fabsf(motor_output.rf);     if (fabsf(motor_output.lb) > max_pwm) max_pwm = fabsf(motor_output.lb);     if (fabsf(motor_output.rb) > max_pwm) max_pwm = fabsf(motor_output.rb);      if (max_pwm > (float)PWM_MAX_M) {         float scale = (float)PWM_MAX_M / max_pwm;         motor_output.lf *= scale; motor_output.rf *= scale;         motor_output.lb *= scale; motor_output.rb *= scale;     } }

@@ -1,0 +1,934 @@
+第二十一届全国大学生智能汽车竞赛
+技 术 报 告
+
+学        校：武汉工程大学邮电与信息工程学院
+队伍名称：不拿国一不改名
+参赛队员：曾阳 宋明华 熊羚辉 孙芸涵
+带队教师：尤洋 李艳红
+关于技术报告和研究论文使用授权的说明
+
+	 本人完全了解全国大学生智能汽车竞赛关保留、使用技术报告和研究论文的规定，即：参赛作品著作权归参赛者本人，比赛组委会可以在相关主页上收录并公开参赛作品的设计方案、技术报告以及参赛模型车的视频、图像资料，并将相关内容编纂收录在组委会出版论文集中。
+
+参赛队员签名：			     
+带队教师签名：			     
+日   期：	            	    
+
+
+
+
+
+
+
+
+
+
+
+
+主要符号表
+表1 主要符号说明
+
+
+
+目　录
+主要符号表	v
+目　录	vii
+第一章 引言	1
+1.1 竞赛背景与任务分析	1
+1.2 相关技术综述	1
+1.3 报告内容安排	2
+第二章 总体设计思路与技术方案	3
+2.1 任务需求分析	3
+2.2 系统总体架构	3
+2.3 关键技术方案选择与比较	4
+2.3.1 视觉感知方案	4
+2.3.2 语音识别方案	4
+2.3.3 倒车返回控制方案	4
+第三章 模型车机械部分安装及改造	7
+3.1 车模总体结构	7
+3.2 传感器的设计安装	7
+3.2.1 摄像头安装	7
+3.2.2 IMU 安装	8
+3.2.3 编码器安装	9
+3.2.4 麦克风与灯光安装	9
+3.3 电路板固定及连接	10
+第四章 电路设计	11
+4.1 电源系统	11
+4.2 电机驱动电路	11
+4.3 传感器接口电路	11
+4.4 灯光鸣笛执行电路	11
+4.5 电路原理图	12
+第五章 微处理器控制软件设计	17
+5.1 软件总体架构	17
+5.2 图像处理与色块识别	17
+5.2.1 RGB565 到 HSV 颜色距离	17
+5.2.2 形态学处理	18
+5.2.3 游程连通域标记	18
+5.3 视觉跟随控制	18
+5.4 路径记录与位姿推算	18
+5.4.1 位姿推算	18
+5.4.2 路径点记录	19
+5.5 倒车返回控制	19
+5.5.1 最近路径点锚定	19
+5.5.2 纯跟踪倒车前视	19
+5.5.3 模糊曲率增益	19
+5.5.4 终点姿态对齐与入库	20
+5.5.5 平行转向差速补偿	20
+5.6 转向与驱动执行层	20
+5.6.1 转向位置闭环	20
+5.6.2 后轮速度闭环	20
+5.7 语音识别系统	21
+5.7.1 音频采集	21
+5.7.2 鉴权与连接	21
+5.7.3 流式识别与结果处理	21
+5.7.4 指令词映射	21
+5.8 灯光鸣笛任务执行	21
+5.9 任务状态机	22
+5.10 人机交互	24
+第六章 开发工具、制作与调试过程	25
+6.1 开发工具与环境	25
+6.2 调试工具与方法	25
+6.3 关键问题与解决方案	25
+6.3.1 转向机构静摩擦与死区问题	25
+6.3.2 倒车 S 形发散问题	25
+6.3.3 低速静摩擦停转与差速压停	25
+6.3.4 重获目标打滑与丢目标窜动	26
+6.3.5 语音鉴权过期与断网恢复	26
+6.3.6 识别结束词污染问题	26
+6.3.7 编码器方向极性不一致	26
+第七章 模型车主要技术参数	27
+7.1 总体参数	27
+7.2 电路参数	27
+7.3 传感器清单	28
+7.4 控制与检测参数	28
+7.5 主要控制参数	29
+结论	31
+附录A　核心算法子程序	32
+附录B引脚分配	36
+
+
+
+第一章 引言
+全国大学生智能汽车竞赛是以智能汽车为研究对象的创意性科技竞赛，是面向全国大学生的具有探索性、实践性的工程实践活动。竞赛以“立足培养、重在参与、鼓励探索、追求卓越”为指导思想，要求参赛队伍在规定时间内完成竞赛模型汽车的设计、制作与调试，并针对竞赛科目完成相应的智能驾驶任务。本技术报告即为本参赛队伍参加全国总决赛所提交的竞赛模型汽车制作技术报告。
+1.1 竞赛背景与任务分析
+本届国赛科目将原科目一，科目二与科目三进行融合，形成带有语音任务的科目三。竞赛要求模型车（智能卡丁车）首先通过视觉方式识别蓝色色块目标并完成跟随行驶，行驶过程中同步记录路径信息；随后在遥控指令或按键指令触发下，沿记录路径倒车返回至发车区；车辆回到发车区后，任务进入语音交互阶段，车辆通过车载语音识别系统识别裁判员下达的灯光、鸣笛类语音指令，并按指令顺序依次完成灯光启闭与鸣笛动作，全部动作完成后任务结束。
+国赛以“视觉跟随＋路径记录＋倒车返回＋语音灯光鸣笛”为主线任务，重点考察模型车在视觉目标跟随、路径记忆复现、精确倒车定位以及人机语音交互方面的综合能力。任务流程可概括为：发车→视觉跟随并记录路径→触发返回→沿路径倒车回到发车区→语音识别灯光/鸣笛指令→执行灯光鸣笛动作→任务完成。
+1.2 相关技术综述
+本模型车的设计涉及嵌入式实时系统、数字图像处理、运动控制、航迹推算、无线通信与语音识别等多个技术领域。在嵌入式平台方面，本队选用英飞凌 AURIX TC264D 双核微控制器作为整车控制核心，配合逐飞科技提供的开源底层库，充分利用其双核 200 MHz 主频与丰富的外设资源，将实时性要求高的控制任务与耗时的网络、语音任务分别部署在两个核心上，保证控制回路稳定可靠。
+在视觉感知方面，模型车采用逐飞科技 SCC8660（凌瞳）数字摄像头，以 DMA 方式直接采集 160×120 像素 RGB565 图像，在 MCU 内部完成 HSV 颜色空间转换、形态学处理与连通域分析，提取蓝色色块目标的位置与面积信息，为视觉跟随提供横向偏差与距离信息，实时性与精度均可满足竞赛要求。
+在路径记录与复现方面，本队综合运用增量式编码器里程计与六轴惯性测量单元（IMU）航向积分进行二维位姿推算，记录行驶路径；倒车返回阶段采用纯跟踪（Pure Pursuit）算法并结合模糊曲率增益调节与终点姿态对齐策略，实现倒车路径跟踪与起点精确定位。在语音交互方面，采用“板载麦克风 ADC 采集＋WiFi 传输＋讯飞语音听写云服务”的方案，通过 WebSocket 实时语音流式识别，将识别文本映射为灯光、鸣笛任务序列。
+1.3 报告内容安排
+本技术报告共分七章：第一章为引言，介绍竞赛背景、任务分析与技术综述；第二章介绍模型车总体设计思路与技术方案；第三章介绍模型车机械部分的安装与改造；第四章介绍电路设计；第五章详细介绍微处理器控制软件的理论、算法与代码设计；第六章介绍开发工具与制作调试过程；第七章给出模型车主要技术参数。最后为结论、附录（核心算法子程序与电路原理图说明）。
+
+第二章 总体设计思路与技术方案
+2.1 任务需求分析
+根据国赛科目任务要求，模型车需依次完成以下子任务：（1）视觉跟随任务：识别蓝色色块目标，保持目标处于图像中心区域，并根据目标面积（反映距离）调节行驶速度，目标丢失或面积异常时可靠停车；（2）路径记录任务：跟随行驶过程中以固定间距记录车体在世界坐标系下的路径点；（3）倒车返回任务：收到触发指令后，沿记录路径逆向倒车行驶，准确返回发车区，并满足停车定位精度要求；（4）语音灯光鸣笛任务：车辆回到发车区后，通过语音识别解析裁判员指令，按序完成左/右转向灯、远/近光灯、雾灯、双闪灯、车内照明灯等灯光动作以及不同时长的鸣笛动作。
+2.2 系统总体架构
+模型车采用“感知—决策—执行”三层架构，以英飞凌 TC264D 双核 MCU 为控制核心。感知层由 SCC8660 数字摄像头（视觉目标）、ASM330LHB 六轴 IMU（航向）、左右轮增量式编码器（里程）、转向绝对编码器（转向角）以及板载模拟麦克风（语音）构成；决策层在 MCU 内完成色块识别、跟随控制、路径记录、倒车返回控制、任务状态机与语音指令解析；执行层由后轮双驱动电机（速度闭环 PI）、前轮转向电机（位置闭环 PID）以及灯光、鸣笛等动作执行器件构成。语音识别采用“板载采集＋云端识别”的方式，由 WiFi 模块将音频流送至讯飞语音听写服务，识别文本回传后由 MCU 完成指令解析与任务映射。
+TC264D 双核架构将任务划分为两个处理域：CPU0 承担实时控制与图像处理，包括 5 ms 周期的车辆控制、任务状态机、色块识别、路径记录与倒车返回运算以及屏幕显示；CPU1 承担低实时性但耗时的任务，包括反馈蜂鸣器驱动、语音识别相关网络与鉴权运算等，两核通过共享内存与事件机制协同工作。系统任务与中断分配如表 2-1 所示。
+表2-1 系统任务与中断资源分配
+
+2.3 关键技术方案选择与比较
+2.3.1 视觉感知方案
+竞赛目标为蓝色色块，要求实时获取目标横向位置与面积。本队比较了串口摄像头与数字摄像头两种方案：串口摄像头输出经压缩的图像数据，MCU 需解压且帧率受限；数字摄像头（SCC8660）以并行数据口加 DMA 方式直接输出 RGB565 原始图像，帧率高、延迟小，且无需外部图像协处理器。最终选用 SCC8660 凌瞳数字摄像头，图像分辨率 160×120，MCU 内完成全流程图像处理，兼顾了实时性与成本。
+2.3.2 语音识别方案
+语音识别可采用本地离线识别与云端在线识别两种方案。本地离线方案（如特定词唤醒识别芯片）响应快、不依赖网络，但词表固定、识别率受环境噪声影响大，且难以覆盖“鸣笛两秒/三秒、鸣笛两声/三声/四声”等近似词的区分；云端在线方案识别率与鲁棒性高，可通过热词配置优化近似词，但依赖网络连接与鉴权。考虑到比赛场地自用热点具备 WiFi 环境，且本任务语音指令在车辆静止状态下进行，对实时性要求适中，本队选用“麦克风 ADC 采集＋WiFi＋讯飞语音听写（iat）WebSocket 流式识别”方案，并针对近似词做了结束词检测与词表匹配优化。
+2.3.3 倒车返回控制方案
+倒车返回要求在仅有里程计与航向信息的条件下沿记录路径复现行驶并精确定位起点。本队在前期科目三方案中采用 Stanley 控制算法实现倒车路径跟踪，取得良好效果；国赛方案在此基础上改用“最近点锚定＋纯跟踪（Pure Pursuit）前视”的架构，并引入模糊曲率增益与终点姿态对齐策略，进一步提高了倒车直线段的稳定性和入库段的对准精度，同时保留了平行转向差速补偿，减小倒车过程中的横向偏移。
+表2-2 主要技术方案汇总
+
+
+第三章 模型车机械部分安装及改造
+3.1 车模总体结构
+本模型车以竞赛用智能卡丁车车模为基础平台，采用后轮双电机独立驱动、前轮单舵机（转向电机）驱动的四轮结构。整车机械结构主要由车架、后桥驱动单元、前桥转向单元、传感器安装支架以及车载电子设备舱组成。机械改造遵循“重心低、结构紧凑、便于拆装调试”的原则，将较重的电池与电子设备布置于车体中部偏后位置，保证车辆加减速与转弯时的稳定性。
+
+
+
+
+
+
+
+
+
+图3-1 模型车总体结构示意图
+3.2 传感器的设计安装
+3.2.1 摄像头安装
+SCC8660 摄像头通过铝合金支架固定于车体前部，镜头朝向前方略向下俯视，保证在跟随目标过程中蓝色色块始终处于图像视野中部。支架具备俯仰角调节能力，便于根据不同场地环境调整视野范围。
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+3.2.2 IMU 安装
+ASM330LHB 六轴 IMU 通过 SPI 接口（5 MHz）与主控相连，安装于车体几何中心附近，并尽量与车体纵轴对齐，以减小航向积分误差；IMU 安装面采用减震泡棉隔离电机振动，避免振动耦合影响陀螺零偏稳定性。上电后程序执行 1000 次、间隔 2 ms 的 Z 轴零偏校准。
+
+
+
+
+
+
+
+
+
+
+
+3.2.3 编码器安装
+左右后轮各安装一个增量式磁编码器，输出 A/B 两路相位差 90° 的脉冲信号，接至 TC264 的定时器编码器接口（TIM2/TIM3），由硬件正交解码自动完成计数与方向判别，5 ms 周期读取并清零。转向机构上安装绝对编码器（SPI 接口，8 MHz），一圈计数 4096，用于转向电机的位置闭环，转向中心、左右限位的原始计数值经标定后写入配置（中心 2936、最左 3880、最右 1992）。
+
+
+
+
+
+
+
+
+
+3.2.4 麦克风与灯光安装
+板载模拟麦克风安装于车体中央，输出经放大后接入主控 ADC（12 bit）进行 8 kHz 采样，采样的音频数据经 FIFO 缓冲后由 WiFi 模块发送至识别服务。灯光执行单元包括左转向灯、右转向灯、远光灯、近光灯、雾灯、双闪灯与车内照明灯共 7 路 LED，分布于车体前部与车内，采用 GPIO 推挽输出驱动；鸣笛执行单元为 2 kHz PWM 驱动的电喇叭，并配有静音控制引脚。
+
+
+
+
+
+
+
+
+3.3 电路板固定及连接
+主控核心板通过排针插接于主板上，扩展主板集成电源管理、电机驱动接口、传感器接口与灯光鸣笛信号线接口，整体固定于车体中部设备舱内。各接口均采用防呆插头并做线序标识；电机动力线与信号线分离走线，避免动力线对传感器信号的干扰；整车线束用绝缘胶带固定，确保剧烈加减速与转向时连接可靠。整车设备布局与走线如图 3-2 所示。
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+图3-2 整车电子设备布局与走线示意图
+
+第四章 电路设计
+本章说明模型车电路系统的设计。主控部分采用组委会指定的英飞凌 TC264D 核心板（逐飞科技提供），核心板本身不在此赘述，以下重点说明外围电路的设计。
+4.1 电源系统
+整车由锂电池组供电，经电源管理电路产生多路稳压输出：为 MCU 及数字电路提供 3.3 V、为传感器与逻辑电路提供 5 V、为电机驱动提供动力电源。电源输入端设置防反接、过流保护与滤波电容，防止电机启停造成的电压跌落影响数字电路工作。
+4.2 电机驱动电路
+后轮左右驱动电机与转向电机均采用“PWM＋方向电平”的双线控制方式：PWM 通道输出 17 kHz 的占空比信号控制转速/力矩，方向 GPIO 控制旋转方向，由驱动芯片实现功率放大。转向电机由于安装时接线反接，程序中通过方向电平定义（向左低电平、向右高电平）进行适配。各电机 PWM 输出均经硬件限幅保护，避免堵转时损坏驱动电路。
+4.3 传感器接口电路
+摄像头数据口、PCLK、VSYNC 与配置串口按 SCC8660 数据手册接入主控对应引脚；PCLK 用于触发 DMA 搬运，VSYNC 触发场中断。IMU 与绝对编码器经 SPI 总线连接。左右轮增量编码器 A/B 信号接定时器正交解码输入。麦克风输出经放大电路接 ADC。各数字接口均按推荐 IO 分配进行布线，避开了 TC264D 的 Boot 引脚（P14.2～P14.6、P10.5、P10.6 等），并对 P20.2（仅可输入）等特殊引脚做了规避。
+4.4 灯光鸣笛执行电路
+7 路灯光由 GPIO 推挽输出驱动 LED，鸣笛喇叭由 2 kHz PWM 驱动并经静音控制引脚（高电平静音）实现快速关断；反馈蜂鸣器由 CPU1 独立驱动，用于按键确认、任务开始、识别就绪等状态提示。灯光、鸣笛引脚分配见附录 B。
+
+
+
+
+
+4.5 电路原理图
+主板
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+转向驱动
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+后轮驱动
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+陀螺仪
+
+
+
+
+
+
+
+
+
+
+
+灯光控制板
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+远光灯和近光灯
+
+
+
+
+
+
+
+
+
+
+
+硅麦运放板
+
+
+
+
+第五章 微处理器控制软件设计
+本章为技术报告的核心部分，详细介绍模型车控制软件的理论基础、算法设计与代码实现。软件基于逐飞科技 TC264 开源库开发，采用双核并行架构，控制周期 5 ms，图像处理由帧中断驱动，语音任务独立调度。
+5.1 软件总体架构
+软件按“实时控制域”与“交互运算域”划分：CPU0 完成 5 ms 车辆控制、任务状态机、色块识别、路径运算与屏幕显示；CPU1 完成反馈蜂鸣器驱动与语音识别相关的网络、鉴权运算。CPU0 主循环在每帧图像就绪后执行色块识别，并将识别结果送入车辆控制模块；5 ms 定时中断中依次执行车辆控制、任务状态机与路径运算；125 μs 定时中断执行麦克风采样，构成 8 kHz 音频流。语音识别流程与车辆控制流程互不阻塞，识别完成后通过事件标志通知任务状态机。
+
+5.2 图像处理与色块识别
+5.2.1 RGB565 到 HSV 颜色距离
+摄像头输出 RGB565 图像。为增强对光照变化的鲁棒性，程序将每个像素转换为 HSV（色相、饱和度、明度），并计算其与目标色（默认色相 220°、饱和度 180、明度 120）在 HSV 空间中的欧氏距离，距离小于阈值（默认 70）的像素判为目标像素，同时记录该像素的相似度作为连通域得分种子。HSV 转换采用整数运算，并利用整数平方根避免浮点开销。
+D = sqrt( (ΔH·255/180)² + (ΔS)² + (ΔV)² )，若 D ≤ D_max 则为目标像素    （公式1）
+5.2.2 形态学处理
+对二值掩码执行十字形膨胀与腐蚀（迭代次数可调，默认 1 次），用于闭合色块内部的细小空洞并滤除孤立噪点。膨胀采用十字邻域（上、下、左、右、中心），腐蚀判断十字邻域全为目标时保留，均为位图按位运算，处理速度满足实时要求。
+5.2.3 游程连通域标记
+对形态学处理后的二值图逐行进行游程编码，采用带并查集（Union-Find）的经典两遍法在线标记连通域：当前行游程与上一行重叠游程合并，合并时以面积较大的连通域为根以减少路径压缩开销；每行结束后，不再被触及的连通域即完成封闭，将其纳入候选目标。候选连通域需满足最小面积约束，并以“相似度得分优先、面积次之”的规则选出最终目标，输出其中心坐标（center_x、center_y）、包围盒、面积与得分。该算法对任意形状连通域均适用，且无需浮点运算，适用于嵌入式平台。
+5.3 视觉跟随控制
+视觉跟随控制以 5 ms 周期运行。色块中心横向位置先经一阶低通滤波（Q4 定点，系数 3/4）抑制抖动，随后计算与目标中心（默认 80 像素，即图像中心）的横向偏差，叠加微分项构成 PD 控制，输出转向目标偏移量；目标面积则映射为速度指令，面积偏小（目标远）时加速、面积偏大（目标近）时减速，实现随距离自适应调速。
+steer = sign · ( Kp·e + Kd·de/dt )，其中 Kp=14，Kd=3/2，e 为横向偏差（像素）    （公式2）
+为抑制低速转向时内侧车轮因静摩擦停转，程序中设置了内侧轮最低正向轮速；目标丢失后并不立即急停，而是进入软停止斜坡（降速间隔 15 ms），并在斜坡期间保持最后转向角，避免突然的转向关闭造成横向窜动；若超过 150 ms 无有效目标则完全停车。此外，当色块面积超过停车阈值（默认 12000 像素）并连续确认 3 帧时，判定目标过近（遮挡停车），车辆锁停，待色块变小后自动恢复。
+5.4 路径记录与位姿推算
+5.4.1 位姿推算
+路径记录以发车时刻为坐标原点。每 5 ms 读取左右轮编码器计数，取均值换算为行驶距离（每计数 0.000833 m），结合 IMU 积分得到的相对航向角（以记录起始时刻为航向零点）进行二维航迹推算，得到车体局部坐标 (x, y) 与航向 yaw。航向由 Z 轴陀螺积分获得，积分前完成零偏校准。
+x(k+1) = x(k) + d·cos(yaw)， y(k+1) = y(k) + d·sin(yaw)    （公式3）
+5.4.2 路径点记录
+跟随行驶过程中，当车体位移超过设定间距（默认 0.20 m，可在线调节）时，将当前位置追加为路径点，路径容量 2000 点。记录起始时刻强制写入原点（0,0），返回开始时再强制写入当前位置，保证路径闭合。
+5.5 倒车返回控制
+倒车返回是国赛任务的技术难点：车辆仅依赖里程计与航向信息，沿记录路径逆向行驶回到起点。本队采用“最近点锚定＋纯跟踪前视＋模糊曲率增益＋终点姿态对齐”的复合控制策略。
+5.5.1 最近路径点锚定
+每 5 ms 在返回索引前最多 20 个点的窗口内搜索距离当前车体位置最近的路径点，作为目标锚点。该窗口搜索方式限制了搜索范围，既保证实时性，又避免了距离远点误选。
+5.5.2 纯跟踪倒车前视
+在锚点基础上，沿路径向起点方向前视若干个路径点（默认 5 点）作为跟踪目标。计算目标点相对车体坐标系的横向偏差 body_y 与前视距离 L，按纯跟踪原理计算期望曲率与转向角：
+κ = 2·body_y / L² ， δ = -atan( wheel_base·κ )    （公式4）
+其中 wheel_base 为轴距（0.65 m）。为保证低速时算法稳定，前视距离设置了最小值保护（0.10 m）。倒车方向采用车体反向航向（yaw+180°）作为参考。
+5.5.3 模糊曲率增益
+为改善大横向误差下纯跟踪响应过缓、小误差下易振荡的问题，程序引入二维模糊控制器对曲率增益进行在线调节。模糊输入为横向误差的归一化幅值（误差/满量程）与误差变化率的归一化值，采用 3×3 规则表（负大、零、正大三档隶属度），输出增益在 0.70～1.40 之间连续调节：误差大且趋于发散时增益加大、误差小且收敛时增益减小。误差变化率经一阶低通滤波（系数 0.15）平滑，避免噪声干扰。该模糊增益可通过上位机在线使能或关闭。
+表5-1 模糊曲率增益规则表
+
+5.5.4 终点姿态对齐与入库
+当与起点的剩余距离进入姿态介入距离（默认 2.0 m）后，程序在纯跟踪转向角的基础上按剩余距离线性加权加入航向对准项（航向误差比例控制，Kp=0.60，最大权重 0.70），使车辆在接近起点时自动摆正车身；当剩余路径点数较少（默认 10 点）时切换短前视（默认 0.40 m）并降低车速（默认 4 count/5ms），保证入库段平稳。接近起点（2.0 m 内）时速度按剩余距离线性递减。停车判定条件为：到达起点半径 0.55 m 内，或已进入终点姿态区且横向偏差小于 0.30 m 时停车，以补偿里程计定位误差，保证可靠进入语音任务阶段。
+5.5.5 平行转向差速补偿
+后轮双电机驱动在倒车转弯时若左右轮速相同，会产生额外的横向偏移。程序根据转向角计算期望差速（基于阿克曼几何：Δv ∝ track·tan(δ)/wheel_base），对左右轮目标速度进行差速补偿，并对差速量限幅（默认最大 3 count/5ms）与最低轮速保护，防止差速把一侧车轮压停。
+5.6 转向与驱动执行层
+5.6.1 转向位置闭环
+转向电机采用位置 PID 闭环：绝对编码器读取转向位置（相对中心），与目标转向偏移比较，误差进入死区（8 计数）后不动作，避免频繁振荡；输出叠加最小占空比（1200）克服转向机构静摩擦；积分限幅 3000；并设置左右机械限位保护。视觉跟随与倒车返回使用两套可在线切换的 PID 参数，倒车返回参数经上位机在线调节。
+5.6.2 后轮速度闭环
+后轮左右电机分别采用带前馈的速度 PI 闭环：目标轮速（count/5ms）乘以前馈系数（300 PWM/count）作为前馈占空比，叠加 PI 修正量，输出经 9900 硬限幅。前馈保证响应速度，PI 消除稳态误差。编码器计数方向与指令方向不一致的问题通过在软件中按请求符号恢复逻辑方向解决。
+PWM = FF·n_target + Kp·e + Ki·∫e dt ，其中 Kp=80，Ki=4，积分限幅 2000    （公式5）
+5.7 语音识别系统
+5.7.1 音频采集
+语音任务启动后，125 μs 定时中断以 8 kHz 采样率对麦克风放大输出进行 12 bit ADC 采样，减去直流偏置后写入环形 FIFO；FIFO 缓冲 4000 采样点，达到发送批次（3500 点）后组帧发送。发送帧为讯飞 iat 协议 JSON 格式，音频编码为 8 kHz/16 bit 的 base64 原始 PCM，并携带 app_id、领域（iat）、语言（zh_cn）、口音（mandarin）与端点检测参数。
+5.7.2 鉴权与连接
+讯飞语音听写 WebSocket 接口要求每次连接前进行 HMAC-SHA256 签名鉴权：以“host、date、GET 请求行”为待签字符串，用 API 密钥进行 HMAC-SHA256 计算，结果经 base64 与 URL 编码后拼接为 wss://ws-api.xfyun.cn/v2/iat?authorization=…&date=…&host=… 的鉴权 URL。由于鉴权依赖的日期字段有有效期，程序在每次识别启动前重新通过 WiFi 模块获取网络时间（GMT）并刷新鉴权 URL，避免旧 URL 过期导致连接失败。
+5.7.3 流式识别与结果处理
+WebSocket 连接建立后，首先发送 status=0 的首帧（空音频）建立会话，随后按批次发送 status=1 的中间帧，识别结束后发送 status=2 的尾帧。服务器返回的识别结果以 JSON 流式下发，程序解析其中的“w”字段逐段拼接识别文本；一旦检测到结束词（“指令结束”“任务结束”“结束”），立即截断文本并停止后续拼接，保证“结束”之后的冗余识别内容不会进入指令解析。识别最长 60 s，超时自动终止。
+5.7.4 指令词映射
+识别文本按“词组最长匹配＋顺序扫描”的方式解析：程序依次在文本中匹配预置词表中的指令短语（如“打开左转向灯”“鸣笛三声”“急促鸣笛”等 60 余条），命中即生成对应动作任务并跳过已匹配文本，一条语音可解析出最多 8 个依次执行的任务。词表覆盖灯光（照明、左转、右转、远光、近光、雾灯、双闪、关闭灯光）与鸣笛（1～3 秒、2～4 声、长短、急促、警报）两大类，并兼容“鸣笛3秒钟”等口语变体。
+5.8 灯光鸣笛任务执行
+语音解析得到的任务序列由灯光鸣笛执行模块依次执行：灯光类任务点亮对应 LED（转向灯、双闪按 500 ms 周期闪烁），持续 5 s 后自动切换下一任务；鸣笛类任务由预置的节奏步骤表驱动 PWM 蜂鸣器（2 kHz、50% 占空比）按“响/停”时间序列发声，例如“鸣笛两声”为响 1 s、停 1 s、再响 1 s，“急促鸣笛”为 0.5 s 间隔的连续短鸣，“警报鸣笛”为 0.5 kHz 与 1 kHz 交替的警报音。全部任务完成后蜂鸣器提示并回到待机状态；若语音中未识别出任何指令，则提示错误音并回到待机，允许重新识别。
+5.9 任务状态机
+整车任务由统一状态机管理，状态迁移如图 5-1 所示：IDLE（待机）状态下按确认键进入 FOLLOW RECORD（视觉跟随并记录路径）；跟随过程中再次按键触发 RETURNING（倒车返回）；返回完成进入 RETURN DONE；随后在菜单选择语音任务并确认后进入 ASR INIT（语音初始化）、ASR RECORD（语音识别）；识别到指令进入 COMMAND RUN（灯光鸣笛执行），执行完毕回到 IDLE。全过程遥控器 CH3 可随时手动接管，接管后任务中止（ABORTED），退出接管后回到 IDLE。IMU 初始化失败时任务禁止启动并提示 IMU ERROR。
+```mermaid
+stateDiagram-v2
+    [*] --> IDLE: 系统初始化完成
+
+    state "IDLE\n空闲/菜单选择" as IDLE
+    state "FOLLOW_RECORD\n色块跟随＋路径记录" as FOLLOW
+    state "RETURNING\nPure Pursuit倒车复现" as RETURN
+    state "RETURN_DONE\n返回发车区并停车" as RETURN_DONE
+    state "ASR_INIT\nWi-Fi与语音初始化" as ASR_INIT
+    state "ASR_RECORD\n就绪双响后录音识别" as ASR_RECORD
+    state "COMMAND_RUN\n执行灯光/鸣笛队列" as COMMAND
+    state "ABORTED\n任务中止/IMU异常" as ABORTED
+    state "DONE\n预留状态" as DONE
+
+    IDLE --> FOLLOW: 选择循迹并确认
+    IDLE --> ASR_INIT: 选择ASR并确认
+
+    FOLLOW --> RETURN: 循迹中按确认键
+    FOLLOW --> ABORTED: 遥控器接管
+    FOLLOW --> ABORTED: 路径系统异常
+
+    RETURN --> RETURN_DONE: 到达停车条件\nASR功能开启
+    RETURN --> IDLE: 到达停车条件\nASR功能关闭
+    RETURN --> ABORTED: 遥控器接管
+
+    ABORTED --> IDLE: 遥控接管解除
+    ABORTED --> FOLLOW: 菜单选择循迹并确认
+    ABORTED --> ASR_INIT: 菜单选择ASR并确认
+
+    RETURN_DONE --> ASR_INIT: 确认执行语音任务
+    RETURN_DONE --> FOLLOW: 切换到循迹并确认
+
+    ASR_INIT --> ASR_RECORD: 初始化成功\n启动WebSocket识别
+    ASR_INIT --> RETURN_DONE: 初始化失败
+
+    state ASR_RECORD {
+        [*] --> WAIT_READY
+        WAIT_READY --> READY_BEEP: 握手及首帧发送成功
+        READY_BEEP --> CAPTURE: 双响完成
+        CAPTURE --> WAIT_RESULT: 开放麦克风采样
+        WAIT_RESULT --> [*]: 收到识别结果
+    }
+
+    ASR_RECORD --> COMMAND: 解析到1～8项有效命令
+    ASR_RECORD --> IDLE: 未解析到有效命令\n长鸣错误提示
+
+    COMMAND --> IDLE: 灯光和鸣笛全部执行完成
+
+    DONE --> FOLLOW: 菜单选择循迹并确认
+    DONE --> ASR_INIT: 菜单选择ASR并确认
+```
+图5-1 任务状态机示意图
+5.10 人机交互
+模型车提供三种人机交互途径：（1）IPS200 两寸屏实时显示摄像头图像、二值掩码、色块中心/面积、任务状态等诊断信息；（2）X6F 六通道遥控器实现方向、油门、手动接管与速度档位选择；（3）自研 Qt 上位机通过 UDP 与车辆通信，实现 HSV 参数、跟随参数、倒车返回参数与转向 PID 的在线读取、调节与保存，并可实时显示轨迹、编码器曲线与二值图，极大提升了现场调试效率。
+
+第六章 开发工具、制作与调试过程
+6.1 开发工具与环境
+软件开发采用英飞凌 AURIX Development Studio（ADS v1.10.2）与 Tasking 编译器，基于逐飞科技 TC264 开源库（iLLD 底层驱动）开发；图像、控制与语音代码均以 C 语言编写，工程开启二级优化。上位机采用 Qt 6（C++/Widgets）开发，运行于 Windows 平台，通过 UDP 与车端通信。硬件调试使用示波器、逻辑分析仪与串口调试助手。
+6.2 调试工具与方法
+调试过程采用“屏幕诊断＋串口日志＋上位机遥测”三级手段：屏幕实时显示图像处理结果与任务状态，便于现场快速定位图像与状态机问题；车端调试串口输出各阶段状态码（如 R00～R14 表示返回流程各节点）与 ASR 调试日志，便于离线分析；自研上位机通过 UDP 以 10 Hz 遥测速率实时显示编码器、位姿、路径轨迹与 PP 目标点等内部变量，并支持在线修改参数，是倒车返回与图像参数整定的主要工具。
+6.3 关键问题与解决方案
+6.3.1 转向机构静摩擦与死区问题
+转向电机在零位附近因静摩擦存在死区，纯 PID 输出不足以克服静摩擦时转向不动作。解决方案：误差进入 8 计数死区后关闭输出避免振荡；输出叠加最小占空比（1200 PWM）克服静摩擦；同时标定转向电机方向（因接线反接，向左低电平、向右高电平）保证控制方向正确。
+6.3.2 倒车 S 形发散问题
+倒车返回初期出现航向负反馈方向配置错误导致的 S 形发散。通过试验确定倒车航向负反馈方向系数（1），并加入最近点锚定窗口与纯跟踪前视，使倒车轨迹平滑收敛。调试中通过上位机实时观察横向误差与 PP 目标点，确认算法方向无误后再进行速度提升。
+6.3.3 低速静摩擦停转与差速压停
+跟随转弯时内侧轮低速段因静摩擦停转，倒车差速时一侧车轮可能被差速量压停。解决方案：为内侧轮设置最低正向轮速（2 count/5ms）、倒车轮设置最低反向轮速（1 count/5ms），并将差速量限幅在速度幅值以内。
+6.3.4 重获目标打滑与丢目标窜动
+视觉跟随中目标短暂丢失后重获时突然加速易打滑，丢目标时立即急停又造成横向窜动。解决方案：目标重获时按斜坡逐步升速（每 25 ms 提升 1 count/5ms），丢目标时软停止降速（每 15 ms 降低 1 count/5ms）并在减速期间保持最后转向角。
+6.3.5 语音鉴权过期与断网恢复
+车辆需先完成整趟跟随与返回任务后才进行语音识别，期间预生成的鉴权 URL 中的日期字段已过期，导致连接失败。解决方案：每次语音识别启动前重新获取网络时间并刷新鉴权 URL；识别结束后重新初始化 WiFi，保证可重复识别。
+6.3.6 识别结束词污染问题
+讯飞流式识别在裁判员说完指令后仍会返回后续冗余转写（如环境音被转写为“结束”等），若全部拼接会导致指令解析失败。解决方案：检测到结束词后立即截断并停止拼接，只保留结束词之前的任务文本进行解析。
+6.3.7 编码器方向极性不一致
+该车编码器方向输入在正反两个行驶方向上极性相同，直接读数无法区分前进/后退。解决方案：按各轮指令请求的符号恢复逻辑方向，保证里程计与速度闭环方向正确。
+
+第七章 模型车主要技术参数
+本章汇总模型车的主要技术参数。
+7.1 总体参数
+表7-1 模型车总体基本参数
+
+7.2 电路参数
+表7-2 电路与功耗参数
+
+7.3 传感器清单
+表7-3 传感器种类、型号及数量
+
+7.4 控制与检测参数
+表7-4 控制周期与赛道信息检测参数
+
+7.5 主要控制参数
+表7-5 主要控制参数（默认值）
+
+
+结论
+本技术报告详细介绍了参加全国大学生智能汽车竞赛国赛科目的竞赛模型汽车——智能卡丁车的设计、制作与调试过程。模型车以英飞凌 TC264D 双核微控制器为核心，综合运用 SCC8660 数字摄像头视觉识别、ASM330LHB 六轴 IMU 航向推算、编码器里程计、纯跟踪与模糊控制等算法，实现了“蓝色色块视觉跟随＋路径记录＋倒车返回”的完整驾驶任务；并基于“板载麦克风采集＋WiFi＋讯飞语音听写云识别”方案，实现了语音指令驱动的灯光与鸣笛任务，完成了国赛“科目二与科目三融合、带语音任务”的竞赛要求。
+在算法层面，本队针对倒车返回这一技术难点，设计了“最近点锚定＋纯跟踪前视＋模糊曲率增益＋终点姿态对齐＋平行转向差速补偿”的复合控制策略，并通过上位机在线调参手段完成了大量实车标定；针对语音任务，解决了鉴权 URL 过期、识别结束词污染、近似词区分等问题，保证了语音任务的可靠性。整车控制周期 5 ms，视觉处理帧驱动运行，语音识别独立调度，系统实时性与稳定性满足竞赛要求。
+同时，本方案仍存在可改进之处：一是航向推算依赖陀螺积分，长时间低速行驶存在累积漂移，后续可引入加速度计辅助姿态融合或磁力计校正；二是倒车返回完全依赖里程计定位，若场地出现打滑会导致路径偏差，可考虑引入视觉或 UWB 等绝对定位手段进行修正；三是云端语音识别依赖 WiFi 环境，后续可评估本地离线识别作为备份。以上问题为本队后续技术迭代指明了方向。
+
+
+
+
+
+
+
+
+
+
+
+
+
+附录A　核心算法子程序
+附录A-1  HSV 颜色距离二值化子程序
+/* 附录A-1  HSV 颜色距离二值化（color_blob.c 节选） */
+static void rgb565_to_hsv(uint16 pixel, uint16 *hue, uint8 *sat, uint8 *val)
+{
+    uint8 r = (uint8)((((pixel >> 11) & 0x1FU) * 255U + 15U) / 31U);
+    uint8 g = (uint8)((((pixel >> 5)  & 0x3FU) * 255U + 31U) / 63U);
+    uint8 b = (uint8)(((pixel & 0x1FU) * 255U + 15U) / 31U);
+    uint8 max_value = r > g ? (r > b ? r : b) : (g > b ? g : b);
+    uint8 min_value = r < g ? (r < b ? r : b) : (g < b ? g : b);
+    int32 delta = (int32)max_value - min_value;
+    int32 h = 0;
+    *val = max_value;
+    *sat = max_value ? (uint8)((delta * 255 + max_value / 2) / max_value) : 0U;
+    if(delta != 0)
+    {
+        if(max_value == r) h = 60 * ((int32)g - b) / delta;
+        else if(max_value == g) h = 120 + 60 * ((int32)b - r) / delta;
+        else h = 240 + 60 * ((int32)r - g) / delta;
+        if(h < 0) h += 360;
+    }
+    *hue = (uint16)h;
+}
+ 
+static uint8 pixel_is_target(uint16 pixel, uint8 *similarity)
+{
+    uint16 hue; uint8 sat, val; uint32 dh, distance;
+    rgb565_to_hsv(pixel, &hue, &sat, &val);
+    dh = (hue > (uint16)g_national_tune.hsv_target_hue)
+        ? hue - (uint16)g_national_tune.hsv_target_hue
+        : (uint16)g_national_tune.hsv_target_hue - hue;
+    if(dh > 180U) dh = 360U - dh;
+    dh = (dh * 255U) / 180U;
+    distance = color_isqrt(dh * dh +
+        ((int32)sat - g_national_tune.hsv_target_sat) * ((int32)sat - g_national_tune.hsv_target_sat) +
+        ((int32)val - g_national_tune.hsv_target_val) * ((int32)val - g_national_tune.hsv_target_val));
+    if(distance > 255U) distance = 255U;
+    *similarity = (uint8)(255U - distance);
+    return distance <= (uint32)g_national_tune.hsv_distance_max;
+}
+
+附录A-2  视觉跟随控制子程序
+/* 附录A-2  视觉跟随控制（vehicle_control.c 节选，5ms 周期） */
+static void control_apply_follow(void)
+{
+    int16 x = (int16)((s_filtered_x_q4 + 2) / 4);          /* 一阶低通滤波后的色块中心 */
+    uint32 area = (s_filtered_area_q4 + 2U) / 4U;
+    int16 xe = x - (int16)g_national_tune.follow_x_target, derivative, speed;
+    int32 steer;
+    if(xe >= -VEHICLE_FOLLOW_X_DEADBAND && xe <= VEHICLE_FOLLOW_X_DEADBAND) xe = 0;
+    derivative = xe - s_last_x_error; s_last_x_error = xe;
+    steer = VEHICLE_FOLLOW_STEER_SIGN * (g_national_tune.follow_steer_kp * xe +
+        VEHICLE_FOLLOW_STEER_KD_NUM * derivative / VEHICLE_FOLLOW_STEER_KD_DEN);
+    steer = control_limit(steer, -VEHICLE_FOLLOW_STEER_LIMIT, VEHICLE_FOLLOW_STEER_LIMIT);
+    speed = control_follow_speed(area);                    /* 面积→速度映射 */
+    vehicle_steer_set_enable(1U); vehicle_steer_set_target(steer);
+    vehicle_drive_set_follow(speed, steer);
+}
+ 
+/* 目标丢失软停止：减速斜坡期间保持最后转向角 */
+else if(!s_target_valid || (uint32)(now - s_target_time_ms) > VEHICLE_TARGET_TIMEOUT_MS)
+{
+    s_target_valid = 0U;
+    s_have_filtered_target = 0U;
+    s_last_x_error = 0;
+    vehicle_drive_follow_soft_stop();
+    s_state = VEHICLE_STATE_NO_TARGET;
+}
+
+附录A-3  倒车返回（纯跟踪）核心子程序
+/* 附录A-3  倒车返回核心：最近点锚定＋纯跟踪＋模糊增益＋终点姿态对齐
+   （mission_path.c path_update_return() 节选，5ms 周期） */
+static void path_update_return(void)
+{
+    /* 1) 最近路径点锚定（窗口搜索） */
+    search_first = (s_return_index > VEHICLE_RETURN_ANCHOR_SEARCH_POINTS) ?
+                   (uint16)(s_return_index - VEHICLE_RETURN_ANCHOR_SEARCH_POINTS) : 0U;
+    nearest_distance_sq = 3.402823466e+38F;
+    target_index = s_return_index;
+    for(index = s_return_index;; --index)
+    {
+        dx = s_points[index].x - s_x;
+        dy = s_points[index].y - s_y;
+        distance_sq = dx * dx + dy * dy;
+        if(distance_sq < nearest_distance_sq)
+        {
+            nearest_distance_sq = distance_sq;
+            target_index = index;
+        }
+        if(index == search_first) break;
+    }
+    s_return_index = target_index;
+ 
+    /* 2) 终点判定：到达起点半径内或终点区横向偏差达标 */
+    final_distance = path_distance(s_x, s_y, s_points[0].x, s_points[0].y);
+    if(final_distance <= g_national_tune.return_final_align_distance)
+        s_final_zone_entered = 1U;
+    if(s_return_index == 0U &&
+       (final_distance <= g_national_tune.return_stop_radius ||
+        (s_final_zone_entered && s_x <= 0.0f &&
+         fabsf(s_y) <= VEHICLE_RETURN_STOP_CROSS_TRACK_M)))
+    {
+        s_returning = 0U; s_return_done = 1U;
+        vehicle_control_stop_auto();
+        return;
+    }
+ 
+    /* 3) 前视点选择（入库段短前视） */
+    final_lookahead_active =
+        (s_return_index <= (uint16)g_national_tune.return_final_lookahead_start_points) ? 1U : 0U;
+    lookahead_points = (uint16)g_national_tune.return_lookahead_points;
+    if(final_lookahead_active)
+    {
+        float point_spacing = s_point_spacing;
+        if(point_spacing < 0.01f) point_spacing = 0.01f;
+        lookahead_points = (uint16)(g_national_tune.return_final_lookahead_distance /
+                                    point_spacing + 0.5f);
+        if(lookahead_points < 1U) lookahead_points = 1U;
+        if(lookahead_points > 20U) lookahead_points = 20U;
+    }
+    target_index = (s_return_index > lookahead_points) ?
+                   (uint16)(s_return_index - lookahead_points) : 0U;
+    target = s_points[target_index];
+ 
+    /* 4) 纯跟踪：车体系横向偏差 body_y 与期望转向角 */
+    dx = target.x - s_x; dy = target.y - s_y;
+    target_heading = path_normalize_angle(atan2f(dy, dx) * 180.0f / MISSION_PI_F);
+    reverse_heading = path_normalize_angle(s_yaw + 180.0f);
+    reverse_heading_rad = reverse_heading * MISSION_PI_F / 180.0f;
+    heading_error = path_normalize_angle(target_heading - reverse_heading);
+    body_y = -sinf(reverse_heading_rad) * dx + cosf(reverse_heading_rad) * dy;
+    lookahead_sq = dx * dx + dy * dy;
+    protected_lookahead_sq = VEHICLE_RETURN_PP_MIN_LOOKAHEAD_M *
+                             VEHICLE_RETURN_PP_MIN_LOOKAHEAD_M;
+    if(protected_lookahead_sq < lookahead_sq) protected_lookahead_sq = lookahead_sq;
+    fuzzy_gain = path_fuzzy_curvature_gain(body_y, target_index, &fuzzy_error_rate);
+    curvature = fuzzy_gain * 2.0f * body_y / protected_lookahead_sq;
+    pp_steer_deg = -atanf(VEHICLE_DRIVE_WHEEL_BASE_M * curvature) *
+                   180.0f / MISSION_PI_F * (float)VEHICLE_RETURN_STEER_SIGN;
+ 
+    /* 5) 终点姿态对齐加权 */
+    attitude_error = path_normalize_angle(-s_yaw);
+    yaw_steer_deg = -attitude_error * g_national_tune.return_final_yaw_kp *
+                    (float)VEHICLE_RETURN_STEER_SIGN;
+    align_weight = 0.0f;
+    if(g_national_tune.return_final_align_distance > 0.001f &&
+       final_distance < g_national_tune.return_final_align_distance)
+    {
+        align_weight = (1.0f - final_distance /
+                        g_national_tune.return_final_align_distance) *
+                       VEHICLE_RETURN_FINAL_ALIGN_MAX_WEIGHT;
+    }
+    if(align_weight > VEHICLE_RETURN_FINAL_ALIGN_MAX_WEIGHT)
+        align_weight = VEHICLE_RETURN_FINAL_ALIGN_MAX_WEIGHT;
+    steer_deg = (1.0f - align_weight) * pp_steer_deg + align_weight * yaw_steer_deg;
+    if(steer_deg > VEHICLE_RETURN_STEER_MAX_DEG) steer_deg = VEHICLE_RETURN_STEER_MAX_DEG;
+    if(steer_deg < -VEHICLE_RETURN_STEER_MAX_DEG) steer_deg = -VEHICLE_RETURN_STEER_MAX_DEG;
+ 
+    /* 6) 入库减速与执行 */
+    return_speed = final_lookahead_active ? g_national_tune.return_final_speed :
+                                           g_national_tune.return_speed;
+    if(g_national_tune.return_final_slow_radius > 0.001f &&
+       final_distance < g_national_tune.return_final_slow_radius)
+    {
+        return_speed = (int32)((float)return_speed * final_distance /
+                              g_national_tune.return_final_slow_radius + 0.5f);
+        if(return_speed < 1) return_speed = 1;
+    }
+    vehicle_control_set_return((int16)-return_speed,
+        (int32)(steer_deg * VEHICLE_RETURN_RAW_PER_DEG));
+}
+
+附录A-4  模糊曲率增益子程序
+/* 附录A-4  模糊曲率增益（mission_path.c path_fuzzy_curvature_gain() 节选） */
+static const float rules[3][3] = {
+    {-1.0f, -0.7f, 0.0f},
+    {-0.4f,  0.0f, 0.5f},
+    { 0.0f,  0.6f, 1.0f}
+};
+/* 输入归一化 */
+error_normalized = path_clamp(fabsf(lateral_error) /
+                              g_national_tune.return_fuzzy_error_scale, 0.0f, 1.0f);
+trend_normalized = path_clamp(aligned_rate /
+                              g_national_tune.return_fuzzy_rate_scale, -1.0f, 1.0f);
+/* 三角形隶属度 */
+error_membership[0] = path_clamp(1.0f - 2.0f * error_normalized, 0.0f, 1.0f);
+error_membership[1] = path_clamp(1.0f - fabsf(2.0f * error_normalized - 1.0f), 0.0f, 1.0f);
+error_membership[2] = path_clamp(2.0f * error_normalized - 1.0f, 0.0f, 1.0f);
+trend_membership[0] = path_clamp(-trend_normalized, 0.0f, 1.0f);
+trend_membership[1] = path_clamp(1.0f - fabsf(trend_normalized), 0.0f, 1.0f);
+trend_membership[2] = path_clamp(trend_normalized, 0.0f, 1.0f);
+/* 加权平均去模糊化 */
+weighted_output = 0.0f; weight_sum = 0.0f;
+for(error_index = 0U; error_index < 3U; error_index++)
+    for(trend_index = 0U; trend_index < 3U; trend_index++)
+    {
+        weight = error_membership[error_index] * trend_membership[trend_index];
+        weighted_output += weight * rules[error_index][trend_index];
+        weight_sum += weight;
+    }
+fuzzy_output = (weight_sum > 0.0001f) ? weighted_output / weight_sum : 0.0f;
+if(fuzzy_output >= 0.0f)
+    gain = 1.0f + fuzzy_output * (g_national_tune.return_fuzzy_max_gain - 1.0f);
+else
+    gain = 1.0f + fuzzy_output * (1.0f - MISSION_FUZZY_MIN_GAIN);
+*error_rate_out = s_fuzzy_error_rate;
+return path_clamp(gain, MISSION_FUZZY_MIN_GAIN, g_national_tune.return_fuzzy_max_gain);
+
+附录A-5  转向位置 PID 子程序
+/* 附录A-5  转向位置 PID（vehicle_steer.c vehicle_steer_tick_5ms() 节选） */
+error = s_target - s_position;
+if((error > -dead_zone) && (error < dead_zone))          /* 死区处理 */
+{
+    s_integral = 0.0f; s_last_error = 0;
+    pwm_set_duty(VEHICLE_STEER_PWM, 0);
+    return;
+}
+s_integral += (float)error;
+if(s_integral > integral_max) s_integral = integral_max;
+if(s_integral < -integral_max) s_integral = -integral_max;
+output = kp * (float)error + ki * s_integral + kd * (float)(error - s_last_error);
+s_last_error = error;
+if(output > 0.0f) output += (float)min_duty;             /* 静摩擦补偿 */
+if(output < 0.0f) output -= (float)min_duty;
+if(output > (float)pwm_max) output = (float)pwm_max;
+if(output < (float)-pwm_max) output = (float)-pwm_max;
+/* 机械限位保护 */
+if((s_position >= VEHICLE_STEER_MAX_POS && output > 0.0f) ||
+   (s_position <= VEHICLE_STEER_MIN_POS && output < 0.0f))
+{
+    output = 0.0f; s_integral = 0.0f;
+}
+if(duty > 0) { gpio_set_level(VEHICLE_STEER_DIR, VEHICLE_STEER_LEFT_LEVEL);
+               pwm_set_duty(VEHICLE_STEER_PWM, duty); }
+else if(duty < 0) { gpio_set_level(VEHICLE_STEER_DIR, VEHICLE_STEER_RIGHT_LEVEL);
+                    pwm_set_duty(VEHICLE_STEER_PWM, -duty); }
+else pwm_set_duty(VEHICLE_STEER_PWM, 0);
+
+附录A-6  语音指令映射子程序
+/* 附录A-6  语音指令→灯光鸣笛任务映射（signal_actions.c 节选） */
+static const phrase_map_t s_phrases[] =
+{
+    {"打开车内照明灯", TASK_LIGHT_ILLUM}, {"车内照明灯", TASK_LIGHT_ILLUM}, {"照明灯", TASK_LIGHT_ILLUM},
+    {"打开左转向灯", TASK_LIGHT_LEFT}, {"左转向灯", TASK_LIGHT_LEFT}, {"左转向", TASK_LIGHT_LEFT}, {"左转", TASK_LIGHT_LEFT},
+    {"打开右转向灯", TASK_LIGHT_RIGHT}, {"右转向灯", TASK_LIGHT_RIGHT}, {"右转向", TASK_LIGHT_RIGHT}, {"右转", TASK_LIGHT_RIGHT},
+    {"打开远光灯", TASK_LIGHT_HIGH}, {"远光灯", TASK_LIGHT_HIGH}, {"远光", TASK_LIGHT_HIGH},
+    {"打开近光灯", TASK_LIGHT_LOW}, {"近光灯", TASK_LIGHT_LOW}, {"近光", TASK_LIGHT_LOW},
+    {"打开雾灯", TASK_LIGHT_FOG}, {"雾灯", TASK_LIGHT_FOG},
+    {"打开双闪灯", TASK_LIGHT_HAZARD}, {"双闪灯", TASK_LIGHT_HAZARD}, {"双闪", TASK_LIGHT_HAZARD},
+    {"关闭所有灯光", TASK_LIGHT_OFF}, {"关闭灯光", TASK_LIGHT_OFF},
+    {"警报鸣笛", TASK_HORN_ALERT}, {"急促鸣笛", TASK_HORN_URGENT}, {"长短鸣笛", TASK_HORN_LONG_SHORT},
+    {"鸣笛四声", TASK_HORN_4_BEEP}, {"鸣笛三声", TASK_HORN_3_BEEP},
+    {"鸣笛两声", TASK_HORN_2_BEEP}, {"鸣笛二声", TASK_HORN_2_BEEP},
+    {"鸣笛三秒钟", TASK_HORN_3S}, {"鸣笛两秒钟", TASK_HORN_2S}, {"鸣笛一秒钟", TASK_HORN_1S},
+};
+ 
+uint8 signal_actions_start_from_speech(const char *speech)
+{
+    const char *p = speech; uint16 i; uint16 len; uint8 matched;
+    signal_actions_stop(); s_count = 0U; s_index = 0U;
+    if(!speech) { s_state = SIGNAL_ACTION_NO_COMMAND; return 0U; }
+    while(*p && s_count < SIGNAL_ACTION_MAX_TASKS)      /* 顺序扫描，最长匹配 */
+    {
+        matched = 0U;
+        for(i = 0U; i < (uint16)(sizeof(s_phrases)/sizeof(s_phrases[0])); ++i)
+        {
+            len = (uint16)strlen(s_phrases[i].phrase);
+            if(strncmp(p, s_phrases[i].phrase, len) == 0)
+            {
+                s_tasks[s_count] = s_phrases[i].task;
+                ++s_count; p += len; matched = 1U; break;
+            }
+        }
+        if(!matched) ++p;
+    }
+    if(!s_count) { s_state = SIGNAL_ACTION_NO_COMMAND; return 0U; }
+    s_state = SIGNAL_ACTION_RUNNING; actions_start_task(s_tasks[0]); return s_count;
+}
+
+附录B引脚分配
+表B-1 主要外设引脚分配表
+
+
+
+===== TABLE 1 =====
+符号 | 含义 | 单位
+γ | 车体航向角（相对记录起始时刻） | °
+δ | 前轮转向角 | °
+κ | 路径曲率 | 1/m
+e | 横向偏差（色块中心偏差 / 路径横向偏差） | px / m
+L | 纯跟踪前视距离 | m
+d | 单周期行驶距离 | m
+v | 轮速（编码器计数） | count/5ms
+D | HSV 颜色距离 | —
+
+===== TABLE 2 =====
+资源 | 周期 | 功能
+CCU61_CH0 定时中断 | 5 ms | 车辆控制、任务状态机、路径运算、遥测发送
+CCU61_CH1 定时中断 | 20 μs | 遥控器六通道信号扫描
+CCU60_CH0 定时中断 | 125 μs | 麦克风音频采样（8 kHz）
+ERU 外部中断（VSYNC） | 逐帧 | 摄像头场中断，触发图像采集
+DMA_CH5 中断 | 逐帧 | 摄像头行数据搬运完成回调
+CPU0 主循环 | — | 色块识别、屏幕显示、任务流程处理
+CPU1 主循环 | — | 反馈蜂鸣器、语音网络与鉴权运算
+
+===== TABLE 3 =====
+子系统 | 方案 | 说明
+主控 | 英飞凌 TC264D 双核 | 逐飞开源库，双核分工
+视觉 | SCC8660 数字摄像头 | 160×120 RGB565，DMA 采集，MCU 内 HSV 色块识别
+航向 | ASM330LHB 六轴 IMU | SPI 接口，Z 轴陀螺积分航向
+里程 | 左右轮增量编码器 | 5 ms 周期计数，换算行驶距离
+转向角 | 绝对编码器 | 4096 圈计数，位置闭环
+语音 | 麦克风＋WiFi＋讯飞 iat | 8 kHz/16 bit PCM，WebSocket 流式识别
+执行 | 后轮双电机＋转向电机 | 速度闭环 PI＋转向位置闭环 PID
+灯光鸣笛 | 7 路 LED＋PWM 蜂鸣器 | GPIO 电平与 2 kHz PWM 驱动
+
+===== TABLE 4 =====
+误差↓ 趋势→ | 负趋势 | 零趋势 | 正趋势
+误差小 | -1.0 | -0.7 | 0.0
+误差中 | -0.4 | 0.0 | 0.5
+误差大 | 0.0 | 0.6 | 1.0
+
+===== TABLE 5 =====
+参数 | 数值 | 备注
+车模平台 | 竞赛用智能卡丁车车模 | 后轮双电机驱动、前轮转向
+外形尺寸（长×宽×高） | 110cm*60cm*50cm | 含传感器支架
+轴距 | 0.65 m | 软件配置
+后轮轮距 | 0.60 m | 软件配置
+最大转向角 | 40° | 软件限位
+整车供电 | 铅酸电池（14Ah） | —
+除驱动/转向电机外伺服电机数 | 0 | 转向采用电机闭环，无额外伺服电机
+
+===== TABLE 6 =====
+参数 | 数值 | 备注
+主控芯片 | 英飞凌 TC264D（双核 200 MHz） | -
+驱动 PWM 频率 | 17 kHz | 驱动电机/转向电机
+鸣笛 PWM 频率 | 2 kHz | 占空比 50%
+IMU SPI 速率 | 5 MHz | ASM330LHB
+绝对编码器 SPI 速率 | 8 MHz | 转向位置
+WiFi SPI 速率 | 10 MHz | 语音传输
+
+===== TABLE 7 =====
+传感器 | 型号/接口 | 数量 | 用途
+数字摄像头 | SCC8660（凌瞳），并行 DMA | 1 | 视觉目标识别（160×120 RGB565）
+六轴 IMU | ASM330LHB，SPI | 1 | 航向积分、姿态
+增量编码器 | 磁编码器，正交解码 | 2 | 左右后轮里程/速度
+绝对编码器 | 磁绝对编码器，SPI | 1 | 转向位置闭环
+模拟麦克风 | 放大输出接 ADC | 1 | 语音采集（8 kHz/12 bit）
+WiFi 模块 | SPI 接口 | 1 | 语音云服务联网
+遥控器 | X6F 六通道 | 1 | 手动接管/调试
+LED 灯 | GPIO 驱动 | 7 | 转向/远近光/雾灯/双闪/照明
+鸣笛喇叭 | PWM 驱动 | 1 | 语音鸣笛任务
+反馈蜂鸣器 | GPIO 驱动 | 1 | 状态提示
+显示屏 | IPS200 两寸 IPS | 1 | 图像/状态显示
+
+===== TABLE 8 =====
+参数 | 数值 | 备注
+车辆控制周期 | 5 ms | 速度/转向/路径闭环
+遥控扫描周期 | 20 μs | 六通道并行采样
+音频采样率 | 8 kHz | 12 bit ADC
+图像分辨率 | 160×120 | 可配置 80/40 宽
+色块中心检测精度 | ±1 像素 | 连通域质心
+图像处理频率 | 帧驱动（≥50 fps） | 含形态学与连通域
+里程分辨率 | 0.000833 m/计数 | 编码器换算
+转向角分辨率 | 1/23.7° | 绝对编码器 4096/圈
+航向精度 | ±2°（短时） | 陀螺积分＋零偏校准
+路径记录间距 | 0.20 m（可调） | 最大 2000 点
+倒车停车半径 | 0.55 m | 补偿里程计误差
+
+===== TABLE 9 =====
+参数 | 默认值 | 含义
+followSpeedMax | 4 count/5ms | 视觉跟随基准轮速
+followAreaTarget | 1000 像素 | 目标色块面积
+followXTarget | 80 像素 | 色块目标中心
+followSteerKp | 14 | 图像横向偏差比例
+followDiffMax | 3 count/5ms | 跟随差速系数
+followStopArea | 12000 像素 | 遮挡停车面积阈值
+targetTimeout | 150 ms | 目标丢失停车超时
+pathPointDistance | 0.20 m | 路径点间距
+returnSpeed | 8 count/5ms | 倒车返回速度
+returnLookaheadPoints | 5 点 | 倒车前视点数
+returnStopRadius | 0.55 m | 起点停车半径
+returnFinalSpeed | 4 count/5ms | 入库段速度
+returnFinalAlignDistance | 2.0 m | 终点姿态介入距离
+returnFinalYawKp | 0.60 | 终点航向比例
+steerKp/Ki/Kd | 12/0.01/0.50 | 倒车转向位置 PID
+steerDeadZone | 8 计数 | 转向死区
+steerMinDuty | 1200 PWM | 静摩擦补偿
+hsvTargetHue/Sat/Val | 220/180/120 | 目标 HSV
+hsvDistanceMax | 70 | 颜色距离阈值
+hsvMinArea | 40 像素 | 最小连通域面积
+cameraBrightness | 100 | 曝光亮度目标
+
+===== TABLE 10 =====
+功能 | 引脚 | 说明
+摄像头数据 | P00_0～P00_7 | SCC8660 并行数据口
+摄像头 VSYNC | P02_0 | 场中断
+摄像头 PCLK | P02_1 | DMA 触发
+摄像头配置串口 | P02_2/P02_3 | UART1，9600 bps
+左驱动电机 PWM/DIR | P21_3/P21_2 | ATOM1_CH1，17 kHz
+右驱动电机 PWM/DIR | P21_5/P21_4 | ATOM1_CH3，17 kHz
+转向电机 PWM/DIR | P02_5/P02_4 | ATOM1_CH5，17 kHz
+左轮编码器 | P33_7/P33_6 | TIM2 正交解码
+右轮编码器 | P02_6/P02_7 | TIM3 正交解码
+IMU（ASM330LHB） | P20_11/14/12/13 | SPI0，5 MHz
+绝对编码器 | P10_2/P11_9/P11_3/P11_10 | SPI1，8 MHz
+WiFi 模块 | P22_3/0/1/2 + P15_8/P23_1 | SPI3，10 MHz
+麦克风采样 | ADC0_CH1（A1） | 8 kHz 采样
+遥控器 CH1～CH6 | P20_9/P20_10/P10_1/P10_3/P20_8/P33_9 | X6F 六通道
+按键 上/下/确认 | P20_7/P33_12/P11_2 | 低有效
+左转/右转灯 | P14_2/P14_3 | GPIO 输出
+远光/近光灯 | P14_4/P14_5 | GPIO 输出
+雾灯/双闪灯 | P32_4/P20_0 | GPIO 输出
+车内照明灯 | P20_3 | GPIO 输出
+鸣笛 PWM/静音 | P33_8/P33_5 | ATOM3_CH4，2 kHz
+反馈蜂鸣器 | P33_10 | GPIO 输出
+显示屏 | P15_0～P15_5 等 | IPS200 两寸屏

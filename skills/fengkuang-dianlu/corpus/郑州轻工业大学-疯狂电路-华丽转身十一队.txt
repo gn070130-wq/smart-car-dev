@@ -1,0 +1,770 @@
+第二十一届全国大学生智能汽车竞赛
+
+技术报告
+
+
+
+学   校：	郑州轻工业大学
+队伍名称：	华丽转身十一队
+参赛队员：	骆干
+									刘轩辰
+									方领烨
+带队老师：	江泳 梁万用
+
+关于技术报告和研究论文使用授权的说明
+本人完全了解全国大学生智能汽车竞赛保留、使用技术报告和研究论文的规定，即：参赛作品著作权归参赛者本人，比赛组委会可以在相关主页上收录并公开参赛作品的设计方案、技术报告以及参赛模型车的视频、图像资料，并将相关内容编纂收录在组委会出版论文集中。
+
+                               参赛队员签名：
+
+带队教师签名：      
+
+日期：2026 年8月18日
+
+
+摘要
+本技术报告详细阐述了第二十一届全国大学生智能汽车竞赛 "疯狂电路" 组别中，本队的系统设计方案。针对赛事规则中高速循迹与负压吸附协同作业的高难度要求，本队设计了一套以英飞凌 TC264 双核微控制器为核心，集双路电机驱动、负压风机控制、机器视觉导航与多闭环运动控制于一体的智能车系统。
+在硬件设计层面，系统采用三级降压电源架构，以 TPS82130 集成降压转换器为电源枢纽，实现 12V 动力母线、5V 中间总线和 3.3V 逻辑总线的分区供电；驱动部分采用两片 DRV8701E 全桥栅极驱动器配合外置功率 MOSFET 构建双路独立 H 桥，实现双电机四象限运行与电流闭环控制；负压系统通过外接基于 STC32G12K128 的无刷电调驱动 1202.5 无刷电机，为车体提供稳定吸附力。PCB 采用四层板设计，通过功率回路最小化与电源域物理分隔保障信号完整性与散热性能。
+在软件算法层面，采用 MT9V034 灰度摄像头采集赛道图像，通过 Otsu 自适应阈值分割与八邻域搜索提取赛道边界，经最小二乘直线拟合获得循迹偏差；速度控制采用增量式 PI 算法实现左右轮独立闭环，方向控制采用非线性变增益 PD 外环与 LSM6DSRTR 陀螺仪角速度内环相结合的双闭环结构，并结合 Flash 预存路径信息辅助复杂节点判断，实现高精度循迹与稳定转向。
+实验结果表明，该系统在赛道识别稳定性、转向响应速度及负压吸附可靠性上均表现优异，成功实现了高速工况下的精准循迹与稳定运行。
+关键词： 智能车；疯狂电路；TC264；负压吸附；Otsu 阈值分割；非线性 PD 控制；双闭环控制；
+
+
+
+主要符号表
+
+第一章 系统概述及创新点
+1.1 系统概述
+本系统为全国大学生智能汽车竞赛 "疯狂电路" 组别设计的整车控制硬件平台。系统以英飞凌 SAK-TC264D-40F200N 微控制器为核心，集成双路有刷直流电机驱动、无刷负压风机驱动接口及多电压轨电源管理，实现对智能车整车运动的精确控制。
+整车采用 3S 300mAh 锂电池供电，系统电压轨包括 12V 动力母线、5V 中间总线和 3.3V 逻辑总线三级。动力部分驱动两路 LQ1518-030K-A 有刷直流电机（额定电压 11.1V，空载转速 42000rpm），负压部分驱动 1202.5 无刷电机实现车体负压吸附功能。
+系统采用分层架构，自下而上分为电源层、驱动层、控制层和接口层：
+电源层：3S 锂电池输入经保护滤波后，一路直供 12V 动力母线，另一路经降压芯片生成 5V，再经 LDO 稳压至 3.3V。
+驱动层：两片 DRV8701E 全桥栅极驱动器配合外置功率 MOSFET，构建两路独立 H 桥，实现双电机四象限运行。
+控制层：TC264 双核微控制器运行电机控制算法、姿态解算和赛道识别决策。
+接口层：提供 FPC 摄像头接口、编码器接口、调试接口及状态指示。
+主要技术指标如下：
+表1.1
+1.2 硬件创新
+1.2.1三级降压电源架构与集成降压方案
+本系统电源部分采用三级逐级降压的配电方案。3S 锂电池输出电压约 11.1V，经保护与滤波电路后形成 12V 动力母线，直接向电机 H 桥和负压电调供电；同时通过 TPS82130 降压芯片生成 5V/3A 中间总线，为摄像头、编码器等外设供电；最后经多路 LDO 稳压得到 3.3V 逻辑总线，为主控及数字电路供电。
+作为电源架构的核心转换器件，TPS82130SILR 负责将 12V 动力母线降至 5V 中间总线。该器件由 TI 公司推出，是一款内置功率电感的集成型降压转换器，采用 USIP-8 封装（尺寸 3.0mm×2.8mm），具有以下特点：
+（1）稳定的电压转换：可将 3S 锂电池 9V~12.6V 的输入电压稳定输出为 5V，最大输出电流达 3A，为后级 3.3V LDO 和 5V 外设提供可靠的中间电源。5V 总线作为二级配电节点，起到了动力域与逻辑域之间的供电衔接作用。
+（2）高度集成化设计：芯片内部已集成开关 MOSFET 和功率电感，外围电路仅需配置输入输出电容即可正常工作，显著缩减了 PCB 布板面积和元器件数量，这对于车体空间紧张的智能车应用尤为关键。
+（3）高效低损耗运行：采用固定频率 PWM 控制方式，典型转换效率超过 95%；轻载条件下自动切换至省电模式以降低静态功耗，从而延长电池续航时间。高效率也意味着发热量更小，减轻了散热设计负担。
+（4）宽输入电压范围：支持 3V~17V 输入，完全覆盖 3S 锂电池从满电 12.6V 到放电截止 9V 的整个工作区间，确保在电池电压逐渐下降的过程中 5V 输出始终保持稳定。
+
+输出端采用大容量陶瓷电容与高频去耦电容搭配的方式，以保障输出电压的瞬态响应能力和低纹波特性。其输出基准电压经典值为，输出电压计算公式为
+
+
+经实测当基准电压为，当 、时，输出电压为。
+1.2.2 分立式H桥双电机驱动与电流闭环
+电机驱动部分采用 DRV8701E 全桥栅极驱动器搭配外置 N 沟道 MOSFET 的分立式 H 桥方案。系统共使用两片 DRV8701E，每片独立驱动一个 H 桥，分别控制两台 LQ1518-030K-A 有刷直流电机。
+DRV8701E 芯片内部集成了电流采样放大器、VDS 过流检测及过热保护功能，配合低导通内阻的功率 MOSFET，可实现大电流、高效率的电机驱动。H 桥拓扑支持四象限运行，能够完成电机正反转、能耗制动以及再生制动等多种工况。
+每个 H 桥均在低边侧设置电流采样电阻，采样所得电压信号经 DRV8701E 内置放大器放大后输入主控 ADC，从而实现电机相电流的实时采集与闭环调节。电流闭环的作用主要体现在三个方面：抑制启动瞬间的冲击电流、实现转矩闭环控制，以及在电机堵转时提供有效保护。
+
+1.2.3 外置无刷电调负压驱动方案
+负压吸附系统采用 1202.5 型无刷电机作为风机动力源，通过主板上预留的接口外接无刷电子调速器进行驱动。主控输出的 PWM 调速信号经缓冲处理后送至电调，以此控制负压风机的转速；电调本身由 12V 动力母线直接供电。将三相逆变电路独立于主控板之外，有效降低了主控板的发热量并缩减了主板体积。
+该负压电调以 STC32G12K128 单片机为主控芯片，是一款专为三相无刷直流电机（BLDC）设计的电子调速器（ESC）。功率级采用 EG2134 专用栅极驱动芯片驱动 6 路 NMOS 管构成三相全桥逆变电路，支持电池直接供电，并通过 3Pin 接口接收 PWM 或 PPM 调速信号
+
+1.3 软件算法创新
+1.3.1 Otsu自适应阈值与八邻域赛道检测
+竞赛现场的光照条件往往存在波动，若采用固定阈值进行二值化，容易导致赛道边缘提取不稳定。为此，本系统引入 Otsu 最大类间方差法，根据每帧图像的灰度分布自动计算最优分割阈值。
+设图像灰度级为 ，第  个灰度级的像素概率为 。当取某一灰度值作为分割阈值时，前景与背景两类像素的出现概率分别为
+
+
+两类像素的平均灰度值分别为
+
+
+由此可得两类之间的类间方差为
+
+
+使类间方差取得最大值的那个阈值，即为当前帧图像的最佳二值化分割点
+
+
+通过这种自适应方式，可有效削弱环境亮度变化对赛道识别效果的干扰。
+完成二值化后，系统采用八邻域搜索算法逐行提取左右两侧赛道边界点，并依据边界坐标计算赛道中线。为抑制局部噪声与边界抖动对转向控制的影响，对筛选出的中线点进行最小二乘直线拟合。
+设参与拟合的中线点共有个，坐标为，拟合直线形式为
+
+
+其误差平方和定义为
+
+
+根据最小二乘极值条件可解得拟合参数
+
+
+
+最终依据拟合中线的位置与斜率构造车辆循迹偏差，作为方向控制的核心输入量；同时结合赛道边界的几何特征识别关键节点，配合路径信息完成相应的行驶决策。
+
+1.3.2 非线性变增益 PD 方向外环
+以循迹偏差 作为控制输入，方向外环采用一种非线性变增益 PD 控制策略，其控制律可表示为
+
+
+式中 为基础比例增益，为非线性增益系数，为微分增益。
+该策略的特点在于：当循迹偏差较大时，比例控制作用随偏差增大而自动增强，使车辆具备更强劲的回正修正能力；当偏差较小时，控制输出趋于平缓，有助于降低直线行驶及出弯阶段的车身摆动。这种随偏差动态调整增益的方式，兼顾了大偏差下的快速响应与小偏差下的平稳性。
+
+1.3.3 视觉 - 陀螺仪双闭环方向控制
+方向控制整体采用视觉偏差外环与角速度内环相串联的双闭环架构。外环依据视觉系统输出的循迹偏差生成方向控制指令，内环则通过陀螺仪实时采集的车辆偏航角速度进行快速反馈修正。
+角速度内环以外环给出的目标转向状态为参考输入，利用 LSM6DSRTR 传感器获取车辆实际偏航角速度。
+设目标角速度为，实际角速度为，则角速度误差为
+
+
+内环控制律可表示为
+
+
+引入角速度反馈后，车辆转向过程的动态响应速度显著提升，同时能够有效抑制快速转向时产生的过度摆动。方向控制的最终输出以左右轮差速的形式作用于驱动电机，从而完成直线循迹与弯道转向。
+在陀螺仪信息处理方面，系统主要使用 LSM6DSRTR 输出的偏航角速度数据。该信号一方面作为方向内环的反馈量，另一方面用于积分计算车辆的相对航向变化。考虑到机械振动与传感器噪声的影响，对角速度原始数据进行了低通滤波处理。
+设采样周期为，车辆瞬时角速度为，则相对航向变化可通过离散积分方式求得
+
+
+该相对航向信息用于辅助转向过程控制与节点状态判别。视觉信息提供车辆相对于赛道的位置偏差，陀螺仪角速度反映车辆自身的转动状态，二者融合共同参与复杂节点及转弯过程的控制决策。
+
+1.3.4 预存路径辅助节点判断
+赛前根据赛道实际布局人工规划一条最优行驶路线。车辆沿该路线完成一次记录行驶后，系统将所得路径信息自动写入 Flash 保存。正式比赛时，车辆读取已存储的路径数据，与实时视觉检测结果协同工作，辅助车辆按照预定路线完成自主行驶。
+在该方案中，预存路径信息主要承担全局路线引导的作用，而视觉系统则持续负责局部赛道边界、中线及循迹偏差的实时检测。两者结合后，车辆在复杂交叉节点和连续弯道等视觉容易失效的场景下，运行可靠性得到明显提升。
+
+
+
+第二章 硬件电路设计
+2.1 主控单元设计
+2.1.1 TC264 主控芯片选型与作用
+主控采用英飞凌 AURIX 系列SAK-TC264D-40F200N微控制器，是整个系统的运算与控制核心。
+该芯片基于 TriCore 架构，集成两个主频 200MHz 的处理器内核，内置 2MB Flash 和 256KB SRAM。其主要作用体现在以下方面：
+（1）电机实时控制 利用芯片内置的捕获比较单元（CCU6）和通用定时器（GPT12），产生高精度 PWM 信号驱动电机，并通过 ADC 采集电流采样信号，实现转速闭环和电流闭环控制。双核架构中，一个内核专门负责电机控制的实时任务，保证控制周期的确定性。
+（2）图像采集与处理 通过并行接口采集摄像头图像数据，利用另一个内核运行赛道识别和路径规划算法，输出转向和速度决策。双核分工确保图像识别不会影响电机控制的实时性。
+（3）传感器数据融合 通过 ADC、SPI、UART 等接口采集编码器、陀螺仪等传感器数据，进行车速测量和姿态解算，为控制算法提供反馈。
+（4）系统管理与通信 负责整车的状态管理、故障诊断、参数存储以及与上位机的通信调试。
+TC264 在汽车电子领域有广泛应用，工业级温度范围和高抗干扰能力满足智能车竞赛复杂电磁环境下的可靠运行需求。LQFP144 封装提供充足的 I/O 引脚，支持多路传感器和执行器的同时接入。
+
+图2.1：主控电路图
+
+2.1.2 时钟与调试接口
+主控采用 20MHz 无源晶振作为外部时钟源，经内部 PLL 倍频至 200MHz 系统时钟。通过 2x5P 双排排座引出 JTAG 调试接口，支持程序下载和在线调试。
+系统采用 SN74HC125 总线缓冲器对主控输出的 PWM 和使能信号进行缓冲，提高驱动能力并在复位期间隔离驱动级，防止电机误动作。
+2.2 电源系统设计
+2.2.1 三级降压电源架构
+电源系统采用三级降压架构：
+3S锂电(11.1V) → 保护滤波 → 12V动力母线 → 电机H桥 / 负压电机
+                             ↓
+                         TPS82130降压 → 5V/3A → 多路LDO → 3.3V
+12V 母线直接为电机驱动级和负压电调供电；5V 总线为摄像头、编码器等外设供电；3.3V 总线为主控和逻辑电路供电。
+2.2.2 TPS82130 核心降压电路
+TPS82130SILR是系统电源架构的核心器件，承担从 12V 动力母线到 5V 中间总线的降压转换。
+该芯片是 TI 推出的集成电感降压转换器，USIP-8 封装（3.0mm×2.8mm），其主要作用和特点如下：
+（1）电压转换作用 将 3S 锂电池的 9V~12.6V 输入电压稳定降压至 5V 输出，最大输出电流 3A，为后续 3.3V LDO 和 5V 外设提供稳定的中间电源。5V 总线作为系统的二级配电枢纽，是连接动力域与逻辑域的桥梁。
+（2）高集成度优势 TPS82130 内部集成了开关 MOSFET 和功率电感，外围仅需输入输出电容即可工作，大幅减少了 PCB 占用面积和器件数量。对于空间受限的智能车应用，这一特性尤为重要。
+（3）高效率与低损耗 采用固定频率 PWM 控制模式，典型转换效率可达 95% 以上。轻载时自动进入省电模式，降低静态功耗，延长电池续航时间。高效率意味着更少的发热，减少了散热设计压力。
+（4）宽输入电压适应 输入电压范围 3V~17V，完全覆盖 3S 锂电池的工作电压范围（满电 12.6V 至放电截止 9V），在电池电压波动过程中始终保持稳定的 5V 输出。
+输出端配置大容量陶瓷电容和高频去耦电容组合，保证输出电压的瞬态响应和低纹波特性。
+其输出基准电压经典值为，输出电压计算公式为
+
+
+经实测当基准电压为，当 、时，输出电压为。
+
+
+
+图2.2：12V降5VDCDC降压电路
+
+2.2.3 3.3V 分区稳压
+5V 总线经三片 RT9013-33 LDO 分别生成三路独立 3.3V 电源，为主控、外设和摄像头分区供电，实现电源域隔离，减少数字噪声串扰。每路 LDO 输出最大电流 500mA，压差低、纹波小，为控制电路提供干净的电源。
+
+
+图2.3:主控供电 
+
+图2.4:各种外设供电 
+
+
+图2.5:摄像头供电 
+
+2.2.4 输入保护电路
+电池输入经 XT30 插头接入，配置肖特基二极管实现防反接保护，TVS 二极管抑制浪涌电压，大容量电解电容和陶瓷电容组合构成宽频带滤波网络，应对电机启动瞬态电流。
+
+图2.6:12V稳压 
+2.3 电机驱动系统设计
+2.3.1 DRV8701E 分立式 H 桥驱动方案
+电机驱动采用 DRV8701E 全桥栅极驱动器配合外置 N-MOSFET 的分立式 H 桥方案。系统配置两片 DRV8701E，每片驱动一个 H 桥，共驱动两路 LQ1518-030K-A 电机。
+DRV8701E 内置电流采样放大器、VDS 过流保护和过热保护，配合低导通电阻的功率 MOSFET，实现大电流、高效率的电机驱动。H 桥支持四象限运行，可实现电机正反转、能耗制动和再生制动。
+
+图2.7:单电机H桥驱动电路 
+
+2.3.2 电流闭环控制
+每个 H 桥配置低边电流采样电阻，采样电压经 DRV8701E 内部放大器放大后送至主控 ADC，实现电机电流的实时监测与闭环控制。电流闭环可限制启动冲击电流，实现转矩控制，并在堵转时提供保护。
+2.4 负压系统设计
+2.4.1 1202.5 无刷电机与外置电调接口
+负压系统采用 1202.5 无刷电机，通过板上接口外接无刷电调驱动。主控输出 PWM 信号经缓冲后送至电调，控制负压风机转速。12V 动力母线直接为电调供电。将三相逆变电路外置，减少了主控板的发热和体积。
+2.4.2 STC32G 无刷电调设计
+负压电调设计为一款基于 STC32G12K128 主控的三相无刷直流电机（BLDC）电子调速器（ESC），采用 EG2134 专用栅极驱动芯片驱动 6 路 NMOS 组成三相全桥逆变电路，支持电池供电输入，通过 3Pin 控制口接收 PWM/PPM 调速信号。
+
+
+图2.8：主控芯片
+
+2.5 接口与扩展设计
+摄像头接口：18P FPC 插座（0.5mm 间距）连接数字摄像头，传输 8 位并行图像数据及同步信号。
+编码器接口：两路 GH1.25mm 4P 连接器连接光电编码器，实现转速和位置测量。
+调试接口：多路排针引出 GPIO、ADC、PWM 和通信接口，支持功能扩展和调试。
+人机交互：配置多色 LED 指示灯、按键和拨动开关，用于状态显示和模式切换。
+2.6 保护电路设计
+系统从电源、驱动和信号三个层面构建完整的保护体系：
+电源保护：防反接二极管、TVS 浪涌抑制、输入滤波。
+驱动保护：DRV8701E 内置过流保护、过热保护、栅极故障检测；软件电流限流。
+信号保护：TVS 和齐纳二极管对关键信号和电压节点进行钳位保护，防止过压损坏。
+2.7 PCB 设计要点
+PCB 采用四层板设计，完整地平面提供低阻抗回流路径。布局遵循以下原则：
+功率回路最小化：H 桥功率器件与去耦电容紧密布置，降低寄生电感。
+电源分区：12V 功率区、5V 中间区、3.3V 逻辑区物理分隔，功率地与逻辑地单点连接。
+散热设计：功率 MOSFET 散热焊盘通过多过孔连接内层地平面，利用 PCB 铜箔散热。
+信号完整性：高速信号走内层包地处理，晶振下方不布信号线。
+
+
+第三章 软件系统设计
+3.1 软件总体架构
+本系统以 TC264 微控制器为核心，完成图像处理、路径判断、角速度信息采集、速度检测、方向控制及电机驱动等任务。软件采用主循环与周期任务相结合的结构：主循环主要负责图像获取与处理、路径判断等任务；定时中断周期执行陀螺仪角速度采集、编码器测速、速度闭环和方向内环等实时控制任务，以保证图像处理与运动控制之间的协调性和实时性。
+车辆运行过程采用状态管理方式，根据当前运行状态执行相应控制逻辑。系统上电后完成外设及控制参数初始化，进入运行后持续进行视觉检测、路径判断和闭环控制；当出现图像异常、电机堵转或到达终点等状态时，程序执行相应处理。
+3.2 赛道视觉检测
+3.2.1 图像采集与预处理
+车辆采用 MT9V034 灰度摄像头采集赛道图像。为降低计算量并提高处理实时性，对图像进行裁剪和压缩，实际参与算法处理的有效图像分辨率为 156×70 像素，赛道图像检测频率约为 150 帧/s。
+视觉处理流程为：灰度图像采集、Otsu 自适应阈值二值化、八邻域搜索赛道边界、赛道中线提取、中线拟合以及循迹偏差计算。
+3.2.2 Otsu 自适应阈值分割
+比赛环境中光照条件会发生变化，固定阈值容易造成赛道分割不稳定，因此采用 Otsu 最大类间方差法自适应确定二值化阈值。
+设图像灰度级为 ，第  个灰度级的像素概率为 。对于阈值 ，两类像素的概率分别为
+
+
+两类像素的平均灰度分别为
+
+
+类间方差为
+
+
+选择使类间方差最大的阈值作为当前图像的最佳分割阈值，即
+
+
+通过自适应阈值分割，可减小环境亮度变化对赛道识别的影响。
+3.2.3 赛道边界与中线提取
+图像二值化后，采用八邻域搜索方式提取左右赛道边界，并根据边界位置获得赛道中线。为减小局部噪声和边界波动对方向控制的影响，对选取的中线点进行最小二乘直线拟合。
+设选取的  个中线点为 ，采用直线
+
+
+进行拟合，其误差平方和为
+
+
+由最小二乘条件可得
+
+
+
+根据拟合后的中线位置与方向特征构造车辆循迹偏差，作为方向控制的主要输入。关键节点则根据赛道边界及其几何特征进行识别，并结合路径信息完成相应路径判断。
+3.3 路径记录与路径辅助
+赛前根据赛道结构人工规划行驶路线。车辆按照预定路线完成一次路径记录，并将获得的路径信息自动保存至 Flash。正式运行时读取已保存的路径信息，与实时视觉检测结果配合，辅助车辆按照预定路线完成自主运行。
+路径信息主要承担全局路线辅助作用，视觉系统持续完成局部赛道边界、中线和循迹偏差检测，两者结合可提高车辆在复杂节点和连续弯道中的运行可靠性。
+
+3.4 速度控制
+左右驱动轮采用独立速度闭环控制，增量式编码器用于测量车轮实际速度。设目标速度为 ，实际速度为 ，则速度误差为
+
+
+速度控制采用增量式 PI 算法，其表达式为
+
+
+
+
+其中， 和  分别为比例系数和积分系数。左右轮分别完成速度误差计算和闭环调节，并根据方向控制结果进行差速分配，从而兼顾纵向速度跟踪与车辆转向需求。
+3.5 方向控制
+3.5.1 非线性变增益方向外环
+方向控制采用视觉偏差外环与角速度内环相结合的结构。外环根据视觉系统计算得到的循迹偏差产生方向控制量，内环利用陀螺仪测得的车辆偏航角速度进行快速反馈修正。
+设循迹偏差为 ，方向外环采用非线性变增益 PD 控制。其控制关系可表示为
+
+
+其中， 为基础比例增益， 为非线性增益系数， 为微分增益。随着循迹偏差增大，比例控制作用相应增强，使车辆在偏差较大时具有更强的修正能力；偏差较小时控制作用相对平缓，有利于减小直线和出弯阶段的摆动。
+3.5.2 角速度内环
+角速度内环以方向外环给出的目标转向状态为参考，并利用 LSM6DSRTR 获取车辆实际偏航角速度。设目标角速度为 ，实际角速度为 ，则
+
+
+内环控制可表示为
+
+
+角速度反馈能够提高车辆转向过程中的动态响应速度，并抑制快速转向时的过度摆动。方向控制结果最终作用于左右轮差速，使车辆完成直线循迹和弯道转向。
+3.6 陀螺仪信息处理
+车辆转向控制主要使用 LSM6DSRTR 获取的偏航角速度信息。角速度作为方向内环的反馈量，同时用于计算车辆的相对航向变化。为降低机械振动和传感器噪声的影响，对采集到的角速度数据进行低通滤波处理。
+设采样周期为 ，车辆角速度为 ，则相对航向变化可通过离散积分获得：
+
+
+该相对航向信息用于辅助转向过程和节点状态判断。视觉信息提供车辆相对于赛道的位置偏差，陀螺仪角速度反映车辆自身的转动状态，两者共同参与复杂节点及转弯过程的控制。
+3.7 电机与负压控制
+车辆左右驱动电机采用 DRV8701 双路驱动，TC264 根据速度控制和方向控制结果输出 PWM 信号，经驱动模块控制左右电机。增量式编码器反馈车轮速度，构成左右轮独立速度闭环。
+负压风机采用电子调速器驱动，TC264 输出 PWM 控制信号调节风机工作状态。风机启动阶段采用缓启动方式，以减小瞬时冲击；正常运行后保持设定输出，为车辆高速运行提供稳定的负压吸附能力。
+3.8 菜单与调试
+程序在 AURIX Development Studio（ADS）环境下开发。调试菜单用于控制参数调整、图像处理结果查看和车辆运行状态观察，关键参数可保存至 Flash；无线串口用于传输相关调试数据。
+3.9 异常状态处理
+软件针对车辆运行过程中可能出现的异常状态设置相应保护逻辑。主要包括图像异常处理、电机堵转处理和终点停车。当视觉信息异常或驱动状态异常时，程序进入对应处理流程；车辆到达预设终点后，系统判定运行完成并执行停车。
+
+
+
+第四章 调试与测试
+4.1 电源调试
+逐级通电验证 12V、5V、3.3V 各电压轨输出，测量纹波指标。
+4.2 驱动调试
+不接电机时验证 H 桥开关时序，接电机后从零占空比逐步升高，观察电流波形。
+4.3 整车联调
+验证电机正反转、转速调节、负压吸附、摄像头采集和编码器测速功能，监测温升。
+系统上电后首先完成各硬件模块和控制参数初始化，随后进入运行状态。运行过程中，视觉系统持续完成赛道检测和循迹偏差计算，路径信息用于辅助路径判断，陀螺仪提供车辆偏航角速度及相对航向变化；速度闭环和方向闭环根据上述信息实时调节左右驱动轮输出。车辆到达预定终点后执行停车，完成整个运行过程。
+
+
+第五章 车模整体展示
+5.1 整车参数与器件选型
+本赛车采用龙邱科技 mini 闪电鼠 Q 车模作为底盘平台，整车重量 130g，外形尺寸为长 14.9cm × 宽 6cm × 高 16.5cm。空载情况下整车电路功耗为 1.4W。
+
+核心传感器与执行器选型如下：
+陀螺仪：逐飞科技 IMU660RB，核心传感器为 ST LSM6DSRTR，用于采集车辆偏航角速度，构成方向控制内环反馈。
+编码器：龙邱科技 1024 线 1.5g mini 编码器，用于左右驱动轮的转速与位置测量，构成速度闭环反馈。
+车模：龙邱科技 mini 闪电鼠 Q 车模。
+主控板与电调的电容配置如下：
+主控板：共 54 颗电容，其中 MLCC 贴片瓷片电容 49 颗、钽电容 3 颗、铝电解电容 2 颗。
+负压电调：MLCC 贴片电容 14 颗、铝电解电容 1 颗。
+5.2 车模三视图
+
+图5.1：车模顶视图
+
+
+图5.2：车模底视图
+
+
+图5.3：车模侧视图
+
+5.3 负压电调实物展示
+
+图5.4：电调正面
+
+
+图5.5电调背面
+
+5.4主板视图
+
+图5.6：主板的正面
+
+
+图5.7：主板的背面
+
+第六章 龙邱科技mini闪电鼠Q车模整机技术参数
+表7.1 整机技术参数表
+
+第七章 总结
+本硬件系统以 TC264 双核微控制器为运算控制核心，以 TPS82130 集成降压转换器为电源枢纽，构建了集双路电机驱动、负压风机控制、多电压轨管理和丰富接口于一体的整车控制平台。双核架构保证了电机实时控制与图像识别的并行执行，集成降压方案在有限空间内实现了高效率电源转换，分立式 H 桥驱动兼顾了大电流能力和系统可靠性，为智能车竞赛提供了坚实的硬件基础。
+软件方面，采用 Otsu 自适应阈值与八邻域搜索实现稳定的赛道视觉检测，通过非线性变增益 PD 外环与陀螺仪角速度内环构成双闭环方向控制，结合增量式 PI 速度闭环与预存路径辅助，实现了高速工况下的精准循迹与稳定转向。
+
+
+
+参考文献
+[1] 全国大学生智能汽车竞赛组委会. 第二十一届全国大学生智能汽车竞赛竞赛规则[EB/OL]. 2026.
+[2] INFINEON TECHNOLOGIES AG. AURIX TC26x B-Step 32-Bit Single-Chip Microcontroller User's Manual[Z]. Neubiberg: Infineon Technologies AG.
+[3] TEXAS INSTRUMENTS. DRV8701 Brushed DC Motor Full-Bridge Gate Driver Data Sheet[Z]. Dallas: Texas Instruments.
+[4] TEXAS INSTRUMENTS. TPS82130 17-V Input, 3-A Step-Down Converter MicroSiP Module Data Sheet[Z]. Dallas: Texas Instruments.
+[5] STMICROELECTRONICS. LSM6DSRTR iNEMO Inertial Module Data Sheet[Z]. Geneva: STMicroelectronics.
+[6] OTSU N. A Threshold Selection Method from Gray-Level Histograms[J]. IEEE Transactions on Systems, Man, and Cybernetics, 1979, 9(1): 62-66.
+[7] ÅSTRÖM K J, MURRAY R M. Feedback Systems: An Introduction for Scientists and Engineers[M]. Princeton: Princeton University Press, 2008.
+[8] 童诗白, 华成英. 模拟电子技术基础[M]. 5版. 北京: 高等教育出版社, 2015.
+[9] 阎石. 数字电子技术基础[M]. 6版. 北京: 高等教育出版社, 2016.
+[10] 谭浩强. C程序设计[M]. 5版. 北京: 清华大学出版社, 2017.
+
+附录A 程序源代码
+以下程序选自整车主控工程，包含图像处理、路径决策、速度控制、方向控制、惯性测量与执行机构控制等核心子程序。代码文件名称及函数名称均与工程保持一致。
+// ===== 1. 图像自适应阈值分割（deal_img.c） =====
+ 
+uint8 calcOtsuThreshold(void)
+{
+    getGrayscaleHistogram();
+    uint32_t sum = 0, valueSum = 0;
+    uint64_t sigma = 0, maxSigma = 0;
+    float w1 = 0, w2 = 0;
+    int32_t u1 = 0, u2 = 0;
+    uint8 minimumValue = 0, maximumValue = 255;
+ 
+    minimumValue = minGray;
+    maximumValue = maxGray;
+    if(maximumValue < minThreshold)     return minThreshold;
+    if(minimumValue > maxThreshold)     return maxThreshold;
+ 
+    minimumValue = minimumValue < minGrayscale ? minGrayscale : minimumValue;
+    maximumValue = maximumValue > maxGrayscale ? maxGrayscale : maximumValue;
+ 
+    uint32_t lowSum[256] = {0};
+    uint32_t lowValueSum[256] = {0};
+    for (uint16_t i = minimumValue; i <= maximumValue; ++i)
+    {
+        sum += grayHistogram[i];
+        valueSum += grayHistogram[i] * i;
+        lowSum[i] = sum;
+        lowValueSum[i] = valueSum;
+    }
+    for (uint16_t i = minimumValue; i < maximumValue + 1; ++i)
+    {
+        w1 = (float)lowSum[i] / sum;
+        w2 = 1 - w1;
+        u1 = (int32_t)(lowValueSum[i] / w1);
+        u2 = (int32_t)((valueSum - lowValueSum[i]) / w2);
+        sigma = (uint64_t)(w1 * w2 * (u1 - u2) * (u1 - u2));
+        if (sigma >= maxSigma)
+        {
+            maxSigma = sigma;
+            otsuThreshold = i;
+        }
+        else
+        {
+            break;
+        }
+    }
+    otsuThreshold = otsuThreshold < minThreshold ? minThreshold : otsuThreshold;
+    otsuThreshold = otsuThreshold > maxThreshold ? maxThreshold : otsuThreshold;
+    lastOtsuThreshold = otsuThreshold;
+    return otsuThreshold;
+}
+// ===== 2. 中线拟合与视觉偏差计算（direction.c） =====
+ 
+uint8 fitMidLine(float result[2])
+{
+    LineFitSum_t sum = {0};
+    uint8 previousRow = 255;
+    uint8 row;
+ 
+    for(row = seedCenterY; row < validLineEnd; ++row)
+    {
+        float x;
+        float y;
+ 
+        if(!centerPointIsContinuous(row, previousRow))
+        {
+            continue;
+        }
+        previousRow = row;
+        x = rowForwardScale[row];
+        y = (centerLine[row] - XM / 2) * rowLateralScale[row];
+        sum.x += x;
+        sum.y += y;
+        sum.xy += x * y;
+        sum.xx += x * x;
+        ++sum.count;
+    }
+ 
+    if(sum.count >= 2)
+    {
+        const float divisor = sum.count * sum.xx - sum.x * sum.x;
+ 
+        if(absFloat(divisor) >= 0.000001f)
+        {
+            result[0] = (sum.count * sum.xy - sum.x * sum.y) / divisor;
+            result[1] = (sum.y - result[0] * sum.x) / sum.count;
+            return sum.count;
+        }
+    }
+    return 0;
+}
+ 
+void updateLineError(void)
+{
+    lastLineErr = lineErr;
+ 
+    if(validLineEnd && (fitMidLine(midFit) >= 2))
+    {
+        const float slopeWeight = fitKWeight / 10.0f;
+        const float offsetWeight = fitBWeight / 100.0f;
+ 
+        lineErr = midFit[0] * slopeWeight + midFit[1] * offsetWeight;
+        lineErr = clampFloat(lineErr, lineErrLimit, -lineErrLimit);
+    }
+    else
+    {
+        lineErr = lastLineErr;
+    }
+ 
+    if(goMode == United_RUN)
+    {
+        lineErr = blendMapHeading(lineErr);
+    }
+    lineErr = clampFloat(lineErr, lineErrLimit, -lineErrLimit);
+ 
+    if(!(lineErr == lineErr))
+    {
+        lineErr = lastLineErr;
+    }
+}
+// ===== 3. 整车路径决策（go.c） =====
+ 
+void go(void)
+{
+    otsuThreshold = calcOtsuThreshold();/*大津法获取阈值*/ buildBinaryFrame(); /*获取二值化图像imgOSTU*/
+ 
+    validLineEnd = 0;
+    previousRoadShape = roadShape;
+    memset(centerLine, XM/2, sizeof(centerLine));
+ 
+    updateDistanceGate();
+ 
+    if(findEdgeSeeds())
+    {
+        traceEdgesUp(seedLeft,seedCenterY,seedRight,seedCenterY);
+        updateLostEdges(2);
+ 
+        if(distanceGateEnabled())
+        {
+            if(routeNodeIndex < stopNodeIndex)
+            {
+                if(pathSource == PATH_SOURCE_WAIT)
+                {
+                    extractStraightPath();
+                }
+                else if(pathSource == PATH_SOURCE_MAP)
+                {
+                    extractMappedPath();
+                }
+                else
+                {
+                    extractVisualPath();
+                }
+            }
+        }
+        else if(goMode != United_RUN)
+        {
+            switch(routeDirections[routeNodeIndex])
+            {
+                case ROUTE_STRAIGHT:
+                    makeCenterPath();
+                    break;
+                case ROUTE_LEFT:
+                    makeLeftPath();
+                    break;
+                case ROUTE_RIGHT:
+                    makeRightPath();
+                    break;
+            }
+        }
+        else if(goMode == United_RUN)
+        {
+            applyMappedPath();
+        }
+    }
+ 
+    recordNodeDistance();
+ 
+    /* 先记录45度转弯中心，再执行Map模式节点切换。 */
+    finishMappedNode();
+    updateLineError();
+    applyApproachHeading();
+    applyRouteHeading();
+    speedSegment = classifyRoadSpeed();
+ 
+}
+// ===== 4. 速度与方向闭环控制（control.c） =====
+ 
+void runWheelSpeedLoop(void)
+{
+    WheelOutputRange_t range;
+ 
+    carCfg.targetSpeed = selectTargetSpeed();
+    calculateWheelTargets();
+    wheelPid.errorCeiling = 100.0f;
+    wheelPid.errorFloor = -100.0f;
+    range = chooseWheelOutputRange();
+ 
+    updateWheelChannel(driveInfo.targetL, driveInfo.speedL, &wheelPid.errorLeft, wheelPid.errorHistoryLeft, wheelPid.deltaHistoryLeft, (float)wheelPid.kpLeft, (float)wheelPid.kiLeft, &wheelPid.outputLeft, range.leftMin, range.leftMax);
+ 
+    updateWheelChannel(driveInfo.targetR, driveInfo.speedR, &wheelPid.errorRight, wheelPid.errorHistoryRight, wheelPid.deltaHistoryRight, (float)wheelPid.kpRight, (float)wheelPid.kiRight, &wheelPid.outputRight, range.rightMin, range.rightMax);
+}
+ 
+void runLaneLoop(void)
+{
+    float proportionalGain;
+ 
+    lanePid.error = ((runState == TEST) && (carCfg.mode == SPEED_TEST)) ? 0.0f : -lineErr;
+    lanePid.errorDelta = lanePid.error - lanePid.previousError;
+    lanePid.previousError = lanePid.error;
+ 
+    proportionalGain = lanePid.kp / 10.0f + absFloat(lanePid.error * lanePid.error) / 3000.0f * lanePid.extraKp / 10.0f;
+    lanePid.output = proportionalGain * lanePid.error + lanePid.kd / 10.0f * lanePid.errorDelta;
+    lanePid.correctedCurvature = lanePid.output / 100.0f * PI / 180.0f;
+    lanePid.correctedCurvature = limitCurvatureByAcceleration( lanePid.correctedCurvature);
+    lanePid.commandedCurvature = lanePid.correctedCurvature
+                                 * 180.0f / PI * 100.0f;
+}
+ 
+void runYawRateLoop(void)
+{
+    yawPid.previousError = yawPid.error;
+    yawPid.error = clampFloat(lanePid.targetYawRate + motionAtt.yawRate, 600.0f, -600.0f);
+    pushHistory(yawPid.errorHistory, 5, yawPid.error);
+ 
+    yawPid.kp = yawPid.baseKp;
+    yawPid.kd = yawPid.baseKd;
+    pushHistory(yawPid.deltaWindow, 3, yawPid.errorHistory[0] - yawPid.errorHistory[3]);
+    pushHistory(yawPid.feedbackWindow, 3, motionAtt.yawRate);
+    yawPid.derivative = yawPid.feedbackWindow[0] - yawPid.feedbackWindow[3];
+    yawPid.rawOutput = yawPid.kp / 10.0f * yawPid.errorHistory[0] - yawPid.kd / 10.0f * yawPid.derivative;
+ 
+    pushHistory(yawPid.outputWindow, 3, yawPid.rawOutput);
+    yawPid.output = 0.8f * yawPid.outputWindow[0] + 0.2f * yawPid.outputWindow[1];
+    yawPid.output = clampFloat(yawPid.output, 2055.0f, -2055.0f);
+}
+// ===== 5. 1 ms惯性测量数据更新（IMU.c） =====
+ 
+void imuSampleUpdate(void)
+{
+    ImuRawSample_t raw;
+ 
+    readImuRaw(&raw);
+    applyFirstOrderLowPass(35, 1000, (float)raw.gx - gyroBias.x, &filteredGyroX);
+    applyFirstOrderLowPass(35, 1000, (float)raw.gy - gyroBias.y, &filteredGyroY);
+    applyFirstOrderLowPass(35, 1000, (float)raw.gz - gyroBias.z, &filteredGyroZ);
+    applyFirstOrderLowPass(35, 1000, (float)raw.ax, &filteredAccX);
+    applyFirstOrderLowPass(35, 1000, (float)raw.ay, &filteredAccY);
+    applyFirstOrderLowPass(35, 1000, (float)raw.az, &filteredAccZ);
+ 
+    filteredAccX = accToG(filteredAccX);
+    filteredAccY = accToG(filteredAccY);
+    filteredAccZ = accToG(filteredAccZ);
+    filteredGyroX = gyroToDps(filteredGyroX);
+    filteredGyroY = gyroToDps(filteredGyroY);
+    filteredGyroZ = gyroToDps(filteredGyroZ);
+ 
+    attitudeUpdate(filteredGyroX / 57.3f, filteredGyroY / 57.3f, -filteredGyroZ / 57.3f, -filteredAccX, -filteredAccY, -filteredAccZ, &attitude);
+ 
+    motionAtt.yawRate = filteredGyroZ;
+    motionAtt.pitchRate = filteredGyroY;
+    motionAtt.pitch = attitude.pitch;
+    motionAtt.trueYawRate = motionAtt.yawRate;
+    motionAtt.turnAngle += motionAtt.trueYawRate * IMU_SAMPLE_DT;
+    yawAngle = motionAtt.turnAngle;
+}
+// ===== 6. 电机与负压输出（motor.c） =====
+ 
+void motorOutputApply(void)
+{
+    selectDriveOutput();
+    driveInfo.pwmR = func_limit_ab(driveInfo.pwmR, -9333, 9333);
+    driveInfo.pwmL = func_limit_ab(driveInfo.pwmL, -9333, 9333);
+ 
+    motorMagnitude[0] = setMotorDirection(driveInfo.pwmL, MOTOR_DIR_L, Dir_L);
+    motorMagnitude[1] = setMotorDirection(driveInfo.pwmR, MOTOR_DIR_R, Dir_R);
+    pwm_set_duty(MOTOR_PWM_L, motorMagnitude[0]);
+    pwm_set_duty(MOTOR_PWM_R, motorMagnitude[1]);
+}
+ 
+void setVacuumDuty(uint32 duty)
+{
+    if(duty > 10)
+    {
+        duty = 0;
+    }
+    vacuumDuty = (int32)duty;
+ 
+    if(duty == 0)
+    {
+        pwm_init(MOTOR_Pressure, 50, 500);
+    }
+    else if(duty <= 7)
+    {
+        pwm_set_duty(MOTOR_Pressure, 500 + 50 * duty);
+    }
+    else
+    {
+        pwm_set_duty(MOTOR_Pressure, 675 + 25 * duty);
+    }
+}
+附录B：电路原理图
+
+
+
+图B-1、2、3 主驱一体板电路设计图
+
+
+图B-4 stc32电调电路设计图
+
+
+===== TABLE 1 =====
+符号/缩略词 | 含义说明
+ADC | 模数转换器（Analog-to-Digital Converter）
+BLDC | 无刷直流电机（Brushless Direct Current Motor）
+ESC | 电子调速器（Electronic Speed Controller）
+GPIO | 通用输入/输出（General-Purpose Input/Output）
+IMU | 惯性测量单元（Inertial Measurement Unit）
+JTAG | 联合测试工作组调试接口（Joint Test Action Group）
+LDO | 低压差线性稳压器（Low Dropout Regulator）
+MOSFET | 金属氧化物半导体场效应晶体管
+PCB | 印制电路板（Printed Circuit Board）
+PD | 比例-微分（Proportional-Derivative）控制
+PI | 比例-积分（Proportional-Integral）控制
+PWM | 脉宽调制（Pulse Width Modulation）
+SPI | 串行外设接口（Serial Peripheral Interface）
+TVS | 瞬态电压抑制二极管（Transient Voltage Suppressor）
+UART | 通用异步收发传输器（Universal Asynchronous Receiver/Transmitter）
+
+===== TABLE 2 =====
+参数 | 指标
+主控芯片 | SAK-TC264D-40F200N（双核 TriCore @200MHz）
+电机驱动通道 | 2 路独立 H 桥
+动力母线电压 | 9V~12.6V（3S 锂电）
+逻辑供电 | 5V/3A、3.3V 多路独立供电
+控制方式 | PWM 调速 + 电流闭环
+负压驱动 | 12V 无刷电机接口（外接电调）
+
+===== TABLE 3 =====
+ | 公式1
+
+===== TABLE 4 =====
+ | 公式2
+
+===== TABLE 5 =====
+ | 公式3
+
+===== TABLE 6 =====
+ | 公式4
+
+===== TABLE 7 =====
+ | 公式5
+
+===== TABLE 8 =====
+ | 公式6
+
+===== TABLE 9 =====
+ | 公式7
+
+===== TABLE 10 =====
+ | 公式8
+
+===== TABLE 11 =====
+ | 公式9
+
+===== TABLE 12 =====
+ | 公式10
+
+===== TABLE 13 =====
+ | 公式11
+
+===== TABLE 14 =====
+ | 公式12
+
+===== TABLE 15 =====
+ | 公式13
+
+===== TABLE 16 =====
+ | 公式14
+
+===== TABLE 17 =====
+ | 公式15
+
+===== TABLE 18 =====
+ | 公式16
+
+===== TABLE 19 =====
+ | 公式17
+
+===== TABLE 20 =====
+ | 公式18
+
+===== TABLE 21 =====
+ | 公式19
+
+===== TABLE 22 =====
+ | 公式20
+
+===== TABLE 23 =====
+ | 公式21
+
+===== TABLE 24 =====
+ | 公式22
+
+===== TABLE 25 =====
+ | 公式23

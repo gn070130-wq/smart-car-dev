@@ -1,0 +1,945 @@
+I
+第二十一届全国大学生
+智能汽车竞赛
+技 术 报 告
+学 校： 南京信息工程大学
+队伍名称： 死腿快跑队
+参赛队员： 陈羽彤
+杨乐添
+朱向宇
+姚 磊
+带队教师： 张 伟
+刘 佳
+II
+关于技术报告和研究论文使用授权的说明
+本人完全了解全国大学生智能汽车竞赛关保留、使用技术报告和研究论文
+的规定，即：参赛作品著作权归参赛者本人，比赛组委会可以在相关主页上收
+录并公开参赛作品的设计方案、技术报告以及参赛模型车的视频、图像资料，
+并将相关内容编纂收录在组委会出版论文集中。
+参赛队员签名：陈羽彤
+杨乐添
+朱向宇
+姚磊
+带队教师签名：张伟、刘佳
+日 期：2026.8.16
+III
+目录
+第一章 引言.................................................................................................................1
+第二章 方案设计.........................................................................................................2
+2.1 系统的主要设计方案............................................................................2
+2.2 系统总体方案设计................................................................................3
+第三章 轮腿车机械结构与调整优化.........................................................................4
+3.1 轮腿车车体机械建模............................................................................4
+3.2 轮腿机构与重心调整............................................................................4
+3.2.1 足端运动学解算.................................................................4
+3.2.2 重心与平衡零点调整.........................................................4
+3.3 编码器与测距传感器安装....................................................................4
+3.4 车体重心与电路板安装........................................................................5
+第四章 电路设计说明.................................................................................................6
+4.1 电源管理模块........................................................................................6
+4.2 传感器模块............................................................................................6
+4.3 电机与舵机驱动模块............................................................................6
+4.4 系统主板设计........................................................................................7
+第五章 智能车控制软件设计说明.............................................................................8
+5.1 软件设计总体框架................................................................................8
+5.2 传感器信息采集及处理........................................................................8
+5.2.1 摄像头采集与图像处理.....................................................8
+5.2.2IMU 姿态解算....................................................................8
+5.2.3 激光测距与障碍台阶检测.................................................8
+5.2.4GNSS 定位与组合导航.....................................................8
+IV
+5.2.5 路径规划与航点导航.........................................................9
+5.3 速度控制部分........................................................................................9
+5.4PID 算法介绍........................................................................................9
+第六章 系统的开发环境与车模调试.......................................................................12
+6.1 调试工具及调试方法..........................................................................12
+第七章 主要技术参数说明.......................................................................................13
+总结.............................................................................................................................18
+参考文献.....................................................................................................................19
+附录...............................................................................................................................I
+1
+第一章 引言
+本文介绍了南京信息工程大学“死腿快跑”队伍参加全国大学生智能汽车竞
+赛轮腿穿越组的工作成果。本车以英飞凌 CYT4BB7（CYT4BB 系列，双核
+Cortex-M7）微控制器为核心，在逐飞科技 CYT4BB 开源库基础上进行二次开
+发，采用两轮无刷电机差速驱动与四路舵机轮腿机构，融合 MT9V03X 灰度摄
+像头、IMU963RA 九轴惯性传感器、DL1B 激光测距模块，完成循迹、航点导
+航、跳跃越障、上下台阶、单边桥通行等综合科目。报告主要从系统方案、机
+械结构、电路设计和软件控制等方面，对本车设计与调试过程进行说明和总结。
+2
+第二章 方案设计
+本章介绍轮腿智能车的设计思路与总体方案。系统主要由机械结构、传感
+模块、控制模块和程序算法四部分构成。
+2.1 系统的主要设计方案
+本车以英飞凌 CYT4BB7 双核微控制器作为主控，主频配置为 250MHz，
+使用 IAREmbeddedWorkbench9.40.1 开发环境，在逐飞科技 CYT4BB 开源库
+的基础上进行二次开发。车辆采用两轮差速 + 四腿的轮腿结构：两路无刷电机
+通过串口驱动板实现差速行驶和前后俯仰自平衡，四条腿由四路舵机驱动，通
+过足端逆运动学解算实现抬腿、跳跃、越障以及单边桥上的左右横滚补偿。传
+感方面，MT9V03X 灰度摄像头用于采集赛道线与场景信息，IMU963RA 提供
+三轴角速度、加速度和磁力数据用于姿态解算与航向估计，DL1B 激光测距用
+于障碍与台阶检测。TFT180 液晶屏与五向按键构成调试交互界面，蜂鸣器用于
+状态提示。
+第 2 章 方案设计
+3
+2.2 系统总体方案设计
+图2.1 系统总体方案框图
+系统按功能划分为主控模块、传感模块、驱动模块、执行模块和电源模块：
+主控模块负责各外设的初始化、数据融合与决策控制；传感模块采集图像、姿
+态、位置和距离信息；驱动模块通过串口与无刷电机驱动板通信并输出舵机
+PWM；执行模块由两轮无刷电机和四条舵机腿组成；电源模块为主控、传感器
+和驱动系统提供稳定供电。整体方案如图2.1 所示。
+CYT4BB7MT9V03X
+IMU963R
+A
+按键
+电源模块
+激 光 测
+距
+无 刷 电
+机
+编码器 TFT180
+4
+第三章 轮腿车机械结构与调整优化
+轮腿车的所有控制都建立在机械结构之上。本章介绍车体机械建模、轮腿
+机构与重心调整，以及传感器安装方案。
+3.1 轮腿车车体机械建模
+本车采用两轮差速底盘与四条舵机腿相结合的轮腿结构。轮子半径为 42
+cm，两轮间距约 18cm；四条腿分别由左前、左后、右前、右后四路舵机驱动，
+基础足端高度设为 38mm、基础足端水平偏移设为 19mm。通过足端坐标到舵
+机角度的逆运动学解算，可以独立控制每条腿的抬升与伸缩，实现跳跃、越障
+和单边桥等动作。
+
+第 3 章 轮腿车机械结构与调整优化
+5
+图3.1 轮腿车机械结构示意
+3.2 轮腿机构与重心调整
+3.2.1 足端运动学解算
+程序通过 foot_real_xy_to_servo_angle() 将左右足端的 XY 坐标解算为前
+后舵机的目标角度。速度环的输出被映射为足端 X 方向的偏移量，使车身在加
+速时向前倾、减速时向后仰，同时根据俯仰角偏离平衡零点的程度对前倾量进
+行衰减，保证加减速过程中的稳定性。
+3.2.2 重心与平衡零点调整
+自平衡控制以俯仰角（pitch）作为被控量，平衡零点按不同科目动态切换：
+正常行驶约为 -0.82°，跳跃时约为 -1.6°，单边桥时约为 -1.13°，颠簸路段约为
+-0.94°。通过调整腿的基础高度、足端水平偏移和横滚角零点，改变整车重心位
+置，从而兼顾速度与越障稳定性。
+第二十一届全国大学生智能汽车竞赛技术报告
+6
+3.3 编码器与测距传感器安装
+两路无刷电机内置编码器，编码器、转速和力矩数据通过 UART4 串口回
+传，用于速度闭环与里程累加。DL1B 激光测距模块安装于车体前部，用于检
+测颠簸路段、台阶和单边桥等前方障碍与地形特征。
+3.4 车体重心与电路板安装
+主板、电池和舵机的安装位置综合考虑整车重心，尽量降低重心高度并保
+持左右对称。电池安装位置与腿部机构的运动范围相互避让，避免在抬腿、跳
+跃时产生机械干涉，提高行驶和越障过程的稳定性。
+7
+第四章 电路设计说明
+4.1 电源管理模块
+电源是整车稳定运行的基础。系统电池经稳压电路后分别为主控、传感器、
+舵机和电机驱动系统供电，电源方案按负载类型分区供电，以减小舵机大电流
+对主控和传感器模拟信号的干扰。
+4.2 传感器模块
+本车使用 MT9V03X 灰度摄像头、IMU963RA 九轴惯性传感器、TAU1201
+GNSS 定位模块和 DL1B 激光测距模块。摄像头输出 188×120 灰度图像；
+IMU963RA 提供三轴角速度、加速度和磁力数据；GNSS 通过 UART2 串口输
+出定位信息；DL1B 输出前方距离信息。各传感器接口与主控连接如图4.1 所
+示。
+图4.1 传感器模块连接示意
+
+第二十一届全国大学生智能汽车竞赛技术报告
+8
+4.3 电机与舵机驱动模块
+两路无刷电机通过 UART4 串口（波特率 460800）与电机驱动板通信，主
+控下发左右轮占空比，并接收左右轮转速、编码器值和力矩值。四条舵机腿通
+过四路 TCPWM PWM 输出（频率 300 Hz）驱动，分别对应 SERVO_1～
+SERVO_4。此外预留了一路关节电机串口（UART3），用于扩展关节电机闭环
+控制。
+图4.2 电机与舵机驱动示意
+4.4 系统主板设计
+主控板将 CYT4BB7 最小系统与摄像头、IMU、GNSS、激光测距、无线串
+口、按键、显示接口等外设进行模块化布局，统一引出电源、串口、PWM 与 GPIO
+接口，便于调试与更换。系统主板原理图如图4.3 所示。
+
+第 4 章 电路设计说明
+9
+图4.3 系统主板原理图
+
+10
+第五章 智能车控制软件设计说明
+5.1 软件设计总体框架
+系统上电后由 CM7_0 核执行 clock_init() 完成 250 MHz 时钟与系统初
+始化，随后调用 All_init() 完成各外设初始化，进入主循环执行菜单处理、导航
+模式切换、图像处理、航点导航、距离检测、目标速度与目标转向计算等任务。
+CM7_1 核当前作为预留辅助核心，双核通过共享 RAM 中的 shared_data 结构
+体（地址 0x28001000）以及 Bin_Image、mt9v03x_image 两个图像缓存区交换
+数据。1ms 的 PIT 中断内执行 IMU 解算、速度更新和平衡控制，10.2ms 的
+PIT 中断内执行编码器里程累加。
+5.2 传感器信息采集及处理
+5.2.1 摄像头采集与图像处理
+MT9V03X 采集 188×120 灰度图像后，通过 Otsu/自适应阈值进行二值化，
+随后进行边线提取、透视变换、等距采样和角点检测，识别台阶、桥面等场景，
+并利用纯跟踪算法计算 pure_angle 用于巡线转向控制。
+5.2.2 IMU 姿态解算
+IMU963RA 输出三轴角速度和加速度，先经过零偏标定、低通滤波与加速
+度卡尔曼滤波，再采用 Mahony/互补滤波算法解算四元数，得到 roll、pitch、
+yaw 姿态角。姿态数据同时用于平衡控制、转向控制和航向推算。
+5.2.3 激光测距与障碍台阶检测
+DL1B 激光测距数据经中值滤波和有效性判断后用于颠簸路段、台阶和单
+边桥等元素的进入/退出判定。结合里程距离阈值，实现特殊元素的自动切换与
+完成标记。
+5.2.4 GNSS 定位与组合导航
+TAU1201GNSS 解析经纬度后转换为平面坐标，并与基于 IMU 航向和编
+码器里程的航位推算结果进行卡尔曼滤波融合，得到更平滑的融合位置与航向，
+用于户外航点导航。
+第 5 章 智能车控制软件设计说明
+11
+5.2.5 路径规划与航点导航
+系统维护一个 checkpoint 航点列表，每个航点包含目标坐标、类型（旋转
+点、终点、掉头点、转弯点、元素点）等信息。根据编码器里程和 IMU 航向实
+时更新车辆 XY 位置，计算到下一航点的方位角和距离，并在转弯处使用贝塞
+尔曲线进行平滑过渡。路径点可保存至内部 Flash 并回放。
+5.3 速度控制部分
+系统根据科目和当前特殊元素动态设置目标速度：跳跃阶段约 360，旋转
+群约 60，颠簸路段约 210（支持倒车脱困），单边桥按配置速度运行，正常路
+段在 360～700 之间切换。速度环将目标速度与实际平均速度的误差经 PID 计
+算后映射为足端水平偏移，实现车身前倾加速、后仰减速。
+5.4 PID 算法介绍
+在现代自动控制技术中应用最广泛的调节方式是PID 调控方式，该控制原
+理如下图5.1 所示。在本课题中智能车的转向、速度都不同程度的引用PID 算法
+思想。对于PID 控制结构简单，稳定性高。但是采用PID 算法需要有个繁琐的
+参数调整过程，但是可行性算高。相比较其他控制方式占很大优势。
+图5.1PID控制原理图
+原理图对应计算公式如下所示：
+
+第二十一届全国大学生智能汽车竞赛技术报告
+12
+( ) ( ) ( )e k r k c k  公式1
+0
+( ) { ( ) ( ) [ ( ) ( 1)]}
+k
+D
+P
+jI
+TTu k K e k e j e k e kT T      公式2
+式中：
+k ——采样序号，k=0，1，2…； ( )r k ——第k 次给定值；
+( )c k ——第k 次实际输出值； ( )u k —— 第k 次输出控制量；
+( )e k —— 第k 次偏差； ( 1)e k —— 第k-1 次偏差；
+PK ——比例系数； IT ——积分时间常数；
+DT ——微分时间常数； T ——采样周期。
+PID 算法中各个参数的作用如下：
+比例调节（Kp）：对偏差的快速调整，智能车测量得实际值与设定允许值
+产生偏比例控制立即对此时刻误差发生控制，根据偏差的大小直接按比例的输
+出相应的控制。朝着偏差减少方向变化。由此可见偏差调整的快慢取决于Kp 比
+例值得大小，Kp值越大系统调整速度就越快，但是容易导致系统过调，使得系
+统震荡，稳定性下降。比例值过小，使得系统震荡减小，但是偏差调节变慢，
+不利于一些追求速度的系统。
+积分调节（Ki）：对系统的历史偏差积分计算，当系统一直存在偏差时，
+积分调节将对系统进行调整，调整直到没有误差才会停止。积分调节的强度取
+决于积分时间Ti,，Ti越小，积分调整强度越大，反之越小。
+微分调节（Kd）：微分是反映一个系统的偏差变化率，表明偏差的变化趋
+势，由此可见它是能超前比例和和积分调节，但是微分是反映变化率，当偏差
+没有发生变化时，微分作用也不存在，所以不可单独使用，必须结合使用。
+数字PID控制算法通常分为位置式PID控制算法和增量式PID控制算法。
+1、位置式PID
+位置式 PID 中，由于计算机输出的 u(k)直接去控制执行机构(如阀
+门)u(k)的值和执行机构的位置(如阀门开度)是一一对应的，所以通常
+称公式2 为位置式PID 控制算法。
+第 5 章 智能车控制软件设计说明
+13
+位置式PID 控制算法的缺点是：
+由于全量输出，所以每次输出均与过去的状态有关，计算时要对过去
+e(k)进行累加，计算机工作量大；而且因为计算机输出的u(k)对应的是
+执行机构的实际位置，如计算机出现故障，u(k)的大幅度变化，会引
+起执行机构位置的大幅度变化，这种情况往往是生产实践中不允许的，
+在某些场合，还可能造成严重的生产事故。因而产生了增量式PID 控
+制的控制算法，所谓增量式PID 是指数字控制器的输出只是控制量的
+增量 ( )u k 。
+2、增量式PID
+当执行机构需要的是控制量的增量(例如：驱动步进电机)时，可由公
+式2 推导出提供增量的PID 控制算式。由公式2 可以推出公式3，公
+式2 减去公式3 可得公式4。
+1
+0
+( 1) { ( 1) ( ) [ ( 1) ( 2)]}
+k
+D
+P
+jI
+TTu k K e k e j e k e kT T           公式3
+公式4
+式中 ( ) ( ) ( 1)e k e k e k    ； I P
+I
+TK K T ； D D P TK K T
+公式4 称为增量式PID 控制算法，可以看出由于一般计算机控制系统
+采用恒定的采样周期T ，一旦确定了 PK 、 IT 、 DT ，只要使用前后三
+次测量值的偏差，即可由公式4 求出控制增量。
+( ) {[ ( ) ( 1)] ( ) [ ( ) 2 ( 1) ( 2)]}
+( ) ( ) [ ( ) ( 1)]}
+D
+P
+I
+P I D
+TTu k K e k e k e k e k e k e kT T
+K e k K e k K e k e k
+         
+      
+14
+第六章 系统的开发环境与车模调试
+6.1 调试工具及调试方法
+软件开发使用 IAR Embedded Workbench 9.40.1 和逐飞科技 CYT4BB 开
+源库。调试时通过串口 printf 输出速度、姿态角、PID 输出和导航状态等数据，
+配合 TFT180 菜单和五向按键进行参数在线调整。同时使用无线串口模块和遥
+控接收机进行远程监控与遥控控制。
+15
+第七章 主要技术参数说明
+本车主要技术参数如下表所示，其中标注“待补充”的项目需按实车测量或确
+认后填写。
+表7.1 车模技术检查表
+队伍名称 死腿快跑
+参赛学校 南京信息工程大学
+赛题组组别 轮腿穿越组
+检查项目 规格（选手自行填写） 符合 不符合 备注
+1. 车模类型
+是什么？
+V型车模
+车模整体尺
+寸：
+1.（包括传感
+器在内）长，
+宽，高(mm)
+2. 摄像头组
+标明镜头距
+离 地 面 高
+度。
+长宽高：18.5mm×22.5mm×
+32mm
+传 感 器 种
+类、规格(型
+号)数量。
+2.是否使用
+自 带 MCU
+MT9V03X 摄 像 头 1 个 、
+IMU963RA 姿态模块 1 个、
+DL1B 激光测距 1 个、无刷电
+机编码器 2 个；
+未使用
+第二十一届全国大学生智能汽车竞赛技术报告
+16
+的成品传感
+器模块？型
+号是什么？
+控制转向舵
+机型号是否
+自行改装舵
+机？
+2.防伪易损
+标签是否完
+整？
+否
+是
+1. 是否增加
+伺服电机？
+2. 如果有那
+么种类、个
+数和作用？
+否
+1.电路中微
+处理器型号
+和个数？
+1 颗 CYT4BB7 （ 双 核
+CM7_0/CM7_1）
+1.是否具有
+其它可编程
+器件，个数
+与作用？
+无
+是否有无线
+通讯装置？
+2.如果有，那
+么种类和个
+数？
+未使用无线通讯装置
+第 7 章 主要技术参数说明
+17
+1.电池的种
+类、规格和
+数量？
+Lipo 2200mAh 3S
+1. 是否使用
+GPS 导航？
+2. 是否没有
+使用RTK？
+未使用GPS导航，未使用 RTK
+后轮驱动电
+机是否是原
+车模电机？
+2.是否具有
+防伪易损标
+签？
+是
+车模轮胎是
+否原有的纹
+理可辨析？
+轮胎表面是
+否具有粘性
+物质？
+3.对于麦克
+纳姆轮是否
+更换过小轮
+胶皮？
+轮胎纹理可辨
+轮胎表面无粘性物质
+未使用麦克纳姆轮
+车模底盘是
+否是原车模
+底盘？
+2.是否有大
+是，否
+第二十一届全国大学生智能汽车竞赛技术报告
+18
+面积切割？
+车轮轴距、
+轮距是否改
+装？
+2.改装参数
+是什么？
+否
+车模驱动轮
+传动机构是
+否改装？
+2.改装方式
+是什么？
+否
+车模差速器
+是否改装？
+改装方式是
+什么？
+无
+是否更换过
+原装车模中
+的机械元器
+件？更换后
+的规格 是
+什么？
+改装了腿机械结构
+规格：上腿为65mm
+下腿为96mm
+车模电路板
+个 数 及 功
+能。
+2.其中是否
+有 购 买 成
+品 、 哪 一
+3 块
+分别是主板（作用为连接外设
+和MCU，供电）、电机驱动板
+（驱动电机）、舵机驱动板（供
+电和提供pwm）
+第 7 章 主要技术参数说明
+19
+些？
+自制电路板
+是否标记有
+学校名称、
+队伍名称、
+制作日期等
+信息？
+2.标示信息
+在PCB 的哪
+一层？
+包含
+覆铜层
+其它待说明
+内容
+20
+总结
+轮腿智能车竞赛是一个涉及控制、传感、电子信息、机械和导航等多学科
+的综合性项目。在备赛过程中，本队将自平衡控制、轮腿逆运动学、姿态解算、
+航点导航和特殊元素状态机等知识综合应用于实际车辆，通过反复调试提高了
+动手能力、分析问题和解决问题的能力。
+21
+参考文献
+[1] 邵贝贝. 单片机嵌入式应用的在线开发方法. 北京：清华大学出版社，2001.
+[2] 刘慧银，龚光华，王云飞等.Motorola(Freescale) 微控制器 MC68HC08 原理及其
+嵌入式应用（新版）. 北京：清华大学出版社，1993.
+[3] 卓晴，黄开胜，邵贝贝等. 学做智能车. 北京：北京航空航天大学出版社，2001.
+[4] 潘新民，王燕芳. 微型计算机控制技术. 北京：高等教育出版社，2001.
+[5] 何立民. 单片机应用系统设计. 北京：北京航空航天大学出版社，1997.
+
+I
+附录
+部分程序代码
+// 主循环关键流程（main_cm7_0.c 节选）
+while (true) {
+Menu_Choose();
+change_nav();
+image_processing();
+operate_nav_yaw();
+xy_nav_record();
+tof_get_distance();
+get_change_element();
+get_change_zeropoint();
+get_target_speed();
+get_target_turn();
+get_change_pid();
+}
+// 平衡控制（balance.c 节选）
+void balance_control(void) {
+PID_Compute(&angular_speed_cycle, angle_cycle.pid_output, imu_data_out.gyro_y);
+PID_Compute(&turn_angular_speed_cycle, turn_angle_cycle.pid_output, imu_data_out.gyro_z);
+if (system_time % 4 == 0) {
+xy_update_location();
+PID_Compute_turn(&turn_angle_cycle, target_turn, imu_data_out.yaw);
+}
+if (system_time % 5 == 0) {
+PID_Compute(&angle_cycle, pitch_zeropoint, imu_data_out.pitch);
+}
+II
+if (system_time % 10 == 0 && control_flag) {
+posture_control();
+}
+if (control_flag) motor_set(angular_speed_cycle.pid_output);
+else small_driver_set_duty(0, 0);
+}
+// 轮腿足端逆解与舵机输出（servo_ik.c 节选）
+if (foot_real_xy_to_servo_angle(x_left_target, y_left_target,
+x_right_target, y_right_target,
+&FootServoAngle)) {
+servo_angle_to_PWM(FootServoAngle.right_rear,
+FootServoAngle.left_front,
+FootServoAngle.left_rear,
+FootServoAngle.right_front);
+servo_set_duty();
+}
+//二值化后迷宫巡线（image.c 节选）
+if (img->height < 3 || img->width < 2)
+{
+*num = 0;
+*back_num = 0;
+*side_num = 0;
+return 0;
+}
+/* 起始点也限制在有效图像区域内，避免沿着被丢弃的顶部黑行走。 */
+y = clip(y, IGNORE_TOP_ROWS + 1, img->height - 2);
+III
+x = clip(x, 0, img->width - 1);
+int predicted_x = x;
+bool found = false;
+if (hand_rule == HAND_LEFT)
+{
+/*
+* 当前行最左列为白色，说明左边线已经超出图像。
+* 直接把 x=0 作为这一行的左边线。
+*/
+if (get_pixel_safe(img, 0, y, 0) == 255)
+{
+x = 0;
+found = true;
+}
+else
+{
+/*
+* 当前行左端为黑色，搜索距离预测位置最近的
+* 黑->白跳变。
+*/
+for (int distance = 0;
+distance < img->width && !found;
+distance++)
+{
+int candidate_left = predicted_x - distance;
+if (candidate_left >= 1 &&
+IV
+candidate_left < img->width &&
+get_pixel_safe(img,
+candidate_left - 1,
+y,
+0) == 0 &&
+get_pixel_safe(img,
+candidate_left,
+y,
+0) == 255)
+{
+x = candidate_left;
+found = true;
+break;
+}
+if (distance != 0)
+{
+int candidate_right = predicted_x + distance;
+if (candidate_right >= 1 &&
+candidate_right < img->width &&
+get_pixel_safe(img,
+candidate_right - 1,
+y,
+0) == 0 &&
+get_pixel_safe(img,
+candidate_right,
+y,
+0) == 255)
+V
+{
+x = candidate_right;
+found = true;
+break;
+}
+}
+}
+}
+}
+else
+{
+int right_boundary = img->width - 1;
+/*
+* 当前行最右列为白色，说明右边线已经超出图像。
+* 直接把最右列作为这一行的右边线。
+*/
+if (get_pixel_safe(img,
+right_boundary,
+y,
+0) == 255)
+{
+x = right_boundary;
+found = true;
+}
+else
+{
+/*
+* 当前行右端为黑色，搜索距离预测位置最近的
+VI
+* 白->黑跳变。
+*/
+for (int distance = 0;
+distance < img->width && !found;
+distance++)
+{
+int candidate_left = predicted_x - distance;
+if (candidate_left >= 0 &&
+candidate_left < img->width - 1 &&
+get_pixel_safe(img,
+candidate_left,
+y,
+0) == 255 &&
+get_pixel_safe(img,
+candidate_left + 1,
+y,
+0) == 0)
+{
+x = candidate_left;
+found = true;
+break;
+}
+if (distance != 0)
+{
+int candidate_right = predicted_x + distance;
+if (candidate_right >= 0 &&
+candidate_right < img->width - 1 &&
+get_pixel_safe(img,
+VII
+candidate_right,
+y,
+0) == 255 &&
+get_pixel_safe(img,
+candidate_right + 1,
+y,
+0) == 0)
+{
+x = candidate_right;
+found = true;
+break;
+}
+}
+}
+}
+}
+if (!found)
+{
+*num = 0;
+*back_num = 0;
+*side_num = 0;
+return 0;
+}
+void xy_nav_display(void)//xy 模式科目二三
+{
+if(internal_data_now.xy_state==0||Nav_flag!=XY)
+return;
+if (checkpoint_index >= POINTMAX || checkpoint_index < 0)
+{
+VIII
+internal_data_now.xy_state=0; // 无效索引，停止导航
+return;
+}
+if(check_point[checkpoint_index].type == 3)//转弯点
+{
+slow_flag=0;
+float turn_r;
+float turn_exit_preview_dis;
+if(calculate_distance2(check_point[checkpoint_index].x,check_point[checkpoint_index].y)<TURN_SLOW_DI
+S*TURN_SLOW_DIS)
+turn_slow_flag=1;
+else
+turn_slow_flag=0;
+if(check_point[checkpoint_index].is_turn_around==1)
+{
+turn_r=TURN_AROUND_R;
+turn_exit_preview_dis=TURN_AROUDND_EXIT_PREVIEW_DISTANCE;
+}
+else
+{
+turn_r=TURN_R;
+turn_exit_preview_dis=TURN_EXIT_PREVIEW_DISTANCE;
+}
+// 还没进入贝塞尔转弯
+if(bezier_turn_point.init_flag == 0)
+{
+calculate_distance_azimuth(check_point[checkpoint_index].x,check_point[checkpoint_index].y);
+if(internal_data_now.distance_to_checkpoint < turn_r)
+{
+IX
+load_bezier_turn_point(checkpoint_index, turn_r);
+bezier_turn_point.init_flag = 1;
+}
+else
+{
+return;
+}
+}
+// 已经在贝塞尔转弯中
+float bezier_t_pre = get_bezier_t() + TURN_PREVIEW_T;
+if(bezier_t_pre<=1.0f)
+{
+Bezier_change_for_turn(bezier_t_pre);
+calculate_distance_azimuth(bezier_turn_point.turn_target_x,bezier_turn_point.turn_target_y);
+}
+else if(bezier_t_pre>1.0f&&bezier_t_pre<1.0f+TURN_PREVIEW_T)
+{
+get_after_turn_target(bezier_t_pre, turn_exit_preview_dis);
+}
+else
+{
+bezier_turn_point.init_flag = 0;
+checkpoint_index++;
+calculate_distance_azimuth(check_point[checkpoint_index].x,check_point[checkpoint_index].y);// 立刻切
+到下一个点
+}
+}
+else
+{
+turn_slow_flag=0;
+X
+calculate_distance_azimuth(check_point[checkpoint_index].x,check_point[checkpoint_index].y);
+if(check_point[checkpoint_index].type==0&&rotate_slow_start == 0)
+{
+if(checkpoint_index==1)
+{
+check_point[checkpoint_index].slow_dis=get_course2_dynamic_slow_dis(avg_speed)-25;
+}
+else if(checkpoint_index==2)
+{
+check_point[checkpoint_index].slow_dis=get_course2_dynamic_slow_dis(avg_speed)-24;
+}
+}
+if(internal_data_now.distance_to_checkpoint < check_point[checkpoint_index].distance)
+{
+if(check_point[checkpoint_index].type==1)//终点
+{
+internal_data_now.xy_state=0;
+checkpoint_index = 0;
+//导航关闭
+}
+else if(check_point[checkpoint_index].type==0)//旋转
+{
+// printf(
+// "C2_ARRIVE point=%d, speed=%.1f, slow_dis=%d, remain=%.1f\r\n",
+// checkpoint_index,
+// fabsf(avg_speed),
+// check_point[checkpoint_index].slow_dis,
+// internal_data_now.distance_to_checkpoint
+// );
+XI
+spe_element = ROTATE;
+checkpoint_index++;
+}
+else if(check_point[checkpoint_index].type==4)//元素点
+{
+if(check_point[checkpoint_index].course3_element==VMC_NAV)
+{
+//置你要的
+Image.state=1;
+check_vmc_flag=1;
+}
+else if(check_point[checkpoint_index].course3_element==ENTER_STAIR_NAV)
+{
+//置你要的
+//Image.state=1;
+Jump.state=1;
+}
+else if(check_point[checkpoint_index].course3_element==EXIT_STAIR_NAV)
+{
+//置你要的
+spe_element=JUMP_BE;
+current_x=internal_data_now.x_pos;
+current_y=internal_data_now.y_pos;
+Image.state=1;
+gpio_set_level(BUZZER_PIN, GPIO_HIGH);
+}
+else if(check_point[checkpoint_index].course3_element==ENTER_BUMP_NAV)
+{
+//置你要的
+XII
+Bump.state=1;
+Image.state=0;
+}
+else if(check_point[checkpoint_index].course3_element==EXIT_BUMP_NAV)
+{
+//置你要的
+gpio_set_level(BUZZER_PIN, GPIO_HIGH);
+}
+checkpoint_index++;
+}
+}
+else if(rotate_slow_start ==
+1||internal_data_now.distance_to_checkpoint<check_point[checkpoint_index].slow_dis)
+{
+slow_flag=1;
+//只在第一次触发减速时打印一次
+if(rotate_slow_start == 0&&spe_finish.rotate_group.finished ==0)
+{
+// 新的一次减速开始，允许重新打印 TARGET
+rotate_target_printed = 0;
+// printf(
+// "C2_SLOW point=%d, speed=%.1f, slow_dis=%d, remain=%.1f\r\n",
+// checkpoint_index,
+// fabsf(avg_speed),
+// check_point[checkpoint_index].slow_dis,
+// internal_data_now.distance_to_checkpoint
+// );
+rotate_slow_start = 1;
+}
+XIII
+// 第一次下降到旋转目标速度附近
+if(rotate_target_printed == 0 &&
+fabsf(avg_speed) <= 80.0f)
+{
+// printf(
+// "C2_TARGET point=%d, speed=%.1f, remain=%.1f\r\n",
+// checkpoint_index,
+// fabsf(avg_speed),
+// internal_data_now.distance_to_checkpoint
+// );
+rotate_target_printed = 1;
+}
+}
+else
+{
+slow_flag=0;
+}
+}
+}
+void find_element_index(void)
+{
+for(int i=0;i<POINTMAX;i++)
+{
+if(check_point[i].course3_element==ENTER_STAIR_NAV)
+element_index.stair_index=i;
+else if(check_point[i].course3_element==VMC_NAV)
+XIV
+element_index.vmc_index=i;
+else if(check_point[i].course3_element==ENTER_BUMP_NAV)
+element_index.bump_index=i;
+}
+}void speed_update(void)//放中断 越快越好(1ms)
+{
+left_speed=motor_value.receive_left_speed_data*RATIO;
+right_speed=motor_value.receive_right_speed_data*(-1)*RATIO;
+speed_ave=-(left_speed+right_speed)/2.0;//加负号
+internal_data_now.yaw=imu_data_out.yaw;//yaw 角向右为正
+}
+void xy_update_location(void)//放中断 4ms 一次
+{
+float dx = speed_ave*sinf(internal_data_now.yaw*DEG2RAD)*DT;
+float dy = speed_ave*cosf(internal_data_now.yaw*DEG2RAD)*DT;
+internal_data_now.x_pos+=dx;
+internal_data_now.y_pos+=dy;
+if(yaw_mode_azimuth_flag==1)
+{
+int8_t bezier_result = Bezier_change();
+if(bezier_result == 0)
+{
+calculate_azimuth(pos_target_x,pos_target_y);
+}
+else if(bezier_result == 1)
+{
+yaw_final_out = norm(internal_data_now.yaw + BEZIER_ANGLE_THRESHOLD);
+}
+XV
+else if(bezier_result == -1)
+{
+yaw_final_out = norm(internal_data_now.yaw - BEZIER_ANGLE_THRESHOLD);
+}
+printf("%d\r\n",bezier_result);
+}
+//nav_kf_predict(dx, dy, internal_data_now.yaw);
+}
+void Bezier_change_for_turn(float bezier_t)
+{
+bezier_turn_point.turn_target_x=(1-bezier_t)*(1-bezier_t)*bezier_turn_point.x1+2*(1-bezier_t)*bezier
+_t*bezier_turn_point.x2+bezier_t*bezier_t*bezier_turn_point.x3;
+bezier_turn_point.turn_target_y=(1-bezier_t)*(1-bezier_t)*bezier_turn_point.y1+2*(1-bezier_t)*bezier
+_t*bezier_turn_point.y2+bezier_t*bezier_t*bezier_turn_point.y3;
+}
+float get_bezier_t(void)
+{
+float vx = bezier_turn_point.x3 - bezier_turn_point.x1;
+float vy = bezier_turn_point.y3 - bezier_turn_point.y1;
+float wx = internal_data_now.x_pos - bezier_turn_point.x1;
+float wy = internal_data_now.y_pos - bezier_turn_point.y1;
+float len2 = vx * vx + vy * vy;
+if(len2 < 1.0f)
+{
+return 0.0f;
+}
+float t = (wx * vx + wy * vy) / len2;
+if(t < 0.0f) t = 0.0f;
+XVI
+if(t > 1.0f) t = 1.0f;
+return t;
+}
+void load_bezier_turn_point(int index, float turn_radius)
+{
+bezier_turn_point.x1 = internal_data_now.x_pos;
+bezier_turn_point.y1 = internal_data_now.y_pos;
+bezier_turn_point.x2 = check_point[index].x;
+bezier_turn_point.y2 = check_point[index].y;
+float yaw = atan2f(check_point[index + 1].x - check_point[index].x,check_point[index + 1].y -
+check_point[index].y);
+bezier_turn_point.x3 = check_point[index].x + turn_radius * sinf(yaw);
+bezier_turn_point.y3 = check_point[index].y + turn_radius * cosf(yaw);
+}
+void get_after_turn_target(float bezier_t_pre, float turn_exit_preview_dis)
+{
+float after_t = bezier_t_pre - 1;
+float next_dx =check_point[checkpoint_index + 1].x - bezier_turn_point.x3;
+float next_dy =check_point[checkpoint_index + 1].y - bezier_turn_point.y3;
+float next_line_length =sqrtf(next_dx * next_dx + next_dy * next_dy);
+if(next_line_length > 0.001f)
+{
+float line_ratio = (bezier_t_pre - 1.0f) / TURN_PREVIEW_T;
+if(line_ratio < 0.0f)
+line_ratio = 0.0f;
+if(line_ratio > 1.0f)
+line_ratio = 1.0f;
+float preview_distance =turn_exit_preview_dis * line_ratio;
+// 不允许预瞄点越过下一个 checkpoint
+if(preview_distance > next_line_length)
+XVII
+{
+preview_distance = next_line_length;
+}
+bezier_turn_point.turn_target_x =bezier_turn_point.x3 + next_dx / next_line_length *
+preview_distance;
+bezier_turn_point.turn_target_y =bezier_turn_point.y3 + next_dy / next_line_length *
+preview_distance;
+}

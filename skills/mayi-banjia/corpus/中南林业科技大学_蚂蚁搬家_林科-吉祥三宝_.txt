@@ -1,0 +1,588 @@
+第二十一届全国大学生
+智能汽车竞赛
+技术报告
+学校：中南林业科技大学
+队伍名称：林科-吉祥三宝
+参赛队员：李博、陈展、赵吉祥、陈政炀
+带队老师：崔祥波、蒋淑霞
+关于技术报告和研究论文使用授权的说明
+本人完全了解全国大学生智能汽车竞赛关保留、使用技术报告和研究论文的规定，即：参赛作品著作权归参赛者本人，比赛组委会可以在相关主页上收录并公开参赛作品的设计方案、技术报告以及参赛模型车的视频、图像资料，并将相关内容编纂收录在组委会出版论文集中。
+
+
+
+
+
+参赛队员签名：______________________________
+
+带队教师签名：______________________________
+日　期：　　2026年8月17日
+第一章绪论
+1.1竞赛背景与蚂蚁搬家组别特点
+全国大学生智能汽车竞赛是由教育部高等学校自动化类专业教学指导委员会主办，面向全国高校在校大学生的探索性工程实践类竞赛。第二十一届竞赛以“创意无限、智驾未来”为主题，鼓励参赛队伍将具身智能、多机协同等前沿技术融入车模作品。
+蚂蚁搬家组是第二十一届竞赛新增设的创意任务组别，其核心任务是使用两辆自制车模（搬运车）协同将场地中央的目标物体（含红蓝色纯色沙包、网球、白棕色小熊玩偶）搬运至场地四周指定区域。比赛场地为3.2m×2.4m矩形区域，蓝色背景布铺设，场地边界以5cm宽黄色胶带标识。被搬运物体放置在场地中心1m见方的区域中，物品间距不小于10cm。
+本组别具有以下显著区别于传统竞速组别的特点：（1）采用两辆搬运车协同推动的机制，要求物体在搬运全程不离开地面，且两车之间不得有物理连接；（2）允许使用无线通信协调两车行为；（3）比赛成绩按车模从发车区出发到返回发车区的总用时计算，遗漏物品需按规则罚时；（4）除搬运车外，可选用不超过2台的辅助车模或导引信标，但其不得接触被搬运物品。
+在硬件平台方面，本组别要求搬运车必须使用基于NXPi.MXRT1021微控制器的MicroPython核心板作为主控制器，并仅允许使用Python语言（MicroPython方言）进行应用程序开发；辅助车模可使用STC32G144K246单片机。
+1.2国内外搬运机器人研究现状
+多机协同搬运是移动机器人领域的经典问题。早期研究主要关注两台差速车模通过刚性或柔性连接协同搬运大型物体，例如基于主从式（leader–follower）控制的两车协调。在该模式下，主车负责路径规划与速度指令，从车通过相对位姿反馈跟踪主车。
+近年来随着视觉感知与无线通信能力的提升，无物理连接的双车协同搬运成为研究热点。MIT、ETH等团队提出基于AprilTag视觉标签的多机器人相对定位方案，可在无GPS环境实现厘米级相对位姿估计。在工业领域，亚马逊Kiva机器人采用二维码+地面标记的方案实现仓储搬运，但需要预先铺设专用导航基础设施。
+国内方面，哈尔滨工业大学、华中科技大学、上海交通大学等高校在该领域有持续研究输出。蚂蚁搬家组的双车协同搬运是首次将该任务引入本科生竞赛，对参赛队伍的多机协调算法设计能力提出更高要求。
+现有的多机协同方案多依赖外部全局定位系统（如Vicon动作捕捉、UWB基站），这在竞赛的开放场地中难以部署。本作品针对这一问题，提出“搬运车航迹推算为主+辅助车俯视校正为辅+搬运车模型识别目标”的混合感知方案，以较低成本实现了全场定位与目标识别。
+1.3本文主要工作与章节安排
+本文系统性地介绍了本参赛队所设计的第二十一届全国大学生智能汽车竞赛基于全场坐标定位与双车协同的智能搬运系统，主要工作包括：（1）分析了蚂蚁搬家组的比赛任务需求与硬件平台约束，提出双车协同搬运的总体方案；（2）完成了搬运车与辅助车的原理图与PCB设计，搭建了集成化的三轮全向搬运车模；（3）实现了基于辅助车俯视识别的全场定位算法、基于OpenARTPlus的目标识别算法、双车无线通信协议与三轮全向PID运动控制；（4）通过系统联调与多轮比赛测试验证了方案的有效性。
+本文共分为九章。第一章为绪论；第二章介绍系统总体方案；第三章至第五章分别介绍机械、硬件电路与传感器方案；第六章详细阐述软件算法设计；第七章介绍开发与调试过程；第八章给出主要技术参数；第九章总结全文并展望进一步工作。最后附录给出原理图、PCB与核心源代码。
+第二章系统总体方案设计
+2.1系统功能需求分析
+根据竞赛规则与场地布局，本系统的核心功能需求可归纳为以下三类：
+（1）感知需求。系统需实时获取场地内两台搬运车的位置坐标、目标物体的种类与位置坐标。位置精度需达到厘米级，以满足两车在物体前后对接形成稳定推力的精度要求。
+（2）决策与通信需求。两台搬运车需要协调其搬运目标与运动节奏，搬运车A与搬运车B需通过无线串口与辅助车通信，并依据辅助车下发的全场态势信息生成各自的目标点。通信需具备一定抗丢包能力。
+（3）执行需求。搬运车需要根据目标点生成运动控制指令，驱动三轮车模完成直行、横移、自转、复合运动等多种动作，并能精确抵达对接点（误差不超过±2cm），且抵达后能维持航向以稳定推动物体。
+2.2双车协同搬运总体方案
+本作品的定位架构以搬运车航迹推算为主、辅助车俯视校正为辅。搬运车利用编码器与IMU660RA陀螺仪进行航迹推算，实现高频全场坐标估计；辅助车架高50cm，通过MT9V034灰度图像二值化与黑点检测获取物体的大致位置，经无线串口下发给搬运车用于校正累积漂移。在目标识别方面，搬运车利用机载OpenARTPlus运行预先训练的目标检测模型，识别沙包、网球、布偶等搬运物体的类别与位置，完成精准对接与推动。
+双车协同搬运的工作流程如下：（1）发车阶段，两台搬运车位于发车区，辅助车架高在指定位置不动，辅助车开始连续采集俯视图像，识别目标物体位置；（2）辅助车将多目标坐标打包通过无线串口周期下发；（3）两台搬运车根据目标1坐标计算各自应抵达的对接点（物体前后两侧），并按全场坐标路径规划算法抵达；（4）抵达对接点后，两车以相同速度沿相同方向推动物体至指定区域；（5）搬运完成，前往下个目标位置，准备下一次搬运。
+2.3全场坐标定位策略
+本系统将3.2m×2.4m的矩形场地抽象为坐标系：以场地左下角为原点，X轴沿长边（3.2m）方向，Y轴沿短边（2.4m）方向，单位为厘米。
+全场定位采用搬运车航迹推算与辅助车俯视观测相结合的互补方案。搬运车利用编码器与IMU660RA陀螺仪进行航迹推算，通过三轮逆运动学解算车体速度并积分得到全场坐标；辅助车架高50cm，MT9V034摄像头以俯视角度覆盖整个场地，对灰度图像进行二值化处理，识别图像中的黑色标记点，将像素坐标换算为场地全局坐标后通过无线串口下发给搬运车，用于标记搬运物体位置。
+2.4硬件总体架构
+本系统由一辆辅助车与两辆搬运车组成，三者通过无线串口构成通信网络。搬运车主控采用NXPi.MXRT1021MicroPython核心板，搭载OpenARTPlus视觉模块、IMU660RA六轴姿态传感器、三个DRV8701E电机驱动电路、三个N20直流电机及对应的1024线增量式编码器pro；辅助车主控采用STC32G144K246单片机，搭载总钻风MT9V034摄像头与无线串口模块。
+详细原理图参见附录A，PCB设计参见附录B，主要参数参见第8章。
+第三章车模机械结构设计与安装
+3.1搬运车总体结构设计
+为最大程度减少车模重量与尺寸，搬运车模采用三轮全向轮布局，沿圆周120°等分布置。这种布局可实现平面内任意方向的运动，无需转向机构，特别适合在场地受限且需要频繁调整姿态的搬运任务中使用。
+搬运车模的核心尺寸约束为：搬运车模实际外形尺寸为177mm×147mm×200mm（长×宽×高，含推杆）。为满足该约束，本作品将主板设计为不规则多边形板，并采用主板兼作底板的集成方案（详见3.3节）。每个黄色丝印区域上方安装编码器，下方安装N20电机，构成三个独立的驱动-全向轮单元。
+车身中间预留OpenARTPlus摄像头安装座，可调节俯仰角，支杆为碳素杆。推杆为3D打印材料。推杆大小为100mm×50mm。
+
+图3.1搬运车实物图
+3.2三轮运动学分析
+三轮全向轮的运动学模型基于120°对称分布的三个全向轮。当车体坐标系下的速度为(vx,vy)，自转角速度为ω时，三个轮子的目标速度可由正运动学公式给出。
+（公式1）
+其中雅可比矩阵J为：
+
+（公式2）
+式中θᵢ为第i个轮子相对车体X轴的安装角，本作品取θ_left=60°，θ_right=120°，θ_rear=0°。
+实际控制时，先由路径规划层输出期望的(vx,vy,ω)，再经正运动学公式解算得到三个轮子的目标转速，最后通过增量式PID（kp=5.0,ki=2.1,kd=0）控制各轮电机达成目标转速。编码器经一阶低通滤波（α=0.7）后反馈至PID闭环。
+3.3底板的集成设计
+为减轻重量并简化装配，本作品对搬运车进行了集成化创新：将车模底板与电机驱动主控板合二为一。PCB采用1.2mm厚的FR4板材，按车模不规则多边形轮廓设计，板上设有三个黄色方形丝印区域，每个区域上方为编码器安装位置，下方为N20电机安装位置。
+这种方案将原本“底板+驱动板”多层结构压缩为单层，显著降低了车模厚度与重量，同时避免了多层结构间的相对位移问题。
+图3.2搬运车底板图
+3.4辅助车架支撑结构
+辅助车定位的核心是获取稳定的视野。本作品将辅助车放置在赛场发车边中点，支架3D打印制作，辅助车PCB固定于支架上。MT9V034摄像头镜头朝下，距地面50cm，视野覆盖整个3.2m×2.4m场地。
+辅助车与搬运车采用相同的3S锂电池（满电12.6V）供电，经DCDC与LDO稳压后为各模块供电。
+图3.3辅助车实物图
+第四章硬件电路设计
+4.1搬运车主控电路
+搬运车主控选用基于NXPi.MXRT1021微控制器的144Pin插针版MicroPython核心板。该芯片原生主频500MHz，能够运行组委会指定的MicroPython固件，并支持UART、SPI等模块调用，满足本作品对实时多任务调度的需求。
+核心板通过排针/排母与搬运车主板对接，板上预留了OpenARTPlus接口、三个编码器接口、IMU660RA接口、无线模块接口、IPS200屏幕接口、拨码开关、四个按键以及电源接口。
+
+图4.1主控原理图
+4.2电机驱动电路
+搬运车采用三个独立的H桥直流电机驱动电路，驱动芯片选用TIDRV8701E。该芯片是一款集成度高、保护功能齐全的单路H桥驱动器，为外部N-MOSFET提供栅极驱动电流，并提供短路、过温、欠压等保护功能。
+每个驱动通道由一片DRV8701E与四个TPHR403NLN沟道MOSFET构成全桥，外加自举电容与去耦电容。
+PWM信号由RT1021定时器产生，频率设置为20kHz。方向信号DIR由普通GPIO控制。三个驱动通道分别对应电机1、电机2、电机3，对应主板的三个PWM与三个DIR引脚。
+
+图4.2电机驱动电路原理图
+4.3辅助车硬件电路
+辅助车主控选用STC32G144K246单片机。该芯片基于STC32位8051内核，采用94脚LQFP封装，使用内部晶振最高可达120MHz，片内集成多路SPI、UART等外设，可独立承担图像采集与无线通信任务。辅助车在功能上仅启用摄像头与无线串口两个模块，PCB上预留的屏幕、按键、蜂鸣器等仅用于调试。辅助车硬件结构较搬运车简单，主要包括：摄像头接口摄像头独立3.3V电源（采用另一片RTR9013-33LDO以避免干扰）、无线模块接口、屏幕接口、蜂鸣器、按键与拨码开关。
+辅助车电源部分与搬运车类似：电池经SCT2450降至5V，再经RTR9013-33降至3.3V。为减少不必要的功耗，辅助车未配置电机驱动电路。
+
+图4.3辅助车硬件电路原理图
+第五章传感器与外设方案设计
+5.1视觉传感器方案
+本作品共配置两类视觉传感器，分别承担“全场物体识别”与“搬运车前方目标识别”两类任务。
+（1）OpenARTPlus+SCC8660摄像头（搬运车）。OpenARTPlus是基于NXP芯片的视觉处理模块，可独立运行训练好的目标检测模型而无需占用主控算力。其配套的SCC8660摄像头模组视角130°，分辨率1280×720，支持彩色图像输出。在本作品中，OpenARTPlus用于运行预先训练的目标检测模型，识别前方视野中的沙包、网球、小熊等搬运物体的类别与位置。
+（2）总钻风MT9V034摄像头（辅助车）。MT9V034是一款全局快门CMOS图像传感器，分辨率640×480，最高帧率120fps。由于其为全局快门特性，可有效避免快速运动产生的果冻效应，适合辅助车的全场物体识别场景。辅助车MT9V034将采集到的灰度图像直接送入STC32G144K246主控，由STC32G144K246进行二值化处理与黑点检测，识别场地内被搬运物体的位置。
+5.2姿态与运动传感器
+（1）IMU660RA六轴姿态传感器。IMU660RA是逐飞科技推出的一款高精度六轴IMU，集成三轴加速度计与三轴陀螺仪，加速度量程±16g，陀螺仪量程±2000°/s，数据输出频率最高1kHz，本作品配置为200Hz采样。搬运车主控通过SPI接口以200Hz的频率读取IMU数据，用于姿态估计与航向修正。
+（2）逐飞科技1024线增量式编码器pro。编码器为正交AB相输出，角度分辨率0.088°。编码器通过6pin排线连接到主控板的对应接口，RT1021定时器以QEI模式采集脉冲。在运动控制中，编码器反馈构成PID控制的速度环与位置环。
+第六章软件算法设计
+6.1软件总体架构
+本作品的软件系统由两类运行环境组成：搬运车主控基于MicroPython固件运行Python脚本；辅助车主控基于逐飞科技STC32G144K246100Pin开源库运行C语言程序（KeilC251编译），搬运车主控运行MicroPython脚本。两者通过无线串口协议实现数据互通。
+搬运车主程序采用双Ticker定时调度架构：pit1周期5ms，负责编码器采样、IMU数据读取与Mahony姿态融合、航迹推算位置更新、状态机执行与电机PID控制；pit2周期10ms，负责LCD屏幕刷新、按键处理与OpenART摄像头心跳通信。主循环负责OpenART UART数据接收解析等。搬运车任务流程采用35态有限状态机，覆盖从发车、接近目标、绕物定位、双车对推、推送至目标区域、回库等完整搬运流程。辅助车主程序采用while(1)循环加定时器中断架构，周期采集MT9V034灰度图像并执行二值化与黑点检测。
+6.2辅助车物体识别与定位
+辅助车的核心任务是为搬运车提供大致位置参考。辅助车总钻风MT9V034摄像头采集灰度图像后，通过二值化处理将图像分为黑白两部分。根据黑点在图像中的像素位置，结合辅助车的安装高度与摄像头参数，换算为搬运车在场地坐标系下的(X,Y)坐标，通过无线串口下发给搬运车。
+（1）图像二值化。辅助车开机后持续采集MT9V034灰度图像，选取适当的灰度阈值对图像进行二值化处理。蓝色背景布在灰度图像中呈较亮区域，被搬运物体（沙包、网球、小熊等）呈较暗区域，通过阈值分割可将黑色物体连通域从背景中提取出来。
+（2）黑点检测与坐标换算。对二值化后的图像进行连通域分析，提取面积在合理范围内的黑色连通域作为搬运物体候选。根据黑点中心在图像中的像素坐标(u,v)，结合辅助车安装高度h=50cm与摄像头焦距f，通过几何关系换算物体在场地坐标系下的位置。
+（3）互补定位。搬运车同时利用机载OpenART Plus摄像头进行目标物体（沙包、网球等）的视觉识别，结合辅助车下发的全场坐标进行精确对接。搬运车自身的航迹推算与辅助车的俯视观测形成互补定位：航迹推算提供高频位姿估计，辅助车观测提供低频绝对位置校正。
+6.3搬运车物体识别与定位
+搬运车利用机载OpenARTPlus运行预先训练的YOLOv3目标检测模型，对前方视野中的搬运物体进行识别。模型支持6类物体识别：网球(1)、蓝色沙包(2)、红色沙包(3)、白色布偶(4)、棕色布偶(5)与车(6)。
+训练数据由4批独立标注合并而来，经清洗后统一为规范VOC数据集datasets/merged，包含图像与标注两部分，图片与标注一一对应。所有图像原始分辨率为320×240（横置）。
+
+表6.1训练数据规模
+OpenARTPlus通过UART12（115200baud）以20字节（10个16位字）数据包向RT1021回传识别结果，包格式为：[包标识0xDB,物体类别，目标X坐标，目标Y坐标，置信度，对方车辆类别，对方车X，对方车Y，对方车置信度，保留0]。RT1021主控每20ms向OpenART发送3字节心跳包（包标识0xAC+当前状态+锁定目标类别），控制OpenART的识别行为。通信超时阈值300ms，超时后清除目标缓存。主控结合辅助车下发的大致坐标与模型输出的精确位置进行路径规划。
+表6.2数据集类别分布
+
+图6.1数据集类别分布
+
+本作品采用模型识别+距离估算策略：搬运车在向目标点行进过程中持续运行目标检测模型，一旦检测到目标类别的物体，则根据模型输出的边界框位置估算剩余距离，引导搬运车精准停在物体前方约2cm处。
+图6.2训练样本示例（原图 + 标注框）
+6.4全场坐标路径规划
+搬运车收到辅助车下发的目标坐标(Xg，Yg)后，需要在场地内规划一条无碰撞路径到达该点。本作品采用基于“关键点+直线段”的简化路径规划策略：将场地离散为0.1m×0.1m的网格，每辆搬运车当前坐标记为(Xc，Yc)，规划输出为路径点序列。
+对于简单的“点到点”运动（无障碍物阻挡），路径规划层直接输出当前点到目标点的直线轨迹，并按速度上限分两阶段：加速段、减速段。对于需要避障的情况（如两辆搬运车接近时），规划层在两车之间设置一个“汇合点”，由两车分别从不同方向绕行到该汇合点，再继续前往各自目标。
+v=kpm·d+kdm·(d-d_last)（公式3）
+式中d为车体到目标点的距离，kpm=2.1为比例系数，kdm=10.5为微分系数。距离较远时输出大速度快速接近，距离较近时自然减速实现精准停靠。
+6.5双车协同搬运控制策略
+双车协同搬运采用一前一后的对推式策略。前车通过机载OpenARTPlus目标检测模型找到搬运物体后，将物体类别ID与位置坐标通过无线串口发送给后车。后车收到信息后，导航至前车相对位置，形成一前一后的搬运队形。在搬运过程中，前车速度略快于后车，以保证双车协同推送的稳定性。搬运车通过编码器与IMU航迹推算获取自身全场坐标，两车通过无线串口持续交换坐标信息。
+在搬运过程中，两车利用对方车辆坐标与当前物体坐标进行对齐控制，确保小车与物体之间、小车与小车之间保持对齐。move_clamp_translation_smart2函数融合OpenART目标坐标(target_x)与对方车辆坐标(camera_car_x)：当两者均有效时取平均值，仅一个有效时取该值，均无效时取默认中心值160。经坐标旋转换算至车体本地坐标系后，通过正运动学解算三轮目标转速，同时叠加航向角PID修正（kpt=2.1,kdt=12.6）维持车身姿态。
+为防止队形震荡，补偿速度做±3.0限幅保护，微分项kdc=0.7提供阻尼。此外，状态机还包含避让策略：当检测到对方车辆阻挡推送路径时（car2_flag），搬运车自动计算偏移坐标绕行至推送位置。
+6.6运动控制与PID算法
+运动控制层负责将路径规划输出的期望速度(vx，vy，ω)转换为三轮全向轮的目标转速，再通过PID控制达成目标转速。
+本作品采用增量式PID控制：电机转速环采样周期5ms（200Hz），三组电机PID参数一致（kp=5.0，ki=2.1，kd=0）。编码器读数经一阶低通滤波（α=0.7）后与目标值求差，PID输出按增量累加（output+=kp·Δe+ki·e），限幅±9500。PWM频率17kHz，电机2方向反转。运动控制层将期望车体速度(vx,vy，ω)经三轮全向轮正运动学解算后得到三个电机的目标转速。
+u(t)=Kp·e(t)+Ki·∫e(t)dt+Kd·de(t)/dt（公式4）
+式中e(t)为当前误差（速度环为转速差，位置环为坐标差），Kp、Ki、Kd为PID参数。PID参数通过工程整定法调试：先单独整定单个电机的kp与ki，再将三组参数设为一致进行整车速度环整定，最后结合运动控制层的角度环与位置环进行联合调试。
+为抑制积分饱和，位置环采用抗积分饱和PID：当输出饱和时停止积分累积。微分环节引入低通滤波以抑制编码器噪声。
+第七章开发与调试方案设计
+7.1开发工具箱链
+搬运车主控的MicroPython程序采用ThonnyIDE开发，Thonny内置MicroPythonREPL与文件管理功能，可通过核心板的USB虚拟串口直接烧录Python脚本。代码编辑在PC端的VSCode中完成，再粘贴至Thonny中烧录。
+辅助车主控的C语言程序采用KeilC251（MDKforC251V5.60）开发，编译生成HEX文件后通过USB下载模式烧录（按住P32引脚上电进入下载模式）。图像处理算法借鉴OpenMV库函数实现，并针对STC32G144K246平台进行了精简。
+电路原理图与PCB设计采用立创EDA完成。机械结构设计采用SolidWorks。仿真验证采用MATLAB/Simulink。
+7.2硬件调试方案设计
+硬件调试遵循“分模块→分系统→整车”的递进流程。分模块阶段，首先对电源模块单独调试：使用万用表测量各级电压是否正常，重点观察DCDC的纹波（要求<50mV）。然后对单路电机驱动调试：不接电机时，测量PWM输入与H桥输出的对应关系；接入电机后，测量相电流波形与转速曲线。
+分系统阶段，将各模块连接至主控，编写最简测试程序（如LED闪烁、串口打印等），验证MCU与外设的基本通信。最后进入整车调试：将电池装入车模，测试整车在平面上直行、横移、自转的精度。
+7.3软件调试方案设计
+软件调试遵循“分模块→分模块联调→整车联调”的流程。辅助车图像处理算法的调试在PC端进行：将MT9V034采集的离线图像导入Python+OpenMV环境，编写相同算法的Python版本，通过对比验证算法正确性后再移植到基于逐飞开源库的STC32G144K246平台。
+搬运车PID参数的整定是软件调试的重点。整定过程采用“先单轮后整车”的策略：先固定两轮电机参数，对单个电机整定PID；再将三个电机参数设为相同值，进行整车速度环整定；最后加入位置环进行整车位置环整定。
+第八章主要技术参数
+依据竞赛规则附录要求，本节列出搬运车模的主要技术参数。各项参数为设计值与实测值，最终实测数据以实际测试为准。
+表8.1搬运车主要技术参数
+
+第九章总结与展望
+9.1结论
+本文针对第二十一届全国大学生智能汽车竞赛蚂蚁搬家组的具体任务要求，设计并实现了一套第二十一届全国大学生智能汽车竞赛基于全场坐标定位与双车协同的智能搬运系统。系统由两辆三轮全向搬运车与一辆辅助车组成，三者通过无线串口构成通信网络。搬运车主控采用基于NXP i.MX RT1021的MicroPython核心板，搭载OpenART Plus视觉模块、IMU660RA姿态传感器；辅助车采用STC32G144K246单片机配合总钻风MT9V034全局快门摄像头实现俯视全场定位。
+在算法层面，系统采用“搬运车航迹推算为主+辅助车俯视校正为辅”的定位架构与“训练模型识别目标”的视觉架构：搬运车利用编码器、IMU660RA姿态传感器与IMU进行航迹推算，辅助车通过灰度二值化与黑点检测提供大致位置校正；搬运车利用OpenART Plus运行训练好的目标检测模型识别沙包、网球等搬运物体。运动控制采用基于三轮全向轮运动学的增量式PID控制方案，实验表明系统具有较高的直线与角度控制精度。
+本作品在硬件层面的创新点包括：（1）主板兼作底板的集成化结构设计，将车模层数压缩为单层，实现搬运车减重；（2）DRV8701E搭配外部N-MOSFET的高效率H桥驱动电路；（3）辅助车摄像头独立3.3V供电设计，避免摄像头开关噪声对主控电源的干扰。在算法层面的创新点包括：（1）搬运车航迹推算为主、辅助车灰度二值化黑点检测为辅的互补定位方案；（2）前车找物体、后车跟随的一前一后对推式协同搬运策略；（3）针对MicroPython环境的轻量化运动学解算库。
+9.2展望
+随着具身智能技术的快速发展，多机器人协同搬运将在仓储物流、家庭服务等领域发挥越来越重要的作用。本作品的设计方案虽然在竞赛场景下完成验证，但其核心架构（全局感知+分布式决策+协同执行）可推广至更广泛的应用场景。未来，我们将把本系统拓展至多机器人协同探索与搜救任务中，进一步验证其工程实用性。
+参考文献
+[1] 卓晴.第二十一届全国大学生智能汽车竞赛蚂蚁搬家组细则及MicroPython开发板相关说明 [EB/OL]. (2026-01) [2026-08]. https://blog.csdn.net/zhuoqingjoking97298/article/details/156342641.
+[2] 卓晴.第21届全国大学生智能汽车竞赛提问与回答:蚂蚁搬家组别 [EB/OL]. (2026-02) [2026-08]. https://blog.csdn.net/zhuoqingjoking97298/article/details/157686623.
+[3] 卓晴.第21届智能车竞赛中的导航技术 [EB/OL]. (2026) [2026-08]. https://www.eet-china.com/mp/a512685.html.
+[4] NXP Semiconductors. i.MX RT1020 Reference Manual [Z]. Rev. 1, 2024.
+[5] Texas Instruments. DRV8701E H-Bridge Gate Driver Datasheet [Z]. 2023.
+[6] STC宏晶科技. STC32G Series Datasheet [Z]. 2025.
+[7] 逐飞科技. RT1021 MicroPython核心板硬件手册 [Z]. 2026.
+[8] 逐飞科技. IMU660RA六轴姿态传感器使用说明 [Z]. 2025.
+[9] 逐飞科技. 1024线增量式编码器pro使用说明 [Z]. 2025.
+附录A电路原理图
+附录A为本作品所设计的全部电路原理图，包括搬运车主控板原理图（A.1）、搬运车电机驱动板原理图（A.2）以及辅助车硬件原理图（A.3）。各原理图均按模块分区绘制。各模块功能与设计要点参见正文第4章。
+
+图A.1搬运车主控板原理图（含5V/3.3V电源、IMU/编码器/屏幕/无线模块接口）
+
+图A.2搬运车电机驱动板原理图（DRV8701E×3路H桥）
+
+图A.3 辅助车硬件原理图
+
+附录B主板设计图
+附录B为本作品所设计的PCB图，包括搬运车主控+驱动一体化PCB（B.1）与辅助车PCB（B.2）。
+图B.1搬运车一体化PCB顶层布局
+图B.2辅助车PCB顶层布局
+附录C核心算法源代码
+附录C节选本作品的核心算法源代码，包括三轮全向轮运动学（C.1，摘自coordinate.py）、电机增量式PID控制（C.2，摘自motor.py）、无线串口通信协议（C.3，摘自wireless_uart_communication.py）以及Mahony AHRS姿态解算（C.4，摘自gyroscope.py）。
+C.1三轮全向轮运动学解算
+以下代码摘自搬运车coordinate.py的PositionTracker类，实现三轮全向轮的正/逆运动学解算及航迹推算。
+    def inverse_kinematics(self, v_left, v_right, v_rear):
+        """
+        逆运动学：将三个车轮速度转换为车辆坐标系下的速度 [vx, vy, omega]
+        
+        基于120度全向轮运动学模型：
+        vx = (2/3) * [v_right*cos(30°) + v_left*cos(150°) + v_rear*cos(270°)]
+        vy = (2/3) * [v_right*sin(30°) + v_left*sin(150°) + v_rear*sin(270°)]
+        omega = (1/(3*R)) * (v_left + v_right + v_rear)
+        """
+        
+        # 将角度转换为弧度
+        angle_rad = [math.radians(angle) for angle in self.wheel_angles]
+        
+        # 计算车辆坐标系下的线速度
+        vx = (2/3) * (
+            v_right * math.cos(angle_rad[1]) +  # 前右轮 30°
+            v_left * math.cos(angle_rad[0]) +   # 前左轮 150°
+            v_rear * math.cos(angle_rad[2])     # 后轮 270°
+        )
+        
+        vy = (2/3) * (
+            v_right * math.sin(angle_rad[1]) +  # 前右轮 30°
+            v_left * math.sin(angle_rad[0]) +   # 前左轮 150°
+            v_rear * math.sin(angle_rad[2])     # 后轮 270°
+        )
+        
+        # 计算角速度
+        omega = (v_left + v_right + v_rear) / (3 * self.wheel_radius)
+        
+        return vx, vy, omega
+
+    def forward_kinematics(self, vx, vy, omega):
+        """
+        正运动学：将车辆坐标系速度 [vx, vy, omega] 转换为三个车轮速度
+        
+        用于控制车辆运动，计算每个车轮应该达到的速度
+        """
+        # 将角度转换为弧度
+        angle_rad = [math.radians(angle) for angle in self.wheel_angles]
+        
+        # 计算各车轮速度
+        v_left = (math.cos(angle_rad[0]) * vx + math.sin(angle_rad[0]) * vy + 
+                 self.wheel_radius * omega)
+        
+        v_right = (math.cos(angle_rad[1]) * vx + math.sin(angle_rad[1]) * vy + 
+                  self.wheel_radius * omega)
+        
+        v_rear = (math.cos(angle_rad[2]) * vx + math.sin(angle_rad[2]) * vy + 
+                 self.wheel_radius * omega)
+        
+        return v_left, v_right, v_rear
+
+    def wheels_to_encoder_target(self, v_left, v_right, v_rear):
+        """将车轮速度转换为编码器目标值"""
+        # 计算每个编码器脉冲对应的线位移
+        wheel_circumference = math.pi * self.wheel_diameter
+        pulses_per_mm = self.encoder_per_revolution / wheel_circumference
+        
+        # 转换为编码器脉冲数（假设单位时间内的速度）
+        enc_left = v_left * pulses_per_mm
+        enc_right = v_right * pulses_per_mm
+        enc_rear = v_rear * pulses_per_mm
+        
+
+C.2电机增量式PID控制
+from machine import Pin
+from smartcar import encoder
+from seekfree import MOTOR_CONTROLLER
+
+class Motor:
+    def __init__(self, motor_obj, encoder_obj, kp=0, ki=0, kd=0, target=0):
+        self.motor = motor_obj
+        self.encoder = encoder_obj
+        self.kp = kp
+        self.ki = ki
+        self.kd = kd
+        self.target = target
+        self.error = 0
+        self.last_error = 0
+        self.error_delta = 0
+        self.output = 0
+        self.filtered_encoder = 0
+        self.duty_value = 0
+    
+    def set_target(self, new_target):
+        self.target = new_target
+    
+    def stop(self):
+        """安全停止电机"""
+        self.duty_value = 0
+        self.motor.duty(0)
+    
+    def update_pid(self, limit=9500):
+        encoder_current = self.encoder.get()
+        self.filtered_encoder = 0.7 * encoder_current + 0.3 * self.filtered_encoder
+        
+        self.error = self.target - self.filtered_encoder
+        self.error_delta = self.error - self.last_error
+        self.output += self.kp * self.error_delta + self.ki * self.error
+        self.last_error = self.error
+        
+        self.output = max(-limit, min(limit, int(self.output)))
+        duty=self.output
+        self.duty_value = duty
+        self.motor.duty(duty)
+        
+        return duty
+
+class MotorController:
+    def __init__(self, left_motor, right_motor,behind_motor):
+        self.left_motor = left_motor
+        self.right_motor = right_motor
+        self.behind_motor = behind_motor
+    
+    def set_motors_target(self, left_target, right_target,behind_target):
+        """设置左右轮目标速度"""
+        self.left_motor.set_target(left_target)
+        self.right_motor.set_target(right_target)
+        self.behind_motor.set_target(behind_target)
+    
+    def update_pid_control(self,main_vari):
+        """执行PID控制更新"""
+        if main_vari.emergency_stop or (not main_vari.start_flag):
+            self.left_motor.stop()
+            self.right_motor.stop()
+            self.behind_motor.stop()
+            return 0, 0,0
+        else:
+            limit = getattr(main_vari, 'motor_pwm_limit', 9500)
+            left_duty = self.left_motor.update_pid(limit)
+            right_duty = self.right_motor.update_pid(limit)
+            behind_duty = self.behind_motor.update_pid(limit)
+            return left_duty, right_duty ,behind_duty
+
+def create_motor_instances(main_vari, l_kp=0, l_ki=0,l_kd=0,r_kp=0,r_ki=0,r_kd=0,b_kp=0.0,b_ki=0.0,b_kd=0.0):
+    """创建电机实例的工厂函数"""
+    encoder_1 = encoder("C2" , "C3" , True)
+    encoder_2 = encoder("D13", "D14")
+    encoder_3 = encoder("D15", "D16")
+    motor_1 =MOTOR_CONTROLLER(MOTOR_CONTROLLER.PWM_C30_DIR_C31, 17000, duty = 0, invert = False)
+    motor_2 = MOTOR_CONTROLLER(MOTOR_CONTROLLER.PWM_C28_DIR_C29, 17000, duty = 0, invert = True)
+    motor_3 = MOTOR_CONTROLLER(MOTOR_CONTROLLER.PWM_D4_DIR_D5  , 17000, duty = 0, invert = False)
+    
+    left_motor = Motor(motor_1, encoder_1, l_kp, l_ki, l_kd, main_vari.expect_speed_L)
+    right_motor = Motor(motor_2, encoder_2, r_kp, r_ki, r_kd, main_vari.expect_speed_R)
+    behind_motor = Motor(motor_3, encoder_3, b_kp, b_ki, b_kd, main_vari.expect_speed_B)
+    
+    motor_controller = MotorController(left_motor, right_motor,behind_motor)
+    
+
+    
+    return left_motor, right_motor,behind_motor, motor_controller
+
+
+C.3无线串口通信协议
+from machine import UART
+
+uart = UART(2, baudrate=115200)
+
+MY_DEVICE_ID = 0x10
+TARGET_DEVICE_ID = 0x20
+STC32_DEVICE_ID = 0x30
+
+MSG_TYPE_COORDINATE = 0x01
+MSG_TYPE_SENSOR = 0x02
+MSG_TYPE_DEBUG = 0x03
+MSG_TYPE_START_FLAG = 0x04
+MSG_TYPE_OBJECT_COORDINATE = 0x05
+MSG_TYPE_TARGET_STATUS = 0x06
+
+UART_READ_CHUNK = 64
+UART_RX_BUFFER_LIMIT = 256
+UART_MAX_PAYLOAD_LEN = 64
+UART_MAX_CHUNKS_PER_TASK = 8
+
+print("RT1021 Enhanced UART Initialized @ 115200 baud")
+
+
+def combine_16_bit(high, low):
+    val = (high << 8) | low
+    if val > 32767:
+        val -= 65536
+    return val
+
+
+class Receive_data:
+    def __init__(self):
+        self.x = 0
+        self.y = 0
+        self.state = 0
+        self.latest_data = []
+        self.object_count = 0
+        self.object_valid = False
+        self.object_updated = False
+        self.object_coordinates = []
+        self.rx_buffer = bytearray()
+
+    def split_16bit(self, val):
+        if val < 0:
+            val = (1 << 16) + val
+        return (val >> 8) & 0xFF, val & 0xFF
+
+    def combine_16bit(self, high, low):
+        val = (high << 8) | low
+        if val > 32767:
+            val -= 65536
+        return val
+
+    def send_packet(self, target_id, msg_id, data_list):
+        packet = bytearray([0xAA, 0x55, target_id, msg_id])
+
+        length = len(data_list)
+        packet.append(length)
+        for byte in data_list:
+            packet.append(byte)
+
+        checksum = (target_id + msg_id + length + sum(data_list)) & 0xFF
+        packet.append(checksum)
+
+        uart.write(packet)
+
+    def send_16bit_packet(self, target_id, msg_id, int_list):
+        byte_list = []
+        for val in int_list:
+            high, low = self.split_16bit(val)
+            byte_list.append(high)
+            byte_list.append(low)
+
+        self.send_packet(target_id, msg_id, byte_list)
+
+    def send_start_flag(self, target_id, start_flag):
+        self.send_packet(target_id, MSG_TYPE_START_FLAG, [1 if start_flag else 0])
+
+C.4Mahony AHRS姿态解算
+import math
+import time
+from seekfree import IMU660RX
+
+# ==========================================================
+# 基础算法参数设置
+# ==========================================================
+SAMPLE_FREQ     = 200.0      # 采样频率(Hz) - 必须和主函数定时器(5ms)匹配！
+Kp_DEFAULT      = 0.5        # 比例增益 (信任加速度计的程度)
+Ki_DEFAULT      = 0.001      # 积分增益 (消除长期静态误差)
+ANGLE_LPF_ALPHA = 0.15       # 角度低通滤波系数
+
+# 核心优化参数
+GYRO_Z_SCALE    = 1.000      # 多圈累加误差比例系数
+ACC_GRAVITY_1G  = 1.0        # 1G 基准
+IMU660RA_PROPORTION = 16.34 # 陀螺仪量程比例
+ACC_PROPORTION      = 2048.0 # 加速度计量程比例 (根据实际LSB修改)
+
+class Gyroscope_get:
+    def __init__(self):
+        # 内部四元数变量
+        self.q0, self.q1, self.q2, self.q3 = 1.0, 0.0, 0.0, 0.0
+        # 内部积分误差
+        self.integralFBx, self.integralFBy, self.integralFBz = 0.0, 0.0, 0.0
+        # 采样周期一半
+        self.halfT = 0.5 / SAMPLE_FREQ
+        
+        # 输出变量
+        self.roll = 0.0
+        self.pitch = 0.0
+        self.yaw = 0.0
+        
+        # 连续Yaw逻辑
+        self.yaw_continuous = 0.0
+        self.yaw_offset = 0.0
+        self.last_raw_yaw = 0.0
+        
+        # 零偏校准
+        self.gyro_offset_x = 0.0
+        self.gyro_offset_y = 0.0
+
+    def mahony_update(self, gx, gy, gz, ax, ay, az):
+        """核心算法：四元数姿态解算及误差修正"""
+        gx *= 0.0174533
+        gy *= 0.0174533
+        gz *= 0.0174533
+
+        if not (ax == 0 and ay == 0 and az == 0):
+            current_kp = Kp_DEFAULT
+            current_ki = Ki_DEFAULT
+            
+            acc_norm = math.sqrt(ax*ax + ay*ay + az*az)
+            gyro_norm = math.sqrt(gx*gx + gy*gy + gz*gz)
+
+            # 抗离心力保护逻辑
+            if gyro_norm > 1.0 or abs(acc_norm - ACC_GRAVITY_1G) > (0.15 * ACC_GRAVITY_1G):
+                current_kp = 0.0
+                current_ki = 0.0
+                if gyro_norm > 2.0:
+                    self.integralFBx = self.integralFBy = self.integralFBz = 0.0
+
+            recip_norm = 1.0 / acc_norm
+            ax *= recip_norm; ay *= recip_norm; az *= recip_norm
+
+            vx = 2.0 * (self.q1 * self.q3 - self.q0 * self.q2)
+            vy = 2.0 * (self.q0 * self.q1 + self.q2 * self.q3)
+            vz = self.q0*self.q0 - self.q1*self.q1 - self.q2*self.q2 + self.q3*self.q3
+
+            ex = (ay * vz - az * vy)
+            ey = (az * vx - ax * vz)
+            ez = (ax * vy - ay * vx)
+
+            if current_ki > 0:
+                self.integralFBx += ex * current_ki * (2.0 * self.halfT)
+                self.integralFBy += ey * current_ki * (2.0 * self.halfT)
+                self.integralFBz += ez * current_ki * (2.0 * self.halfT)
+            else:
+                self.integralFBx = self.integralFBy = self.integralFBz = 0.0
+
+            gx += current_kp * ex + self.integralFBx
+            gy += current_kp * ey + self.integralFBy
+            gz += current_kp * ez + self.integralFBz
+
+        qa, qb, qc = self.q0, self.q1, self.q2
+        self.q0 += (-qb * gx - qc * gy - self.q3 * gz) * self.halfT
+        self.q1 += (qa * gx + qc * gz - self.q3 * gy) * self.halfT
+        self.q2 += (qa * gy - qb * gz + self.q3 * gx) * self.halfT
+        self.q3 += (qa * gz + qb * gy - qc * gx) * self.halfT
+
+        norm = math.sqrt(self.q0**2 + self.q1**2 + self.q2**2 + self.q3**2)
+        self.q0 /= norm; self.q1 /= norm; self.q2 /= norm; self.q3 /= norm
+C.5运动控制与路径规划
+以下代码摘自搬运车move.py的Move_control类，实现全场坐标导航与运动控制。navigate_target_direct将全局目标坐标转换至车体本地坐标系，move_target结合距离PD控制生成车体速度并经正运动学解算三轮目标转速，同时叠加航向角PD修正维持车身姿态。
+    def navigate_target_direct(self,main_vari,target_x,target_y):
+        angle_rad = math.radians(main_vari.gyro_z_angle)
+        current_x, current_y = main_vari.car_current_coordinate
+        global_x = target_x - current_x
+        global_y = target_y - current_y
+        car_x = global_x * math.cos(angle_rad) - global_y * math.sin(angle_rad)
+        car_y = global_x * math.sin(angle_rad) + global_y * math.cos(angle_rad)
+        
+        return car_x,car_y
+    def move_target(self, main_vari,position_tracker,speed_max, target_x, target_y, target_angle=None):
+        car_x,car_y=self.navigate_target_direct(main_vari,target_x,target_y)
+        self.distance = math.sqrt(car_x**2 + car_y**2)
+        speed=self.kpm*self.distance+self.kdm*(self.distance-self.last_distance)
+        speed=min(speed,speed_max)
+        if abs(car_x) + abs(car_y) > 0:
+            vx = (car_x / (abs(car_x) + abs(car_y))) * speed
+            vy = (car_y / (abs(car_x) + abs(car_y))) * speed
+        else:
+            vx, vy = 0, 0
+        self.last_distance=self.distance
+        self.last_angle_error=self.angle_error
+        v_left, v_right, v_rear=position_tracker.forward_kinematics( vx, vy, 0)
+        if target_angle is None:
+            # 计算目标点在小车坐标系下的角度
+            target_angle_car = math.degrees(math.atan2(car_x, car_y))
+            target_angle =main_vari.gyro_z_angle+ target_angle_car
+        
+        # 计算角度误差
+        self.angle_error=min((target_angle-main_vari.gyro_z_angle),(target_angle+360-main_vari.gyro_z_angle),
+                                (target_angle-360-main_vari.gyro_z_angle),key=abs)
+        move_pid=self.kpt*self.angle_error+self.kdt*(self.angle_error-self.last_angle_error)
+        move_pid=max(min(move_pid,30),-30)
+        v_left=v_left+move_pid
+        v_right=v_right-move_pid
+        v_rear=v_rear-move_pid
+        main_vari.expect_speed_L=v_left
+        main_vari.expect_speed_R=v_right
+        main_vari.expect_speed_B=v_rear
+        self.last_angle_error=self.angle_error
+        return self.distance
+
+
+附录D实物图
+D.1搬运车实物图
+ 图D.1-3车主车实物图
+图D.4-6从车实物图
+
+D.2辅助车实物图
+  图D.7辅助车实物图
+
+===== TABLE 1 =====
+统计项 | 数值
+图像总数 | 63,885张（全部320×240）
+标注文件数 | 63,885个（XML，与图像一一对应）
+目标框总数 | 232,478个
+每图目标数 | 均值3.64，中位数4，最多10（90%图像含1~6个目标）
+目标面积占比 | 均值4.06%，中位数1.41%，最大68.6%（以目标相对较小为主，p90=11.8%）
+异常标注 | 0个（无效框/越界框均已剔除）
+
+===== TABLE 2 =====
+类别 | 中文名 | 目标框数量 | 占比
+red_bag | 红包 | 54,957 | 23.6%
+tennis | 网球 | 46,896 | 20.2%
+white_bear | 白熊 | 41,812 | 18.0%
+brown_bear | 棕熊 | 37,220 | 16.0%
+blue_bag | 蓝包 | 34,075 | 14.7%
+car | 小车 | 17,518 | 7.5%
+
+===== TABLE 3 =====
+参数类别 | 参数项 | 实测值 | 备注
+基本参数 | 总重量（含电池） | 290g | 存在误差
+基本参数 | 外形尺寸（长×宽×高） | 177×147×200 mm | 含推杆
+电路参数 | 平均工作功耗 | 15W/0.3W | 前为搬运车/后为辅助车（下同）
+电路参数 | 所有电容总容量 | 521.7047µF/412.4µF | 含DCDC电解/陶瓷电容
+传感器 | 摄像头 | 3 | 搬运车模为OpenART Plus+SCC68660摄像头模组（2个）辅助车模为总钻风MT9V034
+传感器 | 编码器 | 3 | 1024线增量式编码器pro
+传感器 | 六轴IMU | 1 | IMU660RA
+伺服电机 | 除驱动电机外 | 0 | /
+检测性能 | 视觉识别帧率 | 10 fps | OpenART Plus+SCC8660
+YOLOv3模型 | 目标检测率 | 88.6% | /
+YOLOv3模型 | 分类准确率 | 98.9% | /

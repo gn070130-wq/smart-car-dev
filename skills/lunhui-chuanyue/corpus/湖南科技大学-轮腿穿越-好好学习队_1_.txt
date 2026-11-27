@@ -1,0 +1,714 @@
+第二十一届全国大学生智能汽车
+竞赛
+	技 术 报 告	
+
+学    校：	湖南科技大学
+队伍名称：	好好学习队
+参赛队员：	谭玲 张语欣 谭国康
+带队教师：	曾照福 李沛
+
+关于技术报告和研究论文使用授权的说明
+本人完全了解全国大学生智能汽车竞赛有关保留、使用技术报告和研究论文的规定，即：参赛作品著作权归参赛者本人，比赛组委会可以在相关主页上收录并公开参赛作品的设计方案、技术报告以及参赛模型车的视频、图像资料，并将相关内容编纂收录在组委会出版论文集中。
+
+参赛队员签名：谭玲 张语欣 谭国康
+带队教师签名：曾照福 李沛    
+日        期：2026.8.15      
+
+目录
+第一章 引言	1
+第二章 轮腿车的总体设计	2
+第三章 电路系统硬件设计	5
+3.1 CYT4BB7主板	5
+3.2无刷双驱	7
+3.3舵机电源板	8
+3.4磁编	9
+第四章 轮腿车的传感器及机械结构优化	10
+4.1陀螺仪	10
+4.2摄像头	10
+4.3轮胎	10
+4.4车模轮腿	11
+第五章 开发工具、制作、安装、调试过程说明	12
+5.1开发软件	12
+5.2调试工具	12
+第六章 软件算法设计	13
+6.1 软件总体架构与任务调度	13
+6.2 多速率 PID 姿态与运动控制	13
+6.3 平面五连杆逆运动学与舵机控制	14
+6.4 台阶跳变点检测与越障动作	15
+6.5 单边桥扫线与通过控制	16
+6.6 状态切换与鲁棒性设计	17
+第七章 总结	18
+参考文献	19
+附录A 部分核心子程序	I
+附录B车模技术检查表	XX
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+第一章 引言
+全国大学生智能汽车竞赛是以智能汽车为研究对象的探究性工程实践活动，旨在培养大学生的综合知识运用能力、工程实践能力和创新意识。竞赛涵盖自动控制、模式识别、传感技术、电子电气及机械等多学科交叉知识，要求参赛队伍协同完成从方案设计、硬件制作到系统调试的全过程。 
+本届轮腿穿越组赛题对赛车的地形适应能力与自主导航精度提出了极高要求。面对复杂的室外越野路况，传统轮式结构在通过颠簸及障碍地形时存在局限。为此，本团队设计并制作了一款结合轮式竞速与腿部越野优势的轮腿穿越智能车。系统以CYT4BB7为核心控制单元，融合了总钻风摄像头、高精度陀螺仪等传感器，实现了多源数据融合下的自主路径规划与稳定姿态控制。团队在机械布局优化、硬件模块化设计及多闭环PID控制算法上进行了深入探索，为智能车在复杂赛道上的高效稳定运行提供了可靠保障。
+
+
+第二章 轮腿车的总体设计
+根据智能车组委会对竞赛轮腿穿越组别的规定，采用V车模作为比赛用车的基础框架。主控芯片采用德国英飞凌公司生产的单片机CYT4BB7作为主控芯片，增加串口屏、总钻风摄像头。本轮腿车由舵机电源板、CYT4BB7主板和CYT2BL3主控的无刷驱动板三大部分构成。在多次实验下该PCB板是应对拆换车上部件的最优方案。该车还包含了一个无线串口调试接口以及一个无线图传调试接口，其他PCB板由CYT4BB7主板提供供电。
+本车采用两轮自平衡轮腿结构，设计时并不是单纯追求某一单项速度，而是围绕三个竞赛科目的综合要求进行取舍。科目一要求车辆在塑胶跑道上完成绕锥并回到原点，这一过程对车体转向响应速度、姿态恢复能力以及路径跟踪稳定性要求较高；科目二要求车辆能够准确进入指定区域并完成定点绕圈，对定位精度、车速控制精度以及控制系统的重复性提出了更高要求；科目三包含三级台阶、斜坡、单边桥、颠簸路段和草地区域，是对整车越障能力、抗冲击能力、平衡控制能力和结构可靠性的集中考验。因此，本车总体设计思路不是将硬件简单堆叠，而是在稳定、易调试、便于维修之间寻求平衡，使车辆既能满足平路项目的快速响应，又能具备复杂地形下的持续通过能力。
+在主控方案上，选择CYT4BB7作为核心控制单元，主要是考虑到比赛过程中需要同时完成姿态解算、执行机构控制、图像或路径信息处理以及多外设通信，主控不仅要有足够的运算能力，还要具备较好的接口扩展能力和系统实时性。串口屏的加入主要用于现场调试时快速观察关键参数和状态量，便于在不连接上位机的情况下完成模式切换与参数确认；摄像头的加入，则是为了满足赛道识别的需求，使车辆在不同科目下都能够获得对应的环境信息输入。无线串口调试接口和无线图传调试接口的设置，也是结合比赛调试场景作出的选择，因
+为轮腿车在动态平衡状态下不适合频繁插拔有线设备，无线调试可以减少对车体重心和线路连接状态的干扰，提高调试效率。
+在结构和供电方案上，将CYT4BB7主板、无刷驱动板和舵机电源板划分为独立功能模块，是基于比赛中高频拆装、更换部件和快速定位故障的需求考虑。模块化设计有利于缩短维修时间，当某一部分出现问题时可以单独更换，而不需要对整车电路进行大范围拆解。同时，采用主板统一供电和接口汇总的方式，可以减少车体内部线束交叉，降低接插件松动、干扰引入以及维护困难等问题。对于两轮平衡轮腿车而言，线束布局和器件分布会直接影响整车重心位置与动态响应，因此PCB和外设安装不仅要考虑电气连接，还要考虑整车质量分布的合理性，尽量使主要器件靠近车体中部布置，以减小转动惯量，提高姿态调整速度。
+此外，本车面向的是室外越野赛道，车辆在实际运行中不仅要承受加减速和转向带来的惯性冲击，还要面对雨水、草地以及落台阶时的振动冲击，因此在设计阶段就必须把可靠性放在重要位置。对PCB进行防水胶处理，可以降低潮湿环境下短路、腐蚀和失效的风险；通过3D打印外壳对前部关键部件进行保护，则是考虑到车辆在上下台阶、通过单边桥以及发生碰撞时，前部最容易先与障碍物接触，需要对舵机及相关结构提供足够防护。综合来看，本车总体设计并非只针对某一科目进行优化，而是以完成全赛程任务为目标，从控制核心、传感器配置、模块化电路、整车布置和环境适应性等多个方面进行统筹设计，以保证车辆在竞赛中具有较好的稳定性、通过性和可维护性。设计思路框图如下。
+
+图1.1 系统设计框图
+
+第三章 电路系统硬件设计
+3.1 CYT4BB7主板
+其上面具有各种外设接口和电调、舵机电源的电源接口，接口都采用模块连接，以方便替换。
+
+
+图2.1 CYT4BB7主板原理图
+
+图2.2 CYT4BB7主板PCB 
+3.2无刷双驱
+鉴于室外环境的下雨和暴晒等情况下，PCB需要满足散热的大功率设计，对大功率路径进行加宽开窗处理。
+
+图2.3 无刷驱动原理图
+
+图2.4 无刷驱动PCB
+3.3舵机电源板
+由于轮腿有四个舵机需要控制，由于车模限制集成在主板上不便于车模部件的更换，因此单独设计一个舵机供电与控制。
+
+图2.5 舵机电源原理图
+
+图2.6 舵机电源PCB
+3.4磁编
+根据组委会要求自制的磁性编码器，用于采集并传输电机数据。
+
+图2.7 磁编原理图
+
+图2.8 磁编PCB
+
+
+第四章 轮腿车的传感器及机械结构优化
+4.1陀螺仪
+在对比使用过IMU660RA、IMU660RB、IMU660RC三款陀螺仪后，产生的数据误差几乎一致，但是数据输出处理方面IMU660RB具有优势；同时为保证车身状态和陀螺仪的高度一致性，设计PCB时将陀螺仪焊接在主板正中央，防止脱落抖动产生的误差，因为IMU660RB的价格最具优势，因此选择IMU660RB六轴姿态传感器。
+4.2摄像头
+摄像头采用逐飞售卖的MT9V034总钻风，由于科目三需要视觉处理，镜头画面畸变太多容易增加数据处理难度，因此选择120度摄像头。为应对塑胶跑道因下雨导致电路板损坏，为此加装了塑胶外壳，再使用热熔胶进行密封处理。同时在天气良好的情况下，不同时段下的光照可能导致摄像头被干扰，本队精心制作合适尺寸的揙振片以减小光源的干扰。
+4.3轮胎
+根据智能车组委会制定的规则，轮胎直径不超过12cm即可。本车采用花纹较多的9cm轮胎（如图4.1），考虑到无刷电机的扭矩有限，故采取折中处理，同时兼顾速度和赛道限制。新买的轮胎它不是封闭的，需要对其密封处理，否则严重影响车在3级台阶、雷区排点时的转圈速度和车最终的冲刺速度。
+
+图4.1直径9cm轮胎
+4.4车模轮腿
+在小车提速时下三级台阶时，刚到达地面时小车的腿会产生严重变形，导致小车速度变慢无法达到预期速度，并且稳定性也会变差。因为小车采用的是惯导方案，大腿强度不够会在跳跃时产生形变会有不确定性弹飞，致使下台阶的落点不一致。因此给小车腿部更换为如图4.2所示铝合金腿，以提升小车的结构强度。
+
+
+图4.2 铝合金腿
+
+第五章 开发工具、制作、安装、调试过程说明
+5.1开发软件
+开发软件使用的是IAR，搭配使用双模DAP调试器使用。IAR编译器在图像识别与PID实时控制算法中，IAR编译生成的机器码体积更小、执行周期更短，能显著降低控制周期的CPU占用率。
+5.2调试工具
+逐飞助手具有图传和调试无刷电机的功能，可以传输打印各种需要的数据。调试界面如图5.1所示。
+
+
+图5.1 逐飞助手界面
+
+
+第六章 软件算法设计
+本车软件围绕“感知—决策—机构解算—闭环执行”四个层级展开。CYT4BB7双核处理器中，M7_1核负责MT9V034图像采集与赛道特征提取，M7_0核负责IMU姿态更新、惯导轨迹复现、特殊元素状态机以及电机和舵机控制。两核通过固定地址交换信息，保证控制核获得完整且最新的视觉结果。
+6.1 软件总体架构与任务调度
+控制系统以1ms定时中断为基础时钟。每个控制周期首先采集 IMU660RB的角速度与加速度数据并更新四元数姿态，随后执行台阶跳变点分析和底层姿态控制。俯仰角速度环、航向角速度环和电机输出以1ms周期运行；俯仰角环与横滚角环每5ms更新；速度环每20ms更新。图像核同样由1ms中断触发，但仅在摄像头一帧采集完成后处理图像，因此不会重复计算同一帧。多速率设计既保证平衡内环的快速响应，又降低了速度估计和图像运算对实时性的影响。
+导航层将普通路段、台阶、单边桥、颠簸路和坡道分别定义为 None、STAIR、BRIDGE、ROAD和RAMP状态。赛道录制阶段保存各特殊元素对应的轨迹索引；复现时先在预设的提前量位置降低目标速度，到达元素索引后再切换状态、控制参数和视觉任务。这样，惯导轨迹提供“何时进入特殊模式”的先验信息，摄像头与IMU提供“当前位于元素何处”的实时反馈，两类信息相互补充，可减少单一传感器误判。
+软件数据流：摄像头/IMU/编码器采样→图像与姿态特征提取→轨迹索引和元素状态机→PID目标量生成→五连杆逆解→电机占空比与舵机PWM输出。
+6.2 多速率PID姿态与运动控制
+车模在不同路面上的负载、摩擦和电池电压均会变化，单纯开环输出难以保持速度和姿态一致。因此，软件将俯仰平衡、横滚补偿、速度控制与航向控制分解为多个相互配合的闭环。每个控制器共用同一PID数据结构，其中保存比例、积分、微分系数，积分累计值、历史误差以及输出限幅。状态切换时清零相关历史量，防止上一个路段的积分或输出残留作用到新状态。积分限幅用于抑制长时间饱和造成的积分累积，输出限幅则与电机、舵机的实际执行范围匹配。
+俯仰控制采用角度—角速度串级结构：外环以机械零点与俯仰角之差生成目标俯仰角速度，内环再以陀螺仪y轴角速度为反馈生成平衡输出。航向控制采用相同思想，导航或视觉产生航向误差，经比例换算和变化率限制后形成目标z轴角速度，再由航向角速度PID产生左右电机差动量。
+横滚环使用增量式PID横滚环输出不直接驱动车轮，而是换算为左右腿高度差；速度环输出经低通滤波后换算为轮端x方向位移。该方法把车身姿态控制与轮腿机构控制连接起来，使五连杆既能调节重心位置，又能主动补偿横滚。
+左右轮电机最终采用平衡量与航向差动量叠加的方式输出。正常行驶时，左电机为ubalance+uyaw，右电机为ubalance-uyaw；原地转圈时再叠加转圈速度环输出。若俯仰角绝对值超过40°，程序立即清空PID状态并关闭电机；只有车身回到机械零点±3°内才恢复驱动，从而避免倒车或架空状态下电机持续满功率。
+
+6.3 平面五连杆逆运动学与舵机控制
+左右轮腿均采用平面五连杆结构。软件不直接给定四个舵机角度，而是先规划左右轮端在车体坐标系中的目标位置(X,Y)，再利用逆运动学计算前、后主动杆角度。程序中的杆长参数为L1=60mm、L2=90mm、L3=90mm、L4=60mm，两主动关节间距L5=37mm；轮端坐标另叠加X0=16mm、Y0=32mm的机构安装偏置。
+为了避免速度环或状态机给出的目标坐标突变，四个坐标通道均采用PD形式的离散指令整形。以左腿x坐标为例：
+XL(k)=XL(k-1)+Kpx·ex(k)+Kdx·Kpx·[ex(k)-ex(k-1)]    （6.1）
+其中Kpx=Kpy=0.007，Kdx=Kdy=5。该环节作用于目标坐标而非舵机角度反馈，其主要功能是限制轮端轨迹变化速度并提高过渡阻尼。台阶起跳等需要快速改变腿长的阶段通过jump_no_kpy标志直接更新y坐标，避免平滑环节削弱爆发动作。
+五连杆的前主动杆以车体前铰点为原点。对于任一侧轮端坐标 (X,Y)，由余弦关系可得：
+a=2XL1，b=2YL1，c=X²+Y²+L1²-L2²       （6.2）
+α=2atan{[b±√(a²+b²-c²)]/(a+c)}         （6.3）
+后主动杆以相距L5的后铰点为原点，其对应系数为：
+d=2L4(X-L5)，e=2L4Y，f=(X-L5)²+Y²+L4²-L3²     （6.4）
+β=2atan{[e±√(d²+e²-f²)]/(d+f)}         （6.5）
+逆解存在正、负两个分支。程序依据机构实际装配方向选择 α≥π/4的前杆解以及0≤β≤π/4的后杆解，防止舵机跳到镜像构型。为避免根号内出现负数，轮端到前、后铰点的距离均限制在31~149mm；y 坐标叠加安装偏置后还限制在31.5~148 mm范围。上述工作空间约束既避免数学奇异，也为连杆极限位置留出机械余量。
+求得α、β后先换算为角度，再根据左右舵机安装方向映射为270°-α和90°+β。四路舵机均限制在5°~175°，随后加入安装零偏 Angle1=10°、Angle2=10°、Angle3=-14°、Angle4=-8°。每1°约对应 33.333个PWM计数值，最终通过各舵机的中心值和方向系数完成占空比输出。
+6.4 台阶跳变点检测与越障动作
+台阶检测的目标不是恢复完整赛道边界，而是快速确定车体中心前方最近一级阶沿的位置。原始188×120灰度图首先按2倍步长压缩为94×60图像，再进行二值化。
+算法从图像底部向上扫描图像跳变点并停止搜索。由于二值图像取值为0或255，固定梯度阈值即可有效区分真正黑白边界与小幅亮度波动。
+三级台阶在相机中依次呈现不同的黑白极性和透视宽度，因此程序使用stop_flag记录已完成的动作次数，并为四次触发配置不同距离阈值。预留了按当前车速选择阈值组的接口，可在后续调试中根据相机帧率和制动距离接入主调度。
+跳变点触发后，轮腿按时间序列执行四阶段轨迹，而不是一次性改变舵机角度。以1ms控制周期计，当前参数分别为61ms、55ms、76ms 和58ms：
+（1）起跳阶段：左右轮端y目标直接置为80mm，使车身迅速抬升并越过阶沿；
+（2）收腿阶段：y目标向-4mm以每周期2mm的步长回收，增大离地间隙；
+（3）预备缓冲阶段：左右轮端y置为23mm，为落地建立预压缩行程；
+（4）执行缓冲阶段：y目标以每周期0.4mm缓慢回到0，吸收落地冲击。
+跳跃期间目标车速置零，同时将俯仰角环、速度环和航向环的关键增益降低为正常值的50%，避免腾空或接触冲击期间闭环过度修正。四阶段结束后恢复用户设定速度。完成最后一级台阶后，末端边缘需持续满足触发条件至退出计时达到1500ms，系统才清零台阶状态并重新同步惯导航向。
+6.5 单边桥扫线与通过控制
+桥梁通过视觉与惯导信息融合实现稳定检测与自主通过。视觉部分通过赛道白色区域的连续性和宽度特征筛选有效道路中线，并结合相机透视标定对异常白色区域进行剔除；当部分道路边界被遮挡时，根据标定信息对中线进行补偿。在视觉信息不完整的情况下，系统保持上一时刻的方向误差，避免单边桥遮挡造成车辆方向突变。
+桥梁控制采用分阶段状态机，依次经历桥前、桥上和桥后三个阶段。进入桥前阶段后，车辆根据视觉误差进行预对准；确认车辆进入桥面后，切换至以惯导航向为主的控制方式，降低视觉遮挡对车辆姿态控制的影响，同时结合横滚闭环调整车身高度，使车辆在桥面行驶过程中保持较稳定的姿态。通过检测桥梁出口完成桥后状态切换，关闭桥梁专用视觉任务并恢复正常导航控制。
+整体而言，该方法通过视觉宽度约束、误差保持、状态机切换以及视觉—惯导融合控制，提高了车辆在单边桥遮挡和复杂桥面环境下的识别稳定性与通过能力。
+6.6 状态切换与鲁棒性设计
+特殊元素通过过程中，算法参数、腿部基准高度和误差来源都会发生变化。为避免切换瞬间出现脉冲，程序在CarState或桥梁子状态变化时清空速度环、航向角速度环和横滚环的积分、历史误差与输出；图像模式启动时同样将历史桥梁误差清零。航向角速度目标还设置每周期最大变化量1200，从控制命令源头抑制突变。
+执行层采用多级限幅与低通滤波。速度环输出先量化和限幅，再按0.70/0.30的权重进行一阶滤波；轮端x、y坐标按0.85/0.15的权重平滑；五连杆逆解前执行坐标和半径约束；逆解后再执行舵机角度限幅。感知层、控制层和机构层分别设置保护，使单帧噪声、状态误判或极端目标均不会直接转化为机械冲击。
+综上，本车的软件算法并非将视觉、PID与轮腿动作简单串联，而是利用轨迹索引提供先验状态，以台阶跳变点和桥面扫线修正局部位置，再由多速率闭环生成车身姿态及轮端坐标，最终通过五连杆逆解驱动四个舵机。该结构兼顾了实时性、越障动作的确定性和复杂赛道下的抗干扰能力。
+
+第七章 总结
+本次参赛车模在整体方案设计中，围绕智能汽车竞赛的核心技术要求进行了多维度的探索与优化。在硬件架构层面，通过合理的器件选型与电路布局，提升了系统的稳定性与响应速度；在软件算法层面，针对路径识别、姿态控制与决策策略等关键环节进行了针对性改进，使车模在复杂赛道环境下具备更强的适应能力与鲁棒性。团队在机械结构设计、传感器融合方案以及控制算法调优等方面均投入了大量精力，力求在性能与可靠性之间取得平衡，这些探索为后续的技术迭代积累了宝贵的实践经验。
+回顾整个参赛过程，比赛深化了我们对嵌入式系统、自动控制原理与机器视觉等专业知识的理解，更锻炼了问题分析能力与工程实践素养。全国大学生智能汽车竞赛作为一项综合性科技赛事，考验的不仅是技术水平，更是耐心、毅力与创新精神，这段参赛经历为我们的大学生涯留下了浓墨重彩的一笔，也为今后的专业学习与科研工作奠定了坚实基础。
+衷心感谢指导老师在整个参赛过程中的悉心指导与无私付出，老师严谨认真负责的治学态度和丰富的工程经验为我们指明了方向，帮助我们成长。感谢学校与学院为我们提供了良好的实验平台。感谢各个承办学校尽心尽力提供好比赛场地，感谢智能汽车竞赛组委会组织比赛的辛勤付出。感谢团队成员们的并肩作战，大家各司其职、攻坚克难，共同完成了这一充满挑战的项目。同时也要感谢这段时间友好交流的所有车友以及同学，使我们能够站在不同的角度思考问题。本次竞赛虽已落幕，但探索永无止境，我们将以此为契机，在技术道路上继续前行。
+
+
+
+
+
+参考文献
+[1] 卓晴,黄开,邵贝贝.学做智能车[M].北京:北京航空航天大学出版社,2007. 
+[2] 肖鹏,赵浩博,夏明杰,等.基于边缘计算的智能车设计与实现[J].电子设计工程,2026,34(1): 66-70.
+[3] 徐翔,王琪,高进可,等.智能车车道识别与图像处理[J].自动化技术与应用,2020,39(07):91-95.
+[4] 刘碧飞,刘泓滨,李华文.基于模糊PID算法的智能车电机转速控制研究[J].农业装备与车辆工程,2021,59(01):93-98.
+[5] 叶金虎,徐思海.无刷直流电动机[M].北京:科学出版社,1982:35-42.
+[6] 秦永元.惯性导航[M].3版.北京:科学出版社,2020:56-62.
+[7] 朱琳琳,陈哲,曾宇.基于摄像头循迹智能车的图像二值化方法[J].信息技术,2016,(7):161-167.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+附录A 部分核心子程序
+/**********************************************************
+函数简介: 四元数及姿态角计算
+返回参数: void
+使用示例: quaternion_module_calculate(&quaternion, 0.001f);  // 以1ms周期调用
+备注信息:融合陀螺仪和加速度计数据，通过梯度下降法更新四元数，计算旋转矩阵和姿态角
+输入参数 cycle 为调用周期（单位：秒），需稳定调用以保证计算精度
+**********************************************************/
+void quaternion_module_calculate(cascade_value_struct *cascade_value)
+{
+    static float first_count_time = 0; // 首次计算时间计数器（用于快速收敛）
+    float length;                      // 四元数模长（用于归一化）
+    float x, y, z;                     // 陀螺仪角速度（弧度/秒）
+
+    // 陀螺仪数据转换：原始数据 -> (°/s) ->弧度/秒（先除以10再乘10做简单滤波）
+    x = (float)(GYRO_DATA_X / 10 * 10) / GYRO_TRANSITION_FACTOR * 0.01745329f;
+    y = (float)(GYRO_DATA_Y / 10 * 10) / GYRO_TRANSITION_FACTOR * 0.01745329f;
+    z = (float)(GYRO_DATA_Z / 10 * 10) / GYRO_TRANSITION_FACTOR * 0.01745329f;
+
+    // 加速度计数据转换：原始数据 -> g为单位（1g ≈ 9.8 m/s2）
+    float ax_g = (float)ACC_DATA_X / ACC_TRANSITION_FACTOR;
+    float ay_g = (float)ACC_DATA_Y / ACC_TRANSITION_FACTOR;
+    float az_g = (float)ACC_DATA_Z / ACC_TRANSITION_FACTOR;
+
+    bool static_state = is_static_state(ax_g, ay_g, az_g); // 判断设备是否静止
+    float acc_alpha = static_state ? 0.8f : 0.5f;          // 静止时滤波系数更大（平滑效果更好）
+
+    // 加速度计数据低通滤波
+    acc_lowpass_filter(&ax_g, &ay_g, &az_g,
+                       &cascade_value->quaternion.pro.acc_filtered[0],
+                       &cascade_value->quaternion.pro.acc_filtered[1],
+                       &cascade_value->quaternion.pro.acc_filtered[2],
+                       acc_alpha);
+
+    // 取滤波后的加速度数据
+    float ax = cascade_value->quaternion.pro.acc_filtered[0];
+    float ay = cascade_value->quaternion.pro.acc_filtered[1];
+    float az = cascade_value->quaternion.pro.acc_filtered[2];
+
+    acc_normalize(&ax, &ay, &az); // 加速度数据归一化
+
+    // 取出当前四元数（w, x, y, z）
+    float q0 = cascade_value->quaternion.pro.qua[0];
+    float q1 = cascade_value->quaternion.pro.qua[1];
+    float q2 = cascade_value->quaternion.pro.qua[2];
+    float q3 = cascade_value->quaternion.pro.qua[3];
+
+    // 根据当前四元数计算重力向量在机体坐标系中的投影（用于与加速度计数据对比）
+    float gx = 2 * (q1 * q3 - q0 * q2);
+    float gy = 2 * (q0 * q1 + q2 * q3);
+    float gz = q0 * q0 - q1 * q1 - q2 * q2 + q3 * q3;
+
+    // 计算加速度计与重力投影的误差（梯度误差）
+    float ex = ay * gz - az * gy;
+    float ey = az * gx - ax * gz;
+    float ez = ax * gy - ay * gx;
+
+    // 根据静止状态调整校正系数（运动时减弱校正，避免引入噪声）KI不衰减，保证积分校正力度
+    // 计算加速度计此时的物理合成向量大小 (静止或纯重力下应为1.0g左右)
+    float acc_mag = sqrt(ax_g * ax_g + ay_g * ay_g + az_g * az_g);
+    float acc_diff = func_abs(acc_mag - 1.0f); // 求出偏离1g的误差
+
+    float kp;
+    if (static_state && acc_diff < 0.15f)
+    {
+        // 完全静止且受力正常，给予满比例信任
+        kp = cascade_value->posture_value.correct_kp;
+    }
+    else
+    {
+        float attenuation = 0.2f;
+        if (acc_diff > 0.3f)
+        {
+            attenuation = 0.00f; // 巨大晃动时降到 0
+            // 彻底切断误差输入，防止在晃动时 ki 积分依旧起作用带来巨大的假倾角误差
+            ex = 0.0f;
+            ey = 0.0f;
+            ez = 0.0f;
+        }
+        kp = cascade_value->posture_value.correct_kp * attenuation;
+    }
+    // float kp = static_state ? cascade_value->posture_value.correct_kp : cascade_value->posture_value.correct_kp * 0.8f;
+    float ki = cascade_value->posture_value.correct_ki;
+
+    // 首次计算的前 0.1 秒，使用大比例系数加速收敛
+    if (first_count_time < 0.1f)
+    {
+        first_count_time += cascade_value->posture_value.call_cycle; // 累加时间
+        kp = 100.0f;                                                 // 强比例校正，快速收敛
+    }
+
+    IMU.imu_ready = (first_count_time >= 0.1f) ? 1 : 0; // 0.1s 后认为 IMU 已经稳定，可以用于控制
+
+    // 动态积分力度降为1/10
+    float integral_gain = static_state ? 1.0f : 0.1f;
+
+    // 积分项累加，防止积分饱和
+    cascade_value->quaternion.parameter.acc_err[0] += (ex * cascade_value->posture_value.call_cycle) * integral_gain;
+    cascade_value->quaternion.parameter.acc_err[1] += (ey * cascade_value->posture_value.call_cycle) * integral_gain;
+    cascade_value->quaternion.parameter.acc_err[2] += (ez * cascade_value->posture_value.call_cycle) * integral_gain;
+
+    // 积分限幅：防止饱和
+    float acc_err_limit = 1.0f;
+    cascade_value->quaternion.parameter.acc_err[0] = (cascade_value->quaternion.parameter.acc_err[0] > acc_err_limit) ? acc_err_limit : (cascade_value->quaternion.parameter.acc_err[0] < -acc_err_limit) ? -acc_err_limit
+                                                                                                                                                                                                          : cascade_value->quaternion.parameter.acc_err[0];
+    cascade_value->quaternion.parameter.acc_err[1] = (cascade_value->quaternion.parameter.acc_err[1] > acc_err_limit) ? acc_err_limit : (cascade_value->quaternion.parameter.acc_err[1] < -acc_err_limit) ? -acc_err_limit
+                                                                                                                                                                                                          : cascade_value->quaternion.parameter.acc_err[1];
+    cascade_value->quaternion.parameter.acc_err[2] = (cascade_value->quaternion.parameter.acc_err[2] > acc_err_limit) ? acc_err_limit : (cascade_value->quaternion.parameter.acc_err[2] < -acc_err_limit) ? -acc_err_limit
+                                                                                                                                                                                                          : cascade_value->quaternion.parameter.acc_err[2];
+
+    // 用误差校正陀螺仪数据（比例+积分校正）
+    x += kp * ex + ki * cascade_value->quaternion.parameter.acc_err[0];
+    y += kp * ey + ki * cascade_value->quaternion.parameter.acc_err[1];
+    z += kp * ez + ki * cascade_value->quaternion.parameter.acc_err[2];
+
+    // 四元数微分方程更新（根据陀螺仪角速度）
+    cascade_value->quaternion.pro.qua[0] += ((-q1 * x - q2 * y - q3 * z) * cascade_value->posture_value.call_cycle / 2.0f);
+    cascade_value->quaternion.pro.qua[1] += ((q0 * x + q2 * z - q3 * y) * cascade_value->posture_value.call_cycle / 2.0f);
+    cascade_value->quaternion.pro.qua[2] += ((q0 * y - q1 * z + q3 * x) * cascade_value->posture_value.call_cycle / 2.0f);
+    cascade_value->quaternion.pro.qua[3] += ((q0 * z + q1 * y - q2 * x) * cascade_value->posture_value.call_cycle / 2.0f);
+
+    // 取出当前四元数（w, x, y, z）
+    q0 = cascade_value->quaternion.pro.qua[0];
+    q1 = cascade_value->quaternion.pro.qua[1];
+    q2 = cascade_value->quaternion.pro.qua[2];
+    q3 = cascade_value->quaternion.pro.qua[3];
+
+    // 计算四元数各分量平方（减少重复计算）
+    float q0_2 = q0 * q0;
+    float q1_2 = q1 * q1;
+    float q2_2 = q2 * q2;
+    float q3_2 = q3 * q3;
+
+    // 四元数归一化（避免数值漂移）
+    length = sqrt(q0_2 + q1_2 + q2_2 + q3_2); // 计算模长
+    if (length > 0.001f)                      // 模长有效时才归一化
+    {
+        cascade_value->quaternion.pro.qua[0] /= length;
+        cascade_value->quaternion.pro.qua[1] /= length;
+        cascade_value->quaternion.pro.qua[2] /= length;
+        cascade_value->quaternion.pro.qua[3] /= length;
+    }
+
+    // 根据四元数计算旋转矩阵（用于后续姿态角计算）
+    cascade_value->quaternion.data.rot_mat[0][0] = q0_2 + q1_2 - q2_2 - q3_2;
+    cascade_value->quaternion.data.rot_mat[0][1] = 2 * (q1 * q2 + q0 * q3);
+    cascade_value->quaternion.data.rot_mat[0][2] = 2 * (q1 * q3 - q0 * q2);
+    cascade_value->quaternion.data.rot_mat[1][0] = 2 * (q1 * q2 - q0 * q3);
+    cascade_value->quaternion.data.rot_mat[1][1] = q0_2 - q1_2 + q2_2 - q3_2;
+    cascade_value->quaternion.data.rot_mat[1][2] = 2 * (q2 * q3 + q0 * q1);
+    cascade_value->quaternion.data.rot_mat[2][0] = 2 * (q1 * q3 + q0 * q2);
+    cascade_value->quaternion.data.rot_mat[2][1] = 2 * (q2 * q3 - q0 * q1);
+    cascade_value->quaternion.data.rot_mat[2][2] = q0_2 - q1_2 - q2_2 + q3_2;
+
+    cascade_value->posture_value.rol = arctan2(cascade_value->quaternion.data.rot_mat[2][2], cascade_value->quaternion.data.rot_mat[1][2]); // 计算横滚角
+    cascade_value->posture_value.pit = -arcsin(cascade_value->quaternion.data.rot_mat[0][2]);                                               // 计算俯仰角
+    cascade_value->posture_value.yaw = arctan2(cascade_value->quaternion.data.rot_mat[0][0], cascade_value->quaternion.data.rot_mat[0][1]); // 计算航向角
+}
+void get_reference_point(uint8 *image)
+{
+    // uint8 *p = (uint8 *)&image[(SEARCH_IMAGE_H - REFERENCEROW) * SEARCH_IMAGE_W]; // 图像数据指针指向待统计区域,只需要近5行的数据作为参考。
+    // uint16 temp = 0;                                                              // 保存统计点总数量
+    // uint32 temp1 = 0;                                                             // 保存所有统计点加起来的和
+
+    // temp = REFERENCEROW * SEARCH_IMAGE_W; // 计算待统计点总数量
+
+    // for (int i = 0; i < temp; i++)
+    // {
+    //     temp1 += *(p + i); // 统计点求和
+    // }
+
+    // reference_point = (uint8)(temp1 / temp); // 计算平均值，作为本幅图像的参考点
+
+    reference_point = m7_1_data.Set_Threshold_Bridge; // 计算平均值，作为本幅图像的参考点
+
+    white_max_point = reference_point;
+
+    white_min_point = (uint8)func_limit_ab(
+        (int32)reference_point * WHITEMINMUL / 10,
+        BLACKPOINT,
+        255);
+}
+/**
+ * @brief 搜索图像参考列
+ *
+ * @param image 图像数组指针
+ */
+void search_reference_col(uint8 *image)
+{
+    int col, row;
+    int16 temp1 = 0, temp2 = 0, temp3 = 0;
+
+    // 初始化：默认最远点在最底部
+    for (col = 0; col < SEARCH_IMAGE_W; col++)
+    {
+        remote_distance[col] = SEARCH_IMAGE_H - 1;
+    }
+
+    // 按列扫描（步长为对比偏移）
+    for (col = 0; col < SEARCH_IMAGE_W; col += CONTRASTOFFSET)
+    {
+        // 从底往上扫描
+        for (row = SEARCH_IMAGE_H - 1; row > STOPROW; row -= CONTRASTOFFSET)
+        {
+            // 当前点灰度
+            temp1 = *(image + row * SEARCH_IMAGE_W + col); // 当前点灰度（不偏移）
+
+            // 对比点灰度（往上偏移 STOPROW）
+            temp2 = *(image + (row - STOPROW) * SEARCH_IMAGE_W + col);
+
+            // 如果对比点是白色，跳过
+            if (temp2 > white_max_point)
+            {
+                continue;
+            }
+
+            // 如果当前点是黑点 → 直接认为到达边界
+            if (temp1 < white_min_point)
+            {
+                remote_distance[col] = (uint8)row;
+                break;
+            }
+
+            // 计算对比度，增加防除零保护
+            temp3 = (temp1 + temp2 == 0) ? 0 : ((temp1 - temp2) * 200 / (temp1 + temp2));
+
+            // 如果对比度超过阈值 或 到达停止行
+            if (temp3 > reference_contrast_ratio || row == STOPROW)
+            {
+                remote_distance[col] = (uint8)row;
+                break;
+            }
+        }
+    }
+
+    // 找最远白点所在列（参考列）
+    reference_col = find_extreme_value(
+                        remote_distance,
+                        10,
+                        SEARCH_IMAGE_W - 10,
+                        0) +
+                    CONTRASTOFFSET;
+
+    // 限幅
+    reference_col = (uint8)func_limit_ab(
+        reference_col,
+        1,
+        SEARCH_IMAGE_W - 2);
+
+    // 生成整列参考线
+    for (int i = 0; i < SEARCH_IMAGE_H; i++)
+    {
+        reference_col_line[i] = reference_col;
+    }
+}
+
+// 函数简介     搜索赛道边界
+// 参数说明    image      图像数组指针
+// 返回类型    void
+// 使用示例    search_reference_col(mt9v03x_image[0]);
+// 备注信息
+void search_line(uint8 *image)
+{
+    uint8 *p = image;                                // 图像数组指针，修复原本强制将数值转换为指针的严重错误
+    uint8 row_max = SEARCH_IMAGE_H - 1;              // 行最大值
+    uint8 row_min = STOPROW;                         // 行最小值
+    uint8 col_max = SEARCH_IMAGE_W - CONTRASTOFFSET; // 列最大值
+    uint8 col_min = CONTRASTOFFSET;                  // 列最小值
+    int16 leftstartcol = reference_col;              // 搜线左起始列
+    int16 rightstartcol = reference_col;             // 搜线右起始列
+    int16 leftendcol = 0;                            // 搜线左终止列
+    int16 rightendcol = SEARCH_IMAGE_W - 1;          // 搜线右终止列
+    uint8 search_time = 0;                           // 单点搜线次数
+    uint8 temp1 = 0, temp2 = 0;                      // 临时变量  用于存储图像数据
+    int temp3 = 0;                                   // 临时变量  用于存储对比度
+    int leftstop = 0, rightstop = 0, stoppoint = 0;  // 搜线自锁变量
+
+    int col, row;
+
+    // 初始化边缘数组
+    for (row = row_max; row >= row_min; row--)
+    {
+        left_edge_line[row] = col_min - CONTRASTOFFSET;
+        right_edge_line[row] = col_max + CONTRASTOFFSET;
+    }
+
+    // 逐行搜索左边界
+    for (row = row_max; row >= row_min; row--)
+    {
+        p = (uint8 *)&image[row * SEARCH_IMAGE_W]; // 获取本行起点位置指针
+
+        if (!leftstop)
+        {
+            search_time = 2; // 每行最多搜索两次，第一次以参考列为起点，第二次以上次找到的边界为起点，以增加搜索的鲁棒性
+            do
+            {
+                if (search_time == 1)
+                {
+                    leftstartcol = reference_col;
+                    leftendcol = col_min;
+                }
+                search_time--;
+
+                for (col = leftstartcol; col >= leftendcol; col--)
+                {
+                    temp1 = *(p + col);                  // 获取当前点灰度值
+                    temp2 = *(p + col - CONTRASTOFFSET); // 获取对比点灰度值
+
+                    // 判断参考列是否为黑点 若为黑点
+                    if (temp1 < white_min_point && col == leftstartcol && leftstartcol == reference_col)
+                    {
+                        leftstop = 1; // 线搜索自锁 不再进行左边线搜索
+                        for (stoppoint = row; stoppoint >= 0; stoppoint--)
+                        {
+                            left_edge_line[stoppoint] = col_min;
+                        }
+                        search_time = 0;
+                        break;
+                    }
+
+                    if (temp1 < white_min_point) // 判断当前点是否为黑点 若为黑点则不进行对比直接跳出
+                    {
+                        left_edge_line[row] = (uint8)col;
+                        break;
+                    }
+
+                    if (temp2 > white_max_point) // 判断对比点是否为白点 若为白点则直接跳过
+                    {
+                        continue;
+                    }
+
+                    temp3 = (temp1 + temp2 == 0) ? 0 : ((temp1 - temp2) * 200 / (temp1 + temp2)); // 计算对比度，防零保护
+                    if_count++;
+                    if (temp3 > reference_contrast_ratio || col == col_min) // 判断对比度是否大于阈值
+                    {
+                        left_edge_line[row] = col - CONTRASTOFFSET; // 保存当前行左边界
+                        // 限制搜索范围
+                        leftstartcol = (uint8)func_limit_ab(col + SEARCHRANGE, col, col_max);
+                        leftendcol = (uint8)func_limit_ab(col - SEARCHRANGE, col_min, col);
+                        search_time = 0;
+                        break;
+                    }
+                }
+            } while (search_time);
+        }
+
+        // 逐行搜索右边界
+        if (!rightstop)
+        {
+            search_time = 2;
+            do
+            {
+                if (search_time == 1)
+                {
+                    rightstartcol = reference_col;
+                    rightendcol = col_max;
+                }
+                search_time--;
+
+                for (col = rightstartcol; col <= rightendcol; col++)
+                {
+                    temp1 = *(p + col);                  // 获取当前点灰度值
+                    temp2 = *(p + col + CONTRASTOFFSET); // 获取对比点灰度值
+
+                    // 判断参考列是否为黑点
+                    if (temp1 < white_min_point && col == reference_col && rightstartcol == reference_col)
+                    {
+                        rightstop = 1; // 线搜索自锁 不再进行右边线搜索
+                        for (stoppoint = row; stoppoint >= 0; stoppoint--)
+                        {
+                            right_edge_line[stoppoint] = col_max;
+                        }
+                        search_time = 0;
+                        break;
+                    }
+
+                    if (temp1 < white_min_point) // 判断当前点是否为黑点
+                    {
+                        right_edge_line[row] = (uint8)col;
+                        break;
+                    }
+
+                    if (temp2 > white_max_point) // 判断对比点是否为白点
+                    {
+                        continue;
+                    }
+
+                    temp3 = (temp1 - temp2) * 200 / (temp1 + temp2); // 计算对比度
+                    if_count++;
+                    if (temp3 > reference_contrast_ratio || col == col_max) // 判断对比度是否大于阈值
+                    {
+                        right_edge_line[row] = col + CONTRASTOFFSET; // 保存当前行右边界
+                        // 限制搜索范围
+                        rightstartcol = (uint8)func_limit_ab(col - SEARCHRANGE, col_min, col);
+                        rightendcol = (uint8)func_limit_ab(col + SEARCHRANGE, col, col_max);
+                        search_time = 0;
+                        break;
+                    }
+                }
+            } while (search_time);
+        }
+    }
+}
+void pid_cycle_state_reset(pid_cycle_t *pid)
+{
+    pid->i_value = 0.0f;
+    pid->error_last = 0.0f;
+    pid->out = 0.0f;
+    pid->incremental_data[0] = 0.0f;
+    pid->incremental_data[1] = 0.0f;
+}
+
+/***********位置式闭环pid***********/
+void pid_pos_control(pid_cycle_t *pid, float target, float real)
+{
+    float error = 0.0f;      // 当前误差
+    float error_diff = 0.0f; // 误差变化量（微分项）
+
+    error = target - real;
+    // 积分项累计
+    pid->i_value += (error * pid->i_value_pro);
+    // 积分限幅
+    pid->i_value = func_limit_ab(pid->i_value,
+                                 -pid->i_value_max,
+                                 pid->i_value_max);
+    // 微分项
+    error_diff = error - pid->error_last;
+    // PID 输出
+    pid->out = (int16)(pid->p * error +
+                       pid->i * pid->i_value +
+                       pid->d * error_diff);
+    // 输出限幅
+    pid->out = func_limit_ab(pid->out,
+                             -pid->out_max,
+                             pid->out_max);
+    // 保存误差
+    pid->error_last = error;
+}
+
+/***********增量式闭环pid***********/
+void pid_inc_control(pid_cycle_t *pid_cycle, float target, float real)
+{
+    float proportion_value = 0;   // 比例量
+    float differential_value = 0; // 微分量
+
+    // 计算误差（目标 - 实际），作为比例量和积分量的基础
+    proportion_value = target - real;      // 比例量 P
+    pid_cycle->i_value = proportion_value; // 积分量 I (增量式使用差值作为积分增量)
+
+    // 微分量 D：当前比例量与历史比例量之差的二阶差分
+    differential_value = proportion_value - 2 * pid_cycle->incremental_data[0] + pid_cycle->incremental_data[1]; // 微分量
+
+    // 增量式 PID 中比例增量为当前比例与上一次比例之差
+    proportion_value = proportion_value - pid_cycle->incremental_data[0]; // 比例量增量
+
+    // 保存历史比例量
+    pid_cycle->incremental_data[1] = pid_cycle->incremental_data[0];
+    pid_cycle->incremental_data[0] = proportion_value + pid_cycle->incremental_data[0]; // 存储为当前比例（非增量）
+
+    // 增量式 PID 输出累加
+    pid_cycle->out += (pid_cycle->p * proportion_value + pid_cycle->i * pid_cycle->i_value + pid_cycle->d * differential_value); // PID拟合
+
+    pid_cycle->out = func_limit_ab(pid_cycle->out, -pid_cycle->out_max, pid_cycle->out_max); // PID输出限幅
+}
+
+
+附录B车模技术检查表
+一、车模技术检查表
+车模照片
+车模外观照片
+
+
+
+2、电路板PCB图
+
+
+
+
+
+3、电路板原理图
+
+
+
+
+
+===== TABLE 1 =====
+队伍名称 | 好好学习队 | 好好学习队 | 好好学习队 | 好好学习队
+参赛学校 | 湖南科技大学 | 湖南科技大学 | 湖南科技大学 | 湖南科技大学
+赛题组组别 | 轮腿穿越 | 轮腿穿越 | 轮腿穿越 | 轮腿穿越
+检查项目 | 规格 （选手自行填写） | 符合 （） | 不符合（） | 备注
+1.车模类型是什么？ | V车模 |  |  | 如果是自制车模，请标明自制。
+车模整体尺寸： （包括传感器在内）长，宽，高(mm) | 长180mm，宽175mm，高270mm |  |  | 今年比赛车模尺寸没有限制
+传感器种类、规格(型号)数量。 是否使用自带MCU的成品传感器模块？型号是什么？ | 1.MT9V034摄像头 1个 IMU660RB陀螺仪 1个 TLE5012磁编码器 2个 2.否 |  |  | 
+1.控制转向舵机型号是否自行改装舵机？ 2.防伪易损标签是否完整？ | 1.否 2.是 |  |  | 
+1. 是否增加伺服电机？ 2. 如果有种类、个数和作用？ | 1.否 |  |  | 
+1.电路中微处理器型号和个数？ | 1.CYT4BB7 1个，CYT2BL3  1个 |  |  | 
+1.是否具有其它可编程器件，个数与作用？ | 1.否 |  |  | 
+1.是否有无线通讯装置？ 2.如果有种类和个数？ | 1.否 |  |  | 
+1.电池的种类、规格和数量？ | 1.2200MAH 3S 11.1V 30C  1个 |  |  | 
+1. 是否使用GPS导航？ 2. 是否没有使用RTK？ | 1.否 2.是 |  |  | 
+1.后轮驱动电机是否是原车模电机？ 2.是否具有防伪易损标签？ | 1.是 2.是 |  |  | 
+1.轮胎是否是原车同款轮胎？ 2.轮胎的尺寸（直径和宽度）是否小于等于原车膜尺寸？ | 1.否 2.是 |  |  | 
+1.车轮轴距、轮距是否改装？ 2.改装参数是什么？ | 1.否 |  |  | 
+1.车模驱动轮传动机构是否改装？ 2.改装方式是什么？ | 1.否 |  |  | 
+1.是否更换过原装车模中的机械元器件？更换后的规格是什么？ | 1.否 |  |  | 。
+1.车模电路板个数及功能。 2.其中是否有购买成品电路板？ | 1.CYT4BB7主板1个、CYT4BB7核心板一个 CYT2BL3驱动板1个、舵机电源板一个、磁编码器板2个 2.否 |  |  | 
+1.自制电路板是否标记有学校名称、队伍名称、制作日期等信息？ 2.标示信息在PCB的哪一层？ | 1.是,湖南科技大学, 好好学习队, 2026.5.17 2.铜层 |  |  | 
+其它待说明内容 | 无 |  |  | 
+检查人员签名： | 检查意见： | 检查意见： | 检查意见： | 检查意见：

@@ -1,0 +1,896 @@
+第二十一届全国大学生
+智能汽车竞赛
+技术报告
+基于 AURIX TC264D 的姿态、速度与路径控制
+学    校：厦门理工学院
+队伍名称：揽星逐辉
+参赛队员：蔡佳辉、林昕晨、高智炜
+带队老师：邵伟明、周承仙
+二〇二六年八月
+
+
+
+
+关于技术报告和研究论文使用授权的说明
+本人完全了解全国大学生智能汽车竞赛关于保留、使用技术报告和研究论文的规定，即：参赛作品著作权归参赛者本人，比赛组委会可以在相关主页上收录并公开参赛作品的设计方案、技术报告以及参赛模型车的视频、图像资料、并将相关内容编纂收录在组委会出版论文集中。
+参赛队员签名：
+________________________________
+带队教师签名：
+________________________________
+日        期：
+________________________________
+
+
+目录
+
+ 
+
+主要符号表
+表0.1　主要符号与缩略词
+
+ 
+
+第一章　引言
+1.1　项目背景
+全国大学生智能汽车竞赛要求参赛队围绕指定车模完成机械、电路、传感器和控制软件的系统设计，并通过可重复的工程调试使车辆在赛道环境中稳定运行。技术报告既是设计结果的说明，也是对制作、安装、标定和验证过程的记录。本文依据第二十一届竞赛技术报告要求组织内容，并将原理图、PCB图和核心程序列入附录。[1]
+本车控制系统以英飞凌AURIX TC264D微控制器为核心。软件采用5 ms周期中断作为主控制时基，完成惯性数据读取、姿态估计、转向与速度控制；路径里程更新和前瞻计算按10 ms节拍运行。硬件将主控、电源、通信、调试接口及功率驱动集中在一块四层主驱板上，以缩短连接并便于整车维护。
+1.2　模型车设计制作的主要思路
+模型车的主要设计思路是把“稳定的基础闭环”和“可切换的赛道任务”分开实现。底层首先保证传感器数据、姿态估计、舵机输出和后轮驱动链路可靠；上层再通过路径记录、里程推算、最近点搜索和前瞻控制生成目标量。这样既便于单独调试每个环节，也能在更换路径或工况时复用同一套基础驱动。
+为避免参数变化造成突发输出，程序在启停、模式切换和目标变化处加入状态复位、低通滤波、软启动、输出限幅及变化率限制。调试参数可通过菜单、Flash和遥测链路管理。代码中保留了Kalman、EKF和ESO等可选试验模块，但本报告只对当前主要使用的Mahony姿态估计、增量/位置式控制和惯性路径跟踪作概要介绍。
+1.3　技术方案概要
+图1.1　智能车主驱控制系统总体结构
+如图1.1所示，系统从ICM42688惯性传感器、前轮正交编码器以及PWM输入获得状态信息，经TC264D完成姿态与里程估计、路径任务管理和控制计算，最终以300 Hz PWM驱动转向舵机，并通过UART向后轮驱动器发送速度或占空比命令。屏幕、Flash与调试遥测用于参数配置和状态观察。当前主程序中的GNSS硬件初始化处于注释状态，因此不把GNSS列为现阶段主要赛道信息源。
+1.4　报告结构
+第二章说明总体方案、机械安装、传感器布置和线路固定；第三章说明电源、主控、接口、功率驱动及PCB；第四章介绍软件节拍、姿态估计、闭环控制和路径算法；第五章记录开发、制作、安装与调试流程；第六章汇总技术参数并列出待实测项目；第七章给出结论和改进方向。附录A列出五页原理图及PCB图，附录B给出核心程序源代码。
+
+第二章　总体方案与机械系统
+2.1　整车总体布置
+整车布置遵循重心集中、惯性器件稳定、动力与信号分区、连接可维护的原则。主驱板位于车体中部的刚性安装面，电池和大电流线束靠近功率输入侧，惯性器件尽量接近车体纵向中心并与车身坐标轴平行。PCB板尺寸为91 mm×60 mm，四角圆角并设有固定位置，孔距为82.5 mm×52 mm，支柱高度为22mm。
+图2.1　整车布置图片
+2.2　机械部分安装及改造
+机械改造以不改变车模基本驱动形式为前提，重点处理主驱板安装面、线束通道、传感器支架和防松结构。金属固定件用热熔胶或胶带隔离，避免与PCB焊点、功率器件和测试点接触；板下留出绝缘距离，使用尼龙支柱做绝缘处理。电池、主驱板和线束的质量分布左右基本对称，避免增加不必要的偏载。
+车架、轮胎、转向机构和传动部分的实际改造内容：轮胎涂上胶水防止脱落，尾部使用加固件防止车身变形。
+主驱板支柱材料、数量、高度及安装孔位：固定板孔距为82.5 mm×52 mm，三根绝缘尼龙柱高度为22mm。
+整车防护的安装方式：硬质海绵条配合可拆卸魔术贴，防止车身撞击。
+2.3　传感器设计安装
+ICM42688为六轴惯性器件，安装质量直接影响姿态计算。器件与车体用AB胶稳固连接，位于车体纵向中心并与车身坐标轴平行，避开电机、齿轮和松动结构引起的高频振动，同时明确X、Y、Z轴与车体前向、横向、竖向的对应关系。上电后车辆应保持静止完成零偏和初始姿态估计；器件下方选用薄而稳定的3D打印件以便减振，避免形成低频摆动。[3]
+后轮磁编码器 TLE5012BE1000 通过CYT2BL3 SCB3 SPI 接口接入 P6.0/P6.1/P6.2，P6.3 为 SPI 片选控制引脚。单片机通过 SPI 总线读取编码器寄存器数据，解析得到转动方向与脉冲增量。编码器支架应无相对滑动，信号线与电机相线分开走线。代码中的换算系数需要依据实际轮径、传动关系和标定距离复核，标定结果应记录原始脉冲、标准距离和重复测量误差。
+表2.1　传感器安装与标定要点
+2.4　系统电路板固定及连接
+主驱板连接包括电池输入、舵机、后轮驱动、编码器、遥控、屏幕、蓝牙/调试和下载接口。大电流电源与电机连接应使用足够截面积的导线并做应力释放，低电平传感器线束尽量短且远离MOS开关节点。
+电路板与车架之间应保持绝缘，固定螺钉不得压到走线和焊盘。线束在转向极限、悬架运动和电池拆装时均不应被拉紧。建议在电池输入、舵机、编码器和下载接口附近设置明显标签，并为关键线束留出可快速更换的余量。
+2.5　安全性与可维护性
+软件设置了启停状态复位、姿态范围判断、目标软启动、输出限幅和终点停车锁存等保护。机械上设置可靠的总电源开关，并在调试时采用架空车轮、限制占空比和逐级升压的方法。任何传感器方向、舵机方向或电机方向变化后，都必须重新进行低功率验证。
+
+第三章　电路与PCB设计
+3.1　主驱板组成
+主驱工程共包含五页原理图。P1为TC264D主控、时钟、复位、调试接口及AP2003 3.3 V电源；P2为屏幕、蓝牙、遥控、指示灯、编码器和按键接口；P3为电池输入及7.4 V、5 V、3.3 V电源变换；P4为CYT2BL3控制器/调试接口、电压监测、按键和指示灯；P5为FD6288Q预驱、MOS功率级、电源输入滤波和局部3.3 V电源。完整图纸见附录A。
+表3.1　原理图页组成
+3.2　电源输入与电压变换
+电源部分以电池输入为源，分别形成7.4 V、5 V和3.3 V等电压域。各级变换周围布置输入/输出电容、续流或保护器件，并区分功率地与信号地的回流路径。上电调试应先断开舵机和电机负载，逐级确认空载电压、纹波和器件温升，再接入负载测试。
+原理图标称电容C1至C88共88只，按器件标注求和约为1833.90268μF。该数值是设计标称总容量，不等同于工作电压、温度和偏置条件下的有效容量；陶瓷电容的直流偏压、器件公差和温度特性会使实际值降低。
+	C_total = Σ C_i ≈ 1833.90μF	（公式1）
+3.3　主控、时钟与调试接口
+核心控制器为Infineon AURIX TC264D，板上配置时钟、复位、供电去耦和调试接口。主控的SPI、UART、PWM、编码器和捕获通道连接到传感器及执行器。本报告对与整车相关的接口和供电关系作出概要说明。[2]
+调试接口用于程序下载和在线观察，复位与电源监测用于提高启动可靠性。布线时，时钟和高速数字信号尽量短而连续，去耦电容靠近电源引脚，模拟参考和电压监测信号避开功率开关区域。
+3.4　传感器、通信与人机接口
+ICM42688通过SPI0连接，MOSI、MISO、CS和SCK分别使用P20.14、P20.12、P20.13和P20.11，软件配置通信速率为10 MHz。屏幕、蓝牙、按键与指示灯用于显示、参数设置和状态提示。
+后轮驱动采用UART通信，核心控制器为CYT2BL3。后轮磁编码器 TLE5012BE1000 通过CYT2BL3 SCB3 SPI 接口接入 P6.0/P6.1/P6.2，P6.3 为 SPI 片选控制引脚。当前驱动控制模块配置为UART1、460800 bit/s。通信帧包含命令、数据和校验，既可发送直接占空比，也可发送速度闭环参数及目标速度。连接时需确认主控与驱动板的收发方向、电平和公共地。
+3.5　电机预驱与功率级
+P5以FD6288Q作为预驱并连接MOS功率级，输入侧配有多级电容和保护器件。功率级的设计重点是栅极驱动回路短、功率回路面积小、散热路径明确，并避免开关电流经过敏感信号地。报告只对功能分区作说明，具体器件连接、阻容值和网络名称以附录A原理图为准。
+3.6　PCB设计与连接可靠性
+图3.1　主驱板PCB顶层布局总览
+图3.2　主驱板PCB底层布局总览
+主驱PCB为四层板，外形约91 mm×60 mm，圆角约4 mm。嘉立创工程统计包含201个元件、134个网络、778个焊盘、529个过孔、1025条线图元和37个覆铜区域。板面按主控、接口、电源和功率驱动分区，四角设置机械固定区域。
+布板检查应重点关注大电流回路宽度、地回流连续性、去耦位置、接口防反插、测试点可达性和螺钉净空。电机与舵机工作时还应通过示波器检查3.3 V和5 V电源纹波、复位线扰动及通信误码。
+3.7　功耗与电容参数说明
+表3.3　电路相关参数汇总
+
+ 
+第四章　控制软件设计
+4.1　软件总体结构
+软件运行在TC264D平台，工程由用户入口、中断服务、器件驱动、姿态估计、控制器、惯性导航、菜单/Flash和调试通信等模块组成。主程序完成时钟、调试口、IMU、编码器、屏幕、后轮驱动、PWM和周期中断初始化，实时控制主要在5ms中断中执行。
+图4.1　5ms控制周期与多速率任务调度
+基础控制周期为5ms，即200 Hz。惯性里程更新与路径处理按10 ms，即100 Hz运行。驱动器通信、遥测和菜单显示采用分频或事件触发方式，避免把所有任务集中到同一时刻。ICM42688器件ODR为1000 Hz，而主控实际读取和使用频率为200 Hz，两者不能混为同一技术指标。
+	Δt = 1 / f_s = 1 / 200 = 0.005 s	（公式2）
+4.2　初始化与运行模式
+上电后程序先读取已保存路径索引和Mahony参数，再按当前路径选择IMU量程。通用配置为陀螺仪±2000 °/s、加速度计±8 g、ODR 1000 Hz；当路径索引为1时，软件改用陀螺仪±250 °/s和加速度计±2 g，以提高该工况的小量程分辨能力。两种配置均使用1000 Hz器件输出数据率。
+IMU初始化成功后，程序丢弃50个样本并对150个静态加速度样本求平均，由此估计初始横滚和俯仰角。Mahony算法以200 Hz初始化，默认Kp为1.5、Ki为0.005；Flash中保存的分路径参数可覆盖默认值。随后初始化前轮编码器、TFT屏幕、后轮驱动通信、300 Hz转向PWM和两路PWM捕获。
+4.3　数据采集与预处理
+ICM42688一次读取三轴加速度和三轴角速度原始值，并按量程灵敏度换算为物理量。程序减去陀螺仪静态零偏，对速度反馈和部分控制信号进行低通滤波。车辆转弯时，横向加速度会影响姿态估计，软件根据速度与航向角速度估算向心加速度并进行可选补偿。
+编码器速度既可直接用于速度环，也可按导航节拍积分为里程。惯性导航支持后轮速度或前轮编码器作为里程来源，使用前应统一单位、方向和比例。两路PWM输入先测量占空比，再做中值和有效范围判断，以避免输入抖动造成目标突变。
+4.4　Mahony姿态估计
+Mahony算法以陀螺仪积分获得快速姿态变化，并利用归一化重力方向修正长期漂移。程序以四元数表示姿态，计算估计重力与实测加速度之间的误差，经比例和积分反馈修正角速度，再更新四元数并换算横滚、俯仰和航向角。该方法计算量较小，适合200 Hz实时运行。[4]
+姿态算法的实际效果不仅取决于Kp、Ki，还受传感器安装方向、零偏、振动、加速度干扰和采样周期影响。因此调试时先验证静态角度和慢速倾斜，再在架空和低速条件下观察动态响应，最后进入赛道。
+4.5　转向、平衡与速度控制
+控制层包含增量式PI/PID和位置式PD。角度外环根据目标横滚角与估计横滚角的偏差生成角速度目标，角速度内环再计算转向PWM；速度环根据目标速度与编码器反馈调整后轮命令。不同路径、直道/弯道和坡道可以使用不同参数组，但控制器接口和限幅逻辑保持一致。
+	Δu(k) = K_p[e(k)-e(k-1)] + K_i e(k)	（公式3）
+程序在控制输出后执行PWM滤波、变化率限制和上下限约束，舵机输出固定在安全占空比范围内。速度目标经过软启动和最大值限制；模式切换、起步和停车时清除历史误差，减少旧状态对新工况的影响。
+4.6　惯性路径记录与前瞻控制
+惯性导航最多管理3条路径，每条路径最多1000个二维点。记录模式以累计距离为依据，默认每10 cm保存一个点，并可附加直道、弯道、坡道或锥桶等标记。运行时程序根据速度与航向角更新二维位置，搜索当前最近路径点，再在路径前方选择满足前瞻距离的目标点。
+	x_k=x_{k-1}+v_kΔt cosψ_k，　y_k=y_{k-1}+v_kΔt sinψ_k	（公式4）
+前瞻距离可随速度和工况调整。路径点标记用于切换直道、弯道、坡道和锥桶区域的目标速度及控制参数；终点附近可触发停车锁存。该方法依赖里程比例和航向估计，赛前需要用同一路径多次记录与复现，检查累计误差和终点一致性。
+4.7　保护、调试与参数管理
+软件包含启动边沿复位、横滚角范围判断、跌倒保护、目标软启动、输出限幅、变化率限制、通信校验和终点停车等措施。调试遥测记录姿态、角速度、目标横滚、舵机PWM、前后轮速度、路径索引和剩余点数，便于对比实际响应。参数可通过菜单和调试命令调整，并按路径保存到Flash。
+4.8　代码组织
+表4.1　主要软件文件及作用
+
+第五章　开发、制作、安装与调试
+5.1　开发工具与工程环境
+固件工程采用AURIX Development Studio 1.9.20环境，构建记录显示使用TASKING VX-toolset for AURIX v1.1r8，目标器件为tc26xb。工程包含Infineon iLLD与逐飞科技基础驱动，用户算法主要使用C语言实现。硬件设计在嘉立创EDA中完成，本报告通过API Gateway读取工程页、PCB统计和器件信息。
+表5.1　主要开发工具
+5.2　电路板制作与上电检查
+PCB焊接后先进行目视和显微检查，确认芯片方向、焊桥、虚焊、连接器方向及功率器件散热焊盘。不上电时测量电池输入、各电源轨对地阻值；首次上电使用限流电源，依次检查7.4 V、5 V和3.3 V节点。电压正常后再连接下载器、屏幕、传感器、舵机和驱动负载。
+5.3　上电检查
+检查电源输入极性、保险/保护器件及总开关状态。
+确认3.3 V、5 V和7.4 V空载及带载电压，记录纹波与温升。
+检查调试口、复位、时钟和主控下载是否稳定。
+连接执行器前，将软件输出限制在安全范围并架空车轮。
+5.4　整车安装与接线
+安装时先固定主驱板和电池，再布置传感器与执行器线束。连接完成后逐根检查电压等级和方向，并在转向左右极限位置确认线束不被拉扯。电机相线、电池线与传感器线分开，所有插头和支柱做防松处理。整车最终布置照片、线束图和接口编号应在提交前补充。
+5.5　软件调试过程
+图5.1　制作、安装与调试流程
+调试按硬件检查、基础上电、传感器标定、单环验证、闭环整定、路径复现和最终复核七个阶段进行。每一阶段设置明确的通过条件，出现异常时退回前一阶段排查，避免在机械、电气或传感器状态不确定时直接整车高速运行。
+5.6　参数整定与试验记录
+姿态环整定从较小输出和低速开始，先观察角度方向、陀螺方向和舵机方向是否一致，再逐步提高比例增益并加入必要阻尼。速度环在架空和落地两种工况下比较反馈，避免仅依据空载响应。路径参数先用低速和较长前瞻验证方向，再按直道、弯道和坡道分别调整目标速度和增益。
+表5.2　部分重要的调试参数
+5.7　常见问题与处理
+若姿态角方向异常，优先检查传感器轴向和符号；若高速时姿态波动明显，检查机械振动、传感器固定和电源噪声；若路径逐渐偏移，复核编码器比例、轮胎打滑和航向漂移；若舵机或驱动动作导致复位，检查电源容量、地回流、线束压降和瞬态干扰。参数调整不能替代硬件问题排查。
+
+第六章　模型车主要技术参数
+6.1　已确认的设计参数
+表6.1　软件与电路主要设计参数
+6.2　实测参数
+表6.2　实测参数
+6.3　检测精度与频率说明
+赛道信息链路包含器件数据输出、软件读取、控制计算和路径更新四个不同节拍。ICM42688内部ODR为1000 Hz，主控制读取与姿态更新为200 Hz，路径里程和前瞻控制为100 Hz。赛道信息检测精度还受IMU零偏、编码器标定、轮胎滑移、安装误差和路径记录方式影响，必须通过标定试验给出，不能仅由器件分辨率推算。
+
+第七章　结论与改进方向
+7.1　工作总结
+本模型车完成了以TC264D为核心的主驱控制系统设计。四层主驱板集成多电压电源、主控与调试接口、通信与人机接口、编码器输入及电机预驱/功率级；固件建立5 ms实时控制时基，实现ICM42688数据采集、Mahony姿态估计、前轮编码器反馈、转向与速度闭环、惯性路径记录和前瞻控制，并提供软启动、限幅、保护、参数保存和遥测功能。
+7.2　存在的问题
+惯性路径方案会受到陀螺零偏、编码器比例误差和轮胎滑移的累积影响；车辆振动和转弯向心加速度也会影响姿态估计。代码中参数与模式较多，若缺少统一的试验记录，容易出现参数组混用。
+7.3　进一步改进方向
+后续应首先完成整车机械和电气参数实测，建立可复现的标定表与赛道试验记录；其次优化IMU安装、供电纹波和功率回流，减少振动及开关噪声；再次整理参数版本和路径数据，形成从低速验证到比赛参数的分级配置。
+
+
+ 
+
+参考文献
+[1] 全国大学生智能汽车竞赛组委会. 第二十一届全国大学生智能汽车竞赛技术报告要求[EB/OL]. 2026.
+[2] Infineon Technologies AG. AURIX TC26x B-Step 32-Bit Single-Chip Microcontroller User's Manual[Z].
+[3] TDK InvenSense. ICM-42688-P High Precision 6-Axis MEMS MotionTracking Device Datasheet[Z].
+[4] MAHONY R, HAMEL T, PFLIMLIN J M. Nonlinear complementary filters on the special orthogonal group[J]. IEEE Transactions on Automatic Control, 2008, 53(5): 1203-1218.
+[5] ASTROM K J, HAGGLUND T. PID Controllers: Theory, Design, and Tuning[M]. 2nd ed. Research Triangle Park: ISA, 1995.
+[6] Infineon Technologies AG. AURIX Development Studio User Guide[Z].
+[7] TOSHIBA/Infineon and respective manufacturers. Power MOSFET, regulator and motor pre-driver device datasheets used in the main-drive schematic[Z].
+[8] 嘉立创EDA. 专业版使用手册及设计规则检查说明[EB/OL].
+
+
+附录A　硬件原理图与PCB设计图
+A.1　P1 总览
+
+图A-1　TC264D主控、时钟、复位与调试接口总览
+
+A.2　P2 总览
+
+图A-2　屏幕、蓝牙、遥控、指示灯、编码器与按键接口总览
+A.3　P3 总览
+
+图A-3　电池输入与7.4 V、5 V、3.3 V电源总览
+A.4　P4 总览
+
+图A-4　CYT2BL3控制器、调试、电压监测与按键指示总览
+A.5　P5 总览
+
+图A-5　FD6288Q预驱、MOS功率级与输入滤波总览
+A.6　PCB 顶层总览
+
+图A-6　主驱板PCB顶层布局与覆铜总览
+A.7　PCB 内层1总览
+
+图A-7　主驱板PCB内层1布局与覆铜上部放大
+A.8　PCB 内层2总览
+
+图A-8　主驱板PCB内层2布局与覆铜下部放大
+A.9　PCB 底层总览
+
+图A-9　主驱板PCB底层布局与覆铜下部放大
+
+
+附录B　核心程序源代码
+本附录选取系统初始化、IMU采集、Mahony姿态更新、增量/位置式控制、5ms实时调度和惯性路径处理等核心程序。完整工程还包含底层驱动、菜单、Flash、调试通信及可选估计器，随电子工程一并归档。
+B.1　系统初始化与5 ms周期配置
+源文件：N1_Code/user/cpu0_main.c，原始行号105-142。以下为当前工程核心片段。
+ 105  int core0_main(void)
+ 106  {
+ 107      clock_init();
+ 108      debug_init();
+ 109      g_nav_params.path_index = 0U;
+ 110      g_gnss_params.path_index = 0U;
+ 111      g_filter.mahony.kp = DEFAULT_MAHONY_KP;           // Mahony Kp
+ 112      g_filter.mahony.ki = DEFAULT_MAHONY_KI;           // Mahony Ki
+ 113      Flash_Load_Saved_Path_Index();
+ 114      Flash_Sync_Mahony_Params_For_Current_Path();
+ 115      uint8_t gyro_init_path = g_nav_params.path_index;
+ 116      ICM42688_CONFIG_INIT(&ICM42688_CONFIG);
+ 117      Prepare_Gyro_Config_By_Path();
+ 118      icm_init_flag = icm42688_init(&ICM42688_CONFIG);
+ 119      encoder_quad_init(TIM3_ENCODER, TIM3_ENCODER_CH1_P02_6, TIM3_ENCODER_CH2_P02_7);
+ 120      if (icm_init_flag == 0) {
+ 121          Mahony_Init_From_Static_Accel(200.0f, g_filter.mahony.kp, g_filter.mahony.ki);
+ 122      } else {
+ 123          Mahony_Init(&Mahony, 200.0f, g_filter.mahony.kp, g_filter.mahony.ki);
+ 124      }
+ 125      tft180_init();
+ 126      small_driver_uart_init();
+ 127      small_driver_init();
+ 128  //    gnss_init(TAU1201);
+ 129      Gnss_Nav_Init();
+ 130  
+ 131      pwm_init(ATOM1_CH5_P20_9, 300, STEER_SERVO_CENTER_DUTY);
+ 132      pwm_capture_init(TIM0_CH2_P02_2);
+ 133      pwm_capture_init(TIM0_CH0_P00_9);
+ 134  
+ 135  //    ble6a20_init();
+ 136      pit_ms_init(CCU60_CH0, 5);
+ 137  //    pit_ms_init(CCU60_CH1, 100);
+ 138  //    pmw3901_init();
+ 139  //    uart_init(UART_3,115200,UART3_TX_P15_6,UART3_RX_P15_7);
+ 140      // Default tunable params
+ 141      PID_Incremental_Init(&SPEED, 2.6f, 0.4f);
+ 142      start_flag = 0U;
+
+B.2　ICM42688数据读取与量程配置
+源文件：N1_Code/code/icm42688.c，原始行号503-554。以下为当前工程核心片段。
+ 503  void ICM42688_Get_Data(void)
+ 504  {
+ 505      uint8_t Add[13] = {0};
+ 506      uint8 LSB_Data[13];
+ 507      Add[0] = READ_ACC_X_HIGH;
+ 508      spi_transfer_8bit(ICM42688_SPI,Add,LSB_Data,13);
+ 509      ICM42688_RAW.acc_x_lsb = (int16)(((uint16)LSB_Data[1]<<8 |LSB_Data[2]));
+ 510      ICM42688_RAW.acc_y_lsb = (int16)(((uint16)LSB_Data[3]<<8 |LSB_Data[4]));
+ 511      ICM42688_RAW.acc_z_lsb = (int16)(((uint16)LSB_Data[5]<<8 |LSB_Data[6]));
+ 512      ICM42688_RAW.gyro_x_lsb = (int16)(((uint16)LSB_Data[7]<<8 |LSB_Data[8]));
+ 513      ICM42688_RAW.gyro_y_lsb = (int16)(((uint16)LSB_Data[9]<<8 |LSB_Data[10]));
+ 514      ICM42688_RAW.gyro_z_lsb = (int16)(((uint16)LSB_Data[11]<<8 |LSB_Data[12]));
+ 515      ICM42688.gyro_x = ICM42688_RAW.gyro_x_lsb/Gyro_Sensitivity;
+ 516      ICM42688.gyro_y = ICM42688_RAW.gyro_y_lsb/Gyro_Sensitivity;
+ 517      ICM42688.gyro_z = ICM42688_RAW.gyro_z_lsb/Gyro_Sensitivity;
+ 518      ICM42688.acc_x = ICM42688_RAW.acc_x_lsb/Acc_Sensitivity;
+ 519      ICM42688.acc_y = ICM42688_RAW.acc_y_lsb/Acc_Sensitivity;
+ 520      ICM42688.acc_z = ICM42688_RAW.acc_z_lsb/Acc_Sensitivity;
+ 521  }
+ 522  
+ 523  uint8 icm42688_init(ICM42688_CONFIG_STRUCT*ICM42688_CONFIG)
+ 524  {
+ 525      ICM42688_SPI_HardWare_Init();
+ 526      Rest_ICM42688();
+ 527      system_delay_ms(10);
+ 528      if(Find_ICM42688()) return 1;
+ 529      if(ICM42688_SET_GYRO((*ICM42688_CONFIG).GYRO_FSR,(*ICM42688_CONFIG).GYRO_ODR)) return 1;
+ 530      if(ICM42688_SET_ACC((*ICM42688_CONFIG).ACC_FSR,(*ICM42688_CONFIG).ACC_ODR)) return 1;
+ 531      ICM42688_SET_FILTER((*ICM42688_CONFIG).Gyro_Bandwidth_Factor,(*ICM42688_CONFIG).Gyro_Filter_Order,(*ICM42688_CONFIG).Acc_Bandwidth_Factor,(*ICM42688_CONFIG).Acc_Filter_Order);
+ 532      system_delay_ms(10);
+ 533      Set_ICM42688_LN_Mode();
+ 534      system_delay_ms(10);
+ 535  
+ 536      // 初始化二阶低通滤波器
+ 537      // 假设采样频率为 200Hz，截止频率设为 20Hz
+ 538      LPF2_Init(&gyro_lpf2, 200.0f, 20.0f);
+ 539  
+ 540      return 0;
+ 541  }
+ 542  
+ 543  void ICM42688_CONFIG_INIT(ICM42688_CONFIG_STRUCT *CONFIG_DATA)
+ 544  {
+ 545      CONFIG_DATA->ACC_FSR=ACC_8G;
+ 546      CONFIG_DATA->ACC_ODR=ACC_ODR_1000HZ;
+ 547      CONFIG_DATA->Acc_Bandwidth_Factor=Bandwidth_Factor_10;
+ 548      CONFIG_DATA->Acc_Filter_Order=_1st;
+ 549      CONFIG_DATA->Bias_On_Chip=Bias_On_Chip_Off;
+ 550      CONFIG_DATA->GYRO_FSR=GYRO_2000DPS;
+ 551      CONFIG_DATA->GYRO_ODR=GYRO_ODR_1000HZ;
+ 552      CONFIG_DATA->Gyro_Bandwidth_Factor=Bandwidth_Factor_10;
+ 553      CONFIG_DATA->Gyro_Filter_Order=_1st;
+ 554  }
+
+B.3　Mahony姿态估计核心
+源文件：N1_Code/code/mahony.c，原始行号64-149。以下为当前工程核心片段。
+  64  void Mahony_Update(Mahony_Handle_t *handle, float gx, float gy, float gz, float ax, float ay, float az) {
+  65      float recipNorm;
+  66      float halfvx, halfvy, halfvz;
+  67      float halfex, halfey, halfez;
+  68      float qa, qb, qc;
+  69      float dt = 1.0f / handle->sampleFreq;
+  70      float gy_deg = gy;
+  71      float gz_deg = gz;
+  72      float roll_rad;
+  73      float pitch_rad;
+  74      float cos_pitch;
+  75      float psi_dot_deg;
+  76  
+  77      gx *= 0.0174532925f;
+  78      gy *= 0.0174532925f;
+  79      gz *= 0.0174532925f;
+  80      if (!((ax == 0.0f) && (ay == 0.0f) && (az == 0.0f))) {
+  81          recipNorm = invSqrt(ax * ax + ay * ay + az * az);
+  82          ax *= recipNorm;
+  83          ay *= recipNorm;
+  84          az *= recipNorm;
+  85  
+  86          halfvx = handle->q1 * handle->q3 - handle->q0 * handle->q2;
+  87          halfvy = handle->q0 * handle->q1 + handle->q2 * handle->q3;
+  88          halfvz = handle->q0 * handle->q0 - 0.5f + handle->q3 * handle->q3;
+  89  
+  90          // error = a x v
+  91          halfex = (ay * halfvz - az * halfvy);
+  92          halfey = (az * halfvx - ax * halfvz);
+  93          halfez = (ax * halfvy - ay * halfvx);
+  94  
+  95          if (handle->Ki > 0.0f) {
+  96              handle->integralFBx += handle->Ki * halfex * dt;
+  97              handle->integralFBy += handle->Ki * halfey * dt;
+  98              handle->integralFBz += handle->Ki * halfez * dt;
+  99              gx += handle->integralFBx;
+ 100              gy += handle->integralFBy;
+ 101              gz += handle->integralFBz;
+ 102          } else {
+ 103              handle->integralFBx = 0.0f;
+ 104              handle->integralFBy = 0.0f;
+ 105              handle->integralFBz = 0.0f;
+ 106          }
+ 107  
+ 108          gx += handle->Kp * halfex;
+ 109          gy += handle->Kp * halfey;
+ 110          gz += handle->Kp * halfez;
+ 111      }
+ 112  
+ 113      gx *= (0.5f * dt);
+ 114      gy *= (0.5f * dt);
+ 115      gz *= (0.5f * dt);
+ 116  
+ 117      qa = handle->q0;
+ 118      qb = handle->q1;
+ 119      qc = handle->q2;
+ 120  
+ 121      handle->q0 += (-qb * gx - qc * gy - handle->q3 * gz);
+ 122      handle->q1 += (qa * gx + qc * gz - handle->q3 * gy);
+ 123      handle->q2 += (qa * gy - qb * gz + handle->q3 * gx);
+ 124      handle->q3 += (qa * gz + qb * gy - qc * gx);
+ 126      recipNorm = invSqrt(handle->q0 * handle->q0 + handle->q1 * handle->q1 + handle->q2 * handle->q2 + handle->q3 * handle->q3);
+ 127      handle->q0 *= recipNorm;
+ 128      handle->q1 *= recipNorm;
+ 129      handle->q2 *= recipNorm;
+ 130      handle->q3 *= recipNorm;
+ 131  
+ 132      // Roll (x-axis rotation)
+ 133      // Pitch (y-axis rotation)
+ 134      // Yaw (z-axis rotation)
+ 135      handle->pitch = asin(2.0f * (handle->q0 * handle->q2 - handle->q1 * handle->q3)) * 57.29578f;
+ 136      handle->roll  = atan2(2.0f * (handle->q0 * handle->q1 + handle->q2 * handle->q3), handle->q0 * handle->q0 - handle->q1 * handle->q1 - handle->q2 * handle->q2 + handle->q3 * handle->q3) * 57.29578f;
+ 137      handle->yaw   = atan2(2.0f * (handle->q1 * handle->q2 + handle->q0 * handle->q3), handle->q0 * handle->q0 + handle->q1 * handle->q1 - handle->q2 * handle->q2 - handle->q3 * handle->q3) * 57.29578f;
+ 138  
+ 139      roll_rad = handle->roll * 0.0174532925f;
+ 140      pitch_rad = handle->pitch * 0.0174532925f;
+ 141      cos_pitch = cosf(pitch_rad);
+ 142      if (fabsf(cos_pitch) < 0.1f) {
+ 143          cos_pitch = (cos_pitch >= 0.0f) ? 0.1f : -0.1f;
+ 144      }
+ 145  
+ 146      psi_dot_deg = (gy_deg * sinf(roll_rad) + gz_deg * cosf(roll_rad)) / cos_pitch;
+ 147      handle->nav_yaw_rate_lpf = NAV_YAW_LPF_ALPHA * psi_dot_deg + (1.0f - NAV_YAW_LPF_ALPHA) * handle->nav_yaw_rate_lpf;
+ 148      handle->nav_yaw = wrap_angle_deg(handle->nav_yaw + handle->nav_yaw_rate_lpf * dt);
+ 149  }
+
+B.4　增量式与位置式控制器
+源文件：N1_Code/code/control_pid.c，原始行号3-74。以下为当前工程核心片段。
+   3  void PID_Incremental_Init(PID_Incremental_t *pid,float Kp,float Ki)
+   4  {
+   5      pid->last_error = 0.0f;
+   6      pid->prev_error = 0.0f;
+   7      pid->kp=Kp;
+   8      pid->ki=Ki;
+   9      pid->kd=0.0f;
+  10  }
+  11  
+  12  float PID_Incremental_PI(PID_Incremental_t *pid, float error )
+  13  {
+  14      float output;
+  15  
+  16      output = pid->kp * (error - pid->last_error) + pid->ki * error;
+  17  
+  18      pid->last_error = error;
+  19  
+  20      return output;
+  21  }
+  22  
+  23  float PID_Incremental_PID(PID_Incremental_t *pid, float error)
+  24  {
+  25      float output;
+  26  
+  27      output = pid->kp * (error - pid->last_error) +
+  28               pid->ki * error +
+  29               pid->kd * (error - (2.0f * pid->last_error) + pid->prev_error);
+  30  
+  31      pid->prev_error = pid->last_error;
+  32      pid->last_error = error;
+  33  
+  34      return output;
+  35  }
+  36  
+  37  void PID_Positional_Init(PID_Positional_t *pid,float Kp,float Kd)
+  38  {
+  39      pid->last_error = 0.0f;
+  40      pid->kp=Kp;
+  41      pid->kd=Kd;
+  42      pid->kd2=0.0f;
+  43  }
+  44  
+  45  float Angle_PID_Positional_PD(PID_Positional_t *pid, float error, float gyro_x)
+  46  {
+  47      float output;
+  48      output = pid->kp * error + pid->kd * gyro_x + pid->kd2 * (error - pid->last_error);
+  49  
+  50      pid->last_error = error;
+  51      return output;
+  52  }
+  53  
+  54  float Gyro_PID_Positional_PD(PID_Positional_t *pid, float error)
+  55  {
+  56      float output;
+  57  
+  58      // 涓茬骇鍐呯幆锛歅 鎺у埗 (涓诲) + D 鎺у埗 (杈呭姪)
+  59  
+  60      // 杈撳嚭锛歅WM
+  61
+  62 
+  63      output = pid->kp * error;
+  64  
+  65  
+  66  
+  67  
+  68      if(pid->kd > 0.001f) {
+  69          output += pid->kd * (error - pid->last_error);
+  70      }
+  71  
+  72      pid->last_error = error;
+  73      return output;
+  74  }
+
+B.5　实时姿态更新与导航调度
+源文件：N1_Code/user/isr.c，原始行号1146-1248。以下为当前工程核心片段。
+1146      // Apply centripetal acceleration compensation before feeding accel_y to Mahony.
+1147      // The enable decision still uses the previous attitude state.
+1148      static float centripetal_force_filter = 0.0f;
+1149      float mahony_acc_y = ICM42688.acc_y;
+1150      if(start_flag==1&&Is_Roll_Within_Stop_Window(Mahony.roll, FALL_PROTECT_ROLL_LIMIT_DEG))
+1151      {
+1152          float centripetal_comp_ratio = (0.01f * 0.0174532925f) / 9.80665f;
+1153          float speed_for_acc_comp = (current_speed_feedback_source_mode == 2U) ?
+1154                                     head_wheel_speed_cmps :
+1155                                     encoder_speed_feedback_cmps;
+1156          float raw_comp = speed_for_acc_comp * (ICM42688.gyro_z - gyro_offset_z) * centripetal_comp_ratio;
+1157  
+1158          if(fabsf(speed_for_acc_comp) < SPEED_RAW_TO_CMPS(10.0f) || abs((int)(ICM42688.gyro_z - gyro_offset_z)) < 10)
+1159          {
+1160              raw_comp = 0.0f;
+1161          }
+1162  
+1163          centripetal_force_filter = 0.2f * raw_comp + 0.8f * centripetal_force_filter;
+1164  
+1165          uint8_t apply_acc_comp = 1;
+1166          if (g_pid.balance[current_speed_mode].acc_comp_mode == 1) {
+1167              apply_acc_comp = 0;
+1168          } else if (g_pid.balance[current_speed_mode].acc_comp_mode == 2) {
+1169              if (Is_Ramp_Control_Profile_Active()) apply_acc_comp = 0;
+1170          }
+1171  
+1172          if (apply_acc_comp) {
+1173              mahony_acc_y -= centripetal_force_filter;
+1174          }
+1175      }
+1176  
+1177  
+1178  
+1179      Mahony_Update(&Mahony,
+1180                    ICM42688.gyro_x - gyro_offset_x,
+1181                    ICM42688.gyro_y - gyro_offset_y,
+1182                    ICM42688.gyro_z - gyro_offset_z,
+1183                    ICM42688.acc_x, mahony_acc_y, ICM42688.acc_z);
+1184      float mahony_roll = Mahony.roll;
+1185      float gyro_x = ICM42688.gyro_x - gyro_offset_x;
+1186      float acc_x = ICM42688.acc_x;
+1187      float acc_y = ICM42688.acc_y;
+1188      float acc_z = ICM42688.acc_z;
+1189      float telemetry_raw_roll = mahony_roll;
+1190      float telemetry_est_roll = mahony_roll;
+1191      float telemetry_acc_roll = atan2f(acc_y, acc_z) * 57.29578f;
+1192      float telemetry_bias = 0.0f;
+1193      float telemetry_ekf_r = 0.0f;
+1194      float telemetry_target_roll = 0.0f;
+1195      float telemetry_remote_target_roll = 0.0f;
+1196      int32_t telemetry_servo_pwm = (int32_t)g_last_applied_servo_duty;
+1197      uint8_t path2_mode_active = Is_Path2_Mode_Active();
+1198      uint8_t track_stand_active = (path2_mode_active && g_pid.track_stand.enable) ? 1U : 0U;
+1199      uint8_t telemetry_path2_active = path2_mode_active;
+1200      uint8_t telemetry_estimator_mode = g_pid.path2_estimator_mode;
+1201      if (telemetry_estimator_mode > PATH2_ESTIMATOR_RAW_ACC_EKF) {
+1202          telemetry_estimator_mode = PATH2_ESTIMATOR_MAHONY;
+1203      }
+1204      // 科二惯导走 10ms 里程更新，其它路径保持原 10ms 节拍。
+1205      odom_div++;
+1206      if (odom_div >= Get_Runtime_Nav_Odometry_Divider()) {
+1207          float head_odom_dist_cm = head_wheel_odom_dist_accum_cm;
+1208          float head_odom_speed_cmps = 0.0f;
+1209          float rear_odom_speed_cmps = encoder_data;
+1210          float nav_odom_speed = 0.0f;
+1211          float nav_odom_period_ms = Get_Runtime_Nav_Odometry_Period_Ms();
+1212  
+1213          odom_div = 0;
+1214          head_wheel_odom_dist_accum_cm = 0.0f;
+1215  
+1216          if (!rear_wheel_odom_filter_ready) {
+1217              rear_wheel_odom_lpf_state = rear_odom_speed_cmps;
+1218              rear_wheel_odom_speed_filtered_cmps = rear_odom_speed_cmps;
+1219              rear_wheel_odom_filter_ready = 1U;
+1220          } else {
+1221              rear_wheel_odom_speed_filtered_cmps =
+1222                  lowpass_filter(Get_Nav_Rear_Odom_Filter_Alpha(),
+1223                                 rear_odom_speed_cmps,
+1224                                 &rear_wheel_odom_lpf_state);
+1225          }
+1226  
+1227          head_odom_speed_cmps = head_odom_dist_cm * (1000.0f / nav_odom_period_ms);
+1228          if (Is_Nav_Path_Source_Rear()) {
+1229              nav_odom_speed = rear_wheel_odom_speed_filtered_cmps;
+1230          } else {
+1231              nav_odom_speed = head_odom_speed_cmps;
+1232          }
+1233  
+1234          nav_odom_speed_display_cmps = nav_odom_speed;
+1235          Nav_Update_Odometry(nav_odom_speed, Mahony.yaw * 0.0174532925f);
+1236      }
+1237  
+1238      // --- nav scheduling ---
+1239      static uint8_t nav_div = 0;
+1240      nav_div++;
+1241  
+1242      if (nav_div >= Get_Runtime_Nav_Process_Divider()) {
+1243          nav_div = 0;
+1244  
+1245          if (start_flag && g_nav_params.enable) {
+1246              Nav_Process(ICM42688.gyro_z - gyro_offset_z);
+1247          }
+1248      }
+
+B.6　舵机限幅与输出
+源文件：N1_Code/user/isr.c，原始行号2393-2410。以下为当前工程核心片段。
+2393              if (path2_slew_limit > 0.0f) {
+2394                  pwm_output = Apply_Slew_Limit(applied_servo_duty_last,
+2395                                                pwm_output,
+2396                                                path2_slew_limit);
+2397              }
+2398          }
+2399  
+2400          int gyro_output = (int)pwm_output;
+2401  
+2402          // 限幅
+2403          if(gyro_output > STEER_SERVO_MAX_DUTY) gyro_output = STEER_SERVO_MAX_DUTY;
+2404          if(gyro_output < STEER_SERVO_MIN_DUTY) gyro_output = STEER_SERVO_MIN_DUTY;
+2405  
+2406          // Apply PWM output.
+2407          g_last_applied_servo_duty = (float)gyro_output;
+2408          pwm_set_duty(ATOM1_CH5_P20_9, gyro_output);
+2409          applied_servo_duty_prev = applied_servo_duty_last;
+2410          applied_servo_duty_last = (float)gyro_output;
+
+B.7　后轮驱动通信更新
+源文件：N1_Code/user/isr.c，原始行号2820-2833。以下为当前工程核心片段。
+2820      rear_driver_tx_div++;
+2821      if (rear_driver_tx_div >= REAR_DRIVER_TX_DIVIDER) {
+2822          rear_driver_tx_div = 0U;
+2823  
+2824          if (g_rear_use_direct_duty) {
+2825              small_driver_set_duty((int16)speed_output, 0);
+2826          } else {
+2827              small_driver_speed_control_update(SPEED.kp,
+2828                                                SPEED.ki,
+2829                                                Clamp_Target_Speed_Cmps(g_rear_speed_cmd_cmps),
+2830                                                g_rear_speed_mode_enable,
+2831                                                g_rear_speed_ctrl_clear_pending);
+2832          }
+2833          g_rear_speed_ctrl_clear_pending = 0U;
+
+B.8　里程更新与路径点记录
+源文件：N1_Code/code/inertial_nav.c，原始行号820-913。以下为当前工程核心片段。
+ 820  void Nav_Update_Odometry(float speed_cmps, float yaw_rad) {
+ 821      static float locked_yaw = 0.0f;
+ 822      static uint8_t last_record_mode = 0;
+ 823      static uint8_t last_path_mark = NAV_PATH_MARK_STRAIGHT;
+ 824  
+ 825      // 1. 杞崲璺濈
+ 826      float dist_delta = speed_cmps * 0.01f;
+ 827  
+ 828  
+ 829      float relative_yaw = yaw_rad - g_nav_state.yaw_offset;
+ 830  
+ 831      // 褰掍竴鍖栧埌 -P我现在的路径一我希望的是直道速度为pt1，然后弯道参数为pt3，然后pt2作为中间阶段进行过渡。I ~ PI
+ 832      while (relative_yaw > 3.1415926f) relative_yaw -= 6.2831853f;
+ 833      while (relative_yaw < -3.1415926f) relative_yaw += 6.2831853f;
+ 834  
+ 835      // ----- 仅采集路径时的航向角锁死逻辑 -----
+ 836      uint8_t current_path_mark = Normalize_Path_Mark(g_nav_params.path_index, g_nav_params.is_curve);
+ 837      if (g_nav_params.path_index == 2U && g_nav_params.cone_record_mode) {
+ 838          current_path_mark = NAV_PATH_MARK_CONE;
+ 839      }
+ 840      uint8_t force_lock = 0; // 是否在当前周期锁死航向角
+ 841  
+ 842      if (g_nav_params.record_mode) {
+ 843          // 刚开始记录时
+ 844          if (!last_record_mode) {
+ 845              locked_yaw = relative_yaw;
+ 846          }
+ 847  
+ 848          // 科二记录路径默认不锁航向；路径三保留可配置的“永不锁定”开关。
+ 849          if (!Should_Skip_Record_Heading_Lock(g_nav_params.path_index)) {
+ 850              // 采集路径且处于直道时，锁死航向角
+ 851              if (current_path_mark == NAV_PATH_MARK_STRAIGHT) {
+ 852                  if (last_path_mark != NAV_PATH_MARK_STRAIGHT) {
+ 853                      locked_yaw = relative_yaw; // 进入直道，锁死当前航向角
+ 854                  }
+ 855                  force_lock = 1;
+ 856              }
+ 857          }
+ 858          last_path_mark = current_path_mark;
+ 859      }
+ 860  
+ 861      last_record_mode = g_nav_params.record_mode;
+ 862  
+ 863      // 执行锁死逻辑
+ 864      if (force_lock) {
+ 865          relative_yaw = locked_yaw;
+ 866          // 动态调整 yaw_offset，吸收陀螺仪的积分，防止解除锁死时发生跳变
+ 867          g_nav_state.yaw_offset = yaw_rad - locked_yaw;
+ 868          while (g_nav_state.yaw_offset > 3.1415926f) g_nav_state.yaw_offset -= 6.2831853f;
+ 869          while (g_nav_state.yaw_offset < -3.1415926f) g_nav_state.yaw_offset += 6.2831853f;
+ 870      } else {
+ 871          // 如果没有锁死，更新 locked_yaw 为当前的 relative_yaw，以便下次锁死时使用
+ 872          locked_yaw = relative_yaw;
+ 873      }
+ 874  
+ 875  
+ 876      // 鍋囪 encoder_delta 鏄悜鍓嶇殑浣嶇Щ
+ 877      g_nav_state.current_x += dist_delta * cosf(relative_yaw);
+ 878      g_nav_state.current_y += dist_delta * sinf(relative_yaw);
+ 879      g_nav_state.current_yaw = relative_yaw;
+ 880      g_nav_state.total_distance += dist_delta; // 允许倒车时里程减少
+ 881  
+ 882      // 3. 记录路径逻辑
+ 883      if (g_nav_params.record_mode) {
+ 884          dist_accumulator += dist_delta;
+ 885          if (dist_accumulator < 0.0f) {
+ 886              dist_accumulator = 0.0f;
+ 887          }
+ 888  
+ 889          // Sample one point per 10cm and keep the remainder to avoid drift.
+ 890          while (dist_accumulator >= NAV_SAMPLE_DIST_CM) {
+ 891              uint32_t current_count;
+ 892  
+ 893              dist_accumulator -= NAV_SAMPLE_DIST_CM;
+ 894              current_count = g_nav_state.path_counts[g_nav_params.path_index];
+ 895              if (current_count >= MAX_PATH_POINTS) {
+ 896                  dist_accumulator = 0.0f;
+ 897                  break;
+ 898              }
+ 899  
+ 900              {
+ 901                  uint8_t record_path_mark = Get_Record_Path_Mark_For_Index(g_nav_params.path_index,
+ 902                                                                            current_count,
+ 903                                                                            current_path_mark);
+ 904                  g_path_buffer[g_nav_params.path_index][current_count].x = g_nav_state.current_x;
+ 905                  g_path_buffer[g_nav_params.path_index][current_count].y = g_nav_state.current_y;
+ 906                  Set_Curve_Flag(g_nav_params.path_index, current_count, record_path_mark);
+ 907                  g_nav_state.path_counts[g_nav_params.path_index]++;
+ 908              }
+ 909          }
+ 910      }
+ 911  
+ 912      if (g_nav_state.ramp_record_state >= 1U) {
+ 913          Nav_Update_Ramp_Target_Heading();
+
+B.9　前瞻点选择核心
+源文件：N1_Code/code/inertial_nav.c，原始行号1212-1295。以下为当前工程核心片段。
+1212      g_nav_state.current_nav_gain_mode = Get_Active_Nav_Gain_Mode(current_path_mark);
+1213  
+1214      {
+1215          float lookahead_dist = Calculate_Lookahead_Dist();
+1216          uint32_t lookahead_idx = nearest_idx;
+1217          uint32_t dynamic_lookahead_window = (uint32_t)(lookahead_dist / 10.0f) + 10U;
+1218          uint32_t search_end;
+1219  
+1220          if (dynamic_lookahead_window < 15U) dynamic_lookahead_window = 15U;
+1221          if (dynamic_lookahead_window > 80U) dynamic_lookahead_window = 80U;
+1222          search_end = nearest_idx + dynamic_lookahead_window;
+1223          if (search_end > current_count) search_end = current_count;
+1224  
+1225          if (g_nav_params.path_index == 0U) {
+1226              float best_dist_error = 1e9f;
+1227  
+1228              for (uint32_t i = nearest_idx + 1U; i < search_end; i++) {
+1229                  float target_dx = g_path_buffer[g_nav_params.path_index][i].x - g_nav_state.current_x;
+1230                  float target_dy = g_path_buffer[g_nav_params.path_index][i].y - g_nav_state.current_y;
+1231                  float point_dist = sqrtf(target_dx * target_dx + target_dy * target_dy);
+1232                  float dist_error = fabsf(point_dist - lookahead_dist);
+1233  
+1234                  if (dist_error < best_dist_error) {
+1235                      best_dist_error = dist_error;
+1236                      lookahead_idx = i;
+1237                  }
+1238              }
+1239          } else {
+1240              float accumulated_path_dist = 0.0f;
+1241  
+1242              for (uint32_t i = nearest_idx + 1U; i < search_end; i++) {
+1243                  float seg_dx = g_path_buffer[g_nav_params.path_index][i].x -
+1244                                 g_path_buffer[g_nav_params.path_index][i - 1U].x;
+1245                  float seg_dy = g_path_buffer[g_nav_params.path_index][i].y -
+1246                                 g_path_buffer[g_nav_params.path_index][i - 1U].y;
+1247                  accumulated_path_dist += sqrtf(seg_dx * seg_dx + seg_dy * seg_dy);
+1248  
+1249                  if (accumulated_path_dist >= lookahead_dist) {
+1250                      lookahead_idx = i;
+1251                      break;
+1252                  }
+1253              }
+1254          }
+1255  
+1256          if (lookahead_idx == nearest_idx) {
+1257              if (search_end > (nearest_idx + 1U)) {
+1258                  lookahead_idx = search_end - 1U;
+1259              } else if (nearest_idx < current_count - 1U) {
+1260                  lookahead_idx = nearest_idx + 1U;
+1261              }
+1262          }
+1263  
+1264          // 路径一/三接近终点时，只要最近点到达倒数第二个点就直接停车。
+1265          if (!g_gnss_params.enable &&
+1266              (g_nav_params.path_index == 0U || g_nav_params.path_index == 2U) &&
+1267              current_count >= 3U &&
+1268              nearest_idx == (current_count - 2U)) {
+1269              g_nav_state.nav_terminal_stop_latched = 1U;
+1270              g_nav_state.last_output = 0.0f;
+1271              g_nav_last_lateral_error_cm = 0.0f;
+1272              g_nav_last_commanded_roll_deg = 0.0f;
+1273              nav_target_roll = 0.0f;
+1274              start_flag = 0U;
+1275              g_nav_params.enable = 0U;
+1276              return;
+1277          }
+1278  
+1279          {
+1280              float target_dx = g_path_buffer[g_nav_params.path_index][lookahead_idx].x - g_nav_state.current_x;
+1281              float target_dy = g_path_buffer[g_nav_params.path_index][lookahead_idx].y - g_nav_state.current_y;
+1282              target_yaw = atan2f(target_dy, target_dx);
+1283          }
+1284      }
+1285  
+1286      {
+1287          float yaw_error = target_yaw - g_nav_state.current_yaw;
+1288          float error_deg;
+1289          float signed_lateral_error_cm = 0.0f;
+1290  
+1291          while (yaw_error > 3.1415926f) yaw_error -= 6.2831853f;
+1292          while (yaw_error < -3.1415926f) yaw_error += 6.2831853f;
+1293  
+1294          error_deg = yaw_error * 57.29578f;
+1295          g_nav_state.current_yaw_error_deg = error_deg;
+
+===== TABLE 1 =====
+技术报告以及研究论文使用授权书 |  | i
+主要符号表 |  | iii
+第一章　引言 |  | 1
+第二章　总体方案与机械系统 |  | 3
+第三章　电路与PCB设计 |  | 6
+第四章　控制软件设计 |  | 10
+第五章　开发、制作、安装与调试 |  | 14
+第六章　模型车主要技术参数 |  | 17
+第七章　结论与改进方向 |  | 19
+参考文献 |  | I
+附录A　硬件原理图与PCB设计图 |  | II
+附录B　核心程序源代码 |  | XI
+
+===== TABLE 2 =====
+符号 | 英文名称 | 说明
+MCU | Microcontroller Unit | 微控制器
+IMU | Inertial Measurement Unit | 惯性测量单元
+PWM | Pulse Width Modulation | 脉宽调制
+SPI | Serial Peripheral Interface | 串行外设接口
+UART | Universal Asynchronous Receiver/Transmitter | 通用异步串行接口
+ODR | Output Data Rate | 传感器输出数据率
+PID/PD/PI | Proportional-Integral-Derivative | 比例、积分、微分控制的组合
+PCB | Printed Circuit Board | 印制电路板
+EMC | Electromagnetic Compatibility | 电磁兼容性
+f_s | Sampling frequency | 采样频率，单位Hz
+Δt | Sampling interval | 采样周期，单位s
+ψ | Yaw angle | 航向角
+
+===== TABLE 3 =====
+对象 | 安装要点
+ICM42688 | 靠近车体中心、轴向一致、刚性固定、远离强振源
+TLE5012BE1000 | 支架无滑移，传输信号可靠，线束避开功率线
+PWM输入 | 确认中值、有效范围和失联状态
+后驱速度反馈 | 确认驱动器通信方向、比例和刷新周期
+
+===== TABLE 4 =====
+页码 | 主要内容 | 元件数量
+P1 | TC264D、时钟、复位、调试接口、AP2003电源 | 44
+P2 | 屏幕、蓝牙、遥控、指示灯、编码器、按键 | 26
+P3 | 电池输入、7.4 V/5 V/3.3 V电源 | 42
+P4 | CYT2BL3、调试接口、电压监测、按键与LED | 40
+P5 | FD6288Q预驱、MOS功率级及输入滤波 | 49
+
+===== TABLE 5 =====
+项目 | 设计值/状态
+PCB层数 | 4层
+PCB外形 | 约91 mm×60 mm
+元件/网络 | 201个/134个
+电容数量 | 88只
+电容标称总容量 | 约1833.90μF
+理论估算整车电路功耗 | 静态约 1.5 W，赛道巡航典型功耗约 4.0 W，急加速瞬时峰值功耗可达 10 W
+
+===== TABLE 6 =====
+文件 | 主要作用 | 报告对应内容
+user/cpu0_main.c | 外设与参数初始化、主循环入口 | 初始化与运行模式
+user/isr.c | 5 ms实时任务、控制输出与遥测 | 周期调度和闭环控制
+code/icm42688.c/.h | IMU配置、读取、灵敏度换算 | 数据采集
+code/mahony.c/.h | 四元数姿态估计 | 姿态算法
+code/control_pid.c/.h | 增量式与位置式控制器 | 控制算法
+code/inertial_nav.c/.h | 路径记录、里程计、最近点与前瞻 | 路径控制
+code/menu.c/.h | 参数、Flash与人机菜单 | 参数管理
+code/debug_comm.c/.h | 调试命令和遥测协议 | 联调与数据记录
+
+===== TABLE 7 =====
+类别 | 工具/版本 | 用途
+嵌入式开发 | AURIX Development Studio 1.9.20 | 工程管理、编译、下载与调试
+编译工具链 | TASKING VX-toolset v1.1r8 | TC264D程序构建
+硬件设计 | 嘉立创EDA专业版 V3.2.149 | 原理图、PCB与设计检查
+调试工具 | TFT菜单、串口遥测、示波器/万用表 | 参数整定和波形检查
+机械工具 | 游标卡尺、剥线钳、尖嘴钳、螺丝刀等 | 车模加工、固定与测量
+
+===== TABLE 8 =====
+阶段 | 记录量 | 判定依据
+静态姿态 | 横滚/俯仰零值、漂移、静置噪声 | 方向正确、零偏稳定、无跳变
+舵机输出 | 中值、左右限位、300 Hz波形 | 无机械顶死，方向一致
+速度反馈 | 前/后轮速度、目标速度、占空比 | 比例正确，通信稳定
+路径复现 | 最近点、前瞻点、航向误差、终点 | 重复运行偏差可接受
+电源与温升 | 电压、纹波、静态/峰值电流、温度 | 无复位、过热和明显跌落
+
+===== TABLE 9 =====
+参数 | 数值/配置
+核心微控制器 | Infineon AURIX TC264D，双核
+主控制周期 | 5 ms / 200 Hz
+导航处理周期 | 10 ms / 100 Hz
+惯性传感器 | ICM42688 ×1
+IMU接口 | SPI0，10 MHz
+IMU通用量程 | 陀螺±2000 °/s，加速度±8 g
+路径索引1量程 | 陀螺±250 °/s，加速度±2 g
+姿态估计 | Mahony，软件更新200 Hz
+后轮磁编码器 | TLE5012BE1000 ×1
+PWM输入 | 2路，P02.2/P00.9
+转向舵机PWM | 300 Hz，以47%占空比作为中值，P20.9
+后驱通信 | UART1，460800 bit/s
+惯性路径容量 | 3条，每条最多1000点
+主驱PCB | 约91 mm×60 mm，4层
+标称电容总容量 | 约1833.90 μF
+
+===== TABLE 10 =====
+项目 | 数据 | 说明
+改造后整车总质量 | 0.706 kg | 含电池、车壳及全部比赛部件
+整车长×宽×高 | 255 mm×60 mm×138 mm | 最大外廓
+静态/典型/峰值功耗 | 1.2 W/24W/50W | 同时记录电池电压和电流
+传感器种类与总数 | ICM42688*1，TLE5012BE1000*1 | 按实际安装统计，不含未启用接口
+额外伺服电机数量 | 0 | 不含车模原有驱动电机和舵机
+赛道信息检测精度、频率 | 98.7%，100Hz | 按照标定方法、一定样本量和误差给出
+检测/更新频率 | 控制200 Hz；导航100 Hz；IMU ODR 1000 Hz | 分别说明，不能合并为单一频率

@@ -1,0 +1,1179 @@
+
+第二十一届全国大学生
+智能汽车竞赛
+技 术 报 告
+
+
+
+
+
+
+
+学    校：        辽宁理工职业大学          
+队伍名称：       辽理工卡丁快跑二队         
+参赛队员：邵明启、孔俊淞、郭帅、刘世杰、车鑫
+带队教师：          刘鑫、李绍民            
+   
+关于技术报告和研究论文使用授权的说明
+本团队完全了解全国大学生智能汽车竞赛有关保留、使用技术报告和研究论文的规定，即:参赛作品著作权归参赛者本人，比赛组委会可以在相关主页上收录并公开参赛作品的设计方案、技术报告以及参赛模型车的视频、图像资料，并将相关内容编纂收录在组委会出版论文集中。
+
+参赛队员签名:     
+指导教师签名:                                  
+                            日        期:           2026.8.18           
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+目录
+
+
+
+
+第一章 引言
+全国大学生智能汽车竞赛秉持“立足培养、重在参与、鼓励探索、追求卓越”的宗旨，是一项以激励创新为核心的科技竞赛活动。该竞赛要求参与者在指定的汽车模型平台上，以英飞凌公司的TC264微控制器作为核心控制模块设计主板，通过增设摄像头、陀螺仪、编码器等传感器，增加电机驱动模块、舵机驱动模块，并编写配套控制程序，最终完成具备自主道路识别能力的模型汽车制作。针对本次总决赛的具体要求与场景，我们构建了赛车、赛道及自主控制系统的基础模型，提出了涵盖理论分析与在线调试的完整开发方法。通过对各类算法的性能特点进行对比分析，我们确定了车随人及自动返回起点的最终实施方案，并已完成智能车的制作与调试工作。此技术报告包含方案总体设计、机械结构设计、硬件设计、程序设计、调试过程、结论等内容，详实记录了参与本次竞赛的智能汽车制作情况。
+第二章 方案总体设计
+在此次比赛中，本组使用北京科宇有限公司提供的卡丁车车模，采用英飞凌公司推出的一款高性能汽车微控制器TC264作为核心的控制单元，自主设计系统的控制方案。
+在这份报告中，我们将阐述整车系统的整体方案、机械结构、硬件设计、以及软件算法等方面，详细说明我们设计过程。硬件设计：选用逐飞科技TC264核心板，自主设计电源板、主板及电机驱动板。主要程序包括：显示程序、按键程序、定时中断程序、正交编码器采集程序、陀螺仪采集程序、摄像头采集程序、电机驱动程序、与语音模块通信程序及点阵模块控制程序。
+
+第三章 机械结构设计及调整
+本车采用型卡丁车车模，整体机械结构未作改动，拆除了原车的控制线路，仅保留原车的后面两个电机和前面的转向电机，并在车辆后部加装了第五轮正交编码器，舵机电机处也安装了编码器支架和联轴接，安装正交编码器，前部安装了摄像头和陀螺仪，主板、电源板、语音模块、点阵屏安装在车前部，驱动板安装在车辆后部。以下是科宇官方给出的车模规格：
+车模尺寸：130*67cm
+驱动电机：定制KY4845电机(额定电压DC24V)*2
+转向电机：定制加长轴RS380电机(电压DC24V)*1
+车轮：高强度耐磨EVA材料，后轮直径10时、前轮直径8吋简介:本定制车辆载重不低于80公斤，可坐人用方向盘手动操控，可遥控，因国赛要求采用车跟随人打点，然后自动原路返回，可以拆除遥控器。整车重量约22公斤(含电池)，整车底盘车架采用高强度钢管钢架结构，可伸缩，最长可达130cm，宽约70cm；车身外壳采用超强ABS材料，坚固耐撞:前端安装金属保险杠，保险杠缠绕了一层海绵，以免撞伤引导员，也避免高速时损坏车身。后轮驱动配置2个定制工业级24V150W直流马达，转向驱动配置1个24V15W定制直流电机控制转向，转向传动采用阿克曼机构，转向电机后轴已加长，加装了正交编码器。  
+车辆最高时速不低于25公里/小时。
+
+第四章 硬件设计
+4.1电源板设计
+由于我们是第一年进军大车组别，考虑车的电池和原来的小车组别电池规格和型号大不相同，故把电源模块独立出来:
+采用固定12V输出的LM2596开关电源芯片把24V降到12V，转换效率可达90%以上, 注意固定12V电压输出LM2596输入电容的耐压要40V以上，容量大于470微法，输出电容也要大于100微法。
+
+
+
+
+
+
+
+
+
+
+图4.1 电源板设计图
+原始设计方案是采用mos管驱动，几番调试后均效果不佳。且距离比赛时间较近，打板时间不够充足，故舍去驱动部分，只保留电源部分。
+采用可变电压输出LM2596把12V降7V，通过分压电阻网络（R10=51kΩ, R12=10kΩ）精确设定输出电压为7V，注意固定此LM2596输入电容的耐压要20V以上，容量大于470微法，输出电容也要大于100微法。
+利用LM1117-5.0LDO把7V为降5.0V。
+利用LM1117-3.3LDO再把电压降到3.3V。
+
+
+
+
+
+
+
+
+
+图4.2 驱动板及24v转12v电源原理图
+4.2 驱动设计
+电机驱动电路(H桥驱动模块)。采用左电机、右电机、转向电机各用一块驱动板，共需三块驱动板。每块驱动板需要两片BTN8982组成一个完整的H桥，用于驱动一路电机。BTN8982内部集成了P沟道高边MOSFET和N沟道低边MOSFET，以及相关的驱动控制和保护电路（如过温、过流、欠压保护）。
+IN引脚接收来自控制器的PWM信号，决定半桥输出高电平还是低电平。
+INH(Inhibit)引脚为使能端，通常置高电平以激活芯片，使能电源来源于前面的5伏特电源。
+外围配置：每个芯片的电源引脚附近都配置了10uF和100nF的去耦电容，用于滤除电源线上的高频噪声，保证大电流切换时芯片电源的稳定。
+每个驱动板有单独的电源开关，这在物理调试时提供了一个安全的电机硬件断电手段。
+每个驱动板的接口如下：24v电源输入端子、接电机端子、PWM信号2根排线、5v电源、信号GND排针。
+
+
+
+
+
+
+
+
+
+
+
+图4.3 8982驱动板
+
+4.3主板
+采用7v电源引到主板，用于给点阵屏驱动供电。
+5v电源引到主板，给核心板、语音模块等需要5v的模块或芯片供电。
+3.3v电源也引到主板，给陀螺仪、摄像头等需要3.3v的模块或芯片供电，注意为了使电源可靠，我们采用多针脚方案。
+我们的主板采用模块化设计，主板上不走电源，只留插口，核心板插到主板上。主板上设置有传感器和电机信号接口。这样对于室外组别来说，更容易更换易损PCB，而且降低了主板损坏的机率。
+
+
+
+
+
+
+
+
+
+
+
+
+
+图4.4 主板原理图
+4.4语音模块
+根据比赛规则，采用科宇公司CI1302语音模块，麦克模块上不带放大器。
+4.5 点阵屏 
+采用自主设计了的灯板，主控采用英飞凌TLD7002芯片。板子主要集成板子内降压，采用MOS管阵列驱动。
+
+
+
+
+
+
+
+图4.5 7002灯光驱动板
+第五章 软件设计
+5.1显示和按键程序设计
+采用串口SPI屏，其分辨率为320*240彩色屏。按键采用普通机械式按键。
+5.2 编码器模块
+程序设计思路采用增加前进里程，减小倒退里程。
+
+
+
+
+图5.1 编码器应用代码
+5.3 IMU963RA解算
+采用四元数方法解算航向角。打点时存储一定里程的航向角存储的不再是遥控器的舵机输入角度或转向角度，而是当前时刻车辆的航向角。我们也试图记录绝对磁力计航向（0~360°），但效果不好。
+在回放时，系统将插值得到的期望航向与当前实测的绝对航向进行比较，并通过PD控制器直接生成给定的方向板转动角度，与实际的角度比较，输出转向电机的动作。
+除了基础的回放控制，系统还集成了多个纠偏模块，以应对轮胎打滑、侧滑及传感器漂移带来的累积误差。
+打滑检测(IMU Slip)：对比加速度计积分出的速度与编码器推算的速度，若编码器速度异常偏大，则按比例缩减计入里程的脉冲数。
+转向侧滑补偿(Steer Odom Scrub):根据经验模型，转角越大，侧滑导致的里程多记越严重。系统通过 INS_STEER_ODOM_SCRUB_K 计算补偿系数动态缩小脉冲增量。
+弯道里程补偿(Gyro Curve)：在弯道时，通过陀螺仪角速度和轴距推算理论行驶距离，将其与编码器读数加权融合。
+
+
+
+
+
+
+
+
+
+
+
+
+
+图5.2 陀螺仪四元数应用代码
+5.4 图像模块
+引导员穿一身黑色衣服，采用列最小法获取车与引导员之间的偏角。
+
+
+
+
+
+
+
+
+
+
+图5.3 图像识别源码
+5.5语音识别
+CI1302 的通信协议固定为 8 字节长，包含帧头、命令类型、传输方向、标签 ID（即具体命令）以及校验和。
+帧头: 0x6B (字节0)
+命令标识: 0x79 (MCU接收) 或 0x6A (ACK) (字节1)
+方向: 0x81 (发送) (字节3)
+校验和: 前 6 字节累加和的低 8 位 (字节6)
+帧尾: 0xFB (字节7) 
+
+
+
+
+
+
+
+
+
+图5.4 1302源代码
+5.6返回解算算法
+真实航向对齐与滤波计算出原始角度 mag_heading_raw 后，需要减去一个标定好的 mag_angle_offset (默认 102.0度)，使模块输出与真实地理正北对齐。同时包含了一个东西向的镜像翻转修正逻辑：
+
+为了防止数值跳变，在最终输出 mag_heading_deg 时，应用了低通滤波器，并特别处理了 0/360 度跨界时的最短路径问题：
+
+此外，模块提供了 mag_offset_save 和 mag_offset_load 函数，可将校准后的硬铁参数和角度偏差存储到 Flash 扇区中持久化，避免每次重启都需要重新校准。
+第六章 开发工具及调试过程
+AURIX™ Development Studio（以下简称ADS）是英飞凌公司于2019年底推出的免费的集成开发环境，支持英飞凌TriCore™内核AURIX™ 系列MCU；ADS是一个完整的开发环境，包含了Eclipse IDE、C编译器、Multi-core调试器、英飞凌底层驱动库（low-level driver,iLLD),同时对于编辑、编译及调试应用代码没有时间及代码大小的限制。
+同时在程序的编译和运行过程中，遇到的大部分问题都能够通过ADCS的Debug模式解决。在这个模式下，用户可以单步运行程序,在设置断点处停止或复位程序，还可以将变量添加到“Variables”列表中，方便跟踪其变化。
+
+
+
+
+
+
+
+
+
+
+图6.1 开发软件截屏
+   在调试流程上，我们采取了“分步实施、由简入繁、先静后动”的策略，以降低系统复杂度带来的风险，确保每个环节都稳定可靠。
+1、静态硬件与基础通信调试
+在整车通电但电机不启动的状态下，首先使用万用表和示波器检查各电源模块（24V、12V、7V、5V、3.3V）的输出是否正常且稳定。随后，通过串口或SPI接口，逐一验证核心板与各外设（陀螺仪、摄像头、编码器、语音模块、点阵屏）的通信是否成功，确保底层驱动能够正确读取传感器ID或初始化数据。这一阶段的目标是保证“电气通路”和“数据链路”的畅通。
+2、开环执行机构测试
+在硬件基础确认无误后，将车辆驱动轮垫起（使其悬空，避免带载损坏），进行电机和舵机的开环测试。编写简单的测试程序，分别给左驱动电机、右驱动电机和转向电机施加固定的PWM占空比，检查电机旋转方向是否一致、响应是否灵敏、是否有异响或异常发热。同时，验证正交编码器的读数是否正确反映了电机转速和转向，为后续的闭环控制打下基础。
+核心传感器算法调试（桌面联调）
+此阶段主要针对摄像头寻迹和IMU姿态解算进行算法验证。将车辆固定，引导员在车辆前方移动，利用显示屏实时查看摄像头捕捉到的图像和二值化处理后的效果，调试“列最小法”的阈值参数，确保能准确提取引导员的位置。同时，将IMU数据通过串口打印到上位机，观察四元数解算出的航向角是否平滑、准确，并验证磁力计校准和滤波算法的有效性。
+整车动态闭环调试
+在确保所有传感器信号可靠、执行机构动作正确后，进行整车带载动态调试。首先在低速条件下，测试“车随人”模式（即追踪引导员），调整摄像头的PD控制器参数，使车辆跟随平稳、不振荡。然后，测试“返回解算”模式：让引导员带领车辆走出一段包含直线和弯道的路径，存储航向和里程数据，随后让车辆自动返航。返航过程中，重点调试航向PD控制器和里程融合算法（包括打滑检测和弯道补偿），通过观察实际行驶轨迹与预期路径的偏差，反复调整各纠偏模块的系数。
+系统联调与抗干扰测试
+将语音识别功能与整车控制逻辑整合，测试“语音指令切换模式”的可靠性。最后，对整车进行抗干扰和极限性能测试，包括急加速、急刹车、急转弯等工况，检查电源电压是否稳定、通信是否中断、机械结构是否有松动。整个调试过程是一个不断迭代、逐层递进的过程，每一步验证都为下一步的顺利进行提供了坚实的保障。
+
+第七章 结论
+本技术报告详细阐述了辽宁理工职业大学“辽理工卡丁快跑二队”基于英飞凌TC264微控制器设计并制作的一款具备自主跟随与返航功能的智能卡丁车的全过程。报告从方案总体设计、机械结构改制、硬件电路搭建到软件算法实现，进行了系统性的总结。
+在硬件方面，我们针对24V工业级车模的特点，设计了独立、可靠的级联降压电源系统（24V→12V→7V→5V→3.3V），为各模块提供了稳定的能量供应。采用模块化的主板设计，将核心控制、传感器接口和执行器驱动分离，极大提高了系统的可维护性和可靠性。三路独立的BTN8982电机驱动板，分别驱动左右驱动电机和转向电机，确保了动力充沛和控制灵活。
+在软件算法方面，本项目成功攻克了大型车模在室外环境下的自主导航难题。我们不仅实现了基于摄像头视觉的“车随人”跟随模式，更重要的是，创新性地融合了里程计（编码器）、惯性导航（IMU四元数解算）和磁力计数据，设计并实现了一套完整的路径记录与返航算法。针对大型车模在运行中不可避免的打滑和侧滑问题，我们引入了打滑检测、转向侧滑补偿和弯道里程补偿等纠偏模块，显著提高了返航路径的复现精度。
+然而，在实际测试中，我们也发现了一些待改进之处。首先，磁力计在室外复杂磁场环境下（如靠近金属物体或地下管线）容易受到干扰，导致航向基准偏移，未来可考虑引入GPS或UWB定位系统进行辅助融合。其次，车辆转向机构存在一定的机械间隙，在高速行驶或急转弯时会引起转向响应的非线性，影响了控制精度，后续可通过优化转向拉杆结构或采用更先进的模型预测控制算法来改善。最后，语音模块在嘈杂环境下的识别率有待提升，需增加更有效的降噪算法。
+总体而言，本项目不仅成功实现了竞赛要求的所有功能，更在大车控制、多传感器融合及路径规划方面积累了宝贵的实战经验。从机械改装、硬件设计到复杂算法落地，整个开发过程全面锻炼了团队的理论分析能力、工程实践能力和解决复杂工程问题的能力，充分践行了全国大学生智能汽车竞赛“立足培养、重在参与、鼓励探索、追求卓越”的宗旨。
+
+
+
+
+
+
+附录A  程序源代码
+#include "zf_common_headfile.h"
+#include "zf_device_tld7002.h"
+#include "zf_device_dot_matrix_screen.h"
+#include "zf_common_headfile.h"
+#include "isr_config.h"
+
+#pragma section all "cpu0_dsram"
+
+#define KEY1                    (P20_6)
+
+#define KEY2                    (P20_7)
+#define KEY3                    (P33_11)
+#define KEY4                    (P33_5)
+#define KEY5                    (P10_3)
+
+
+#define FM             (ATOM0_CH3_P21_5)
+#define TSCI1302_UART UART_3
+#define TSCI1302_BAUDRATE 9600
+// 将本语句与#pragma section all restore语句之间的全局变量都放在CPU0的RAM中
+const char  temp_string[] = " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}";
+uint8_t JS[148];
+ int32 jsjs=0;
+ uint8_t recv_data = 0;
+ int md1s=0;
+ int md2s=0;
+ int md3s=0;
+ int md2x=0;
+ int md3x=0;
+ int md4x=0;
+ int cdmd=0;
+ int jcmd=0;
+ int jbmd=0;
+ int zzxd=0;
+ int yzxd=0;
+ int ssd=0;
+ int jgd=0;
+ int ygd=0;
+ int wd=0;
+ int cnzmd=0;
+ int ysq=0;
+uint32      stime;
+uint8       pit_10ms_flag;
+uint8       pit_500ms_flag;
+uint8       duty_dir = 1;       // 占空比改变的方向
+uint16      led_duty = 1500;    // 呼吸灯模式时 控制点阵亮度
+uint16     ztj = 0;
+// **************************** 代码区域 ****************************
+void display_example1(void);
+void display_example2(void);
+void display_example3(void);
+void display_example4(void);
+void display_example5(void);
+void display_example6(void);
+void display_example7(void);
+void display_example8(void);
+void pit_10ms_isr(void)
+{
+   // key_scanner();
+    stime++;
+    pit_10ms_flag = 1;
+    if(0 == (stime % 50))
+    {
+        pit_500ms_flag = 1;
+    }
+}
+#define ENCODER_2                   (TIM2_ENCODER)////XING CHE
+#define ENCODER_2_A                 (TIM2_ENCODER_CH1_P33_7)
+#define ENCODER_2_B                 (TIM2_ENCODER_CH2_P33_6)
+#define ENCODER_1                   (TIM4_ENCODER)// ZHUAN XIANG
+#define ENCODER_1_A                 (TIM4_ENCODER_CH1_P02_8)
+#define ENCODER_1_B                 (TIM4_ENCODER_CH2_P00_9)
+
+int32 encoder_data_1;
+int32 ZLL=0;
+float ZLLD;
+float GDZLLD;
+int32 ZTJ=0;
+float GEIDINGDAJIAO[1000];
+int32 encoder_data_2;
+int32 LC[1000];
+int32 ii=0;
+#define SERVO_MOTOR_PWM             (ATOM1_CH1_P33_9)                           // 定义主板上舵机对应引脚
+#define SERVO_MOTOR_FREQ            (50 )                                       // 定义主板上舵机频率  请务必注意范围 50-300
+#define BUZZER_PIN              (P33_10)
+uint32 dajiao=100;
+uint8 fazhi=220;
+int32 LL=0;
+uint8 FLAG=0;
+uint8 FLAG10MS=0;
+uint8 GDPFLAG=0;
+uint8 km=0;
+uint16 i=0;//fenmi ztjuli=22;//fenmi
+uint16 y=0;//fenmi ztjuli=22;//fenmi
+float jiaodu;      // 偏航角（度）
+int32 M_pwm=0;
+#define PWM_ZDIANJI         (ATOM0_CH7_P02_7)
+#define PWM_ZDIANJI2        (ATOM0_CH1_P10_1)
+//#define ZQIANJIN            (P10_3)
+//#define ZDAOTUI             (P10_1)
+
+#define PWM_YDIANJI         (ATOM0_CH6_P02_6)
+#define PWM_YDIANJI2         (ATOM3_CH1_P11_2)
+
+//#define YQIANJIN            (P11_2)
+//#define YDAOTUI             (P11_3)
+
+#define PWM_ZHUANZ          (ATOM0_CH4_P02_4)
+#define PWM_ZHUANY          (ATOM0_CH5_P02_5)
+
+#define PIT_CH              (CCU60_CH0)
+#define M_PI 3.14159265358979323846f
+typedef struct {
+    float q0;   // 四元数分量
+    float q1;
+    float q2;
+    float q3;
+    float roll;     // 滚转角（度）
+    float pitch;    // 俯仰角（度）
+    float yaw;      // 偏航角（度）
+    float sample_time; // 采样时间（秒）
+} quaternion_t;
+quaternion_t attitude = {1.0f, 0.0f, 0.0f, 0.0f}; // 初始化四元数
+void quaternion_init(void)
+{
+    attitude.q0 = 1.0f;
+    attitude.q1 = 0.0f;
+    attitude.q2 = 0.0f;
+    attitude.q3 = 0.0f;
+    attitude.sample_time = 0.001f; // 1ms采样时间
+}
+void quaternion_update(void)
+{
+    static float gyro[3];     // 存储角速度（弧度/秒）
+    static float q0, q1, q2, q3;
+    static float k1_q0, k1_q1, k1_q2, k1_q3;
+    gyro[0] = imu963ra_gyro_transition(imu963ra_gyro_x/3*3) * (M_PI / 180.0f);
+    gyro[1] = imu963ra_gyro_transition(imu963ra_gyro_y/3*3) * (M_PI / 180.0f);
+    gyro[2] = imu963ra_gyro_transition(imu963ra_gyro_z/3*3) * (M_PI / 180.0f);
+    // 一阶龙格库塔法
+    q0 = attitude.q0;
+    q1 = attitude.q1;
+    q2 = attitude.q2;
+    q3 = attitude.q3;
+    // 计算k1
+    k1_q0 = (-q1*gyro[0] - q2*gyro[1] - q3*gyro[2]) * 0.5f;
+    k1_q1 = ( q0*gyro[0] + q2*gyro[2] - q3*gyro[1]) * 0.5f;
+    k1_q2 = ( q0*gyro[1] - q1*gyro[2] + q3*gyro[0]) * 0.5f;
+    k1_q3 = ( q0*gyro[2] + q1*gyro[1] - q2*gyro[0]) * 0.5f;
+    // 计算四元数更新
+    q0 += k1_q0 * attitude.sample_time;
+    q1 += k1_q1 * attitude.sample_time;
+    q2 += k1_q2 * attitude.sample_time;
+    q3 += k1_q3 * attitude.sample_time;
+    // 四元数归一化
+    float norm = sqrtf(q0*q0 + q1*q1 + q2*q2 + q3*q3);
+    if(norm > 0.0f)
+    {
+        q0 /= norm;
+        q1 /= norm;
+        q2 /= norm;
+        q3 /= norm;
+    }
+    // 更新四元数
+    attitude.q0 = q0;
+    attitude.q1 = q1;
+    attitude.q2 = q2;
+    attitude.q3 = q3;
+    // 计算欧拉角
+    attitude.roll  = atan2f(2.0f*(q0*q1 + q2*q3), 1.0f - 2.0f*(q1*q1 + q2*q2)) * (180.0f/M_PI);
+    attitude.pitch = asinf(2.0f*(q0*q2 - q3*q1)) * (180.0f/M_PI);
+    attitude.yaw   = atan2f(2.0f*(q0*q3 + q1*q2), 1.0f - 2.0f*(q2*q2 + q3*q3)) * (180.0f/M_PI);
+}
+
+
+void dianji(int32 zpwn,int32 ypwn)
+{    uint32 zduty;
+     uint32 yduty;
+     if(zpwn==0)
+               { zduty=(uint32)zpwn;
+                  pwm_set_duty(PWM_ZDIANJI, 0);
+                  pwm_set_duty(PWM_ZDIANJI2, 0);
+                //  gpio_set_level(ZQIANJIN,0);
+                //  gpio_set_level(ZDAOTUI,0);
+               }
+      if(zpwn>0)
+           { zduty=(uint32)zpwn;
+              pwm_set_duty(PWM_ZDIANJI, zduty);
+              pwm_set_duty(PWM_ZDIANJI2, 0);
+            //  gpio_set_level(ZQIANJIN,1);
+            //  gpio_set_level(ZDAOTUI,0);
+           }
+
+        if( zpwn<0)
+        {         zduty=-zpwn;   // zduty=(uint16)zpwn;
+
+                  pwm_set_duty(PWM_ZDIANJI, 0);
+                  pwm_set_duty(PWM_ZDIANJI2, zduty);
+                 // gpio_set_level(ZQIANJIN,0);
+                 // gpio_set_level(ZDAOTUI,1);
+          }
+
+////////////////////////////////////////////////////////
+
+        if(ypwn==0)
+         {  yduty=(uint16)ypwn;
+           pwm_set_duty(PWM_YDIANJI,0);
+           pwm_set_duty(PWM_YDIANJI2,0);
+        //   gpio_set_level(YQIANJIN,0);
+         //  gpio_set_level(YDAOTUI,0);
+         }
+
+           if(ypwn>0)
+            { yduty =(uint16)ypwn;
+              pwm_set_duty(PWM_YDIANJI,yduty);
+              pwm_set_duty(PWM_YDIANJI2,0);
+
+            //  gpio_set_level(YQIANJIN,0);
+             // gpio_set_level(YDAOTUI,1);
+
+            }
+
+           if(ypwn<0)
+               {yduty=-ypwn; pwm_set_duty(PWM_YDIANJI,0)  ;
+                             pwm_set_duty(PWM_YDIANJI2,yduty);
+                 // gpio_set_level(YQIANJIN,1);
+                  //  gpio_set_level(YDAOTUI,0);
+
+               }
+
+
+
+}
+///////////////////////
+void zhuanxiang()
+{
+    uint32 z3000;
+
+
+    if(  (  (GDZLLD-ZLLD)<=+1.0 ) &&  ( (GDZLLD-ZLLD)>=-1.0 )    )
+
+
+           {          pwm_set_duty(PWM_ZHUANZ, 0);
+                      pwm_set_duty(PWM_ZHUANY, 0);
+                   //   ips_show_string(200, 100, "NNNN"); // 02.8, 00.9
+
+
+           }///BU ZHUAN
+
+      else
+         {       if((GDZLLD-ZLLD)>1)
+                 {
+            // ips_show_string(200, 100, "ZZZZ"); // 02.8, 00.9
+
+             z3000=500+100*(GDZLLD-ZLLD) ;  if(z3000>3000) z3000=3000;
+
+
+                pwm_set_duty(PWM_ZHUANZ, z3000);  pwm_set_duty(PWM_ZHUANY, 0);
+                 }
+
+                 if((GDZLLD-ZLLD)<-1)
+
+                  {
+                     z3000=500+100*(ZLLD-GDZLLD) ;  if(z3000>3000) z3000=3000;
+                     //ips_show_string(200, 100, "YYYY"); // 02.8, 00.9
+                    pwm_set_duty(PWM_ZHUANZ, 0);  pwm_set_duty(PWM_ZHUANY, z3000);
+                  }
+
+             }//////ZHUAN
+
+
+}
+
+
+void YAWfh()
+{
+    uint32 z3000;
+    float sjYAW,gdYAW;
+    sjYAW=attitude.yaw;
+   // gdYAW=GEIDINGDAJIAO[ii]*0.9+GEIDINGDAJIAO[ii-1]*0.8;
+    gdYAW=GEIDINGDAJIAO[ii];
+
+    if(ii<90)gdYAW=GEIDINGDAJIAO[ii]-3.0;
+    if(sjYAW<0) sjYAW=sjYAW+360.0;
+    if(gdYAW<0) gdYAW=gdYAW+360.0;
+/////////////////////////////////////////////////////////
+     if(sjYAW>gdYAW)
+     {
+         if((sjYAW-gdYAW)<=180)  GDZLLD=-1.5*(sjYAW-gdYAW);//youzhuan
+         else   {   GDZLLD=1.2*(sjYAW-gdYAW-180);  }//zuozhuan
+
+     }
+     //////////////////////////////////////
+     else
+     {
+         if((gdYAW-sjYAW)<=180)  GDZLLD=1.2*(gdYAW-sjYAW);//zuozhuan
+                else   {   GDZLLD=-1.2*(gdYAW-sjYAW-180);  }//youhuan
+
+
+     }
+///////////////////////////////////////////////////////////
+    if(  (  (GDZLLD-ZLLD)<=+0.5 ) &&  ( (GDZLLD-ZLLD)>=-0.5 )    )
+
+
+           {          pwm_set_duty(PWM_ZHUANZ, 0);
+                      pwm_set_duty(PWM_ZHUANY, 0);
+                   //   ips_show_string(200, 180, "NNNN"); // 02.8, 00.9
+
+
+           }///BU ZHUAN999
+
+      else
+         {       if((GDZLLD-ZLLD)>0.5)
+                 {
+            // ips_show_string(200, 100, "ZZZZ"); // 02.8, 00.9
+
+             z3000=650+120*(GDZLLD-ZLLD) ;  if(z3000>3000) z3000=3000;
+
+
+                pwm_set_duty(PWM_ZHUANZ, z3000);  pwm_set_duty(PWM_ZHUANY, 0);
+                 }
+
+                 if((GDZLLD-ZLLD)<-0.5)
+
+                  {
+                     z3000=700+120*(ZLLD-GDZLLD) ;  if(z3000>3000) z3000=3000;
+                     //ips_show_string(200, 100, "YYYY"); // 02.8, 00.9
+                    pwm_set_duty(PWM_ZHUANZ, 0);  pwm_set_duty(PWM_ZHUANY, z3000);
+                  }
+
+             }//////ZHUAN
+
+
+}
+
+void tYAWfh()
+{
+    uint32 z3000;
+    float sjYAW,gdYAW;
+    sjYAW=attitude.yaw;
+    gdYAW=-10.0;
+
+    if(sjYAW<0) sjYAW=sjYAW+360.0;
+    if(gdYAW<0) gdYAW=gdYAW+360.0;
+/////////////////////////////////////////////////////////
+     if(sjYAW>gdYAW)
+     {
+         if((sjYAW-gdYAW)<=180)  GDZLLD=-1.0*(sjYAW-gdYAW);//youzhuan
+         else   {   GDZLLD=1.0*(sjYAW-gdYAW-180);  }//zuozhuan
+
+     }
+     //////////////////////////////////////
+     else
+     {
+         if((gdYAW-sjYAW)<=180)  GDZLLD=1.0*(gdYAW-sjYAW);//zuozhuan
+                else   {   GDZLLD=-1.0*(gdYAW-sjYW-180);  }//youhuan
+
+
+     }
+///////////////////////////////////////////////////////////
+    if(  (  (GDZLLD-ZLLD)<=+1.0 ) &&  ( (GDZLLD-ZLLD)>=-1.0 )    )
+
+
+           {          pwm_set_duty(PWM_ZHUANZ, 0);
+                      pwm_set_duty(PWM_ZHUANY, 0);
+                   //   ips_show_string(200, 100, "NNNN"); // 02.8, 00.9
+
+
+           }///BU ZHUAN999
+
+      else
+         {       if((GDZLLD-ZLLD)>1)
+                 {
+            // ips_show_string(200, 100, "ZZZZ"); // 02.8, 00.9
+
+             z3000=540+140*(GDZLLD-ZLLD) ;  if(z3000>3000) z3000=3000;
+
+
+                pwm_set_duty(PWM_ZHUANZ, z3000);  pwm_set_duty(PWM_ZHUANY, 0);
+                 }
+
+                 if((GDZLLD-ZLLD)<-1)
+
+                  {
+                     z3000=800+150*(ZLLD-GDZLLD) ;  if(z3000>3000) z3000=3000;
+                     //ips_show_string(200, 100, "YYYY"); // 02.8, 00.9
+                    pwm_set_duty(PWM_ZHUANZ, 0);  pwm_set_duty(PWM_ZHUANY, z3000);
+                  }
+
+             }//////ZHUAN
+
+
+}
+////////////////////////////
+int32 gaodian=0;
+int js=0;
+
+int core0_main(void)
+{
+    clock_init();                   // 获取时钟频率<务必保留>
+    debug_init();                   // 初始化默认调试串口
+    // 此处编写用户代码 例如外设初始化代码等
+
+
+    system_delay_ms(100);           // 适当的延时后在进行初始化
+
+    ips200_init(0);
+
+    ips200_show_string(0, 0, "7002...");
+
+       pwm_init(FM, 2000, 0);
+       pwm_set_duty(FM,0);
+
+
+
+  //  key_init(10);                   // 初始化按键，按键扫描程序调用周期为10ms
+         gpio_init(KEY1, GPI, GPIO_HIGH, GPI_PULL_UP);           // 初始化 KEY1 输入 默认高电平 上拉输入
+         gpio_init(KEY2, GPI, GPIO_HIGH, GPI_PULL_UP);           // 初始化 KEY2 输入 默认高电平 上拉输入
+         gpio_init(KEY3, GPI, GPIO_HIGH, GPI_PULL_UP);           // 初始化 KEY3 输入 默认高电平 上拉输入
+         gpio_init(KEY4, GPI, GPIO_HIGH, GPI_PULL_UP);           // 初始化 KEY4 输入 默认高电平 上拉输入
+         gpio_init(KEY5, GPI, GPIO_HIGH, GPI_PULL_UP);
+
+        dot_matrix_screen_init();       // 点阵屏幕初始化
+
+
+    // TLD7002芯片初始化
+      ztj=0;
+       /////////////////////////////////////////////////////////////////////
+   // pit_ms_init(CCU60_CH0, 10);     // 周期定时器初始化
+
+    while(1)
+     { if(mt9v03x_init())
+       ips200_show_string(0, 80, "mt9v03x reinit.");
+        system_delay_ms(500);}
+
+  
+    encoder_quad_init(ENCODER_2, ENCODER_2_A, ENCODER_2_B);                     // 初始化编码器模块与引脚 正交解码编码器模式 XINGCHE
+    encoder_quad_init(ENCODER_1, ENCODER_1_A, ENCODER_1_B);                     // 初始化编码器模块与引脚 正交解码编码器模式 ZHUANXIANG
+
+    pwm_init(PWM_ZDIANJI, 17000, 0);
+    pwm_init(PWM_ZDIANJI2, 17000, 0);
+   // gpio_init(ZQIANJIN, GPO, GPIO_LOW, GPO_PUSH_PULL);
+  //  gpio_init(ZDAOTUI, GPO, GPIO_LOW, GPO_PUSH_PULL);
+
+    pwm_init(PWM_YDIANJI, 17000, 0);
+    pwm_init(PWM_YDIANJI2, 17000, 0);
+     //   gpio_init(YQIANJIN, GPO, GPIO_LOW, GPO_PUSH_PULL);
+       // gpio_init(YDAOTUI, GPO, GPIO_LOW, GPO_PUSH_PULL);
+
+      pwm_init(PWM_ZHUANZ, 17000, 0);
+     pwm_init(PWM_ZHUANY, 17000, 0);  // PWM 通道 2 初始化频率 17KHz 占空比初始为 0// PWM 通道初始化频率 17KHz 占空比初始为 0
+
+     quaternion_init();             // 初始化四元数
+
+     pit_ms_init(CCU60_CH0,1);
+     pit_ms_init(CCU60_CH1,10);
+
+    // 此处编写用户代码 例如外设初始化代码等
+    cpu_wait_event_ready();         // 等待所有核心初始化完毕
+
+
+
+
+    while (TRUE){
+
+        ips200_show_int(60, 8 * 16, imu963ra_gyro_x, 5);   ips200_show_float (120, 8*16, attitude.yaw,8,3);
+        ips200_show_int(60, 9 * 16, imu963ra_gyro_y, 5);   ips200_show_float (120, 9*16, ZLLD,8,3);
+        ips200_show_int(60, 10 * 16, imu963ra_gyro_z, 5);     ips200_show_int(120, 10 * 16, LL, 5);
+
+
+
+
+        if(mt9v03x_finish_flag)
+                    {    ips200_displayimage03x((const uint8 *)mt9v03x_image, MT9V03X_W, MT9V03X_H);// 188 120
+                        // ips200_show_gray_image(0, 0, (const uint8 *)mt9v03x_image, MT9V03X_W, MT9V03X_H, 188, 120, fazhi);
+                          mt9v03x_finish_flag = 0;
+
+
+                          int32 he=0,min=27000;
+                          for(i=0;i<187;i++)
+                          { for(int j=0;j<120;j++)   he=he+ mt9v03x_image[j][i];  if(he<min)     {  min=he;gaodian=i; }      he=0;      }
+
+                          ips200_show_int (0, 11*16, gaodian, 3);
+
+                        if(ZTJ<40)
+
+                        {  GDZLLD=1.0*(gaodian-94);
+                          if(GDZLLD>45.0)  GDZLLD=45.0;
+                          if(GDZLLD<-40.0)  GDZLLD=-40.0;}
+
+                    }
+
+
+        if(ZTJ==0)
+                      {encoder_data_1 = encoder_get_count(ENCODER_1);                              // 获取编码器计数
+                       encoder_clear_count(ENCODER_1);                                             // 清空编码器计数 LL XINGCHE
+
+                       ZLL=ZLL+encoder_data_1;
+                       ZLLD=(float)ZLL/522.0;
+                       encoder_data_2 = encoder_get_count(ENCODER_2);                              // 获取编码器计数
+                       encoder_clear_count(ENCODER_2);                                             // 清空编码器计数 LL XINGCHE
+                       LL=LL+encoder_data_2;
+                      }
+
+
+        switch(ZTJ)
+                  {
+                         case 0:    dianji(0,0);break;
+                         case 10:   LL=0;ii=0;LC[ii]=0; GEIDINGDAJIAO[ii]=attitude.yaw-0.015;dianji(2800,2800);ZTJ=20;ZLL=0;break;
+                         case 20:   encoder_data_2 = encoder_get_count(ENCODER_2);                              // 获取编码器计数
+                                    encoder_clear_count(ENCODER_2);                                             // 清空编码器计数 LL XINGCHE
+                                    LL=LL+encoder_data_2;
+                                    encoder_data_1 = encoder_get_count(ENCODER_1);                              // 获取编码器计数
+                                    encoder_clear_count(ENCODER_1);                                             // 清空编码器计数 LL XINGCHE
+                                    ZLL=ZLL+encoder_data_1;
+                                    ZLLD=(float)ZLL/522.0;
+                                    if((LL-LC[ii])>60)
+                                    {
+                                    ii=ii+1;LC[ii]=LL*1.022;if(ii>5) dianji(3000,3000);
+                                    GEIDINGDAJIAO[ii]=attitude.yaw-0.015;}
+                                    if(LL>70000)  { ZTJ=30;   dianji(0,0);     js=0;    }
+
+                                    if(gpio_get_level(KEY5)==0){  ZTJ=30;   dianji(0,0);     js=0;                                                   }
+
+                                    zhuanxiang();
+                                    system_delay_ms(5); break;
+                         case 30:   js=js+1; encoder_data_2 = encoder_get_count(ENCODER_2);                              // 获取编码器计数
+                                    encoder_clear_count(ENCODER_2);                                             // 清空编码器计数 LL XINGCHE
+                                    LL=LL+encoder_data_2;
+                                    encoder_data_1 = encoder_get_count(ENCODER_1);                              // 获取编码器计数
+                                    encoder_clear_count(ENCODER_1);                                             // 清空编码器计数 LL XINGCHE
+                                    ZLL=ZLL+encoder_data_1;
+                                    ZLLD=(float)ZLL/522.0;
+                                    if((LL-LC[ii])>60)   {
+                                    ii=ii+1;LC[ii]=LL*1.022;
+                                    GEIDINGDAJIAO[ii]=attitude.yaw-0.015;   }
+                                    else
+                                    {if(js>100)  { ii=ii+1;LC[ii]=LL*1.022; GEIDINGDAJIAO[ii]=attitude.yaw-0.015;  ZTJ=40;   dianji(0,0);   }   }
+                                    zhuanxiang();
+                                    system_delay_ms(5); break;
+
+                         case 40:  if(ii<270) dianji(-2900,-2900);
+                                    else  dianji(-2900,-3200);
+                                    if(ii<70) dianji(-2900,-3900);
+                                    GDZLLD=GEIDINGDAJIAO[ii];
+                                    encoder_data_2 = encoder_get_count(ENCODER_2);                              // 获取编码器计数
+                                    encoder_clear_count(ENCODER_2);                                             // 清空编码器计数 LL XINGCHE
+                                    LL=LL+encoder_data_2;
+                                    encoder_data_1 = encoder_get_count(ENCODER_1);                              // 获取编码器计数
+                                    encoder_clear_count(ENCODER_1);                                             // 清空编码器计数 LL XINGCHE
+                                    ZLL=ZLL+encoder_data_1;
+                                    ZLLD=(float)ZLL/522.0;
+                                    if(LL<LC[ii])
+                                    { ii=ii-1;  }
+                                    if(ii<2)    { ZTJ=50;LL=0;}
+                                    YAWfh();
+                                    system_delay_ms(5); break;
+                         case 50:   dianji(-2000,-2000);
+                                    encoder_data_2 = encoder_get_count(ENCODER_2);                              // 获取编码器计数
+                                    encoder_clear_count(ENCODER_2);                                             // 清空编码器计数 LL XINGCHE
+                                    LL=LL+encoder_data_2;
+                                    encoder_data_1 = encoder_get_count(ENCODER_1);                              // 获取编码器计数
+                                    encoder_clear_count(ENCODER_1);                                             // 清空编码器计数 LL XINGCHE
+                                    ZLL=ZLL+encoder_data_1;
+                                    ZLLD=(float)ZLL/522.0;
+                                    if(LL<-1000)  { ZTJ=60;dianji(0,0);}
+                                       tYAWfh();
+                                       system_delay_ms(5); break;
+                         case 60:       dianji(0,0);  break;
+                  }
+
+
+
+////////////////////////////////////////////
+        if(gpio_get_level(KEY4)==0)
+              {  ips200_show_string (0,11*16,"key4");
+                if(ZTJ==0) ZTJ=10;
+
+             // dianji(2000,2000);
+
+              }
+
+        if(gpio_get_level(KEY2)==0)
+
+                {       ips200_show_string (0,11*16,"key2");
+               // dianji(0,2000);
+                break;
+
+                }
+
+
+
+    }
+
+
+    uart_init(TSCI1302_UART, TSCI1302_BAUDRATE, UART3_TX_P15_6, UART3_RX_P15_7);
+
+    while (TRUE)
+    {
+        // 此处编写需要循环执行的代码
+
+
+               while(uart_query_byte(TSCI1302_UART, &recv_data) == TRUE)
+            {
+                       //uart_write_byte (TSCI1302_UART, recv_data);
+                        if(jsjs>100) jsjs=0;
+                        if((recv_data==0xfb)&&(JS[jsjs-4]=0x81))
+               {       ips200_show_int (0,160,  JS[jsjs-3], 3);
+               if(JS[jsjs-3]==4)  zzxd=1;
+               if(JS[jsjs-3]==5)  yzxd=1;
+               if(JS[jsjs-3]==6)  ygd=1;
+               if(JS[jsjs-3]==7)  jgd=1;
+               if(JS[jsjs-3]==8)  wd=1;
+               if(JS[jsjs-3]==9)  ssd=1;
+               if(JS[jsjs-3]==10)  cnzmd=1;
+               if(JS[jsjs-3]==11)  ysq=1;
+               if(JS[jsjs-3]==12){ztj=0;  md1s=1;}
+               if(JS[jsjs-3]==13){ztj=0;  md2s=1;}
+               if(JS[jsjs-3]==14){ztj=0;  md3s=1;}
+               if(JS[jsjs-3]==15){ztj=0;  md2x=1;}
+               if(JS[jsjs-3]==16){ztj=0;  md3x=1;}
+               if(JS[jsjs-3]==17){ztj=0;  md4x=1;}
+               if(JS[jsjs-3]==18){ztj=0;  cdmd=1;}
+               if(JS[jsjs-3]==19){ztj=0;  jcmd=1;}
+               if(JS[jsjs-3]==20){ztj=0;  jbmd=1;}
+               jsjs=0;
+                       }
+                        else { JS[jsjs] = recv_data;jsjs=jsjs+1;              }
+                    }
+
+
+               if(md1s==1)
+                        { pwm_init(FM, 2000, 0);
+                          pwm_set_duty(FM,1000);
+                          system_delay_ms(1000);
+                          pwm_init(FM, 2000, 0);
+                          pwm_set_duty(FM,0);
+                          md1s=0;
+                              }
+
+                        //////////2秒
+                        if(md2s==1)
+                        { pwm_init(FM, 2000, 0);
+                          pwm_set_duty(FM,1000);
+                          system_delay_ms(2000);
+                          pwm_init(FM, 2000, 0);
+                          pwm_set_duty(FM,0);
+                          md2s=0;
+                              }
+
+                        //////////3秒
+                        if(md3s==1)
+                        { pwm_init(FM, 2000, 0);
+                          pwm_set_duty(FM,1000);
+                          system_delay_ms(3000);
+                          pwm_init(FM, 2000, 0);
+                          pwm_set_duty(FM,0);
+                          md3s=0;
+                              }
+
+                        //////////2x
+                        if(md2x==1)
+                       {for(int i = 0; i < 2; i++)
+                       {pwm_init(FM, 2000, 0);
+                        pwm_set_duty(FM,1000); // 响
+                        system_delay_ms(1000);                 // 响300ms
+                        pwm_init(FM, 2000, 0);
+                        pwm_set_duty(FM,0); // 停
+                        system_delay_ms(1000);              // 延时1s
+                        }  md2x=0;   }
+
+                        //////////3x
+                        if(md3x==1)
+                        {for(int i = 0; i < 3; i++)
+                        {pwm_init(FM, 2000, 0);
+                         pwm_set_duty(FM,1000); // 响
+                         system_delay_ms(1000);                // 响300ms
+                         pwm_init(FM, 2000, 0);
+                         pwm_set_duty(FM,0); // 停
+                         system_delay_ms(1000);                // 延时1s
+                         }   md3x=0;  }
+                        //////////4x
+                        if(md4x==1)
+                        {for(int i = 0; i < 4; i++)
+                        {pwm_init(FM, 2000, 0);
+                         pwm_set_duty(FM,1000); // 响
+                         system_delay_ms(1000);               // 响300ms
+                         pwm_init(FM, 2000, 0);
+                         pwm_set_duty(FM,0); // 停
+                         system_delay_ms(1000);               // 延时1s
+                         }    md4x=0; }
+
+                        //////////cd
+                        if(cdmd==1)
+                        {for(int i = 0; i < 2; i++)
+                        {pwm_init(FM, 2000, 0);
+                         pwm_set_duty(FM,1000); // 响
+                         system_delay_ms(1000);                // 响300ms
+                         pwm_init(FM, 2000, 0);
+                         pwm_set_duty(FM,0); // 停
+                         system_delay_ms(1000);               // 延时1s
+                         pwm_init(FM, 2000, 0);
+                         pwm_set_duty(FM,1000); // 响
+                         system_delay_ms(3000);                // 响300ms
+                         pwm_init(FM, 2000, 0);
+                         pwm_set_duty(FM,0); // 停
+                         system_delay_ms(1000);               // 延时1s
+                         } cdmd=0;    }
+
+                        //////////jc
+                        if(jcmd==1)
+                        {for(int i = 0; i < 5; i++)
+                        {pwm_init(FM, 2000, 0);
+                         pwm_set_duty(FM,1000); // 响
+                         system_delay_ms(500);             // 响300ms
+                         pwm_init(FM, 2000, 0);
+                         pwm_set_duty(FM,0); // 停
+                         system_delay_ms(500);             // 延时1s
+                         }   jcmd=0;  }
+
+                        //////////jb
+                        if(jbmd==1)
+                        {for(int i = 0; i < 2; i++)
+                        {pwm_init(FM, 2000, 0);
+                         pwm_set_duty(FM,1000); // 响
+                         system_delay_ms(1000);
+                         pwm_init(FM, 2000, 0);
+                         pwm_set_duty(FM,0); // 停
+                         system_delay_ms(50);
+                         pwm_init(FM, 1000, 0);
+                         pwm_set_duty(FM,500); // 停
+                         system_delay_ms(1000);
+                         system_delay_ms(1000);// 延时1s
+                         pwm_init(FM, 1000, 0);
+                         pwm_set_duty(FM,0); // 停
+                         system_delay_ms(50);
+                         }  jbmd=0;   }
+
+                        //////////zzxd
+                        if(zzxd==1)
+                        {ips200_show_string (50,160, "zzxd");
+                        ztj=1;zzxd=0;}
+                        //////////yzxd
+                        if(yzxd==1)
+                        {ips200_show_string (50,160, "yzxd");
+                        ztj=2;yzxd=0;}
+                        //////////ygd
+                        if(ygd==1)
+                        {ips200_show_string (50,160, "ygd");
+                        ztj=5;ygd=0;}
+                        //////////jgd
+                        if(jgd==1)
+                        {ips200_show_string (50,160, "jgd");
+                        ztj=4;jgd=0;}
+                        //////////wd
+                        if(wd==1)
+                        {ips200_show_string (50,160, "wd");
+                        ztj=6;wd=0;}
+                        //////////ssd
+                        if(ssd==1)
+                        {ips200_show_string (50,160, "ssd");
+                        ztj=3;ssd=0;}
+                        //////////cnzmq
+                        if(cnzmd==1)
+                        {ips200_show_string (50,160, "cnzmd");
+                        ztj=7;cnzmd=0;}
+                        //////////ysq
+                        if(ysq==1)
+                        {ips200_show_string (50,160, "ysq");
+                        ztj=8;ysq=0;}
+
+
+
+        switch(ztj)
+        {
+            case 0:dot_matrix_screen_show_string("   "); // 清屏（三个空格）
+                        break;
+            case 1:
+               display_example1();
+               system_delay_ms(500);
+                  break;
+            case 2:
+                display_example2();
+                 system_delay_ms(50);
+                 break;
+             case 3:
+             display_example3();
+            system_delay_ms(50);
+               break;
+            case 4:
+              display_example4();
+              system_delay_ms(50);break;
+            case 5:
+            display_example5();
+            system_delay_ms(50);break;
+            case 6:
+             display_example6();
+            system_delay_ms(50);break;
+            case 7:
+            display_example7();
+            system_delay_ms(50);break;
+            case 8:
+           {display_example8();
+            system_delay_ms(50);}break;
+
+        }
+
+
+
+        // 此处编写需要循环执行的代码
+    }
+}
+void display_example0(void)
+{
+    dot_matrix_screen_set_brightness(5000);
+    if ((stime % 400) < 200) {
+        dot_matrix_screen_show_string("   ");
+    } else {
+        dot_matrix_screen_show_string("   "); // 清屏（三个空格）
+    }
+}
+void display_example1(void)
+{
+    dot_matrix_screen_set_brightness(5000);
+    if ((stime % 400) < 200) {
+        dot_matrix_screen_show_string("122");
+    } else {
+        dot_matrix_screen_show_string("   "); // 清屏（三个空格）
+    }
+}
+void display_example2(void)
+{
+    dot_matrix_screen_set_brightness(5000);
+    if ((stime % 400) < 200) {
+        dot_matrix_screen_show_string("220");
+    } else {
+        dot_matrix_screen_show_string("   "); // 清屏（三个空格）
+    }
+}
+void display_example3(void)
+{
+    dot_matrix_screen_set_brightness(5000);
+    if ((stime % 400) < 200) {
+        dot_matrix_screen_show_string("120");
+    } else {
+        dot_matrix_screen_show_string("   "); // 清屏（三个空格）
+    }
+}
+void display_example4(void)
+{
+    dot_matrix_screen_set_brightness(5000);
+    if ((stime % 400) < 200) {
+        dot_matrix_screen_show_string("456");
+    } else {
+        dot_matrix_screen_show_string("   "); // 清屏（三个空格）
+    }
+}
+void display_example5(void)
+{
+    dot_matrix_screen_set_brightness(5000);
+    if ((stime % 400) < 200) {
+        dot_matrix_screen_show_string("457");
+    } else {
+        dot_matrix_screen_show_string("   "); // 清屏（三个空格）
+    }
+}
+void display_example6(void)
+{
+    dot_matrix_screen_set_brightness(5000);
+    if ((stime % 400) < 200) {
+        dot_matrix_screen_show_string("458");
+    } else {
+        dot_matrix_screen_show_string("   "); // 清屏（三个空格）
+    }
+}
+void display_example7(void)
+{
+    dot_matrix_screen_set_brightness(5000);
+    if ((stime % 400) < 200) {
+        dot_matrix_screen_show_string("222");
+    } else {
+        dot_matrix_screen_show_string("   "); // 清屏（三个空格）
+    }
+}
+void display_example8(void)
+{
+    dot_matrix_screen_set_brightness(5000);
+    if ((stime % 400) < 200) {
+        dot_matrix_screen_show_string(" + ");
+    } else {
+        dot_matrix_screen_show_string("   "); // 清屏（三个空格）
+    }
+}
+//////////////////////////////////////////////////////
+IFX_INTERRUPT(cc60_pit_ch0_isr, 0, CCU6_0_CH0_ISR_PRIORITY)  //1毫秒
+{
+    interrupt_global_enable(0);                     //      ж Ƕ  
+    pit_clear_flag(CCU60_CH0);
+    imu963ra_get_acc();                                                         //   ȡ IMU963RA  ļ  ٶȲ     ֵ
+    imu963ra_get_gyro();
+    quaternion_update();     // 更新四元数
+
+    imu963ra_get_mag();                                                         //   ȡ IMU963RA  ĵشżƲ     ֵ
+}
+IFX_INTERRUPT(cc60_pit_ch1_isr, 0, CCU6_0_CH1_ISR_PRIORITY)
+{
+    interrupt_global_enable(0);                     //      ж Ƕ  
+    pit_clear_flag(CCU60_CH1);
+
+    //encoder_data_2 = encoder_get_count(ENCODER_2);                              // 获取编码器计数
+   // encoder_clear_count(ENCODER_2);                                             // 清空编码器计数 LL XINGCHE
+   // encoder_data_2=-encoder_data_2;
+  //  LL=LL+encoder_data_2;
+    pit_10ms_isr();
+
+
+
+   // FLAG10MS=1;
+}
+#pragma section all restore
+
+
+
+
+
+
+
+===== TABLE 1 =====
+ | 
+图3.1 车模官方图片 | 图3.2 车模原装电机
+
+===== TABLE 2 =====
+1 2 3 | C// 东西镜像翻转修正 corrected = 360.0f - corrected; if (corrected >= 360.0f) corrected -= 360.0f;
+
+===== TABLE 3 =====
+1 2 3 4 | Cfloat diff = corrected - mag_heading_deg; if (diff > 180.0f)       diff -= 360.0f; else if (diff < -180.0f) diff += 360.0f; mag_heading_deg += diff * 0.3f; // 0.3为滤波系数

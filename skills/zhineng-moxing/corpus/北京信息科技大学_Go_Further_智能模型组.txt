@@ -1,0 +1,2032 @@
+
+第二十一届全国大学生
+智能汽车竞赛
+
+技 术 报 告
+
+
+
+
+学    校：北京信息科技大学
+队伍名称：Go Further
+参赛队员：冯杨、王靖菡、蔡朝坤、刘博文、邵海鈺
+
+
+带队老师：张晓青、荆日星
+
+
+
+
+
+关于技术报告和研究论文使用授权的说明
+
+本人完全了解全国大学生智能汽车竞赛关于保留、使用技术报告和研究论文的规定，即：参赛作品著作权归参赛者本人。比赛组委会可以在相关主页上收录并公开参赛作品的设计方案、技术报告以及参赛模型车的视频、图像资料，并将相关内容编纂收录在组委会出版论文集中。
+
+        参赛队员签名：
+
+带队教师签名：
+日        期：          2026.8.9              
+
+
+
+
+
+
+
+引言
+随着社会科技的不断发展，电子科技的影响逐渐深入到各行各业之中，嵌入式的迅猛发展也为智能研究提供了更为广阔的平台。并且随着5G网络的到来，无人驾驶汽车的研究与发展步入了一个新的快车道。通过联合各种传感器和控制器组成的控制方式就成为了新的研究热点，控制算法和控制策略也显得更加重要。
+全国大学生智能汽车竞赛是国家教学质量与教学改革工程资助项目，通过使用德国英飞凌半导体公司生产的264单片机作为车载核心控制模块，增加道路传感器、摄像头、电机驱动电路以及编写相应的程序，制作出一个可以自主识别道路的汽车模型。因而该竞赛是涵盖了智能控制、模式识别、传感技术、汽车电子、电气、计算机、机械等多个学科的比赛，对学生的知识融合和实践能力的提高，具有良好的推动作用。
+本篇技术报告将从智能车的机械结构、硬件电路、算法设计等方面全面详细的介绍整个准备过程。分为整体设计思路、上下位机、开发环境、调试过程三个章节进行细节性的阐述。
+
+
+正文
+2.1整体设计思路
+根据竞赛规则要求，上位机采用香橙派Orange Pi 5开发板，搭载Linux操作系统及RK3588芯片，负责图像采集、道路识别、路径规划与控制指令下发。摄像头安装在整体车模上方并保持平视前方，用于实时获取车辆行驶区域的道路图像。下位机采用逐飞科技出品的Infineon（英飞凌）TC264微控制器核心板，外围电路根据车辆控制需求自主设计，负责接收并执行上位机发送的控制指令。
+软件方面，Orange Pi 5通过摄像头获取前方道路图像，并在Linux环境下完成图像预处理、传输及语义分割推理。基于Paddle深度学习框架的神经网络模型进行对图片进行训练，提取可行驶区域、道路边界等关键信息；再根据识别结果计算车辆的目标行驶轨迹，生成速度与转向控制指令，并发送至下位机。TC264对接收到的指令进行解析和处理，分别控制直流电机与舵机，实现车辆驱动与转向。基于Paddle深度学习框架的神经网络模型进行对图片进行训练，借助百度公司提供的Paddle_Lite端侧推理框架，对摄像头传入的数据进行特征识别并返回标签和具体位置。
+动力单元采用逐飞科技 C 车模原装适配的 380 型直流电机；电机配套使用逐飞科技测速 1024 线正交解码 Mini 迷你编码器及转接板，用于采集电机转速和转动方向信息，实现电机闭环控制。转向部分采用 C 车模套件配套舵机，并通过原装四杆机构驱动前轮，实现车辆转向角控制。
+2.2下位机电路设计
+由于使用的Infineon（英飞凌）TC264微控制器，需要对其外围电路进行设计。电路板包含了电压转换电路、电机驱动电路、电机控制电路、舵机控制电路、按键、电池电压检测电路等。
+2.2.1电源入口与总开关电路
+主板使用DB301V-5.0-2P-BU-S两芯接口接入 12 V 电源。Q2（HY19P03D）位于电源正端，配合滑动开关U11、10 kΩ 电阻 R38 与稳压二极管D2（BZT52C16）构成高边电源开关及栅源电压保护电路。该设计在接通电源后向主板提供 12 V 母线，同时降低反接、开关浪涌对后级电路的影响。另一路两芯接口 U15 将 12 V 单独引出至电机驱动板，便于将大电流动力回路与逻辑电源接口分开布置。
+
+图2.1 电源开关示意图
+2.2.2 5 V 降压电源电路
+U1采用SCT2450STER降压芯片，将 12 V 转换为 5 V。输入侧由 D1（SS54）及 C3（100 μF）、C4（4.7 μF）、C5（100 nF）抑制输入纹波；功率级由 L1（4.7 μH）、C2（220 μF）和 C7（47 μF）滤波。R2、R9 等反馈网络接至 FEEDBACK1引脚，用于闭环稳定输出，LED1 配合 R4 指示 5 V 电源状态。该路 5 V 为外设、无线串口及上位机供电接口提供电能。
+
+图2.2 5V降压电路原理图
+2.2.3 3.3V电源电路
+U8（RT9013-33GB）将 5 V 稳压为 VCC3V3，输入侧 C15（10 μF）、C16（100 nF）和输出侧 C17（10 μF）、C18（100 nF）完成去耦。LED3 与 R25 用于显示 3.3 V 电源状态。该电源为 TC264D 核心板的逻辑接口、编码器以及显示、按键等低压外设提供稳定供电。
+
+图2.3 3.3V电源电路
+2.2.4 舵机电路
+U5 采用 SCT2450STER 将 12 V 转换为舵机专用 VCCSTEER。L2（4.7 μH）、C10（220 μF）和 C14（47 μF）用于功率滤波，R12、R18（100 kΩ 可调电阻）和 R22 构成可调反馈网络，可根据舵机额定电压调整输出；LED2 指示电源状态，H3 为三线舵机接口。舵机供电独立于数字逻辑及电机功率回路，可降低转向动作时的电流波动对其他模块的干扰。
+
+图2.4 舵机电源电路
+
+2.2.5 电机驱动模块
+主板经 H6 输出两组控制信号，21.4、21.5 和 21.2、21.3 分别通过 R26～R29（100 Ω）接入驱动板。驱动板使用 U4（SN74HC125）缓冲 PH、EN 信号，并通过 R3～R6（10 kΩ）设置确定的下拉状态；U3 及 C11、C12 提供本地逻辑电源，P3 和 C14（220 μF）为功率级提供 12 V 输入与瞬态储能。每路电机采用由 U1 栅极驱动器和 Q1～Q4 四只 MOSFET 构成的全桥，MOTOR-A、MOTOR-B 接在两个桥臂中点之间。PH 决定电机电流方向，EN 接收 PWM 调速信号，nSLEEP 控制驱动器使能；电荷泵 CPH、CPL、VCP 与 C4 为高边 MOSFET 提供驱动电压，P1、P2 分别引出两路电机输出。该结构支持左右后轮独立正反转、调速和闭环控制。
+
+
+图2.5 电机电源接口电路
+
+
+
+图2.6 有刷电机电路
+
+
+
+图2.7 电机信号输入电路
+
+2.2.6编码器模块
+H4、H5 分别为左右后轮编码器接口，均提供 VCC3V3 和 GND，并引出两路正交相位信号。左编码器接至 TC264D 的 33.6、33.7 引脚，右编码器接至 20.8、20.9 引脚。TC264D 根据 A、B 相计数及相位关系获得轮速和转动方向，为左右电机速度闭环、差速补偿与异常停车提供反馈。
+
+
+图2.8 编码器原理图
+
+2.2.7串口通信电路
+USB-C 接口 U12 的 CC1、CC2 通过 R31、R32（5.1 kΩ）下拉，配置为受电端；D+、D- 经 R33、R34（10 Ω）串联后连接至 CH340N（U13），由其完成 USB 与 UART 转换。CH340N 的 RXD、TXD 分别接至 TC264D 的 10.5、10.6 引脚，C19～C21 用于去耦，LED5 指示 USB 5 V 状态。无线串口接口同时引出 10.5、10.6、10.2、11.6、5 V 和 GND，可用于上位机命令传输、无线调参及运行状态回传。
+
+图2.9 串口转USB电路
+	
+2.2.8显示屏电路
+为了方便调试，我们设计了显示屏模块，用以显示当前编码器，pwm和舵机数值。
+
+图2.10 显示屏电路
+2.2.9按键电路
+为启动程序调试，我们增加了四个按键。连接到下位机上，实际使用中，按下按键后，速度值和转向值发生变化。
+
+
+图2.11 按键电路
+2.2.10蜂鸣器电路
+
+
+图2.12 蜂鸣器电路
+2.2.11电路板设计思路
+电路板为自主设计。由于I车模有左右两侧可以装电路板的位置，因此，为了拓展功能和平衡重量，我们设计了主副两块电路板（副板未用）。主电路板为核心板与其外围电路，其中集成了电机、舵机驱动，电量计，陀螺仪（未使用），USB转串口（上下位机通信）。主电路板上除了基本的供电接口，还设置有电机编码器的4Pin接口，用来读取电机转速，对电机实现闭环控制。
+
+
+图2.13 车模结构
+
+
+
+图2.14 电路板3D模型
+
+
+
+
+图2.15 电路板实物打板
+
+
+
+图2.16 电路板顶层绘图
+
+
+
+
+图2.17 底层绘图
+2.3上位机程序设计
+上位机采用香橙派Orange Pi 5开发板，其核心处理器为RK3588，可满足目标检测、道路语义分割及控制决策的实时运行需求。系统采集的赛道图像数据集使用百度智能云自动标注工具完成标注；目标检测模型和道路语义分割模型均基于百度飞桨PaddleDetection套件进行训练，并转换为适用于RK3588平台部署的RKNN模型。
+运行时，上位机从共享内存读取摄像头图像，利用多个NPU核并行执行目标检测和道路语义分割：目标检测识别红绿灯、车辆、行人、路口标志等特殊元素；语义分割提取可行驶道路区域并拟合赛道中心线。随后，程序将赛道循迹结果和特殊元素状态机决策融合，生成舵机PWM与电机目标速度，并通过串口发送至下位机。
+2.3.1赛道图像特点与程序设计基本思路
+本工程使用 PP-LiteSeg 语义分割网络直接输出每个像素的类别。道路分割模型的输入尺寸固定为 384×384，模型输出再按原始画面尺寸恢复。分割结果中类别 ID 为 1 的区域被视为可行驶道路。程序只保留画面下部主要区域，并通过形态学处理和最大连通域筛选去除噪声，使道路区域更加稳定。程序整体采用“并行感知、状态机决策”的设计思想：道路语义分割线程负责输出道路区域、左右边界和中心线；目标检测线程负责识别红绿灯、路口标志、车辆、行人、停车标志等特殊元素；特殊任务状态机根据检测结果决定是否减速、停车、右转或绕行；最终控制命令由串口发送给下位机执行。
+这种结构使普通循迹与特殊元素处理相互独立，同时又能通过状态机统一协调。
+
+
+图2.18 目标检测标注
+
+2.3.2赛道识别
+道路语义分割网络输出道路类别图后，程序将类别为道路的像素转换为二值道路掩膜。为减少远处背景和无效区域的影响，图像上方约 38% 的区域不参与道路计算。
+随后程序从图像底部向上逐行扫描，在每一行中寻找连续的道路像素区间。取每行最长的连续道路区域作为有效赛道区域，并记录其左边界、右边界及中心点。通过多行扫描可得到赛道左右边线点集及中心点集。
+对于中心点集，程序采用二次贝塞尔曲线进行拟合，而不是四阶贝塞尔曲线。拟合后，在图像高度约 72% 的前视位置选取目标点，计算该点与图像中心之间的横向偏差，同时计算曲线当前方向角。为了减少识别结果随图像波动造成的转向抖动，程序对贝塞尔控制点进行了 EMA 指数滑动平均滤波。
+道路中心线相对于相机视场中心的偏差，构成车辆横向循迹误差；道路曲线的方向角反映车辆未来行驶方向。二者共同用于生成基础转向命令。
+在岔路场景下，程序还会根据道路掩膜横向边界变化检测分叉点。当特殊任务状态机进入右转状态时，程序对岔路处的边界点进行修补，以避免道路分叉导致中心线跳变。
+
+图2.19 道路语义分割标注
+2.3.3舵机角度控制和电机速度控制
+上位机首先根据道路中心线生成基础控制命令。转向量由横向误差和道路航向角共同决定：转向量 = 横向偏差归一化值 + 航向角修正项其中，航向角修正系数默认为 0.3。计算结果被限制在规定范围内，再映射为舵机 PWM。当前标定值为：舵机中位 PWM 为 808，左转极限为 898，右转极限为 718。当道路中心线无效时，上位机会将舵机回正，并下发较低速度，避免车辆因识别失效而产生大幅转向。速度控制分为上、下位机两部分：上位机根据任务状态给出目标速度。下位机每 5 ms 读取左右编码器速度反馈，分别通过左右轮速度 PID 控制电机 PWM。下位机还根据舵机转角生成左右轮目标差速，并利用差速 PID 进行修正，使车辆转弯时左右后轮速度匹配实际转向需求。上位机通过串口以如下格式发送控制命令：(808,-30)当前上位机约每 40 ms 发送一次命令；下位机若连续约 500 ms 未收到有效指令，则自动将速度置零、舵机回中。
+2.3.4岔路口识别原理
+岔路口在道路分割图中的主要特征是：原本连续的道路区域在某些扫描行中由两个边界跳变点，变为三个或四个跳变点，即道路区域出现分叉或局部扩宽。程序逐行统计道路掩膜的黑白跳变位置。当连续多行检测到道路边界数量由正常的两个变化为三个或四个时，即可判断该区域可能存在岔路口，并记录分叉点位置。
+
+图2.20 岔路检测
+2.4开发环境介绍
+由于使用英飞凌生产的TC264单片机芯片，开发环境选择AURIX，基于逐飞科技提供第底层代码进行开发。主要包括核心PID控制算法、上下位机通信、电机的闭环控制算法、舵机驱动、编码器读数、按键控制、中断等。
+
+
+图2.21 AURIX软件示意图
+
+识别程序Python语言进行编写。程序编写团队使用VSCODE。VSCODE有丰富的插件，能够提供自动补全、颜色区分等功能。
+
+
+图2.22 VSCODE开发示意
+
+AI模型的训练我们采用赛事提供的AI_STUDIO，采用Paddle深度学习框架的神经网络模型对图片进行训练。
+
+图2.23 百度智能云标注
+
+
+图2.24 百度飞桨模型训练
+2.5调试过程介绍
+2.5.1软件调试
+为提高系统调试与现场适应效率，项目将主要可调参数集中定义在统一的配置文件中，避免在多个程序模块中重复修改。配置内容包括目标速度、舵机控制参数、串口通信参数、道路识别与视场范围、图像处理阈值、目标检测模型输入尺寸、分割周期以及各功能模块使能状态等，详情见下：
+
+图2.25 参数调试
+所有数据都是依据现实情况进行调整。
+2.5.2硬件调试
+a)硬件选型
+底盘部分的主要部件包括有轮胎、悬架、电池、转向舵机、驱动电机、差速器、底盘碳板七部分构成。其中电池、转向舵机、驱动电机、轮胎采用C车模原装设计，车身结构由自己设计。
+
+
+图2.26 C车模
+
+b)定位修改
+本次比赛为虚拟与现实深度融合的任务环境，车辆在真实物理赛道内行驶，同时系统会实时叠加虚拟行人、虚拟道路标识、虚拟障碍物、虚拟目标物（如金币、特效奖励、任务道具）等信息。在平时调试过程中小车的定位问题我们采用在车上安装Tag码的方案来解决。Tag码为30cm * 30cm，为了使tag码平稳牢固地固定在小车上，我们重新设计了车模底板，在底板上打孔，通过六角立柱将定位码固定在车架上。在实际比赛时采用官方提供的定位模块来采集小车位置，为了放置官方的定位模块我们调整了上下位机板的放置，自己设计车模，并在车模中心设计了专门安装定位底座的模块。
+
+
+
+图2.27 固定tag码小车
+
+c)摄像头固定
+RK3588板卡自带摄像头，摄像头尺寸只有1.7cm * 1.4cm，为了固定摄像头，我们设计了专门的支架和保护壳。
+
+图2.28 3D打印摄像头支架
+
+
+
+
+
+结论
+在这份报告中，我们主要从智能车的机械结构、硬件电路、控制算法、调试方法等介绍了我们准备比赛的整个过程。作为全新的战队首次参加智能车竞赛完全模型组别，对于我们有太多的未知，但是我们不仅没有因此而退缩，反而迎难而上，付出大量的时间和精力，从一点一滴做起，刻苦钻研各项技术，队员之间密切配合、互相勉励，始终不言放弃，我们通过此次比赛学到了团队合作的重要性以及众多相关的技术知识。
+智能车是培养大学生综合动手能力的一个很好的、很成熟的平台，在比赛里我们不仅需要编程能力，还需要对车辆机械结构有着较深的理解，也需要熟悉各种传感器和电路的性能。智能车比赛中最重要的是需要足够多的创新能力和想法，国家已经把创新放在了核心位置，如今的竞赛一方面是在考验大学生的基本知识，更是在考验每一个参赛大学生的创新能力，所以只有创新才可以从全国大学生中脱颖而出。
+我们团队五个人并没有一帆风顺，但我们不惧艰难，苦难与折磨只会让我们更加的强大。
+希望这篇技术报告会对未来参与智能车这项比赛的同学有所帮助，也祝愿他们可以在比赛中收获快乐。
+
+参考文献
+[1] 童诗白，华成英．模拟电子技术基础[M]．北京. 高等教育出版社．2000
+[2] 邵贝贝. 嵌入式实时操作系统[LC／OS-Ⅱ(第2版)[M]. 北京．清华大学出版社．2004
+[3] 张文春．汽车理论[M]．北京．机械工业出版社．2005
+[4] 雷霏霖,梁志毅.基于CMOS传感器 OV7620 采集系统设计[J].电子测量技术,2008,12(31):110-112.
+[5] 王晓华. TensorFlow 2.0深度学习应用实践. 第2版 ed. Print.
+[6] 郭芳,曹桂琴.数据结构基础[M].大连：大连理工大学出版社，1994.
+[7] 邵贝贝.单片机嵌入式应用的在线开发方法[M].北京:清华大学出版社,2004.
+[8] 胡寿松.自动控制原理(第六版)[M].科学出版社,2014.
+[9] 阎石.数字电子技术基础[M].北京:高等教育出版社,1998.
+[10] 谭浩强.C程序设计[M].北京:清华大学出版社,2005.
+[11] 黄友锐. PID控制器参数整定与实现. Print.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+附录
+程序源代码
+上位机
+from __future__ import annotations
+
+import os
+import struct
+import threading
+import time
+from dataclasses import dataclass
+from multiprocessing import resource_tracker, shared_memory
+from typing import Optional
+
+import cv2
+import numpy as np
+
+from lane_center import EmaSmoother, LaneConfig, LaneResult, draw_lane_result, process_road_segmentation
+from ppseg_road import DEFAULT_SEG_MODEL_PATH, PPSegConfig, PPSegRoadInfer
+from detector_ext import InferWrapExt
+from special_tasks import (
+    SpecialTaskConfig,
+    SpecialTaskController,
+    detections_from_dicts,
+)
+from vehicle_control import (
+    SerialControlSender,
+    VehicleControlCommand,
+    VehicleControlConfig,
+    build_control_command,
+)
+
+SHM_NAME = "shm_ar_video"
+SHM_HEADER_SIZE = 16
+
+DET_MODEL_PATH = "/home/orangepi/Desktop/setupUI/infer_wrap/base/model/rknn_lt.rknn"
+SEG_MODEL_PATH = DEFAULT_SEG_MODEL_PATH
+
+@dataclass(frozen=True)
+class RuntimeConfig:
+    detection_tpes: int = 2
+    segmentation_min_interval_s: float = 0.04
+    show_window: bool = True
+    show_road_binary: bool = False
+    road_alpha: float = 0.25
+    wait_no_frame_s: float = 0.002
+
+    @classmethod
+    def from_env(cls) -> "RuntimeConfig":
+        return cls(
+            detection_tpes=_env_int("DET_TPES", cls.detection_tpes),
+            segmentation_min_interval_s=_env_float("SEG_INTERVAL", cls.segmentation_min_interval_s),
+            show_window=_env_bool("SHOW_WINDOW", cls.show_window),
+            show_road_binary=_env_bool("SHOW_ROAD_BINARY", cls.show_road_binary),
+            road_alpha=_env_float("ROAD_ALPHA", cls.road_alpha),
+        )
+
+def _env_bool(name: str, default: bool) -> bool:
+    raw = os.environ.get(name)
+    if raw is None:
+        return default
+    return raw.strip().lower() not in {"0", "false", "no", "off", "disable", "disabled"}
+
+def _env_int(name: str, default: int) -> int:
+    raw = os.environ.get(name)
+    if raw is None:
+        return default
+    try:
+        return int(raw)
+    except ValueError:
+        return default
+
+def _env_float(name: str, default: float) -> float:
+    raw = os.environ.get(name)
+    if raw is None:
+        return default
+    try:
+        return float(raw)
+    except ValueError:
+        return default
+
+class LatestSegmentationWorker:
+    def __init__(self, seg_model_path: str, lane_cfg: LaneConfig, min_interval_s: float):
+        self.seg_model_path = seg_model_path
+        self.lane_cfg = lane_cfg
+        self.min_interval_s = min_interval_s
+        self._ema_smoother = EmaSmoother(alpha=lane_cfg.ema_alpha)
+        self._condition = threading.Condition()
+        self._pending_frame: Optional[np.ndarray] = None
+        self._pending_frame_id: int = 0
+        self._latest_result: Optional[LaneResult] = None
+        self._latest_frame_id: int = 0
+        self._latest_error: Optional[str] = None
+        self._task_state: str = "NORMAL"
+        self._running = False
+        self._thread: Optional[threading.Thread] = None
+
+    def start(self) -> None:
+        self._running = True
+        self._thread = threading.Thread(target=self._run, name="pp_liteseg_worker", daemon=True)
+        self._thread.start()
+
+    def submit(self, frame_id: int, frame_bgr: np.ndarray) -> None:
+        with self._condition:
+            self._pending_frame_id = frame_id
+            self._pending_frame = frame_bgr.copy()
+            self._condition.notify()
+
+    def latest(self) -> tuple[int, Optional[LaneResult], Optional[str]]:
+        with self._condition:
+            return self._latest_frame_id, self._latest_result, self._latest_error
+
+    def set_task_state(self, task_state: str) -> None:
+        with self._condition:
+            self._task_state = str(task_state)
+
+    def stop(self) -> None:
+        with self._condition:
+            self._running = False
+            self._condition.notify_all()
+        if self._thread is not None:
+            self._thread.join(timeout=2.0)
+
+    def _run(self) -> None:
+        seg_infer: Optional[PPSegRoadInfer] = None
+        last_infer_t = 0.0
+        try:
+            seg_infer = PPSegRoadInfer(PPSegConfig(model_path=self.seg_model_path, road_class_id=1))
+            while True:
+                with self._condition:
+                    while self._running and self._pending_frame is None:
+                        self._condition.wait(timeout=0.2)
+                    if not self._running:
+                        return
+                    frame_id = self._pending_frame_id
+                    frame = self._pending_frame
+                    task_state = self._task_state
+                    self._pending_frame = None
+
+                elapsed = time.perf_counter() - last_infer_t
+                if elapsed < self.min_interval_s:
+                    time.sleep(self.min_interval_s - elapsed)
+
+                seg_map = seg_infer.infer_seg_map(frame)
+                lane_result = process_road_segmentation(seg_map, frame.shape, self.lane_cfg, task_state=task_state)
+                self._ema_smoother.smooth(lane_result, self.lane_cfg)
+                last_infer_t = time.perf_counter()
+
+                with self._condition:
+                    self._latest_frame_id = frame_id
+                    self._latest_result = lane_result
+                    self._latest_error = None
+        except Exception as exc:
+            with self._condition:
+                self._latest_error = str(exc)
+        finally:
+            if seg_infer is not None:
+                seg_infer.release()
+
+def create_detector(model_path: str, tpes: int):
+    return InferWrapExt(model_dir=os.path.dirname(model_path), TPEs=tpes)
+
+def remove_shm_from_resource_tracker() -> None:
+    try:
+        resource_tracker.unregister("/" + SHM_NAME, "shared_memory")
+    except Exception:
+        pass
+
+def read_frame_from_shm(shm: shared_memory.SharedMemory) -> tuple[int, np.ndarray]:
+    header = bytes(shm.buf[:SHM_HEADER_SIZE])
+    frame_id, w, h = struct.unpack("QII", header)
+    size = w * h * 3
+    view = np.ndarray(
+        (h, w, 3),
+        dtype=np.uint8,
+        buffer=shm.buf[SHM_HEADER_SIZE: SHM_HEADER_SIZE + size],
+    )
+    frame = view.copy()
+    del view
+    frame = cv2.flip(frame, 0)
+    frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+    return frame_id, frame
+
+def run_detection(detector, frame_bgr: np.ndarray):
+    try:
+        det_frame, detections, ok = detector.infer(frame_bgr)
+        if ok and det_frame is not None:
+            return det_frame, detections_from_dicts(detections), True
+    except Exception as exc:
+        print(f"[WARN] detection failed: {exc}")
+    return frame_bgr.copy(), [], False
+
+def draw_status(
+    image_bgr: np.ndarray,
+    fps: float,
+    det_ok: bool,
+    lane_result: Optional[LaneResult],
+    control_command: VehicleControlCommand,
+    task_state: str,
+    seg_frame_age: int,
+    seg_error: Optional[str],
+) -> None:
+    lane_ok = bool(lane_result and lane_result.centerline.valid)
+    center_points = len(lane_result.points.center) if lane_result is not None else 0
+    h, w = image_bgr.shape[:2]
+    status = (
+        f"FPS:{fps:.1f} SIZE:{w}x{h} DET:{'OK' if det_ok else 'FAIL'} "
+        f"CENTER:{'OK' if lane_ok else 'WAIT'} PTS:{center_points} TASK:{task_state}"
+    )
+    if seg_frame_age >= 0:
+        status += f" SEG_AGE:{seg_frame_age}"
+    if seg_error:
+        status += " SEG_ERR"
+    cv2.putText(image_bgr, status, (10, 28), cv2.FONT_HERSHEY_SIMPLEX, 0.65, (0, 255, 0), 2)
+
+    if lane_ok:
+        centerline = lane_result.centerline
+        text = (
+            f"ERR:{centerline.error_px:+.1f}px HEAD:{centerline.heading_deg:+.1f}deg "
+            f"PWM:{control_command.steer_pwm} SPEED:{control_command.speed}"
+        )
+        cv2.putText(image_bgr, text, (10, 56), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 2)
+    elif seg_error:
+        cv2.putText(image_bgr, seg_error[:80], (10, 56), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1)
+
+def main() -> None:
+    runtime_cfg = RuntimeConfig.from_env()
+    control_cfg = VehicleControlConfig.from_env()
+    lane_cfg = LaneConfig(road_class_id=1)
+    task_controller = SpecialTaskController(SpecialTaskConfig())
+
+    det_model = os.environ.get("DET_MODEL_PATH", DET_MODEL_PATH)
+    seg_model = os.environ.get("SEG_MODEL_PATH", SEG_MODEL_PATH)
+
+    print("Client Ready. Waiting for Server...")
+    print(f"Detection model: {det_model}")
+    print(f"Segmentation model: {seg_model}")
+    print("Segmentation input size: 384x384")
+    print(f"Display window: {'on' if runtime_cfg.show_window else 'off'}")
+    print(
+        f"Serial control: {'on' if control_cfg.serial_enabled else 'off'} "
+        f"{control_cfg.serial_port} @ {control_cfg.serial_baudrate}"
+    )
+
+    detector = create_detector(det_model, runtime_cfg.detection_tpes)
+    seg_worker = LatestSegmentationWorker(seg_model, lane_cfg, runtime_cfg.segmentation_min_interval_s)
+    control_sender = SerialControlSender(control_cfg)
+    seg_worker.start()
+    control_sender.open()
+
+    shm = None
+    try:
+        while True:
+            try:
+                if shm is None:
+                    try:
+                        shm = shared_memory.SharedMemory(name=SHM_NAME)
+                        remove_shm_from_resource_tracker()
+                        print("Connected to shared memory.")
+                    except FileNotFoundError:
+                        time.sleep(1.0)
+                        continue
+
+                last_frame_id = 0
+                fps_t = time.perf_counter()
+                fps_n = 0
+                cur_fps = 0.0
+                last_logged_size = None
+
+                while True:
+                    frame_id, frame = read_frame_from_shm(shm)
+                    if frame_id == last_frame_id:
+                        time.sleep(runtime_cfg.wait_no_frame_s)
+                        if runtime_cfg.show_window and cv2.waitKey(1) == 27:
+                            raise KeyboardInterrupt
+                        continue
+                    last_frame_id = frame_id
+                    frame_h, frame_w = frame.shape[:2]
+                    current_size = (frame_w, frame_h)
+                    if current_size != last_logged_size:
+                        print(f"Processing frame size: {frame_w}x{frame_h}")
+                        last_logged_size = current_size
+
+                    now = time.perf_counter()
+                    fps_n += 1
+                    if now - fps_t >= 1.0:
+                        cur_fps = fps_n / (now - fps_t)
+                        fps_n = 0
+                        fps_t = now
+
+                    seg_worker.submit(frame_id, frame)
+                    display, detections, det_ok = run_detection(detector, frame)
+
+                    seg_frame_id, lane_result, seg_error = seg_worker.latest()
+                    if lane_result is not None:
+                        draw_lane_result(display, lane_result, road_alpha=runtime_cfg.road_alpha)
+                        if runtime_cfg.show_window and runtime_cfg.show_road_binary:
+                            cv2.imshow("road_binary", lane_result.road_mask)
+
+                    lane_command = build_control_command(lane_result, control_cfg)
+                    control_command = task_controller.update(detections, lane_command, frame.shape)
+                    seg_worker.set_task_state(task_controller.state.value)
+                    control_sender.send(control_command)
+
+                    seg_age = int(frame_id - seg_frame_id) if seg_frame_id else -1
+                    draw_status(
+                        display,
+                        cur_fps,
+                        det_ok,
+                        lane_result,
+                        control_command,
+                        task_controller.state.value,
+                        seg_age,
+                        seg_error,
+                    )
+
+                    if runtime_cfg.show_window:
+                        cv2.imshow("AR Detection + Road Segmentation + Bezier Lane", display)
+                        if cv2.waitKey(1) == 27:
+                            raise KeyboardInterrupt
+
+            except (ValueError, struct.error, BufferError):
+                print("Connection lost... Waiting...")
+                if shm is not None:
+                    shm.close()
+                    shm = None
+                cv2.destroyAllWindows()
+                time.sleep(1.0)
+    except KeyboardInterrupt:
+        print("\nClient Stop.")
+    finally:
+        seg_worker.stop()
+        control_sender.close()
+        if hasattr(detector, "release"):
+            try:
+                detector.release()
+            except Exception as exc:
+                print(f"[WARN] detector release failed: {exc}")
+        if shm is not None:
+            try:
+                shm.close()
+            except Exception:
+                pass
+        cv2.destroyAllWindows()
+
+if __name__ == "__main__":
+    main()
+from __future__ import annotations
+import os
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Optional, Sequence
+
+import cv2
+import numpy as np
+
+DEFAULT_SEG_MODEL_PATH = "/home/orangepi/Desktop/setupUI/seg_python/model/pp_liteseg.rknn"
+
+@dataclass(frozen=True)
+class PPSegConfig:
+    model_path: str = DEFAULT_SEG_MODEL_PATH
+    input_size: tuple[int, int] = (384, 384)
+    core_mask: Optional[int] = None
+    road_class_id: int = 1
+
+def preprocess_bgr(image_bgr: np.ndarray, input_size: tuple[int, int] = (384, 384)) -> np.ndarray:
+    image_rgb = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2RGB)
+    resized = cv2.resize(image_rgb, input_size, interpolation=cv2.INTER_LINEAR)
+    return np.expand_dims(resized, axis=0).astype(np.uint8)
+
+def output_to_seg_map(outputs: Sequence[np.ndarray] | np.ndarray, original_shape: Sequence[int]) -> np.ndarray:
+    output = outputs[0] if isinstance(outputs, (list, tuple)) else outputs
+    arr = np.asarray(output)
+
+    if arr.ndim == 4:
+        if arr.shape[1] > 1:
+            seg = np.argmax(arr[0], axis=0)
+        else:
+            seg = arr[0, 0]
+    elif arr.ndim == 3:
+        if arr.shape[0] > 1 and arr.shape[0] < arr.shape[-1]:
+            seg = np.argmax(arr, axis=0)
+        else:
+            seg = arr[0]
+    elif arr.ndim == 2:
+        seg = arr
+    else:
+        raise ValueError(f"Unsupported segmentation output shape: {arr.shape}")
+
+    h, w = int(original_shape[0]), int(original_shape[1])
+    if seg.shape[:2] != (h, w):
+        seg = cv2.resize(seg.astype(np.float32), (w, h), interpolation=cv2.INTER_NEAREST)
+    return seg.astype(np.uint8)
+
+def seg_map_to_road_mask(seg_map: np.ndarray, road_class_id: int = 1) -> np.ndarray:
+    mask = np.zeros(seg_map.shape[:2], dtype=np.uint8)
+    mask[seg_map == road_class_id] = 255
+    return mask
+
+def resolve_seg_model_path(model_path: str, search_root: Optional[str] = None) -> str:
+    requested = Path(model_path)
+    if requested.is_file():
+        return str(requested)
+
+    if requested.is_dir():
+        matches = sorted(requested.glob("*.rknn"))
+        if matches:
+            return str(matches[0])
+
+    root = Path(search_root) if search_root is not None else Path(__file__).resolve().parent
+    candidates = [
+        root / "seg_python" / "mode" / "pp_liteseg.rknn",
+        root / "seg_python" / "model" / "pp_liteseg.rknn",
+        root / "seg_python" / "model" / "pp_liteseg1.rknn",
+        root / "model" / "pp_liteseg.rknn",
+        root / "model" / "pp_liteseg1.rknn",
+    ]
+    for candidate in candidates:
+        if candidate.is_file():
+            return str(candidate)
+
+    search_dirs = [
+        root / "seg_python" / "model",
+        root / "seg_python" / "mode",
+        root / "model",
+    ]
+    for directory in search_dirs:
+        if directory.is_dir():
+            matches = sorted(directory.glob("*.rknn"))
+            if matches:
+                return str(matches[0])
+
+    searched = [str(requested)] + [str(path) for path in candidates] + [str(path) for path in search_dirs]
+    raise FileNotFoundError("Segmentation RKNN model not found. Searched: " + "; ".join(searched))
+
+class PPSegRoadInfer:
+    def __init__(self, config: PPSegConfig = PPSegConfig()):
+        resolved_model_path = resolve_seg_model_path(config.model_path)
+
+        from rknnlite.api import RKNNLite
+
+        self.config = config
+        self._rknn = RKNNLite()
+        ret = self._rknn.load_rknn(resolved_model_path)
+        if ret != 0:
+            raise RuntimeError(f"load_rknn failed for {resolved_model_path}: {ret}")
+
+        core_mask = config.core_mask
+        if core_mask is None:
+            core_mask = RKNNLite.NPU_CORE_2
+        ret = self._rknn.init_runtime(core_mask=core_mask)
+        if ret != 0:
+            raise RuntimeError(f"init_runtime failed for {resolved_model_path}: {ret}")
+
+    def infer_seg_map(self, image_bgr: np.ndarray) -> np.ndarray:
+        original_shape = image_bgr.shape[:2]
+        input_data = preprocess_bgr(image_bgr, self.config.input_size)
+        outputs = self._rknn.inference(inputs=[input_data])
+        return output_to_seg_map(outputs, original_shape)
+
+    def infer_road_mask(self, image_bgr: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+        seg_map = self.infer_seg_map(image_bgr)
+        road_mask = seg_map_to_road_mask(seg_map, self.config.road_class_id)
+        return seg_map, road_mask
+
+    def release(self) -> None:
+        if getattr(self, "_rknn", None) is not None:
+            self._rknn.release()
+            self._rknn = None
+
+    def __enter__(self) -> "PPSegRoadInfer":
+        return self
+
+    def __exit__(self, exc_type, exc, tb) -> None:
+        self.release()
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from typing import List, Optional, Sequence, Tuple
+
+import cv2
+import numpy as np
+
+Point = Tuple[float, float]
+
+@dataclass(frozen=True)
+class LaneConfig:
+    road_class_id: int = 1
+    roi_top_ratio: float = 0.38
+    scan_step: int = 6
+    min_road_width_ratio: float = 0.08
+    max_road_width_ratio: float = 0.98
+    morph_kernel_size: int = 5
+    min_valid_points: int = 8
+    lookahead_y_ratio: float = 0.72
+    bezier_samples: int = 80
+    ema_alpha: float = 0.4
+    fork_confirm_rows: int = 3
+
+@dataclass
+class LanePoints:
+    left: List[Point] = field(default_factory=list)
+    right: List[Point] = field(default_factory=list)
+    center: List[Point] = field(default_factory=list)
+
+@dataclass
+class BezierCenterline:
+    valid: bool
+    control_points: Optional[np.ndarray] = None
+    curve_points: np.ndarray = field(default_factory=lambda: np.empty((0, 2), dtype=np.float32))
+    lookahead_point: Optional[Point] = None
+    error_px: float = 0.0
+    error_norm: float = 0.0
+    heading_deg: float = 0.0
+
+@dataclass
+class LaneResult:
+    road_mask: np.ndarray
+    points: LanePoints
+    centerline: BezierCenterline
+    fork_point: Optional[Point] = None
+
+def keep_largest_component(binary_mask: np.ndarray) -> np.ndarray:
+    if binary_mask.size == 0 or int(binary_mask.max()) == 0:
+        return binary_mask
+
+    num_labels, labels, stats, _ = cv2.connectedComponentsWithStats(binary_mask, connectivity=8)
+    if num_labels <= 1:
+        return binary_mask
+
+    areas = stats[1:, cv2.CC_STAT_AREA]
+    max_label = int(np.argmax(areas)) + 1
+    largest = np.zeros_like(binary_mask)
+    largest[labels == max_label] = 255
+    return largest
+
+def build_road_mask(seg_map: np.ndarray, frame_shape: Sequence[int], cfg: LaneConfig) -> np.ndarray:
+    h, w = int(frame_shape[0]), int(frame_shape[1])
+    if seg_map is None:
+        return np.zeros((h, w), dtype=np.uint8)
+
+    seg = np.asarray(seg_map)
+    if seg.ndim == 3:
+        seg = np.squeeze(seg)
+    if seg.shape[:2] != (h, w):
+        seg = cv2.resize(seg.astype(np.uint8), (w, h), interpolation=cv2.INTER_NEAREST)
+
+    road_mask = np.zeros((h, w), dtype=np.uint8)
+    road_mask[seg == cfg.road_class_id] = 255
+
+    roi_top = int(h * cfg.roi_top_ratio)
+    road_mask[:roi_top, :] = 0
+
+    k = max(1, int(cfg.morph_kernel_size))
+    if k >= 3:
+        if k % 2 == 0:
+            k += 1
+        kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (k, k))
+        road_mask = cv2.morphologyEx(road_mask, cv2.MORPH_CLOSE, kernel, iterations=1)
+        road_mask = cv2.morphologyEx(road_mask, cv2.MORPH_OPEN, kernel, iterations=1)
+
+    return keep_largest_component(road_mask)
+
+def largest_continuous_segment(xs: np.ndarray) -> Optional[Tuple[int, int, int]]:
+    if xs.size == 0:
+        return None
+
+    splits = np.where(np.diff(xs) > 1)[0] + 1
+    segments = np.split(xs, splits)
+    best = max(segments, key=lambda arr: arr.size)
+    if best.size == 0:
+        return None
+    return int(best[0]), int(best[-1]), int(best.size)
+
+def extract_lane_points(road_mask: np.ndarray, cfg: LaneConfig) -> LanePoints:
+    h, w = road_mask.shape[:2]
+    roi_top = int(h * cfg.roi_top_ratio)
+    min_width = int(w * cfg.min_road_width_ratio)
+    max_width = int(w * cfg.max_road_width_ratio)
+    step = max(1, int(cfg.scan_step))
+
+    points = LanePoints()
+    for y in range(h - 1, roi_top, -step):
+        xs = np.flatnonzero(road_mask[y] > 0)
+        segment = largest_continuous_segment(xs)
+        if segment is None:
+            continue
+
+        x_left, x_right, width = segment
+        if width < min_width or width > max_width:
+            continue
+
+        x_center = 0.5 * (x_left + x_right)
+        points.left.append((float(x_left), float(y)))
+        points.right.append((float(x_right), float(y)))
+        points.center.append((float(x_center), float(y)))
+
+    return points
+
+def row_transition_points(row: np.ndarray) -> list[int]:
+    binary = np.asarray(row > 0, dtype=np.uint8)
+    if binary.size < 2:
+        return []
+    changes = np.flatnonzero(np.diff(binary) != 0)
+    return [int(idx + 1) for idx in changes]
+
+def find_fork_point(road_mask: np.ndarray, cfg: LaneConfig) -> Optional[Point]:
+    h = road_mask.shape[0]
+    roi_top = int(h * cfg.roi_top_ratio)
+    step = max(1, int(cfg.scan_step))
+    last_count = None
+    candidates: list[Point] = []
+
+    for y in range(h - 1, roi_top, -step):
+        transitions = row_transition_points(road_mask[y])
+        count = len(transitions)
+        if last_count == 2 and count in {3, 4} and len(transitions) >= 2:
+            candidates = [(float(transitions[1]), float(y))]
+        elif candidates and count in {3, 4} and len(transitions) >= 2:
+            candidates.append((float(transitions[1]), float(y)))
+        elif candidates:
+            candidates = []
+
+        if len(candidates) >= max(1, int(cfg.fork_confirm_rows)):
+            return candidates[0]
+
+        if count in {2, 3, 4}:
+            last_count = count
+
+    return None
+
+def _sort_bottom_to_top(points: Sequence[Point]) -> list[Point]:
+    return sorted([(float(x), float(y)) for x, y in points], key=lambda point: point[1], reverse=True)
+
+def _linear_rebuild_points(deleted_y: list[float], fork_point: Point, anchor: Point) -> list[Point]:
+    bx, by = fork_point
+    ax, ay = anchor
+    if not deleted_y:
+        return []
+    if abs(ay - by) < 1e-6:
+        return [(float(bx), float(y)) for y in deleted_y]
+
+    rebuilt = []
+    for y in deleted_y:
+        t = (float(y) - by) / (ay - by)
+        x = bx + t * (ax - bx)
+        rebuilt.append((float(x), float(y)))
+    return rebuilt
+
+def _nearest_remaining_anchor(remaining: Sequence[Point], fork_point: Point) -> Optional[Point]:
+    bx, by = fork_point
+    candidates = [
+        point for point in remaining
+        if abs(point[0] - bx) > 1e-6 or abs(point[1] - by) > 1e-6
+    ]
+    if candidates:
+        return max(candidates, key=lambda point: point[1])
+    if remaining:
+        return max(remaining, key=lambda point: point[1])
+    return None
+
+def rebuild_center_points(left_points: Sequence[Point], right_points: Sequence[Point]) -> list[Point]:
+    left_by_y = {round(float(y), 3): float(x) for x, y in left_points}
+    right_by_y = {round(float(y), 3): float(x) for x, y in right_points}
+    centers = []
+    for y_key in sorted(left_by_y.keys() & right_by_y.keys(), reverse=True):
+        centers.append((0.5 * (left_by_y[y_key] + right_by_y[y_key]), float(y_key)))
+    return centers
+
+def repair_lane_points_for_fork(
+    points: LanePoints,
+    fork_point: Point,
+    task_state: str,
+    cfg: LaneConfig,
+) -> LanePoints:
+    bx, by = float(fork_point[0]), float(fork_point[1])
+    state = str(task_state)
+    left = _sort_bottom_to_top(points.left)
+    right = _sort_bottom_to_top(points.right)
+
+    if state == "FORK_RIGHT":
+        deleted = [point for point in left if point[1] > by]
+        if deleted:
+            deleted_y = [point[1] for point in deleted]
+            remaining = [point for point in left if point[1] <= by]
+            anchor = _nearest_remaining_anchor(remaining, (bx, by))
+            if anchor is not None:
+                rebuilt = _linear_rebuild_points(deleted_y, (bx, by), anchor)
+                left = _sort_bottom_to_top(remaining + rebuilt)
+    else:
+        deleted = [point for point in right if point[1] > by]
+        if deleted:
+            deleted_y = [point[1] for point in deleted]
+            remaining = [point for point in right if point[1] <= by]
+            anchor = _nearest_remaining_anchor(remaining, (bx, by))
+            if anchor is not None:
+                rebuilt = _linear_rebuild_points(deleted_y, (bx, by), anchor)
+                right = _sort_bottom_to_top(remaining + rebuilt)
+
+    return LanePoints(left=left, right=right, center=rebuild_center_points(left, right))
+
+def _estimate_bezier_controls(center_points: Sequence[Point]) -> np.ndarray:
+    pts = np.asarray(center_points, dtype=np.float32)
+    near = pts[0]
+    far = pts[-1]
+    mid = pts[len(pts) // 2]
+
+    control_mid = 2.0 * mid - 0.5 * (near + far)
+    return np.vstack([near, control_mid, far]).astype(np.float32)
+
+def _sample_quadratic_bezier(control_points: np.ndarray, sample_count: int) -> np.ndarray:
+    t = np.linspace(0.0, 1.0, max(2, sample_count), dtype=np.float32)[:, None]
+    p0, p1, p2 = control_points
+    return ((1.0 - t) ** 2) * p0 + 2.0 * (1.0 - t) * t * p1 + (t ** 2) * p2
+
+def _quadratic_bezier_derivative(control_points: np.ndarray, t: float) -> np.ndarray:
+    p0, p1, p2 = control_points
+    return 2.0 * (1.0 - t) * (p1 - p0) + 2.0 * t * (p2 - p1)
+
+def fit_bezier_centerline(
+    center_points: Sequence[Point],
+    frame_shape: Sequence[int],
+    cfg: LaneConfig,
+) -> BezierCenterline:
+    h, w = int(frame_shape[0]), int(frame_shape[1])
+    if len(center_points) < cfg.min_valid_points:
+        return BezierCenterline(valid=False)
+
+    controls = _estimate_bezier_controls(center_points)
+    curve = _sample_quadratic_bezier(controls, cfg.bezier_samples)
+
+    lookahead_y = float(np.clip(h * cfg.lookahead_y_ratio, 0, h - 1))
+    idx = int(np.argmin(np.abs(curve[:, 1] - lookahead_y)))
+    lookahead = curve[idx]
+    center_x = w * 0.5
+    error_px = float(lookahead[0] - center_x)
+    error_norm = float(error_px / center_x) if center_x else 0.0
+
+    t = idx / float(max(1, len(curve) - 1))
+    derivative = _quadratic_bezier_derivative(controls, t)
+    dy = float(derivative[1])
+    dx = float(derivative[0])
+    heading_deg = float(np.degrees(np.arctan2(dx, abs(dy) if abs(dy) > 1e-6 else 1e-6)))
+
+    return BezierCenterline(
+        valid=True,
+        control_points=controls,
+        curve_points=curve.astype(np.float32),
+        lookahead_point=(float(lookahead[0]), float(lookahead[1])),
+        error_px=error_px,
+        error_norm=error_norm,
+        heading_deg=heading_deg,
+    )
+
+class EmaSmoother:
+    def __init__(self, alpha: float = 0.4):
+        self.alpha = alpha
+        self._smoothed_controls: Optional[np.ndarray] = None
+
+    def reset(self) -> None:
+        self._smoothed_controls = None
+
+    def smooth(self, result: LaneResult, cfg: LaneConfig) -> None:
+        if not result.centerline.valid or result.centerline.control_points is None:
+            self.reset()
+            return
+
+        raw_controls = result.centerline.control_points
+        a = self.alpha
+
+        if self._smoothed_controls is None or self._smoothed_controls.shape != raw_controls.shape:
+            self._smoothed_controls = raw_controls.copy().astype(np.float64)
+        else:
+            self._smoothed_controls = a * raw_controls + (1.0 - a) * self._smoothed_controls
+
+        controls = self._smoothed_controls.astype(np.float32)
+        curve = _sample_quadratic_bezier(controls, cfg.bezier_samples)
+
+        h, w = result.road_mask.shape[:2]
+        lookahead_y = float(np.clip(h * cfg.lookahead_y_ratio, 0, h - 1))
+        idx = int(np.argmin(np.abs(curve[:, 1] - lookahead_y)))
+        lookahead = curve[idx]
+        center_x = w * 0.5
+        error_px = float(lookahead[0] - center_x)
+        error_norm = float(error_px / center_x) if center_x else 0.0
+
+        t = idx / float(max(1, len(curve) - 1))
+        derivative = _quadratic_bezier_derivative(controls, t)
+        dx = float(derivative[0])
+        dy = float(derivative[1])
+        heading_deg = float(np.degrees(np.arctan2(dx, abs(dy) if abs(dy) > 1e-6 else 1e-6)))
+
+        result.centerline.control_points = controls
+        result.centerline.curve_points = curve.astype(np.float32)
+        result.centerline.lookahead_point = (float(lookahead[0]), float(lookahead[1]))
+        result.centerline.error_px = error_px
+        result.centerline.error_norm = error_norm
+        result.centerline.heading_deg = heading_deg
+
+def process_road_segmentation(
+    seg_map: np.ndarray,
+    frame_shape: Sequence[int],
+    cfg: LaneConfig,
+    task_state: str = "NORMAL",
+) -> LaneResult:
+    road_mask = build_road_mask(seg_map, frame_shape, cfg)
+    points = extract_lane_points(road_mask, cfg)
+    fork_point = find_fork_point(road_mask, cfg) if str(task_state) == "FORK_RIGHT" else None
+    if fork_point is not None:
+        points = repair_lane_points_for_fork(points, fork_point, task_state, cfg)
+    centerline = fit_bezier_centerline(points.center, frame_shape, cfg)
+    return LaneResult(road_mask=road_mask, points=points, centerline=centerline, fork_point=fork_point)
+
+def draw_lane_result(
+    image_bgr: np.ndarray,
+    result: LaneResult,
+    road_alpha: float = 0.25,
+    draw_points: bool = True,
+) -> np.ndarray:
+    out = image_bgr
+    if result.road_mask.shape[:2] == out.shape[:2] and result.road_mask.any():
+        overlay = out.copy()
+        overlay[result.road_mask > 0] = (70, 70, 70)
+        cv2.addWeighted(overlay, road_alpha, out, 1.0 - road_alpha, 0, dst=out)
+
+    if draw_points:
+        for x, y in result.points.left[::2]:
+            cv2.circle(out, (int(x), int(y)), 2, (255, 0, 0), -1)
+        for x, y in result.points.right[::2]:
+            cv2.circle(out, (int(x), int(y)), 2, (0, 0, 255), -1)
+        for x, y in result.points.center[::2]:
+            cv2.circle(out, (int(x), int(y)), 2, (0, 165, 255), -1)
+
+    if result.centerline.valid and len(result.centerline.curve_points) >= 2:
+        curve = np.round(result.centerline.curve_points).astype(np.int32)
+        cv2.polylines(out, [curve], False, (0, 0, 0), 7)
+        cv2.polylines(out, [curve], False, (0, 255, 255), 4)
+        if result.centerline.control_points is not None:
+            controls = np.round(result.centerline.control_points).astype(np.int32)
+            cv2.polylines(out, [controls], False, (0, 200, 0), 1)
+            for point in controls:
+                cv2.circle(out, (int(point[0]), int(point[1])), 5, (0, 255, 0), -1)
+        if result.centerline.lookahead_point is not None:
+            lx, ly = result.centerline.lookahead_point
+            cv2.circle(out, (int(round(lx)), int(round(ly))), 8, (0, 0, 0), -1)
+            cv2.circle(out, (int(round(lx)), int(round(ly))), 6, (0, 255, 255), -1)
+    elif len(result.points.center) >= 2:
+        center_pts = np.round(np.asarray(result.points.center, dtype=np.float32)).astype(np.int32)
+        cv2.polylines(out, [center_pts], False, (0, 165, 255), 3)
+
+    if result.fork_point is not None:
+        fx, fy = result.fork_point
+        cv2.circle(out, (int(round(fx)), int(round(fy))), 8, (0, 0, 0), -1)
+        cv2.circle(out, (int(round(fx)), int(round(fy))), 6, (255, 0, 255), -1)
+        cv2.putText(
+            out,
+            "FORK",
+            (int(round(fx)) + 8, max(20, int(round(fy)) - 8)),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.55,
+            (255, 0, 255),
+            2,
+        )
+
+    return out
+from __future__ import annotations
+
+from dataclasses import dataclass
+from enum import Enum
+from typing import Iterable, Optional, Sequence
+
+from vehicle_control import VehicleControlCommand
+
+SPECIAL_LABELS = {
+    "rock",
+    "yellow",
+    "left",
+    "red",
+    "cross",
+    "green",
+    "car",
+    "person",
+    "stop",
+}
+
+class TaskState(str, Enum):
+    NORMAL = "NORMAL"
+    FORK_RIGHT = "FORK_RIGHT"
+    TRAFFIC_APPROACH = "TRAFFIC_APPROACH"
+    TRAFFIC_WAIT = "TRAFFIC_WAIT"
+    CAR_APPROACH = "CAR_APPROACH"
+    CAR_AVOID_LEFT = "CAR_AVOID_LEFT"
+    CAR_HOLD_LEFT = "CAR_HOLD_LEFT"
+    CAR_RETURN = "CAR_RETURN"
+    PERSON_WATCH = "PERSON_WATCH"
+    PERSON_WAIT = "PERSON_WAIT"
+    STOP_TRACK = "STOP_TRACK"
+    STOP_FORWARD = "STOP_FORWARD"
+    FINISHED = "FINISHED"
+
+@dataclass(frozen=True)
+class Detection:
+    label: str
+    score: float
+    box: tuple[int, int, int, int]
+
+    @property
+    def left(self) -> int:
+        return self.box[0]
+
+    @property
+    def right(self) -> int:
+        return self.box[2]
+
+    @property
+    def bottom(self) -> int:
+        return self.box[3]
+
+    @property
+    def width(self) -> int:
+        return max(0, self.right - self.left)
+
+    @property
+    def center_x(self) -> float:
+        return 0.5 * (self.left + self.right)
+
+@dataclass(frozen=True)
+class SpecialTaskConfig:
+    servo_left_pwm: int = 898
+    servo_center_pwm: int = 808
+    servo_right_pwm: int = 718
+    normal_speed: int = 30
+    slow_speed: int = 20
+    stop_speed: int = 0
+    frame_width: int = 1440
+    frame_height: int = 1080
+    car_slow_y: int = 500
+    car_avoid_y: int = 680
+    car_margin_px: int = 190
+    car_hold_min_frames: int = 15
+    car_hold_max_frames: int = 50
+    car_return_frames: int = 25
+    car_hold_left_pwm: int = 860
+    person_watch_y: int = 420
+    person_stop_y: int = 650
+    person_move_min_px: float = 8.0
+    person_center_corridor_half_width: int = 160
+    person_clear_frames: int = 8
+    traffic_cross_stop_y: int = 820
+    green_confirm_frames: int = 3
+    fork_lock_frames: int = 80
+    fork_right_pwm: int = 756
+    stop_near_bottom_y: int = 850
+    stop_forward_frames: int = 20
+
+def detections_from_dicts(items: Iterable[dict]) -> list[Detection]:
+    detections = []
+    for item in items:
+        box = item.get("box")
+        if box is None or len(box) != 4:
+            continue
+        detections.append(
+            Detection(
+                label=str(item.get("label", "")).strip().lower(),
+                score=float(item.get("score", 0.0)),
+                box=tuple(int(value) for value in box),
+            )
+        )
+    return detections
+
+class SpecialTaskController:
+    def __init__(self, cfg: SpecialTaskConfig = SpecialTaskConfig()):
+        self.cfg = cfg
+        self.state = TaskState.NORMAL
+        self._fork_frames_left = 0
+        self._car_hold_frames_left = 0
+        self._car_return_frames_left = 0
+        self._last_car: Optional[Detection] = None
+        self._last_person_center_x: Optional[float] = None
+        self._person_clear_count = 0
+        self._green_count = 0
+        self._stop_forward_count = 0
+
+    def update(
+        self,
+        detections: Sequence[Detection],
+        lane_command: VehicleControlCommand,
+        frame_shape: Sequence[int],
+    ) -> VehicleControlCommand:
+        if self.state == TaskState.FINISHED:
+            return self._stop_command()
+
+        detected_labels = {d.label for d in detections}
+        labels = detected_labels & SPECIAL_LABELS
+        car = self._best(detections, "car")
+        person = self._best(detections, "person")
+        cross = self._best(detections, "cross")
+
+        if self.state in {TaskState.STOP_TRACK, TaskState.STOP_FORWARD} and detected_labels - {"stop"}:
+            self.state = TaskState.NORMAL
+            self._stop_forward_count = 0
+
+        stop_flow_command = self._update_stop_flow(detected_labels, detections, lane_command, frame_shape)
+        if stop_flow_command is not None:
+            return stop_flow_command
+
+        if self.state == TaskState.TRAFFIC_WAIT:
+            if "green" in labels:
+                self._green_count += 1
+                if self._green_count >= self.cfg.green_confirm_frames:
+                    self.state = TaskState.NORMAL
+                    self._green_count = 0
+                    return self._normal_command(lane_command)
+            else:
+                self._green_count = 0
+            return self._stop_command()
+
+        person_command = self._update_person(person, lane_command, frame_shape)
+        if person_command is not None:
+            return person_command
+
+        car_command = self._update_car(car, lane_command, frame_shape)
+        if car_command is not None:
+            return car_command
+
+        if "red" in labels or "yellow" in labels:
+            self.state = TaskState.TRAFFIC_APPROACH
+        if self.state == TaskState.TRAFFIC_APPROACH:
+            if cross is not None and cross.bottom >= self._scale_y(self.cfg.traffic_cross_stop_y, frame_shape):
+                self.state = TaskState.TRAFFIC_WAIT
+                self._green_count = 0
+                return self._stop_command()
+            if "green" in labels:
+                self.state = TaskState.NORMAL
+                return self._normal_command(lane_command)
+            return self._with_speed(lane_command, self.cfg.slow_speed)
+
+        if "rock" in labels or "left" in labels:
+            self.state = TaskState.FORK_RIGHT
+            self._fork_frames_left = self.cfg.fork_lock_frames
+        if self.state == TaskState.FORK_RIGHT:
+            self._fork_frames_left -= 1
+            if self._fork_frames_left <= 0:
+                self.state = TaskState.NORMAL
+            return VehicleControlCommand(
+                steer_pwm=self.cfg.fork_right_pwm,
+                speed=self.cfg.normal_speed,
+                valid_lane=True,
+            )
+
+        self.state = TaskState.NORMAL
+        return self._normal_command(lane_command)
+
+    def _update_stop_flow(
+        self,
+        detected_labels: set[str],
+        detections: Sequence[Detection],
+        lane_command: VehicleControlCommand,
+        frame_shape: Sequence[int],
+    ) -> Optional[VehicleControlCommand]:
+        if self.state == TaskState.STOP_FORWARD:
+            self._stop_forward_count += 1
+            if self._stop_forward_count >= self.cfg.stop_forward_frames:
+                self.state = TaskState.FINISHED
+                return self._stop_command()
+            return self._normal_command(lane_command)
+
+        if self.state == TaskState.STOP_TRACK:
+            stop = self._best(detections, "stop")
+            if stop is None:
+                self.state = TaskState.STOP_FORWARD
+                self._stop_forward_count = 1
+                if self._stop_forward_count >= self.cfg.stop_forward_frames:
+                    self.state = TaskState.FINISHED
+                    return self._stop_command()
+            return self._normal_command(lane_command)
+
+        stop = self._best(detections, "stop")
+        if detected_labels == {"stop"} and stop is not None and stop.bottom >= self._scale_y(self.cfg.stop_near_bottom_y, frame_shape):
+            self.state = TaskState.STOP_TRACK
+            return self._normal_command(lane_command)
+        return None
+
+    def _update_person(
+        self,
+        person: Optional[Detection],
+        lane_command: VehicleControlCommand,
+        frame_shape: Sequence[int],
+    ) -> Optional[VehicleControlCommand]:
+        if self.state == TaskState.PERSON_WAIT:
+            if person is None:
+                self._person_clear_count += 1
+                if self._person_clear_count >= self.cfg.person_clear_frames:
+                    self.state = TaskState.NORMAL
+                    self._last_person_center_x = None
+                    self._person_clear_count = 0
+                    return self._normal_command(lane_command)
+            else:
+                self._person_clear_count = 0
+                self._last_person_center_x = person.center_x
+            return self._stop_command()
+
+        if person is None or person.bottom < self._scale_y(self.cfg.person_watch_y, frame_shape):
+            if self.state == TaskState.PERSON_WATCH:
+                self.state = TaskState.NORMAL
+            self._last_person_center_x = None
+            return None
+
+        frame_center = float(frame_shape[1]) * 0.5
+        previous_x = self._last_person_center_x
+        self._last_person_center_x = person.center_x
+        self.state = TaskState.PERSON_WATCH
+
+        if previous_x is None:
+            return self._with_speed(lane_command, self.cfg.slow_speed)
+
+        delta_x = person.center_x - previous_x
+        moving = abs(delta_x) >= self.cfg.person_move_min_px
+        corridor_half_width = self._scale_x(self.cfg.person_center_corridor_half_width, frame_shape)
+        near_center = abs(person.center_x - frame_center) <= corridor_half_width
+        next_center_x = person.center_x + delta_x
+        will_cross_center = (person.center_x - frame_center) * (next_center_x - frame_center) <= 0
+        entering_corridor = abs(next_center_x - frame_center) <= corridor_half_width
+        if person.bottom >= self._scale_y(self.cfg.person_stop_y, frame_shape) and moving and (near_center or entering_corridor or will_cross_center):
+            self.state = TaskState.PERSON_WAIT
+            self._person_clear_count = 0
+            return self._stop_command()
+        return self._with_speed(lane_command, self.cfg.slow_speed)
+
+    def _update_car(
+        self,
+        car: Optional[Detection],
+        lane_command: VehicleControlCommand,
+        frame_shape: Sequence[int],
+    ) -> Optional[VehicleControlCommand]:
+        if car is not None:
+            self._last_car = car
+            if self.state == TaskState.CAR_AVOID_LEFT:
+                return self._car_left_command(car, frame_shape)
+            if car.bottom >= self._scale_y(self.cfg.car_avoid_y, frame_shape):
+                self.state = TaskState.CAR_AVOID_LEFT
+                return self._car_left_command(car, frame_shape)
+            if car.bottom >= self._scale_y(self.cfg.car_slow_y, frame_shape):
+                self.state = TaskState.CAR_APPROACH
+                return self._with_speed(lane_command, self.cfg.slow_speed)
+
+        if self.state == TaskState.CAR_AVOID_LEFT and car is None:
+            self.state = TaskState.CAR_HOLD_LEFT
+            self._car_hold_frames_left = self._car_hold_frames(self._last_car, frame_shape)
+
+        if self.state == TaskState.CAR_HOLD_LEFT:
+            self._car_hold_frames_left -= 1
+            if self._car_hold_frames_left <= 0:
+                self.state = TaskState.CAR_RETURN
+                self._car_return_frames_left = self.cfg.car_return_frames
+            return VehicleControlCommand(
+                steer_pwm=self.cfg.car_hold_left_pwm,
+                speed=self.cfg.slow_speed,
+                valid_lane=True,
+            )
+
+        if self.state == TaskState.CAR_RETURN:
+            self._car_return_frames_left -= 1
+            if self._car_return_frames_left <= 0:
+                self.state = TaskState.NORMAL
+            return self._with_speed(lane_command, self.cfg.slow_speed)
+
+        if self.state == TaskState.CAR_APPROACH and car is None:
+            self.state = TaskState.NORMAL
+        return None
+
+    def _car_left_command(self, car: Detection, frame_shape: Sequence[int]) -> VehicleControlCommand:
+        frame_center = float(frame_shape[1]) * 0.5
+        margin = max(float(self._scale_x(self.cfg.car_margin_px, frame_shape)), 1.5 * car.width)
+        target_x = float(car.left) - margin
+        steer_norm = max(-1.0, min(0.0, (target_x - frame_center) / frame_center))
+        pwm = round(self.cfg.servo_center_pwm + abs(steer_norm) * (self.cfg.servo_left_pwm - self.cfg.servo_center_pwm))
+        return VehicleControlCommand(steer_pwm=int(pwm), speed=self.cfg.slow_speed, valid_lane=True)
+
+    def _car_hold_frames(self, car: Optional[Detection], frame_shape: Sequence[int]) -> int:
+        if car is None:
+            return self.cfg.car_hold_min_frames
+        height = max(1.0, float(frame_shape[0]))
+        ratio = max(0.0, min(1.0, car.bottom / height))
+        span = self.cfg.car_hold_max_frames - self.cfg.car_hold_min_frames
+        return int(round(self.cfg.car_hold_min_frames + ratio * span))
+
+    def _normal_command(self, lane_command: VehicleControlCommand) -> VehicleControlCommand:
+        if not lane_command.valid_lane:
+            return lane_command
+        return self._with_speed(lane_command, self.cfg.normal_speed)
+
+    def _scale_y(self, value: int, frame_shape: Sequence[int]) -> int:
+        height = max(1, int(frame_shape[0]))
+        base_height = max(1, int(self.cfg.frame_height))
+        return int(round(value * height / base_height))
+
+    def _scale_x(self, value: int, frame_shape: Sequence[int]) -> int:
+        width = max(1, int(frame_shape[1]))
+        base_width = max(1, int(self.cfg.frame_width))
+        return int(round(value * width / base_width))
+
+    @staticmethod
+    def _with_speed(command: VehicleControlCommand, speed: int) -> VehicleControlCommand:
+        return VehicleControlCommand(steer_pwm=command.steer_pwm, speed=speed, valid_lane=command.valid_lane)
+
+    def _stop_command(self) -> VehicleControlCommand:
+        return VehicleControlCommand(
+            steer_pwm=self.cfg.servo_center_pwm,
+            speed=self.cfg.stop_speed,
+            valid_lane=False,
+        )
+
+    @staticmethod
+    def _best(detections: Sequence[Detection], label: str) -> Optional[Detection]:
+        matches = [detection for detection in detections if detection.label == label]
+        return max(matches, key=lambda detection: detection.score, default=None)
+
+
+
+
+
+
+下位机
+#include "zf_common_headfile.h"
+
+/*
+ * 将本文件中定义的全局变量放到 CPU0 DSRAM。
+ * 这是 TC264 多核工程常见写法，避免不同 CPU 核访问内存区域不明确。
+ */
+#pragma section all "cpu0_dsram"
+
+/* 电机使能标志。主循环读取，中断中按 KEY_1 翻转，所以必须使用 volatile。 */
+volatile uint8 g_motor_enable = 0;
+static uint32 g_debug_display_tick = 0;
+
+/*
+ * TFT 调试显示。
+ *
+ * 屏幕竖屏 128x160，字体 8x16，每行 16 字符，共 10 行。
+ * Row 0~1: 控制模式 + 接收数据
+ * Row 2~9: 编码器、PWM、舵机、差速、基础速度等调试信息
+ */
+static void app_show_debug_info(void)
+{
+#if SERIAL_CMD_ENABLE
+    tft180_show_string(0, 0, "Serial:");
+    tft180_show_string(56, 0, g_serial_connected ? "ON " : "OFF");
+
+    tft180_show_string(0, 16, "RxS:");
+    tft180_show_int(24, 16, g_serial_servo_pwm, 3);
+    tft180_show_string(64, 16, "RxM:");
+    tft180_show_int(88, 16, (int32)g_serial_motor_speed, 3);
+#else
+    tft180_show_string(0, 0, "Remote:");
+    tft180_show_string(56, 0, g_remote_connected ? "ON " : "OFF");
+
+    tft180_show_string(0, 16, "Flg:");
+    tft180_show_uint(24, 16, g_remote_flags, 3);
+    tft180_show_string(64, 16, "Spd:");
+    tft180_show_int(88, 16, (int32)g_motor_base_speed, 3);
+#endif
+
+    tft180_show_string(0, 32, "LEnc:");
+    tft180_show_int(40, 32, g_left_motor.encoder_filt, 4);
+    tft180_show_string(0, 48, "REnc:");
+    tft180_show_int(40, 48, g_right_motor.encoder_filt, 4);
+
+    tft180_show_string(0, 64, "LPwm:");
+    tft180_show_int(40, 64, g_left_motor.pwm_out, 4);
+    tft180_show_string(0, 80, "RPwm:");
+    tft180_show_int(40, 80, g_right_motor.pwm_out, 4);
+
+    tft180_show_string(0, 96, "Svo:");
+    tft180_show_int(32, 96, g_servo_pwm, 4);
+    tft180_show_string(0, 112, "STar:");
+    tft180_show_int(40, 112, g_servo_target_pwm, 4);
+
+    tft180_show_string(0, 128, "Base:");
+    tft180_show_int(40, 128, (int32)g_motor_base_speed, 4);
+    tft180_show_string(0, 144, "DTar:");
+    tft180_show_int(40, 144, (int32)g_motor_target_diff, 4);
+}
+
+/*
+ * CPU0 主函数。
+ *
+ * 初始化顺序说明：
+ * 1. clock/debug 必须优先初始化，保证系统时钟和调试输出可用。
+ * 2. 编码器、电机、舵机等外设随后初始化。
+ * 3. 最后启动 5 ms PIT 中断，避免外设未初始化完成时中断先进入。
+ */
+int core0_main(void)
+{
+    clock_init();
+    debug_init();
+
+    encoder_clear_motor_state();
+    encoder_init();
+    motor_init();
+    servo_init();
+#if SERIAL_CMD_ENABLE
+    serial_command_init();
+#else
+    remote_control_init();
+#endif
+    vofa_pid_init();
+    tft180_init();
+    key_init(5);
+    pit_ms_init(CCU60_CH0, 5);
+    /* CCU60_CH1: 10 ms 外环差速 PIT，仅 SERIAL_CMD_ENABLE 时使用。 */
+    /* 等待所有 CPU 核完成初始化后再进入主循环。 */
+    cpu_wait_event_ready();
+
+    while(TRUE)
+    {
+        vofa_pid_update();
+        if((g_pit_tick_count - g_debug_display_tick) >= 10)
+        {
+            g_debug_display_tick = g_pit_tick_count;
+            app_show_debug_info();
+        }
+        printf("%d,%d,%d\n",-50,g_left_motor.encoder_filt,g_right_motor.encoder_filt);
+    }
+
+    return 0;
+}
+
+#pragma section all restore
+#include "isr_config.h"
+#include "isr.h"
+#include "Motor.h"
+#include "Servo.h"
+#include "encoder.h"
+#include "pid.h"
+#include "pit.h"
+#include "serial_command.h"
+#include "remote_control.h"
+#include "vofa_pid_tune.h"
+
+/* 电机使能标志定义在 cpu0_main.c，中断里通过 KEY_1 修改该标志。 */
+extern volatile uint8 g_motor_enable;
+
+/*
+ * CCU60 通道 0 PIT 中断。
+ *
+ * 该中断是当前工程的主控制节拍，初始化周期为 5 ms。
+ * 不建议在这里加入耗时操作，例如大量 TFT 刷屏、阻塞延时或复杂浮点打印。
+ */
+
+IFX_INTERRUPT(cc60_pit_ch0_isr, 0, CCU6_0_CH0_ISR_PRIORITY)
+{
+    /* TC 系列默认进入中断后会关闭全局中断；这里允许更高优先级中断嵌套。 */
+    interrupt_global_enable(0);
+
+    /* 清除本通道 PIT 中断标志，否则会反复进入同一个中断。 */
+    pit_clear_flag(CCU60_CH0);
+
+    /* 用户节拍计数，方便调试或后续做时间统计。 */
+    g_pit_tick_count++;
+
+    /* 先采样编码器，再进行电机闭环，保证 PID 使用的是最新反馈。 */
+    encoder_update();
+
+    /* 更新按键状态机。key_get_state() 依赖这里的周期扫描。 */
+    key_scanner();
+
+    /* 舵机每 5 ms 向目标值逼近一步。 */
+    servo_update();
+
+#if SERIAL_CMD_ENABLE
+    /* ========== 上位机串口控制模式 ========== */
+    serial_command_update();
+
+    if(g_serial_connected)
+    {
+        if(serial_command_consume_frame())
+        {
+            // 收到有效帧：原有逻辑不变，正常更新舵机 + 差速控制
+            g_servo_target_pwm = g_serial_servo_pwm;
+            servo_set_pwm(g_servo_target_pwm);
+
+            if(0.0f == g_serial_motor_speed)
+            {
+                motor_steer_diff_control(g_servo_pwm, g_serial_motor_speed);
+            }
+            else
+            {
+                motor_steer_diff_control(g_servo_pwm, g_serial_motor_speed);
+            }
+        }
+        else
+        {
+            // 没接收到新数据：不做差速，左右轮同速运行
+            if(0.0f != g_serial_motor_speed)
+            {
+                // 差速运算
+                motor_steer_diff_control(g_servo_pwm, g_serial_motor_speed);
+            }
+            else
+            {
+                // 左右轮都设为基础速度，跳过所有差速运算
+                motor_steer_diff_control(g_servo_pwm, g_serial_motor_speed);
+            }
+        }
+    }
+    else
+    {
+        motor_stop();
+    }
+}
+#include "Servo.h"
+
+/* 当前舵机实际输出 PWM，初始化为中位。 */
+uint16 g_servo_pwm = SERVO_MID_PWM;
+
+/* 舵机目标 PWM，按键改变的是该目标值。 */
+uint16 g_servo_target_pwm = SERVO_MID_PWM;
+
+/* 初始化舵机 PWM 输出，频率为标准舵机常用的 50 Hz。 */
+void servo_init(void)
+{
+    g_servo_pwm = SERVO_MID_PWM;
+    g_servo_target_pwm = SERVO_MID_PWM;
+    pwm_init(SERVO_PWM_PIN, 50, SERVO_MID_PWM);
+}
+
+/*
+ * 设置舵机 PWM。
+ *
+ * 输入值会被限制在 SERVO_RIGHT_PWM ~ SERVO_LEFT_PWM 内，
+ * 防止舵机撞机械限位或超过安全活动范围。
+ */
+void servo_set_pwm(uint16 pwm)
+{
+    g_servo_pwm = pwm;
+    if(g_servo_pwm < SERVO_RIGHT_PWM)
+    {
+        g_servo_pwm = SERVO_RIGHT_PWM;
+    }
+    else if(g_servo_pwm > SERVO_LEFT_PWM)
+    {
+        g_servo_pwm = SERVO_LEFT_PWM;
+    }
+
+    pwm_set_duty(SERVO_PWM_PIN, g_servo_pwm);
+}
+
+/* 增大目标 PWM。按当前标定值，PWM 增大表示向 SERVO_LEFT_PWM 方向移动。 */
+void servo_target_add_angle(void)
+{
+    if(g_servo_target_pwm + SERVO_STEP_5_DEG > SERVO_LEFT_PWM)
+    {
+        g_servo_target_pwm = SERVO_LEFT_PWM;
+    }
+    else
+    {
+        g_servo_target_pwm += SERVO_STEP_5_DEG;
+    }
+}
+
+/* 减小目标 PWM。按当前标定值，PWM 减小表示向 SERVO_RIGHT_PWM 方向移动。 */
+void servo_target_sub_angle(void)
+{
+    if(g_servo_target_pwm < SERVO_RIGHT_PWM + SERVO_STEP_5_DEG)
+    {
+        g_servo_target_pwm = SERVO_RIGHT_PWM;
+    }
+    else
+    {
+        g_servo_target_pwm -= SERVO_STEP_5_DEG;
+    }
+}
+*
+ * encoder.c
+ *
+ * 编码器模块实现。
+ *
+ * 每次 encoder_update() 读取的是“上一次清零之后到当前时刻”的增量。
+ * 因为 PIT 中断周期为 5 ms，所以 encoder_filt 当前可理解为 5 ms 内的速度反馈。
+ */
+
+#include "Motor.h"
+#include "encoder.h"
+
+/* 清空左右电机保存的编码器数据，通常在系统初始化时调用。 */
+void encoder_clear_motor_state(void)
+{
+    g_left_motor.encoder_raw = 0;
+    g_left_motor.encoder_filt = 0;
+    g_left_motor.encoder_total = 0;
+
+    g_right_motor.encoder_raw = 0;
+    g_right_motor.encoder_filt = 0;
+    g_right_motor.encoder_total = 0;
+}
+
+/* 初始化左右正交编码器。A/B 相顺序会影响计数方向，方向不对时可交换 A/B 或在软件中取反。 */
+void encoder_init(void)
+{
+    encoder_quad_init(ENCODER_QUADDEC_L, ENCODER_QUADDEC_L_A, ENCODER_QUADDEC_L_B);
+    encoder_quad_init(ENCODER_QUADDEC_R, ENCODER_QUADDEC_R_A, ENCODER_QUADDEC_R_B);
+}
+
+/*
+ * 采样左右编码器。
+ *
+ * 编码器计数会乘以 MOTOR_x_ENCODER_DIR。
+ * 速度闭环要求“电机正向转动时反馈为正”，否则 PID 会变成正反馈并迅速打满 PWM。
+ * encoder_filt 目前直接等于 encoder_raw，如果后续需要降低噪声，可在这里加入一阶低通滤波。
+ * 每次读取后立即清除硬件计数器，保证下一次读到的是新的周期增量。
+ */
+void encoder_update(void)
+{
+    g_left_motor.encoder_raw = (encoder_get_count(ENCODER_QUADDEC_L) * MOTOR_LEFT_ENCODER_DIR);
+    g_left_motor.encoder_filt = (g_left_motor.encoder_raw);
+    g_left_motor.encoder_total += g_left_motor.encoder_raw;
+    encoder_clear_count(ENCODER_QUADDEC_L);
+
+    g_right_motor.encoder_raw = (encoder_get_count(ENCODER_QUADDEC_R) * MOTOR_RIGHT_ENCODER_DIR);
+    g_right_motor.encoder_filt = (g_right_motor.encoder_raw);
+    g_right_motor.encoder_total += g_right_motor.encoder_raw;
+    encoder_clear_count(ENCODER_QUADDEC_R);
+}
+/*
+ * pid.c
+ *
+ * PID/PD 控制器实现。
+ */
+
+#include "pid.h"
+/*
+ * 增量式 PID 计算。
+ * 公式：
+ * output += kp * (error - last_error) + ki * error
+ *
+ */
+float pid_calculate_incremental(pid_controller_t *pid, float target, float real)
+{
+    if(NULL == pid)
+    {
+        return 0.0f;
+    }
+
+    pid->last_error = pid->error;
+    pid->error = target - real;
+    pid->output += pid->kp * (pid->error - pid->last_error) + pid->ki * pid->error;
+    pid->output = pid_limit_float(pid->output, PID_INCREMENTAL_OUTPUT_LIMIT);
+
+    return pid->output;
+}
+/*
+ * 位置式 PD 计算。
+ *
+ * 公式：
+ * output = kp * error + kd * (error - last_error)
+ *
+ * 与增量式 PID 不同，这里的 output 不累加，适合舵机角度、位置误差这类直接目标跟踪。
+ */
+float pid_calculate_position_pd(pid_controller_t *pid, float target, float real)
+{
+    if(NULL == pid)
+    {
+        return 0.0f;
+    }
+
+    pid->error = target - real;
+    pid->output = pid->kp * pid->error + pid->kd * (pid->error - pid->last_error);
+    pid->output = pid_limit_float(pid->output, PD_POSITION_OUTPUT_LIMIT);
+    pid->last_error = pid->error;
+
+    return pid->output;
+}
+/*
+ * Motor.c
+ *
+ * 电机控制模块实现。
+ *
+ * 控制思路：
+ * 1. 编码器模块在固定周期内更新左右轮速度反馈。
+ * 2. 舵机转角先换算成目标左右轮差速，这是外层“舵机-差速匹配”。
+ * 3. 差速外环 PID 根据实际左右轮速差修正目标差速。
+ * 4. 左右轮速度内环 PID 分别根据目标速度和编码器反馈计算 PWM。
+ * 5. PWM 的正负号表示方向，绝对值表示占空比大小。
+ * 6. 输出前统一限幅，避免异常目标值或 PID 积累导致输出过大。
+ */
+
+#include "Motor.h"
+#include "Servo.h"
+#include "encoder.h"
+#include "pid.h"
+
+/* 左右电机的实时状态。初始化为 0，避免上电后读取到未定义状态。 */
+motor_state_t g_left_motor = {0};
+motor_state_t g_right_motor = {0};
+
+/* 默认启用闭环控制。counter 用于 motor_update_control() 的软件分频。 */
+motor_control_t g_motor_control = {TRUE, 0};
+
+/* 开环模式下的 PWM 命令值。闭环控制时左右电机实际输出记录在各自的 pwm_out 字段中。 */
+int g_motor_pwm = 0;
+
+/* 整车基础速度。主程序或上层策略可以随时修改该值。 */
+volatile float g_motor_base_speed = MOTOR_DEFAULT_BASE_SPEED;
+
+/* 差速控制调试量：目标差速、实际差速、PID 修正量。 */
+volatile float g_motor_target_diff = 0.0f;
+volatile float g_motor_real_diff = 0.0f;
+volatile float g_motor_diff_correction = 0.0f;
+
+static float motor_limit_float(float value, float limit);
+
+/*
+ * 电机 PWM 限幅。
+ *
+ * 传入值可以是 PID 计算得到的浮点数，也可以是开环给定值。
+ */
+static int motor_limit_pwm(float pwm)
+{
+    if(pwm > MOTOR_MAX_PWM)
+    {
+        return MOTOR_MAX_PWM;
+    }
+    if(pwm < -MOTOR_MAX_PWM)
+    {
+        return -MOTOR_MAX_PWM;
+    }
+    // if((pwm > 0) && (pwm < MOTOR_MIN_PWM))
+    // {
+    //     return MOTOR_MIN_PWM;
+    // }
+    // if((pwm < 0) && (pwm > -MOTOR_MIN_PWM))
+    // {
+    //     return -MOTOR_MIN_PWM;
+    // }
+    return (int)pwm;
+}
+* 初始化电机相关硬件资源：方向引脚为推挽输出，PWM 初始占空比为 0。 */
+void motor_init(void)
+{
+    gpio_init(MOTOR_LEFT_DIR_PIN, GPO, 0, GPO_PUSH_PULL);
+    pwm_init(MOTOR_LEFT_PWM_PIN, MOTOR_PWM_FREQUENCY_HZ, 0);
+
+    gpio_init(MOTOR_RIGHT_DIR_PIN, GPO, 0, GPO_PUSH_PULL);
+    pwm_init(MOTOR_RIGHT_PWM_PIN, MOTOR_PWM_FREQUENCY_HZ, 0);
+}
+
+/*
+ * 设置左电机 PWM。
+ *
+ * pwm > 0 时使用 MOTOR_LEFT_FORWARD_LEVEL，pwm <= 0 时使用相反电平。
+ * 注意：不同电机驱动板的方向定义可能相反，如果实车方向不一致，应优先检查接线和方向引脚逻辑。
+ */
+void motor_set_left_pwm(int pwm)
+{
+    int limited_pwm = motor_limit_pwm((float)pwm);
+
+    g_left_motor.pwm_out = limited_pwm;
+    if(limited_pwm > 0)
+    {
+        gpio_set_level(MOTOR_LEFT_DIR_PIN, MOTOR_LEFT_FORWARD_LEVEL);
+        pwm_set_duty(MOTOR_LEFT_PWM_PIN, limited_pwm);
+    }
+    else if(limited_pwm < 0)
+    {
+        gpio_set_level(MOTOR_LEFT_DIR_PIN, !MOTOR_LEFT_FORWARD_LEVEL);
+        pwm_set_duty(MOTOR_LEFT_PWM_PIN, -limited_pwm);
+    }
+    else
+    {
+        gpio_set_level(MOTOR_LEFT_DIR_PIN, MOTOR_LEFT_FORWARD_LEVEL);
+        pwm_set_duty(MOTOR_LEFT_PWM_PIN, 0);
+    }
+}
+
+/* 设置右电机 PWM，逻辑与左电机一致。 */
+void motor_set_right_pwm(int pwm)
+{
+    int limited_pwm = motor_limit_pwm((float)pwm);
+
+    g_right_motor.pwm_out = limited_pwm;
+    if(limited_pwm > 0)
+    {
+        gpio_set_level(MOTOR_RIGHT_DIR_PIN, MOTOR_RIGHT_FORWARD_LEVEL);
+        pwm_set_duty(MOTOR_RIGHT_PWM_PIN, limited_pwm);
+    }
+    else if(limited_pwm < 0)
+    {
+        gpio_set_level(MOTOR_RIGHT_DIR_PIN, !MOTOR_RIGHT_FORWARD_LEVEL);
+        pwm_set_duty(MOTOR_RIGHT_PWM_PIN, -limited_pwm);
+    }
+    else
+    {
+        gpio_set_level(MOTOR_RIGHT_DIR_PIN, MOTOR_RIGHT_FORWARD_LEVEL);
+        pwm_set_duty(MOTOR_RIGHT_PWM_PIN, 0);
+    }
+}
+/*
+ * 左右电机闭环控制。
+ *
+ * left_target/right_target 是目标速度，当前单位等价于 5 ms 周期内的编码器计数增量。
+ * g_left_motor.encoder_filt/g_right_motor.encoder_filt 是反馈值。
+ * 当左右目标均为 0 时直接停车，并重置 PID，避免原地抖动。
+ */
+void motor_close_loop_control(float left_target, float right_target)
+{
+    g_left_motor.target = left_target;
+    g_right_motor.target = right_target;
+
+//    if((0.0f == left_target) && (0.0f == right_target))
+//    {
+//        motor_stop();
+//        return;
+//    }
+
+    g_left_motor.pwm_out = motor_limit_pwm(pid_calculate_incremental(&g_left_motor_pid,
+            g_left_motor.target, g_left_motor.encoder_filt));
+    g_right_motor.pwm_out = motor_limit_pwm(pid_calculate_incremental(&g_right_motor_pid,
+            g_right_motor.target, g_right_motor.encoder_filt));
+
+    motor_set_left_pwm(g_left_motor.pwm_out);
+    motor_set_right_pwm(g_right_motor.pwm_out);
+}
+/*
+ * 舵机转角匹配后轮差速控制
+ * 结构：阿克曼几何前馈 + 差速外环PID修正 + 左右轮速度内环PID
+ * 差速定义：right_speed - left_speed（左转时右轮更快，差速为正）
+ */
+void motor_steer_diff_control(uint16 servo_pwm, float base_speed)
+{
+    float delta = 0.0f;       // 前轮转角（弧度）
+    float k = 0.0f;           // 差速系数 k = T/(2L) * tan(δ)
+    float feedforward_diff = 0.0f;
+    float target_diff = 0.0f;
+    float real_diff = 0.0f;
+    float diff_correction = 0.0f;
+    float left_target = 0.0f;
+    float right_target = 0.0f;
+
+    base_speed = motor_limit_target_speed(base_speed);
+
+    // 1. 舵机PWM → 前轮转角
+    delta = motor_get_steer_angle(servo_pwm);
+
+    // 2. 阿克曼公式计算差速系数
+    k = (WHEEL_TRACK_T / (2.0f * WHEEL_BASE_L)) * tanf(delta);
+
+    // 3. k限幅 ±0.8，避免内侧轮速度出现负值
+    k = motor_limit_float(k, DIFF_K_LIMIT);
+
+    // 4. 计算前馈目标差速：Δv = 2 * base_speed * k （右轮 - 左轮）
+    feedforward_diff = 2.0f * base_speed * k;
+    target_diff = feedforward_diff;
+
+    // 5. 差速外环PID修正（保留原闭环逻辑，补偿电机/地面差异）
+    real_diff = (float)g_right_motor.encoder_filt - (float)g_left_motor.encoder_filt;
+//    diff_correction = pid_calculate_position(&g_rear_diff_pid,
+//            target_diff, real_diff, MOTOR_DIFF_PID_OUTPUT_LIMIT);
+    diff_correction = pid_calculate_position_pd(&g_rear_diff_pid,target_diff, real_diff);
+    // 调试变量更新
+    g_motor_target_diff = target_diff;
+    g_motor_real_diff = real_diff;
+    g_motor_diff_correction = diff_correction;
+
+    // 6. 左右轮目标速度分配（与标准阿克曼公式完全对应）
+    //    v_L = base * (1 - k) , v_R = base * (1 + k)
+    left_target  = base_speed - (target_diff + diff_correction) * 0.5f;
+    right_target = base_speed + (target_diff + diff_correction) * 0.5f;
+
+    // 目标速度最终限幅
+    left_target  = motor_limit_target_speed(left_target);
+    right_target = motor_limit_target_speed(right_target);
+
+    motor_close_loop_control(left_target, right_target);
+}
+/*
+ * 电机周期控制封装。
+ *
+ * 当前工程的主控制流程在 5 ms PIT 中断里直接完成编码器采样和闭环控制。
+ * 这个函数保留给后续扩展：如果未来希望用更高频中断驱动，再通过 counter 做软件分频即可。
+ */
+void motor_update_control(void)
+{
+    g_motor_control.counter++;
+    if(g_motor_control.counter >= 5)
+    {
+        encoder_update();
+
+        if(g_motor_control.close_loop)
+        {
+            motor_close_loop_control(g_left_motor.target, g_right_motor.target);
+        }
+        else
+        {
+            motor_set_left_pwm(g_motor_pwm);
+            motor_set_right_pwm(g_motor_pwm);
+        }
+
+        g_motor_control.counter = 0;
+    }
+}

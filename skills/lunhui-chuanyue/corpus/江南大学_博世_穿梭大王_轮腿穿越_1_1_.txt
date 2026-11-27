@@ -1,0 +1,1076 @@
+第二十一届全国大学生智能汽车竞赛
+技 术 报 告
+（室外轮腿组）
+
+学　　校：江南大学
+队伍名称：博世·穿梭大王
+参赛队员：周嘉乐　梁天宇　陈再林　吴昊
+指导教师：吴定会　马浩
+
+2026 年 8 月
+
+目　　录
+
+第1章 引言	1
+1.1 竞赛背景与作品概述	1
+1.2 相关技术综述	1
+1.3 报告内容框架安排	2
+第2章 系统总体方案设计	3
+2.1 总体设计思路	3
+2.2 系统总体结构	3
+2.3 主要器件选型	4
+2.4 双核任务划分	5
+第3章 机械结构设计	7
+3.1 整体布局	7
+3.2 轮腿机构	8
+3.3 轮胎与轮毂	9
+3.4 传感器安装	10
+3.5 电路板安装	12
+第4章 硬件电路设计	13
+4.1 主板总体设计	13
+4.2 电源电路	13
+4.3 驱动板设计	14
+4.4 磁编码器板设计	14
+4.5 传感器接口	16
+4.6 可靠性设计	16
+第5章 软件算法设计	17
+5.1 软件总体架构	17
+5.2 IMU 姿态解算	17
+5.3 速度—角度—角速度三环串级控制	18
+5.4 转向控制	20
+5.5 五连杆腿部逆运动学	20
+5.6 GNSS/INS 组合定位	21
+5.7 路径规划	22
+5.8 图像处理与赛道识别	23
+5.9 特殊元素处理策略	23
+5.10 程序框架与任务调度	25
+第6章 系统开发与调试	26
+6.1 开发工具与调试环境	26
+6.2 调试过程中遇到的主要问题及解决方案	26
+6.3 关键参数整定过程	28
+6.4 系统测试与性能验证	29
+6.5 本章小结	30
+第7章 车模主要技术参数	32
+第8章 结论	33
+参考文献	i
+附录A 电路原理图	i
+附录B 核心源代码	i
+
+
+符号表
+
+第1章 引言
+1.1 竞赛背景与作品概述
+全国大学生智能汽车竞赛是教育部倡导的面向全国大学生的科技竞赛活动，旨在加强大学生实践、创新能力和团队精神的培养。第二十一届竞赛设立室外轮腿组，要求参赛车模以轮腿式结构在室外复杂地形环境下完成循迹、越野与多个特种科目，对车模的平衡控制、越障能力、定位精度与环境适应性提出了很高要求。
+本报告介绍的作品是一辆基于英飞凌 CYT4BB 双核微控制器的轮腿式越野智能车。车模以 V 车模为底盘基础，采用"轮毂电机驱动 + 五连杆舵机变腿长"的轮腿复合结构：两只 BDS3620 轮毂无刷电机提供驱动力，四只 BDS300 舵机驱动左右两组五连杆机构实现腿长主动调节，使车模兼具轮式的高速性与腿式的越障能力，能够完成三级台阶跳跃、单边桥、颠簸路、雷区掉头等高难度科目。
+整车按照"感知—定位—决策—控制"四层架构设计：以 IMU660RC 六轴传感器为核心的 4 kHz 姿态解算与 1 kHz 三环串级 PID 保证车体动态平衡；MT9V03X 摄像头与 DL1B 激光测距负责赛道与元素感知；TAU1201 GNSS 模块与惯导航迹推算经二维卡尔曼滤波融合，给出米级平面定位；上层导航状态机按科目调度路径规划与元素处理策略。
+1.2 相关技术综述
+轮腿复合机器人结合了轮式移动的高效率与腿式移动的高通过性，是近年来移动机器人领域的研究热点。对于双轮足式轮腿车而言，其纵向动力学本质上是一个可变腿长的轮式倒立摆，需要在平衡控制的同时协调腿长调节，控制耦合性强。常用方案是在串级 PID 平衡控制的基础上叠加腿长（重心）补偿通路，本车即采用"速度环—角度环—角速度环"三环串级加惯性辅助腿长补偿的结构。
+在姿态估计方面，Mahony 互补滤波与 Madgwick 梯度下降法是嵌入式平台最常用的两类姿态解算算法，二者均以加速度计重力方向修正陀螺积分漂移，计算量小、实时性好。本车选用纯比例反馈的 Mahony 方案，并辅以二阶 Biquad 巴特沃斯低通滤波抑制越野振动引入的角速度噪声。
+在室外定位方面，单点 GNSS 精度为米级且输出频率低，纯惯导航迹推算短期平滑但长期发散，二者互补性强。采用卡尔曼滤波进行松耦合融合是工程上成熟可靠的方案。本车实现了状态量为平面位置与速度的二维卡尔曼滤波器，全部矩阵运算手工展开，满足 1 kHz 实时性要求。
+在路径规划方面，针对锥桶绕行等局部场景，贝塞尔曲线与 Dubins 曲线能够在保证曲率连续的前提下生成可跟踪的光滑路径，配合纯跟踪（Pure Pursuit）算法即可实现稳定的曲线跟随。
+1.3 报告内容框架安排
+本报告共分八章。第 1 章为引言，介绍竞赛背景、作品概况与相关技术；第 2 章给出系统总体方案，包括总体结构、器件选型与双核任务划分；第 3 章介绍机械结构设计；第 4 章介绍硬件电路设计；第 5 章详细阐述软件算法，包括姿态解算、平衡控制、转向控制、五连杆逆运动学、组合定位、路径规划、图像处理与特殊元素策略；第 6 章记录开发工具、调试过程中遇到的典型问题与解决方法以及关键参数整定过程；第 7 章汇总车模主要技术参数；第 8 章给出结论。文末附参考文献、电路原理图与核心源代码。
+
+第2章 系统总体方案设计
+2.1 总体设计思路
+室外轮腿组赛题的核心难点可归纳为三点：一是双轮足式轮腿车本身是不稳定的多耦合被控对象，直立平衡是一切功能的前提；二是赛道位于室外，光照、地形变化剧烈，感知与定位必须足够鲁棒；三是三级台阶、单边桥、颠簸路、雷区等特种元素要求车模具备主动越障与策略切换能力。
+针对上述难点，总体设计遵循三条原则：其一，控制优先，以高频率的姿态解算与串级控制保证动态平衡，所有上层功能都建立在稳定的平衡底盘之上；其二，传感冗余，视觉、激光测距、GNSS、IMU 多源信息互补，任一单源失效不导致整车失控；其三，策略分层，路点导航负责"把车带到元素门口"，元素内部切换为局部闭环，元素完成后用已知坐标重置定位，阻断误差累积。
+2.2 系统总体结构
+整车系统由主控核心、传感器组、执行机构、驱动板与电源系统五部分构成，总体结构如图 2.1 所示。
+
+图 2.1　系统总体结构框图
+主控核心为英飞凌 CYT4BB 车规级微控制器，片内双 Cortex-M7 内核分工协作；传感器组包括 MT9V03X 灰度摄像头、IMU660RC 六轴 IMU、DL1B 激光测距模块、TAU1201 GNSS 模块以及电流检测电路；执行机构为四只 BDS300 舵机与两只 BDS3620 轮毂无刷电机；无刷驱动板以 CYT2BL3 为控制核心，经 UART 与主板通信；电源系统由 3S 锂聚合物电池与多路 DC-DC/LDO 构成。
+2.3 主要器件选型
+主要器件选型如表 2.1 所示。主控选用 CYT4BB 是考虑到其双 M7 内核可将控制与视觉天然隔离，车规级可靠性也更适应室外振动与温湿度环境；舵机与轮毂电机均采用赛事官方指定型号，保证合规性与备件通用性。
+表 2.1　主要器件选型
+2.4 双核任务划分
+CYT4BB 内部集成两个 Cortex-M7 内核（CM7_0 / CM7_1）与一个 Cortex-M0+ 启动核。系统时钟在两个核的 main() 入口处由 clock_init(SYSTEM_CLOCK_250M) 统一配置为 250 MHz。两核之间通过 0x28001000 起始的共享 RAM 区域交换数据；由于 M7 带有 D-Cache，共享变量使用 #pragma location 定位到固定地址并声明为 __no_init，读写前后显式调用 SCB_CleanInvalidateDCache_by_Addr() 按 32 字节 Cache Line 同步，保证双核数据一致性。任务划分如表 2.2 所示。
+表 2.2　双核任务划分
+
+第3章 机械结构设计
+3.1 整体布局
+车模以竞赛指定的 V 车模为底盘基础，整体采用对称式布局：左右两组轮腿机构分居车体两侧，主板与驱动板层叠安装于车体中部甲板，电池置于甲板下方以降低重心，摄像头与激光测距模块通过碳纤维立杆架高安装。整车外形尺寸约为 16 cm（宽）× 21 cm（高）× 38 cm（长），满足竞赛对车模尺寸的限制要求。车模前视与侧视照片如图 3.1、图 3.2 所示。
+
+图 3.1　车模前视图
+
+图 3.2　车模侧视图
+3.2 轮腿机构
+轮腿机构是本车机械部分的核心。每条腿由两只 BDS300 舵机驱动一组五连杆机构，连杆长度分别为 L1 = 6 cm、L2 = 9 cm、L3 = 9 cm、L4 = 6 cm，机架宽 L5 = 3.7 cm。通过两个主动连杆角的组合，足端（轮轴）可在平面内实现前后与上下两个自由度的运动：上下运动实现腿长在约 3 cm 至 11 cm 范围内的主动调节，用于跳跃、抬腿越障与地形自适应；前后运动实现等效重心前后移动，辅助速度控制与加减速姿态管理。轮腿机构照片如图 3.3 所示。
+
+图 3.3　五连杆轮腿机构
+五连杆机构相比直接舵机摆臂的优点在于：足端运动范围大且近似直线、两舵机扭矩叠加、机构刚度好；代价是需要实时求解逆运动学，该部分算法见第 5.5 节。
+3.3 轮胎与轮毂
+车轮采用直径 88 mm 的越野轮胎，胎纹深、抓地力强，适应室外砂石与草地路面。轮胎内部填充 3D 打印 TPU 软性材料作为弹性支撑，轮毂采用 PETG 材料 3D 打印，兼顾强度与韧性。BDS3620 轮毂无刷电机直接内置于轮内，省去了传动机构，结构紧凑、效率高。轮胎与轮毂照片如图 3.4 所示。
+
+图 3.4　轮胎与 3D 打印轮毂
+3.4 传感器安装
+摄像头安装高度约 300 mm（轮腿车高随腿长变化，此为行驶中的典型值），镜头俯角约 50°，兼顾前瞻距离与近处盲区；DL1B 激光测距模块安装于车头前下方，用于三级台阶的距离检测；GNSS 天线架高远离电机与舵机，减小电磁干扰；IMU660RC 模块安装于车体几何中心附近并做减振处理，降低电机振动对姿态解算的影响；两块自研磁编码器板分别与左右轮毂电机同轴安装，编码芯片正对轴端磁钢，实时检测车轮绝对角度（详见第 4.4 节）。车模甲板布局与尾部照片如图 3.5、图 3.6 所示。
+
+图 3.5　车体甲板布局
+
+图 3.6　车模尾部视图
+3.5 电路板安装
+主板与无刷驱动板采用铜柱层叠安装于甲板之上，板间预留足够间隙保证散热；接插件均选用带锁扣的 WAFER/GH 连接器并点胶加固，防止越野振动导致松脱；动力线采用硅胶线并留有余量，适应轮腿大幅度运动。整车装配完成后进行重心检查，保证空载静态时重心位于两轮连线附近，为平衡控制创造良好的机械条件。
+
+第4章 硬件电路设计
+4.1 主板总体设计
+主板以 CYT4BB7 最小系统为核心，集成电源变换、传感器接口、舵机接口、显示与调试接口、按键与拨码开关等全部功能，采用四层板设计，完整地平面保证信号完整性。主板 PCB 如图 4.1 所示，完整原理图见附录 A。
+
+图 4.1　主板 PCB（顶层）
+最小系统部分包括 16 MHz 外部晶振（ECO）与 32.768 kHz 手表晶振（WCO）、复位电路、SWD 调试接口、ADC 基准以及去耦电容阵列。所有对外接口均经 100 Ω 串联电阻与 ESD 器件防护。
+4.2 电源电路
+整车由 3S 锂聚合物电池（标称 11.1 V，2200 mAh）供电。主板电源分为三级：第一级采用 TPS54302 同步降压变换器将电池电压降至 5 V，供舵机、屏幕与外设；第二级采用 TLV62568 降压至 3.3 V 与 1.1 V，分别供 MCU 的 VDDD/VDDIO 与内核；模拟部分由 TPRT9013-33 低压差线性稳压器单独供电，降低数字噪声对 ADC 与传感器的影响。电池输入经 NCE30P50G P 沟道 MOSFET 构成电源开关，实现低损耗通断控制。舵机母线另设多路 330 μF 电解电容阵列，抑制舵机堵转冲击造成的母线跌落。
+4.3 驱动板设计
+无刷驱动板以 CYT2BL3 为控制核心，通过 UART（460800 bps，0xA5 帧头自定义协议）接收主板下发的目标占空比/力矩指令并回传轮速与状态。功率级采用两颗 FD6288Q 三相栅极驱动器驱动 12 只 DCN8N03 N 沟道 MOSFET 组成的双三相全桥，可独立驱动两只 BDS3620 轮毂电机；每相下桥臂串入采样电阻，经 INA240A2 电流放大器（增益 50 V/V）送入 MCU ADC，实现相电流闭环与过流保护；栅极驱动器使能端串接 SMF26CA TVS 管抑制功率回路尖峰。驱动板 PCB 如图 4.2 所示。
+
+图 4.2　无刷驱动板 PCB（顶层）
+4.4 磁编码器板设计
+为精确获取左右车轮的绝对角度，两只轮毂电机轴端各安装一块自研磁编码器板。磁编板以 MagnTek MT6826 磁性角度编码芯片为核心：电机轴端粘结径向充磁磁钢，编码芯片与磁钢同轴正对安装，非接触地检测车轮绝对角度。板载 TPRT9013-33 低压差线性稳压器将输入电源稳压至 3.3 V 为芯片供电，并以 BZT52C3V6 稳压管对 3.3 V 电源轨作过压钳位保护；MT6826 的 ABZ 增量输出与 UVW 换相输出悬空不用，仅通过 SPI 接口输出角度数据，CS、MISO、MOSI、CLK 信号线均串接 100 Ω 电阻抑制振铃与干扰，另预留 CAL 校准焊盘，便于安装后现场标定零位。磁编板经 ZH1.5-6P 接插件接入驱动板，驱动板定时读取左右车轮角度后随状态量经 UART 上报主板，主板据此可对轮毂电机构成绝对角度闭环，将车轮精确转至目标角度（程序见附录 B.14）。磁编码器板 PCB 如图 4.3、图 4.4 所示，原理图见附录 A 图 A-6。
+
+图 4.3　磁编码器板 PCB（顶层）
+
+图 4.4　磁编码器板 PCB（底层）
+4.5 传感器接口
+主板为各类传感器预留了完整接口：摄像头经 FPC-20P 连接器接入，采用专用 LDO 供电；IMU 接口原理图上预留 LSM6DSRTR 贴片焊盘，实际装贴 IMU660RC 模块（驱动代码对应 IMU660RC，LSM6DSRTR 驱动已注释保留）；TOF 与 GNSS 分别经 IIC 与 UART 接口接入；四路舵机信号经 100 Ω 电阻隔离输出，舵机母线电流经四路 INA181 电流检测放大器监测，可实现舵机堵转保护；另预留蜂鸣器、五向按键、拨码开关、编码器与无线串口接口。
+4.6 可靠性设计
+针对室外越野的恶劣工况，硬件层面采取了多项可靠性措施：电源入口设防反与 TVS 防护；所有对外信号线串联小电阻限流；功率地与信号地单点连接，舵机与电机大电流回路单独走线；关键接插件点胶防松；主板与驱动板均铺铜散热并留安装孔加固。软件层面的打滑、堵转、离地、俯仰角与遥控失控保护见第 5.9 节。
+
+第5章 软件算法设计
+5.1 软件总体架构
+整车软件由"感知—定位—决策—控制"四层构成：底层以 4 kHz 姿态解算与 1 kHz 串级 PID 保证车体直立与速度跟踪；中间层以 GPS/惯导卡尔曼融合给出米级平面坐标；上层由导航状态机按科目调度路径规划与元素处理策略。软件总体架构如图 5.1 所示。
+
+图 5.1　软件总体架构
+两个核心各自拥有独立的 main()，上电后由 CM0+ 依次启动。CM7_0 的启动序列为：clock_init(250 MHz) → debug_init() → all_init()（外设与参数初始化）→ IMU 零偏标定（3 s）→ 使能中断进入主循环；CM7_1 完成摄像头与 TOF 初始化后进入图像处理主循环，处理结果经共享 RAM 供 CM7_0 读取。
+5.2 IMU 姿态解算
+姿态解算在 PIT0 CH2 的 0.25 ms 中断中执行，采样率 4 kHz。原始数据取自 IMU660RC 六轴传感器，处理链路为：零偏补偿 → 静态死区 → Mahony 互补滤波 → 四元数转欧拉角。
+零偏标定：上电后在 IMU_calibration() 中关全局中断，以 250 μs 间隔连续采样，每 4000 点求一次均值，连续 3 秒取平均得到三轴零偏。静态死区：零偏补偿后若单轴角速度绝对值小于 5 LSB（约 0.35 °/s）则直接置零，抑制静止时的积分漂移。
+Mahony 互补滤波取 twoKp = 1.6、twoKi = 0（纯比例反馈，避免积分项在长时间越野颠簸中发散）：用加速度计测得的重力方向与四元数推算的重力方向作叉积得到误差，反馈修正陀螺积分。归一化使用 Quake III 的 invSqrt() 位运算近似，相比 1.0f/sqrtf() 在 4 kHz 中断中显著节省周期。工程中同时保留了 Madgwick 梯度下降解算（beta = 0.11）作为对比方案，实际参赛版本调用的是 Mahony 分支。
+三轴角速度另经 30 Hz 截止、Q = 0.7071（二阶巴特沃斯，相位失真最小）的 Biquad 低通滤波，得到 Pitch_g_F / Roll_g_F / Yaw_g_F，直接作为角速度环反馈与转向前馈；对角速度做一阶低通差分（时间常数 DGyroLPF = 0.00225）得到角加速度，用于跳跃与颠簸段的姿态突变判断。
+5.3 速度—角度—角速度三环串级控制
+轮腿车的纵向控制采用"速度环 → 角度环 → 角速度环"三级串级结构，左右轮各跑一套完全独立的三环，最终输出叠加差速量得到两侧占空比，控制结构如图 5.2 所示，整定参数如表 5.1 所示。
+
+图 5.2　三环串级控制结构框图
+表 5.1　三环串级控制结构与整定参数
+分频通过 loop_counter % 5 实现：角速度环每次 1 ms 中断都执行，速度环与角度环每 5 次执行一次，形成 200 Hz / 1 kHz 的内外环带宽比，保证内环足够快而外环不与内环打架。速度环的微分项刻意作用在实际速度而非误差上（Derivative = actual_speed − LastActual），原因是目标速度在状态机切换时会发生阶跃，微分作用于测量值可避免阶跃引起的微分冲击。
+除三环之外，还有一条并行的"惯性辅助腿长补偿"通路：Inertial_assistedCrl_X() 用速度误差经 special_PID 解算出腿部前后坐标 wheel_x 的补偿量，等效于用重心前后移动承担大部分速度跟踪职责。为适应越野下坡工况，update_speed_pid_output_limit_by_pitch() 会在俯仰角小于 −16° 时按每度 0.1 的斜率收缩腿长补偿的输出限幅，俯仰越大补偿越保守，避免前扑。
+科目三的三级台阶完成前、以及颠簸路段与反三级台阶期间，three_cascade_target_angle() 会直接丢弃速度环输出、把目标俯仰角强制置零，只保留角度环 + 角速度环稳住车身——此时"平衡"比"速度"更重要。
+5.4 转向控制
+转向不使用舵机，而是通过左右轮占空比差实现差速转向。控制器为航向角外环 + 航向角速度内环的串级结构，外环 Dual_PD_Control() 的输出为
+	u = Kp·e + Kp2·e·|e| + Kd·Δe + Gkd·ω	(1)
+其中 e 为航向误差，已作 ±180° 环绕处理（保证车永远选劣角转向而不会绕远路）；e·|e| 为非线性比例项，小误差时增益低、抑制直道抖动，大误差时增益迅速增大、提高大角度纠偏速度；ω 为 Biquad 滤波后的航向角速度前馈。
+转向参数按科目分档存放于 turn_pid_profile_t 结构体数组中，进入不同科目时由 turn_pid_select_subject() 整体切换，避免单套参数在三种赛道上顾此失彼，如表 5.2 所示。在特殊工况下还有一层运行时增益覆盖：科目三元素段将内外环 D 项放大 30 倍以强化阻尼；单边桥视觉循线时 D 放大 50 倍同时 P 减半；原地打圆时外环 Kp 另行调整。
+表 5.2　分科目转向 PID 参数表
+5.5 五连杆腿部逆运动学
+每条腿由两个舵机驱动一组五连杆机构，杆长参数为 L1 = 6 cm、L2 = 9 cm、L3 = 9 cm、L4 = 6 cm、机架宽 L5 = 3.7 cm。给定足端目标坐标 (x, y)，需要反解两个主动连杆角 φ1 与 φ4。以左侧支链为例，设 a = 2(x + L5/2)·L1，b = 2y·L1，c = (x + L5/2)² + y² + L1² − L2²，则由半角公式得到解析解：
+	φ1 = 2·atan2( b + √(a² + b² − c²),  a + c )	(2)
+右侧支链形式相同，但取判别式的负根（φ4 = 2·atan2(b₁ − √Δ, a₁ + c₁)），以选择机构的正确装配构型。判别式 Δ = a² + b² − c² 小于零表示目标点超出工作空间，此时逆解函数直接返回失败，调用方保持上一拍角度不写入，杜绝 NaN 传播到 PWM 寄存器。解算得到的连杆角还需映射到舵机角：motor1 = 270° − φ1；φ4 大于 270° 时 motor2 = φ4 − 270°，φ4 小于 90° 时 motor2 = 90° + φ4，其余情况保留原角度。
+5.6 GNSS/INS 组合定位
+GNSS 模块输出频率约 10 Hz、单点精度米级，直接用于闭环导航会造成航向指令跳变；而纯航迹推算（轮速 + 航向积分）短期平滑但长期发散。因此采用二维卡尔曼滤波器融合两者，状态量取平面坐标与速度 (x, y, vx, vy)，融合结构如图 5.3 所示。
+
+图 5.3　GNSS/INS 组合定位结构框图
+预测步（1 kHz，与电机中断同频）的状态转移为
+	xₖ⁺ = xₖ + vx·dt + ½·aₓ·dt²,　yₖ⁺ = yₖ + vy·dt + ½·ay·dt²	(3)
+其中体轴加速度经 Mahony 输出的航向角 ψ 投影到当地平面。更新步在 GPS 到帧时触发，观测矩阵 H = I，新息协方差 S = P + R，2×2 矩阵解析求逆后得到卡尔曼增益 K = P·S⁻¹；协方差更新采用 Joseph 形式
+	P = (I − KH)·P·(I − KH)ᵀ + K·R·Kᵀ	(4)
+并在最后强制 P01 = P10 = (P01 + P10)/2 保持数值对称，防止长时间运行后浮点误差累积导致协方差矩阵失对称。噪声参数取过程噪声 Q = 0.0001、量测噪声 R = 1.0，二者比值由稳态增益公式 k = nQ/(nQ + R) 反推确定，n = 预测频率/更新频率 = 1000/10 = 100。全部矩阵运算均手工按元素展开（hand-unrolled），不引入通用矩阵库，避免循环开销与动态内存分配。经纬度到本地平面的转换由 gps_to_local() 完成：以录点时的第一个点为原点，x = Δlon·k_lon，y = Δlat·k_lat，其中 k_lat、k_lon 按参考纬度椭球修正，在赛道尺度上误差可忽略。
+5.7 路径规划
+科目一的锥桶绕行段不采用"直接打点"而是生成连续曲线跟随，流程分四步：直线拟合——对录入的锥桶坐标做全最小二乘（Total Least Squares）拟合，通过协方差矩阵最小特征值对应的特征向量求出一般式直线，相比普通最小二乘，TLS 同时考虑 x、y 两个方向的误差；绕行点生成——沿拟合直线法向左右交替偏移 0.8 m 生成绕行点，对"先左后右"与"先右后左"两种起始方向各试算一次总路程，取较短者，自动适配车辆进桩方向；曲线化——默认使用三次贝塞尔曲线，控制点由 Catmull-Rom 切线给出（切线长度 = 段长 × 0.3），每段采样 8 点，保证经过所有绕行点且一阶连续，工程同时实现了完整的 Dubins 曲线作为备选；跟随——规划结果写入统一缓冲 planned_path[200]，跟随时以 0.3 m 为到点阈值逐点推进，该阈值约为点间距的 40 %，与 GPS 定位精度匹配。
+科目三的 P7→P9 段另有一套"1/4 圆弧 + 直线 + 1/4 圆弧"规划器（generate_arc_line_arc_path）：以 P7→P9 连线为基准，中间点 P8 只提供到该连线的垂距，配合固定前视半径 0.8 m 的纯跟踪算法，解决了直瞄路点时前视距离缩短导致航向指令抖动的问题。
+5.8 图像处理与赛道识别
+图像处理全部运行在 CM7_1 核，摄像头为 MT9V03X（188 × 120 灰度）。基础处理链为：大津法（OTSU）自适应阈值——统计 256 级灰度直方图，遍历求最大类间方差得到最佳阈值，再叠加 +20 的经验偏置以适应赛道白线偏亮的特点；二值去噪——按行游程处理，孤立白点（连续白 ≤ 2）删除，细窄黑缝（连续黑 ≤ 7）填白；边线提取——逐行从左向右扫描，连续"黑黑→白白"记为左边界、"白白→黑黑"记为右边界，相邻行跳变量超过 15 像素则限幅；中线连续度——统计中线列差小于 3 的最长连续段，取该段对应行作为最可信的循线目标行，输出偏差 image_error 与角度 image_error_angle；逆透视变换（IPM）——按相机安装高度、俯仰安装角与实时 Pitch/Roll 建立映射，将透视图还原为俯视图，用于元素几何尺寸的判定。赛道元素视觉识别判据如表 5.3 所示。
+表 5.3　赛道元素视觉识别判据
+5.9 特殊元素处理策略
+特殊元素是本赛题的主要难点。总体策略为：GPS 路点负责"把车带到元素门口"，元素内部则切换为局部闭环（视觉 / 惯导 / 定时 / 姿态），完成后用元素终点的已知坐标重置定位估计，消除元素期间累积的定位误差。各元素的处理策略如表 5.4 所示。
+表 5.4　特殊元素处理策略汇总
+此外还实现了多重安全保护，均在 1 ms 中断中运行：打滑检测——每 2 ms 计算轮速变化率，超过 80（约 11.9 m/s²）立即切断占空比；速度方差检测——对 10 ms 滑动窗口内的轮速求方差，超过 1000 判定为异常波动；堵转/疯转/超速/车体自旋/驱动板卡死——分别以计数器累计判定，阈值 500/500/600/250/250 次；离地检测——以 Z 轴加速度与重力修正值之差超阈值累计 20 次判离地，回落后延时 0.5 s 复位；俯仰角保护——|Pitch| > 75° 直接清除运行标志，电机停转；遥控失控保护——按当前车速动态选择超时阈值，高速时超时更短，触发后关闭电机并进入安全死循环。
+5.10 程序框架与任务调度
+整机行为由三层状态机嵌套构成：第一层为控制模式状态机 Crl_mode（遥控手动 / GPS 自动巡航 / 纯惯导巡航 / 原地起跳测试 / 单元素测试）；第二层为科目状态机（Subject1 路点导航 + 贝塞尔绕桩、Subject2 导航-刹车-720° 掉头、Subject3 按 element_order[] 依次处理 6 个元素槽位）；第三层为元素状态机（三级台阶、跳跃时序、单边桥、颠簸路、雷区、反台阶）。元素完成后统一走 subject3_finish_element()：用该元素终点路点的已知坐标重置卡尔曼/惯导估计位置，再把目标点推进到终点之后的下一个点，这一"坐标重置"是科目三能连续通过六个元素的关键。任务调度周期如表 5.5 所示。
+表 5.5　任务调度周期表（CM7_0）
+
+第6章 系统开发与调试
+6.1 开发工具与调试环境
+软件开发环境为 IAR Embedded Workbench for ARM 9.40.1，语言标准 C99，双核各用一份 .icf 链接脚本，命令行通过 iarbuild 实现一键编译；调试器使用 CMSIS-DAP 在线仿真。辅助工具链包括：VOFA+ 无线串口上位机（13 通道浮点数据实时波形显示，并支持 "p=0.0103!" 形式的在线参数改写）；IPS200 液晶屏菜单系统（13 页参数界面，全部现场可调并保存至 Flash）；Python 脚本 plot_ins.py 离线回放分析惯导数据；Git 进行版本管理，全部参数迭代与问题修复均有提交记录可查。
+6.2 调试过程中遇到的主要问题及解决方案
+表 6.1 按问题性质分类，记录整个开发周期中最具代表性、也最耗时的若干问题，每一条的解决方案均已固化在当前代码中。
+表 6.1　典型问题与解决方法
+6.3 关键参数整定过程
+例一：三环串级 PID（由内环到外环）。串级系统必须自内向外逐环整定，否则外环的振荡会被误判为内环参数问题。第一步整定角速度环：断开外环直接给定固定目标角速度，P 从 0 逐步增大至 5；此环最典型的故障是"车变成陀螺"，即反馈符号取反。第二步整定角度环：P 从 20 起逐步上调至 48，D 从 8 降到 4，因为角度环 D 过大会引起高频抖动。第三步整定速度环：输出为目标俯仰角，限幅 ±40° 防止外环把车顶翻，取 P = 0.010、I = 0、D = 0，由于腿长补偿通路已承担大部分速度跟踪职责，此环只需提供慢速重心配平。第四步整定腿长补偿 PID：P = 0.0103、I = 0.00004、D = 0.002，积分限幅按 Integralmax = maxoutput/I/3 自动计算，保证纯积分项最多贡献 1/3 输出。整定辅助手段：通过 VOFA+ 无线串口在线改写参数，单次迭代从数分钟缩短到数秒。
+例二：三级台阶跳跃时序。三级台阶要求车在三级连续台阶上完成三次跳跃，时序偏差几十毫秒就会导致撞台阶或落空，是整个赛题中最难整定的部分。触发阈值由固定值改为自动标定：车在接近元素起点 1 m 内时先延时若干拍等待姿态稳定，再连续采样 TOF 距离求均值，三次跳跃的触发阈值取"均值 − 40 mm"。跳跃内部时序由 Jump_test() 状态机的计数器决定，全部以 2 ms 为一拍。跳间延时——第一跳到第二跳 128 ms、第二跳到第三跳 60 ms，这两个值与车速强相关，是在固定通过速度 270 下扫描得到的。落地稳定——第三跳落地后锁定航向并保持 400 ms，期间不接受任何新的航向指令，等车身姿态收敛后再交回路点导航。
+例三：白色带状元素识别阈值（雷区触发）。雷区改为纯视觉触发后，误触发一次就意味着在错误位置原地转 720°，因此识别阈值的整定标准是"宁可漏、不可错"。整定顺序为：先放宽全部阈值观察能否稳定命中，再逐项收紧到刚好排除误检。所有中间量（跨度、厚度、最近行、倾角、拟合偏差、命中通道）都实时显示在 IPS200 屏幕上，可在不连电脑的情况下直接观察每一帧的判据取值。
+6.4 系统测试与性能验证
+速度单位为电机转速原始值，与实际线速度的换算系数为 v_2_m_per_s = 212.21（即 60/(2πr)，轮半径约 4.4 cm），换算关系示例：300 ≈ 1.41 m/s，600 ≈ 2.83 m/s，1300 ≈ 6.13 m/s。三个科目的分段速度标定分别如表 6.2、表 6.3、表 6.4 所示。
+表 6.2　科目一分段速度标定
+表 6.3　科目二分段速度标定
+表 6.4　科目三分段速度与元素驻留时间标定
+6.5 本章小结
+从版本记录看，整个开发大致经历五个阶段：基础平台阶段（3 月—5 月上旬）调通姿态解算与三环串级 PID，完成五连杆逆解与舵机零点标定、GPS 录点与菜单系统；定位与导航阶段（5 月中旬）引入惯导打点与 GPS/INS 卡尔曼融合；元素攻坚阶段（5 月下旬—8 月上旬）先后调稳单边桥、颠簸路与三级台阶，科目三状态机重构为元素槽位表驱动；精细化阶段（8 月中旬）完成 P7—P9 圆弧路径与白色带状元素识别算法。回顾整个过程，最有效的三项工程手段是：其一，把可能需要现场改动的量全部做成菜单可调 + Flash 保存，把"改代码—编译—下载"的循环压缩为"按几下按键"；其二，把每一个状态机的中间标志位与判据数值都上屏或上传 VOFA，让问题在现象出现的第一时间可观测；其三，坚持 Git 版本管理，任何一次参数回归都能快速定位引入问题的提交。
+
+第7章 车模主要技术参数
+车模主要技术参数汇总如表 7.1 所示。
+表 7.1　车模主要技术参数
+
+第8章 结论
+本报告完整地介绍了一辆室外轮腿组智能车的设计、实现与调试过程。作品以英飞凌 CYT4BB 双核微控制器为核心，采用轮腿复合结构，主要成果与创新点可归纳为以下四个方面。
+第一，构建了高带宽的平衡控制体系。4 kHz Mahony 姿态解算与"速度—角度—角速度"三环串级 PID 加惯性辅助腿长补偿的控制结构，使双轮足式车模在室外颠簸路面上保持了可靠的动态平衡；微分作用于测量值、陀螺前馈、俯仰自适应限幅等工程细节显著改善了控制品质。
+第二，发挥了双核架构的算力优势。CM7_0 专职实时控制、CM7_1 专职视觉与测距，配合基于固定地址共享 RAM 与显式 D-Cache 维护的跨核通信机制，在保证 1 kHz 控制回路确定性的同时实现了约 50 Hz 的图像处理能力。
+第三，形成了鲁棒的室外定位与元素处理策略。GNSS 与惯导经手工展开的二维卡尔曼滤波融合，给出平滑的米级定位；"路点导航到门口 + 元素内部局部闭环 + 元素终点坐标重置"的三段式策略，有效阻断了误差在六个连续元素间的累积。
+第四，沉淀了一套高效的调试方法论。菜单可调参数、VOFA 在线整定、全量中间变量上屏与 Git 版本管理，使三级台阶跳跃时序、雷区视觉阈值等难题的整定效率成倍提升。
+限于时间与水平，车模仍有可改进之处：轮速观测目前依赖电机霍尔，精度有限，后续可考虑融合轮毂编码器与 IMU 的紧耦合里程计；纯白视觉的雷区触发在强逆光下仍有漏检风险，可引入 TOF 阵列做多模态确认；五连杆逆解目前逐腿独立计算，尚未考虑双腿耦合的全身姿态优化。我们将在后续训练中继续完善。
+
+参考文献
+[1] 卓晴， 黄开胜， 邵贝贝. 学做智能车——挑战"飞思卡尔"杯[M]. 北京: 北京航空航天大学出版社, 2007.
+[2] Mahony R, Hamel T, Pflimlin J M. Nonlinear complementary filters on the special orthogonal group[J]. IEEE Transactions on Automatic Control, 2008, 53(5): 1203-1218.
+[3] Madgwick S O H, Harrison A J L, Vaidyanathan R. Estimation of IMU and MARG orientation using a gradient descent algorithm[C]//IEEE International Conference on Rehabilitation Robotics. Zurich: IEEE, 2011: 1-7.
+[4] 邵贝贝. 单片机嵌入式应用的在线开发方法[M]. 北京: 清华大学出版社, 2004.
+[5] Infineon Technologies AG. TRAVEO T2G Automotive Microcontroller Datasheet: CYT4BB Series[Z]. Munich: Infineon, 2023.
+[6] Welch G, Bishop G. An Introduction to the Kalman Filter[R]. Chapel Hill: University of North Carolina, 2006.
+[7] Coulter R C. Implementation of the Pure Pursuit Path Tracking Algorithm[R]. Pittsburgh: Carnegie Mellon University, 1992.
+[8] Otsu N. A threshold selection method from gray-level histograms[J]. IEEE Transactions on Systems, Man, and Cybernetics, 1979, 9(1): 62-66.
+[9] 全国大学生智能汽车竞赛秘书处. 第二十一届全国大学生智能汽车竞赛竞速比赛规则[Z]. 2026.
+
+附录A 电路原理图
+本附录给出无刷驱动板与主板的完整原理图。图 A-1、图 A-2 为驱动板原理图（CYT2BL3 最小系统与功率驱动级），图 A-3 至图 A-5 为主板原理图（CYT4BB7 最小系统与电源、传感器接口与外设、舵机电流检测），图 A-6 为磁编码器板原理图（MT6826 及其电源、接口）。
+
+图 A-1　无刷驱动板原理图（一）：CYT2BL3 最小系统与电源
+
+图 A-2　无刷驱动板原理图（二）：FD6288Q 功率级与电流检测
+
+图 A-3　主板原理图（一）：CYT4BB7 最小系统与电源
+
+图 A-4　主板原理图（二）：传感器接口与外设
+
+图 A-5　主板原理图（三）：舵机接口与电流检测
+
+图 A-6　磁编码器板原理图
+
+附录B 核心源代码
+本附录代码摘自实际参赛工程，未作简化改写，路径相对于工程根目录。受篇幅所限仅收录核心算法子程序，完整工程代码随参赛作品一并提交。
+B.1 Mahony 互补滤波姿态解算（project/code/ICM.c）
+void MahonyAHRSupdateIMU(float gx, float gy, float gz, float ax, float ay, float az)
+{
+    static float recipNorm;
+    static float halfvx, halfvy, halfvz;
+    static float halfex, halfey, halfez; // 方向误差
+    static float qa, qb, qc;
+ 
+    if (!((ax == 0.0f) && (ay == 0.0f) && (az == 0.0f)))
+    {
+        // 将角速度从度/秒转换为弧度/秒
+        gx *= 0.0174532925f;
+        gy *= 0.0174532925f;
+        gz *= 0.0174532925f;
+ 
+        // 归一化加速度测量值
+        recipNorm = invSqrt(ax * ax + ay * ay + az * az);
+        ax *= recipNorm;
+        ay *= recipNorm;
+        az *= recipNorm;
+ 
+        // 计算重力方向与加速度方向的叉积
+        halfvx = q1 * q3 - q0 * q2;
+        halfvy = q0 * q1 + q2 * q3;
+        halfvz = q0 * q0 - 0.5f + q3 * q3;
+ 
+        // 测量重力方向与推算重力方向的误差
+        halfex = (ay * halfvz - az * halfvy);
+        halfey = (az * halfvx - ax * halfvz);
+        halfez = (ax * halfvy - ay * halfvx);
+ 
+        if (twoKi > 0.0f)
+        {
+            integralFBx += twoKi * halfex * invsampleFreq;
+            integralFBy += twoKi * halfey * invsampleFreq;
+            integralFBz += twoKi * halfez * invsampleFreq;
+            gx += integralFBx;
+            gy += integralFBy;
+            gz += integralFBz;
+        }
+        else
+        {
+            integralFBx = 0.0f;
+            integralFBy = 0.0f;
+            integralFBz = 0.0f;
+        }
+ 
+        // 应用比例反馈
+        gx += twoKp * halfex;
+        gy += twoKp * halfey;
+        gz += twoKp * halfez;
+    }
+ 
+    // 四元数微分积分
+    gx *= (0.5f * invsampleFreq);
+    gy *= (0.5f * invsampleFreq);
+    gz *= (0.5f * invsampleFreq);
+    qa = q0;
+    qb = q1;
+    qc = q2;
+    q0 += (-qb * gx - qc * gy - q3 * gz);
+    q1 += (qa * gx + qc * gz - q3 * gy);
+    q2 += (qa * gy - qb * gz + q3 * gx);
+    q3 += (qa * gz + qb * gy - qc * gx);
+ 
+    // 四元数归一化
+    recipNorm = invSqrt(q0 * q0 + q1 * q1 + q2 * q2 + q3 * q3);
+    q0 *= recipNorm;
+    q1 *= recipNorm;
+    q2 *= recipNorm;
+    q3 *= recipNorm;
+ 
+    static float r11, r12, r21, r31, r32;
+    r11 = 2.0f * (q0 * q1 + q2 * q3);
+    r12 = 1.0f - 2.0f * (q1 * q1 + q2 * q2);
+    r21 = 2.0f * (q0 * q2 - q3 * q1);
+    r31 = 2.0f * (q0 * q3 + q1 * q2);
+    r32 = 1.0f - 2.0f * (q2 * q2 + q3 * q3);
+ 
+    q[0] = q0;  q[1] = q1;  q[2] = q2;  q[3] = q3;
+ 
+    // 计算欧拉角（弧度）
+    Yaw_a_Pi   = atan2f(r31, r32);
+    Pitch_a_Pi = -asinf(r21);
+    Roll_a_Pi  = atan2f(r11, r12);
+}
+
+B.2 二阶 Biquad 巴特沃斯低通滤波（project/code/ICM.c）
+void biquad_filter_init(biquad_state *state, biquad_type type, int fs, float fc, float q_value)
+{
+    float w0, sin_w0, cos_w0, alpha;
+    float b0, b1, b2, a0, a1, a2;
+ 
+    w0 = 2 * PI * fc / fs;          // 频率转换
+    sin_w0 = sinf(w0);
+    cos_w0 = cosf(w0);
+    alpha = sin_w0 / (2.0 * q_value); // 衰减系数
+ 
+    switch(type)
+    {
+    case BIQUAD_LOWPASS:
+        b0 = (1.0 - cos_w0) / 2.0;
+        b1 = b0 * 2;
+        b2 = b0;
+        a0 = 1.0 + alpha;
+        a1 = -2.0 * cos_w0;
+        a2 = 1.0 - alpha;
+        break;
+    case BIQUAD_HIGHPASS:
+        b0 = (1.0 + cos_w0) / 2.0;
+        b1 = -b0 * 2;
+        b2 = b0;
+        a0 = 1.0 + alpha;
+        a1 = -2.0 * cos_w0;
+        a2 = 1.0 - alpha;
+        break;
+    default:
+        b0 = alpha; b1 = 0.0; b2 = -alpha;
+        a0 = 1.0 + alpha; a1 = -2.0 * cos_w0; a2 = 1.0 - alpha;
+        break;
+    }
+    state->a0 = b0 / a0;
+    state->a1 = b1 / a0;
+    state->a2 = b2 / a0;
+    state->a3 = a1 / a0;
+    state->a4 = a2 / a0;
+    state->x1 = state->x2 = 0.0;
+    state->y1 = state->y2 = 0.0;
+}
+ 
+// 二阶滤波
+float biquad(biquad_state *state, float data)
+{
+    float result = 0;
+    result = state->a0 * data + state->a1 * state->x1 + state->a2 * state->x2
+           - state->a3 * state->y1 - state->a4 * state->y2;
+    state->x2 = state->x1;
+    state->x1 = data;
+    state->y2 = state->y1;
+    state->y1 = result;
+    return result;
+}
+
+B.3 三环串级平衡控制（project/code/motor.c）
+// 三级台阶完成前、颠簸路段与反三级台阶期间，丢弃速度环输出，
+// 目标俯仰角固定为 0，只留角度环 + 角速度环稳住车身
+static float three_cascade_target_angle(float speed_target_angle)
+{
+    if(Crl_mode == GPS_MODE &&
+       gps_subject_select == 3u &&
+       (three_steps_once_done == 0u ||
+        subject3_bumpy_road_active() == 1u ||
+        subject3_three_step_back_active() == 1u))
+    {
+        return 0.0f;
+    }
+    return speed_target_angle;
+}
+ 
+// 三环串级 PID（左轮，右轮同构）
+float Control_ISR_L(float Pitch, float nowspeed, float Tarspeed,
+    PID_Datatypedef *speedpid, PID_Datatypedef *roll_pid, PID_Datatypedef *w_pid)
+{
+    // 速度环与角度环（每 5 ms）
+    if (loop_counter_L % 5 == 0)
+    {
+        speedpid->Speedout_Tar_roll = three_cascade_target_angle(
+            SpeedToPitch_PID(nowspeed, Tarspeed, speedpid));
+        w_pid->Rollout_Tar_w = Common_PID(Pitch, speedpid->Speedout_Tar_roll, roll_pid);
+        loop_counter_L = 0;
+    }
+    loop_counter_L += 1;
+    // 角速度环（每 1 ms）
+    w_pid->DeltaOutput = Common_PID(Pitch_g_F, w_pid->Rollout_Tar_w, w_pid);
+    return w_pid->DeltaOutput;
+}
+
+B.4 速度环 PID（微分作用于测量值）
+float SpeedToPitch_PID(float actual_speed, float target_speed, PID_Datatypedef *motorpid)
+{
+    float Error = actual_speed - target_speed;
+ 
+    motorpid->Integral += Error;
+    if(motorpid->Integral > motorpid->Integralmax)
+        motorpid->Integral = motorpid->Integralmax;
+    else if(motorpid->Integral < motorpid->Integralmin)
+        motorpid->Integral = motorpid->Integralmin;
+ 
+    if(motorpid->EC == 0)
+    {
+        motorpid->LastActual = actual_speed;
+        motorpid->EC = 1;
+    }
+ 
+    // 微分作用于实际速度而非误差，避免目标阶跃引起微分冲击
+    motorpid->Derivative = actual_speed - motorpid->LastActual;
+    motorpid->out_p = motorpid->P * Error;
+    motorpid->out_i = motorpid->I * motorpid->Integral;
+    motorpid->out_d = motorpid->D * motorpid->Derivative;
+    motorpid->DeltaOutput = motorpid->out_p + motorpid->out_i + motorpid->out_d;
+    motorpid->LastError = Error;
+    motorpid->LastActual = actual_speed;
+ 
+    if(motorpid->DeltaOutput > motorpid->maxoutput)
+        motorpid->DeltaOutput = motorpid->maxoutput;
+    else if(motorpid->DeltaOutput < motorpid->minoutput)
+        motorpid->DeltaOutput = motorpid->minoutput;
+ 
+    return motorpid->DeltaOutput;
+}
+
+B.5 通用位置式 PID（含陀螺前馈）
+float Common_PID(float Actual, float Target, PID_Datatypedef *motorpid)
+{
+    float Error;
+    Error = Target - Actual;
+    motorpid->Integral += Error;
+ 
+    if(motorpid->Integral >= motorpid->Integralmax)
+        motorpid->Integral = motorpid->Integralmax;
+    else if(motorpid->Integral <= motorpid->Integralmin)
+        motorpid->Integral = motorpid->Integralmin;
+ 
+    motorpid->Integralout = motorpid->I * motorpid->Integral;
+    motorpid->Derivative = Error - motorpid->LastError;
+ 
+    motorpid->DeltaOutput =
+        motorpid->P * Error +
+        motorpid->I * motorpid->Integral +
+        motorpid->D * motorpid->Derivative +
+        motorpid->Gkd * Pitch_g_F;   // 陀螺仪前馈项
+ 
+    motorpid->LastError = Error;
+ 
+    if(motorpid->DeltaOutput > motorpid->maxoutput)
+        motorpid->DeltaOutput = motorpid->maxoutput;
+    else if(motorpid->DeltaOutput < motorpid->minoutput)
+        motorpid->DeltaOutput = motorpid->minoutput;
+ 
+    return motorpid->DeltaOutput;
+}
+
+B.6 转向双 PD 控制（project/code/motor.c）
+float Dual_PD_Control(float target_yaw, float current_yaw, float omega_gyro,
+                      DualPD_DataTypeDef *controller)
+{
+    // 航向误差，±180° 环绕处理
+    float error = target_yaw - current_yaw;
+    if(error > 180.0f)  error -= 360.0f;
+    else if(error < -180.0f) error += 360.0f;
+ 
+    float delta_e = error - controller->Last_e;
+    float nonlinear_p = error * fabs(error);   // 非线性比例项 e·|e|
+ 
+    float output = controller->Kp * error
+                 + controller->Kp2 * nonlinear_p
+                 + controller->Kd * delta_e
+                 + controller->Gkd * omega_gyro;   // 陀螺仪前馈
+ 
+    if(output > controller->maxoutput)      output = controller->maxoutput;
+    else if(output < controller->minoutput) output = controller->minoutput;
+ 
+    controller->Last_e = error;
+    return output;
+}
+
+B.7 五连杆腿部逆运动学解算（project/code/steer.c）
+uint8 FiveLinkage_InverseRaw(float link1, float link2, float link3, float link4,
+                             float base_width, float x, float y, float *ph1, float *ph4)
+{
+    float a, b, c, disc;
+    float a1, b1, c1;
+ 
+    if(NULL == ph1 || NULL == ph4) return 0;
+ 
+    a = 2.0f * (x + base_width / 2.0f) * link1;
+    b = 2.0f * y * link1;
+    c = (x + base_width / 2.0f) * (x + base_width / 2.0f) + y * y
+        + link1 * link1 - link2 * link2;
+    disc = a * a + b * b - c * c;
+    if(disc < 0.0f)   // 目标点超出工作空间
+    {
+        *ph1 = NAN;  *ph4 = NAN;
+        return 0;
+    }
+ 
+    *ph1 = 2.0f * atan2f(b + sqrtf(disc), a + c) * 180.0f / (float)M_PI;
+    *ph1 = steer_norm_angle_deg(*ph1);
+ 
+    a1 = 2.0f * (x - base_width / 2.0f) * link4;
+    b1 = 2.0f * y * link4;
+    c1 = (x - base_width / 2.0f) * (x - base_width / 2.0f) + y * y
+         + link4 * link4 - link3 * link3;
+    disc = a1 * a1 + b1 * b1 - c1 * c1;
+    if(disc < 0.0f)
+    {
+        *ph1 = NAN;  *ph4 = NAN;
+        return 0;
+    }
+ 
+    *ph4 = 2.0f * atan2f(b1 - sqrtf(disc), a1 + c1) * 180.0f / (float)M_PI;
+    *ph4 = steer_norm_angle_deg(*ph4);
+    return 1;
+}
+ 
+void TargetAngleGet_L(float xx, float yy)
+{
+    float motor1, motor2;
+    if(FiveLinkage_InverseRaw(L1, L2, L3, L4, L5, -xx, yy, &ph1_L, &ph4_L)
+       && five_link_raw_to_motor(ph1_L, ph4_L, &motor1, &motor2))
+    {
+        Tarangle11 = motor1;
+        Tarangle21 = motor2;
+    }
+}
+
+B.8 地形自适应变腿高控制（project/code/steer.c）
+void Terrain_adaptiveCrl(float row)
+{
+    static float Compensate_Limit;
+    Compensate_Limit = 2.5f;
+    wheel_y = SINGLEWHEELY_HIGHT;
+    // 以横滚角反馈解算左右腿高差：tan(Roll) × 车宽 / 2
+    compensate_hight = tan(row*2.0*3.1415926/360.0)*car_width;
+    static float compensate_hight_2, compensate_hight_compensate;
+    compensate_hight_2 = compensate_hight/2.0;
+    compensate_hight_compensate = speed_PID(compensate_hight_2, 0, &single_pid);
+    // 左右腿反向补偿
+    Left_compensate  +=  compensate_hight_compensate;
+    Right_compensate += -compensate_hight_compensate;
+ 
+    if(Left_compensate > Compensate_Limit)        Left_compensate = Compensate_Limit;
+    else if(Left_compensate < -Compensate_Limit)  Left_compensate = -Compensate_Limit;
+    if(Right_compensate > Compensate_Limit)       Right_compensate = Compensate_Limit;
+    else if(Right_compensate < -Compensate_Limit) Right_compensate = -Compensate_Limit;
+}
+
+B.9 跳跃时序状态机
+void Jump_test(void)
+{
+    static float32_t start_pitch = 0, pitch_check = 0;
+    static float32_t start_x = 0, start_y = 0;
+    static float32_t pre_height = 0;
+    switch (jump_state)
+    {
+        case 0:  // 预蹲下
+            if (imu660ra_pitch >= 6)
+            {
+                jump_state = 2;
+                start_pitch = imu660ra_pitch;
+                target_leg_length = jump_length3;    // 起跳腿高
+                pitch_check = start_pitch;
+                jump_time = 0;
+            }
+            else
+            {
+                target_leg_length = jump_length1;    // 下蹲到 7.5cm
+                leg_pid.pOut = 0;                    // 原地站立
+            }
+            break;
+        case 2:  // 起跳姿态确认
+            if (imu660ra_pitch > pitch_check + 2.5f)
+            { jump_state = 3; jump_time = 0; }
+            else if (jump_time > 400)
+            { jump_state = 4; jump_time = 0; }       // 超时兜底
+            break;
+        case 3:  // 离地检测与最高点检测
+            jump_time++;
+            target_leg_length = jump_length2;        // 空中收腿
+            if (abs(imu660ra_acc_z) < 0.3 && imu660ra_pitch <= 10 &&
+                imu660ra_pitch >= 4 && jump_time >= 260)
+            { jump_state = 4; jump_time = 0; }
+            else if (jump_time > 700)
+            { jump_state = 4; jump_time = 0; }
+            break;
+        case 4:  // 落地缓冲
+            jump_time++;
+            target_leg_length = jump_length4;        // 落地下蹲缓冲
+            if (jump_time > 150)
+            { jump_state = 5; jump_time = 0; }
+            break;
+        case 5:  // 退出跳跃
+            if (abs(imu660ra_acc_z) < 0.3 && imu660ra_pitch <= 10)
+            {
+                target_leg_length = normal_length;
+                jump_state = 0;
+                jump_flag = 0;
+            }
+            break;
+    }
+}
+
+B.10 二维卡尔曼组合定位
+// 经纬度 -> 本地平面坐标
+static void gps_to_local(double lat, double lon, double *x, double *y)
+{
+    double lat_ref = HOME_LAT * DEG2RAD, lon_ref = HOME_LON * DEG2RAD;
+    double lat_r = lat * DEG2RAD, lon_r = lon * DEG2RAD;
+    double k_lat = 111132.92 - 559.82 * cos(2*lat_ref)
+                 + 1.175 * cos(4*lat_ref) - 0.0023 * cos(6*lat_ref);
+    double k_lon = 111412.84 * cos(lat_ref) - 93.5 * cos(3*lat_ref)
+                 + 0.118 * cos(5*lat_ref);
+    *x = (lon_r - lon_ref) * k_lon;
+    *y = (lat_r - lat_ref) * k_lat;
+}
+ 
+// 预测步（含航向投影补偿）
+static void kf2d_predict(KF2D_State *s, float a_body, float dt, float az_meas)
+{
+    float A = (float)s->att.yaw;
+    float sinA = sinf(A), cosA = cosf(A);
+    float a0 = a_body * cosA, a1 = a_body * sinA;
+    s->x[0] += s->x[2]*dt + 0.5f*a0*dt*dt;
+    s->x[1] += s->x[3]*dt + 0.5f*a1*dt*dt;
+    s->x[2] += a0*dt;  s->x[3] += a1*dt;
+    float dt2 = dt*dt, dt3 = dt2*dt, dt4 = dt3*dt;
+    float q = Q_PROCESS;
+    float p00 = s->P[0], p01 = s->P[1], p02 = s->P[2], p03 = s->P[3];
+    float p10 = s->P[4], p11 = s->P[5], p12 = s->P[6], p13 = s->P[7];
+    float p20 = s->P[8], p21 = s->P[9], p22 = s->P[10], p23 = s->P[11];
+    float p30 = s->P[12], p31 = s->P[13], p32 = s->P[14], p33 = s->P[15];
+    float n00 = p00 + dt*(p20+p02) + dt2*p22 + q*0.25f*dt4;
+    float n01 = p01 + dt*(p21+p03) + dt2*p23;
+    float n02 = p02 + dt*p22 + q*0.5f*dt3;
+    float n03 = p03 + dt*p23;
+    float n10 = p10 + dt*(p30+p12) + dt2*p32;
+    float n11 = p11 + dt*(p31+p13) + dt2*p33 + q*0.25f*dt4;
+    float n12 = p12 + dt*p32;
+    float n13 = p13 + dt*p33 + q*0.5f*dt3;
+    float n20 = p20 + dt*p22 + q*0.5f*dt3;
+    float n21 = p21 + dt*p23;
+    float n22 = p22 + q*dt2;
+    float n23 = p23;
+    float n30 = p30 + dt*p32;
+    float n31 = p31 + dt*p33 + q*0.5f*dt3;
+    float n32 = p32;
+    float n33 = p33 + q*dt2;
+    s->P[0]=n00;  s->P[1]=n01;  s->P[2]=n02;  s->P[3]=n03;
+    s->P[4]=n10;  s->P[5]=n11;  s->P[6]=n12;  s->P[7]=n13;
+    s->P[8]=n20;  s->P[9]=n21;  s->P[10]=n22; s->P[11]=n23;
+    s->P[12]=n30; s->P[13]=n31; s->P[14]=n32; s->P[15]=n33;
+}
+ 
+// 量测更新（Joseph 形式）
+static void kf2d_update(KF2D_State *s, float mx, float my)
+{
+    float r = R_MEAS;
+    float p00=s->P[0], p01=s->P[1], p02=s->P[2], p03=s->P[3];
+    float p10=s->P[4], p11=s->P[5], p12=s->P[6], p13=s->P[7];
+    float p20=s->P[8], p21=s->P[9], p22=s->P[10], p23=s->P[11];
+    float p30=s->P[12], p31=s->P[13], p32=s->P[14], p33=s->P[15];
+    float s00 = p00 + r, s11 = p11 + r;
+    float det = s00*s11;
+    float inv00 = s11/det, inv01 = 0, inv10 = 0, inv11 = s00/det;
+    float k00 = p00*inv00, k01 = p01*inv11;
+    float k10 = p10*inv00, k11 = p11*inv11;
+    float k20 = p20*inv00, k21 = p21*inv11;
+    float k30 = p30*inv00, k31 = p31*inv11;
+    float y0 = mx - s->x[0], y1 = my - s->x[1];
+    s->x[0] += k00*y0 + k01*y1;  s->x[1] += k10*y0 + k11*y1;
+    s->x[2] += k20*y0 + k21*y1;  s->x[3] += k30*y0 + k31*y1;
+    float ikh00 = 1.0f-k00, ikh01 = -k01, ikh10 = -k10, ikh11 = 1.0f-k11;
+    float ikh20 = -k20, ikh21 = -k21, ikh30 = -k30, ikh31 = -k31;
+    float t00 = ikh00*p00 + ikh01*p10, t01 = ikh00*p01 + ikh01*p11;
+    float t02 = ikh00*p02 + ikh01*p12, t03 = ikh00*p03 + ikh01*p13;
+    float t10 = ikh10*p00 + ikh11*p10, t11 = ikh10*p01 + ikh11*p11;
+    float t12 = ikh10*p02 + ikh11*p12, t13 = ikh10*p03 + ikh11*p13;
+    float t20 = ikh20*p00 + ikh21*p10, t21 = ikh20*p01 + ikh21*p11;
+    float t22 = ikh20*p02 + ikh21*p12, t23 = ikh20*p03 + ikh21*p13;
+    float t30 = ikh30*p00 + ikh31*p10, t31 = ikh30*p01 + ikh31*p11;
+    float t32 = ikh30*p02 + ikh31*p12, t33 = ikh30*p03 + ikh31*p13;
+    s->P[0]  = t00*ikh00 + t01*ikh10 + k00*r*k00 + k01*r*k01;
+    s->P[1]  = t00*ikh01 + t01*ikh11 + k00*r*k10 + k01*r*k11;
+    s->P[2]  = t00*ikh20 + t01*ikh30 + k00*r*k20 + k01*r*k21;
+    s->P[3]  = t00*ikh21 + t01*ikh31 + k00*r*k30 + k01*r*k31;
+    s->P[4]  = t10*ikh00 + t11*ikh10 + k10*r*k00 + k11*r*k01;
+    s->P[5]  = t10*ikh01 + t11*ikh11 + k10*r*k10 + k11*r*k11;
+    s->P[6]  = t10*ikh20 + t11*ikh30 + k10*r*k20 + k11*r*k21;
+    s->P[7]  = t10*ikh21 + t11*ikh31 + k10*r*k30 + k11*r*k31;
+    s->P[8]  = t20*ikh00 + t21*ikh10 + k20*r*k00 + k21*r*k01;
+    s->P[9]  = t20*ikh01 + t21*ikh11 + k20*r*k10 + k21*r*k11;
+    s->P[10] = t20*ikh20 + t21*ikh30 + k20*r*k20 + k21*r*k21;
+    s->P[11] = t20*ikh21 + t21*ikh31 + k20*r*k30 + k21*r*k31;
+    s->P[12] = t30*ikh00 + t31*ikh10 + k30*r*k00 + k31*r*k01;
+    s->P[13] = t30*ikh01 + t31*ikh11 + k30*r*k10 + k31*r*k11;
+    s->P[14] = t30*ikh20 + t31*ikh30 + k30*r*k20 + k31*r*k21;
+    s->P[15] = t30*ikh21 + t31*ikh31 + k30*r*k30 + k31*r*k31;
+}
+
+B.11 锥桶 TLS 直线拟合
+static int fitTotalLeastSquaresLine(float *xs, float *ys, int n, float *theta)
+{
+    if (n < 2) return 0;
+    float mean_x = 0, mean_y = 0;
+    for (int i = 0; i < n; i++) { mean_x += xs[i]; mean_y += ys[i]; }
+    mean_x /= n; mean_y /= n;
+    float sxx = 0, syy = 0, sxy = 0;
+    for (int i = 0; i < n; i++)
+    {
+        float dx = xs[i] - mean_x, dy = ys[i] - mean_y;
+        sxx += dx*dx; syy += dy*dy; sxy += dx*dy;
+    }
+    *theta = 0.5f * atan2f(2*sxy, sxx - syy);
+    return 1;
+}
+
+B.12 贝塞尔曲线路径生成
+static void bezier_cubic(const Point2D *p0, const Point2D *p1,
+                         const Point2D *p2, const Point2D *p3,
+                         float t, Point2D *out)
+{
+    float u = 1.0f - t;
+    float b0 = u*u*u, b1 = 3*u*u*t, b2 = 3*u*t*t, b3 = t*t*t;
+    out->x = b0*p0->x + b1*p1->x + b2*p2->x + b3*p3->x;
+    out->y = b0*p0->y + b1*p1->y + b2*p2->y + b3*p3->y;
+}
+ 
+int generate_bezier_cone_path(const Point2D *car_pos, float heading_rad,
+    const ConePosition *left_cones, int left_count,
+    const ConePosition *right_cones, int right_count,
+    Point2D *out_points, int max_points)
+{
+    float center_x = 0, center_y = 0; int total = 0;
+    for (int i = 0; i < left_count; i++)
+    { center_x += left_cones[i].x; center_y += left_cones[i].y; total++; }
+    for (int i = 0; i < right_count; i++)
+    { center_x += right_cones[i].x; center_y += right_cones[i].y; total++; }
+    if (total == 0) return 0;
+    center_x /= total; center_y /= total;
+    float t2x = 0, t2y = 0, t1x = 0, t1y = 0; int cnt2 = 0, cnt1 = 0;
+    for (int i = 0; i < left_count; i++)
+    {
+        if (left_cones[i].y > 0.8f)
+        { t2x += left_cones[i].x; t2y += left_cones[i].y; cnt2++; }
+        else { t1x += left_cones[i].x; t1y += left_cones[i].y; cnt1++; }
+    }
+    for (int i = 0; i < right_count; i++)
+    {
+        if (right_cones[i].y > 0.8f)
+        { t2x += right_cones[i].x; t2y += right_cones[i].y; cnt2++; }
+        else { t1x += right_cones[i].x; t1y += right_cones[i].y; cnt1++; }
+    }
+    if (cnt2 > 0) { t2x /= cnt2; t2y /= cnt2; }
+    if (cnt1 > 0) { t1x /= cnt1; t1y /= cnt1; }
+    float vx = t2x - t1x, vy = t2y - t1y;
+    float vlen = sqrtf(vx*vx + vy*vy);
+    if (vlen < 1e-3f) { vx = 0; vy = 1; vlen = 1; }
+    float dir_x = vx/vlen, dir_y = vy/vlen;
+    Point2D p0 = { car_pos->x, car_pos->y };
+    Point2D p3 = { center_x, center_y };
+    float dist = sqrtf((p3.x-p0.x)*(p3.x-p0.x) + (p3.y-p0.y)*(p3.y-p0.y));
+    float d1 = 0.25f * dist, d2 = 0.75f * dist;
+    float hx = cosf(heading_rad), hy = sinf(heading_rad);
+    Point2D p1 = { p0.x + hx*d1, p0.y + hy*d1 };
+    Point2D p2 = { p3.x - dir_x*d2, p3.y - dir_y*d2 };
+    int num = (max_points < 12) ? max_points : 12;
+    for (int i = 0; i < num; i++)
+    {
+        float t = (float)i / (num - 1);
+        bezier_cubic(&p0, &p1, &p2, &p3, t, &out_points[i]);
+    }
+    return num;
+}
+
+B.13 OTSU 大津法自适应阈值
+short LQ_GetOSTU (unsigned char tmImage[LCDH][LCDW])
+{
+    signed short i, j;
+    unsigned long PixelAmount = 0;
+    unsigned long PixelIntegral = 0;
+    signed short Delta, DeltaB;
+    unsigned long NewAvg = 0, NewAvgB = 0, Count = 0, CountB = 0;
+    unsigned long Max = 0;
+    unsigned long Total = 0;
+    short Threshold = 0;
+    unsigned long HistoGram[256];
+    unsigned long Widest = 0;
+    unsigned long Min1 = 100000, Min2 = 100000;
+    unsigned long Ave, Ave2, Ave3;
+    signed short Max1, Max2;
+    float T;
+    for (j = 0; j < LCDH; j++)
+        for (i = 0; i < LCDW; i++)
+            HistoGram[tmImage[j][i]]++;
+    for (i = 0; i < 256; i++)
+    {
+        Total += HistoGram[i];
+        PixelIntegral += HistoGram[i] * i;
+    }
+    for (i = 0; i < 256; i++)
+    {
+        PixelAmount += HistoGram[i];
+        NewAvg += HistoGram[i] * i;
+        Count = Total - PixelAmount;
+        if (Count == 0) break;
+        NewAvgB = PixelIntegral - NewAvg;
+        Delta = PixelAmount * NewAvgB - Count * NewAvg;
+        if (Delta * Delta > Max * PixelAmount * Count)
+        {
+            Max = Delta * Delta / (PixelAmount * Count);
+            Threshold = i;
+        }
+    }
+    Count = Total;
+    Ave = PixelIntegral / Count;
+    for (i = 0; i < 256; i++)
+    {
+        DeltaB = i - Ave;
+        if (DeltaB < 0) DeltaB = -DeltaB;
+        Widest += HistoGram[i] * DeltaB * DeltaB;
+    }
+    T = 4.0f * sqrt(Widest / Count) / Ave;
+    Ave2 = 0; Ave3 = 0;
+    Count = 0; CountB = 0;
+    for (i = 0; i < Threshold; i++)
+    {
+        Count += HistoGram[i];
+        Ave2 += HistoGram[i] * i;
+    }
+    for (i = Threshold; i < 256; i++)
+    {
+        CountB += HistoGram[i];
+        Ave3 += HistoGram[i] * i;
+    }
+    if (Count) Ave2 = Ave2 / Count;
+    if (CountB) Ave3 = Ave3 / CountB;
+    Max1 = Ave2 + T * (Ave3 - Ave2);
+    Max2 = Ave2 + (Ave3 - Ave2) / T;
+    return (Max1 + Max2) / 2;
+}
+B.14 车轮绝对角度闭环（project/code/steer.c）
+// 角度误差归一化到 [-180, 180]
+static float _servo_angle_err_norm(float err)
+{
+    while(err >  180.0f) err -= 360.0f;
+    while(err < -180.0f) err += 360.0f;
+    return err;
+}
+
+//-------------------------------------------------------------------------------------------------------------------
+// 函数简介     车轮角度闭环 PID 更新（磁编码器绝对值反馈）
+// 参数说明     s              控制结构体指针
+// 参数说明     enc            当前磁编码器绝对值（0~MOTOR_ENCODER_PRECISION）
+// 参数说明     out_duty       输出占空比指针（±10000，经 UART 下发驱动板）
+//-------------------------------------------------------------------------------------------------------------------
+void motor_servo_update(motor_servo_ctrl_t *s, uint16 enc, float *out_duty)
+{
+    if(!s->enable)
+    {
+        *out_duty = 0.0f;
+        return;
+    }
+
+    float cur_angle = (float)enc / (float)MOTOR_ENCODER_PRECISION * 360.0f;  // 当前角度 0~360°
+    float err       = _servo_angle_err_norm(s->target_angle - cur_angle);    // 最短路径误差
+
+    if(fabsf(err) < s->deadzone)        // 死区：误差在 ±deadzone° 以内直接停止输出
+    {
+        *out_duty     = 0.0f;
+        s->integral   = 0.0f;
+        s->last_error = err;
+        return;
+    }
+
+    s->integral += err;
+    if(s->integral >  300.0f) s->integral =  300.0f;    // 积分限幅
+    if(s->integral < -300.0f) s->integral = -300.0f;
+
+    float output = s->kp * err
+                 + s->ki * s->integral
+                 + s->kd * (err - s->last_error);
+    s->last_error = err;
+
+    if(output >  s->output_limit) output =  s->output_limit;   // 输出限幅
+    if(output < -s->output_limit) output = -s->output_limit;
+
+    if(s->dir == 1) output = -output;     // 左电机反转
+
+    *out_duty = output;
+}
+
+
+===== TABLE 1 =====
+符　号 | 含　义 | 单位/取值
+v | 车体前进速度（轮速原始值 / 线速度） | — / m·s⁻¹
+θ（Pitch） | 车体俯仰角，Mahony 姿态解算输出 | °
+ω | 俯仰角速度，Biquad 滤波后的陀螺输出 | °·s⁻¹
+ψ（Yaw） | 航向角 | °
+e | 控制器误差（速度/角度/航向误差） | —
+Kp、Ki、Kd | PID 控制器比例、积分、微分增益 | —
+Kp2 | 转向外环非线性比例增益（e·|e| 项） | —
+Gkd | 陀螺仪前馈增益 | —
+φ1、φ4 | 五连杆机构左、右支链主动连杆角 | °
+L1～L5 | 五连杆杆长与机架宽（6/9/9/6/3.7） | cm
+(x, y) | 足端目标坐标 / 本地平面位置 | cm / m
+Q、R | 卡尔曼滤波过程噪声与量测噪声协方差 | 0.0001 / 1.0
+P、K | 卡尔曼估计误差协方差矩阵与卡尔曼增益 | —
+dt | 控制周期（预测步） | s
+twoKp、twoKi | Mahony 互补滤波比例、积分增益 | 1.6 / 0
+
+===== TABLE 2 =====
+类　别 | 型　号 | 主要指标 | 用途
+主控芯片 | Infineon CYT4BB7 | 双 Cortex-M7 @250 MHz + CM0+ | 整车控制与视觉处理
+驱动板控制 | Infineon CYT2BL3 | Cortex-M4F | 无刷电机 FOC/六步驱动
+舵机 | BDS300（官方指定）×4 | 大扭矩数字舵机 | 五连杆腿长调节
+轮毂电机 | BDS3620（官方指定）×2 | 无刷轮毂电机 | 车轮驱动
+IMU | IMU660RC | 六轴，4 kHz 采样 | 姿态解算
+摄像头 | MT9V03X | 188×120 灰度 | 赛道与元素识别
+激光测距 | DL1B TOF | 100 Hz | 台阶起跳判据
+GNSS | TAU1201 | 约 10 Hz 输出 | 室外定位
+电池 | 3S 锂聚合物电池 | 11.1 V，2200 mAh | 整车供电
+显示屏 | IPS200 | 2.0 寸 IPS | 菜单与调试显示
+磁编码器 | MT6826（自研磁编板）×2 | SPI 绝对角度输出 | 车轮绝对角度反馈
+
+===== TABLE 3 =====
+内　核 | 主　频 | 承担任务
+CM7_0 | 250 MHz | 主控核。IMU 姿态解算（4 kHz）、三环串级 PID 与差速转向（1 kHz）、五连杆舵机解算（500 Hz）、GPS 解析与卡尔曼定位、导航状态机、按键菜单与 IPS200 显示、无线数传
+CM7_1 | 250 MHz | 协处理核。MT9V03X 摄像头采集与二值化、赛道边线/中线提取、单边桥/三级台阶/颠簸路/白色带状元素识别、DL1B 激光测距（TOF）10 ms 轮询
+CM0+ | — | SDK 启动核，负责上电时钟与双核启动，不参与应用逻辑
+
+===== TABLE 4 =====
+环　节 | 调用周期 | 输入 → 输出 | 控制器形式 | 整定参数
+速度环 | 5 ms | 实际轮速 → 目标俯仰角 | PID，微分作用于测量值 | P=0.010, I=0, D=0，限幅 ±40°
+角度环 | 5 ms | 目标俯仰角 → 目标角速度 | 位置式 PID + 陀螺前馈 | P=48, I=0, D=4，限幅 ±1200
+角速度环 | 1 ms | 目标角速度 → 电机占空比 | 位置式 PID + 陀螺前馈 | P=5, I=0, D=0，限幅 ±6000
+腿长补偿环 | 2 ms | 速度误差 → 腿部 X 坐标补偿 | 带积分衰减的位置式 PID | P=0.0103, I=4e-5, D=0.002，限幅 ±2.3
+
+===== TABLE 5 =====
+场　景 | 外环 Kp | 外环 Kp2 | 外环 Kd | 外环限幅 | 内环 P | 内环限幅
+科目一 | 6.0 | 0.01 | 1.0 | ±250 | 6.0 | ±3000
+科目二 | 8.0 | 0.01 | 1.0 | ±300 | 6.0 | ±5000
+科目三 | 8.0 | 0.01 | 1.0 | ±400 | 8.0 | ±3000
+遥控模式 | 8.0 | 0.01 | 1.0 | ±400 | 8.0 | ±3000
+
+===== TABLE 6 =====
+元　素 | 判　据 | 阈　值
+单边桥 | 取图像中部 ±W/5 宽、下 2/3 高的 ROI，统计白像素总面积与"行内白像素 ≥ 20"的有效行数 | 面积 ≥ 1000 且有效行 ≥ 24
+三级台阶 | 自上而下扫描，统计"行内白像素 > 40"的最长连续行段 | 连续行数 ≥ 15
+颠簸路段 | 路面纹理密度判定，配合 Pitch 角速度双重确认 | |Pitch_g_F| ≥ 80 °/s 进入，≤ 40 °/s 且持续 0.5 s 退出
+白色带状元素（雷区标志线） | 逐列纵扫与逐行横扫双通道搜索白色游程链：限定厚度区间、限制相邻扫描线的中心/厚度跳变、允许跨越 ≤2 条噪声空洞，再对链上中心点作直线拟合校验共线性；两通道均命中时按跨度归一化取更显著者；主算法失败时由"直角补充算法"兜底 | 厚度 6～32 px；跨度 ≥ 90 px（列扫）/ 45 px（行扫）；密实度 ≥ 7/8；拟合均方根偏差 ≤ 3.5 px；连续 3 帧确认置位、3 帧丢失清除
+
+===== TABLE 7 =====
+元　素 | 触发方式 | 处理动作 | 退出判据
+三级台阶 | 惯导纵向位移 ins_y > 2.08 m 触发；进点 1 m 内先用 TOF 自动标定跳跃阈值 | 锁定进入时航向，执行三连跳状态机：腿长由 4 cm 快速伸至 11 cm 起跳 → 43×2 ms 后收腿 → 落至 3 cm 缓冲；跳跃期间冻结航迹推算，落地后按元素方向补偿 0.12 m 位置误差 | 第三跳落地后锁航向保持 400 ms
+单边桥 | 航向对准（误差 < 5°）后进入定时流程 | 上桥后 1 s 保持常规腿高，随后抬腿至 6 cm 并开启地形自适应：以横滚角 Roll 反馈，用 tan(Roll)·车宽/2 解算左右腿高差，经 PID 平滑后左右腿反向补偿，补偿量限幅 ±2.5 cm | 桥上保持 4000 ms
+颠簸路段 | 视觉纹理 + 俯仰角速度双重确认 | 速度降至 200，速度环 Kp×1.5、Ki×2.5 增强抗扰；腿高固定 4 cm；转向输出 ×1.8 提高越野纠偏能力 | 定时模式 3500 ms；视觉模式需"看到过 + 颠过 + 当前平稳 + 平稳窗口内图像至少丢过一帧"四条同时满足
+雷区（×2） | 纯视觉：识别到白色带状元素 | 刹停至 |v| < 30 → 原地打圆 720°（逐周期改写目标航向，累计偏航角判满）→ 将卡尔曼估计坐标拉回雷区路点 | 偏航累计 ≥ 720°；两个雷区之间设 1.2 s 重触发时间闸
+反三级台阶 | 图像白行数判据 | 抬腿至 6 cm，切换为图像循线，转向输出 ×0.3 抑制过冲 | 到达终点路点
+锥桶绕行（科目一） | 到达第 5 个路点 | 切入预先规划的贝塞尔曲线逐点跟随，速度 680 | 曲线点用尽，跳至第 6 点
+原地掉头（科目二） | 到达各中间路点 | 刹停 → 原地打圆 720° → 继续下一点；打圆期间右轮差速系数 ×1.2 补偿左右不对称 | 偏航累计 ≥ 720°
+
+===== TABLE 8 =====
+调度单元 | 周　期 | 任务内容
+PIT0 CH2 中断 | 0.25 ms | get_ICM_data()：读 IMU → 零偏与死区 → Biquad 滤波 → Mahony 解算 → 输出欧拉角
+PIT0 CH1 中断 | 1 ms | 轮速一阶低通与里程累积 → kf2d_predict() 卡尔曼预测 → 目标速度平滑 → 打圆处理 → 差速转向 → 三环输出
+PIT0 CH10 中断 | 2 ms | 三级台阶状态机 → 跳跃时序 → 腿长补偿与地形自适应 → 五连杆逆解 → 四路舵机 PWM 输出
+PIT0 CH0 中断 | 20 ms | 按键扫描、编码器计数、系统时基累加
+主循环 | 约 100 Hz | 电池电压滤波、GNSS 报文解析、菜单与显示刷新、跨核共享数据同步、导航状态机、遥控解析、VOFA 数据上传
+
+===== TABLE 9 =====
+序号 | 问题现象 | 原因分析 | 解决方法
+1 | CM7_0 读到的图像结果、TOF 距离、元素标志位常常是上一帧甚至更早的值 | M7 内核带 D-Cache，跨核共享 RAM 的写入停留在写核的 Cache 中，读核读到旧行 | 共享变量用 #pragma location 定位并声明 __no_init；读写前后调用 SCB_CleanInvalidateDCache_by_Addr() 按 32 字节 Cache Line 同步
+2 | 上电 IMU 零偏标定期间遥控接收机大量丢帧，标定后遥控无响应 | 标定期间关全局中断持续 3 秒，UART4 的 SBUS 数据把 FIFO 灌满溢出 | 把 uart_receiver_init() 移到 IMU_calibration() 之后再初始化，避开标定窗口
+3 | 上电瞬间四路舵机剧烈抽搐，个别情况直接撞限位 | 初始化时 wheel_x/wheel_y 为 0，逆解判别式为负，atan2 返回 NaN 被强转为占空比 | 初始化先给定合法安全腿高；逆解判别式 Δ<0 时返回失败，保持上一拍角度不写入
+4 | 原地打圆刹停后不动随即又开走，等于没转 | 上次打圆退出时偏航累计器 yaw_acc 未清零，新一圈带着残留 720° 进入 | 抽出 turn_circle_arm()/disarm() 作为唯一起旋/收旋入口，先清零再抬标志位
+5 | 遥控模式打圆档一直转不满 720° | 每个主循环周期都调用 turn_circle_arm()，累计角被反复清零 | 增加上升沿闸门：仅 turn_circle_flag==0 且车速降到 5 以下时才起旋
+6 | 雷区点附近车冲过点后掉头回去捡点，来回原地打转 | 纯视觉触发后没有 GPS 到点判据，point_number 钉在雷区点上，过点后方位角翻转 180° | 进入雷区点 0.5 m 内即锁住当时的瞄点方位角，此后按该方向直线搜索白带
+7 | 一条白带把两个相邻雷区点连着触发掉 | 视觉标志位持续为 1 期间被重复判定 | 加入上升沿闸门 trigger_armed + 上一次转圈结束后 1.2 s 重触发时间闸
+8 | 主循环频率被拖低，导航响应变慢 | VOFA 用 snprintf 格式化 13 个浮点数，且无线串口 RTS 流控阻塞发送 | 改用无流控 uart_write_string() 直接发送；用 fre_calcul() 实时统计各中断执行频率
+9 | 引入 TOF 做三级台阶起跳判据后算力不足，姿态解算频率下降 | DL1B 的 IIC 轮询耗时长，占用 CM7_0 中断时间 | TOF 初始化与 10 ms 轮询整体迁移到 CM7_1 核，结果经共享 RAM 回传
+10 | 三级台阶跳完后位置估计偏差明显，后续路点导航跑偏 | 跳跃腾空期间轮速失去意义，航迹推算继续积分引入虚假位移 | 跳跃期间冻结航迹推算；落地后沿元素方向一次性补偿 0.12 m 固定偏移
+11 | 带航向偏差进入单边桥时车容易掉桥 | 元素起点到点判据只看距离不看航向 | 所有元素增加"航向对准"前置状态：速度降到 0、航向误差小于 5° 再进入
+12 | 颠簸路段末端退出条件卡死，车一直保持低速 | 退出判据要求"图像一直看不到颠簸路"，而末端图像会闪烁 | 改为"本次平稳窗口内至少有一帧看不到"即可，标志随平稳计时一起清零
+13 | 车在原地前后往复摆动且幅度越来越大 | 腿长补偿 PID 比例增益过小，相位滞后导致等效负阻尼 | 提高 P 至 0.0103 一线
+14 | 车身高频抖动 | 微分项分配不当 | 微分作用加在角度环远好于角速度环；最终取角度环 D=4、角速度环 D=0
+15 | 起步与急加速时驱动轮打滑 | 扭矩输出不受限 | 1 ms 中断运行两套检测：速度变化率 >80/2ms 切断占空比；10 ms 窗口速度方差 >1000 判异常；开环力矩通路 ±550 饱和限幅
+16 | 电池电量下降过程中同一套 PID 表现不一致 | 母线电压随放电下降，同占空比对应扭矩变化 | ADC 采样后做 α=0.02 一阶低通得稳定电压用于监控，保留 V_compensate 电压补偿接口
+17 | 下坡段腿部前后补偿过冲，车容易前扑 | 腿长补偿输出限幅在任何姿态下都相同 | 俯仰角小于 −16° 后按每度 0.1 收缩输出限幅，俯仰越大补偿越保守
+18 | 科目三 P7 附近航向指令剧烈抖动 | 直瞄路点时前视距离缩到 0.1 m，定位噪声被放大成十几度航向指令 | 改用圆弧-直线-圆弧规划 + 固定前视半径 0.8 m 纯跟踪，离开 P6 时即接管
+
+===== TABLE 10 =====
+路　段 | 目标速度 | 折合速度 | 说　明
+起步 → P1 | 自适应，上限 1300 | ≤ 6.13 m/s | 按"当前速度 + 900"递增，实现平滑加速
+P1 距目标 5 m 内 | 350 | 1.65 m/s | 提前减速，为后续密集路点做准备
+P2、P3 | 350 | 1.65 m/s | 连续转向段
+P4（锥桶入口） | 800 | 3.77 m/s | 直线接近段
+P4 → P5 锥桶绕行 | 680 | 3.20 m/s | 贝塞尔曲线跟随；锥桶间距 1.6 m 时最大不打滑绕行速度为 400
+P6（终点冲刺） | 1000 | 4.71 m/s | 到终点 0.5 m 内锁定航向并刹停
+到点阈值 | 0.1 m / 0.3 m | — | 普通路点 0.1 m；贝塞尔路径点 0.3 m（约为点间距的 40 %）
+加速度限幅 | 300 /s | — | 限制目标速度上升率，防止起步打滑
+
+===== TABLE 11 =====
+路　段 | 目标速度 | 说　明
+常规路点段 | 450 | 每到一点刹停 → 原地打圆 720° → 继续
+倒数第 4 点 | 900 | 转圈段结束，进入直线加速
+末段（终点） | 1300 | 全场最高速冲刺
+到点阈值 | 1.6 m / 0.3 m | 需要转圈的点用 1.6 m 提前刹车；末尾四点用 0.3 m 精确到点
+起旋条件 | |v| ≤ 30 | 刹停确认后才起旋，避免带速旋转甩出
+转圈差速补偿 | 右轮 × 1.2 | 补偿左右驱动不对称，保证原地转圈轨迹不漂移
+
+===== TABLE 12 =====
+路段 / 元素 | 目标速度 | 折合速度 | 驻留时间 / 说明
+P5、P6 接近段 | 650 | 3.06 m/s | 直线加速段
+P7 → P9 圆弧段 | 600 | 2.83 m/s | 圆弧-直线-圆弧路径，纯跟踪前视 0.8 m
+P9 → P10 出口 | 600 → 300 | 2.83 → 1.41 m/s | 末段 4.5 m 起减速，减速度约 0.07 g
+P10 之后 | 500 | 2.36 m/s | 常规路点段
+三级台阶 | 270 | 1.27 m/s | 全程保持，三连跳期间不变速
+单边桥接近 | 450 | 2.12 m/s | 到点后减速至 0 对准航向
+单边桥通过 | 180 | 0.85 m/s | 桥上保持 4000 ms；进桥 1000 ms 后抬腿并开启地形自适应
+颠簸路段 | 200 | 0.94 m/s | 保持 3500 ms；速度环 Kp×1.5、Ki×2.5
+雷区接近 | 330 | 1.56 m/s | 识别白带后刹停，原地 720°，两雷区间隔 1.2 s 时间闸
+反三级台阶 | 400 → 250 | 1.88 → 1.18 m/s | 距起点 2.5 m 内降速；抬腿 6 cm，转向输出 ×0.3
+元素航向对准 | 0 | — | 航向误差收敛到 5° 以内才允许进入元素
+
+===== TABLE 13 =====
+项　目 | 参　数
+车模总重（含电池） | ______ kg（待实测）
+外形尺寸（宽×高×长） | 16 cm × 21 cm × 38 cm
+轮胎直径 | 88 mm
+电池规格 | 3S 锂聚合物电池，11.1 V / 2200 mAh
+整车功耗（估算） | 约 40 W（驱动约 3 A + 控制约 0.6 A，@11.1 V）
+电容总容量（估算） | 约 3300 μF（驱动母线阵列 + 舵机 330 μF×6 + 各级滤波）
+传感器种类与数量 | 7 种共 9 个：摄像头×1、IMU×1、TOF×1、GNSS×1、磁编码器×2、电流检测×2、霍尔（电机内置）×1
+赛道信息检测精度 | 图像边线 ±2 px；TOF ±5 mm；GNSS 融合后平面定位优于 0.5 m
+检测频率 | 姿态解算 4 kHz；平衡控制 1 kHz；图像处理约 50 Hz；TOF 100 Hz；GNSS 约 10 Hz
+摄像头安装 | 高度约 300 mm，俯角约 50°
+腿长调节范围 | 约 3 cm ～ 11 cm
+最高车速 | 约 6.1 m/s（轮速原始值 1300）

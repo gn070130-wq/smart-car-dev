@@ -1,0 +1,574 @@
+第二十一届全国大学生
+智能汽车竞赛
+
+技 术 报 告
+
+
+学    校：哈尔滨理工大学
+队伍名称：别炸foc
+参赛队员：毛鹏宇 罗凡超 孙维栋 张继涵
+带队教师：李双全
+关于技术报告和研究论文使用授权的说明
+本人完全了解全国大学生智能汽车竞赛关保留、使用技术报告和研究论文的规定，即：参赛作品著作权归参赛者本人，比赛组委会可以在相关主页上收录并公开参赛作品的设计方案、技术报告以及参赛模型车的视频、图像资料，并将相关内容编纂收录在组委会出版论文集中。
+参赛队员签名： 
+
+
+
+带队教师签名：	
+日期：2026 年 8 月 16 日
+
+摘要
+本文详细介绍了哈尔滨理工大学别炸foc队参加第二十一届全国大学生智能汽车竞赛轮腿穿越组别的智能车系统设计方案。整车以指定V车模为基础，通过降低重心、优化传感器和控制板布局，提高了车体稳定性。硬件采用模块化供电，保证舵机与无刷电机稳定工作，并加强了驱动电路抗干扰能力。软件以双核单片机为核心，采用分层结构和定时中断，通过多级控制算法实现直立平衡、速度控制和转向控制，并针对过桥、侧倾等复杂地形设计了相应的补偿和保护策略。路径采用记录后回放的方式完成自动循迹。经过反复调试和验证，系统能够稳定完成竞赛任务，达到预期目标。
+
+
+
+第一章 引言
+随着科学技术的持续发展，智能控制技术的应用范围不断扩大，已经逐渐渗透到各个领域。智能车作为一种融合了高新技术的智能移动装置，涉及多个学科，是未来汽车产业发展的重要方向。
+在我国，智能车相关技术的研究与应用正在快速推进，尤其在自动驾驶、路径识别、自动避障等方面取得了较多成果。智能车主要由环境感知、决策规划、运动控制等模块组成，能够通过传感器获取周围环境信息，并根据预设算法完成路径跟踪、障碍物规避等任务。
+本报告从硬件，软件以及车模结构设计上尽可能阐释我们的想法，以供大家交流学习共同进步。
+第二章 车模分析及实现
+2.1 车模简介
+
+
+
+
+
+
+
+
+我们采用了第二十一届智能车竞赛指定的v车模，此车模关键结构采用开模注塑工艺一体化成型，强度和精度较高，同时省去自制车模的麻烦，舵机采用bds300，无刷电机采用BDS3620，转速常数500KV，同时我们在规则范围内更改了轮胎尺寸，便于完成竞赛任务
+
+
+2.2 车模设计制作的主要思路
+2.2.1 主要设计思路
+对于轮腿车模来说平衡和优秀的动态稳定性尤为重要，在最开始的设计方案中，车模较高的重心很容易导致侧翻，从而进一步影响系统的稳定性，我们在之后的优化设计中进一步降低重心和设计方案以便稳定性和动态性能的提升
+
+2.2.2 陀螺仪安装位置
+	陀螺仪作为车辆保持平衡的核心传感器，其安装位置和固定方式尤为重要，我们为保持陀螺仪的稳固以减少误差以便更好面对室外组别的高强度运动，我们通过3D打印设计保护外壳并将主板与陀螺仪保持固定
+  
+2.2.3 主控板安装位置
+
+2.2.4 电机驱动板安装位置
+  无刷电机驱动板通过打印件将其直接固定于车的正后方，安装方式如下图
+                    
+
+硬件电路设计
+3.1 概述
+硬件设计对智能车来说至关重要，对室外组别最重要的是考虑耐用性和稳定性，以适应高强度运动和复杂任务
+3.2 控制板电路。
+3.2.1 控制板供电
+12V航模锂电池通过与主板连接给舵机电路和无刷驱动供电，并通过DCDC电路和LDO稳压电路转换成单片机所用电压
+
+图3-1 控制板5V供电模块原理图
+
+图3-2 控制板供电模块原理图
+3.2.2 单片机供电及配置
+
+
+图3-3 单片机原理图
+
+3.2.3 舵机供电
+舵机电路采用四路SCT2450芯片为四个舵机提供供电，SCT2450具有逐周期电流限制和打嗝过流保护，热停机保护，输出过压保护和输入电压欠压保护，同时具有100 kHz至1.1 MHz的可编程开关频率，带有外部电阻，可灵活地优化效率或外部元件尺寸。
+
+图3-4舵机供电模块原理图
+3.3 无刷电机驱动板电路
+3.3.1 供电以及预驱MOS
+在电源设计方面，我们选用TPS565201DDCR作为5V电源轨的核心芯片，其工作频率可提供优异的瞬态响应特性，完美匹配驱动板对电源的低电流需求；同时，3.3V电源轨采用TPS7A2033PDBVR LDO稳压器，能够满足良好的供电质量要求
+
+
+
+
+ 
+图3-5电机驱动供电模块原理图
+将预驱芯片封装改为FD6288t,引脚封装比QFN封装在焊接上大大降低了难度
+
+第四章 软件系统设计
+软件系统是轮腿机器人的“大脑”，负责多源传感器数据的融合、复杂运动学解算以及实时控制指令的下发。本系统软件基于模块化与分层设计思想，采用 C 语言在 IAR 9.40.1 环境下开发。为应对轮腿机器人高速运动下的多任务并发需求，软件架构采用了“前后台系统 + 状态机”的设计模式，并充分利用主控芯片（CYT4BB）的多核特性，通过核间通信（IPC）实现了视觉处理与运动控制的解耦，确保了系统的实时性与稳定性。
+
+4.1 软件总体架构与任务调度
+系统软件架构分为三层：硬件驱动层、算法逻辑层和应用控制层。
+硬件驱动层：基于 CYT4BB 开源库，封装了 GPIO、UART、PIT（周期中断定时器）、EXTI（外部中断）等底层接口，为上层提供统一的硬件访问接口。
+算法逻辑层：包含惯性导航（Inertial Nav）、PID 控制算法、路径规划与航位推算等核心模块。
+应用控制层：负责系统状态管理、人机交互（HMI）以及多模式任务调度。
+任务调度机制：
+系统采用时间片轮询 + 中断触发的混合调度机制。
+后台（主循环）：负责非实时性任务，如按键扫描、屏幕刷新、无线串口通信及系统状态机流转。
+前台（中断服务程序）：负责高实时性任务。系统配置了多个 PIT 通道，分别以 1ms 和 5ms 的周期触发平衡控制与数据采集中断，确保控制频率的绝对稳定。
+4.2 中断服务系统与实时控制
+中断系统是保证轮腿机器人动态平衡的关键。代码中定义了严格的优先级与执行周期，主要包含以下核心中断服务：
+1. 平衡控制中断（PIT_CH0, 1ms）
+该中断优先级最高，周期为 1ms，直接决定车体的动态响应能力。
+IMU 数据更新：调用 imu_update() 读取陀螺仪与加速度计数据，进行姿态解算。
+状态监测：实时检测车体倾角（Pitch/Roll），判断车体是否处于“大致直立”状态（误差 < 30°）。
+PID 执行：仅在系统处于运行状态（PLAYBACK 或直立状态）时调用 pid_control()，输出电机 PWM 信号。若车体倒地或系统关闭，则立即切断电机输出，确保安全。
+2. 速度采集与定位中断（PIT_CH1, 5ms）
+该中断周期为 5ms，用于执行频率稍低但数据量大的任务。
+编码器更新：调用 encoder_update() 获取电机转速与位移。
+航位推算：调用 location_update()，结合编码器位移与 IMU 航向角，实时更新机器人的全局坐标  。
+系统时钟：维护系统全局时间戳 time，为上层逻辑提供时间基准。
+3. 视觉核间通信（IPC）
+系统利用 IPC（Inter-Processor Communication）机制实现双核数据交互。主核通过 vision_ipc_init 初始化共享内存，并在主循环中通过 vision_ipc_get_binary_image_ptr 获取视觉协处理器传来的二值化图像数据。这种机制避免了大量图像数据通过串口传输的延迟，实现了视觉与控制的高效并行。
+
+4.3 运动控制算法设计
+运动控制是本系统的核心，旨在解决轮腿机器人“边走边平衡”的强耦合非线性问题。系统设计了基于串级 PID 的多闭环控制策略。
+1. 直立平衡控制（角度-角速度双闭环）
+为了保证车体在动态运动中的直立稳定性，系统采用了角度环与陀螺仪环（角速度环）串联的控制策略。
+角度外环（P控制）：以期望倾角与实际倾角（Pitch）的偏差作为输入，计算出维持平衡所需的角速度指令。
+角速度内环（PD控制）：接收角度环的输出作为目标角速度，结合陀螺仪实测的角速度（Gyro_Y），通过 PD 算法快速输出电机 PWM 占空比。内环引入了微分控制（D），提供了强大的阻尼力矩，有效抑制了车体的震荡。
+2. 速度控制与抗积分饱和
+速度环作为直立控制的最外环，通过调节车体的目标倾角来实现速度闭环。当车体需要加速时，系统会控制车体前倾，利用重力分量产生加速度。
+为了防止系统在启动或受扰动时出现积分饱和（Windup）现象，代码中实现了变速积分（Variable Rate Integration）算法。系统根据速度误差  的大小动态调整积分系数  ：
+当误差较大时（  ），取消积分作用，防止超调；
+当误差较小时（  ），投入全额积分，消除静差；
+在中间区域，积分系数随误差线性变化。
+此外，针对编码器信号的高频噪声，软件层面加入了一阶低通滤波（LPF），有效平滑了速度反馈曲线，提高了控制的平稳性。
+3. 方向控制（航向-角速度串级）
+转向控制采用航向角（Yaw）与偏航角速度（Gyro_Z）串级 PID 结构。
+航向外环：计算目标航向与 IMU 解算航向的偏差，输出期望的偏航角速度。
+角速度内环：根据期望角速度与实际陀螺仪 Z 轴数据的偏差，输出差速控制量，作用于左右电机。
+转向辅助：代码中引入了转向辅助逻辑，根据航向误差动态调整舵机姿态，辅助车体更顺滑地完成转弯动作。
+
+4.4 舵机协同控制与地形适应策略
+针对轮腿机器人的特殊构型，软件设计了专门的舵机控制逻辑，以实现精准的转向辅助及复杂地形的姿态调整。
+1. 转向辅助与协同控制
+舵机系统不仅负责常规的转向动作，还与车体的航向控制（Yaw）深度耦合。在转向环输出差速控制量的同时，系统会根据航向误差动态调整舵机角度，实现“差速转向+舵机转向”的协同控制。这种策略有效减小了单一差速转向带来的侧滑，提高了过弯的平顺性与循迹精度。
+2. 过桥侧倾补偿（Roll Compensation）
+在通过单边桥等狭窄地形时，系统进入“过桥模式”。代码通过实时监测 IMU 的 Roll 角（横滚角），利用 PD 算法控制舵机进行侧倾补偿。
+死区处理：设置 Roll 角误差死区，防止在平坦路面产生高频抖动。
+斜坡补偿：根据 Roll 角误差的大小，非线性地调整左右舵机的偏转角度，使车体重心始终保持在支撑面内，防止侧翻。
+软着陆逻辑：在离开单边桥瞬间，为了防止舵机突然回正导致车体失稳，程序加入了“软着陆”算法，限制舵机回正的变化率，实现平滑过渡。
+3. 悬空与冲击保护
+为了提高系统的鲁棒性，软件中集成了状态监测逻辑：
+悬空检测：当加速度计模值小于重力加速度阈值（如  ）且编码器显示有速度时，判定为腾空状态。此时系统会冻结里程计算，并锁定舵机角度，防止空中轮子空转或舵机乱动导致落地姿态失控。
+冲击检测：监测左右轮速度差与平均速度的比值，当比值超过阈值时判定为发生剧烈冲击或单边掉轮，系统可据此触发保护机制或调整控制参数。
+
+4.5 系统状态机与人机交互
+为了管理复杂的比赛流程（如准备、发车、循迹、回放、调试），软件设计了一套严密的三层状态机架构：
+系统层（System Layer）：分为 SYS_LAYER_OFF（关机/待机）和 SYS_LAYER_ON（运行）。
+功能选择层（Function Select）：在运行状态下，通过按键切换功能模式，包括：
+S1/S2/S3 回放模式：加载不同槽位的路径数据进行自动循迹。
+记录模式（Record）：手动推行机器人，记录路径点。
+路径修改模式（Change Path）：加载已有路径进行编辑。
+执行层（Execution Layer）：具体执行上述功能，如 EXEC_STATE_PLAYBACK（回放执行）、EXEC_STATE_RECORDING（记录执行）。
+按键交互逻辑：
+系统通过 key_scanner() 扫描按键状态，支持短按与长按组合操作：
+开机/关机：KEY1 短按实现系统上下电逻辑。
+模式切换：KEY4 循环切换功能模式。
+路径操作：在记录模式下，KEY3/KEY4 用于添加普通点或特殊点（如十字、圆环标记），KEY2 长按结束记录并保存至指定槽位（S1/S2/S3）。
+
+4.6 路径管理与导航策略
+系统实现了基于多槽位（Multi-Slot）的路径存储与管理机制，支持路径的录制、回放与在线编辑。
+1. 路径录制（Dead Reckoning）
+在记录模式下，系统以 IMU 初始化时的航向为基准（  ），利用编码器里程计进行航位推算。
+自动采样：程序实时监测当前位置与上一个记录点的欧氏距离。当距离超过阈值时，自动将当前坐标  存入采样点数组。
+手动打点：支持通过按键强制插入“普通点”或“特殊点”，用于标记赛道关键元素。
+2. 路径回放与循迹
+在回放模式下，系统根据当前功能选择（S1/S2/S3），从 Flash 中加载对应的路径数据。
+惯性导航循迹：调用 inertial_nav_run() 系列函数，计算机器人当前位置与目标路径的偏差，结合 PID 算法输出转向控制量。
+结束判定：当路径播放完毕或检测到 KEY1 按下时，系统自动停止电机并返回待机状态。
+3. 路径编辑
+系统支持“示教再现”后的微调。在路径修改模式下，用户可加载已有路径，通过按键选择路径点索引，利用无线串口或屏幕交互修改路径参数，修改后的路径可重新保存覆盖原槽位，极大地提高了调试效率。
+
+4.7 调试与可视化工具
+为了提高开发效率，软件集成了完善的调试工具：
+屏幕调试（IPS200）：
+视觉调试：开机阶段直接进入视觉调试页面，通过 IPC 实时显示二值化图像，便于调整摄像头曝光与阈值。
+数据监控：运行阶段实时显示系统状态（SYS OFF/ON）、当前坐标  、航向角（Yaw）及路径点数量。
+无线串口调试（UART1）：
+通过 wireless_uart_process() 处理上位机指令，支持实时打印系统日志（Log）与关键变量波形，辅助 PID 参数整定。
+LED 状态指示：
+利用 LED1 的翻转指示系统运行状态及按键响应，提供直观的硬件反馈。
+
+第五章 开发工具与调试过程
+5.1 开发工具
+本系统软件开发采用 IAR Embedded Workbench for ARM (IAR EWARM) 作为核心集成开发环境。IAR EWARM 是一款业界领先的嵌入式开发工具链，以其高效的编译器优化能力和强大的调试功能著称，特别适合基于 ARM Cortex-M 内核的高性能微控制器开发。
+选择 IAR EWARM 主要基于以下优势：
+高效的代码优化：其 C/C++ 编译器能够生成高度优化的机器码，在保证代码执行效率的同时，有效减少了程序的存储空间占用，这对于资源受限的嵌入式系统至关重要。
+强大的调试功能：集成了功能全面的 C-SPY 调试器，支持源码级调试、实时变量监控、寄存器查看以及复杂的断点设置。配合 J-Link 等硬件调试器，可以实现对多核芯片（如 CYT4BB）的同步调试和性能分析。
+完善的项目管理：提供了直观的项目管理器，方便开发者组织源文件、配置编译选项和管理不同版本的构建，极大地提升了开发效率。
+丰富的生态系统支持：能够无缝集成各类嵌入式实时操作系统（RTOS）和中间件，并提供了大量的示例代码和库文件，加速了项目的启动和开发进程。
+
+5.2 制作与调试过程
+1. IAR 在线仿真调试
+利用 IAR EWARM 强大的 C-SPY 调试器，我们进行了深入的在线仿真调试。在开发过程中，通过设置断点（Breakpoint）和观察点（Watchpoint），可以精确地定位程序运行的逻辑错误。例如，在调试电机控制算法时，我们可以在关键的 PID 计算函数处设置断点，单步执行并实时查看中间变量的值，从而快速排查算法实现中的问题。同时，利用调试器的“Live Watch”功能，可以在程序运行时实时监控关键变量（如 IMU 姿态角、电机转速等）的变化曲线，为参数整定提供了直观的数据支持。
+2. 屏幕打印的线上调试
+除了使用仿真器调试外，我们还充分利用了车模上搭载的 IPS 显示屏进行实时信息反馈。这是一种非常直观且高效的调试手段。
+变量监控：在程序运行过程中，将关键的传感器数据（如陀螺仪角度、编码器速度）、控制量（如 PID 输出）以及系统状态（如当前模式、路径点索引）等变量实时打印在屏幕上。这不仅可以帮助开发者在车模运行时即时了解其内部状态，还能在出现异常时快速定位问题。
+图像调试：对于视觉部分，我们将摄像头采集到的原始图像或二值化后的图像直接显示在屏幕上，便于我们实时调整图像处理的阈值和算法，确保在不同光照条件下都能准确识别赛道元素。
+通过 IAR 在线调试与屏幕打印相结合的方式，我们构建了一套高效的软硬件协同调试流程，极大地缩短了开发周期，并有效提升了系统的稳定性。
+
+
+第六章 模型车主要技术参数
+表 6.1 车模技术参数
+
+
+
+第七章 结论
+本文完成了一款面向轮腿穿越组别的智能车系统设计与验证。机械方面通过降低整车重心、优化传感器和驱动模块布局，有效抑制了车体侧翻风险，提升了车辆在复杂地形下的动态稳定性。硬件方面采用主控板与驱动板分离的模块化方案，以多级电源变换为各子系统提供稳定供电，并针对室外高强度运动强化了驱动电路的电流采样精度和抗干扰能力。软件方面以CYT4BB双核控制器为平台，融合陀螺仪、编码器等多源传感器数据，通过分层软件架构和中断调度机制保证系统实时性；以串级PID为核心建立了直立平衡、速度和航向控制回路，并引入变速积分、低通滤波、舵机协同、横滚补偿、软着陆及异常保护策略，提高了系统鲁棒性。基于航位推算的多槽位路径录制与回放机制，实现了比赛路径的灵活记录和自动循迹。经过IAR在线调试、屏幕实时显示和无线串口监测等环节的反复整定与验证，系统表现出较好的稳定性、实时性和路径跟踪性能，能够满足竞赛要求。该方案为轮腿机器人在动态平衡、地形适应和路径导航方面的工程实现积累了经验。
+参考文献
+	[1] 秦永元. 惯性导航[M]. 北京: 科学出版社, 2006.
+	[2] 严恭敏, 翁浚. 捷联惯导算法与组合导航原理[M]. 西安: 西北工业大学出版社, 2019
+[3]卓晴,黄开,邵贝贝.学做智能车[M].北京:北京航空航天大学出版社,2007. 
+[4] 邱权, 韩建达. 用于室外移动机器人实时自主导航的2.5维角度势场法[J]. 中国科学:信息科学, 2011, 41(7): 875-891.
+	[5] 童诗白，华成英．模拟电子技术基础[M]．北京. 高等教育出版社．2000 
+
+
+
+
+
+
+
+
+
+
+
+
+附录
+附录A 程序源代码
+int main(void)
+{
+    uint8 wireless_ok = 0;
+
+    clock_init(SYSTEM_CLOCK_250M);
+    debug_init();
+
+    // ==================== 核间通信（视觉） ====================
+    // 参考 IPC demo：尽早关闭 D-Cache 并初始化 IPC，确保共享内存一致性
+    vision_ipc_init(IPC_PORT_1, cm7_0_vision_ipc_callback);
+    printf("[CM7_0] IPC init OK, shared buf @ 0x%08X\r\n",
+           (uint32_t)vision_ipc_get_binary_image_ptr());
+
+    // ==================== LED ====================
+    gpio_init(LED1, GPO, GPIO_HIGH, GPO_PUSH_PULL);
+
+    // ==================== IMU ====================
+    while(imu_init())
+    {
+        printf("\r\n imu init");
+        gpio_toggle_level(LED1);
+        system_delay_ms(500);
+    }
+    printf(" OK\r\n");
+
+    // ==================== 屏幕 ====================
+    display_init();
+
+    // 开机立即切换到图像页面，避免黑色画布
+    display_vision_enter();
+    printf("[VISION] Display switched to IMAGE page\r\n");
+
+    // ==================== 舵机初始化 ====================
+    servo_init();
+
+    // ==================== 无线串口模块（UART1） ====================
+    wireless_ok = (0 == wireless_uart_init());
+    if(wireless_ok)
+    {
+        printf("Wireless UART init OK\r\n");
+    }
+    else
+    {
+        printf("Wireless UART init FAIL\r\n");
+    }
+
+    // ==================== 电机驱动通信 ====================
+    small_driver_uart_init(SMALL_DRIVER_1);
+    encoder_init();
+    location_init();
+    path_storage_init();
+    /* 开机不默认加载任何路径；S1/S2/S3 回放和 CP 修改时按需加载对应槽位 */
+    printf("[PATH] multi-slot storage ready\r\n");
+    inertial_nav_init();
+    inertial_nav2_init();
+    inertial_nav3_init();
+    system_state_init();
+    key_handler_init();
+
+    display_notify_inertial_status("SYS OFF");
+    printf("Motor driver init OK\r\n");
+
+    // ==================== 定时器中断 ====================
+    pit_ms_init(PIT_BALANCE_CH, PIT_BALANCE_PERIOD_MS);
+    pit_ms_init(PIT_SPEED_CH,   PIT_SPEED_PERIOD_MS);
+
+    printf("\r\n===== All modules initialized =====\r\n");
+
+    // 原 2s 延时改为视觉感知的延时：期间若 CM7_1 已送来图像则立即刷新
+    {
+        uint32_t delay_ms = 2000;
+        volatile uint32_t *delay_frame_counter_ptr = vision_ipc_get_frame_counter_ptr();
+        SCB_InvalidateDCache_by_Addr((void *)delay_frame_counter_ptr, sizeof(uint32_t));
+        uint32_t delay_last_counter = *delay_frame_counter_ptr;
+        while(delay_ms > 0)
+        {
+            key_scanner();
+
+            SCB_InvalidateDCache_by_Addr((void *)delay_frame_counter_ptr, sizeof(uint32_t));
+            uint32_t current_counter = *delay_frame_counter_ptr;
+            if(current_counter != delay_last_counter)
+            {
+                delay_last_counter = current_counter;
+                uint8_t *img = vision_ipc_get_binary_image_ptr();
+                SCB_InvalidateDCache_by_Addr(img, VISION_IMAGE_SIZE);
+                display_vision_update(img);
+            }
+
+            system_delay_ms(10);
+            delay_ms -= 10;
+        }
+    }
+
+    // ==================== 视觉启动模式 ====================
+    // 开机直接显示 CM7_1 传来的二值化图像，按 KEY_1 后撤掉图像并进入正常主循环
+    volatile uint32_t *frame_counter_ptr_init = vision_ipc_get_frame_counter_ptr();
+    SCB_InvalidateDCache_by_Addr((void *)frame_counter_ptr_init, sizeof(uint32_t));
+    printf("[VISION] Enter vision boot loop, frame counter = %u\r\n",
+           (unsigned)(*frame_counter_ptr_init));
+
+    uint8_t vision_exit = 0;
+    uint32_t vision_no_frame_timeout = 3000; /* 30s timeout (3000 * 10ms), 收到帧会重置 */
+    uint32_t vision_last_counter = 0;
+    uint32_t vision_frame_received = 0;
+    g_vision_new_frame = 0;
+
+    while(!vision_exit)
+    {
+        key_scanner();
+
+        /* 同时支持 IPC 中断通知和轮询帧计数器，提高可靠性 */
+        volatile uint32_t *frame_counter_ptr = vision_ipc_get_frame_counter_ptr();
+        SCB_InvalidateDCache_by_Addr((void *)frame_counter_ptr, sizeof(uint32_t));
+        uint32_t current_counter = *frame_counter_ptr;
+        if(g_vision_new_frame || (current_counter != vision_last_counter))
+        {
+            g_vision_new_frame = 0;
+            if(current_counter != vision_last_counter)
+            {
+                vision_last_counter = current_counter;
+                vision_frame_received++;
+                if((vision_frame_received % 50) == 1)
+                {
+                    printf("[VISION] frame #%u received\r\n", (unsigned)vision_frame_received);
+                }
+                if(vision_frame_received == 1)
+                {
+                    uint32 black_pixels = 0, white_pixels = 0;
+                    uint8 *img = vision_ipc_get_binary_image_ptr();
+                    SCB_InvalidateDCache_by_Addr(img, VISION_IMAGE_SIZE);
+                    uint32 idx;
+                    for(idx = 0; idx < VISION_IMAGE_SIZE; idx++)
+                    {
+                        if(img[idx] == 0) black_pixels++;
+                        else if(img[idx] == 255) white_pixels++;
+                    }
+                    printf("[VISION] first frame pixel stats: black=%u white=%u\r\n",
+                           (unsigned)black_pixels, (unsigned)white_pixels);
+                }
+            }
+            uint8_t *img = vision_ipc_get_binary_image_ptr();
+            SCB_InvalidateDCache_by_Addr(img, VISION_IMAGE_SIZE);
+            display_vision_update(img);
+            vision_no_frame_timeout = 3000; /* 收到新帧重置超时 */
+        }
+
+        if(KEY_SHORT_PRESS == key_get_state(KEY_1))
+        {
+            key_clear_state(KEY_1);
+            display_vision_exit();
+            vision_exit = 1;
+
+            /* 模拟原 KEY_1 在关机层的开机动作 */
+            gpio_toggle_level(LED1);
+            system_set_layer(SYS_LAYER_ON);
+            system_set_func_select(FUNC_SELECT_OFF);
+            system_set_exec_state(EXEC_STATE_IDLE);
+            display_switch_to_imu();
+            update_display_status();
+            display_notify_log("System ON");
+            printf("[SYS] ON (vision exit)\r\n");
+        }
+
+        if(vision_no_frame_timeout > 0)
+        {
+            vision_no_frame_timeout--;
+        }
+        else
+        {
+            display_vision_exit();
+            vision_exit = 1;
+            printf("[VISION] Timeout, exit vision boot mode\r\n");
+        }
+
+        system_delay_ms(10);
+    }
+
+    // **************************** 主循环 ****************************
+    while(true)
+    {
+        key_scanner();
+
+        sys_layer_enum layer = system_get_layer();
+
+        if(layer == SYS_LAYER_OFF)
+        {
+            handle_key_system_off();
+            system_stop_all();
+        }
+        else
+        {
+            /* 定期更新数据区显示（200ms） */
+            static uint32_t last_data_update = 0;
+            if(time - last_data_update >= 20)
+            {
+                last_data_update = time;
+                update_display_data();
+            }
+
+            exec_state_enum exec = system_get_exec_state();
+
+            if(exec == EXEC_STATE_IDLE)
+            {
+                if(g_path_select_mode != PATH_SELECT_NONE)
+                {
+                    handle_key_path_select_layer();
+                }
+                else
+                {
+                    handle_key_select_layer();
+                }
+            }
+            else
+            {
+                handle_key_exec_layer();
+            }
+
+            wireless_uart_process();
+
+            // 执行层运行逻辑
+            switch(exec)
+            {
+                case EXEC_STATE_PLAYBACK_S1:
+                    inertial_nav_run();
+                    display_request_path_update();
+                    if(inertial_nav_is_playback_done())
+                    {
+                        system_return_to_select();
+                        update_display_status();
+                        display_notify_log("S1 playback done");
+                        printf("[SYS] S1 playback done -> OFF\r\n");
+                    }
+                    break;
+
+                case EXEC_STATE_PLAYBACK_S2:
+                    inertial_nav2_run();
+                    display_request_path_update();
+                    if(inertial_nav2_is_playback_done())
+                    {
+                        system_return_to_select();
+                        update_display_status();
+                        display_notify_log("S2 playback done");
+                        printf("[SYS] S2 playback done -> OFF\r\n");
+                    }
+                    break;
+
+                case EXEC_STATE_PLAYBACK_S3:
+                    inertial_nav3_run();
+                    display_request_path_update();
+                    if(inertial_nav3_is_playback_done())
+                    {
+                        system_return_to_select();
+                        update_display_status();
+                        display_notify_log("S3 playback done");
+                        printf("[SYS] S3 playback done -> OFF\r\n");
+                    }
+                    break;
+
+                case EXEC_STATE_RECORDING:
+                    /* 记录由 location_update() 在 PIT 中断中处理 */
+                    /* 自由推行模式由 ISR 中 location_get_recording() 触发 */
+                    display_request_path_update();
+                    break;
+
+                case EXEC_STATE_RECORD_DONE:
+                    /* 记录完成待机状态：无自动动作，PID由ISR禁用 */
+                    break;
+
+                case EXEC_STATE_CHANGE_PATH:
+                    /* 路径编辑：小车静止，仅显示与交互 */
+                    break;
+
+                case EXEC_STATE_IDLE:
+                default:
+                    expect_speed = 0;
+                    target_direction = imu_get_yaw();
+                    break;
+            }
+        }
+
+        display_page_control();
+        display_update();
+
+        /* 无线串口发送分频，避免 10ms 周期高频发送导致阻塞 */
+        {
+            static uint16_t encoder_send_div = 0U;
+            if(++encoder_send_div >= 10U)
+            {
+                encoder_send_div = 0U;
+                //encoder_wireless_send();
+                //wireless_send_angles_as_text();
+                //wireless_send_jiasuduji_Date();
+                //wireless_send_tuoluoyi_Date();
+            }
+        }
+
+        system_delay_ms(10);
+    }
+}
+
+附录B 电路板PCB图
+
+
+
+主板电路图
+
+磁编码器电路图
+
+
+驱动板电路
+
+
+
+
+
+舵机供电电路板电路
+附录C 电路板原理图
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+===== TABLE 1 =====
+名称 | 小车参数
+车模长度 | 190mm
+车模宽度 | 210mm
+车模高度 | 400mm / 190mm
+电路电容器总容量 | 30he00uF
+传感器种类及个数 | 陀螺仪 ium660rc * 1 磁编码器 tle5012b * 2
+外加伺服电机个数 | 0
+赛道信息检测频率 | 1000 次/秒

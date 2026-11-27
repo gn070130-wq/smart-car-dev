@@ -1,0 +1,799 @@
+
+第二十一届全国大学生
+智能汽车竞赛
+
+技 术 报 告
+
+
+学    校：太原工业学院
+队伍名称：晋速-昭眸星
+参赛队员：冯剑 董晨彤 朱玉杰 吕奇峰 
+带队教师：张婕 左义海 
+
+
+
+摘要：在本次比赛中，本组使用大赛组委会统一提供的竞赛车模, 使用NXP公司的RT1064做为小车的主控.，通过OpenART Plus摄像头,icm20602陀螺仪模块获取赛道信息以及当前姿态从而规划路径；通过编码器实时检测模型车的速度，使用 PID 控制算法对车身姿态的矫正、驱动电机的转速进行调节，实现了对模型车运动速度和运动方向的闭环控制，以确保车模在赛道上稳定行驶
+关键字：智能车，RT1064单片机，PID控制
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+第一章 引 言
+全国大学生智能汽车竞赛是以“立足培养、重在参与、 鼓励探索、追求卓越”为宗旨，鼓励创新的一项科技竞赛活动。参赛队伍使用组委会规定的汽车模型以及微控制器，通过增加传感器，电机驱动模块并编写对应的控制代码，制作完成一辆能够自主识别道路的汽车模型。智能视觉组要求参赛队伍制作一辆可以在平面比赛场地内自由运动的车模。车模在场地内的位置、方向是由比赛系统根据车模上的标记目标板来确定。车模上放置有普通的手机或无线投屏器，屏幕上显示比赛虚拟现实仿真系统投影的实时动态图像。其中包括有比赛场地的全局图像和车模第一视角的图像。车模通过完成虚拟游戏任务来完成比赛，场地大约为3.2×2.4米，使用宽度为5厘米的黄色布基胶带贴在场地边缘，示意车模可活动范围。比赛内容来自于推箱子游戏的演变，按照规则将全部箱子推到目的地即为完成比赛任务，游戏难度和要求会随着关卡的提高而递增。其设计内容涵盖了控制、模式识别、传感技术、汽车电子、电气、计算机、机械、能源等多个学科的知识，对学生的知识融合和实践动手能力的培养，具有良好的推动作用。
+本次比赛中，我们使用竞赛组委会指定车模中的M成品车模，采用NXP公司RT1064作为核心控制单元，采用DRV作为电机的驱动控制单元，自主构思了一套控制方案，包括传感器信号采集处理、动力电机驱动、控制算法及执行等，设计并实现出一套能够自主识别路线的智能车控制系统。
+在制作过程中，本组对小车的整体构架进行研究，分别在硬件电路设计、机械结构和软件都不断迭代。电路设计方面我们考虑并实践各种传感器的布局；软件上不断进行完善，机械结构上我们尽可能保证整个车模协调化。
+本报告我们主要通过对整体方案、机械、硬件、算法等方面的介绍，详细为大家呈现该系统的设计方案和制作过程。我队成员涉及电子、机械等专业，在备赛过程中，队员查阅了大量相关资料，反复地调试车模的各项参数。所有队员都为此次智能汽车竞赛付出了艰苦的劳动。
+第二章 方案设计
+本章主要介绍智能汽车系统总体方案的选定和总体设计思路，在后面的章节中将整个系统分为传感器布局，机械结构、硬件模块、控制算法等三部分对智能汽车控制系统进行深入的介绍和分析。
+
+2.1 系统总体结构
+对于M车模，首要的任务是速度角度闭环，闭环的核心是编码器，陀螺仪角速度计模块。由陀螺仪获取车模角速度信息，通过姿态解算计算出车模当前偏航角，运用PID控制麦轮保持车身稳定。由车模上的Open Art PLUS摄像头来采集屏幕上的赛道信息，以此来转向、规划路径。
+
+2.2 系统总体方案选定
+本次智能车系统方案选型严格围绕智能视觉组赛事规则、比赛场地特性与推箱子逐级闯关的任务需求展开，结合组委会指定M系列成品车模的硬件适配性，兼顾系统稳定性、实时性、容错性与可迭代性，通过多套备选方案对比测试，最终确定以RT1064主控+视觉图像识别+惯性姿态闭环控制的一体化智能控制系统方案，全方位适配赛事动态场景作业需求。
+
+  2.3系统总体方案的设计
+遵照竞赛规则规定，本组别采用NXP RT1064单片机作为核心控制单元用于车模系统的控制。在选定智能汽车系统采用摄像头方案后，目标位置的信息主要通过图像分析来进行路径规划，经RT1064 MCU对车模进行移动转向控制进而保持赛道上能够自主规划行驶，并以较短的路径以及较稳定姿态以合理的速度完成赛事任务。此外，还增加了五轴按键和拨码开关作为输入输出设备，用于车模的速度和控制方案选择。
+根据以上系统方案设计，系统共包括六大模块：RT1064主控模块、DRV驱动模块、传感器模块、速度检测模块、辅助调试模块和电源模块。各模块的作用如下所述：
+Rt1064主控模块：作为整个车模的“大脑”，其采集陀螺仪,摄像头传感器、编码器等传感器的信号，根据控制算法做出控制决策，驱动麦轮对车模控制。
+DRV驱动模块：作为车模飞轮驱动的核心，通过接受“大脑”串口发送的信息，对麦轮转速进行调整，保证电机执行指定的转速，维持车模姿态的稳定。
+传感器模块：是车模的“感官”，可以通过一定的前瞻性，提前感知前方的赛道信息，为车模的“大脑”做出决策提供必要的依据和充足的反应时间。
+速度检测模块：检测反馈车模车轮的转速。
+辅助调试模块：主要用于车模系统的功能调试、状态检测。
+电源模块：为整个系统提供合适而又稳定的电源。
+
+
+第三章 传感器安装及布局
+大赛提供的都是通用的车模都是运动型模型车通用车模，并没有提供专门为智能车安装电路、传感器等电路部分的部件，因此这部分机械结构需要自行设计制作并安装。我们需要自制覆有铜层的PCB板子，在对原有的机械结构进行一定的修改，另外，为了提高车模的运动性能，对一些机械结构还需要调整。
+
+3.1 陀螺仪＆加速度计安装
+陀螺仪和加速度计用于测量车模姿态，需要和小车紧密相连，对于加速度计，为了减少运动产生的噪声，需要安装的尽可能靠近车轴，对于陀螺仪，则需要保证完全水平安装，否则颠簸时会产生竖直方向的分量，形成偏航角漂移的现象，陀螺仪同时也测量了车模运行时的角速度用来进行转向微分控制，最终我们决定采用3D打印技术将它放在车模中间。图3.1为陀螺仪＆加速度计安装图。
+
+
+
+
+
+
+
+
+
+
+
+图3.1    陀螺仪&加速度计安装图
+
+3.2 摄像头安装
+
+
+
+
+图3.2 摄像头安装图
+
+
+第四章 机械结构分析及调节
+任何的控制算法和软件程序都是需要一定的机械结构来执行和实现的，一个好的机械结构能避免很多麻烦，因此在设计整个软件架构和算法之前一定要对整个车模的机械结构有一个理性的认识。
+
+4.1车体机械建模
+我们选用的赛车车模是逐飞科技的M车模。赛车的机械结构调整方案主要是针对竞赛车模的重心，要想实现高速稳定的运行，机械结构应当做到使重心尽可能的落在整车中心，减少车模在横向移动时歪斜，以减轻陀螺仪死区干扰，同时，要想移动灵活，机械结构应当使重心尽可能的集中，以减少车模转动惯量。对于原装的M车搭建机械结构后重心偏后，于是我们在前端加了100g配重它可以提供更大的力矩，以便于在横向平移时保持稳定。
+
+4.2摄像头&陀螺仪&车载屏幕的安装 
+摄像头与屏幕之间的距离经过了调整可以在一定范围内看全看清晰屏幕显示的赛道信息，周围添加了遮光纸板，可以减少环境光的影响。陀螺仪模块是车模获取车模姿态的传感器，为了让陀螺仪可以更好的出值，我们将陀螺仪尽可能安装在了车模中间部分，陀螺仪放在了车模的摄像头正下方，在移动时可以更好的锁定目标偏航角。为了减小移动时摄像头与屏幕相对位移导致识别不稳定，我们通过3D打印技术将其固定为一体，提高运行时车模识别稳定性。
+
+4.3系统电路板的固定及连接
+由于车模空间有限，摄像头与屏幕占据了大部分空间，而需要安装的电路板又比较多，为了保证车模重心集中和整体的协调，对电路板的位置做了多次相应的调整，提高调车效率及车模速度上限。对于各个电路板的连接也进行了调整尽可能让线路合适。
+第五章 硬件电路设计
+硬件电路由7块电路板组成，分别是主板，直流电机驱动板，核心板，调参板，摄像头板，显示屏，陀螺仪。主板包含了单片机最小系统插口、陀螺仪插口、串口插口、TFT插口、通信接口、有刷电机PWM口、五轴拨码调试口，编码器插口如图5.0。
+
+
+图5.0 主板外设插口
+
+
+
+
+
+
+
+5.1电源模块
+电源输入：
+采用PMOS限流的方法，极大地缓解了后续电路的工作压力，采用更多的电解电容来对电压滤波也可以防止PMOS被打穿，如图5.1-1。
+
+
+
+
+图5.1-1 MOS防打火装置
+
+
+
+
+
+5V电源：
+降压采用了SCT2450的降压方案，直接将12V降到5V,这款芯片支持宽电压输入，且电源纹波小。5V主要给串口插口、RT1064单片机等，如图5.1-2。
+
+图5.1-2 5V电源电路
+
+
+
+3.3V和使能时序电源：
+3.3V电源比较重要，给调参的串口、上拉电源、TFT和陀螺仪，还有核心供电。采用RT9013-3.3和SY6280供电，RT9013 是一款高性能、输出电流能力 500mA 的线性稳压器，提供极高的 PSRR 和 超低压降。摄像头单独设置一个电源模块，核心单独设置一个电源模块，其他共用一个，如图5.1-3。
+
+
+图5.1-3 3.3v电源电路
+
+
+
+
+5.2 电机驱动模块
+电机驱动采用DRV8701E方案，通过LR8341A-T33的降压来给隔离芯片SN74HC125PWR供电，电路图如图5.2 所示
+
+
+
+
+
+
+图5.2电机驱动模块
+
+
+
+第六章 车模软件算法
+6.1 车模的运行控制
+6.1.1 PID控制原理
+PID控制以其结构简单、稳定性好、工作可靠、调整方便而成为工业控制的主要技术之一。当被控对象的结构和参数不能完全掌握，或得不到精确的数学模型时，系统控制器的结构和参数必须依靠经验和现场调试来确定，这时应用PID控制技术最为方便。
+PID控制就是根据系统的误差，利用比例(P)、积分(I)、微分(D)计算出控制量进行控制的。目前PID控制在工业控制系统中无处不见，随着控制效果的要求不断提高，PID逐渐向智能化发展，但形形色色的现代控制理论最终还是源自经典PID理论。
+PID解决了自动控制理论所要解决的最基本问题，既系统的稳定性、快速性和准确性。调节PID的参数，可实现在系统稳定的前提下，兼顾系统的带载能力和抗扰能力，同时，在PID调节器中引入积分项，系统增加了一个零积点，使之成为一阶或一阶以上的系统，这样系统阶跃响应的稳态误差就为零。
+由于自动控制系统被控对象的千差万别，PID的参数也必须随之变化，以满足系统的性能要求。因此PID参数的确定是PID控制中重要的部分之一[3]。
+PID控制的基本原理如公式1所示：
+                  公式1
+式中，u(t) -- 控制量
+KP -- 比例系数
+Ti -- 积分时间常数
+Td -- 微分时间常数
+
+
+
+将公式1离散化，即将描述连续系统的微分方程代之以等效的描述离散系统的差分方程，就可以得到相应的数字PID调节器。当控制周期也就是积分时间足够小的时候，利用矩形法进行数值积分，即以求和代替积分，以差分代替微分，可得到数字形式的PID控制方程如公式2所示：
+             公式2
+式中T为控制周期，当T足够小时离散化的控制模型可以逼近连续式的PID控制模型。另外，可以将公式2中的T提取出来，把Kp分配进去，分别与1/Ti和Td组成比例项系数KP，积分项系数KI和微分项系数KD，公式2可简化为公式3：
+             公式3
+公式3也就是常说的位置式PID控制方程，但是由于积分项累加计算比较复杂，而且在程序计算中极容易出现溢出现象，因此人们考虑每一次不是给出绝对的控制量，而是根据上一次的控制，给出本次需要增加的控制量即可。根据这一想法，我们首先考虑上一次(即k-1时)给出的控制量u(k-1)为：
+        公式4
+公式3－公式4可得k时刻需要给出的增量
+ 公式-5
+由公式5得输出u(k)也可表示为：
+ 公式6
+公式6就是增量式PID控制方程，由此可以看出，增量式PID消去了积分项的累加部分，这样便于程序编写。
+
+6.1.2.M车运动控制原理
+本次 M 型底盘采用四轮麦克纳姆轮全向移动结构，依托四轮独立转速配合实现平面全向运动，为适配推箱子场景高精度姿态保持、定点驻车、低速稳推需求，整车采用车体航向位置闭环（角度位置环）+ 单轮转速位置式 PID 闭环双层位置环控制架构，从上层姿态位置纠偏、车体运动学解算、底层电机位置闭环执行形成完整控制链路，下文从运动学模型、航向角度位置环控制、电机转速位置式 PID 闭环、指令平滑约束、整车联动逻辑展开完整说明。
+首先麦克纳姆轮底盘运动学逆解模型是以底盘几何中心建立车体坐标系：X 轴指向车头正前方，Y 轴指向车体左侧，Z 轴垂直地面向上，绕 Z 轴转动为航向角θ。定义车体期望运动输入：Vx​：车体前后轴向线速度（向前为正）；Vy​：车体左右横向线速度（向左为正）；ω：车体绕中心旋转角速度（逆时针为正）。四轮排布：左前轮 M1、右前轮 M2、左后轮 M3、右后轮 M4，L为前后轴距半长，W为左右轮距半长，四轮目标线速度逆解公式：
+⎩⎨⎧​Vw1​=Vx​−Vy​−ω(L+W)Vw2​=Vx​+Vy​+ω(L+W)Vw3​=Vx​+Vy​−ω(L+W)Vw4​=Vx​−Vy​+ω(L+W)​
+结合车轮半径R、电机减速比i，将车轮线速度换算为电机期望转速，作为底层电机闭环的设定值。上层路径规划、箱子对位逻辑输出、、，通过运动学拆解为四路电机目标转速，是整车运动的数学基础。
+推箱作业中车体航向偏移会直接造成箱子横向偏移、对位失效，因此以航向绝对角度作为位置环被控量，构建角度位置式 PID 闭环，直接修正车体旋转角速度指令。
+通过 ICM20602 陀螺仪完成姿态解算，得到车体实时绝对航向角θreal​，任务给定目标航向角θset​，角度位置偏差：
+eθ​(k)=θset​−θreal​(k)
+2.2 角度位置式 PID 控制公式
+位置式 PID 直接输出角速度修正总量，公式为：
+Δω(k)=KPθ​⋅eθ​(k)+KIθ​⋅∑i=0k​eθ​(i)+KDθ​⋅[eθ​(k)−eθ​(k−1)]
+比例项KPθ​⋅eθ​(k)：根据当前角度偏差直接输出纠偏角速度，偏差越大纠偏力度越强，快速收拢航向误差；
+积分项KIθ​⋅∑eθ​(i)：对长时间累计角度误差做积分补偿，消除陀螺仪温漂、底盘机械不对称带来的稳态航向漂移，保证长时间直行航向不跑偏；
+微分项KDθ​⋅Δeθ​：抑制角度超调，避免车体反复左右摆头震荡，适配低速微调航向推箱工况。
+将角度环输出的角速度修正量叠加至基础旋转指令：
+ωout​=ωbase​+Δω(k)
+修正后的角速度重新代入麦轮逆解公式，修改四轮转速，实现航向角度的位置闭环锁定，维持车身姿态固定。
+位置式 PID 积分项存在累加饱和缺陷，当车体航向大幅偏移时，积分值持续累积，即便航向回归目标值，饱和积分仍会输出反向大控制量，造成剧烈过冲。因此增加积分上下限约束：
+{Sume​=Summax​Sume​=Summin​​Sume​>Summax​Sume​<Summin​​
+限制积分累计极值，规避积分饱和飞车、车体姿态剧烈抖动问题。
+经过运动学解算得到四轮目标转速Vset1​∼Vset4​，每一路直流电机搭载正交编码器采集实时转速Vreal​(k)，以转速为被控量搭建独立位置式 PID 闭环，直接输出电机 PWM 控制占空比绝对值，对应前文增量式 PID 对比，位置式 PID 直接输出最终控制输出量u(k)。
+转速偏差：e(k)=Vset​(k)−Vreal​(k)位置式 PID 输出：
+u(k)=KP​⋅e(k)+KI​⋅∑i=0k​e(i)+KD​⋅[e(k)−e(k−1)]
+u(k)为当前周期输出至 DRV8833 驱动模块的 PWM 占空比，正负符号控制电机正反转，幅值决定输出功率。
+位置式 PID 电机控制控制输出直观：输出量直接对应驱动 PWM 幅值，标定参数时可直观对应 “偏差多大对应多大动力”，现场调试门槛低，适合竞赛现场快速调参；
+稳态转速精度高：积分项持续补偿轮间机械差异、电池电压跌落带来的转速跌落，保证四个麦轮实际转速严格贴合理论解算值，避免四轮转速不一致导致的车体不自觉侧滑、航向偏移；
+停机特性优异：当目标转速Vset​=0时，偏差e(k)直接由当前转速决定，PID 输出反向制动 PWM，实现主动刹车，相比增量式 PID 驻车刚性更强，推箱到位后可以牢牢锁死车轮，防止车体溜动顶推箱子移位；
+必须配套输出限幅：对最终 PWM 输出u(k)设置最大最小值，限制电机满占空比输出，保护 DRV 驱动芯片与电机，防止堵转大电流烧毁功率器件。
+增量式 PID 输出控制量变化值，适合连续调速场景；本车使用位置式 PID，依靠直接输出制动力矩的优势，完美适配推箱子定点驻车、精准刹停、姿态锁紧核心需求，是全向底盘高精度作业的优选方案。
+上层路径规划直接给出阶跃式、、指令时，目标转速突变会让电机位置环瞬间产生超大偏差，PID 输出骤变引发车体冲击抖动。在运动学解算前增加斜坡加减速滤波，限制单周期速度最大变化量：
+Vout​(k)=⎩⎨⎧​Vout​(k−1)+Vstep​Vout​(k−1)−Vstep​Vset​​Vset​>Vout​(k−1)Vset​<Vout​(k−1)∣Vset​−Vout​(k−1)∣≤Vstep​​
+长距离行进使用大步长提升移动效率，靠近箱子、终点点位切换小步长，平缓改变目标转速，降低电机位置环瞬时误差，进一步提升运动平顺性。
+决策层：视觉模块识别箱子、终点、场地边界，输出车体目标行进速度、与目标航向角度θset​；
+航向位置环：陀螺仪解算实际航向，位置式 PID 完成角度闭环纠偏，修正车体旋转角速度指令，锁定车身朝向；
+指令平滑层：斜坡滤波处理速度指令，消除阶跃冲击；
+麦轮运动解算：将车体三轴运动矢量分解为四个电机目标转速；
+电机转速位置环：四路独立位置式 PID 闭环，结合编码器反馈稳定轮速，PWM 输出至 DRV 驱动驱动车轮运动。
+整套角度位置外环 + 转速位置内环双闭环架构，充分发挥位置式 PID 稳态控制强、制动锁止可靠的优势，解决麦克纳姆轮底盘航向漂移、轮速不一致、驻车溜车三大通病，实现赛场高速行进、低速贴箱对位、原地角度校准、到位刚性驻车的全工况稳定运动，满足虚拟推箱子多关卡高精度作业要求。
+
+
+6.2 速度控制
+速度控制并不像方向控制那样精确，只要在短时间内达到目标速度即可，写了一些加减速去控制速度，经过调试，选择合适的参数后，速度控制效果好。
+
+6.3识别策略
+ 整车搭载两台逐飞科技OpenART Plus视觉摄像头组成双目视觉识别架构，左右摄像头分工明确，分别承担全局地图环境感知与局部目标精细化分类任务，二者通过串口将解析完成的特征数据统一传输至RT1064主控下位机，为路径规划、推箱决策、爆破逻辑提供视觉数据源。 
+左侧摄像头负责全局赛场地图轮廓、障碍物、功能物件定位，采用四点标定法选取场地四个基准顶点完成赛场边界框选，随后使用逆透视变换算法矫正镜头畸变与透视形变，还原出垂直俯视的标准鸟瞰地图。在矫正完成的鸟瞰图内采用LAB色彩空间阈值分割算法，依靠不同色块LAB通道数值差异区分围墙墙体、可推动箱子、目标放置点位、爆破炸弹标识，同时通过画面色块消失检测判断炸弹触发后被摧毁的墙体编号，结合场地坐标解算小车当前在地图内的坐标位置与行进姿态，实现整车全局定位与环境建模。 
+右侧摄像头专注近距离目标精细化分类识别，采集画面中心240×240像素核心区域作为模型推理输入，缩减运算量提升识别帧率。模型依托NXP eIQ模型部署软件完成训练、量化与边缘端部署，整体设置11分类标签：序号0至9对应赛场内不同编号箱体目标，序号10统一识别黄色箱体与对应目标存放点位。摄像头完成模型推理后，将目标类别、中心坐标等有效信息打包，通过串口通信发送至主控下位机。 双目视觉各司其职完成环境建模与物体分类，既依靠左摄保证全局地图定位的稳定性，又依靠右摄保障箱体类别识别精度，有效规避单摄像头兼顾全局与近距离识别带来的畸变、算力不足问题，为智能车推箱配对、炸弹爆破、轨迹修正提供可靠视觉支撑。
+第七章  系统开发及调试工具
+7.1软件开发平台
+我们采用的是 IAR Embedded Workbench for ARM 开发工具，IAR Embedded Workbench 是 IAR Systems 公司推出面向 ARM 架构单片机的专业商业集成开发环境。IAR 集成了高性能编译器、在线调试器、硬件下载适配、工程管理组件等开发必备模块，适配 NXP RT1064 这类 i.MX RT 跨界 MCU 开发，编译效率高、代码优化能力强，适配嵌入式控制、图像算法、多传感器实时调度的工程开发，软件调试功能完善，能够配合下载器完成断点调试、变量实时观测，便于智能车控制算法、闭环 PID、视觉识别代码的在线调试与参数标定，是竞赛嵌入式开发常用的稳定开发平台。
+7.2上位机调试助手
+关于上位机我们采用的是VOFA+，通过数据的依据来进行分析，推理然后根据得出的结论来改变参数，远远比盲目调参效率要高的多，如下图所示：
+
+
+图7.2 VOFA+
+
+
+
+
+7.3人机交互界面
+因为在比赛的时候要跟就不同的赛道设置不通的参数，调整策略。又因为比赛时间有限下载代码耗费时间。所以一个方便的快捷的调参界面非常重要。对于策略的修改我们用到了拨码开关，和五轴按键。效果如图所示：
+在赛场起到了非常大的作用。
+
+图7.3 人机交互界面
+
+
+
+第八章车模基础信息表
+
+
+
+
+  第九章 结论
+在这份技术报告中，我们主要介绍了参赛小车整体设计思路，包含机械结构、硬件电路以及核心运动控制算法的设计与调试思路。
+项目前期，我们相关工程实践经验较为欠缺，调试阶段遇到诸多软硬件故障。通过反复实车测试、算法调参和团队协作攻关，逐一解决各类问题，完成整车系统优化，自身实践能力也得到充分锻炼。
+机械布局上，依托 M 型麦轮车全向移动的特性，优化摄像头、陀螺仪、编码器等传感器安装位置，在实现车体轻量化的同时，保障小车行驶结构稳定。硬件电路以 RT1064 主控搭配 DRV 电机驱动搭建，调试阶段解决了电机冲击烧管、电源压降等硬件问题，硬件稳定性得到保障。软件控制上，整车采用双位置环 PID 实现麦轮姿态与转速闭环控制，视觉模块采集箱子与场地信息，结合陀螺仪姿态数据计算运动偏差，输出车体运动指令，配合速度平滑处理，让小车既能快速行进，又可精准完成贴箱、驻车、姿态修正动作，稳定完成赛场推箱作业。
+
+参考文献
+[1] 张化光，何希勤．模糊自适应控制理论及其应用[M]．北京：北京航空大学出版社，2002 
+[2] 王威．HCS12微控制器原理及应用[M]．北京：北京航空航天大学出版社，2007 
+[3] 孙同景，陈贵友．十六位单片机原理及嵌入式开发技术[M]．北京：机械工业出版社，2008
+[4] 刘畅生，张耀进．新型集成电路简明手册及典型应用[Ｊ]．西安电子科技大学出版社，2005 
+[5] 夏路易，石宗义著．电路原理图与电路板设计[M]．北京： 北京希望电子出版社， 2002．6
+[5] 桌晴，黄开胜，邵贝贝．学做智能车[M]． 北京：北京航空大学出版社，2007 
+[6] 张靖武．单片机原理应用与PROTEUS仿真[J]．电子工业出版社，2009．8（１）：19-28
+[7] 邵贝贝 ．单片机嵌入式应用的在线开发方法[M]． 北京：清华大学出版社， 2004
+[8] 臧杰，阎岩．汽车构造[M]．北京：机械工业出版社，2005 
+[9] 王柏盛．C程序设计[Ｊ]．北京：高等教育出版社．2004．4(1)：65-98 
+[10] 卓晴公众号
+[11] 智能车论坛
+
+
+
+
+
+
+
+
+
+
+
+
+附录：源代码
+#include "zf_common_headfile.h"
+/***五轴引脚宏定义***/
+#define up          D15//M车
+#define down        D12
+#define Left        D13
+#define Right       D14
+#define push        D4
+#define one        C15
+#define two        C14
+#define three      C13
+#define four       C12
+uint8 page = 1;
+uint8 Page=26;//最大页数
+int line = 0;
+double power = 1.0;   //改变数据的倍数
+uint8 number = 0;     //箭头所在行数
+uint8 open_car=0,open_modle=0;
+void caidan_init(){
+  //按键
+    gpio_init(up,GPI, 1,  GPI_FLOATING_IN);
+    gpio_init(down,  GPI, 1,  GPI_FLOATING_IN);
+    gpio_init(Left,  GPI, 1,  GPI_FLOATING_IN);
+    gpio_init(Right,  GPI, 1,  GPI_FLOATING_IN);
+    gpio_init(push,   GPI, 1,  GPI_FLOATING_IN);
+    
+  //拨码 
+  gpio_init(C12 , GPI, 1, GPI_FLOATING_IN);
+  gpio_init(C13 , GPI, 1, GPI_FLOATING_IN);
+  gpio_init(C14 , GPI, 1, GPI_FLOATING_IN);
+  gpio_init(C15 , GPI, 1, GPI_FLOATING_IN);
+}
+int Set_key_number(){                      //检测按键
+    if(!gpio_get_level(up)){return 1;}
+    else if(!gpio_get_level(down)){return 2;}
+    else if(!gpio_get_level(Left)){return 3;}
+    else if(!gpio_get_level(Right)){return 4;}
+    else if(!gpio_get_level(push)){return 5;}
+    else{return 0;}
+}
+int Set_bo_number1(){   
+    if(!gpio_get_level(one)){return 1;}
+    else{return 0;}
+}
+int Set_bo_number4()
+{
+    if(!gpio_get_level(four)){return 1;}
+     else{return 0;}
+}
+
+void find_data(int KeyNum){                    //箭头移动(上下按键控制)
+    if(KeyNum == 2)
+    {
+        if(number<8){number++;tft180_clear();}
+        else if(number>=8){number=0;}
+    }
+    else if(KeyNum == 1)
+    {
+        if(number>=1){number--;tft180_clear();}
+        else if(number<=0){number=8;}
+    }
+}
+uint8 a[3]={0};uint8 b[3]={0},ch[3]={0};
+
+void pages(int page){
+     if(page!=8&&page!=9)
+     {
+        tft180_show_string(0,0,"power");
+        tft180_show_float(6*8,0,power,5,3);
+     }
+    tft180_show_string(13*8,number*16,"<-");
+    if(number!=8){tft180_show_string(12*8,8*16,"   ");}
+    tft180_show_string(0,8*16,"page");
+    tft180_show_int(8*8,8*16,page,2);
+    if(page==1){  
+      
+      tft180_show_float(8*0,16*1,bmq_lf,3,1);
+      tft180_show_float(8*8,16*1,bmq_rf,3,1);
+      tft180_show_float(8*0,16*2,bmq_lh,3,1);
+      tft180_show_float(8*8,16*2,bmq_rh,3,1);
+      tft180_show_string(0,16*3,"kaimoxin");
+      tft180_show_int(8*9,16*3,open_modle,1);
+      tft180_show_string(0,16*4,"qusai");
+      tft180_show_int(8*9,16*4,qusai,2);
+      tft180_show_string(0,16*5,"open_car");
+      tft180_show_uint(8*8,16*5,open_car,1);    
+      tft180_show_string(0,16*9,"jishu");
+      tft180_show_int(8*9,16*9,jishu,2);
+      tft180_show_float(0,16*7,car_x,3,1);
+      tft180_show_float(8*8,16*7,car_y,3,1);
+      tft180_show_string(0,16*6,"tly_z");
+      tft180_show_float(8*8,16*6,tly_z,1,4);
+    }
+    
+    if(page==2){
+      tft180_show_string(0,16*1,"find");
+      tft180_show_uint(8*8,16*1,find,1);
+      tft180_show_string(0,16*2,"an");
+      tft180_show_uint(8*8,16*2,an,1);
+      tft180_show_float(0*8,16*3,A_R,3,5);
+      tft180_show_string(0,16*4,"a_kp_in");
+      tft180_show_float(8*9,16*4,a_kp_in,1,3);
+      
+      
+      tft180_show_string(0,16*5,"a_kd_in");
+      tft180_show_float(8*9,16*5,a_kd_in,2,2);
+      tft180_show_string(0,16*6,"angle_kp");
+      tft180_show_float(8*9,16*6,angle_kp,3,1);
+      tft180_show_string(0,16*7,"angle_kd");
+      tft180_show_float(8*9,16*7,angle_kd,2,2);
+    }
+//    
+    if(page==3){
+     tft180_show_string(0,16*1,"bmq_kp_lf");
+      tft180_show_float(8*9,16*1,bmq_kp_lf,2,2);
+           tft180_show_string(0,16*2,"bmq_kd_lf");
+      tft180_show_float(8*9,16*2,bmq_kd_lf,2,2);
+     tft180_show_string(0,16*3,"bmq_ki_lf");
+      tft180_show_float(8*9,16*3,bmq_ki_lf,2,2);
+     tft180_show_string(0,16*4,"bmq_kp_rf");
+      tft180_show_float(8*9,16*4,bmq_kp_rf,2,2);
+           tft180_show_string(0,16*5,"bmq_kd_rf");
+      tft180_show_float(8*9,16*5,bmq_kd_rf,2,2);
+           tft180_show_string(0,16*6,"bmq_ki_rf");
+      tft180_show_float(8*9,16*6,bmq_ki_rf,2,2);
+      tft180_show_string(0,16*7,"buchang");
+      tft180_show_float(8*9,16*7,buchang,2,2);
+        
+        
+    }
+    if(page==4)
+    {
+      tft180_show_string(0,16*1,"bmq_kp_ld");
+      tft180_show_float(8*9,16*1,bmq_kp_ld,2,2);
+      tft180_show_string(0,16*2,"bmq_kd_ld");
+      tft180_show_float(8*9,16*2,bmq_kd_ld,2,2);
+      tft180_show_string(0,16*3,"bmq_ki_ld");
+      tft180_show_float(8*9,16*3,bmq_ki_ld,2,2);
+      tft180_show_string(0,16*4,"bmq_kp_rd");
+      tft180_show_float(8*9,16*4,bmq_kp_rd,2,2);
+      tft180_show_string(0,16*5,"bmq_kd_rd");
+      tft180_show_float(8*9,16*5,bmq_kd_rd,2,2);
+      tft180_show_string(0,16*6,"bmq_ki_rd");
+      tft180_show_float(8*9,16*6,bmq_ki_rd,2,2);
+      tft180_show_string(0,16*7,"kp_y");
+      tft180_show_float(8*9,16*7,kp_y,2,2);
+      tft180_show_float(8*9,16*9,pwm_rd,3,1);
+    }
+    if(page==5){
+      tft180_show_string(0,16*1,"kd_y");
+      tft180_show_float(8*9,16*1,kd_y,2,2);
+      tft180_show_string(0,16*2,"kp_x");
+      tft180_show_float(8*9,16*2,kp_x,2,2);
+      tft180_show_string(0,16*3,"kd_x");
+      tft180_show_float(8*9,16*3,kd_x,2,2);
+      tft180_show_string(0,16*4,"kp_y_in");
+      tft180_show_float(8*9,16*4,kp_y_in,2,2);
+      tft180_show_string(0,16*5,"kd_y_in");
+      tft180_show_float(8*9,16*5,kd_y_in,2,2);
+      tft180_show_string(0,16*6,"kp_x_in");
+      tft180_show_float(8*9,16*6,kp_x_in,2,2);
+      tft180_show_string(0,16*7,"kd_x_in");
+      tft180_show_float(8*9,16*7,kd_x_in,2,2);
+    }
+    if(page==6)
+    {
+      tft180_show_string(0,16*1,"box_num");
+      tft180_show_int(8*9,16*1,box_num,2);
+      tft180_show_string(0,16*2,"1box");
+      tft180_show_int(5*8,16*2,transfer_x_virtual(box_x1),3);
+      tft180_show_int(8*9,16*2,transfer_y__virtual(box_y1),3);
+      tft180_show_string(0,16*3,"2box");
+      tft180_show_int(5*8,16*3,transfer_x_virtual(box_x2),3);
+      tft180_show_int(8*9,16*3,transfer_y__virtual(box_y2),3);
+      tft180_show_string(0,16*4,"3box");
+      tft180_show_int(5*8,16*4,transfer_x_virtual(box_x3),3);
+      tft180_show_int(8*9,16*4,transfer_y__virtual(box_y3),3);
+      
+      tft180_show_string(0,16*5,"4box");
+      tft180_show_int(5*8,16*5,transfer_x_virtual(box_x4),3);
+      tft180_show_int(8*9,16*5,transfer_y__virtual(box_y4),3);
+      tft180_show_string(0,16*6,"5box");
+      tft180_show_int(5*8,16*6,transfer_x_virtual(box_x5),3);
+      tft180_show_int(8*9,16*6,transfer_y__virtual(box_y5),3);
+    }
+    if(page==11)
+    {
+          tft180_show_string(0,16*1,"unlock");
+          tft180_show_uint(8*8,16*1,unlock,1);
+          tft180_show_string(0,16*2,"open_car");
+          tft180_show_uint(8*8,16*2,open_car,1);
+          //int game_over=0;
+          tft180_show_string(0,16*3,"game_over");
+          tft180_show_int(8*9,16*3,game_over,2);
+          tft180_show_string(0,16*4,"road_i");
+          tft180_show_int(8*9,16*4,road_i,2);
+          tft180_show_string(0,16*5,"lengthx");
+          tft180_show_float(8*9,16*5,perlength_x,3,1);  
+          tft180_show_string(0,16*6,"lengthy");
+          tft180_show_float(8*9,16*6,perlength_y,3,1);  
+                    tft180_show_string(0,16*7,"seek_road");
+          tft180_show_int(8*9,16*7,seek_road,1);
+          
+                    tft180_show_string(0,16*9,"model");
+          tft180_show_int(8*9,16*9,model,2);
+    }
+    if(page==9)
+    {
+        tft180_show_int(8*12,16*0,stop_road_i_arr[0],2);
+        tft180_show_int(8*12,16*1,stop_road_i_arr[1],2);
+        tft180_show_int(8*12,16*2,stop_road_i_arr[2],2);
+     tft180_show_int(8*12,16*3,temp_len,2);
+       tft180_show_int(8*12,16*4,final_path_length,2);
+       tft180_show_int(8*12,16*5,my_path_len,2);
+          tft180_show_int(8*12,16*6,stop_poit,2);
+               tft180_show_int(8*12,16*7,stop_car,1);
+      for(int i=0;i<16;i++){
+               for(int j=0;j<12;j++){
+                 
+                    if(rawMap[i][j]==1)
+                    {
+                      // 计算起始坐标
+                int x0 = j * 8;
+                int y0 = i * 8;
+
+                // 填充 8×8 像素
+                for(int dx = 0; dx < 8; dx++)
+                {
+                    for(int dy = 0; dy < 8; dy++)
+                    {
+                        tft180_draw_point(x0 + dx, y0 + dy, 0);
+                    }
+                }                      
+                    }  
+               }
+          }
+    }
+    
+    if(page==9)
+    {
+  for(int i=0; i<140; i++) // 140对应你goal_road[14*10][2]的总长度，可改path_len限制有效步数
+  {
+    // 跳过无效坐标（如果数组中有0,0这类无效点，可根据实际规则调整）
+    if(goal_road[i][0] == 0 && goal_road[i][1] == 0)
+      continue;
+    int x0 = goal_road[i][0] * 8; // 第一列[x]放大8倍
+    int y0 = goal_road[i][1] * 8; // 第二列[y]放大8倍
+    
+    for(int dx = 0; dx < 8; dx++)  // 横向8个像素
+    {
+      for(int dy = 0; dy < 8; dy++) // 纵向8个像素
+      {
+        tft180_draw_point(x0 + dx, y0 + dy, RGB565_RED); 
+      }
+    }
+  }
+    }
+    if(page==9)
+    {
+         for(int i = 0; i < 140; i++)  
+         {
+              // 跳过无效坐标（0,0这类无路径的点）
+              if(final_path[i][0] == 0 && final_path[i][1] == 0)
+                   continue;
+              int x0 = final_path[i][0] * 8 + 2; 
+              int y0 = final_path[i][1] * 8 + 2;
+              // 绘制4×4实心蓝色方块（缩小一倍）
+              for(int dx = 0; dx < 4; dx++)  // 横向遍历4个像素（原8个→现4个）
+              {
+                   for(int dy = 0; dy < 4; dy++) // 纵向遍历4个像素（原8个→现4个）
+                   {
+                        tft180_draw_point(x0 + dx, y0 + dy, RGB565_BLUE); 
+                   }
+              }
+         }
+         
+         
+         
+    }
+        if(page==7)
+    {
+      tft180_show_string(0,16*1,"1dest");
+      tft180_show_int(5*8,16*1,transfer_x_virtual(destination1_x),3);
+      tft180_show_int(8*9,16*1,transfer_y__virtual(destination1_y),3);
+      tft180_show_string(0,16*2,"2dest");
+      tft180_show_int(5*8,16*2,transfer_x_virtual(destination2_x),3);
+      tft180_show_int(8*9,16*2,transfer_y__virtual(destination2_y),3);
+      tft180_show_string(0,16*3,"3dest");
+      tft180_show_int(5*8,16*3,transfer_x_virtual(destination3_x),3);
+      tft180_show_int(8*9,16*3,transfer_y__virtual(destination3_y),3);
+      tft180_show_string(0,16*4,"4dest");
+      tft180_show_int(5*8,16*4,transfer_x_virtual(destination4_x),3);
+      tft180_show_int(8*9,16*4,transfer_y__virtual(destination4_y),3);
+      tft180_show_string(0,16*5,"5dest");
+      tft180_show_int(5*8,16*5,transfer_x_virtual(destination5_x),3);
+      tft180_show_int(8*9,16*5,transfer_y__virtual(destination5_y),3);
+      tft180_show_string(0,16*7,"model");
+      tft180_show_int(8*9,16*7,model,2);    
+    }
+    if(page==8)
+    {
+      tft180_show_string(0,16*1,"boom_num");
+      tft180_show_int(8*9,16*1,boom_num,2);
+      tft180_show_string(0,16*2,"1boom");
+      tft180_show_int(5*8,16*2,transfer_x_virtual(boom_x1),3);
+      tft180_show_int(8*9,16*2,transfer_y__virtual(boom_y1),3);
+      tft180_show_string(0,16*3,"2boom");
+      tft180_show_int(5*8,16*3,transfer_x_virtual(boom_x2),3);
+      tft180_show_int(8*9,16*3,transfer_y__virtual(boom_y2),3);
+      tft180_show_string(0,16*4,"3boom");
+      tft180_show_int(5*8,16*4,transfer_x_virtual(boom_x3),3);
+      tft180_show_int(8*9,16*4,transfer_y__virtual(boom_y3),3);
+      tft180_show_string(0,16*5,"4boom");
+      tft180_show_int(5*8,16*5,transfer_x_virtual(boom_x4),3);
+      tft180_show_int(8*9,16*5,transfer_y__virtual(boom_y4),3);
+      tft180_show_string(0,16*6,"5boom");
+      tft180_show_int(5*8,16*6,transfer_x_virtual(boom_x5),3);
+      tft180_show_int(8*9,16*6,transfer_y__virtual(boom_y5),3);
+    }
+    if(page==12)
+    {
+         tft180_show_string(0,16*1,"kaimoxin");
+         tft180_show_int(8*9,16*1,open_modle,1);
+           tft180_show_string(0,16*2,"fangxiang");
+         tft180_show_int(8*9,16*2,fangxiang,2);
+         tft180_show_string(0,16*3,"ceckmo_flag");
+         tft180_show_int(8*9,16*3,check_moshi_flag,2);
+         tft180_show_string(0,16*4,"conflag0");
+         tft180_show_int(8*9,16*4,condition_flag0,2);
+         tft180_show_string(0,16*5,"conflag1");
+         tft180_show_int(8*9,16*5,condition_flag1,2);
+         tft180_show_string(0,16*6,"conflag2");
+         tft180_show_int(8*9,16*6,condition_flag2,2);
+          tft180_show_string(0,16*7,"ceshi_flag");
+         tft180_show_int(8*10,16*7,ceshi_flag,2);
+    }
+    
+    //
+        if(page==13)
+    {
+          tft180_show_string(0,16*1,"check_flag");
+          tft180_show_int(8*10,16*1,check_flag,1);
+          tft180_show_string(0,16*2,"mox_flag11");
+          tft180_show_int(8*10,16*2,moxing_flag11,1);
+          tft180_show_string(0,16*3,"mox_flag12");
+          tft180_show_int(8*10,16*3,moxing_flag12,1);
+          tft180_show_string(0,16*4,"mox_flag13");
+          tft180_show_int(8*10,16*4,moxing_flag13,1);
+          tft180_show_string(0,16*5,"moxing_ok");
+          tft180_show_int(8*10,16*5,moxing_ok,1);
+          tft180_show_string(0,16*6,"box_mo_ok");
+          tft180_show_int(8*10,16*6,box_moxing_ok,1);   
+          tft180_show_string(0,16*7,"modle_num");
+          tft180_show_int(8*10,16*7,modle_num,1);
+    }
+    if(page==14)
+    {
+            tft180_show_string(0,16*1,"ki_x");
+      tft180_show_float(8*8,16*1,ki_x,1,2);
+      tft180_show_string(0,16*2,"ki_x_in");
+      tft180_show_float(8*9,16*2,ki_x_in,1,2);  
+      tft180_show_string(0,16*3,"ki_y");
+      tft180_show_float(8*8,16*3,ki_y,1,2);
+      tft180_show_string(0,16*4,"ki_y_in");
+      tft180_show_float(8*9,16*4,ki_y_in,1,2);
+      
+      tft180_show_string(0,16*5,"ka_show");
+      tft180_show_int(8*9,16*5,ka_show,1);
+      tft180_show_string(0,16*7,"bom_flag");
+      tft180_show_int(8*9,16*7,map_boom_flag,2);
+    }
+}
+    
+uint8 an=0,find=0,ring=0;
+int closeTFT=0,closeTFT2=0;
+int recog_x = -1, recog_y = -1;       // 箱子模型输出识别点初始化
+void key(){
+  int boNum1 = Set_bo_number1(); //检测按键(重点是拨码)
+  
+  if(boNum1==1){closeTFT=1;tft180_clear();}
+  else if(closeTFT==0) {menu(page);} 
+  else if(boNum1!=1){closeTFT=0;}
+  
+
+  /*******************简化并列************************/
+  if(open_car==1)
+  {
+       if( ka_show == 1&&game_over==0)
+       {
+            station_ok=0;
+            stop_car=0;
+                 ceshi_dw();
+       }
+       else if( ka_show == 0&&station_ok==1)//确保传完一次再进入主循环程序，station_ok==1（初始等于0）
+       {
+            if(unlock==1)
+            {
+                 if(moshi_flag==1)               
+                      tui_box();
+                 else if(moshi_flag==0)   
+                      check_moshi();         
+            }
+            else if(unlock==0)
+            {
+                 tui_box();
+            }
+       }
+  }
+}
+
+void menu(int page)
+{
+    pages(page);                                    //显示
+    int KeyNum = Set_key_number();                    //检测按键
+    if(KeyNum == 1||KeyNum == 2){find_data(KeyNum);}  //移动箭头
+    else if(KeyNum == 3||KeyNum == 4||KeyNum == 5){set_data(KeyNum);} //设置数据
+    while(KeyNum != 0&&KeyNum<=4){                              //防止多次计数
+        KeyNum = Set_key_number();
+    }
+}
+void all_init(){
+     
+     tft180_set_color(RGB565_BLUE,RGB565_WHITE );
+     clock_init(SYSTEM_CLOCK_600M);  // 不可删除z
+     debug_init();                       // 务必保留，本函数用于初始化MPU 时钟 调试串
+     system_delay_ms(500);
+     uart_init(UART_2 , 115200 , UART2_TX_B18 , UART2_RX_B19 ); 
+     uart_rx_interrupt(UART_2, 1);    // 开启 UART_INDEX 的接收中
+     uart_init(UART_4 , 115200 , UART4_TX_D0 , UART4_RX_D1 ); 
+     uart_rx_interrupt(UART_4, 1);                                   // 开启 UART_INDEX 的接收中断
+     
+     uart_rx_interrupt(UART_1, 1); 
+     icm20602_init();
+     tft180_init();
+     caidan_init();
+     motor_init();
+     bmq_init();
+     tly_init();
+     pit_ms_init(PIT_CH0, 1);
+     pit_ms_init(PIT_CH1, 5);
+     pit_ms_init(PIT_CH2, 5);
+}
+
+void motor_init(){
+  
+
+    pwm_init(PWM_CH2, 17000, 0);
+    pwm_init(PWM_CH3, 17000, 0);
+    pwm_init(PWM_CH5, 17000, 0);
+    pwm_init(PWM_CH7, 17000, 0);
+
+   gpio_init(PWM_CH1, GPO, 1, GPO_PUSH_PULL);
+   gpio_init(PWM_CH4, GPO, 1, GPO_PUSH_PULL);
+   gpio_init(PWM_CH6, GPO, 1, GPO_PUSH_PULL);
+   gpio_init(PWM_CH8, GPO, 1, GPO_PUSH_PULL);
+
+}
+void pure_all()
+{
+  
+     ttt=2;
+     eee = 0;
+     memset(stop_road_i_arr, -1, sizeof(stop_road_i_arr));
+     memset(valid_stop_points, 0, sizeof(valid_stop_points));
+     memset(dest_init, -1, sizeof(dest_init));
+     memset(box_cache, -1, sizeof(box_cache));
+     stop_point_count = 0;
+     condition_flag0=0;
+     condition_flag1=0;ceshi_flag=0;current_target_id = -1;
+     condition_flag2=0;
+     check_moshi_flag=0;
+     moshi_flag=0;moxing_flag11=0;moxing_flag12=0;moxing_flag13=0;moxing_flag14=0;moxing_flag15=0;first_flag=0;
+     destination1_x=0,destination2_x=0,destination3_x=0,destination4_x=0,destination5_x=0,destination1_y=0,destination2_y=0,destination3_y=0,destination4_y=0,destination5_y=0;
+     boom_x1=0,boom_x2=0,boom_x3=0,boom_x4=0,boom_x5=0,boom_y1=0,boom_y2=0,boom_y3=0,boom_y4=0,boom_y5=0;
+     box_x1=0,box_x2=0,box_x3=0,box_x4=0,box_x5=0,box_y1=0,box_y2=0,box_y3=0,box_y4=0,box_y5=0;
+     goal_thing=0;model=88;station_ok=0;stop_poit=0;
+     seek_road=0;road_i=1;virtual_box_x=-1;virtual_box_y=-1;point_move_flag=0;
+     last_target_type = 0;
+     last_target_index = 0;
+     moxing1=-1;moxing2=-1;moxing3=-1;moxing4=-1,moxing5=-1,moxing_ok=0;box1_moxing=-1; box2_moxing=-1;box3_moxing=-1;box4_moxing=-1;box5_moxing=-1;box_moxing_ok=0; 
+     memset(final_path, 0, 240 * 2 * sizeof(int));
+     memset(my_path, 0, 240 * 2 * sizeof(int));
+     memset(goal_road, 0, 240 * 2 * sizeof(int));modle_num=0;ini_A_R=(int)A_R;chage=0;
+     memset(sorted_obj, -1, 20 * 5 * sizeof(int)); 
+     Rebuf1 = 0;Rebuf3 = 0;ka_show=1,map_boom_flag=0;last_box_num=0;
+     game_over=0; stop_car=1;boom_step_stage=0;send_flag1=0,send_flag=0;
+     my_path_len = 0;     skip_suoyin=0;
+     final_path_length = 0; jilu=0;Rebuf2=0;
+     path_flag = 0;      suoyin=0;an=0;
+     open_modle=1;
+     duoshibie = 0;
+     if(jishu==2&&qusai==1)
+     {
+          qusai=0;open_modle=0;open_car=0;stop_car=1;jishu=0;
+     }
+     else if(qusai==1)
+          jishu++;
+}
+void bmq_init(){
+  
+  encoder_dir_init(QTIMER2_ENCODER2 , QTIMER2_ENCODER2_CH1_C5 , QTIMER2_ENCODER2_CH2_C25 );
+  encoder_dir_init(QTIMER2_ENCODER1 , QTIMER2_ENCODER1_CH1_C3 , QTIMER2_ENCODER1_CH2_C4 );   //编码器三        右前      前+
+  encoder_dir_init(QTIMER1_ENCODER1 , QTIMER1_ENCODER1_CH1_C0 , QTIMER1_ENCODER1_CH2_C1 );
+  encoder_dir_init(QTIMER1_ENCODER2 , QTIMER1_ENCODER2_CH1_C2, QTIMER1_ENCODER2_CH2_C24 );
+
+}
+
+===== TABLE 1 =====
+项目 | 规格 | 备注
+车模型号 | M车 | 
+车模长宽高 | 长310mm  宽210mm  高150mm | 
+车模重量 | 约1860g | 
+电路功耗 | 约300W | 
+所有电容总容量 | 约1000uF | 
+传感器种类及个数 | Open ART Plus摄像头*2 陀螺仪icm20602 *1 奥凯特编码器*4 | 
+除了车模原有的驱动电机、舵机之外伺服电机个数 | 无 | 
+车模改造 | 将原黄铜齿替换为F车的黄铜齿 | 
+赛道信息检测精度、频率 | ART摄像头像素320*240； ART摄像头帧率30帧； | 
+其他 |  | 

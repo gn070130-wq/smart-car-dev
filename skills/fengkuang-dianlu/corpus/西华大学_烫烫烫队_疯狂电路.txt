@@ -1,0 +1,488 @@
+第二十一届全国大学生
+智能汽车竞赛
+
+
+技  术  报  告
+
+
+
+
+学    校： 西华大学   
+队伍名称： 烫烫烫    
+参赛队员： 罗文杰
+           王雨润
+带队教师： 李月卉  梁莉
+
+
+
+
+
+关于技术报告和研究论文使用授权的说明
+
+本人完全了解全国大学生智能汽车竞赛关保留、使用技术报告和研究论文的规定，即：参赛作品著作权归参赛者本人，比赛组委会可以在相关主页上收录并公开参赛作品的设计方案、技术报告以及参赛模型车的视频、图像资料，并将相关内容编纂收录在组委会出版论文集中。
+
+参赛队员签名：罗文杰         王雨润 	        
+带队教师签名：李月卉              梁莉	        
+日        	     期：	    2026.8.19		       
+
+
+
+
+摘要
+本文针对第二十一届全国大学生智能汽车竞赛"疯狂电路"组别赛题要求，对西华大学"烫烫烫"队智能车系统进行了技术总结。系统以 TC264D 微控制器为核心，MT9V034 摄像头为视觉传感器，融合 LSM6DSRTR 姿态传感器与编码器实现多源信息感知；采用 AI8051 芯片与 FD6288 驱动实现无刷负压控制。软件上通过图像预处理、赛道中线提取、回路路径规划及 PID 闭环控制，实现了车模在电路图赛道上的自主导航与稳定运行。硬件与机械设计围绕传感器布局、车体轻量化及负压结构优化展开。经系统测试与参数整定，车模具备良好的赛道识别能力与运行稳定性，满足比赛任务要求。
+关键词：TC264D；AI8051；MT9V034；LSM6DSRTR 姿态传感器；负压控制；赛道识别；PID控制
+目录
+摘要	I
+目录	III
+第一章  绪论	1
+1.1 竞赛任务与设计目标	1
+1.2 系统总体方案	1
+1.3 报告结构	2
+第二章  机械结构与传感器安装	3
+2.1 模型车机械设计	3
+2.2 机械部分安装及改造	5
+2.3 传感器设计与安装	6
+2.4 电路板连接及固定	6
+第三章  电路系统设计	9
+3.1 电路设计总体说明	9
+3.2 控制核心与最小系统	10
+3.3 电源与功耗设计	10
+3.4 驱动与执行机构电路	13
+3.5 PCB 与可靠性设计	14
+第四章  控制软件与核心算法	15
+4.1 软件总体架构	15
+4.2 赛道信息检测与处理算法	16
+4.3 速度检测与闭环控制	16
+4.4 转向/路径控制算法	17
+4.5 特殊元素识别与运行策略	18
+4.6 代码设计与核心子程序	18
+第五章  开发工具、制作安装与调试	21
+5.1 开发工具与环境	21
+5.2 调试方法与实验过程	21
+5.3 调试问题分析与解决	21
+第六章  主要技术参数与结论	23
+6.1 模型车主要技术参数	23
+6.2 测试结果与性能评价	23
+6.3 结论与改进方向	24
+参考文献	I
+附录 A 电路板详细设计原理图	III
+附录 B 核心算法子程序与源代码	IX
+
+
+第一章  绪论
+1.1 竞赛任务与设计目标
+“疯狂电路”组属于缩微赛道类赛题，要求参赛队伍自制轻量化车模，利用摄像头或光电传感器获取赛道信息，并在电路图形式的赛道中自主运行。赛道由引导线、节点、支路、闭合回路及元器件图案组成，车模需要尽可能完整地通过各电路回路和关键元器件区域。
+比赛成绩主要由运行时间、重量罚时和元器件遗漏罚时共同决定。规则对车模重量、器件选型、通信方式和参赛车模数量均有限制，因此系统设计既要保证循迹稳定性和路径通过率，也要兼顾结构轻量化、动力输出效率与系统可靠性。
+基于上述要求，本系统重点解决复杂电路赛道下的图像识别、路径规划、差速转向、速度闭环控制和现场快速调试等问题；同时综合权衡负压效果、整车重量、功耗与续航。本文围绕机械结构、电路系统、控制算法和调试过程，对本队智能车系统的设计与实现进行说明。
+1.2 系统总体方案
+本系统以英飞凌TC264D微控制器为控制核心，使用MT9V034摄像头采集赛道图像，并结合左右轮正交编码器和LSM6DSRTR姿态传感器获取速度与姿态信息。车模采用四轮差速结构，通过两台N30电机实现行进和转向。
+系统由感知、控制、执行、负压、电源和调试六个模块组成。主控周期性完成图像处理、赛道特征提取、路径判断及运动闭环控制，并根据识别结果输出左右电机控制量，实现加速、减速和差速转向。
+为提高高速运行和快速转向时的贴地稳定性，车模设置了独立无刷负压模块；供电系统采用3S锂电池，并对逻辑电源进行分级稳压。调试模块支持屏幕菜单、串口通信和参数在线调整，正式比赛时由本地程序自主运行。各模块的具体器件、接口和实现方式在后续章节中说明。
+图 1.1  系统总体结构图
+1.3 报告结构
+本文后续章节安排如下：第二章介绍模型车机械结构、传感器安装及电路板固定连接；第三章说明系统电路设计；第四章介绍控制软件、核心算法与代码设计；第五章总结开发工具、制作安装和调试过程；第六章列示主要技术参数并给出结论与改进方向。
+
+第二章  机械结构与传感器安装
+2.1 模型车机械设计
+我们车模采用全自制四轮差速结构。车体首先在SolidWorks中完成三维建模，再通过3D打印件与定制碳纤维板装配成型；轮毂及轮胎均为自制，其中轮胎采用硅胶翻模工艺制作。整车尺寸、质量及轮毂参数集中列于表6.1，模型车总体布局见图2.1。为了减重，我们尝试3D打印车模，但是整体精度和强度都不够。于是我们决定使用碳纤维（T300材料）作为车模主体结构，兼顾强度和轻便。底板和侧板都尽量镂空减重，轮毂使用尼龙烧结，摄像头杆也使用碳纤维材料。
+图 2.1  模型车总体布局
+
+
+
+
+
+
+
+传动系统采用N30强磁电机，电机轴上的10齿齿轮驱动44齿一体式轮毂；另设一组10齿齿轮连接正交编码器，用于检测车轮转速，如图2.2所示。
+
+图 2.2  齿轮传动结构
+负压系统采用1103无刷电机和直径28 mm的自制扇叶，通过抽气式结构在底部负压膜内形成低压区，利用压差为车模提供附加下压力，以提高高速行驶和转向时的稳定性，如图2.3和图2.4所示。实测下压力见表6.1。
+
+图 2.3  1103无刷负压电机安装
+
+图 2.4  负压结构整体
+2.2 机械部分安装及改造
+车模主体结构采用螺钉连接。底板与侧板通过四个3D打印六方连接件固定，编码器、驱动电机和无刷电机等部件使用M2螺钉安装在碳纤维板上。每个轮毂内设置两个M2轴承，并通过钛合金车轴与侧板连接，便于快速拆装。两侧板之间设置加强筋，以减小负压下压力造成的底板变形；电池、摄像头支架均采用专用固定结构，如图2.5所示。
+
+图 2.5  车模连接件示意图
+针对装配和运行中发现的问题，对车模进行了针对性改造，具体措施见表2.1。
+表 2.1  机械部分改造情况
+2.3 传感器设计与安装
+表 2.2  传感器配置与安装位置
+2.4 电路板连接及固定
+主板集成TC264D主控、LSM6DSRTR姿态传感器、降压电源和电机驱动电路，以减小PCB面积与整车质量。板上设置电源、双编码器、摄像头和电机接口，并预留显示屏、串口及调试接口。主板通过两个M3螺钉和3D打印支柱固定在车模上，正、背面接口分别如图2.6和图2.7所示。
+
+图 2.6  电路板正面连接接口
+
+图 2.7  电路板背面连接接口
+
+第三章  电路系统设计
+3.1 电路设计总体说明
+系统电路以TC264D为主控核心。12 V电池经TVS、自恢复保险丝、防反接二极管和PMOS开关后，由TPS82130降压至5 V；随后通过两个RT9013 LDO分别为主控及其外设、MT9V034摄像头供电。MT9V034摄像头、正交编码器和LSM6DSRTR姿态传感器分别用于采集赛道、速度和姿态信息。系统电路总体框图见图3.1。
+执行部分采用两路DRV8701E及H桥功率级驱动两台N30电机，每个H桥开关位置由两只N沟道MOSFET并联构成。负压系统由STC AI8051 协处理器、FD6288栅极驱动器及MOS三相桥驱动1103无刷电机。TC264D通过英飞凌烧录器下载程序，STC AI8051通过外部串口下载；系统还设置屏幕、选择按键、编码器、FPC扩展接口和WS2812状态指示灯，便于现场调试。
+3.2 控制核心与最小系统
+
+图 3.2  控制核心与最小系统
+3.3 电源与功耗设计
+整车采用3S、300 mAh锂电池供电。TPS82130完成主逻辑电源的降压，两个RT9013 LDO分别为主控及其外设、摄像头提供相互独立的低噪声电源；STC无刷电调由5 V电源轨供电，两台行进电机和负压无刷电机由电池电源轨供电。各级电源均配置输入滤波、局部去耦和浪涌保护，相关电路如图3.3至图3.7所示。
+实测主板空载待机电流约为0.11 A，负压电机运行电流约为2.4 A，两台行进电机合计电流约为2.6 A，整车运行功耗约为60 W。电源输入滤波、电荷泵及芯片供电去耦电容的总容量约为200 μF。上述数据统一汇总于表6.1。
+
+图 3.3  TPS82130降压电路
+
+图 3.4  主控及外设RT9013供电电路
+
+图 3.5  摄像头RT9013独立供电电路
+
+图 3.6  TVS保护电路
+
+图 3.7  PMOS电源开关电路
+3.4 驱动与执行机构电路
+
+图 3.8  行进电机驱动电路
+
+图 3.9  负压无刷电机驱动电路
+3.5 PCB 与可靠性设计
+PCB使用嘉立创 EDA专业版设计并完成生产。主板采用四层结构，板厚1 mm，通过高度集成减小板面积和质量。布局按功能模块划分，大电流驱动区域优先采用宽线和铺铜，并布置散热过孔；信号主要分布于三层，另一层作为完整GND平面，以缩短回流路径。主控及关键器件的电源入口设置磁珠和去耦电容，降低电机开关噪声对控制系统的影响。
+
+第四章  控制软件与核心算法
+4.1 软件总体架构
+控制软件运行于英飞凌TC264D双核平台，工程按照配置层、驱动层、视觉层、控制层和用户调度层划分。CPU0负责时钟与外设初始化、屏幕菜单、Flash参数读取、当前帧动态阈值计算以及停车后的里程计保存；CPU1在完成同步启动后负责消费已经准备好的摄像头整帧并执行视觉算法。周期性强、实时性要求高的反馈与控制任务集中在CPU0的1 ms PIT中断中，主循环不承担阻塞式控制计算。
+摄像头垂直同步信号触发DMA采集，整帧完成后置位mt9v03x_finish_flag。CPU0调用Update_Dynamic_Image_Thres()计算阈值并发布Image_Thres_Result_Ready，CPU1随后应用阈值、调用Image_Process()完成边界提取和路径判断，再以Vision_Result_Seq和Vision_Result_Ready发布稳定视觉误差。CPU0控制中断通过序号只消费一次最新结果，并使用__dsync()保证跨核读写顺序。中断内编码器每1 ms更新一次，IMU每2 ms更新一次；方向环、角速度环和速度环分别按6 ms、3 ms和1 ms运行，形成确定节拍的数据闭环。
+图 4.1  软件总体流程图
+4.2 赛道信息检测与处理算法
+赛道信息由MT9V034摄像头采集，原始灰度图分辨率为188×120。正常运行时先按2∶1固定抽样压缩为94×60处理图，以减少逐行扫描的访存量；处理完成后再将左右边界和中线结果映射回原图坐标。二值化既支持固定阈值，也支持动态阈值。当前默认固定阈值为25；启用动态模式时，CPU0对去除左右各20像素后的区域按横纵2像素间隔建立256级直方图并计算大津阈值，同时利用图像底部三分之一区域的95%灰度分位值和标准差，对白色比例过低或前后景灰度差不足的结果进行补偿，最终阈值限制在10～100，并按“上一帧权重3、当前帧权重1”进行帧间平滑。
+边界搜索从图像下方向上进行，先在近车端获得稳定边界，再逐步向远端延伸。算法在每一行分别查找黑到白跳变，形成Left_Board_Line_X/Y、Right_Board_Line_X/Y和Mid_X/Y六个长度为100的坐标数组；压缩处理时实际计算前50个点。若单侧边界丢失，则继承间隔位置的历史边界；当单行白点数量达到阈值时执行边缘补线。补线区域内若边界横坐标在设定间隔上发生突变，则记录候选拐点，并在80×60像素动态矩形的四边继续搜索路径特征。整帧只保留最终有效候选点，避免同一帧中旧拐点或噪声重复修改路径状态。
+普通状态下，中线取左右边界的平均值，视觉误差为所有有效中线点相对目标横坐标的平均偏差；靠左或靠右直行时，目标中线分别偏移-10像素和+3像素。输出误差限制在±120范围内，防止异常帧使后级方向环瞬间饱和。出界保护直接复用边界有效状态：单帧左右边界丢点总数超过90并连续保持5帧时提交停车请求。该方法计算量小、适合高频运行，但在极端反光、阴影遮挡或整幅图像对比度过低时仍可能出现边界缺失，因此工程同时提供动态阈值和里程计复现作为辅助。
+4.3 速度检测与闭环控制
+左右轮分别采用TIM2和TIM5正交编码器模块计数，编码器每转输出1024个脉冲。根据轮胎直径25.5 mm及44∶10的轮系传动关系计算单位脉冲行程K_s；1 ms中断内读取并清零计数，将单周期行程除以采样周期得到轮速。由于mm/ms与m/s数值相同，计算结果可直接作为速度环反馈。左右轮速度分别经过系数α=0.3的一阶低通滤波，累计里程取两轮行程平均值，以减小单轮打滑和计数抖动的影响。
+N=(Z_w/Z_m)·(Z_m/Z_e)·P，K_s=πD/N                                      （1）
+v_k=α(n_kK_s/T_s)+(1-α)v_(k-1)，α=0.3，T_s=1 ms                         （2）
+s_k=s_(k-1)+(Δs_L+Δs_R)/2                                               （3）
+速度控制采用方向环、角速度环和左右轮速度环三级级联结构。方向环把视觉横向误差转换为目标角速度，角速度环比较目标角速度与陀螺仪Z轴角速度并生成Speed_Bias，再按照“内轮减速较多、外轮加速较少”的策略分配左右轮目标速度。最内层使用位置式PID，包含速度前馈、变速积分、积分分离、输出饱和抗积分、历史积分0.95衰减和单次PWM最大500的变化率限制，最终输出限制在0～10000。工程按1.1～4.25 m/s建立14组标定参数，设置目标速度时自动精确匹配或在0.2 m/s范围内选择最近档位，同时更新速度环、方向环、角速度环及负压风扇参数。
+4.4 转向/路径控制算法
+转向控制以视觉中线平均误差为外环输入。方向PID每6 ms计算目标角速度，角速度PID每3 ms读取LSM6DSRTR的Z轴角速度并计算差速量。陀螺仪量程保持±2000 °/s，CTRL2_G寄存器配置为833 Hz输出率；系统上电稳定1.5 s后采集400组静止数据进行零漂标定。运行时每2 ms读取原始值，减去零偏后按α=0.5进行低通滤波，并使用梯形积分ψ_k=ψ_(k-1)-(ω_(k-1)+ω_k)T/2获得航向角，其中T=0.002 s。直线状态且视觉误差绝对值小于5像素时，CPU1通过单向请求邮箱通知CPU0把航向角校准到下一转弯前的理论方向，避免长距离积分漂移。
+路径规划按三个科目分别建立Route_Arr1～Route_Arr3。每条主路径数组均有三组严格一一对应的附属数组：Route_Point_Cnt_Thres_Arr用于设置路径特征点确认阈值，Route_Exit_Yaw_Thres_Arr用于设置转弯退出角度阈值，Route_Mid_Mode_Arr用于选择左右边界拟合、左边界单边或右边界单边中线策略。Route_Arr_Config_List把四组指针和自动计算的路径长度绑定在同一配置项中，并用编译期长度检查防止增删路径元素后附属参数错位。切换科目时，Image_Route_Subject_Select()同步更新当前指针并根据左转-90°、右转+90°自动生成Route_Angle_Arr目标绝对角度数组。
+确认进入路径后，算法从本帧最终拐点下标开始实施边界偏置，并按当前附属中线策略生成控制中线。左转、右转通过目标绝对角度与当前航向角的最小差值退出；普通直行、双线直行和直行接转弯类型则通过左右侧固定区域的边缘是否消失判断退出。退出后Route_Index递增并在数组末尾回绕，同时清除拐点、区域扫描和偏置状态。工程还为每个科目配置独立里程计数组：记录模式在每个路径入口保存累计距离，复现模式只有当当前距离与记录值偏差不超过0.2 m时才允许视觉候选进入路径，并提供0.05 m预判距离，从而减少相似路口误识别。
+4.5 特殊元素识别与运行策略
+本车的特殊元素主要表现为路口转向和不同直行分支。程序将路径类型划分为左转、右转、普通直行、双线直行、直行接转弯，以及靠左、靠右和不偏置三类直行目标。识别过程采用“普通循迹—候选拐点—矩形区域特征确认—路径执行—退出检测—下一路径”的状态机：只有有效Y坐标范围内的拐点经过跨帧确认，并且矩形区域路径点数量达到当前下标阈值后，才置位路径状态。转弯阶段根据目标航向角抑制T字路口或Y形边界造成的错误补线；直行阶段按路径类型选择对侧区域进行退出确认，路径提示灯同步显示当前策略。
+停车与异常处理同样采用非阻塞状态。完整路径回绕后，车辆退出指定路径下标时启动延时停车任务，当前配置的停车下标为2、延时为0 ms；Key4可随时提交人工停车请求。若连续5帧检测到严重边界丢失，或左右轮速度均不高于0.03 m/s且相邻采样变化均不高于0.01 m/s并持续约50 ms，系统分别按出界或堵转处理，清除启动标志、复位速度PID并关闭行进电机与负压风扇。里程计数据只有在本次运行已经覆盖当前科目全部路径点后才写入Flash，避免不完整记录覆盖有效标定。
+4.6 代码设计与核心子程序
+软件通过公开头文件限制模块边界：业务模块统一包含image.h访问视觉结果，Vision_Config.h集中保存需要标定的原始参数，Image_Internal.h仅供视觉内部共享压缩坐标、状态和辅助接口。路径配置、里程计记录、动态阈值、图像调试和控制算法分别拆分到独立源文件，既降低单文件耦合，也便于在屏幕菜单和无线串口中对阈值、科目、目标速度及PID参数进行调整。关键模块及其接口关系见表4.1。
+表 4.1  关键软件模块与接口
+主调用链为：camera_vsync_handler()触发采集，camera_dma_handler()发布整帧完成标志；CPU0执行Update_Dynamic_Image_Thres()，CPU1依次执行Apply_Dynamic_Image_Thres()、Image_Process()、Vision_Process()和Get_Vision_Err()并发布结果；CPU0中断中的Cpu0_Vision_Result_Update()读取稳定误差后调用Contrl_Car()，再依次经过Direction_PID_Calculate()、Angular_PID_Calculate()、Get_Diff_Target_Speed()、左右轮位置式PID和电机PWM接口。陀螺仪链路为cc60_pit_ch0_isr()每2 ms调用LSM_interrupt_hand()，完成原始采样、零偏修正、低通滤波、航向积分和校准请求处理，其角速度供角速度环使用，航向角供路径退出判定使用。
+
+第五章  开发工具、制作安装与调试
+5.1 开发工具与环境
+5.2 调试方法与实验过程
+调试采用“单模块验证—反馈链路校准—闭环联调—整车赛道复现”的顺序。首先使用万用表和示波器检查各级供电、电机PWM及编码器脉冲，再通过VOFA+观察轮速、目标角速度、实际角速度和PID输出曲线；视觉部分在屏幕调试界面核对阈值、边界、中线和路径状态，最后在相同赛道条件下重复运行并记录参数变化，以确认修改效果。
+5.3 调试问题分析与解决
+表 5.1  调试问题及处理结果
+
+第六章  主要技术参数与结论
+6.1 模型车主要技术参数
+表 6.1  模型车主要技术参数
+6.2 测试结果与性能评价
+	为验证模型车机械结构、电路系统和控制算法的整体可靠性，我们在赛道环境下对模型车进行了多轮运行测试。测试内容主要包括摄像头识别稳定性、编码器测速反馈、IMU 姿态数据读取、电机闭环控制效果、负压系统工作状态以及连续运行可靠性等方面。
+	测试过程中，模型车能够完成赛道信息采集、路径判断、速度闭环控制和差速转向控制。MT9V034 摄像头能够稳定获取赛道图像，编码器反馈可用于驱动电机速度闭环控制，LSM6DSRTR IMU 可辅助判断车体姿态变化。负压系统启动后，车体贴地稳定性有所提高，在弯道和高速运行过程中能够减小车体侧滑和姿态波动。
+	在电源系统方面，模型车采用 12 V 电池输入，经 PMOS 开关后由 TPS82130 降压至 5 V，再通过两路 RT9013 LDO 分别为主控及其外设、摄像头供电。实测主板空载待机电流约为 0.11 A，负压电机运行电流约为 2.4 A，两台行进电机合计电流约为 2.6 A，整车运行功耗约为 60 W。测试结果表明，电源系统能够满足模型车各模块的供电需求，运行过程中未出现明显掉电或复位现象。
+	模型车在调试过程中仍存在部分需要继续优化的问题。例如，在高速入弯时，若速度给定过高，车体姿态仍可能出现轻微波动；在光照变化较大的环境下，图像阈值和边线提取参数需要进一步调整；负压系统虽然能够提升稳定性，但也会增加整车功耗，需要在吸附效果和续航能力之间进行折中。
+6.3 结论与改进方向
+	从确定参赛方案到完成整车调试，本车模的设计与制作经历了近一年的反复修改和验证。在这一过程中，PCB 前后迭代了 10 版，自制车模结构也完成了 9 版验证。最初，我们只是希望模型车能够稳定完成基本运行任务；但随着机械结构、电路系统和控制算法逐步成型，我们逐渐认识到，在严格的减重要求下，整车性能的提升必须依赖于每一个细节的持续优化。为减轻整车质量，我们不断缩小并集成 PCB，优化车模连接件的尺寸和材料，最终将车模质量从约 240 g 降低到约 117 g。这个过程也让我们深刻意识到，智能车并不是某一个模块单独优秀就能够跑好的系统，而是机械、电路、软件和调试经验共同作用的结果。每一次结构调整、每一版电路修改、每一次参数整定，都会直接影响模型车最终在赛道上的表现。
+	在调试过程中，我们遇到了许多预想之外的问题，例如 PWM 控制异常、编码器读数跳动、电机过热甚至烧毁等。针对这些问题，我们在软件中加入了多项保护措施，包括控制量越界停止、无线串口紧急刹车等，以提高系统运行的安全性和可靠性。机械结构方面，车体重心、轮胎抓地力和负压膜密封效果都会直接影响车辆的行驶姿态。为了获得更稳定的吸附效果，我们尝试了多种负压膜材料和结构形式，最终认为“晨光书皮 + 薄双面胶”的方案在密封性、柔顺性和加工便利性之间取得了较好的平衡。电路方面，我们不断将各功能模块集成到同一块主板上，这对 PCB 布局、布线、电源完整性和散热都提出了更高要求；电机驱动部分的 MOS 管型号也经过了多次尝试和验证。软件方面，图像识别参数、速度环响应和转向控制之间需要不断折中。很多问题并不能通过一次修改彻底解决，而是需要在赛道上反复测试、观察现象、分析原因，再逐步调整方案。也正是在这个过程中，我们对智能车系统中机械、电路和软件之间的耦合关系有了更直观、更深入的理解。
+	通过持续制作、测试和修改，模型车最终能够完成赛道信息采集、速度控制、转向控制和负压辅助稳定等功能，整体方案具有较好的可行性。虽然目前系统已经具备基本比赛能力，但仍然存在进一步提升的空间。后续工作中，我们希望继续优化图像处理算法，提高复杂光照和特殊赛道元素下的识别稳定性；进一步整定速度环和转向控制参数，使模型车在高速入弯和出弯时更加平顺；优化负压系统的控制策略，在保证吸附效果的同时降低功耗；同时继续改进机械结构、PCB 布局和线束固定方式，提高整车的可靠性和维护便利性。
+	这次智能车制作过程让我们深刻体会到，工程设计并不是简单地把各个模块拼接在一起，而是在一次次失败、验证和调整中寻找更合适的平衡点。每一次模型车能够稳定跑完赛道，背后都是机械设计、电路实现、软件控制和调试细节共同积累的结果。后续我们也将继续根据测试数据和比赛经验完善系统，使模型车在速度、稳定性和可靠性方面取得更好的表现。
+参考文献
+[1] Infineon Technologies AG. AURIX TC26xD Family 32-bit TriCore Microcontroller Data Sheet[EB/OL].
+[2] onsemi. MT9V034 1/3-Inch Wide-VGA CMOS Digital Image Sensor Data Sheet[EB/OL].
+[3] STMicroelectronics. LSM6DSR iNEMO Inertial Module: 3D Accelerometer and 3D Gyroscope Data Sheet[EB/OL].
+[4] Texas Instruments. DRV8701 Brushed DC Motor Full-Bridge Gate Driver Data Sheet[EB/OL].
+[5] Texas Instruments. TPS82130 17-V Input 3-A Step-Down Converter MicroSiP Power Module Data Sheet[EB/OL].
+[6] Richtek Technology Corporation. RT9013 500 mA Low Dropout, Low Noise CMOS LDO Regulator Data Sheet[EB/OL].
+[7] 宏晶科技. AI8051U 系列单片机数据手册[EB/OL].
+[8] 峰岹科技（深圳）股份有限公司. FD6288 三相 250 V 栅极驱动器数据手册[EB/OL].
+[9] 胡寿松. 自动控制原理[M]. 北京: 科学出版社.
+[10] Rafael C. Gonzalez, Richard E. Woods. Digital Image Processing[M]. 4th ed. Pearson.
+[11] 谭浩强. C程序设计[M]. 北京: 清华大学出版社.
+[12] Howard Johnson, Martin Graham. High-Speed Digital Design: A Handbook of Black Magic[M]. Prentice Hall.
+[13] Texas Instruments. Best Practices for Board Layout of Motor Drivers[EB/OL].
+
+附录 A 电路板详细设计原理图
+
+
+图 A-1.0  最小系统电路
+
+图 A-1.3  无刷负压驱动电路
+
+
+
+
+图 A-2  电路板正面图
+
+图 A-3  电路板背面图
+
+
+附录 B 核心算法子程序与源代码。
+表 B.1  核心算法文件及接口
+B.1 双核图像处理与控制中断调度
+/* user/cpu0_main.c：正常运行分支 */
+static void Cpu0_Image_Frame_Task(void)
+{
+    if(mt9v03x_finish_flag && !Image_Thres_Result_Ready)
+    {
+        Update_Dynamic_Image_Thres();
+    }
+}
+
+/* user/cpu1_main.c：调试计时分支省略 */
+static void Cpu1_Image_Frame_Task(void)
+{
+    if(mt9v03x_finish_flag && Image_Thres_Result_Ready)
+    {
+        Apply_Dynamic_Image_Thres();
+        mt9v03x_finish_flag = 0;
+        Image_Thres_Result_Ready = 0;
+        __dsync();
+        Image_Process();
+    }
+}
+
+/* user/isr.c */
+static inline void Cpu0_Vision_Result_Update(void)
+{
+    if(Vision_Result_Ready)
+    {
+        uint32_t Vision_Result_Seq_Now = Vision_Result_Seq;
+        if(Vision_Result_Seq_Now != Vision_Result_Seq_Last)
+        {
+            __dsync();
+            Vision_Err_Control = Vision_Err;
+            Vision_Result_Seq_Last = Vision_Result_Seq_Now;
+        }
+    }
+}
+
+IFX_INTERRUPT(cc60_pit_ch0_isr, 0, CCU6_0_CH0_ISR_PRIORITY)
+{
+    interrupt_global_enable(0);
+    pit_clear_flag(CCU60_CH0);
+    IT_Cnt++;
+    if(IT_Cnt % 2 == 0) LSM_interrupt_hand();
+    if((Menu_Flag != Image_DeBug_Flag) || (O_Recurrence_Flag == 1))
+        Encoder_Handle();
+    if(Start_Flag == 1)
+    {
+        Cpu0_Vision_Result_Update();
+        Contrl_Car(IT_Cnt, Vision_Err_Control);
+    }
+    Car_Stop_Task();
+    IT_Cnt %= CTRL_LOOP_COUNTER_MOD;
+}
+B.2 动态阈值核心算法
+/* code/Vision/Image_Thres.c：大津阈值核心统计与可靠性补偿摘录 */
+for(uint16_t Gray_Index = Pixel_Min; Gray_Index < Pixel_Max; Gray_Index++)
+{
+    Back_Pixel_Sum += Dynamic_Thres_Pixel_Cnt[Gray_Index];
+    Back_Gray_Sum += (uint32_t)Gray_Index * Dynamic_Thres_Pixel_Cnt[Gray_Index];
+    if(Back_Pixel_Sum == 0) continue;
+
+    uint32_t Front_Pixel_Sum = Pixel_Sum - Back_Pixel_Sum;
+    if(Front_Pixel_Sum == 0) break;
+
+    Back_Avg = (float)Back_Gray_Sum / (float)Back_Pixel_Sum;
+    Front_Avg = (float)(Gray_Sum - Back_Gray_Sum) / (float)Front_Pixel_Sum;
+    Avg_Diff = Back_Avg - Front_Avg;
+    Variance_Temp = (float)Back_Pixel_Sum * Inv_Pixel_Sum *
+                    (float)Front_Pixel_Sum * Inv_Pixel_Sum * Avg_Diff * Avg_Diff;
+    if(Variance_Temp > Max_Variance)
+    {
+        Max_Variance = Variance_Temp;
+        Best_Thres = (uint8_t)Gray_Index;
+        Otsu_Valid = 1;
+    }
+}
+
+if(Otsu_Unreliable && (Bottom_Pixel_Sum > 0))
+{
+    int16_t Bottom_Offset = Dynamic_Thres_Bottom_Offset_Base +
+                            (int16_t)(Bottom_Back_Std * Dynamic_Thres_Bottom_Std_Scale);
+    if(Bottom_Offset > Dynamic_Thres_Bottom_Offset_Max)
+        Bottom_Offset = Dynamic_Thres_Bottom_Offset_Max;
+    Final_Thres = (int16_t)Bottom_Back_Ref + Bottom_Offset;
+}
+if(Final_Thres < Dynamic_Thres_Min)
+{
+    Final_Thres = Dynamic_Thres_Min;
+}else if(Final_Thres > Dynamic_Thres_Max){
+    Final_Thres = Dynamic_Thres_Max;
+}
+Final_Thres = ((uint16_t)Dynamic_Image_Thres_Prev *
+               Dynamic_Thres_Filter_Prev_Weight + (uint16_t)Final_Thres) /
+              Dynamic_Thres_Filter_Den;
+
+void Update_Dynamic_Image_Thres(void)
+{
+    Dynamic_Image_Thres = Dynamic_Image_Thres_Enable ?
+        Get_Dynamic_Image_Thres_Otsu_Fast() : Image_Thres_Base;
+    __dsync();
+    Image_Thres_Result_Ready = 1;
+}
+B.3 路径数组切换与三级闭环控制
+/* code/Vision/Image_Route.c */
+void Image_Route_Subject_Select(uint8_t Subject_Index)
+{
+    if(Subject_Index >= Route_Subject_Num) return;
+    Route_Subject_Index = Subject_Index;
+    Route_Arr = Route_Arr_Config_List[Subject_Index].Route_Data;
+    Route_Point_Cnt_Thres_Arr =
+        Route_Arr_Config_List[Subject_Index].Route_Point_Thres_Data;
+    Route_Exit_Yaw_Thres_Arr =
+        Route_Arr_Config_List[Subject_Index].Route_Exit_Yaw_Thres_Data;
+    Route_Mid_Mode_Arr =
+        Route_Arr_Config_List[Subject_Index].Route_Mid_Mode_Data;
+    Route_Arr_Length = Route_Arr_Config_List[Subject_Index].Route_Length;
+    if(Route_Arr_Length > Route_Arr_Max_Length)
+        Route_Arr_Length = Route_Arr_Max_Length;
+    Generate_Route_Angle_Arr();
+    Route_Parking_State_Reset();
+}
+
+/* code/Control/Contr_Car.c */
+void Contrl_Car(uint8_t Cnt, float Direction_Err)
+{
+    int16_t Left_PWM = 0;
+    int16_t Right_PWM = 0;
+    if((Cnt % CTRL_DIRECTION_LOOP_TICK) == 0U)
+        target_angular = -Direction_PID_Calculate(Direction_Err);
+    if((Cnt % CTRL_ANGULAR_LOOP_TICK) == 0U)
+    {
+        actual_angular = lsm_gyro_param.gyro_z;
+        Speed_Bias = -Angular_PID_Calculate(target_angular, actual_angular);
+    }
+    if(Stall_Protect_Handle())
+    {
+        Car_Stop_Request();
+        Stall_Protect_Reset();
+        return;
+    }
+    Get_Diff_Target_Speed(&Target_SpeedL, &Target_SpeedR);
+    Left_PWM = (int16_t)PID_Left_Position(Target_SpeedL, SpeedL);
+    Right_PWM = (int16_t)PID_Right_Position(Target_SpeedR, SpeedR);
+    Set_Motor1_Duty(Right_PWM);
+    Set_Motor2_Duty(Left_PWM);
+}
+B.4 陀螺仪采样、滤波与航向积分
+/* code/Driver/LSM6DSRTR.c */
+void lsm_gyro_transform_value(void)
+{
+    float Gyro_Z_Raw = 0.0f;
+    lsm_gyro_param.gyro_x = imu660rb_gyro_transition(
+        (float)imu660rb_gyro_x - lsm_gyro_zero_param.Xdata);
+    lsm_gyro_param.gyro_y = imu660rb_gyro_transition(
+        (float)imu660rb_gyro_y - lsm_gyro_zero_param.Ydata);
+    Gyro_Z_Raw = imu660rb_gyro_transition(
+        (float)imu660rb_gyro_z - lsm_gyro_zero_param.Zdata);
+    lsm_gyro_param.gyro_z = lsm_gyro_z_low_pass_filter(Gyro_Z_Raw);
+}
+
+void lsm_gyro_yaw_integral(void)
+{
+    float Delta_Yaw = 0.0f;
+    lsm_yaw_now = lsm_gyro_param.gyro_z;
+    Delta_Yaw = -(lsm_yaw_last + lsm_yaw_now) / 2 * 0.002f;
+    lsm_yaw_angle += Delta_Yaw;
+    lsm_yaw_last = lsm_yaw_now;
+}
+
+float Get_LSM_Data(void)
+{
+    imu660rb_get_gyro();
+    imu660rb_get_acc();
+    lsm_gyro_transform_value();
+    lsm_acc_transform_value();
+    if(lsm_gyro_zero_flag == 1) lsm_gyro_yaw_integral();
+    return lsm_yaw_angle;
+}
+
+void LSM_interrupt_hand(void)
+{
+    Get_LSM_Data();
+    LSM_Yaw_Calibration_Update();
+}
+
+===== TABLE 1 =====
+
+
+===== TABLE 2 =====
+
+
+===== TABLE 3 =====
+改造项目 | 改造原因 | 实施方法 | 效果/风险
+无刷电机三相线 | 原装线太粗导致底盘不平整，影响负压压力 | 更换更细的硅胶线 | 负压膜明显更平整，吸力稳定
+
+===== TABLE 4 =====
+传感器 | 数量 | 安装位置 | 检测对象
+MT9V034 摄像头 | 1 | 车模正前方，高度15cm | 赛道元素
+正交编码器 | 2 | 左右侧板 | 轮胎速度
+LSM6DSRTR  姿态传感器 | 1 | 主板上 | 转向角度
+
+===== TABLE 5 =====
+3.1  系统电路总体框图
+
+===== TABLE 6 =====
+
+
+===== TABLE 7 =====
+模块 | 主要函数 | 输入 | 输出 | 说明
+双核调度 | Cpu0_Image_Frame_Task、Cpu1_Image_Frame_Task | 摄像头完成标志、阈值就绪标志 | 完整视觉帧 | CPU0计算阈值，CPU1完成图像处理
+阈值处理 | Update_Dynamic_Image_Thres、Apply_Dynamic_Image_Thres | 188×120灰度图 | 二值化阈值 | 固定阈值或抽样大津法，并进行可信度补偿和平滑
+视觉路径 | Vision_Process、Get_Vision_Err | 图像、路径配置、航向角 | 边界、中线、视觉误差 | 完成拐点确认、路径状态推进和出界保护
+路径配置 | Image_Route_Subject_Select、Route_*_Get | 科目下标、路径下标 | 路径类型及三组附属参数 | 路径、点数阈值、退出角和中线策略同步切换
+反馈解算 | Encoder_Handle、LSM_interrupt_hand | 编码器脉冲、IMU原始值 | 轮速、里程、角速度、航向角 | 分别按1 ms和2 ms节拍更新
+整车控制 | Contrl_Car、PID_Left_Position、PID_Right_Position | 视觉误差、角速度、轮速 | 左右电机PWM | 方向环、角速度环、速度环级联并执行安全保护
+
+===== TABLE 8 =====
+类别 | 工具/软件/设备 | 用途
+软件开发 | AURIX Development Studio | 编写、编译与烧录程序
+硬件设计 | 嘉立创 EDA | 绘制原理图、PCB
+调试测试 | 示波器、万用表、VOFA+ 串口调试工具 | 测量电气参数和PWM波形，观察PID曲线
+机械制作 | SolidWorks | 对车模结构进行建模，装配分析
+
+===== TABLE 9 =====
+问题/现象 | 原因分析 | 调整措施 | 验证结果
+电机PWM输出异常或堵转 | 目标突变、输出饱和或车轮受阻 | 增加输出限幅、变化率限制和堵转停机保护 | PWM波形连续，异常时能够及时停机
+编码器速度偶发跳变 | 单周期计数抖动及电机噪声干扰 | 1 ms读取并清零计数，采用α=0.3低通滤波 | 速度反馈明显平滑，闭环输入稳定
+高速转弯时车体轻微摆动 | 方向、角速度和轮速环带宽不匹配 | 按6 ms/3 ms/1 ms分层调度并重新整定PID | 转向过渡更平顺，连续运行稳定性提高
+
+===== TABLE 10 =====
+项目 | 参数/实测值 | 单位 | 备注
+自制车模总重量 | 约117 | g | 实测值
+车模长度 | 131 | mm | 实测值
+车模宽度 | 60 | mm | 实测值
+车模高度 | 92 | mm | 实测值
+电路功耗 | 约60 | W | 整车运行功耗
+所有电容总容量 | 约200 | μF | 输入滤波、电荷泵及去耦电容合计
+传感器种类及个数 | 3类，共4个 | - | 摄像头1个、编码器2个、姿态传感器1个
+额外伺服电机个数 | 0 | 个 | 不含行进电机和负压电机
+赛道信息检测精度 | 94×60 | pixel | 由188×120原图按2∶1抽样处理
+赛道信息检测频率 | 100 | Hz | MT9V034工程配置帧率
+轮毂尺寸（直径×宽度） | 20×14 | mm | 自制轮毂
+电池规格 | 3S，300 | mAh | 格氏锂电池
+主板空载待机电流 | 约0.11 | A | 实测值
+负压电机运行电流 | 约2.4 | A | 实测值
+两台行进电机合计电流 | 约2.6 | A | 实测值
+负压下压力 | 约1 | kg | 当前实测值
+PCB层数/板厚 | 4/1 | 层/mm | 四层板
+
+===== TABLE 11 =====
+图 A-1.1  主要外设电路             图 A-1.2  行进电机驱动电路
+
+===== TABLE 12 =====
+文件/模块 | 函数/接口 | 功能说明 | 调用位置
+user/cpu0_main.c | Cpu0_Image_Frame_Task | CPU0计算当前帧阈值并发布就绪标志 | 双核图像链路
+user/cpu1_main.c | Cpu1_Image_Frame_Task | CPU1消费完整帧并执行视觉处理 | 双核图像链路
+user/isr.c | cc60_pit_ch0_isr、Cpu0_Vision_Result_Update | 1 ms反馈采样、视觉结果消费与控制调度 | 控制主链
+code/Vision/Image_Thres.c | Get_Dynamic_Image_Thres_Otsu_Fast、Update_Dynamic_Image_Thres | 动态阈值计算、限幅和平滑 | 视觉预处理
+code/Vision/image.c | Image_Process、Vision_Process、Get_Vision_Err | 边界、中线、路径状态与误差计算 | 视觉主链
+code/Vision/Image_Route.c | Image_Route_Subject_Select | 主路径数组与三组附属数组同步切换 | 路径配置
+code/Control/Contr_Car.c | Contrl_Car | 方向环、角速度环和左右轮速度环级联 | 整车控制
+code/Driver/LSM6DSRTR.c | LSM_interrupt_hand、lsm_gyro_yaw_integral | 陀螺仪采样、滤波与航向积分 | 姿态反馈

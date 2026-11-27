@@ -1,0 +1,50 @@
+#ifndef _car_replay_config_h_
+#define _car_replay_config_h_
+
+#include "car_config.h"
+#include "car_follow_config.h"
+
+// Replay controller only. None of these values are used while following.
+#define CAR_REPLAY_TARGET_SPEED_MPS        (CAR_VISION_TARGET_SPEED_MPS)
+#define CAR_REPLAY_MIN_SPEED_MPS           (CAR_FOLLOW_PWM_MIN_MOVE_SPEED_MPS)
+#define CAR_REPLAY_SLOWDOWN_DISTANCE_M     (0.65f)
+#define CAR_REPLAY_STOP_MARGIN_M           (0.06f)
+#define CAR_REPLAY_LOOKAHEAD_M             (0.15f)
+#define CAR_REPLAY_HEADING_KP              (0.50f)
+#define CAR_REPLAY_HEADING_KI              (0.12f)
+#define CAR_REPLAY_HEADING_I_LIMIT_DEG     (8.0f)
+#define CAR_REPLAY_YAW_RATE_KD             (0.025f)
+#define CAR_REPLAY_STEER_SIGN               (1.0f)
+#define CAR_REPLAY_CURVATURE_GAIN          (1.00f)
+#define CAR_REPLAY_CURVATURE_LIMIT         (2.20f)
+#define CAR_REPLAY_CURVE_MIN_CURVATURE     (0.12f)
+#define CAR_REPLAY_TIGHT_CURVATURE         (0.55f)
+#define CAR_REPLAY_SHORT_SELECT_CURVATURE  (0.45f)
+#define CAR_REPLAY_SIGN_COMPARE_EPS        (0.06f)
+#define CAR_REPLAY_TARGET_YAW_DEADBAND_DEG (0.50f)
+#define CAR_REPLAY_TARGET_YAW_FILTER_ALPHA (0.35f)
+#define CAR_REPLAY_TURN_ENTER_LONG_YAW_DEG (4.0f)
+#define CAR_REPLAY_TURN_EXIT_LONG_YAW_DEG  (2.0f)
+#define CAR_REPLAY_TURN_EXIT_CURVATURE     (0.07f)
+#define CAR_REPLAY_STRAIGHT_CURVATURE_MAX  (0.10f)
+#define CAR_REPLAY_STRAIGHT_HEADING_MAX_DEG (4.0f)
+#define CAR_REPLAY_STRAIGHT_LOCK_HEADING_DEG (1.2f)
+#define CAR_REPLAY_STRAIGHT_YAW_RATE_MAX_DPS (3.0f)
+#define CAR_REPLAY_RECORDED_STEER_MIN_DEG  (1.0f)
+#define CAR_REPLAY_RECORDED_STEER_GAIN     (1.15f)
+#define CAR_REPLAY_STEER_FILTER_ALPHA      (0.40f)
+#define CAR_REPLAY_PHASE_SEARCH_RANGE_M    (0.40f)
+#define CAR_REPLAY_PHASE_SEARCH_STEP_M     (0.025f)
+#define CAR_REPLAY_PHASE_DISTANCE_DEG_PER_M (30.0f)
+#define CAR_REPLAY_PHASE_FILTER_ALPHA      (0.12f)
+#define CAR_REPLAY_PHASE_MAX_STEP_M        (0.015f)
+#define CAR_REPLAY_REFERENCE_BACKSTEP_M    (0.005f)
+#define CAR_REPLAY_PWM_PER_MPS             (CAR_FOLLOW_PWM_PER_MPS)
+#define CAR_REPLAY_PWM_MIN_MOVE            (CAR_FOLLOW_PWM_MIN_MOVE)
+#define CAR_REPLAY_SPEED_KP                (CAR_FOLLOW_SPEED_KP)
+#define CAR_REPLAY_SPEED_KI                (CAR_FOLLOW_SPEED_KI)
+#define CAR_REPLAY_SPEED_I_LIMIT           (CAR_FOLLOW_SPEED_I_LIMIT)
+#define CAR_REPLAY_START_HEADING_MAX_DEG   (15.0f)
+#define CAR_REPLAY_HEADING_ABORT_DEG       (120.0f)
+
+#endif

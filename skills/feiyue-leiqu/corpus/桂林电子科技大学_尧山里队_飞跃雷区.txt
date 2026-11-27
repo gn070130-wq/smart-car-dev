@@ -1,0 +1,526 @@
+
+
+第21届全国大学生
+智能汽车竞赛
+技 术 报 告
+
+关于技术报告和研究论文使用授权的说明
+本人完全了解全国大学生智能汽车竞赛关于保留、使用技术报告和研究论文的规定，即：参赛作品的设计方案、技术报告以及参赛模型车的视频、图像资料，组委会可以在相关出版物上收录并公开发表，并将相关内容编辑收录在组委会出版论文集中。
+
+
+
+2参赛队员签名：________________________________________________
+带队教师签名：_______________________
+日        期：________________
+
+摘  要
+本文面向全国大学生智能汽车竞赛“飞跃雷区”室内平面光标赛道任务，设计了一套车模与悬停飞行器协同工作的智能检测系统。设计目标是在限定赛道环境下，使自行车模型稳定沿光标赛道运行，并带动悬停飞行器完成指定标志位置检测。系统总体方案以英飞凌 TRAVEO 控制器为核心，结合摄像头、光电管、TOF、IMU 等传感器，实现赛道识别、姿态感知、运动控制和目标判定等功能。硬件方面完成了车模机械结构、电源与传感器安装布局设计；软件方面采用视觉识别、惯性姿态检测和闭环控制算法，提高车辆行驶与飞行器悬停的稳定性。经过制作与调试，系统能够完成基本循迹、协同运动和雷区标志检测任务，整体运行较为稳定。测试结果表明，该方案满足赛题功能要求，具有结构清晰、控制可靠和可扩展性较好的特点，同时仍可在检测精度、抗干扰能力和运动平稳性方面进一步优化。
+关键词：光标赛道；悬停飞行器；TRAVEO；目标检测
+目  录
+摘  要	I
+引 言	1
+第一章 系统总体方案与设计	2
+1.1 总体设计思路	2
+1.2 系统总体架构	2
+第二章 机械结构系统设计	5
+2.1 四旋翼机械结构	5
+2.2 车模机械结构	5
+2.3 系统电路板固定与连接	6
+第三章 电路系统设计	10
+3.1 四合一无刷电机控制电路	10
+3.2 通信模块电路	11
+3.3 智能车控制电路	12
+3.4 电机驱动电路	13
+第四章 软件系统设计	14
+4.1 软件总体架构	14
+4.2 空地协同的控制算法	14
+4.2.1 四旋翼飞控控制算法	14
+4.2.2 麦克纳姆轮车模控制算法	16
+4.3 摄像头视觉算法	17
+结 论	20
+参考文献	21
+附录 A 源代码程序	22
+附录 B 电路板实物	38
+		
+引 言
+全国大学生智能汽车竞赛是以“立足培养、重在参与、鼓励探索、追求卓越”为指导思想，鼓励创新的一项科技竞赛活动。以智能汽车为研究背景的科技创意性制作，是一种具有探索性的工程实 践活动，其本质也是人类创造有用人工物的一种训练性实践，其过程属性是综合，而结果属性很可能是创造。通过竞赛，参赛的同学们培养了对已学过的基础与专业理论知识与实验的综合运用的能力；带着背景对象中的各种新问题，学习控制、模式识别、传感技术、电子、电气、计算机、机械等多个学科新知识，包括来自不同学科背景大学生的相互学习，逐渐学会了在学科交叉、集成基础上的综合运用；若是以实用为目的，还必须考虑考虑可靠性、寿命、外观工业设计、集成科学与非科学，在具体约束条件下融合形成整体的综合运用。
+全国大学生智能汽车竞赛注重考查参赛队伍在机械设计、硬件搭建、软件开发和系统调试等方面的综合能力。“飞跃雷区”赛题将室内平面光标赛道、自行车模型和悬停飞行器检测任务相结合，对作品的路径识别、协同控制和目标检测能力提出了较高要求。
+本作品围绕该赛题设计了一套车模与悬停飞行器协同工作的智能系统。自行车模型负责沿光标赛道稳定运行，悬停飞行器通过与车模连接，在运动过程中完成标志位置检测。系统涉及传感器感知、嵌入式控制、机械连接、电源管理和整车调试等内容，具有较强的工程实践意义。	
+智能车系统通常由环境感知、控制决策、执行机构和供电模块组成。光标赛道识别可通过摄像头获取图像信息，并结合光电管进行辅助检测；TOF 传感器可用于距离测量，IMU 可提供姿态角和角速度信息，为飞行器悬停控制和系统稳定运行提供数据支持。
+系统总体方案与设计
+本章主要简要地介绍智能车系统总体设计思路，在后面的章节中将整个系统分为机械结构、控制模块、控制算法等三部分对智能车控制系统进行深入的介绍分析。
+总体设计思路
+根据竞赛规则相关规定，飞跃雷区组别车模自制，不限制任何传感器，驱动装置，限制车模微控制器使用Infineon系列ARM内核单片机（CYT4BB7和CYT2BL3可选），在IAR开发环境中进行软件开发。我们使用VSCODE进行代码的编写，使用IAR进行编译烧录，本设计以CYT4BB7单片机作为系统控制处理器，CYT2BL3作为无刷电机驱动芯片，系统主要由电源模块、主控模块、按键模块、显示模块、电机驱动模块、传感器模块组成。在传感器模块中，采用红外摄像头传感器获取信标位置信息，采用陀螺仪传感器保持四旋翼飞行姿态平衡，TOF模块保持飞行高度，采用光流模块实现定点飞行功能。
+车模选用带悬挂结构的麦克纳姆轮车型，利用麦克纳姆轮全向移动能力，实现前进、横移、转向等多方向运动，提高车辆在室内平面光标赛道上的机动性和位置调整能力。悬挂结构用于减小地面不平整和运动冲击对车体姿态的影响，提高传感器检测和飞行器搭载过程中的稳定性。
+飞行器部分采用四旋翼结构，通过轻量化机架、姿态传感器和飞控控制算法实现稳定悬停。四旋翼飞行器与车模进行协同工作，在车模沿赛道运行过程中完成雷区标志的检测任务。系统通过摄像头、光电管、TOF、IMU 等传感器获取赛道、距离和姿态信息，并由英飞凌 TRAVEO 控制器完成数据处理、运动控制和目标判断。整体方案强调结构稳定、控制可靠、感知清晰和调试方便。
+系统总体架构
+系统总体上分为地面车模模块、四旋翼飞行器模块、环境感知模块、控制处理模块、电源模块和通信/执行模块六个部分，各模块之间通过传感器采集、控制算法处理和执行机构驱动实现协同工作。
+地面车模模块采用带悬挂结构的麦克纳姆轮底盘，主要负责承载主控板、电源模块、驱动电路、通信模块以及顶部定位灯板等结构。麦克纳姆轮由四个
+驱动电机独立控制，通过轮速分配实现前进、后退、横移和原地转向等全向运动。车模接收四旋翼飞行器发送的目标 XY 坐标差值后，根据偏差信息进行运动方向判断和路径规划，从而实现对信标目标的追踪与位置修正。悬挂结构能够减小车体运动过程中的震动，提高底盘运行稳定性。
+四旋翼飞行器模块主要由 5 寸机架、RS2204 无刷电机、螺旋桨、四合一无刷电调、飞控主板、视觉算法板和传感器安装结构组成。飞行器负责在车模上方完成定高、定点和信标识别任务，并将识别到的位置信息传递给车模。飞控主板安装在机体上方，便于姿态控制和信号连接；视觉算法板、四合一电调板及传感器模块安装在机体下方，方便对地面信标进行识别和定位。
+环境感知模块由摄像头、TOF 测距模块、光流模块、IMU 和光电管等组成。摄像头用于识别车模顶部的 V 字形红外信标和目标标志，获取目标在图像中的位置信息；TOF 模块用于测量飞行器与地面或车模之间的高度距离；光流模块用于检测飞行器水平位移，实现定点悬停；IMU 用于采集角速度和加速度信息，为姿态解算提供数据；光电管用于辅助检测特定光标或环境特征。多传感器信息相互配合，为目标识别、位置判断和姿态控制提供依据。
+姿态检测与飞行控制部分主要用于保证四旋翼在任务过程中的稳定性。系统通过 IMU 获取姿态角和角速度，通过 TOF 获取高度信息，通过光流模块获取水平位移信息。控制算法根据期望状态与实际状态之间的偏差，计算四个电机的输出调整量，实现定姿态、定高和定点控制。在飞行器保持稳定悬停的基础上，视觉模块完成信标检测，并为车模提供可靠的位置偏差信息。
+控制处理模块以英飞凌 TRAVEO 系列控制器为核心，负责各类传感器数据采集、状态判断、控制算法运行和执行信号输出。飞行器端采用两块 CYT4BB7 主控协同工作，其中一块负责姿态控制、TOF 定高、光流定点和摄像头 A 信标识别，另一块负责摄像头 B 信标识别与坐标融合处理。处理后的目标 XY 坐标差值通过 RS485 通信模块发送给地面车模。车模端主控接收坐标信息后，结合自身姿态和运动状态，完成麦克纳姆轮轮速解算与电机驱动控制。
+电源模块为系统各部分提供稳定供电。车模端电源负责驱动电机、主控板、传感器和通信模块供电；飞行器端电源通过四合一无刷电调和稳压模块为无刷电机、飞控主板、视觉算法板及传感器供电。为提高系统可靠性，各电源支路需要进行稳压、滤波和接口固定，减少电机启动、电流突变和线束干扰对控制系统的影响。
+通信/执行模块主要完成数据传输和控制信号输出。飞行器与车模之间通过 RS485 模块进行通信，传输目标坐标差值和状态信息，提高长线连接下的抗干扰能力。执行部分包括麦克纳姆轮驱动电机、四旋翼无刷电机、电调和相关驱动电路。控制器根据算法输出对应的 PWM 或控制信号，驱动车模完成全向运动，并控制四旋翼实现姿态调整和稳定悬停。
+机械结构系统设计
+四旋翼机械结构
+四旋翼飞行器采用 5 寸机架，机架四个机臂分别安装 RS2204 无刷电机、螺旋桨及保护圈，形成稳定的四旋翼动力结构。飞控算法主板通过转接板固定在机体正上方，用于姿态、高度和定点控制；摄像头视觉算法板及四合一无刷电调板安装在机体正下方，便于电机驱动和视觉处理。视觉模块、TOF 测距模块和光流模块通过连接板安装在机体下部，为信标识别、定高和定点控制提供数据支持。
+
+图 2.1四旋翼机械结构（俯视图）
+车模机械结构
+车模采用四轮麦克纳姆轮底盘结构，四个驱动电机分别带动车轮，实现前进、横移和转向等全向运动。底盘中央设置支撑框架，用于固定主控板、电源、驱动模块及通信模块。车体顶部安装 V 字形红外灯板，作为四旋翼识别和定位车模位置的关键标志；陀螺仪安装在车体控制部分，用于检测车模 YAW 角姿态，为运动方向修正和路径规划提供依据。
+
+图 2.2 麦克纳姆轮车模机械结构（俯视图）
+系统电路板固定与连接
+
+图 2.3 车模控制板固定连接图
+
+图 2.4 电机驱动模块固定连接图
+
+
+图 2.5 摄像头模块A固定连接图
+
+图 2.6 光流固定连接图
+
+
+图 2.7 摄像头模块B固定连接图
+
+图2.8 TOF模块固定连接
+电路系统设计
+四合一无刷电机控制电路
+四合一无刷电机控制板由电池端 VBAT 供电，并通过稳压模块为驱动芯片和逻辑电路提供所需电压。控制板接收飞控输出的四路 PWM 控制信号，分别对应四个无刷电机的转速控制。每路信号经驱动芯片处理后，控制 MOS 管桥臂产生三相驱动输出，连接至对应飞行器电机。飞控根据姿态误差和控制算法实时调整各路 PWM 占空比，从而改变四个电机转速，实现四旋翼的升力分配、姿态稳定和悬停控制。
+
+图 3.1 无刷电机控制电路原理图
+无刷电调作为四旋翼动力的驱动板，其过流较大，所以在绘制过程中要保证大电流路径较短，故我们功率部分在上半部分，信号部分在下半部分，电流回流路径短直粗，利于通过大电流，同时有效减少信号干扰。此外，进行开窗镀锡散热处理，进一步提高过流能力。
+根据原理图，飞控控制电路以 CYT4BB7 主控芯片为核心，采用双路 5V 转 3.3V 稳压方案分别为主控和摄像头独立供电，确保图像采集与系统运算互不干扰。主控板外接了丰富的传感器与外设：MT9V03X 摄像头用于实时采集地面图像以识别信标与 V 字形目标，TOF 测距模块获取飞行高度信息，光流模块检测水平位移与速度，陀螺仪提供三轴姿态角（俯仰、横滚、偏航）数据，此外还配备 IPS 显示屏用于实时显示调试信息与识别结果。各传感器数据经主控采集融合后，完成姿态解算、位置判断和飞行状态决策；主控根据控制算法输出四路 PWM 信号至四合一无刷电调，分别驱动四个无刷电机，通过差速调节实现四旋翼的姿态调整、升力分配与稳定悬停。电路还集成了蜂鸣器模块用于状态报警与提示、按键用于人工干预、串口用于数据通信以及电源指示灯用于供电状态监测，构成了一套完整的四旋翼飞行控制硬件系统。
+
+图 3.2四旋翼控制电路原理图
+通信模块电路
+车模与飞行器之间采用 RS485 通信模块进行数据传输，主控串口的 TXD、RXD 信号接入 SP490EEN 收发芯片，经差分转换后通过 TX+、TX-、RX+、RX- 与另一端模块连接。模块由 5V 供电，并在电源端加入滤波电容以减小电源纹波。差分通信方式具有较强的抗干扰能力，适合车模与飞行器之间的连接；线路两端通过匹配电阻提高信号稳定性，减少反射和误码。
+
+图 3.3 四旋翼控制电路原理图
+智能车控制电路
+智能车控制电路以英飞凌 CYT4BB7 主控板为核心，连接编码器、陀螺仪、IPS 屏幕、电机接口和车机通信模块。编码器用于采集车轮速度，陀螺仪用于获取车体姿态，IPS 屏幕用于参数显示与调试。主控通过电机接口输出控制信号，并通过串口与飞行器交换状态信息，实现车模运动控制与协同控制。
+
+图 3.4智能车控制电路原理图
+电机驱动电路
+电机驱动电路采用左右两路电驱模块，主控输出 PWM 和方向信号，经驱动芯片控制 MOS 管桥臂，实现电机调速与正反转。电源端加入开关、滤波和保护器件，驱动输出通过电机接口连接左右驱动电机。
+
+图 3.5 电机驱动电路原理图
+
+软件系统设计
+软件总体架构
+本系统采用“双 CYT4BB7 分布式控制”架构。第一块主控负责姿态稳定、高度控制和定点控制，并控制摄像头 A 搜索信标；第二块主控负责摄像头 B 的信标搜索，接收第一块主控的信标坐标后进行算法处理，并通过 RS485 将目标 XY 坐标差值发送给地面车模。车模根据飞行器传回的坐标差值进行路径规划与目标搜索，实现空地协同定位与导航。
+
+图 4.1软件任务框架流程图
+空地协同的控制算法
+四旋翼飞控控制算法
+四旋翼飞控主要采用姿态闭环控制算法。系统通过陀螺仪获取飞行器姿态角和角速度，利用 TOF 获取高度信息，利用光流模块获取水平位移信息。控制器根据目标姿态、高度和位置与实际测量值之间的偏差，采用 PID 控制算法计算修正量，并分配到四个无刷电机，实现姿态稳定、定高和定点控制。
+
+图 4.2串级PID控制四旋翼姿态平衡代码
+
+图 4.3光流融合陀螺仪解算滤波代码
+麦克纳姆轮车模控制算法
+麦克纳姆轮车模主要采用运动解算与闭环控制算法。车模接收飞行器通过 RS485 发送的目标 XY 坐标差值，根据坐标偏差判断目标方向和距离，并进行路径规划。控制器将期望的前后、左右和旋转运动量转换为四个麦克纳姆轮的目标转速，再结合编码器反馈进行速度闭环控制，使车模能够稳定完成横移、前进、转向和目标搜索。
+
+图 4.4麦克纳姆轮运动学正解算代码
+
+图 4.5速度环PID+PWM输出代码
+摄像头视觉算法
+该视觉算法以 MT9V03X 摄像头采集的灰度图像为输入，首先采用大津法（Otsu）自适应阈值分割对整图及右上、右下两个独立 ROI 区域分别计算最优二值化阈值，经 180° 图像翻转后完成分区域二值化；随后通过8 邻域广度优先搜索（BFS）连通域分析提取所有候选区域，并计算各区域的面积、质心、外接矩形、填充率及基于二阶中心矩的偏心率等形状特征；在目标识别阶段，以面积最大的连通域为对象，通过 "填充率 <0.6 且偏心率> 0.7" 的双阈值判定 V 字形小车，再以 V 中心为圆心设置屏蔽圆排除自身干扰，在圆外候选中选取距 V 最近者作为圆形信标；为解决信标靠近小车时被遮挡丢失的问题，算法引入撞击保持（Hit-Hold）机制，当信标进入屏蔽圆时冻结其最后相对方向并持续输出固定时长，确保小车完成撞击；最终输出信标相对于 V 字形的相对方向坐标，并经 90° 旋转变换后发送给第一摄像头，形成了一套从图像分割、形状分类到目标跟踪的完整嵌入式视觉导航方案。
+
+图 4.6分区域二值化代码
+
+图 4.7大津法部分代码（连通域分析）
+
+结 论
+在此份技术报告中，我们主要介绍了准备比赛时的四旋翼和车模的结构，硬件设计方案，软件算法，技术创新等成果。
+在结构迭代方面，我们经历了从购买现成方案，到尝试自制3D打印件，再到最终自主设计了符合规格并且运动流畅的自制车模的全过程。每一次迭代，我们都针对结构强度、重量分布、传动效率和装配便捷性进行了不断优化，最终实现了结构紧凑、性能优良、适应性强的车模设计。四旋翼经过几次迭代决定采用了5寸模型机，并尽量精简结构的复杂度，减少重量所带来的影响。
+在电路方面，我们根据实际需求，设计了高集成度、低功耗的硬件系统。采用了CYT4BB7作为主控芯片，配合CYT2BL3实现无刷电机的高效驱动。电源管理、信号采集、传感器接口等模块合理布局，既保证了系统的稳定性，也为后续功能扩展提供了支持。
+在算法层面，我们融合了多种控制与识别算法，显著提升了智能车的自主决策与环境适应能力。通过摄像头视觉识别与光电传感器数据的多源融合，实现了对赛道元素的精准感知与最优路径规划；在控制策略上，以 PID 经典控制算法为基础并加以参数优化与前馈补偿，同时针对微缩赛道的弯道曲率、坡道起伏及交叉路口等特殊场景进行了多轮实地调试与迭代改进，使车辆在复杂工况下仍能保持稳定、快速的运行表现。
+回首数月备战历程，从场地搭建到经费保障，我们始终得到了学校与学院的鼎力支持。在此，特别向一直关心和支持智能车竞赛的学校、学院各位领导，向悉心指导我们的各位老师和学长，致以最诚挚的谢意；同时也感谢比赛组委会为我们提供了这样一个锻炼自我、交流切磋的宝贵平台。
+如今，历经近五个月的潜心准备，面对即将到来的大赛，我们满怀信心，也做好了迎接挑战的充分准备。诚然，我们的知识储备尚显不足，考虑问题或有疏漏，但这份技术报告凝聚着小组每位成员的心血与智慧，是五个月来日夜钻研、反复调试的汗水结晶。它不仅是一段赛程的见证，更将成为我们成长路上最珍贵的记忆，伴我们一路前行。
+参考文献
+全权，戴训华，王帅。多旋翼飞行器设计与控制实践 [M]. 北京：电子工业出版社，2020.
+冀明，卢京潮。基于 Cortex-M4 的四旋翼飞行控制系统设计 [J]. 计算机测量与控制，2013, 21 (7): 1816-1821.
+熊有伦。机器人学：建模、控制与视觉 (第二版)[M]. 武汉：华中科技大学出版社，2019.
+刘金琨。先进 PID 控制 MATLAB 仿真 (第 5 版)[M]. 北京：电子工业出版社，2023.
+秦永元，张洪钺，汪叔华。卡尔曼滤波与组合导航原理 [M]. 西安：西北工业大学出版社，2021.
+Grewal M S, Andrews A P. 卡尔曼滤波理论与实践 (MATLAB 版)(第 4 版)[M]. 刘郁林，陈绍荣，徐舜，译。北京：电子工业出版社，2017.
+宋宇，翁新武，郭昕刚。基于光流和惯性导航的小型无人机定位方法 [J]. 传感器与微系统，2015, 34 (1): 13-16.
+吴琦，蔡志浩，王英勋。用于无人机室内导航的光流与地标融合方法 [J]. 控制理论与应用，2015, 32 (11): 1511-1517.
+
+
+附录 A 源代码程序
+    // =================================================
+    // 模式切换或信标跳变时初始化公用PID的D历史
+    // =================================================
+    if(entering_beacon_mode ||
+       raw_target_jump)
+    {
+        float pid_error_x =
+            0.0f -
+            beacon_control_error_y;
+
+        float pid_error_y =
+            0.0f -
+            beacon_control_error_x;
+
+        Beacon_X_inner.error = pid_error_x;
+        Beacon_X_inner.last_error = pid_error_x;
+        Beacon_X_inner.last_2_error = pid_error_x;
+        Beacon_X_inner.jifen = 0.0f;
+        Beacon_X_inner.out = 0.0f;
+
+        Beacon_Y_inner.error = pid_error_y;
+        Beacon_Y_inner.last_error = pid_error_y;
+        Beacon_Y_inner.last_2_error = pid_error_y;
+        Beacon_Y_inner.jifen = 0.0f;
+        Beacon_Y_inner.out = 0.0f;
+    }
+
+    /*
+     * 坐标轴保持不变：
+     *
+     * beacon_control_error_y
+     *     -> Beacon_X_inner
+     *     -> dx_out
+     *     -> X_inner读取speed_x
+     *
+     * beacon_control_error_x
+     *     -> Beacon_Y_inner
+     *     -> dy_out
+     *     -> Y_inner读取speed_y
+     */
+    PID_Location(
+        &Beacon_X_inner,
+        0.02f,
+        beacon_control_error_y,
+        0.0f,
+        beacon_control_sd_y);
+
+    PID_Location(
+        &Beacon_Y_inner,
+        0.02f,
+        beacon_control_error_x,
+        0.0f,
+        beacon_control_sd_x);
+
+    dx_out = Beacon_X_inner.out;
+    dy_out = Beacon_Y_inner.out;
+
+    // =================================================
+    // 追信标水平合速度限制
+    // =================================================
+    float target_cmd_speed =
+        sqrtf(dx_out * dx_out +
+              dy_out * dy_out);
+
+    if(target_cmd_speed >
+           TARGET_TRACK_MAX_SPEED_MPS &&
+       target_cmd_speed > 0.001f)
+    {
+        float target_speed_scale =
+            TARGET_TRACK_MAX_SPEED_MPS /
+            target_cmd_speed;
+
+        dx_out *= target_speed_scale;
+        dy_out *= target_speed_scale;
+    }
+    tracking_was_valid = true;
+    tracking_source_last = 4U;
+}
+    // =================================================
+    // 2. 第一摄像头看不到信标：执行原来的跟车
+    // =================================================
+else if(navigation_valid)
+{
+    /*
+     * 只有上一周期确实正在追信标，
+     * 当前周期切换到1/2/3跟车时，
+     * 才启动信标到跟车的有限时间平滑。
+     */
+    bool switching_from_beacon =
+        tracking_was_valid &&
+        tracking_source_last == 4U &&
+        beacon_control_initialized;
+    /*
+     * 已经退出信标模式，
+     * 终止旧的信标坐标平滑。
+     */
+    beacon_transition_active = false;
+    beacon_transition_sample = 0U;
+    beacon_raw_target_initialized = false;
+    if(switching_from_beacon)
+    {
+        /*
+         * 从上一周期真正送入信标PID的坐标开始，
+         * 平滑转移到当前V字坐标。
+         */
+        car_transition_start_x =beacon_control_error_x;
+        car_transition_start_y =beacon_control_error_y;
+        car_transition_start_sd_x =beacon_control_sd_x;
+        car_transition_start_sd_y =beacon_control_sd_y;
+        car_control_error_x =car_transition_start_x;
+        car_control_error_y =car_transition_start_y;
+        car_control_sd_x =car_transition_start_sd_x;
+        car_control_sd_y =car_transition_start_sd_y;
+        car_transition_sample = 0U;
+        car_transition_active = true;
+        car_control_initialized = true;
+    }
+    else if(!car_control_initialized)
+    {
+        /*
+         * 起飞后直接进入跟车，或者从无导航重新识别V字：
+         * 不从0开始慢慢移动，直接初始化为当前V字坐标。
+         */
+        car_control_error_x = car_error_x;
+        car_control_error_y = car_error_y;
+        car_control_sd_x = car_sd_x;
+        car_control_sd_y = car_sd_y;
+        car_transition_active = false;
+        car_transition_sample = 0U;
+        car_control_initialized = true;
+    }
+    /*
+     * 已经离开信标模式。
+     * 上面的切换起点复制完成后，旧信标控制状态不再使用。
+     */
+    beacon_control_initialized = false;
+    // =================================================
+    // 信标坐标到V字坐标的Smoothstep平滑
+    // =================================================
+    if(car_transition_active)
+    {
+        float transition_ratio;
+
+        if(CAR_MODE_SWITCH_SMOOTH_SAMPLES <= 1U)
+        {transition_ratio = 1.0f;}
+        else
+        {
+            transition_ratio =
+                (float)car_transition_sample /
+                (float)(
+                    CAR_MODE_SWITCH_SMOOTH_SAMPLES -
+                    1U);
+
+            if(transition_ratio > 1.0f)
+            {
+                transition_ratio = 1.0f;
+            }
+        }
+
+        /*
+         * Smoothstep：
+         * 开始和结束时变化斜率都趋近于0。
+         */
+        float smooth_ratio =
+            transition_ratio *
+            transition_ratio *
+            (3.0f -
+             2.0f * transition_ratio);
+        /*
+         * car_error_x/y在过渡期间仍然实时更新。
+         * 过渡目标始终使用当前最新V字坐标。
+         */
+        car_control_error_x =
+            car_transition_start_x +
+            smooth_ratio *
+            (car_error_x -
+             car_transition_start_x);
+        car_control_error_y =
+            car_transition_start_y +
+            smooth_ratio *
+            (car_error_y -
+             car_transition_start_y);
+        car_control_sd_x =
+            car_transition_start_sd_x +
+            smooth_ratio *
+            (car_sd_x -
+             car_transition_start_sd_x);
+
+        car_control_sd_y =
+            car_transition_start_sd_y +
+            smooth_ratio *
+            (car_sd_y -
+             car_transition_start_sd_y);
+        if(car_transition_sample + 1U >=
+           CAR_MODE_SWITCH_SMOOTH_SAMPLES)
+        {
+            car_control_error_x = car_error_x;
+            car_control_error_y = car_error_y;
+            car_control_sd_x = car_sd_x;
+            car_control_sd_y = car_sd_y;
+            car_transition_active = false;
+        }
+        else
+        { car_transition_sample++;}
+    }
+    else
+    {
+        /*
+         * 过渡完成后恢复原来的跟车响应，
+         * 不再增加长期滤波延迟。
+         */
+        car_control_error_x = car_error_x;
+        car_control_error_y = car_error_y;
+        car_control_sd_x = car_sd_x;
+        car_control_sd_y = car_sd_y;
+        car_control_initialized = true;
+    }
+    /*
+     * 模式切换或摄像头来源1/2/3发生变化时，
+     * 使用真正送入PID的平滑坐标初始化D历史。
+     */
+    if(!tracking_was_valid ||
+       tracking_source_last !=
+           navigation_source)
+    {
+        float pid_error_x =0.0f -car_control_error_y;
+
+        float pid_error_y =0.0f -car_control_error_x;
+        Beacon_X_inner.error = pid_error_x;
+        Beacon_X_inner.last_error = pid_error_x;
+        Beacon_X_inner.last_2_error = pid_error_x;
+        Beacon_X_inner.jifen = 0.0f;
+        Beacon_X_inner.out = 0.0f;
+        Beacon_Y_inner.error = pid_error_y;
+        Beacon_Y_inner.last_error = pid_error_y;
+        Beacon_Y_inner.last_2_error = pid_error_y;
+        Beacon_Y_inner.jifen = 0.0f;
+        Beacon_Y_inner.out = 0.0f;
+    }
+    PID_Location(&Beacon_X_inner,0.02f,
+        car_control_error_y, 0.0f, car_control_sd_y);
+
+    PID_Location( &Beacon_Y_inner, 0.02f,
+        car_control_error_x,0.0f,car_control_sd_x);
+    dx_out = Beacon_X_inner.out;
+    dy_out = Beacon_Y_inner.out;
+    tracking_was_valid = true;
+    tracking_source_last =
+        navigation_source;
+}
+    // =================================================
+    // 3. 信标和V字都看不到：水平悬停
+    // =================================================
+    else
+    {
+        dx_out = 0.0f;
+        dy_out = 0.0f;
+		// 公用导航位置环清零
+		Beacon_X_inner.jifen = 0.0f;
+		Beacon_X_inner.out = 0.0f;
+		Beacon_Y_inner.jifen = 0.0f;
+		Beacon_Y_inner.out = 0.0f;
+		beacon_transition_active = false;
+		beacon_transition_sample = 0U;
+		beacon_raw_target_initialized = false;
+		beacon_control_initialized = false;
+		car_transition_active = false;
+		car_transition_sample = 0U;
+		car_control_initialized = false;
+		tracking_was_valid = false;
+		tracking_source_last = 0U;
+    }
+}
+else
+{
+    dx_out = 0.0f;
+    dy_out = 0.0f;
+    beacon_transition_active = false;
+    beacon_transition_sample = 0U;
+    beacon_raw_target_initialized = false;
+    beacon_control_initialized = false;
+    car_transition_active = false;
+    car_transition_sample = 0U;
+    car_control_initialized = false;
+    tracking_was_valid = false;
+    tracking_source_last = 0U;
+}
+// =====================================================
+// 目标速度加速度前馈状态
+// =====================================================
+if(start_flag != 1 ||
+   !navigation_valid)
+{
+    vx_last = dx_out;
+    vy_last = dy_out;
+    vx_to_pitch.out = 0.0f;
+    vy_to_roll.out = 0.0f;
+    velocity_ff_initialized = false;
+    velocity_ff_source_last = 0U;
+}
+else if(!velocity_ff_initialized ||
+        navigation_source !=
+            velocity_ff_source_last)
+{
+    // 信标、跟车、摄像头来源切换时不计算跳变加速度
+    vx_last = dx_out;
+    vy_last = dy_out;
+    vx_to_pitch.out = 0.0f;
+    vy_to_roll.out = 0.0f;
+    velocity_ff_initialized = true;
+    velocity_ff_source_last =navigation_source;
+}
+else
+{
+    float accel_x =
+        (dx_out - vx_last) /0.02f;
+    float accel_y =
+        (dy_out - vy_last) /0.02f;
+    accel_x =
+        LIMIT(accel_x, -1.0f, 1.0f);
+    accel_y =
+        LIMIT(accel_y, -1.0f, 1.0f);
+    LPF_1_(3.0f,0.02f,accel_x,vx_to_pitch.out);
+    LPF_1_(3.0f, 0.02f, accel_y,vy_to_roll.out);
+    vx_last = dx_out; vy_last = dy_out;
+    velocity_ff_source_last =
+        navigation_source;
+}
+        PID_Location(&High_pos, 0.02f,highth_filtered,
+                     NORMAL_HEIGHT_TARGET_MM, 0.0f);
+        PID_Location(&High_vel, 0.02f,high_v,
+                     High_pos.out, 0.0f);
+    }
+}
+    if(cnt%5 == 0)    
+    {
+          sx_out = PID_Location(&X_inner, 0.005f,speed_x,dx_out  , vx_to_pitch.out  );// + LIMIT(car_vy.out * k_ff,-1.2,1.2)
+          sy_out = PID_Location(&Y_inner, 0.005f,speed_y,dy_out  , vy_to_roll.out  );//+ LIMIT(car_vx.out * k_ff,-1.2,1.2)
+         static float sx_last = 0, sy_last = 0;
+         LPF_1_(10.0, 0.005, (sx_out - sx_last)/0.005f, sx_to_pitch.out);   
+         LPF_1_(10.0, 0.005, (sy_out - sy_last)/0.005f, sy_to_roll.out);
+          sx_last = sx_out; 
+          sy_last = sy_out;
+    }
+PID_Location(&Roll_out ,0.001,roll_raw,target_roll+sy_out ,sy_to_roll .out);//+sy_out
+    PID_Location(&Pitch_out ,0.001,pitch_raw,target_pitch +sx_out,sx_to_pitch .out);  // +sx_out-0.8 
+    PID_Location(&Yaw_out, 0.001, yaw_raw, target_yaw,   0.0);   
+    PID_Location(&Roll_inner ,0.001,  -rate_roll   ,-Roll_out.out  ,0);  
+    PID_Location(&Pitch_inner,0.001,  rate_pitch   ,Pitch_out.out  ,0);
+    PID_Location(&Yaw_inner, 0.001,   -rate_yaw    ,-Yaw_out.out   ,0);
+    fly_out.out_2 = (base_speed  -Roll_inner.out  + Pitch_inner.out - Yaw_inner.out + High_vel.out	);// base_speed +Roll_inner.out  + Pitch_inner.out+Yaw_inner.out+ High_pos.out
+    fly_out.out_3 = (base_speed  -Roll_inner.out  - Pitch_inner.out + Yaw_inner.out + High_vel.out  	);// base_speed -Roll_inner.out  + Pitch_inner.out-Yaw_inner.out+ High_pos.out  
+    fly_out.out_1 = (base_speed  +Roll_inner.out  + Pitch_inner.out + Yaw_inner.out + High_vel.out  	);// base_speed +Roll_inner.out  - Pitch_inner.out-Yaw_inner.out+ High_pos.out  
+    fly_out.out_4 = (base_speed  +Roll_inner.out  - Pitch_inner.out - Yaw_inner.out + High_vel.out  	);// base_speed -Roll_inner.out  - Pitch_inner.out+Yaw_inner.out+ High_pos.out  
+附录 B 电路板实物
+
+图B- 1四合一电调电路板实物图（正面）
+
+图B- 2四合一电调电路板实物图（反面）
+
+图B- 3飞控控制电路板实物图
+
+图B- 4麦克纳姆轮控制电路板实物图
+
+图B- 5电机驱动电路板实物图
+
+===== TABLE 1 =====
+学        校： | 桂林电子科技大学
+队伍名称： | 尧山里队
+参赛队员： | 黄之权、黄承均、李伟豪、 袁永煜、陶世周
+带队教师： | 童宣科

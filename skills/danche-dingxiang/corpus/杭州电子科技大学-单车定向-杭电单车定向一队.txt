@@ -1,0 +1,1688 @@
+第二十一届全国大学生智能汽车竞赛
+技 术 报 告
+
+
+学    校：杭州电子科技大学
+队伍名称：杭电单车定向一队
+参赛队员： 孙雨航 叶翔 佟玉崑
+带队教师：黄继业
+余善恩
+
+关于技术报告和研究论文使用授权的说明
+	 本人完全了解全国大学生智能汽车竞赛关保留、使用技术报告和研究论文的规定，即：参赛作品著作权归参赛者本人，比赛组委会可以在相关主页上收录并公开参赛作品的设计方案、技术报告以及参赛模型车的视频、图像资料，并将相关内容编纂收录在组委会出版论文集中。
+
+参赛队员签名：		    
+带队教师签名：			     
+
+日        期：	 2026.8.15   	     
+
+
+
+
+
+第一章 引言
+1.1 概述
+全国大学生智能车竞赛以“立足培养，重在参与，鼓励探索，追求卓  越”为指导思想，涵盖了机械、模式识别、电子、电气、传感技术、计算机、自动化控制、汽车理论等多方面知识，从一定程度上反映了当代大学生综合运用所学知识和探索创新的精神。同时该赛事是教育部高等教育司委托 (教高司函 [2005]201 号文)，由教育部高等自动化专业教学指导分委员会(以下简称自动化分教指委)主办的全国性、多学科交叉、趣味性、创新性赛事，旨在加强大学生实践与团队合作精神，促进高等教育改革。竞赛规则透明，评价客观标准，坚持公开、公平、公正的原则，从而保持了竞赛的健康、普及、持续的发展。
+学校积极响应教育部关于加强大学生的实践、合作精神和创新能力的培养的号召，成立智能车队伍参加比赛。我们组队参加第二十一届全国大学生智能车单车定向组别的比赛，并进行了积极认真的准备。根据本届竞赛规则相关规定，单车定向组别不允许自制车模，于是我们在符合竞赛规则的范围内，对小车的机械结构进行了适当改良。
+技术方面，我们选用了德国Infineon Technologies AG公司的微控制器tc264d40f200w作为核心控制单元，并从零开始设计了一个全新的控制方案。这个方案涵盖了传感器信号采集处理、电机驱动和控制算法软件的开发。
+在软件算法上，我们选择了传统的PID算法作为主导控制。为确保智能车在高速和急转弯情况下具有卓越的动力性能和稳定性，我们汲取了前届队伍的宝贵经验，对于小车的机械结构部分进行的不断优化。
+
+本技术报告详细记录了第二十一届杭电单车定向一队智能车的开发历程，内容涉及机械硬件设计、tc264d40f200w单片机的应用学习，PID算法研究，以及车模机械结构参数的调整与优化。
+1.2 整车设计
+1.2.1  车辆布局
+结构上整体的设计思路采用快拆式结构，以及防撞式结构，快拆式结构主要由母子板拼接而成，由于考虑到单车定向比赛的环境相对恶劣，有可能会经历雨天环境，而防水措施无法保证主板以及电调完好无损，以及高速运转过程中可能会面临板子烧坏等情况，为了以防万一，我们做了快拆设计，一旦比赛过程中出现问题，可快速更换，提高效率。
+当然，为了能够提高车子稳定性，我们还将整个车身重心下移，通过降低架主板以及电调的高度来降低重心，以提高小车通过弯道的灵活性，以及防止小车在高速过弯发生的侧翻现象
+杭电单车定向一队小车主体部分:
+1:底盘及附属部分。包括驱动电机、电池等；
+2:磁编传感部分；
+3:单片机最小系统板，包括电源处理；
+4:IPS屏。
+1.2.2  控制简述
+	关于单车定向的控制思路，我们发现针对不同的科目策略大不相同，所以我们根据三个不同特征的科目通过软件以及UI界面的控制，针对不同的科目，运用不同的控制策略，我们主要利用陀螺仪以及编码器获取小车实时转速的综合控制方法以提高小车运行的准确性，所以我们采用的是惯性导航。而惯性导航部分主要通过编码器测得实时速度以及陀螺仪获得当前角度，两者综合记录当下路径便于复刻。而在通过锥桶区域或者是特殊元素区域，我们会通过将惯性导航记录的位置与提前在赛场打点位置综合确定后，通过特殊的开环控速，达到快速降到对应区域速度，以提高响应速度.由于我们方向环采用的是PID控制算法所以针对不同的特殊区域，例如锥桶，掉头区域，以及长直道区域，采取不同的PID值，以便小车能够丝滑通过对应的区域。
+1.3 小结
+本章主要介绍了杭电单车定向一队的整体设计思路和大致的布局，以上将会 为以下章节的介绍起到铺垫的作用。
+第二章 机械设计与修改
+2.1 子母板的架构
+为了能够实现当主板和电调损坏时我们能够快速的更换备板，所以我们采用的是母板子板两套板子，即将母板固定在车上，而子板固定在母板上，通过一定的榫卯结构和几颗螺丝固定在母板上，这样如果板子出现问题可以迅速将子板拆卸，并换上新的主板与电调，在不违背更换部分零件的原则上能够以最快的速度更换小车零件以防止出现小车由于部分元器件损坏而长时间无法维修小车的困境。
+2.2 两边防撞条
+	在车子的两侧我们采用了PETCF材料打印的3d打印件，这样能最大程度的保护车子在侧翻，前空翻，后空翻等现象发生时车子内部元器件不会受损，我们为了减小小车的负重以及风阻，所以设计的非常简约。
+
+图2.1 越野两侧防撞条
+
+2.3 电池支架
+	为了降低重心我们在车的底部设计了用于放置电池的支架，防止电池过高影响单车的重心。
+
+图2.2 电池支架
+
+第三章 系统硬件电路设计
+3.1 硬件电路整体架构设计
+硬件设计采用模块化架构，分为​​主板设计​​和​​电调设计​​两大核心模块，确保系统高效协同运行。
+​​主板设计​​作为主控核心，涵盖引脚分配、电源管理及外设集成。引脚分配优化信号传输路径；电源模块为各部件提供稳定电压；外设部分集成无线串口（远程调试）、陀螺仪（姿态检测）、编码器（速度反馈）、PWM隔离（驱动保护）及TFT彩屏（实时监控）、电调及电磁运放的串口（数据传输）、遥控器等，形成完整的数据采集与交互链路。
+​​电调设计​​聚焦电机驱动控制，通过引脚分配实现信号对接，电路设计包含MCU供电、栅极驱动供电、三相桥，保障电机高响应与可靠性。
+3.2 单片机最小系统电路设计
+TC264D40F200W单片机最小系统电路设计主要包括电源电路、时钟电路、复位电路和调试接口四个关键部分。电源电路采用3.3V供电方案，使用LDO稳压芯片将输入电压稳定在3.3V，在电源输入端并联100μF电解电容和0.1μF陶瓷电容进行滤波，在MCU每个电源引脚附近放置0.1μF去耦电容。时钟电路采用外部20MHz无源晶振配合两个22pF负载电容，晶振尽量靠近MCU的XTAL1和XTAL2引脚布局。复位电路采用10kΩ上拉电阻和100nF电容组成RC复位网络，同时预留手动复位按钮，复位引脚通过0.1μF电容滤波。调试接口采用10pin SWD标准接口，包含SWDIO、SWCLK和GND信号，并预留UART串口通信引脚用于调试输出。PCB布局时电源走线加粗处理，晶振电路下方禁止走线。该最小系统设计经过实际测试验证，能够稳定运行并满足智能车控制系统的需求，后续可根据具体应用场景扩展PWM输出、ADC采样等外围电路功能。特别注意TC264D40F200W的BOOT0和BOOT1引脚需要通过10kΩ电阻固定到适当电平以确定启动模式，在调试阶段预留跳线帽以便灵活切换启动方式。
+
+
+3.3 PWM隔离设计
+车辆舵机PWM控制信号采用EL3H7高速光耦进行电气隔离，实现主控系统与功率驱动电路的完全隔离保护。该光耦具有1MBd传输速率和0.5μs典型传输延迟，完全满足20ms周期舵机控制需求。电路设计上，输入端串联330Ω限流电阻并并联1N4148保护二极管，输出端配置2.2kΩ上拉电阻和100nF去耦电容，确保信号传输稳定可靠。实测表明该方案可有效抑制电机回灌电流和电磁干扰，在复杂赛道环境下仍能保持PWM波形完整。隔离电源采用B0505S-1W DC-DC模块单独供电，避免共地干扰。特别优化了PCB布局，将光耦尽量靠近MCU放置，PWM走线长度控制在5cm以内并做包地处理。经实际测试，该设计使舵机控制抖动率降低40%，转向响应时间缩短至15ms以内，在电机急启停工况下也未出现信号异常，显著提升了车辆转向系统的稳定性和安全性。
+
+
+3.4 IPS/按键电路设计
+良好的人机交互可以减少调试的时间，能够大大提高调试的效率。  显示模块我们采用 ips 屏，能够显示灰度图像显示非常清晰，而且功耗非常的低，所以与单片机系统使用同一路电源。按键我们为了节省 PCB 空间和调试方便使用了两个独立按键。由于电路较为简单，所以不在此列举。
+
+图3.7 按键
+3.5 主板电源电路设计
+系统稳定运行的基础在于电源设计，本方案采用两级供电架构：第一级通过TI的TPS5450 DC-DC转换器将16.8V电池电压直接降压至5V，该芯片集成高性能MOSFET，支持36V宽输入范围，可提供持续稳定的5V输出；第二级采用两个RT9048 LDO稳压器，分别从5V降压为3.3V，为摄像头和MCU等核心外设提供独立供电。所有电源电路均严格遵循芯片厂商推荐的设计规范，包括外围元件选型、PCB布局和去耦电容配置等关键参数，确保各供电节点纹波控制在允许范围内。这种分级供电方案既保证了电源转换效率，又实现了不同功能模块之间的电源隔离，有效避免了相互干扰。具体电路实现细节可参考各芯片的官方设计手册，在此不再赘述。
+3.6 主板设计
+本设计将电源管理模块和单片机最小系统高度集成在主控主板上，主板包含电池供电接口和柔性排线连接器，并整合了完整的电源转换电路（含3.3V稳压输出）。接口电路板的机械结构经过精心设计，通过优化螺丝孔位布局确保与车模的稳固安装，避免运行过程中发生位移影响性能。连接方案选用高性能FPC柔性排线实现主板与外围设备的可靠远距离通信，这种一体化设计既保证了系统稳定性，又兼顾了安装便利性。所有电路模块均采用紧凑布局，在确保电气性能的同时最大限度减小了整体体积。
+3.7电调设计
+	在电调设计中，MOS管的选型直接决定了系统发热量和最大输出功率，是影响性能的核心要素。经过多轮器件对比测试，最终选用华羿微HYG013N03LS1C2 MOSFET作为功率开关器件。该型号在10V栅极驱动电压下导通电阻仅1.3mΩ，与高端5C410系列性能相当，但具有更优的性价比表现。实测数据显示，该MOS管在满载工况下温升控制在合理范围，配合适当的散热设计可稳定输出大电流，显著提升了电调的整体能效比和可靠性。
+
+
+图3.10 HYG013N03LS1C2部分参数
+3.8 栅极驱动供电设计
+	驱动芯片采用DRV8300D，这是一款专为无刷电机驱动设计的高性能三相栅极驱动器。该芯片集成三个独立的高低压侧驱动通道，可输出最大2A的驱动电流，能快速充放电MOSFET栅极电容，显著降低开关损耗。FD2109S内置死区时间控制功能（典型值500ns），有效防止上下管直通；工作电压范围宽达8-20V，兼容常见的12V系统；具备欠压锁定保护（UVLO）和错误状态输出功能，当检测到异常时可立即关断输出。芯片采用紧凑的SOP-8封装，内置电平转换电路可直接连接3.3V/5V逻辑信号。实际测试表明，搭配HYG013N03LS1C2 MOSFET使用时，开关延时控制在80ns以内，系统效率提升约15%。特别优化了PCB布局，将驱动芯片尽可能靠近功率MOS管放置，并采用星型接地方式，确保驱动回路阻抗最小化。该方案已通过72小时满载老化测试，在高温高湿环境下仍保持稳定工作。
+
+3.9 MCU供电设计
+电调主控采用cyt2bl3，该MCU使用3.3V供电，利用rt9013将5450产生的5V转为3.3V为MCU提供电源。
+
+
+图3.11 rt9013电路图
+3.10 总结
+硬件电路设计必须确保高可靠性和强抗干扰能力，核心原则是"稳定压倒一切"。单片机供电系统需特别加强，通过增加大容量储能电容（如1000μF电解电容配合0.1μF陶瓷电容）来应对电调启动时的瞬时电流冲击，防止电压跌落引发系统复位。电路板开发采用严格的迭代流程：初期手工制板进行72小时不间断压力测试验证基础稳定性；通过验证后依据优化后的原理图进行专业PCB布线，交由正规PCB厂生产首版样品；对样品实施全面检测，未达标的板卡（存在纹波超标、布局不合理或性能缺陷等问题）必须重新设计制作，直至各项参数完全符合要求。硬件作为智能车系统的根基，其品质直接决定后续软件开发的可能性，必须坚持"一次做对"的工程理念，在电路设计、元件选型和制板工艺每个环节都执行最高标准
+
+
+第四章 软件系统设计
+4.1  软件控制的总体思路
+软件是智能车的最重要的部分。流程是通过提前通过遥控器踩点以及通过惯性导航把需要通过的特殊元素记录下来。而后续通过小车二次惯导记录与通过算法追寻特殊点位，最后完成比赛项目。
+
+4.2  惯性导航
+由于GPS定位的不稳定性，且越野比赛规则制定较为严苛，所以根据当时制定的规则我们决定稳定性大于一切的方针，所以我们开始采用以惯导为核心的方案，而由于我们是N1车模所以很难使用磁编码器来记录小车转速，所以我们采用了逐飞的正交编码器器测速的方案，而后在采用惯性导航的方案上我们则是通过编码器器与陀螺仪结合的方案，建立直角坐标系，即每隔一段时间记录对应的角度和距离进行积分操作，最后显示的坐标即为相对原点的坐标位置，在我们这样的方案下，完赛率可以大大提高，而且由于我们是以惯性导航为主，所以控制周期可以很小，可以使得小车在高速行驶下不会因为过长的延时而发生意外的情况。
+4.3  锥桶与杜宾斯曲线的结合
+对于科目二锥桶的通过，我们通过学习自动控制原理，以N1车模的实际出发，小车的运行具有最小转弯半径，所以我们考虑到在绕锥桶过程中需要考虑到小车的最小转弯半径，所以采取轨迹采用杜宾斯曲线，即我们只需要采集锥桶的几个点位，然后在已知锥桶点位坐标的前提下，生成一系列的杜宾斯曲线的控制点，而通过这些控制点，进一步生成杜宾斯曲线，这样我们只要取几个点就能生成曲线，且考虑到了车子本身结构，如下图：
+
+图4.1 科目二地图
+
+4.4  特殊元素的处理
+4.4.1 草地处理
+在经过草地路段时，主要的问题在于速度控制策略上，N1车模具有不稳定性，所以如果通过颠簸路段时若不减速做任何处理的话，小车可能出现前空翻，后空翻，侧翻等等导致小车无法完赛，所以我们在草地路段前会做适当的降速，并且改良小车的车身前桥结构，让小车在以较高速度通过草地路段不会发生翻车现象，如图所示：
+4.4.2 坡道处理
+在过坡道的时候我们同样会遇到和颠簸路段相似的问题，但是经过我们的实际测试，由于我们采用了惯性导航的方式，所以如果采用飞坡的方案则会丢失相当多的数据，使得后续可能不会准确的经过其他的元素，所以我们不采用飞坡道的方案，且实际测量过后我们发现如果低速过坡道之后立马加速，与小车飞坡道在空中滞留时间过长相比其实相差并不大，且低速过坡稳定性更高，且不会较大程度的伤害小车。
+4.4.4 绕锥的特殊处理
+在经过锥桶区域的时候我们不仅采用了杜宾斯曲线作为行进时的轨迹，而且在速度策略上我们考虑到小车在高速过弯的甩尾现象，所以我们打算降速过弯，而又不能过于降速，所以我们采用的是通过杜宾斯曲线的曲率以及循迹的error值与速度挂钩，曲率越大，error越大，速度越慢，这样更能符合实际，过弯也更加丝滑
+
+4.5 PID控制算法
+在工程实际中，应用最为广泛的调节器控制规律为比例、积分、微分控制，简称PID 控制，又称PID调节。PID控制器问世至今已有近70年历史，它以其结构简单、稳定性好、工作可靠、调整方便而成为工业控制的主要技术之一。当被控对象的结构和参数不能完全掌握，或得不到精确的数学模型时，控制理论的其它技术难以采用时，系统控制器的结构和参数必须依靠经验和现场调试来确定，这时应用PID控制技术最为方便。即当我们不完全了解一个系统和被控对象，或不能通过有效的测量手段来获得系统参数时，最适合用PID 控制技术。PID控制，实际中也有PI和PD控制。PID控制器是一种线性控制器，它根据给定值与实际输出值构成控制偏差。将偏差的比例(P)、积分(I)和微分(D)通过线性组合构成控制量，对被控对象进行控制，故称PID控制器。
+
+图4.16：PID控制原理
+简单说来，PID控制器各校正环节的作用如下：比例环节：及时成比例地反映控制系统的偏差信号，偏差一旦产生，控制器立即产生控制作用，以减少偏差。
+积分环节：主要用于消除静差，提高系统的无差度。积分作用的强弱取决于积分时间常数，越大，积分作用越弱，反之则越强。
+微分环节：能反映偏差信号的变化趋势(变化速率)，并能在该偏差信号变得太大之前，在系统中引入一个有效的早期修正信号，从而加快系统的动作速度，减小调节时间。
+4.5.1 位置式PID
+位置式PID中，由于计算机输出的u(k) 直接去控制执行机构(如阀门)，u(k)的值和执行机构的位置(如阀门开度)是一一对应的，所以通常称公式(4.2)为位置式PID控制算法。
+位置式PID控制算法的缺点是：由于全量输出，所以每次输出均与过去的状态有关，计算时要对过去e(k)进行累加，计算机工作量大；而且因为计算机输出的u(k)对应的是执行机构的实际位置，如计算机出现故障，u(k)的大幅度变化，会引起执行机构位置的大幅度变化，这种情况往往是生产实践中不允许的，在某些场合，还可能造成严重的生产事故。因而产生了增量式PID 控制的控制算法，所谓增量式PID 是指数字控制器的输出只是控制量的增量△u(k)。
+4.5.2 增量式PID
+当执行机构需要的是控制量的增量(例如：驱动步进电机)时，可由式(4.2)推导出提供增量的PID控制算式。由式(4.2)可以推出式(4.3)，式(4.2)减去式(4.3)可得式(4.4)。
+      (公式4.3)
+   (公式4.4)
+式中；；
+
+公式(4.4)称为增量式PID控制算法，可以看出由于一般计算机控制系统采用恒定的采样周期T，一旦确定了KP、TI 、TD，只要使用前后三次测量值的偏差，即可由式(4.4)求出控制增量。
+增量式PID具有以下优点：
+由于计算机输出增量，所以误动作时影响小，必要时可用逻辑判断的方法关掉。
+手动/自动切换时冲击小，便于实现无扰动切换。此外，当计算机发生故障时，由于输出通道或执行装置具有信号的锁存作用，故能保持原值。
+算式中不需要累加。控制增量△u(k)的确定仅与最近k次的采样值有关，所以较容易通过加权处理而获得比较好的控制效果。
+但增量式PID也有其不足之处：积分截断效应大，有静态误差；溢出的影响大。使用时，常选择带死区、积分分离等改进PID控制算法。
+
+4.6 速度环控制(半开环控制)
+由于单车定向速度过快的特殊性，所以我们采用的是半开环的模式，即在经过某些特殊性的元素时我会更改不同的pwm值以达到大致的速度，而在降速过程中我通过实际测量，列举了一个pwm值和小车转速的对应表，所以当我需要降速到某个需要输出的PWM值时，我会直接给一定的反转值，当小车转速降低到需要输出的PWM值对应表上的转速时，就停止给反转，这样在一定程度上也实现了闭环，所以我称之为半开环的速度环控制。
+第五章 开发工具、调试过程说明
+前面几章一直是在为系统制定方案以及方案的细化。但整个系统的完善 主要还是在系统的现场调试。在细分的每个模块中，大部分都涉及有众多参 数，对这些参数的确定就需要软硬件联合调试，而这过程就需要一整套开发 调试环境和工具。包括程序源代码的编辑以编译环境，参数调节与设定工  具。
+我们主要的开发环境是 AURIX™ Development Studio，版本是 1.10.2，主要使用的编码语言是 C 语言。
+5.1 现场调试
+在基本程序完成之后还需要在现场对程序进行微调。所以我们自制了按 键和TFT模块。上场后我们的操作选手通过观察赛道情况、智能车循迹情况，然后根据观测结果通过按键对程序进行微调，包括:
+1)各种形式赛道的速度参数；
+2)方向环 PD 控制的 Kp 和 Kd 等参数。我们将方向环 PID 控制的各个参数显示在TFT上，通过主板上设置的按键进行参数大小的增减；
+为了测试在各种赛道上最为契合的参数，我们也花费了大量的时间和金钱在绘制跑道、训练参数经验上。虽然过程是曲折和辛苦的，但是看到小车在赛道上飞驰，再苦再累大家也心甘情愿。
+5.2 调试中遇到的问题及解决过程
+赛车在同样的赛道上走过的路都是不一样的，所以大家无论怎么考虑车 的状态都是不够完全的，因此需要有一套完备的方案来解决对运行中的车辆进行实时监控。为了解决这个问题，我们使用了VOFA+——插件驱动的高自由度上位机。其致力于降低图形化调试的门槛：
+保留了传统字节流调试助手风格的数据收发功能，以应对非图形化调试需求；
+通过直观极简的协议设计和方便快捷的命令绑定，硬件工程师无需处理复杂的协议逻辑，只需以面向串口助手的编程方式，就能获得强大的数据可视化、数据分析、使用控件发送指令的能力；
+拥有一个可裁剪的系统，"丰俭由人"。通过添加控件的方式，工程师可以定制一个无限丰富的调试界面；
+拥有一个开放、开源的插件系统：
+用户可以定制符合自己需求的协议和控件；
+通过开源社区的力量，VOFA+的调试生态可以不断发展繁荣。
+
+图5.1 VOFA+优势
+
+图5.1 VOFA+调试截图
+当然除了用vofa+调试，我们也会通过ips屏幕复现轨迹，与原先预定的轨迹做对比最后再根据实际情况来修改参数，让实际轨迹不断接近原先预定的轨迹
+
+
+第六章 车模技术参数说明
+
+
+
+第七章 结论
+本报告详细介绍了我们为第二十一届全国大学生智能汽车大赛而准备的智 能车系统方案:主板，电调，PID算法实现前打角以及速度控制算法的实现。分析整个车模系统，我们在车模硬件及软件上都有许多改进与创新。系统上主要有以下特色:
+1)采用编码器，陀螺仪作为传感器，通过航向角和等时间走过的距离来记录赛道长度，在经过特殊的元素时结合摄像头传感器进行元素的辅助判断，提高了判断的进度
+2)主板，电调采用可插拔的接口，方便电路的升级和局部维修，同时也降低了成本，同时 PCB 全部用螺丝固定方便拆卸，板间全部用zh型排线连接，方便更换且走线简洁。
+3)完全按照自己的需求定制了主板和电调。主板和电调集成度非常高，极大的减轻了重量和减小了体积，方便机械布局。
+4)增加了按键与TFT辅助调试电路。配合队员的临场发挥，增强了小车对赛道的适应能力。
+5)依照自己的需求定制了防撞条以及调节了小车的前桥和后桥和小车重心位置，使得小车在经过特殊元素的时候不至于翻车，且提高了小车转弯的灵活性
+整个程序的控制部分只开启一个定时中断，控制步骤简单，容易调试。
+
+参考文献
+[1]  潘松，黄继业 现代数字电路基础教程 北京-科学出版社 2008
+[2]  王水平 开关稳压电源原理及设计 北京-人民邮电出版社 2008 [9] TI 公司 Use of Rail-to-Rail Operational Amplifiers / Application Report 1999
+[3] 杨东轩，王嵩  《ARM Cortex-M4 自学笔记——基于 Kinetis K60》  北京-北京航空航天大学出版社
+[4] 邵贝贝. 单片机嵌入式应用的在线开发方法. 北京-清华大学出版 社 2004  年 10 月第1版
+[5] 卓晴，黄开胜，邵贝贝 学做智能车 北京-北京航空航天大学出版 社 2007
+[6] 王威 HCS12 微控制器原理及应用 北京-北京航空航天大学出版 社 2007
+[7] 李宁， 刘启新 电机自动控制系统 北京-机械工业出版社， 2003 [6]  谭浩强 C++ 程序设计 北京-清华大学出版社 2004
+[8] 钱江一号 第六届 "飞思卡尔" 杯全国大学生智能车大赛技术报告杭州电子科技大学 2011
+ [9] 韩绍坤，许向阳，王晓华编。 自动控制原理。北京理工大学出版社， 2009
+[10] PCB LAYOUT高速信号走线指南(PCB LAYOUT高速信号走线指南_spi等长布线-CSDN博客)( https://blog.csdn.net/weixin_48518775/article/details/129620351)
+[11] 郭景华, 罗禹贡, 李克强，智能车辆运动控制系统协同设计
+
+
+
+附录 A 部分主板原理图
+
+
+图  A-1
+
+附录 B 部分程序源代码
+/*
+ * menu.c
+ *
+ *  Created on: 2025年7月13日
+ *      Author: aa
+ */
+#include "menu.h"
+
+int func_index = 1; //初始显示欢迎界面
+int last_index = 250; //定义上电值初始化和初始值不一样即可
+int arrow_key=0,last_arrow_key=1;
+uint8 clear_flag=0;
+uint8 draw_flag=0;
+uint8 SUB_remember_flag=0;
+uint8 SUB3_change_flag=1;
+void (*current_operation_index)(); //定义一个函数指针
+
+typedef struct
+{
+    int  current;
+    int  arrow;//箭头号
+    int  up;//向上翻索引号
+    int  down;//向下翻索引号
+    int  enter;//确认索引号
+    void (*current_operation)();
+} key_table;
+
+
+key_table table[400]=
+{
+        {gogogo,  Y_0,  gogogo,  gogogo,  Balence,  (*go)},
+    //第一层
+        {Balence          ,  N_0,  Test             ,  Subject1         ,  MENU_ka               ,  (*main_menue)},
+        {Subject1         ,  N_1,  Balence          ,  Subject2         ,  MENU_SB1_Map_draw     ,  (*main_menue)},
+        {Subject2         ,  N_2,  Subject1         ,  Subject3         ,  MENU_SB2_Map_draw     ,  (*main_menue)},
+        {Subject3         ,  N_3,  Subject2         ,  Subject4         ,  MENU_SB3_Map_draw     ,  (*main_menue)},
+        {Subject4         ,  N_4,  Subject3         ,  show_imu_data    ,  Subject4              ,  (*main_menue)},
+        {show_imu_data    ,  N_5,  Subject4         ,  MENU_clear_offset,  SUB_MENU_show_imu_data,  (*main_menue)},
+        {MENU_clear_offset,  N_6,  show_imu_data    ,  Test             ,  SUB_MENU_clear_offset ,  (*main_menue)},  //第二层
+        {Test             ,  N_7,  MENU_clear_offset,  Balence          ,  SUB_Test_speed        ,  (*main_menue)},
+
+    //Test
+        {SUB_Test_speed,  Y_0,  SUB_Test_back ,  SUB_if_Test   ,  SUB_Test_speed,  (*Test_mode)},
+        {SUB_if_Test   ,  Y_1,  SUB_Test_speed,  SUB_Test_back ,  SUB_if_Test   ,  (*Test_mode)},
+        {SUB_Test_back ,  Y_2,  SUB_if_Test   ,  SUB_Test_speed,  Test          ,  (*Test_mode)},
+
+    //balence
+        {MENU_ka           ,  Y_0 ,  MENU_IMU_BZCK     ,  MENU_balence_kp   ,  MENU_ka           ,  (*IMU_menue)},
+        {MENU_balence_kp   ,  Y_1 ,  MENU_ka           ,  MENU_balence_kd   ,  MENU_balence_kp   ,  (*IMU_menue)},
+        {MENU_balence_kd   ,  Y_2 ,  MENU_balence_kp   ,  MENU_balence_ki   ,  MENU_balence_kd   ,  (*IMU_menue)},
+        {MENU_balence_ki   ,  Y_3 ,  MENU_balence_kd   ,  MENU_out_kp       ,  MENU_balence_ki   ,  (*IMU_menue)},
+        {MENU_out_kp       ,  Y_4 ,  MENU_balence_ki       ,  MENU_out_kd       ,  MENU_out_kp       ,  (*IMU_menue)},
+        {MENU_out_kd       ,  Y_5 ,  MENU_out_kp       ,  MENU_speed_kp     ,  MENU_out_kd       ,  (*IMU_menue)},
+        {MENU_speed_kp     ,  Y_6 ,  MENU_out_kd       ,  MENU_speed_ki     ,  MENU_speed_kp     ,  (*IMU_menue)},
+        {MENU_speed_ki     ,  Y_7 ,  MENU_speed_kp     ,  MENU_jczz         ,  MENU_speed_ki     ,  (*IMU_menue)},
+        {MENU_jczz         ,  Y_8,  MENU_speed_ki     ,  MENU_balence_qk   ,  MENU_jczz         ,  (*IMU_menue)},
+        {MENU_balence_qk   ,  Y_9,  MENU_jczz         ,  MENU_balence_speed,  MENU_balence_qk   ,  (*IMU_menue)},
+        {MENU_balence_speed,  Y_10,  MENU_balence_qk   ,  MENU_control_mode ,  MENU_balence_speed,  (*IMU_menue)},
+        {MENU_control_mode ,  Y_11,  MENU_balence_speed,  MENU_test_run     ,  MENU_control_mode ,  (*IMU_menue)},
+        {MENU_test_run     ,  Y_12,  MENU_control_mode ,  MENU_IMU_BZCK     ,  SUB_MENU_test_run ,  (*IMU_menue)},
+        {MENU_IMU_BZCK     ,  Y_13,  MENU_test_run     ,  MENU_ka           ,  Balence           ,  (*IMU_menue)},
+    //sb1
+        {MENU_SB1_Map_draw        ,  Y_1 ,  MENU_SB1_Map_back        ,  MENU_SB1_Map_remember    ,  SUB_MENU_SB1_Map_draw              ,  (*SUB1_Map)},
+        {MENU_SB1_Map_remember    ,  Y_2 ,  MENU_SB1_Map_draw        ,  MENU_SB1_Map_run         ,  SUB_MENU_SB1_Map_remember          ,  (*SUB1_Map)},
+        {MENU_SB1_Map_run         ,  Y_3 ,  MENU_SB1_Map_remember    ,  MENU_SB1_Map_change      ,  SUB_MENU_SB1_Map_run               ,  (*SUB1_Map)},
+        {MENU_SB1_Map_change      ,  Y_4 ,  MENU_SB1_Map_run         ,  MENU_SB1_Map_save        ,  MENU_SB1_Map_change_SUB1_turn_angle,  (*SUB1_Map)},
+        {MENU_SB1_Map_save        ,  Y_5 ,  MENU_SB1_Map_change      ,  MENU_SB1_Map_read        ,  SUB_MENU_SB1_Map_save              ,  (*SUB1_Map)},
+        {MENU_SB1_Map_read        ,  Y_6 ,  MENU_SB1_Map_save        ,  MENU_SB1_Map_slow        ,  SUB_MENU_SB1_Map_read              ,  (*SUB1_Map)},
+        {MENU_SB1_Map_slow        ,  Y_7 ,  MENU_SB1_Map_read        ,  MENU_SB1_Map_middle      ,  SUB_MENU_SB1_Map_slow              ,  (*SUB1_Map)},
+        {MENU_SB1_Map_middle      ,  Y_8 ,  MENU_SB1_Map_slow        ,  MENU_SB1_Map_fast        ,  SUB_MENU_SB1_Map_middle            ,  (*SUB1_Map)},
+        {MENU_SB1_Map_fast        ,  Y_9 ,  MENU_SB1_Map_middle      ,  MENU_SB1_Map_clear_offset,  SUB_MENU_SB1_Map_fast              ,  (*SUB1_Map)},
+        {MENU_SB1_Map_clear_offset,  Y_10,  MENU_SB1_Map_fast        ,  MENU_SB1_Map_show_imu    ,  SUB_MENU_SB1_Map_clear_offset      ,  (*SUB1_Map)},
+        {MENU_SB1_Map_show_imu    ,  Y_11,  MENU_SB1_Map_clear_offset,  MENU_SB1_Map_back        ,  SUB_MENU_SB1_Map_show_imu          ,  (*SUB1_Map)},
+        {MENU_SB1_Map_back        ,  Y_12,  MENU_SB1_Map_show_imu    ,  MENU_SB1_Map_draw        ,  Subject1                           ,  (*SUB1_Map)},
+
+    //sb2
+        {MENU_SB2_Map_draw        ,  Y_1 ,  MENU_SB2_Map_back        ,  MENU_SB2_Map_run         ,  SUB_MENU_SB2_Map_draw        ,  (*SUB2_Map)},
+        {MENU_SB2_Map_run         ,  Y_2 ,  MENU_SB2_Map_draw        ,  MENU_SB2_Map_change      ,  SUB_MENU_SB2_Map_run         ,  (*SUB2_Map)},
+        {MENU_SB2_Map_change      ,  Y_3 ,  MENU_SB2_Map_run         ,  MENU_SB2_Map_save        ,  MENU_SB2_Map_change_SUB2_qz  ,  (*SUB2_Map)},
+        {MENU_SB2_Map_save        ,  Y_4 ,  MENU_SB2_Map_change      ,  MENU_SB2_Map_read        ,  SUB_MENU_SB2_Map_save        ,  (*SUB2_Map)},
+        {MENU_SB2_Map_read        ,  Y_5 ,  MENU_SB2_Map_save        ,  MENU_SB2_Map_slow        ,  SUB_MENU_SB2_Map_read        ,  (*SUB2_Map)},
+        {MENU_SB2_Map_slow        ,  Y_6 ,  MENU_SB2_Map_read        ,  MENU_SB2_Map_middle      ,  SUB_MENU_SB2_Map_slow        ,  (*SUB2_Map)},
+        {MENU_SB2_Map_middle      ,  Y_7 ,  MENU_SB2_Map_slow        ,  MENU_SB2_Map_fast        ,  SUB_MENU_SB2_Map_middle      ,  (*SUB2_Map)},
+        {MENU_SB2_Map_fast        ,  Y_8 ,  MENU_SB2_Map_middle      ,  MENU_SB2_Map_clear_offset,  SUB_MENU_SB2_Map_fast        ,  (*SUB2_Map)},
+        {MENU_SB2_Map_clear_offset,  Y_9 ,  MENU_SB2_Map_fast        ,  MENU_SB2_Map_show_imu    ,  SUB_MENU_SB2_Map_clear_offset,  (*SUB2_Map)},
+        {MENU_SB2_Map_show_imu    ,  Y_10,  MENU_SB2_Map_clear_offset,  MENU_SB2_Map_back        ,  SUB_MENU_SB2_Map_show_imu    ,  (*SUB2_Map)},
+        {MENU_SB2_Map_back        ,  Y_11,  MENU_SB2_Map_show_imu    ,  MENU_SB2_Map_draw        ,  Subject2                     ,  (*SUB2_Map)},
+
+    //sb3
+        {MENU_SB3_Map_draw        ,  Y_1 ,  MENU_SB3_Map_back        ,  MENU_SB3_Map_remember    ,  SUB_MENU_SB3_Map_draw        ,  (*SUB3_Map)},
+        {MENU_SB3_Map_remember    ,  Y_2 ,  MENU_SB3_Map_draw        ,  MENU_SB3_Map_run         ,  SUB_MENU_SB3_Map_remember    ,  (*SUB3_Map)},
+        {MENU_SB3_Map_run         ,  Y_3 ,  MENU_SB3_Map_remember    ,  MENU_SB3_Map_change      ,  SUB_MENU_SB3_Map_run         ,  (*SUB3_Map)},
+        {MENU_SB3_Map_change      ,  Y_4 ,  MENU_SB3_Map_run         ,  MENU_SB3_Map_chang2      ,  MENU_SB3_Map_change_SUB3_qz  ,  (*SUB3_Map)},
+        {MENU_SB3_Map_chang2      ,  Y_5 ,  MENU_SB3_Map_change      ,  MENU_SB3_Map_save        ,  MENU_SB3_Map_change_SUB3_len ,  (*SUB3_Map)},
+        {MENU_SB3_Map_save        ,  Y_6 ,  MENU_SB3_Map_chang2      ,  MENU_SB3_Map_read        ,  SUB_MENU_SB3_Map_save        ,  (*SUB3_Map)},
+        {MENU_SB3_Map_read        ,  Y_7 ,  MENU_SB3_Map_save        ,  MENU_SB3_Map_slow,  SUB_MENU_SB3_Map_read        ,  (*SUB3_Map)},
+        {MENU_SB3_Map_slow        ,  Y_8 ,  MENU_SB3_Map_read        ,  MENU_SB3_Map_middle      ,  SUB_MENU_SB3_Map_slow        ,  (*SUB3_Map)},
+        {MENU_SB3_Map_middle      ,  Y_9 ,  MENU_SB3_Map_slow        ,  MENU_SB3_Map_fast        ,  SUB_MENU_SB3_Map_middle      ,  (*SUB3_Map)},
+        {MENU_SB3_Map_fast        ,  Y_10 ,  MENU_SB3_Map_middle      ,  MENU_SB3_Map_clear_offset,  SUB_MENU_SB3_Map_fast        ,  (*SUB3_Map)},
+        {MENU_SB3_Map_clear_offset,  Y_11 ,  MENU_SB3_Map_fast        ,  MENU_SB3_Map_show_imu    ,  SUB_MENU_SB3_Map_clear_offset,  (*SUB3_Map)},
+        {MENU_SB3_Map_show_imu    ,  Y_12 ,  MENU_SB3_Map_clear_offset,  MENU_SB3_Map_back        ,  SUB_MENU_SB3_Map_show_imu    ,  (*SUB3_Map)},
+        {MENU_SB3_Map_back        ,  Y_13,  MENU_SB3_Map_show_imu    ,  MENU_SB3_Map_draw        ,  Subject3                     ,  (*SUB3_Map)},
+
+
+    //balence
+        {SUB_MENU_show_imu_data,  Y_0,  SUB_MENU_show_imu_data,  SUB_MENU_show_imu_data,  Balence,  (*show_imu)},
+        {SUB_MENU_clear_offset ,  Y_0,  SUB_MENU_clear_offset ,  SUB_MENU_clear_offset ,  Balence,  (*IMU_Init)},
+        {SUB_MENU_test_run     ,  Y_0,  SUB_MENU_test_run     ,  SUB_MENU_test_run     ,  MENU_ka,  (*t_run)   },
+    //SUB SUB1
+        {SUB_MENU_SB1_Map_draw        ,  Y_0,  SUB_MENU_SB1_Map_draw        ,  SUB_MENU_SB1_Map_draw        ,  MENU_SB1_Map_draw        ,  (*SUB1_Map_draw)},
+        {SUB_MENU_SB1_Map_remember    ,  Y_0,  SUB_MENU_SB1_Map_remember    ,  SUB_MENU_SB1_Map_remember    ,  MENU_SB1_Map_draw        ,  (*SUB1_remember)},
+        {SUB_MENU_SB1_Map_run         ,  Y_0,  SUB_MENU_SB1_Map_run         ,  SUB_MENU_SB1_Map_run         ,  MENU_SB1_Map_draw        ,  (*SUB1_run)     },
+        {SUB_MENU_SB1_Map_save        ,  Y_0,  SUB_MENU_SB1_Map_save        ,  SUB_MENU_SB1_Map_save        ,  MENU_SB1_Map_draw        ,  (*SUB1_Save)    },
+        {SUB_MENU_SB1_Map_read        ,  Y_0,  SUB_MENU_SB1_Map_read        ,  SUB_MENU_SB1_Map_read        ,  MENU_SB1_Map_draw        ,  (*SUB1_Read)    },
+        {SUB_MENU_SB1_Map_slow        ,  Y_0,  SUB_MENU_SB1_Map_slow        ,  SUB_MENU_SB1_Map_slow        ,  MENU_SB1_Map_draw        ,  (*SUB1_slow)    },
+        {SUB_MENU_SB1_Map_middle      ,  Y_0,  SUB_MENU_SB1_Map_middle      ,  SUB_MENU_SB1_Map_middle      ,  MENU_SB1_Map_draw        ,  (*SUB1_middle)  },
+        {SUB_MENU_SB1_Map_fast        ,  Y_0,  SUB_MENU_SB1_Map_fast        ,  SUB_MENU_SB1_Map_fast        ,  MENU_SB1_Map_draw        ,  (*SUB1_fast)    },
+        {SUB_MENU_SB1_Map_clear_offset,  Y_0,  SUB_MENU_SB1_Map_clear_offset,  SUB_MENU_SB1_Map_clear_offset,  SUB_MENU_SB1_Map_show_imu,  (*IMU_Init)     },
+        {SUB_MENU_SB1_Map_show_imu    ,  Y_0,  SUB_MENU_SB1_Map_show_imu    ,  SUB_MENU_SB1_Map_show_imu    ,  MENU_SB1_Map_run         ,  (*show_imu)     },
+
+    //SUB1 change
+        {MENU_SB1_Map_change_SUB1_turn_angle ,  Y_0 ,  MENU_SB1_Map_change_back            ,  MENU_SB1_Map_change_sub1_len        ,  MENU_SB1_Map_change_SUB1_turn_angle ,  (*SUB1_change)},
+        {MENU_SB1_Map_change_sub1_len        ,  Y_1 ,  MENU_SB1_Map_change_SUB1_turn_angle ,  MENU_SB1_Map_change_SUB1_slow_qz    ,  MENU_SB1_Map_change_sub1_len        ,  (*SUB1_change)},
+        {MENU_SB1_Map_change_SUB1_slow_qz    ,  Y_2 ,  MENU_SB1_Map_change_sub1_len        ,  MENU_SB1_Map_change_SUB1_slow_len   ,  MENU_SB1_Map_change_SUB1_slow_qz    ,  (*SUB1_change)},
+        {MENU_SB1_Map_change_SUB1_slow_len   ,  Y_3 ,  MENU_SB1_Map_change_SUB1_slow_qz    ,  MENU_SB1_Map_change_angle_speed_K   ,  MENU_SB1_Map_change_SUB1_slow_len   ,  (*SUB1_change)},
+        {MENU_SB1_Map_change_angle_speed_K   ,  Y_4 ,  MENU_SB1_Map_change_SUB1_slow_len   ,  MENU_SB1_Map_change_SUB1_state_count,  MENU_SB1_Map_change_angle_speed_K   ,  (*SUB1_change)},
+        {MENU_SB1_Map_change_SUB1_state_count,  Y_5 ,  MENU_SB1_Map_change_angle_speed_K   ,  MENU_SB1_Map_change_sub1_balence_kp ,  MENU_SB1_Map_change_SUB1_state_count,  (*SUB1_change)},
+        {MENU_SB1_Map_change_sub1_balence_kp ,  Y_6 ,  MENU_SB1_Map_change_SUB1_state_count,  MENU_SB1_Map_change_sub1_balence_kd ,  MENU_SB1_Map_change_sub1_balence_kp ,  (*SUB1_change)},
+        {MENU_SB1_Map_change_sub1_balence_kd ,  Y_7 ,  MENU_SB1_Map_change_sub1_balence_kp ,  MENU_SB1_Map_change_sub1_balence_ki ,  MENU_SB1_Map_change_sub1_balence_kd ,  (*SUB1_change)},
+        {MENU_SB1_Map_change_sub1_balence_ki ,  Y_8 ,  MENU_SB1_Map_change_sub1_balence_kd ,  MENU_SB1_Map_change_sub1_outkp      ,  MENU_SB1_Map_change_sub1_balence_ki ,  (*SUB1_change)},
+        {MENU_SB1_Map_change_sub1_outkp      ,  Y_9 ,  MENU_SB1_Map_change_sub1_balence_ki ,  MENU_SB1_Map_change_sub1_outkd      ,  MENU_SB1_Map_change_sub1_outkp      ,  (*SUB1_change)},
+        {MENU_SB1_Map_change_sub1_outkd      ,  Y_10,  MENU_SB1_Map_change_sub1_outkp      ,  MENU_SB1_Map_change_sub1_outki      ,  MENU_SB1_Map_change_sub1_outkd      ,  (*SUB1_change)},
+        {MENU_SB1_Map_change_sub1_outki      ,  Y_11,  MENU_SB1_Map_change_sub1_outkd      ,  MENU_SB1_Map_change_sub1_Woutkp     ,  MENU_SB1_Map_change_sub1_outki      ,  (*SUB1_change)},
+        {MENU_SB1_Map_change_sub1_Woutkp     ,  Y_12,  MENU_SB1_Map_change_sub1_outki      ,  MENU_SB1_Map_change_sub1_Woutkd     ,  MENU_SB1_Map_change_sub1_Woutkp     ,  (*SUB1_change)},
+        {MENU_SB1_Map_change_sub1_Woutkd     ,  Y_13,  MENU_SB1_Map_change_sub1_Woutkp     ,  MENU_SB1_Map_change_sub1_Woutki     ,  MENU_SB1_Map_change_sub1_Woutkd     ,  (*SUB1_change)},
+        {MENU_SB1_Map_change_sub1_Woutki     ,  Y_14,  MENU_SB1_Map_change_sub1_Woutkd     ,  MENU_SB1_Map_change_sub1_Wbalence_kp,  MENU_SB1_Map_change_sub1_Woutki     ,  (*SUB1_change)},
+        {MENU_SB1_Map_change_sub1_Wbalence_kp,  Y_15,  MENU_SB1_Map_change_sub1_Woutki     ,  MENU_SB1_Map_change_sub1_Wbalence_kd,  MENU_SB1_Map_change_sub1_Wbalence_kp,  (*SUB1_change)},
+        {MENU_SB1_Map_change_sub1_Wbalence_kd,  Y_16,  MENU_SB1_Map_change_sub1_Wbalence_kp,  MENU_SB1_Map_change_sub1_Wbalence_ki,  MENU_SB1_Map_change_sub1_Wbalence_kd,  (*SUB1_change)},
+        {MENU_SB1_Map_change_sub1_Wbalence_ki,  Y_17,  MENU_SB1_Map_change_sub1_Wbalence_kd,  MENU_SB1_Map_change_Wsub1_speed_kp  ,  MENU_SB1_Map_change_sub1_Wbalence_ki,  (*SUB1_change)},
+        {MENU_SB1_Map_change_Wsub1_speed_kp  ,  Y_18,  MENU_SB1_Map_change_sub1_Wbalence_ki,  MENU_SB1_Map_change_Wsub1_speed_ki  ,  MENU_SB1_Map_change_Wsub1_speed_kp  ,  (*SUB1_change)},
+        {MENU_SB1_Map_change_Wsub1_speed_ki  ,  Y_19,  MENU_SB1_Map_change_Wsub1_speed_kp  ,  MENU_SB1_Map_change_Wsub1_SUB_speed ,  MENU_SB1_Map_change_Wsub1_speed_ki  ,  (*SUB1_change)},
+        {MENU_SB1_Map_change_Wsub1_SUB_speed ,  Y_20,  MENU_SB1_Map_change_Wsub1_speed_ki  ,  MENU_SB1_Map_change_Wsub1_WSUB_speed,  MENU_SB1_Map_change_Wsub1_SUB_speed ,  (*SUB1_change)},
+        {MENU_SB1_Map_change_Wsub1_WSUB_speed,  Y_21,  MENU_SB1_Map_change_Wsub1_SUB_speed ,  MENU_SB1_Map_change_back            ,  MENU_SB1_Map_change_Wsub1_WSUB_speed,  (*SUB1_change)},
+        {MENU_SB1_Map_change_back            ,  Y_22,  MENU_SB1_Map_change_Wsub1_WSUB_speed,  MENU_SB1_Map_change_SUB1_turn_angle ,  MENU_SB1_Map_change                 ,  (*SUB1_change)},
+    //SUB SUB2
+        {SUB_MENU_SB2_Map_draw        ,  Y_0,  SUB_MENU_SB2_Map_draw        ,  SUB_MENU_SB2_Map_draw        ,  MENU_SB2_Map_draw        ,  (*SUB2_Map_draw)},
+        {SUB_MENU_SB2_Map_run         ,  Y_0,  SUB_MENU_SB2_Map_run         ,  SUB_MENU_SB2_Map_run         ,  MENU_SB2_Map_draw        ,  (*SUB2_run)     },
+        {SUB_MENU_SB2_Map_save        ,  Y_0,  SUB_MENU_SB2_Map_save        ,  SUB_MENU_SB2_Map_save        ,  MENU_SB2_Map_draw        ,  (*SUB2_Save)    },
+        {SUB_MENU_SB2_Map_read        ,  Y_0,  SUB_MENU_SB2_Map_read        ,  SUB_MENU_SB2_Map_read        ,  MENU_SB2_Map_draw        ,  (*SUB2_Read)    },
+        {SUB_MENU_SB2_Map_slow        ,  Y_0,  SUB_MENU_SB2_Map_slow        ,  SUB_MENU_SB2_Map_slow        ,  MENU_SB2_Map_draw        ,  (*SUB2_slow)    },
+        {SUB_MENU_SB2_Map_middle      ,  Y_0,  SUB_MENU_SB2_Map_middle      ,  SUB_MENU_SB2_Map_middle      ,  MENU_SB2_Map_draw        ,  (*SUB2_middle)  },
+        {SUB_MENU_SB2_Map_fast        ,  Y_0,  SUB_MENU_SB2_Map_fast        ,  SUB_MENU_SB2_Map_fast        ,  MENU_SB2_Map_draw        ,  (*SUB2_fast)    },
+        {SUB_MENU_SB2_Map_clear_offset,  Y_0,  SUB_MENU_SB2_Map_clear_offset,  SUB_MENU_SB2_Map_clear_offset,  SUB_MENU_SB2_Map_show_imu,  (*IMU_Init)     },
+        {SUB_MENU_SB2_Map_show_imu    ,  Y_0,  SUB_MENU_SB2_Map_show_imu    ,  SUB_MENU_SB2_Map_show_imu    ,  MENU_SB2_Map_run         ,  (*show_imu)     },
+    //SUB2 change
+        {MENU_SB2_Map_change_SUB2_qz       ,  Y_0 ,  MENU_SB2_Map_change_back          ,  MENU_SB2_Map_change_SUB2_speed    ,  MENU_SB2_Map_change_SUB2_qz       ,  (*SUB2_change)},
+        {MENU_SB2_Map_change_SUB2_speed    ,  Y_1 ,  MENU_SB2_Map_change_SUB2_qz       ,  MENU_SB2_Map_change_SUB2_qk       ,  MENU_SB2_Map_change_SUB2_speed    ,  (*SUB2_change)},
+        {MENU_SB2_Map_change_SUB2_qk       ,  Y_2 ,  MENU_SB2_Map_change_SUB2_speed    ,  MENU_SB2_Map_change_sub2_balencekp,  MENU_SB2_Map_change_SUB2_qk       ,  (*SUB2_change)},
+        {MENU_SB2_Map_change_sub2_balencekp,  Y_3 ,  MENU_SB2_Map_change_SUB2_qk       ,  MENU_SB2_Map_change_sub2_balenceki,  MENU_SB2_Map_change_sub2_balencekp,  (*SUB2_change)},
+        {MENU_SB2_Map_change_sub2_balenceki,  Y_4 ,  MENU_SB2_Map_change_sub2_balencekp,  MENU_SB2_Map_change_sub2_balencekd,  MENU_SB2_Map_change_sub2_balenceki,  (*SUB2_change)},
+        {MENU_SB2_Map_change_sub2_balencekd,  Y_5 ,  MENU_SB2_Map_change_sub2_balenceki,  MENU_SB2_Map_change_sub2_yawkd    ,  MENU_SB2_Map_change_sub2_balencekd,  (*SUB2_change)},
+        {MENU_SB2_Map_change_sub2_yawkd,  Y_6 ,  MENU_SB2_Map_change_sub2_balencekd,  MENU_SB2_Map_change_sub2_outkp    ,  MENU_SB2_Map_change_sub2_yawkd,  (*SUB2_change)},
+        {MENU_SB2_Map_change_sub2_outkp    ,  Y_7 ,  MENU_SB2_Map_change_sub2_yawkd,  MENU_SB2_Map_change_sub2_outkd    ,  MENU_SB2_Map_change_sub2_outkp    ,  (*SUB2_change)},
+        {MENU_SB2_Map_change_sub2_outkd    ,  Y_8 ,  MENU_SB2_Map_change_sub2_outkp    ,  MENU_SB2_Map_change_sub2_speed_kp ,  MENU_SB2_Map_change_sub2_outkd    ,  (*SUB2_change)},
+        {MENU_SB2_Map_change_sub2_speed_kp ,  Y_9 ,  MENU_SB2_Map_change_sub2_outkd    ,  MENU_SB2_Map_change_sub2_speed_ki ,  MENU_SB2_Map_change_sub2_speed_kp ,  (*SUB2_change)},
+        {MENU_SB2_Map_change_sub2_speed_ki ,  Y_10 ,  MENU_SB2_Map_change_sub2_speed_kp ,  MENU_SB2_Map_change_y0            ,  MENU_SB2_Map_change_sub2_speed_ki ,  (*SUB2_change)},
+        {MENU_SB2_Map_change_y0            ,  Y_11,  MENU_SB2_Map_change_sub2_speed_ki ,  MENU_SB2_Map_change_y1            ,  MENU_SB2_Map_change_y0            ,  (*SUB2_change)},
+        {MENU_SB2_Map_change_y1            ,  Y_12,  MENU_SB2_Map_change_y0            ,  MENU_SB2_Map_change_y2            ,  MENU_SB2_Map_change_y1            ,  (*SUB2_change)},
+        {MENU_SB2_Map_change_y2            ,  Y_13,  MENU_SB2_Map_change_y1            ,  MENU_SB2_Map_change_y3            ,  MENU_SB2_Map_change_y2            ,  (*SUB2_change)},
+        {MENU_SB2_Map_change_y3            ,  Y_14,  MENU_SB2_Map_change_y2            ,  MENU_SB2_Map_change_y4            ,  MENU_SB2_Map_change_y3            ,  (*SUB2_change)},
+        {MENU_SB2_Map_change_y4            ,  Y_15,  MENU_SB2_Map_change_y2            ,  MENU_SB2_Map_change_W0            ,  MENU_SB2_Map_change_y4            ,  (*SUB2_change)},
+        {MENU_SB2_Map_change_W0            ,  Y_16,  MENU_SB2_Map_change_y4            ,  MENU_SB2_Map_change_W1            ,  MENU_SB2_Map_change_W0            ,  (*SUB2_change)},
+        {MENU_SB2_Map_change_W1            ,  Y_17,  MENU_SB2_Map_change_W0            ,  MENU_SB2_Map_change_W2            ,  MENU_SB2_Map_change_W1            ,  (*SUB2_change)},
+        {MENU_SB2_Map_change_W2            ,  Y_18,  MENU_SB2_Map_change_W1            ,  MENU_SB2_Map_change_W3            ,  MENU_SB2_Map_change_W2            ,  (*SUB2_change)},
+        {MENU_SB2_Map_change_W3            ,  Y_19,  MENU_SB2_Map_change_W2            ,  MENU_SB2_Map_change_back          ,  MENU_SB2_Map_change_W3            ,  (*SUB2_change)},
+        {MENU_SB2_Map_change_back          ,  Y_20,  MENU_SB2_Map_change_W3            ,  MENU_SB2_Map_change_SUB2_qz       ,  MENU_SB2_Map_change               ,  (*SUB2_change)},
+
+    //SUB3
+        {SUB_MENU_SB3_Map_draw        ,  Y_0,  SUB_MENU_SB3_Map_draw        ,  SUB_MENU_SB3_Map_draw        ,  MENU_SB3_Map_draw        ,  (*SUB3_Map_draw)},
+        {SUB_MENU_SB3_Map_remember    ,  Y_0,  SUB_MENU_SB3_Map_remember    ,  SUB_MENU_SB3_Map_remember    ,  MENU_SB3_Map_draw        ,  (*SUB3_remember)},
+        {SUB_MENU_SB3_Map_run         ,  Y_0,  SUB_MENU_SB3_Map_run         ,  SUB_MENU_SB3_Map_run         ,  MENU_SB3_Map_draw        ,  (*SUB3_run)     },
+        {SUB_MENU_SB3_Map_save        ,  Y_0,  SUB_MENU_SB3_Map_save        ,  SUB_MENU_SB3_Map_save        ,  MENU_SB3_Map_draw        ,  (*SUB3_Save)    },
+        {SUB_MENU_SB3_Map_read        ,  Y_0,  SUB_MENU_SB3_Map_read        ,  SUB_MENU_SB3_Map_read        ,  MENU_SB3_Map_draw        ,  (*SUB3_Read)    },
+        {SUB_MENU_SB3_Map_slow        ,  Y_0,  SUB_MENU_SB3_Map_slow        ,  SUB_MENU_SB3_Map_slow        ,  MENU_SB3_Map_draw        ,  (*SUB3_slow)    },
+        {SUB_MENU_SB3_Map_middle      ,  Y_0,  SUB_MENU_SB3_Map_middle      ,  SUB_MENU_SB3_Map_middle      ,  MENU_SB3_Map_draw        ,  (*SUB3_middle)  },
+        {SUB_MENU_SB3_Map_fast        ,  Y_0,  SUB_MENU_SB3_Map_fast        ,  SUB_MENU_SB3_Map_fast        ,  MENU_SB3_Map_draw        ,  (*SUB3_fast)    },
+        {SUB_MENU_SB3_Map_clear_offset,  Y_0,  SUB_MENU_SB3_Map_clear_offset,  SUB_MENU_SB3_Map_clear_offset,  SUB_MENU_SB3_Map_show_imu,  (*IMU_Init)     },
+        {SUB_MENU_SB3_Map_show_imu    ,  Y_0,  SUB_MENU_SB3_Map_show_imu    ,  SUB_MENU_SB3_Map_show_imu    ,  MENU_SB3_Map_run         ,  (*show_imu)     },
+
+    //SUB3change
+        {MENU_SB3_Map_change_SUB3_qz            ,  Y_0 ,  MENU_SB3_Map_change_back               ,  MENU_SB3_Map_change_SUB3_turn_angle    ,  MENU_SB3_Map_change_SUB3_qz            ,  (*SUB3_change)},
+        {MENU_SB3_Map_change_SUB3_turn_angle    ,  Y_1 ,  MENU_SB3_Map_change_SUB3_qz            ,  MENU_SB3_Map_change_SUB3_speed         ,  MENU_SB3_Map_change_SUB3_turn_angle    ,  (*SUB3_change)},
+        {MENU_SB3_Map_change_SUB3_speed         ,  Y_2 ,  MENU_SB3_Map_change_SUB3_turn_angle    ,  MENU_SB3_Map_change_WSUB3_speed        ,  MENU_SB3_Map_change_SUB3_speed         ,  (*SUB3_change)},
+        {MENU_SB3_Map_change_WSUB3_speed        ,  Y_3 ,  MENU_SB3_Map_change_SUB3_speed         ,  MENU_SB3_Map_change_diao_speed         ,  MENU_SB3_Map_change_WSUB3_speed        ,  (*SUB3_change)},
+        {MENU_SB3_Map_change_diao_speed         ,  Y_4 ,  MENU_SB3_Map_change_WSUB3_speed        ,  MENU_SB3_Map_change_po_speed           ,  MENU_SB3_Map_change_diao_speed         ,  (*SUB3_change)},
+        {MENU_SB3_Map_change_po_speed           ,  Y_5 ,  MENU_SB3_Map_change_diao_speed         ,  MENU_SB3_Map_change_SUB3_zhui_count    ,  MENU_SB3_Map_change_po_speed           ,  (*SUB3_change)},
+        {MENU_SB3_Map_change_SUB3_zhui_count    ,  Y_6 ,  MENU_SB3_Map_change_po_speed           ,  MENU_SB3_Map_change_SUB3_SUB3_right    ,  MENU_SB3_Map_change_SUB3_zhui_count    ,  (*SUB3_change)},
+        {MENU_SB3_Map_change_SUB3_SUB3_right    ,  Y_7 ,  MENU_SB3_Map_change_SUB3_zhui_count    ,  MENU_SB3_Map_change_sub3_balencekp     ,  MENU_SB3_Map_change_SUB3_SUB3_right    ,  (*SUB3_change)},
+        {MENU_SB3_Map_change_sub3_balencekp     ,  Y_8 ,  MENU_SB3_Map_change_SUB3_SUB3_right    ,  MENU_SB3_Map_change_sub3_balenceki     ,  MENU_SB3_Map_change_sub3_balencekp     ,  (*SUB3_change)},
+        {MENU_SB3_Map_change_sub3_balenceki     ,  Y_9 ,  MENU_SB3_Map_change_sub3_balencekp     ,  MENU_SB3_Map_change_sub3_balencekd     ,  MENU_SB3_Map_change_sub3_balenceki     ,  (*SUB3_change)},
+        {MENU_SB3_Map_change_sub3_balencekd     ,  Y_10,  MENU_SB3_Map_change_sub3_balenceki     ,  MENU_SB3_Map_change_sub3_outkp         ,  MENU_SB3_Map_change_sub3_balencekd     ,  (*SUB3_change)},
+        {MENU_SB3_Map_change_sub3_outkp         ,  Y_11,  MENU_SB3_Map_change_sub3_balencekd     ,  MENU_SB3_Map_change_sub3_outkd         ,  MENU_SB3_Map_change_sub3_outkp         ,  (*SUB3_change)},
+        {MENU_SB3_Map_change_sub3_outkd         ,  Y_12,  MENU_SB3_Map_change_sub3_outkp         ,  MENU_SB3_Map_change_sub3_outki         ,  MENU_SB3_Map_change_sub3_outkd         ,  (*SUB3_change)},
+        {MENU_SB3_Map_change_sub3_outki         ,  Y_13,  MENU_SB3_Map_change_sub3_outkd         ,  MENU_SB3_Map_change_sub3_speed_kp      ,  MENU_SB3_Map_change_sub3_outki         ,  (*SUB3_change)},
+        {MENU_SB3_Map_change_sub3_speed_kp      ,  Y_14,  MENU_SB3_Map_change_sub3_outki         ,  MENU_SB3_Map_change_sub3_speed_ki      ,  MENU_SB3_Map_change_sub3_speed_kp      ,  (*SUB3_change)},
+        {MENU_SB3_Map_change_sub3_speed_ki      ,  Y_15,  MENU_SB3_Map_change_sub3_speed_kp      ,  MENU_SB3_Map_change_Wsub3_balencekp    ,  MENU_SB3_Map_change_sub3_speed_ki      ,  (*SUB3_change)},
+        {MENU_SB3_Map_change_Wsub3_balencekp    ,  Y_16,  MENU_SB3_Map_change_sub3_speed_ki      ,  MENU_SB3_Map_change_Wsub3_balenceki    ,  MENU_SB3_Map_change_Wsub3_balencekp    ,  (*SUB3_change)},
+        {MENU_SB3_Map_change_Wsub3_balenceki    ,  Y_17,  MENU_SB3_Map_change_Wsub3_balencekp    ,  MENU_SB3_Map_change_Wsub3_balencekd    ,  MENU_SB3_Map_change_Wsub3_balenceki    ,  (*SUB3_change)},
+        {MENU_SB3_Map_change_Wsub3_balencekd    ,  Y_18,  MENU_SB3_Map_change_Wsub3_balenceki    ,  MENU_SB3_Map_change_Wsub3_outkp        ,  MENU_SB3_Map_change_Wsub3_balencekd    ,  (*SUB3_change)},
+        {MENU_SB3_Map_change_Wsub3_outkp        ,  Y_19,  MENU_SB3_Map_change_Wsub3_balencekd    ,  MENU_SB3_Map_change_Wsub3_outkd        ,  MENU_SB3_Map_change_Wsub3_outkp        ,  (*SUB3_change)},
+        {MENU_SB3_Map_change_Wsub3_outkd        ,  Y_20,  MENU_SB3_Map_change_Wsub3_outkp        ,  MENU_SB3_Map_change_Wsub3_outki        ,  MENU_SB3_Map_change_Wsub3_outkd        ,  (*SUB3_change)},
+        {MENU_SB3_Map_change_Wsub3_outki        ,  Y_21,  MENU_SB3_Map_change_Wsub3_outkd        ,  MENU_SB3_Map_change_sub3_po_balencekp  ,  MENU_SB3_Map_change_Wsub3_outki        ,  (*SUB3_change)},
+        {MENU_SB3_Map_change_sub3_po_balencekp  ,  Y_22,  MENU_SB3_Map_change_Wsub3_outki        ,  MENU_SB3_Map_change_sub3_po_balenceki  ,  MENU_SB3_Map_change_sub3_po_balencekp  ,  (*SUB3_change)},
+        {MENU_SB3_Map_change_sub3_po_balenceki  ,  Y_23,  MENU_SB3_Map_change_sub3_po_balencekp  ,  MENU_SB3_Map_change_sub3_po_balencekd  ,  MENU_SB3_Map_change_sub3_po_balenceki  ,  (*SUB3_change)},
+        {MENU_SB3_Map_change_sub3_po_balencekd  ,  Y_24,  MENU_SB3_Map_change_sub3_po_balenceki  ,  MENU_SB3_Map_change_diao_sub3_outkp,  MENU_SB3_Map_change_sub3_po_balencekd  ,  (*SUB3_change)},
+        {MENU_SB3_Map_change_diao_sub3_outkp,  Y_25,  MENU_SB3_Map_change_sub3_po_balencekd  ,  MENU_SB3_Map_change_diao_sub3_outkd,  MENU_SB3_Map_change_diao_sub3_outkp,  (*SUB3_change)},
+        {MENU_SB3_Map_change_diao_sub3_outkd,  Y_26,  MENU_SB3_Map_change_diao_sub3_outkp  ,  MENU_SB3_Map_change_diao_sub3_outki,  MENU_SB3_Map_change_diao_sub3_outkd,  (*SUB3_change)},
+        {MENU_SB3_Map_change_diao_sub3_outki,  Y_27,  MENU_SB3_Map_change_diao_sub3_outkd  ,  MENU_SB3_Map_change_sub3_diao_balenceki,  MENU_SB3_Map_change_diao_sub3_outki,  (*SUB3_change)},
+        {MENU_SB3_Map_change_sub3_diao_balencekp,  Y_28,  MENU_SB3_Map_change_diao_sub3_outki  ,  MENU_SB3_Map_change_sub3_diao_balenceki,  MENU_SB3_Map_change_sub3_diao_balencekp,  (*SUB3_change)},
+        {MENU_SB3_Map_change_sub3_diao_balenceki,  Y_29,  MENU_SB3_Map_change_sub3_diao_balencekp,  MENU_SB3_Map_change_sub3_diao_balencekd,  MENU_SB3_Map_change_sub3_diao_balenceki,  (*SUB3_change)},
+        {MENU_SB3_Map_change_sub3_diao_balencekd,  Y_30,  MENU_SB3_Map_change_sub3_diao_balenceki,  MENU_SB3_Map_change_back               ,  MENU_SB3_Map_change_sub3_diao_balencekd,  (*SUB3_change)},
+        {MENU_SB3_Map_change_back               ,  Y_31,  MENU_SB3_Map_change_sub3_diao_balencekd,  MENU_SB3_Map_change_SUB3_qz            ,  MENU_SB3_Map_change                    ,  (*SUB3_change)},
+
+        {MENU_SB3_Map_change_SUB3_change_flag,  Y_0 ,  MENU_SB3_Map_change2_back           ,  MENU_SB3_Map_change_SUB3_len        ,  MENU_SB3_Map_change_SUB3_len        ,  (*SUB3_change2)},
+        {MENU_SB3_Map_change_SUB3_len        ,  Y_1 ,  MENU_SB3_Map_change_SUB3_change_flag,  MENU_SB3_Map_change_SUB3_pianyi     ,  MENU_SB3_Map_change_SUB3_len        ,  (*SUB3_change2)},
+        {MENU_SB3_Map_change_SUB3_pianyi     ,  Y_2 ,  MENU_SB3_Map_change_SUB3_len        ,  MENU_SB3_Map_change_SUB3_width      ,  MENU_SB3_Map_change_SUB3_pianyi     ,  (*SUB3_change2)},
+        {MENU_SB3_Map_change_SUB3_width      ,  Y_3 ,  MENU_SB3_Map_change_SUB3_pianyi     ,  MENU_SB3_Map_change_SUB3_start_zhui ,  MENU_SB3_Map_change_SUB3_width      ,  (*SUB3_change2)},
+        {MENU_SB3_Map_change_SUB3_start_zhui ,  Y_4 ,  MENU_SB3_Map_change_SUB3_width      ,  MENU_SB3_Map_change_SUB3_zhui_length,  MENU_SB3_Map_change_SUB3_start_zhui ,  (*SUB3_change2)},
+        {MENU_SB3_Map_change_SUB3_zhui_length,  Y_5 ,  MENU_SB3_Map_change_SUB3_start_zhui ,  MENU_SB3_Map_change_SUB3_po_width   ,  MENU_SB3_Map_change_SUB3_zhui_length,  (*SUB3_change2)},
+        {MENU_SB3_Map_change_SUB3_po_width   ,  Y_6 ,  MENU_SB3_Map_change_SUB3_zhui_length,  MENU_SB3_Map_change_y0              ,  MENU_SB3_Map_change_SUB3_po_width   ,  (*SUB3_change2)},
+        {MENU_SB3_Map_change_y0              ,  Y_7 ,  MENU_SB3_Map_change_SUB3_po_width   ,  MENU_SB3_Map_change_y1              ,  MENU_SB3_Map_change_y0              ,  (*SUB3_change2)},
+        {MENU_SB3_Map_change_y1              ,  Y_8 ,  MENU_SB3_Map_change_y0              ,  MENU_SB3_Map_change_y2              ,  MENU_SB3_Map_change_y1              ,  (*SUB3_change2)},
+        {MENU_SB3_Map_change_y2              ,  Y_9 ,  MENU_SB3_Map_change_y1              ,  MENU_SB3_Map_change_y3              ,  MENU_SB3_Map_change_y2              ,  (*SUB3_change2)},
+        {MENU_SB3_Map_change_y3              ,  Y_10,  MENU_SB3_Map_change_y2              ,  MENU_SB3_Map_change_y4              ,  MENU_SB3_Map_change_y3              ,  (*SUB3_change2)},
+        {MENU_SB3_Map_change_y4              ,  Y_11,  MENU_SB3_Map_change_y3              ,  MENU_SB3_Map_change_y5              ,  MENU_SB3_Map_change_y4              ,  (*SUB3_change2)},
+        {MENU_SB3_Map_change_y5              ,  Y_12,  MENU_SB3_Map_change_y4              ,  MENU_SB3_Map_change_y6              ,  MENU_SB3_Map_change_y5              ,  (*SUB3_change2)},
+        {MENU_SB3_Map_change_y6              ,  Y_13,  MENU_SB3_Map_change_y5              ,  MENU_SB3_Map_change_y7              ,  MENU_SB3_Map_change_y6              ,  (*SUB3_change2)},
+        {MENU_SB3_Map_change_y7              ,  Y_14,  MENU_SB3_Map_change_y6              ,  MENU_SB3_Map_change_y8              ,  MENU_SB3_Map_change_y7              ,  (*SUB3_change2)},
+        {MENU_SB3_Map_change_y8              ,  Y_15,  MENU_SB3_Map_change_y7              ,  MENU_SB3_Map_change_x5              ,  MENU_SB3_Map_change_y8              ,  (*SUB3_change2)},
+        {MENU_SB3_Map_change_x5              ,  Y_16,  MENU_SB3_Map_change_y8              ,  MENU_SB3_Map_change_x6              ,  MENU_SB3_Map_change_x5              ,  (*SUB3_change2)},
+        {MENU_SB3_Map_change_x6              ,  Y_17,  MENU_SB3_Map_change_x5              ,  MENU_SB3_Map_change_x7              ,  MENU_SB3_Map_change_x6              ,  (*SUB3_change2)},
+        {MENU_SB3_Map_change_x7              ,  Y_18,  MENU_SB3_Map_change_x6              ,  MENU_SB3_Map_change_x8              ,  MENU_SB3_Map_change_x7              ,  (*SUB3_change2)},
+        {MENU_SB3_Map_change_x8              ,  Y_19,  MENU_SB3_Map_change_x7              ,  MENU_SB3_Map_change2_back           ,  MENU_SB3_Map_change_x8              ,  (*SUB3_change2)},
+        {MENU_SB3_Map_change2_back           ,  Y_20,  MENU_SB3_Map_change_x8              ,  MENU_SB3_Map_change_SUB3_change_flag,  MENU_SB3_Map_chang2                 ,  (*SUB3_change2)},
+};
+
+void Test_mode(void)
+{
+    ips200_set_font(0);
+    ips200_show_string(X_0,arrow_key,"->");
+    ips200_show_string(X_4,Y_0,"test_speed");             ips200_show_int(X_20, Y_0, Test_speed, 4);
+    ips200_show_string(X_4,Y_1,"test_mode");          ips200_show_int(X_20, Y_1, test_mode, 1);
+    ips200_show_string(X_4,Y_2,"<--");
+}
+
+void main_menue()
+{
+    ips200_set_font(1);
+    ips200_show_string(M_0,arrow_key,"->");
+    ips200_show_string(M_4,N_0,"Balence");
+    ips200_show_string(M_4,N_1,"Subject1");
+    ips200_show_string(M_4,N_2,"Subject2");
+    ips200_show_string(M_4,N_3,"Subject3");
+    ips200_show_string(M_4,N_4,"Subject4");
+    ips200_show_string(M_4,N_5,"show_imu");
+    ips200_show_string(M_4,N_6,"clear_offset");
+    ips200_show_string(M_4,N_7,"Test");
+}
+
+void IMU_menue()
+{
+    ips200_set_font(0);
+    ips200_show_string(X_0,arrow_key,"->");
+    ips200_show_string(X_18,arrow_key,"*");
+    ips200_show_string(X_4,Y_0,"ka");             ips200_show_float(X_20, Y_0, ka, 1,4);
+    ips200_show_string(X_4,Y_1,"ba_kp");          ips200_show_float(X_20, Y_1, balence_kp, 3,1);
+    ips200_show_string(X_4,Y_2,"ba_kd");          ips200_show_float(X_20, Y_2, balence_kd, 3,2);
+    ips200_show_string(X_4,Y_3,"ba_ki");          ips200_show_float(X_20, Y_3, balence_ki, 1,3);
+    ips200_show_string(X_4,Y_4,"out_kp");         ips200_show_float(X_20, Y_4, out_kp, 2,4);
+    ips200_show_string(X_4,Y_5,"out_kd");         ips200_show_float(X_20, Y_5, out_kd, 2,4);
+    ips200_show_string(X_4,Y_6,"speed_kp");       ips200_show_float(X_20, Y_6, speed_kp, 3,1);
+    ips200_show_string(X_4,Y_7,"speed_ki");       ips200_show_float(X_20, Y_7, speed_ki, 3,1);
+    ips200_show_string(X_4,Y_8,"jxzz");           ips200_show_float(X_20, Y_8, jxzz, 2,1);
+    ips200_show_string(X_4,Y_9,"test_qk");        ips200_show_int(X_20, Y_9, test_qk,4);
+    ips200_show_string(X_4,Y_10,"target_speed");  ips200_show_int(X_20, Y_10, target_speed,4);
+    ips200_show_string(X_4,Y_11,"control_mode");  ips200_show_int(X_20, Y_11, control_mode,2);
+    ips200_show_string(X_4,Y_12,"run");
+    ips200_show_string(X_4,Y_13,"<--");
+}
+
+void show_imu(void)
+{
+//    out_control_angle=pianchaget(pianchaxy(NaviData[laste_point].x,NaviData[laste_point].y,locx,locy),eulerAngle.yaw);
+    ips200_set_font(0);
+    ips200_show_string(X_0,Y_0,"yaw");              ips200_show_float(X_19, Y_0, eulerAngle.yaw, 4,4);
+    ips200_show_string(X_0,Y_1,"row");              ips200_show_float(X_19, Y_1, eulerAngle.roll, 4,4);
+    ips200_show_string(X_0,Y_2,"pitch");            ips200_show_float(X_19, Y_2, eulerAngle.pitch, 4,4);
+    ips200_show_string(X_0,Y_3,"remember");  ips200_show_int(X_19, Y_3, remember, 5);
+    ips200_show_string(X_0,Y_4,"remember2");     ips200_show_int(X_19, Y_4, remember2, 5);
+    ips200_show_string(X_0,Y_5,"out_i");           ips200_show_int(X_19, Y_5, out_integration, 4);
+    ips200_show_string(X_0,Y_6,"SUB3_state");        ips200_show_int(X_19, Y_6, SUB3_state, 1);
+    ips200_show_string(X_0,Y_7,"SUB1_state");        ips200_show_int(X_19, Y_7, SUB1_state, 1);
+    ips200_show_string(X_0,Y_8,"locy");        ips200_show_int(X_19, Y_8, locy, 6);
+    
+}
+
+
+
+void minus_jian()
+{
+    switch(func_index)
+    {
+        case MENU_ka:                                  ka                      -=  0.001;   break;
+        case MENU_balence_kp:                          balence_kp              -=  0.1  ;   break;
+        case MENU_balence_kd:                          balence_kd              -=  0.01 ;   break;
+        case MENU_balence_ki:                          balence_ki              -=  0.01 ;   break;
+        case MENU_out_kp:                              out_kp                  -=  0.01 ;   break;
+        case MENU_out_kd:                              out_kd                  -=  0.01 ;   break;
+        case MENU_speed_kp:                            speed_kp                -=  1    ;   break;
+        case MENU_speed_ki:                            speed_ki                -=  0.1  ;   break;
+        case MENU_jczz:                                jxzz                    -=  0.1  ;   break;
+        case MENU_balence_qk:                          test_qk                 -=  100  ;   break;
+        case MENU_balence_speed:                       target_speed            -=  1    ;   break;
+        case MENU_control_mode:                        control_mode            -=  1    ;   break;
+        case SUB_Test_speed:                           Test_speed              -=  100  ;   break;
+        case SUB_if_Test:                              test_mode               -=  1    ;   break;
+        case MENU_SB1_Map_change_SUB1_turn_angle:      SUB1_qz         -=  500  ;   break;
+        case MENU_SB1_Map_change_sub1_len:             sub1_len                -=  500  ;   break;
+        case MENU_SB1_Map_change_SUB1_slow_qz:         SUB1_slow_qz            -=  1000 ;   break;
+        case MENU_SB1_Map_change_SUB1_slow_len:        SUB1_slow_len           -=  100  ;   break;
+        case MENU_SB1_Map_change_angle_speed_K:        angle_speed_K           -=  0.1  ;   break;
+        case MENU_SB1_Map_change_SUB1_state_count:     SUB1_state_count        -=  1    ;   break;
+        case MENU_SB1_Map_change_sub1_balence_kp:      balence_kp              -=  0.1  ;   break;
+        case MENU_SB1_Map_change_sub1_balence_kd:      balence_kd              -=  0.01 ;   break;
+        case MENU_SB1_Map_change_sub1_balence_ki:      balence_ki              -=  0.001 ;   break;
+        case MENU_SB1_Map_change_sub1_outkp:           SUB1_out_kp             -=  0.01 ;   break;
+        case MENU_SB1_Map_change_sub1_outkd:           SUB1_out_kd             -=  0.01 ;   break;
+        case MENU_SB1_Map_change_sub1_outki:           SUB1_out_ki             -=  0.001 ;   break;
+        case MENU_SB1_Map_change_sub1_Woutkp:           WSUB1_out_kp             -=  0.01 ;   break;
+        case MENU_SB1_Map_change_sub1_Woutkd:           WSUB1_out_kd             -=  0.01 ;   break;
+        case MENU_SB1_Map_change_sub1_Woutki:           WSUB1_out_ki             -=  0.001 ;   break;
+        case MENU_SB1_Map_change_sub1_Wbalence_kp:     WSUB1_balence_kp        -=  0.1  ;   break;
+        case MENU_SB1_Map_change_sub1_Wbalence_kd:     WSUB1_balence_kd        -=  0.01 ;   break;
+        case MENU_SB1_Map_change_sub1_Wbalence_ki:     WSUB1_balence_ki        -=  0.001 ;   break;
+        case MENU_SB1_Map_change_Wsub1_speed_kp:       speed_kp                -=  0.5  ;   break;
+        case MENU_SB1_Map_change_Wsub1_speed_ki:       speed_ki                -=  0.1  ;   break;
+        case MENU_SB1_Map_change_Wsub1_SUB_speed:      SUB1_speed              -=  1    ;   break;
+        case MENU_SB1_Map_change_Wsub1_WSUB_speed:     WSUB1_speed             -=  1    ;   break;
+        case MENU_SB2_Map_change_SUB2_qz:              SUB2_qz                 -=  100  ;   break;
+        case MENU_SB2_Map_change_SUB2_speed:           SUB2_speed              -=  1    ;   break;
+        case MENU_SB2_Map_change_SUB2_qk:              SUB2_qk                 -=  100  ;   break;
+        case MENU_SB2_Map_change_sub2_balencekp:       SUB2balence_kp          -=  1    ;   break;
+        case MENU_SB2_Map_change_sub2_balenceki:       SUB2balence_ki          -=  0.01 ;   break;
+        case MENU_SB2_Map_change_sub2_balencekd:       SUB2balence_kd          -=  0.01 ;   break;
+        case MENU_SB2_Map_change_sub2_yawkd:           sub2_yaw_kd          -=  0.01 ;   break;
+        case MENU_SB2_Map_change_sub2_outkp:           SUB2_out_kp             -=  0.001;   break;
+        case MENU_SB2_Map_change_sub2_outkd:           SUB2_out_kd             -=  0.001 ;   break;
+        case MENU_SB2_Map_change_sub2_speed_kp:        SUB2_speed_kp           -=  0.5  ;   break;
+        case MENU_SB2_Map_change_sub2_speed_ki:        SUB2_speed_ki           -=  0.1  ;   break;
+        case MENU_SB2_Map_change_y0:                   special_point[0].y      -=  200  ;   break;
+        case MENU_SB2_Map_change_y1:                   special_point[1].y      -=  200  ;   break;
+        case MENU_SB2_Map_change_y2:                   special_point[2].y      -=  200  ;   break;
+        case MENU_SB2_Map_change_y3:                   special_point[3].y      -=  200  ;   break;
+        case MENU_SB2_Map_change_y4:                   special_point[4].y      -=  200  ;   break;
+        case MENU_SB2_Map_change_W0:                   SUB2_width[0]           -=  1000 ;   break;
+        case MENU_SB2_Map_change_W1:                   SUB2_width[1]           -=  1000 ;   break;
+        case MENU_SB2_Map_change_W2:                   SUB2_width[2]           -=  1000 ;   break;
+        case MENU_SB2_Map_change_W3:                   SUB2_width[3]           -=  1000 ;   break;
+        case MENU_SB3_Map_change_SUB3_qz:              SUB3_qz                 -=  100  ;   break;
+        case MENU_SB3_Map_change_SUB3_turn_angle:      diao_SUB3_qz          -=  100    ;   break;
+        case MENU_SB3_Map_change_SUB3_speed:           SUB3_speed              -=  1    ;   break;
+        case MENU_SB3_Map_change_WSUB3_speed:          WSUB3_speed             -=  1    ;   break;
+        case MENU_SB3_Map_change_diao_speed:           diao_speed              -=  1    ;   break;
+        case MENU_SB3_Map_change_po_speed:             po_speed                -=  1    ;   break;
+        case MENU_SB3_Map_change_SUB3_zhui_count:      zhui_count              -=  1    ;   break;
+        case MENU_SB3_Map_change_SUB3_SUB3_right:      SUB3_right              -=  2    ;   break;
+
+        case MENU_SB3_Map_change_sub3_balencekp:       SUB3balence_kp          -=  0.1  ;   break;
+        case MENU_SB3_Map_change_sub3_balenceki:       SUB3balence_ki          -=  0.001 ;   break;
+        case MENU_SB3_Map_change_sub3_balencekd:       SUB3balence_kd          -=  0.001 ;   break;
+        case MENU_SB3_Map_change_sub3_outkp:           SUB3_out_kp             -=  0.01 ;   break;
+        case MENU_SB3_Map_change_sub3_outkd:           SUB3_out_kd             -=  0.01 ;   break;
+        case MENU_SB3_Map_change_sub3_outki:           SUB3_out_ki             -=  0.001 ;   break;
+        case MENU_SB3_Map_change_sub3_speed_kp:        SUB3_speed_kp           -=  0.5  ;   break;
+        case MENU_SB3_Map_change_sub3_speed_ki:        SUB3_speed_ki           -=  0.1  ;   break;
+
+        case MENU_SB3_Map_change_Wsub3_balencekp:      WSUB3balence_kp         -=  0.1  ;   break;
+        case MENU_SB3_Map_change_Wsub3_balenceki:      WSUB3balence_ki         -=  0.001 ;   break;
+        case MENU_SB3_Map_change_Wsub3_balencekd:      WSUB3balence_kd         -=  0.001 ;   break;
+        case MENU_SB3_Map_change_Wsub3_outkp:          WSUB3_out_kp            -=  0.01 ;   break;
+        case MENU_SB3_Map_change_Wsub3_outkd:          WSUB3_out_kd            -=  0.01 ;   break;
+        case MENU_SB3_Map_change_Wsub3_outki:          WSUB3_out_ki            -=  0.001 ;   break;
+        case MENU_SB3_Map_change_sub3_po_balencekp:    SUB3_po_balence_kp      -=  0.1  ;   break;
+        case MENU_SB3_Map_change_sub3_po_balenceki:    SUB3_po_balence_ki      -=  0.01 ;   break;
+        case MENU_SB3_Map_change_sub3_po_balencekd:    SUB3_po_balence_kd      -=  0.01 ;   break;
+
+        case MENU_SB3_Map_change_diao_sub3_outkp:          diao_SUB3_out_kp            -=  0.01 ;   break;
+        case MENU_SB3_Map_change_diao_sub3_outkd:          diao_SUB3_out_kd            -=  0.01 ;   break;
+        case MENU_SB3_Map_change_diao_sub3_outki:          diao_SUB3_out_ki            -=  0.001 ;   break;
+        case MENU_SB3_Map_change_sub3_diao_balencekp:  SUB3_diao_balence_kp    -=  0.1  ;   break;
+        case MENU_SB3_Map_change_sub3_diao_balenceki:  SUB3_diao_balence_ki    -=  0.001 ;   break;
+        case MENU_SB3_Map_change_sub3_diao_balencekd:  SUB3_diao_balence_kd    -=  0.01 ;   break;
+
+        case MENU_SB3_Map_change_SUB3_change_flag:     SUB3_change_flag        -=  1    ;   break;
+        case MENU_SB3_Map_change_SUB3_len:             sub3_len                -=  100  ;   break;
+        case MENU_SB3_Map_change_SUB3_pianyi:          start_pianyi            -=  100  ;   break;
+        case MENU_SB3_Map_change_SUB3_width:           SUB3_width              -=  100  ;   break;
+        case MENU_SB3_Map_change_SUB3_start_zhui:      SUB3_start_zhui         -=  500  ;   break;
+        case MENU_SB3_Map_change_SUB3_zhui_length:     SUB3_zhui_length        -=  500  ;   break;
+        case MENU_SB3_Map_change_SUB3_po_width:        SUB3_po_width           -=  100  ;   break;
+        case MENU_SB3_Map_change_y0:   special_point[0].y    -=  500    ;   break;
+        case MENU_SB3_Map_change_y1:   special_point[1].y    -=  500    ;   break;
+        case MENU_SB3_Map_change_y2:   special_point[2].y    -=  500    ;   break;
+        case MENU_SB3_Map_change_y3:   special_point[3].y    -=  500    ;   break;
+        case MENU_SB3_Map_change_y4:   special_point[4].y    -=  500    ;   break;
+        case MENU_SB3_Map_change_y5:   special_point[5].y    -=  500    ;   break;
+        case MENU_SB3_Map_change_y6:   special_point[6].y    -=  500    ;   break;
+        case MENU_SB3_Map_change_y7:   special_point[7].y    -=  500    ;   break;
+        case MENU_SB3_Map_change_y8:   special_point[8].y    -=  500    ;   break;
+
+        case MENU_SB3_Map_change_x5:   special_point[5].x    -=  200    ;   break;
+        case MENU_SB3_Map_change_x6:   special_point[6].x    -=  200    ;   break;
+        case MENU_SB3_Map_change_x7:   special_point[7].x    -=  200    ;   break;
+        case MENU_SB3_Map_change_x8:   special_point[8].x    -=  200    ;   break;
+    }
+}
+
+void plus_jia()
+{
+    switch(func_index)
+    {
+        case MENU_ka:                                  ka                      +=  0.001;   break;
+        case MENU_balence_kp:                          balence_kp              +=  0.1  ;   break;
+        case MENU_balence_kd:                          balence_kd              +=  0.01 ;   break;
+        case MENU_balence_ki:                          balence_ki              +=  0.01 ;   break;
+        case MENU_out_kp:                              out_kp                  +=  0.01 ;   break;
+        case MENU_out_kd:                              out_kd                  +=  0.01 ;   break;
+        case MENU_speed_kp:                            speed_kp                +=  1    ;   break;
+        case MENU_speed_ki:                            speed_ki                +=  0.1  ;   break;
+        case MENU_jczz:                                jxzz                    +=  0.1  ;   break;
+        case MENU_balence_qk:                          test_qk                 +=  100  ;   break;
+        case MENU_balence_speed:                       target_speed            +=  1    ;   break;
+        case SUB_Test_speed:                           Test_speed              +=  100  ;   break;
+        case SUB_if_Test:                              test_mode               +=  1    ;   break;
+        case MENU_control_mode:                        control_mode            +=  1    ;   break;
+        case MENU_SB1_Map_change_SUB1_turn_angle:      SUB1_qz         +=  500  ;   break;
+        case MENU_SB1_Map_change_sub1_len:             sub1_len                +=  500  ;   break;
+        case MENU_SB1_Map_change_SUB1_slow_qz:         SUB1_slow_qz            +=  1000 ;   break;
+        case MENU_SB1_Map_change_SUB1_slow_len:        SUB1_slow_len           +=  100  ;   break;
+        case MENU_SB1_Map_change_angle_speed_K:        angle_speed_K           +=  0.1  ;   break;
+        case MENU_SB1_Map_change_SUB1_state_count:     SUB1_state_count        +=  1    ;   break;
+        case MENU_SB1_Map_change_sub1_balence_kp:      balence_kp              +=  0.1  ;   break;
+        case MENU_SB1_Map_change_sub1_balence_kd:      balence_kd              +=  0.01 ;   break;
+        case MENU_SB1_Map_change_sub1_balence_ki:      balence_ki              +=  0.001 ;   break;
+        case MENU_SB1_Map_change_sub1_outkp:           SUB1_out_kp             +=  0.01 ;   break;
+        case MENU_SB1_Map_change_sub1_outkd:           SUB1_out_kd             +=  0.01 ;   break;
+        case MENU_SB1_Map_change_sub1_outki:           SUB1_out_ki             +=  0.001 ;   break;
+
+        case MENU_SB1_Map_change_sub1_Woutkp:           WSUB1_out_kp             +=  0.01 ;   break;
+        case MENU_SB1_Map_change_sub1_Woutkd:           WSUB1_out_kd             +=  0.01 ;   break;
+        case MENU_SB1_Map_change_sub1_Woutki:           WSUB1_out_ki             +=  0.001 ;   break;
+        case MENU_SB1_Map_change_sub1_Wbalence_kp:     WSUB1_balence_kp        +=  0.1  ;   break;
+        case MENU_SB1_Map_change_sub1_Wbalence_kd:     WSUB1_balence_kd        +=  0.01 ;   break;
+        case MENU_SB1_Map_change_sub1_Wbalence_ki:     WSUB1_balence_ki        +=  0.001 ;   break;
+        case MENU_SB1_Map_change_Wsub1_speed_kp:       speed_kp                +=  0.5  ;   break;
+        case MENU_SB1_Map_change_Wsub1_speed_ki:       speed_ki                +=  0.1  ;   break;
+        case MENU_SB1_Map_change_Wsub1_SUB_speed:      SUB1_speed              +=  1    ;   break;
+        case MENU_SB1_Map_change_Wsub1_WSUB_speed:     WSUB1_speed             +=  1    ;   break;
+
+        case MENU_SB2_Map_change_SUB2_qk:              SUB2_qk                 +=  100  ;   break;
+        case MENU_SB2_Map_change_SUB2_qz:              SUB2_qz                 +=  100  ;   break;
+        case MENU_SB2_Map_change_SUB2_speed:           SUB2_speed              +=  1    ;   break;
+        case MENU_SB2_Map_change_sub2_balencekp:       SUB2balence_kp          +=  1    ;   break;
+        case MENU_SB2_Map_change_sub2_balenceki:       SUB2balence_ki          +=  0.01 ;   break;
+        case MENU_SB2_Map_change_sub2_balencekd:       SUB2balence_kd          +=  0.01 ;   break;
+        case MENU_SB2_Map_change_sub2_yawkd:       sub2_yaw_kd          +=  0.01 ;   break;
+
+        case MENU_SB2_Map_change_sub2_outkp:           SUB2_out_kp             +=  0.001;   break;
+        case MENU_SB2_Map_change_sub2_outkd:           SUB2_out_kd             +=  0.001 ;   break;
+        case MENU_SB2_Map_change_sub2_speed_kp:        SUB2_speed_kp           +=  0.5  ;   break;
+        case MENU_SB2_Map_change_sub2_speed_ki:        SUB2_speed_ki           +=  0.1  ;   break;
+        case MENU_SB2_Map_change_y0:                   special_point[0].y      +=  200  ;   break;
+        case MENU_SB2_Map_change_y1:                   special_point[1].y      +=  200  ;   break;
+        case MENU_SB2_Map_change_y2:                   special_point[2].y      +=  200  ;   break;
+        case MENU_SB2_Map_change_y3:                   special_point[3].y      +=  200  ;   break;
+        case MENU_SB2_Map_change_y4:                   special_point[4].y      +=  200  ;   break;
+        case MENU_SB2_Map_change_W0:                   SUB2_width[0]           +=  1000 ;   break;
+        case MENU_SB2_Map_change_W1:                   SUB2_width[1]           +=  1000 ;   break;
+        case MENU_SB2_Map_change_W2:                   SUB2_width[2]           +=  1000 ;   break;
+        case MENU_SB2_Map_change_W3:                   SUB2_width[3]           +=  1000 ;   break;
+
+        case MENU_SB3_Map_change_SUB3_qz:              SUB3_qz                 +=  100  ;   break;
+        case MENU_SB3_Map_change_SUB3_turn_angle:      diao_SUB3_qz         +=  100    ;   break;
+        case MENU_SB3_Map_change_SUB3_speed:           SUB3_speed              +=  1    ;   break;
+        case MENU_SB3_Map_change_WSUB3_speed:          WSUB3_speed             +=  1    ;   break;
+        case MENU_SB3_Map_change_diao_speed:           diao_speed              +=  1    ;   break;
+        case MENU_SB3_Map_change_po_speed:             po_speed                +=  1    ;   break;
+
+        
+        case MENU_SB3_Map_change_SUB3_zhui_count:      zhui_count              +=  1    ;   break;
+        case MENU_SB3_Map_change_SUB3_SUB3_right:      SUB3_right              +=  2    ;   break;
+
+        case MENU_SB3_Map_change_sub3_balencekp:       SUB3balence_kp          +=  0.1  ;   break;
+        case MENU_SB3_Map_change_sub3_balenceki:       SUB3balence_ki          +=  0.001 ;   break;
+        case MENU_SB3_Map_change_sub3_balencekd:       SUB3balence_kd          +=  0.01 ;   break;
+        case MENU_SB3_Map_change_sub3_outkp:           SUB3_out_kp             +=  0.01 ;   break;
+        case MENU_SB3_Map_change_sub3_outkd:           SUB3_out_kd             +=  0.01 ;   break;
+        case MENU_SB3_Map_change_sub3_outki:           SUB3_out_ki             +=  0.001 ;   break;
+        case MENU_SB3_Map_change_sub3_speed_kp:        SUB3_speed_kp           +=  0.5  ;   break;
+        case MENU_SB3_Map_change_sub3_speed_ki:        SUB3_speed_ki           +=  0.1  ;   break;
+
+
+        case MENU_SB3_Map_change_Wsub3_balencekp:      WSUB3balence_kp         +=  0.1  ;   break;
+        case MENU_SB3_Map_change_Wsub3_balenceki:      WSUB3balence_ki         +=  0.001 ;   break;
+        case MENU_SB3_Map_change_Wsub3_balencekd:      WSUB3balence_kd         +=  0.001 ;   break;
+        case MENU_SB3_Map_change_Wsub3_outkp:          WSUB3_out_kp            +=  0.01 ;   break;
+        case MENU_SB3_Map_change_Wsub3_outkd:          WSUB3_out_kd            +=  0.01 ;   break;
+        case MENU_SB3_Map_change_Wsub3_outki:          WSUB3_out_ki            +=  0.001 ;   break;
+        case MENU_SB3_Map_change_sub3_po_balencekp:    SUB3_po_balence_kp      +=  0.1  ;   break;
+        case MENU_SB3_Map_change_sub3_po_balenceki:    SUB3_po_balence_ki      +=  0.01 ;   break;
+        case MENU_SB3_Map_change_sub3_po_balencekd:    SUB3_po_balence_kd      +=  0.001 ;   break;
+        case MENU_SB3_Map_change_SUB3_change_flag:     SUB3_change_flag        +=  1    ;   break;
+        case MENU_SB3_Map_change_diao_sub3_outkp:          diao_SUB3_out_kp            +=  0.01 ;   break;
+        case MENU_SB3_Map_change_diao_sub3_outkd:          diao_SUB3_out_kd            +=  0.01 ;   break;
+        case MENU_SB3_Map_change_diao_sub3_outki:          diao_SUB3_out_ki            +=  0.001 ;   break;
+        case MENU_SB3_Map_change_sub3_diao_balencekp:  SUB3_diao_balence_kp    +=  0.1  ;   break;
+        case MENU_SB3_Map_change_sub3_diao_balenceki:  SUB3_diao_balence_ki    +=  0.001 ;   break;
+        case MENU_SB3_Map_change_sub3_diao_balencekd:  SUB3_diao_balence_kd    +=  0.01 ;   break;
+        case MENU_SB3_Map_change_SUB3_len:             sub3_len                +=  100  ;   break;
+        case MENU_SB3_Map_change_SUB3_pianyi:          start_pianyi            +=  100  ;   break;
+        case MENU_SB3_Map_change_SUB3_width:           SUB3_width              +=  100  ;   break;
+        case MENU_SB3_Map_change_SUB3_start_zhui:      SUB3_start_zhui         +=  500  ;   break;
+        case MENU_SB3_Map_change_SUB3_zhui_length:     SUB3_zhui_length        +=  500  ;   break;
+        case MENU_SB3_Map_change_SUB3_po_width:        SUB3_po_width           +=  100  ;   break;
+
+        case MENU_SB3_Map_change_y0:   special_point[0].y    +=  500    ;   break;
+        case MENU_SB3_Map_change_y1:   special_point[1].y    +=  500    ;   break;
+        case MENU_SB3_Map_change_y2:   special_point[2].y    +=  500    ;   break;
+        case MENU_SB3_Map_change_y3:   special_point[3].y    +=  500    ;   break;
+        case MENU_SB3_Map_change_y4:   special_point[4].y    +=  500    ;   break;
+        case MENU_SB3_Map_change_y5:   special_point[5].y    +=  500    ;   break;
+        case MENU_SB3_Map_change_y6:   special_point[6].y    +=  500    ;   break;
+        case MENU_SB3_Map_change_y7:   special_point[7].y    +=  500    ;   break;
+        case MENU_SB3_Map_change_y8:   special_point[8].y    +=  500    ;   break;
+
+        case MENU_SB3_Map_change_x5:   special_point[5].x    +=  200    ;   break;
+        case MENU_SB3_Map_change_x6:   special_point[6].x    +=  200    ;   break;
+        case MENU_SB3_Map_change_x7:   special_point[7].x    +=  200    ;   break;
+
+    }
+}
+
+
+
+
+void SUB1_Map(void)//x240,y340
+{
+    ips200_set_font(1);
+
+    ips200_show_string(M_21,N_5,"1111");
+
+    ips200_set_font(0);
+    ips200_draw_line(119,0,119,319,RGB565_WHITE);//绘制坐标轴 119竖轴
+    ips200_draw_line(0,0,0,319,RGB565_WHITE);//绘制底面框 0竖
+    ips200_draw_line(239,0,239,319,RGB565_WHITE);//绘制底面框 239竖
+    ips200_draw_line(0,0,239,0,RGB565_WHITE);//绘制底面框 239横
+    ips200_draw_line(0,239,239,239,RGB565_WHITE);//绘制底面框 239横 坐标原点
+    ips200_draw_line(0,319,239,319,RGB565_WHITE);//绘制底面框 319横
+
+    ips200_show_string(X_1,arrow_key,"->");
+
+    ips200_show_string(X_4,Y_1,"draw");
+    ips200_show_string(X_4,Y_2,"remember");
+    ips200_show_string(X_4,Y_3,"run");
+    ips200_show_string(X_4,Y_4,"change");
+    ips200_show_string(X_4,Y_5,"save");
+    ips200_show_string(X_4,Y_6,"read");
+    ips200_show_string(X_4,Y_7,"slow");
+    ips200_show_string(X_4,Y_8,"middle");
+    ips200_show_string(X_4,Y_9,"fast");
+    ips200_show_string(X_4,Y_10,"cl_ofset");
+    ips200_show_string(X_4,Y_11,"show");
+    ips200_show_string(X_4,Y_12,"<--");
+}
+
+void SUB1_Map_draw(void)//x240,y340
+{
+    ips200_set_font(0);
+    ips200_show_string(X_1,Y_31,"locx");  ips200_show_float(X_12, Y_31, locx, 8,1);
+    ips200_show_string(X_1,Y_32,"locy");  ips200_show_float(X_12, Y_32, locy, 8,1);
+    ips200_show_string(X_1,Y_33,"yaw");   ips200_show_float(X_12, Y_33, eulerAngle.yaw, 4,4);
+    ips200_show_string(X_1,Y_34,"spx");   ips200_show_float(X_12, Y_34, special_point[0].x,8,4);
+    ips200_show_string(X_1,Y_35,"spy");   ips200_show_float(X_12, Y_35, special_point[0].y,8,4);
+    ips200_show_string(X_1,Y_36,"DataNum");  ips200_show_int(X_12, Y_36, DataNum, 4);
+
+    ips200_draw_line(0,0,0,319,RGB565_WHITE);//绘制底面框 0竖
+    ips200_draw_line(239,0,239,319,RGB565_WHITE);//绘制底面框 239竖
+    ips200_draw_line(0,0,239,0,RGB565_WHITE);//绘制底面框 239横
+    ips200_draw_line(0,239,239,239,RGB565_WHITE);//绘制底面框 239横 坐标原点(119,239)
+    ips200_draw_line(0,319,239,319,RGB565_WHITE);//绘制底面框 319横
+
+    if(special_point[0].y==0)
+    {
+//        special_point[0].y=603500;
+        special_point[0].y=480000;
+//        special_point[0].y=193500;
+    }
+
+    generate_Path(1);
+}
+
+void SUB1_remember(void)
+{
+    t_run();
+}
+
+void SUB1_run(void)
+{
+    navigation_SUB_flag=1;
+//    control_mode=1; //开启遥控器控制
+    t_run();
+}
+
+void SUB1_slow(void)
+{
+    ips200_set_font(1);
+    ips200_show_string(X_1,Y_1,"SLOW");
+
+    balence_kp=31.3;
+    balence_kd=-1.52;
+    balence_ki=0.064;
+
+    SUB1_out_kp=0.15;
+    SUB1_out_kd=-0.3;
+    SUB1_out_ki=0;
+
+    WSUB1_out_kp=0.23;
+    WSUB1_out_kd=-0.36;
+    WSUB1_out_ki=0;
+    WSUB1_balence_kp=31.3;
+    WSUB1_balence_kd=-1.52;
+    WSUB1_balence_ki=0.064;
+
+    SUB1_speed=80;
+    WSUB1_speed=80;
+    SUB1_state_count=5;
+    SUB1_state_count_2=3;
+    SUB1_turn_angle=-5;
+
+//    balence_kp=24;
+//    balence_kd=-1.5;
+//    balence_ki=0.056;
+//
+//    SUB1_out_kp=0.15;
+//    SUB1_out_kd=-0.3;
+//    SUB1_out_ki=0;
+//
+//    WSUB1_out_kp=0.23;
+//    WSUB1_out_kd=-0.36;
+//    WSUB1_out_ki=0;
+//    WSUB1_balence_kp=31;
+//    WSUB1_balence_kd=-1.52;
+//    WSUB1_balence_ki=0.062;
+//
+//    SUB1_speed=100;
+//    WSUB1_speed=80;
+//    SUB1_state_count=5;
+//    SUB1_state_count_2=3;
+
+    jxzz=0;
+
+}
+
+void SUB1_middle(void)
+{
+    ips200_set_font(1);
+    ips200_show_string(X_1,Y_1,"MIDDLE");
+
+
+    balence_kp=17;
+    balence_kd=-1.26;
+    balence_ki=0.054;
+
+    SUB1_out_kp=0.15;
+    SUB1_out_kd=-0.3;
+    SUB1_out_ki=0;
+
+    WSUB1_out_kp=0.23;
+    WSUB1_out_kd=-0.36;
+    WSUB1_out_ki=0;
+    WSUB1_balence_kp=31.3;
+    WSUB1_balence_kd=-1.52;
+    WSUB1_balence_ki=0.064;
+
+    SUB1_speed=120;
+    WSUB1_speed=80;
+    SUB1_state_count=3;
+    SUB1_state_count_2=3;
+
+    jxzz=0;
+}
+
+void SUB1_fast(void)
+{
+    ips200_set_font(1);
+    ips200_show_string(X_1,Y_1,"FAST");
+
+    balence_kp=13.5;
+    balence_kd=-1.34;
+    balence_ki=0.051;
+
+    SUB1_out_kp=0.15;
+    SUB1_out_kd=-0.3;
+    SUB1_out_ki=0;
+
+    WSUB1_out_kp=0.23;
+    WSUB1_out_kd=-0.36;
+    WSUB1_out_ki=0;
+    WSUB1_balence_kp=31.3;
+    WSUB1_balence_kd=-1.52;
+    WSUB1_balence_ki=0.064;
+
+    SUB1_speed=140;
+    WSUB1_speed=80;
+    SUB1_state_count=3;
+    SUB1_state_count_2=3;
+    jxzz=0;
+}
+
+void SUB1_Save(void)
+{
+    ips200_set_font(1);
+    ips200_show_string(M_1,N_0,"Saving SUB1 point");
+    ips200_set_font(0);
+    flash_union_buffer[0].float_type=special_point[0].x;
+    flash_union_buffer[1].float_type=special_point[0].y;
+
+    flash_erase_page(0, 5);
+    flash_write_page(0, 5, flash_union_buffer, 2);
+}
+
+void SUB1_Read(void)
+{
+    ips200_set_font(1);
+    ips200_show_string(M_1,N_0,"Read SUB1 point");
+    ips200_set_font(0);
+
+    flash_read_page(0, 5, flash_union_buffer, 2);
+    special_point[0].x=flash_union_buffer[0].float_type;
+    special_point[0].y=flash_union_buffer[1].float_type;
+
+}
+
+void SUB1_change(void)
+{
+    ips200_set_font(0);
+    ips200_show_string(X_0,arrow_key,"->");
+    ips200_show_string(X_18,arrow_key,"*");
+    ips200_show_string(X_4,Y_0,"SUB1_qz");      ips200_show_int(X_20, Y_0, SUB1_qz,6);
+    ips200_show_string(X_4,Y_1,"diao_len");      ips200_show_int(X_20, Y_1, sub1_len,6);
+    ips200_show_string(X_4,Y_2,"SUB1_slow_qz");    ips200_show_int(X_20, Y_2, SUB1_slow_qz,6);
+    ips200_show_string(X_4,Y_3,"slow_len");        ips200_show_int(X_20, Y_3, SUB1_slow_len,6);
+    ips200_show_string(X_4,Y_4,"angle_k");         ips200_show_float(X_20, Y_4, angle_speed_K,2,2);
+    ips200_show_string(X_4,Y_5,"state_count_1");  ips200_show_int(X_20, Y_5, SUB1_state_count,2);
+    ips200_show_string(X_4,Y_6,"balence_kp");      ips200_show_float(X_20, Y_6, balence_kp,3,3);
+    ips200_show_string(X_4,Y_7,"balence_kd");      ips200_show_float(X_20, Y_7, balence_kd,3,3);
+    ips200_show_string(X_4,Y_8,"balence_ki");      ips200_show_float(X_20, Y_8, balence_ki,3,3);
+    ips200_show_string(X_4,Y_9,"SB1_outkp");      ips200_show_float(X_20, Y_9, SUB1_out_kp,1,3);
+    ips200_show_string(X_4,Y_10,"SB1_outkd");      ips200_show_float(X_20, Y_10, SUB1_out_kd,1,3);
+    ips200_show_string(X_4,Y_11,"SB1_outki");      ips200_show_float(X_20, Y_11, SUB1_out_ki,1,3);
+    ips200_set_color(RGB565_RED, RGB565_BLACK);
+    ips200_show_string(X_4,Y_12,"SB1_Woutkp");      ips200_show_float(X_20, Y_12, WSUB1_out_kp,1,3);
+    ips200_show_string(X_4,Y_13,"SB1_Woutkd");      ips200_show_float(X_20, Y_13, WSUB1_out_kd,1,3);
+    ips200_show_string(X_4,Y_14,"SB1_Woutki");      ips200_show_float(X_20, Y_14, WSUB1_out_ki,1,3);
+    ips200_show_string(X_4,Y_15,"Wbalence_kp");    ips200_show_float(X_20, Y_15, WSUB1_balence_kp,3,3);
+    ips200_show_string(X_4,Y_16,"Wbalence_kd");    ips200_show_float(X_20, Y_16, WSUB1_balence_kd,3,3);
+    ips200_show_string(X_4,Y_17,"Wbalence_ki");    ips200_show_float(X_20, Y_17, WSUB1_balence_ki,3,3);
+    ips200_set_color(RGB565_YELLOW, RGB565_BLACK);
+    ips200_show_string(X_4,Y_18,"speed_kp");       ips200_show_float(X_20, Y_18, speed_kp,2,3);
+    ips200_show_string(X_4,Y_19,"speed_ki");       ips200_show_float(X_20, Y_19, speed_ki,2,3);
+    ips200_show_string(X_4,Y_20,"SB1_speed");      ips200_show_int(X_20, Y_20, SUB1_speed,3);
+    ips200_show_string(X_4,Y_21,"WSB1_speed");     ips200_show_int(X_20, Y_21, WSUB1_speed,3);
+    ips200_show_string(X_4,Y_22,"<--");
+}
+
+
+void draw_circle_radius_37000(void)
+{
+    int radius = 37000;
+    int r = radius / 400;
+    int cx = 119;           // 圆心x
+    int cy = 239 - r-18500/400;       // 圆心y（最下点向上偏移r）
+
+    for (int i = 0; i < 360; i++)
+    {
+        float a = i * 3.14159f / 180.0f;
+        int x = cx + (int)(r * cosf(a));
+        int y = cy + (int)(r * sinf(a));
+        ips200_draw_point(x, y, RGB565_YELLOW);
+    }
+
+    r=37000/5/700;
+    cy = 239 - radius / 800-18500/400;
+    for (int i = 0; i < 360; i++)
+    {
+        float a = i * 3.14159f / 180.0f;
+        int x = cx + (int)(r * cosf(a));
+        int y = cy + (int)(r * sinf(a));
+        ips200_draw_point(x, y, RGB565_YELLOW);
+    }
+
+    cy = 239 - radius / (800/3)-18500/400;
+    for (int i = 0; i < 360; i++)
+    {
+        float a = i * 3.14159f / 180.0f;
+        int x = cx + (int)(r * cosf(a));
+        int y = cy + (int)(r * sinf(a));
+        ips200_draw_point(x, y, RGB565_YELLOW);
+    }
+
+}
+
+void SUB2_Map(void)//x240,y340
+{
+    ips200_set_font(1);
+
+    ips200_show_string(M_21,N_5,"2222");
+
+    ips200_set_font(0);
+    ips200_draw_line(119,0,119,319,RGB565_WHITE);//绘制坐标轴 119竖轴
+    ips200_draw_line(0,0,0,319,RGB565_WHITE);//绘制底面框 0竖
+    ips200_draw_line(239,0,239,319,RGB565_WHITE);//绘制底面框 239竖
+    ips200_draw_line(0,0,239,0,RGB565_WHITE);//绘制底面框 239横
+    ips200_draw_line(0,239,239,239,RGB565_WHITE);//绘制底面框 239横 坐标原点
+    ips200_draw_line(0,319,239,319,RGB565_WHITE);//绘制底面框 319横
+//    draw_circle_radius_37000();
+    ips200_show_string(X_1,arrow_key,"->");
+    ips200_show_string(X_4,Y_1,"draw");
+    ips200_show_string(X_4,Y_2,"run");
+    ips200_show_string(X_4,Y_3,"change");
+    ips200_show_string(X_4,Y_4,"save");
+    ips200_show_string(X_4,Y_5,"read");
+    ips200_show_string(X_4,Y_6,"slow");
+    ips200_show_string(X_4,Y_7,"middle");
+    ips200_show_string(X_4,Y_8,"fast");
+    ips200_show_string(X_4,Y_9,"cl_ofset");
+    ips200_show_string(X_4,Y_10,"show");
+    ips200_show_string(X_4,Y_11,"<--");
+}
+
+void SUB2_Map_draw(void)//x240,y340
+{
+    ips200_set_font(0);
+
+    ips200_show_string(X_1,Y_31,"locx");      ips200_show_float(X_12, Y_31, locx, 8,1);
+    ips200_show_string(X_1,Y_32,"locy");      ips200_show_float(X_12, Y_32, locy, 8,1);
+    ips200_show_string(X_1,Y_33,"yaw");       ips200_show_float(X_12, Y_33, eulerAngle.yaw, 4,4);
+    ips200_show_string(X_1,Y_34,"DataNum");     ips200_show_int(X_12, Y_34, DataNum, 4);
+
+
+    ips200_draw_line(0,0,0,319,RGB565_WHITE);//绘制底面框 0竖
+    ips200_draw_line(239,0,239,319,RGB565_WHITE);//绘制底面框 239竖
+    ips200_draw_line(0,0,239,0,RGB565_WHITE);//绘制底面框 239横
+    ips200_draw_line(0,239,239,239,RGB565_WHITE);//绘制底面框 239横 坐标原点(119,239)
+    ips200_draw_line(0,319,239,319,RGB565_WHITE);//绘制底面框 319横
+    draw_circle_radius_37000();
+    if(special_point[0].y==0)
+    {
+        special_point[0].y=20000;
+        special_point[1].y=56600;
+        special_point[2].y=90400;
+        special_point[3].y=56600;
+        special_point[4].y=20000;
+    }
+    generate_Path(2);
+}
+
+void SUB2_change(void)
+{
+    ips200_set_color(RGB565_RED, RGB565_BLACK);
+    ips200_show_string(X_0,arrow_key,"-->");
+    ips200_show_string(X_18,arrow_key,"*");
+    ips200_set_color(RGB565_YELLOW, RGB565_BLACK);
+    ips200_show_string(X_4,Y_0,"SUB2_qz");       ips200_show_int(X_20, Y_0, SUB2_qz,5);
+    ips200_show_string(X_4,Y_1,"SUB2_speed");    ips200_show_int(X_20, Y_1, SUB2_speed,5);
+    ips200_show_string(X_4,Y_2,"SUB2_qk");       ips200_show_int(X_20, Y_2, SUB2_qk,4);
+    ips200_show_string(X_4,Y_3,"ba_kp");         ips200_show_float(X_20, Y_3, SUB2balence_kp, 3,2);
+    ips200_show_string(X_4,Y_4,"ba_ki");         ips200_show_float(X_20, Y_4, SUB2balence_ki, 3,2);
+    ips200_show_string(X_4,Y_5,"ba_kd");         ips200_show_float(X_20, Y_5, SUB2balence_kd, 1,3);
+    ips200_show_string(X_4,Y_6,"SB2_yawkd");     ips200_show_float(X_20, Y_6, sub2_yaw_kd,1,3);
+    ips200_show_string(X_4,Y_7,"SB2_outkp");     ips200_show_float(X_20, Y_7, SUB2_out_kp,1,3);
+    ips200_show_string(X_4,Y_8,"SB2_outkd");     ips200_show_float(X_20, Y_8, SUB2_out_kd,1,3);
+    ips200_show_string(X_4,Y_9,"SB2_speedkp");  ips200_show_float(X_20, Y_9, SUB2_speed_kp,3,3);
+    ips200_show_string(X_4,Y_10,"SB2_speedki");  ips200_show_float(X_20, Y_10, SUB2_speed_ki,3,3);
+    ips200_show_string(X_4,Y_11,"y0");           ips200_show_int(X_20, Y_11, special_point[0].y,6);
+    ips200_show_string(X_4,Y_12,"y1");           ips200_show_int(X_20, Y_12, special_point[1].y,6);
+    ips200_show_string(X_4,Y_13,"y2");           ips200_show_int(X_20, Y_13, special_point[2].y,6);
+    ips200_show_string(X_4,Y_14,"y3");           ips200_show_int(X_20, Y_14, special_point[3].y,6);
+    ips200_show_string(X_4,Y_15,"y4");           ips200_show_int(X_20, Y_15, special_point[4].y,6);
+    ips200_show_string(X_4,Y_16,"W0");           ips200_show_int(X_20, Y_16, SUB2_width[0],6);
+    ips200_show_string(X_4,Y_17,"W1");           ips200_show_int(X_20, Y_17, SUB2_width[1],6);
+    ips200_show_string(X_4,Y_18,"W2");           ips200_show_int(X_20, Y_18, SUB2_width[2],6);
+    ips200_show_string(X_4,Y_19,"W3");           ips200_show_int(X_20, Y_19, SUB2_width[3],6);
+    ips200_show_string(X_4,Y_20,"<--");
+}
+
+
+
+void SUB2_run(void)
+{
+    navigation_SUB_flag=2;
+    t_run();
+}
+
+
+
+void SUB2_slow(void)
+{
+    ips200_set_font(1);
+    ips200_show_string(X_1,Y_1,"SLOW");
+
+    SUB2_qz=14000;
+    SUB2_width[0]=29000;
+    SUB2_width[1]=25000;
+    SUB2_width[2]=25000;
+    SUB2_width[3]=29000;
+
+    special_point[0].y=21000;
+    special_point[1].y=50800;
+    special_point[2].y=80400;
+    special_point[3].y=50800;
+    special_point[4].y=17600;
+    SUB2_out_kp=0.034,SUB2_out_kd=-0.06;
+    SUB2balence_kp=160,SUB2balence_kd=-1,SUB2balence_ki=2.75;
+    SUB2_speed_kp=90;
+    SUB2_speed_ki=3.5;
+    SUB2_speed=11;
+}
+
+void SUB2_middle(void)
+{
+    ips200_set_font(1);
+    ips200_show_string(X_1,Y_1,"MIDDLE");
+
+    SUB2_qz=14000;
+    SUB2_width[0]=30000;
+    SUB2_width[1]=27000;
+    SUB2_width[2]=27000;
+    SUB2_width[3]=29000;
+
+    special_point[0].y=21000;
+    special_point[1].y=53800;
+    special_point[2].y=82000;
+    special_point[3].y=52800;
+    special_point[4].y=17600;
+    SUB2_out_kp=0.03,SUB2_out_kd=-0.04;
+    SUB2balence_kp=235,SUB2balence_kd=0,SUB2balence_ki=3.2;
+    SUB2_speed_kp=90;
+    SUB2_speed_ki=3.5;
+    SUB2_speed=10;
+}
+
+void SUB2_fast(void)
+{
+    ips200_set_font(1);
+    ips200_show_string(X_1,Y_1,"FAST");
+
+    SUB2_qz=16000;
+    SUB2_width[0]=26000;
+    SUB2_width[1]=27000;
+    SUB2_width[2]=22000;
+    SUB2_width[3]=30000;
+
+    special_point[0].y=21000;
+    special_point[1].y=54600;
+    special_point[2].y=85400;
+    special_point[3].y=56600;
+    special_point[4].y=17000;
+    SUB2_out_kp=0.063,SUB2_out_kd=-0.07;
+    SUB2balence_kp=322,SUB2balence_kd=0,SUB2balence_ki=3.18;
+    SUB2_speed_kp=125;
+    SUB2_speed_ki=4;
+    SUB2_speed=12;
+
+
+}
+
+void SUB2_Save(void)
+{
+    ips200_set_font(1);
+    ips200_show_string(M_1,N_0,"Saving SUB2 point");
+    ips200_set_font(0);
+    flash_union_buffer[0].float_type=special_point[0].x;
+    flash_union_buffer[1].float_type=special_point[0].y;
+
+    flash_union_buffer[2].float_type=special_point[1].x;
+    flash_union_buffer[3].float_type=special_point[1].y;
+
+    flash_union_buffer[4].float_type=special_point[2].x;
+    flash_union_buffer[5].float_type=special_point[2].y;
+
+    flash_union_buffer[6].float_type=special_point[3].x;
+    flash_union_buffer[7].float_type=special_point[3].y;
+
+    flash_union_buffer[8].float_type=special_point[4].x;
+    flash_union_buffer[9].float_type=special_point[4].y;
+
+    flash_union_buffer[10].float_type=SUB2_width[0];
+    flash_union_buffer[11].float_type=SUB2_width[1];
+    flash_union_buffer[12].float_type=SUB2_width[2];
+    flash_union_buffer[13].float_type=SUB2_width[3];
+
+
+    flash_erase_page(0, 6);
+    flash_write_page(0, 6, flash_union_buffer, 14);
+}
+
+void SUB2_Read(void)
+{
+    ips200_set_font(1);
+    ips200_show_string(M_1,N_0,"Read SUB2 point");
+    ips200_set_font(0);
+
+    flash_read_page(0, 6, flash_union_buffer, 14);
+    special_point[0].x=flash_union_buffer[0].float_type;
+    special_point[0].y=flash_union_buffer[1].float_type;
+
+    special_point[1].x=flash_union_buffer[2].float_type;
+    special_point[1].y=flash_union_buffer[3].float_type;
+
+    special_point[2].x=flash_union_buffer[4].float_type;
+    special_point[2].y=flash_union_buffer[5].float_type;
+
+    special_point[3].x=flash_union_buffer[6].float_type;
+    special_point[3].y=flash_union_buffer[7].float_type;
+
+    special_point[4].x=flash_union_buffer[8].float_type;
+    special_point[4].y=flash_union_buffer[9].float_type;
+
+
+    SUB2_width[0]=flash_union_buffer[10].float_type;
+    SUB2_width[1]=flash_union_buffer[11].float_type;
+    SUB2_width[2]=flash_union_buffer[12].float_type;
+    SUB2_width[3]=flash_union_buffer[13].float_type;
+
+}
+
+
+
+
+void SUB3_Map(void)//x240,y340
+{
+    ips200_set_font(1);
+
+    ips200_show_string(M_21,N_5,"3333");
+
+    ips200_set_font(0);
+    ips200_draw_line(119,0,119,319,RGB565_WHITE);//绘制坐标轴 119竖轴
+    ips200_draw_line(0,0,0,319,RGB565_WHITE);//绘制底面框 0竖
+    ips200_draw_line(239,0,239,319,RGB565_WHITE);//绘制底面框 239竖
+    ips200_draw_line(0,0,239,0,RGB565_WHITE);//绘制底面框 239横
+    ips200_draw_line(0,239,239,239,RGB565_WHITE);//绘制底面框 239横 坐标原点
+    ips200_draw_line(0,319,239,319,RGB565_WHITE);//绘制底面框 319横
+    ips200_show_string(X_1,arrow_key,"->");
+    ips200_show_string(X_4,Y_1,"draw");
+    ips200_show_string(X_4,Y_2,"remember");
+    ips200_show_string(X_4,Y_3,"run");
+    ips200_show_string(X_4,Y_4,"change");
+    ips200_show_string(X_4,Y_5,"change2");
+    ips200_show_string(X_4,Y_6,"save");
+    ips200_show_string(X_4,Y_7,"read");
+    ips200_show_string(X_4,Y_8,"slow");
+    ips200_show_string(X_4,Y_9,"middle");
+    ips200_show_string(X_4,Y_10,"fast");
+    ips200_show_string(X_4,Y_11,"cl_ofset");
+    ips200_show_string(X_4,Y_12,"show");
+    ips200_show_string(X_4,Y_13,"<--");
+}
+
+void SUB3_Map_draw(void)//x240,y340
+{
+    ips200_set_font(0);
+
+    ips200_show_string(X_1,Y_31,"locx");      ips200_show_float(X_12, Y_31, locx, 8,1);
+    ips200_show_string(X_1,Y_32,"locy");      ips200_show_float(X_12, Y_32, locy, 8,1);
+    ips200_show_string(X_1,Y_33,"yaw");       ips200_show_float(X_12, Y_33, eulerAngle.yaw, 4,4);
+    ips200_show_string(X_1,Y_34,"cao_start");     ips200_show_int(X_12, Y_34, SUB3_cao_start, 4);
+    ips200_show_string(X_1,Y_35,"diao_start");     ips200_show_int(X_12, Y_35, SUB3_diao_start, 4);
+    ips200_show_string(X_1,Y_36,"diao_end");     ips200_show_int(X_12, Y_36, SUB3_diao_end, 4);
+    ips200_show_string(X_1,Y_37,"DataNum;");     ips200_show_int(X_12, Y_37, DataNum, 5);
+
+
+    ips200_draw_line(0,0,0,319,RGB565_WHITE);//绘制底面框 0竖
+    ips200_draw_line(239,0,239,319,RGB565_WHITE);//绘制底面框 239竖
+    ips200_draw_line(0,0,239,0,RGB565_WHITE);//绘制底面框 239横
+    ips200_draw_line(0,239,239,239,RGB565_WHITE);//绘制底面框 239横 坐标原点(119,239)
+    ips200_draw_line(0,319,239,319,RGB565_WHITE);//绘制底面框 319横
+    if(SUB3_change_flag==1)
+    {
+        if(turn_flag)
+        {
+            special_point[7].x=SUB3_right * 88100;
+            special_point[7].y=SUB3_start_zhui;
+            special_point[6].y=special_point[7].y+SUB3_zhui_length;
+            special_point[5].y=special_point[zhui_count+3].y+SUB3_zhui_length*2;
+            special_point[4].y=special_point[zhui_count+3].y+SUB3_zhui_length*3;
+            special_point[3].y=special_point[zhui_count+3].y+SUB3_zhui_length*4;
+
+            // special_point[6].x=SUB3_right * 88100;
+            // special_point[6].y=SUB3_start_zhui;
+            // special_point[5].y=special_point[zhui_count+3].y+SUB3_zhui_length;
+            // special_point[4].y=special_point[zhui_count+3].y+SUB3_zhui_length*2;
+            // special_point[3].y=special_point[zhui_count+3].y+SUB3_zhui_length*3;
+
+            if(draw_flag==0)
+            {
+                draw_flag=1;
+                special_point[2].y=408500;
+                special_point[1].y=270000;
+                special_point[0].y=158000;
+                special_point[0].x=0;
+                special_point[1].x=0;
+                special_point[2].x=0;
+            }
+            SUB3_change_flag=0;
+        }
+        else
+        {
+            if(zhui_count==4)
+            {
+                special_point[0].y=SUB3_start_zhui;
+                special_point[1].y=special_point[0].y+SUB3_zhui_length;
+                special_point[2].y=special_point[0].y+SUB3_zhui_length*2;
+                special_point[3].y=special_point[0].y+SUB3_zhui_length*3;
+                special_point[4].y=special_point[0].y+SUB3_zhui_length*4;
+                special_point[0].x=0;
+                special_point[1].x=0;
+                special_point[2].x=0;
+                special_point[3].x=0;
+                special_point[4].x=0;
+            }
+            else if (zhui_count==3)
+            {
+                special_point[0].y=SUB3_start_zhui;
+                special_point[1].y=special_point[0].y+SUB3_zhui_length;
+                special_point[2].y=special_point[0].y+SUB3_zhui_length*2;
+                special_point[3].y=special_point[0].y+SUB3_zhui_length*3;
+                special_point[0].x=0;
+                special_point[1].x=0;
+                special_point[2].x=0;
+                special_point[3].x=0;
+            }
+            if(draw_flag==0)
+            {
+                draw_flag=1;
+                special_point[zhui_count+1].y=448500;
+                special_point[zhui_count+2].y=270000;
+                special_point[zhui_count+3].y=160000;
+                special_point[zhui_count+1].x=0;
+                special_point[zhui_count+2].x=SUB3_right * 95100;
+                special_point[zhui_count+3].x=SUB3_right * 95100;
+            }
+            SUB3_change_flag=0;
+        }
+    }
+    generate_Path(3);
+}
+
+void SUB3_remember(void)
+{
+    t_run();
+}
+
+void SUB3_run(void)
+{
+    navigation_SUB_flag=3;
+    remember_s=0;
+    SUB3_state=0;
+//    control_mode=1; //开启遥控器控制
+    t_run();
+}
+
+
+void SUB3_slow(void)
+{
+    ips200_set_font(1);
+    ips200_show_string(X_1,Y_1,"SLOW");
+
+
+    SUB3balence_kp=31.3,SUB3balence_kd=-1.52,SUB3balence_ki=0.064;
+    SUB3_out_kp=0.18,SUB3_out_kd=-0.3,SUB3_out_ki=0;
+
+    WSUB3balence_kp=31.3,WSUB3balence_kd=-1.52,WSUB3balence_ki=0.064;
+    WSUB3_out_kp=0.24,WSUB3_out_kd=-0.36,WSUB3_out_ki=0;
+
+//    SUB3_po_balence_kp=36.7,SUB3_po_balence_kd=-1.58,SUB3_po_balence_ki=0.059;
+    SUB3_po_balence_kp=34.8,SUB3_po_balence_kd=-1.48,SUB3_po_balence_ki=0.06;
+    SUB3_diao_balence_kp=31.3,SUB3_diao_balence_kd=-1.52,SUB3_diao_balence_ki=0.064;
+    diao_SUB3_out_kp=0.23,diao_SUB3_out_kd=-0.36,diao_SUB3_out_ki=0;
+
+    SUB3_speed=80;
+    WSUB3_speed=80;
+    po_speed=70;
+    diao_speed=80;
+
+    SUB3_qz=21000;
+
+    start_pianyi=10000; //如果先走锥桶，那么会加入一段偏移用于初始不用绕锥
+    SUB3_po_width=62400; //坡道宽度
+    SUB3_width=23000;    //锥桶宽度
+    sub3_len=33000;      //掉头宽度
+    SUB3_zhui_length=60000;  //锥桶长度
+    diao_SUB3_qz=18000;
+    SUB3_start_zhui=84000;
+
+}
+
+void SUB3_middle(void)
+{
+    ips200_set_font(1);
+    ips200_show_string(X_1,Y_1,"MIDDLE");
+
+    SUB3balence_kp=17,SUB3balence_kd=-1.26,SUB3balence_ki=0.054;
+    SUB3_out_kp=0.15,SUB3_out_kd=-0.25,SUB3_out_ki=0;
+
+    WSUB3balence_kp=31.3,WSUB3balence_kd=-1.52,WSUB3balence_ki=0.064;
+    WSUB3_out_kp=0.23,WSUB3_out_kd=-0.36,WSUB3_out_ki=0;
+
+    SUB3_po_balence_kp=34.8,SUB3_po_balence_kd=-1.48,SUB3_po_balence_ki=0.06;
+    SUB3_diao_balence_kp=31.3,SUB3_diao_balence_kd=-1.52,SUB3_diao_balence_ki=0.064;
+    diao_SUB3_out_kp=0.23,diao_SUB3_out_kd=-0.36,diao_SUB3_out_ki=0;
+
+    SUB3_speed=120;
+    WSUB3_speed=80;
+    po_speed=70;
+    diao_speed=80;
+
+    SUB3_qz=21000;
+
+    start_pianyi=10000; //如果先走锥桶，那么会加入一段偏移用于初始不用绕锥
+    SUB3_po_width=62400; //坡道宽度
+    SUB3_width=23000;    //锥桶宽度
+    sub3_len=33000;      //掉头宽度
+    SUB3_zhui_length=42000;  //锥桶长度
+    diao_SUB3_qz=18000;
+    SUB3_start_zhui=90000;
+
+}
+
+
+void SUB3_fast(void)
+{
+
+}
+
+void SUB3_change(void)
+{
+    ips200_set_font(0);
+    ips200_set_color(RGB565_RED, RGB565_BLACK);
+    ips200_show_string(X_0,arrow_key,"-->");
+    ips200_show_string(X_18,arrow_key,"*");
+    ips200_set_color(RGB565_YELLOW, RGB565_BLACK);
+    ips200_show_string(X_4,Y_0,"SUB3_qz");       ips200_show_int(X_20, Y_0, SUB3_qz,5);
+    ips200_show_string(X_4,Y_1,"diao_SUB3_qz");    ips200_show_int(X_20, Y_1, diao_SUB3_qz,5);
+    ips200_show_string(X_4,Y_2,"SUB3_speed");    ips200_show_int(X_20, Y_2, SUB3_speed,5);
+    ips200_show_string(X_4,Y_3,"wan_speed");     ips200_show_int(X_20, Y_3, WSUB3_speed,5);
+    ips200_show_string(X_4,Y_4,"diao_speed");    ips200_show_int(X_20, Y_4, diao_speed,5);
+    ips200_show_string(X_4,Y_5,"po_speed");      ips200_show_int(X_20, Y_5, po_speed,5);
+    ips200_set_color(RGB565_RED, RGB565_BLACK);
+    ips200_show_string(X_4,Y_6,"zhui_count");    ips200_show_int(X_20, Y_6, zhui_count,2);
+    ips200_show_string(X_4,Y_7,"SUB3_right");    ips200_show_int(X_20, Y_7, SUB3_right,2);
+    ips200_show_string(X_4,Y_8,"ba_kp");        ips200_show_float(X_20, Y_8, SUB3balence_kp, 3,1);
+    ips200_show_string(X_4,Y_9,"ba_ki");        ips200_show_float(X_20, Y_9, SUB3balence_ki, 1,3);
+    ips200_show_string(X_4,Y_10,"ba_kd");        ips200_show_float(X_20, Y_10, SUB3balence_kd, 3,2);
+    ips200_show_string(X_4,Y_11,"SB3_outkp");    ips200_show_float(X_20, Y_11, SUB3_out_kp,1,3);
+    ips200_show_string(X_4,Y_12,"SB3_outkd");    ips200_show_float(X_20, Y_12, SUB3_out_kd,2,3);
+    ips200_show_string(X_4,Y_13,"SB3_outki");    ips200_show_float(X_20, Y_13, SUB3_out_ki,1,3);
+    ips200_show_string(X_4,Y_14,"SB3_speedkp");  ips200_show_float(X_20, Y_14, SUB3_speed_kp,3,3);
+    ips200_show_string(X_4,Y_15,"SB3_speedki");  ips200_show_float(X_20, Y_15, SUB3_speed_ki,3,3);
+    ips200_set_color(RGB565_YELLOW, RGB565_BLACK);
+    ips200_show_string(X_4,Y_16,"Wba_kp");       ips200_show_float(X_20, Y_16, WSUB3balence_kp, 3,1);
+    ips200_show_string(X_4,Y_17,"Wba_ki");       ips200_show_float(X_20, Y_17, WSUB3balence_ki, 1,3);
+    ips200_show_string(X_4,Y_18,"Wba_kd");       ips200_show_float(X_20, Y_18, WSUB3balence_kd, 3,2);
+    ips200_show_string(X_4,Y_19,"WSB3_outkp");   ips200_show_float(X_20, Y_19, WSUB3_out_kp,1,3);
+    ips200_show_string(X_4,Y_20,"WSB3_outkd");   ips200_show_float(X_20, Y_20, WSUB3_out_kd,2,3);
+    ips200_show_string(X_4,Y_21,"WSB3_outki");   ips200_show_float(X_20, Y_21, WSUB3_out_ki,1,3);
+    ips200_set_color(RGB565_RED, RGB565_BLACK);
+    ips200_show_string(X_4,Y_22,"ba_po_kp");     ips200_show_float(X_20, Y_22, SUB3_po_balence_kp, 3,1);
+    ips200_show_string(X_4,Y_23,"ba_po_ki");     ips200_show_float(X_20, Y_23, SUB3_po_balence_ki, 1,3);
+    ips200_show_string(X_4,Y_24,"ba_po_kd");     ips200_show_float(X_20, Y_24, SUB3_po_balence_kd, 3,2);
+    ips200_set_color(RGB565_YELLOW, RGB565_BLACK);
+    ips200_show_string(X_4,Y_25,"diao_out_kp");   ips200_show_float(X_20, Y_25, diao_SUB3_out_kp,1,3);
+    ips200_show_string(X_4,Y_26,"diao_out_kp");   ips200_show_float(X_20, Y_26, diao_SUB3_out_kd,2,3);
+    ips200_show_string(X_4,Y_27,"diao_out_kp");   ips200_show_float(X_20, Y_27, diao_SUB3_out_ki,1,3);
+    ips200_show_string(X_4,Y_28,"ba_diao_kp");   ips200_show_float(X_20, Y_28, SUB3_diao_balence_kp, 3,1);
+    ips200_show_string(X_4,Y_29,"ba_diao_ki");   ips200_show_float(X_20, Y_29, SUB3_diao_balence_ki, 1,3);
+    ips200_show_string(X_4,Y_30,"ba_diao_kd");   ips200_show_float(X_20, Y_30, SUB3_diao_balence_kd, 3,2);
+    ips200_show_string(X_4,Y_31,"<--");
+}
+
+void SUB3_change2(void)
+{
+    ips200_set_font(0);
+    ips200_show_string(X_0,arrow_key,"-->");
+    ips200_show_string(X_18,arrow_key,"*");
+    ips200_set_color(RGB565_RED, RGB565_BLACK);
+    ips200_show_string(X_4,Y_0,"IF_CHANGE");      ips200_show_int(X_20, Y_0, SUB3_change_flag,6);
+    ips200_show_string(X_4,Y_1,"sub3_diao_len");  ips200_show_int(X_20, Y_1, sub3_len,6);
+    ips200_show_string(X_4,Y_2,"sub3_pianyi");    ips200_show_int(X_20, Y_2, start_pianyi,6);
+    ips200_show_string(X_4,Y_3,"sub3_width");     ips200_show_int(X_20, Y_3, SUB3_width,6);
+    ips200_show_string(X_4,Y_4,"start_zhui");     ips200_show_int(X_20, Y_4, SUB3_start_zhui,6);
+    ips200_show_string(X_4,Y_5,"zhui_length");    ips200_show_int(X_20, Y_5, SUB3_zhui_length,6);
+    ips200_show_string(X_4,Y_6,"po_width");       ips200_show_int(X_20, Y_6, SUB3_po_width,6);
+    ips200_show_string(X_4,Y_7,"y0");             ips200_show_int(X_20, Y_7, special_point[0].y,6);
+    ips200_show_string(X_4,Y_8,"y1");             ips200_show_int(X_20, Y_8, special_point[1].y,6);
+    ips200_show_string(X_4,Y_9,"y2");             ips200_show_int(X_20, Y_9, special_point[2].y,6);
+    ips200_show_string(X_4,Y_10,"y3");            ips200_show_int(X_20, Y_10, special_point[3].y,6);
+    ips200_show_string(X_4,Y_11,"y4");            ips200_show_int(X_20, Y_11, special_point[4].y,6);
+    ips200_show_string(X_4,Y_12,"y5");            ips200_show_int(X_20, Y_12, special_point[5].y,6);
+    ips200_show_string(X_4,Y_13,"y6");            ips200_show_int(X_20, Y_13, special_point[6].y,6);
+    ips200_show_string(X_4,Y_14,"y7");            ips200_show_int(X_20, Y_14, special_point[7].y,6);
+    ips200_show_string(X_4,Y_15,"y8");            ips200_show_int(X_20, Y_15, special_point[8].y,6);
+    ips200_set_color(RGB565_YELLOW, RGB565_BLACK);
+    ips200_show_string(X_4,Y_16,"x5");            ips200_show_int(X_20, Y_16, special_point[5].x,6);
+    ips200_show_string(X_4,Y_17,"x6");            ips200_show_int(X_20, Y_17, special_point[6].x,6);
+    ips200_show_string(X_4,Y_18,"x7");            ips200_show_int(X_20, Y_18, special_point[7].x,6);
+    ips200_show_string(X_4,Y_19,"x8");            ips200_show_int(X_20, Y_19, special_point[8].x,6);
+    ips200_show_string(X_4,Y_20,"<--");
+}
+
+void SUB3_Save(void)
+{
+    ips200_set_font(1);
+    ips200_show_string(M_1,N_0,"Saving SUB3 point");
+    ips200_set_font(0);
+    flash_union_buffer[0].float_type=special_point[0].y;
+    flash_union_buffer[1].float_type=special_point[1].y;
+    flash_union_buffer[2].float_type=special_point[2].y;
+    flash_union_buffer[3].float_type=special_point[3].y;
+    flash_union_buffer[4].float_type=special_point[4].y;
+    flash_union_buffer[5].float_type=special_point[5].y;
+    flash_union_buffer[6].float_type=special_point[6].y;
+    flash_union_buffer[7].float_type=special_point[7].y;
+    flash_union_buffer[8].float_type=special_point[8].y;
+    flash_union_buffer[9].float_type=special_point[5].x;
+    flash_union_buffer[10].float_type=special_point[6].x;
+    flash_union_buffer[11].float_type=special_point[7].x;
+    flash_union_buffer[12].float_type=special_point[8].x;
+
+    flash_union_buffer[13].float_type=SUB3_right;
+    flash_union_buffer[14].float_type=sub3_len;
+    flash_union_buffer[15].float_type=start_pianyi;
+    flash_union_buffer[16].float_type=SUB3_width;
+    flash_erase_page(0, 7);
+    flash_write_page(0, 7, flash_union_buffer, 17);
+}
+
+void SUB3_Read(void)
+{
+    ips200_set_font(1);
+    ips200_show_string(M_1,N_0,"Read SUB3 point");
+    ips200_set_font(0);
+
+    flash_read_page(0, 7, flash_union_buffer, 17);
+    special_point[0].y=flash_union_buffer[0].float_type;
+    special_point[1].y=flash_union_buffer[1].float_type;
+    special_point[2].y=flash_union_buffer[2].float_type;
+    special_point[3].y=flash_union_buffer[3].float_type;
+    special_point[4].y=flash_union_buffer[4].float_type;
+    special_point[5].y=flash_union_buffer[5].float_type;
+    special_point[6].y=flash_union_buffer[6].float_type;
+    special_point[7].y=flash_union_buffer[7].float_type;
+    special_point[8].y=flash_union_buffer[8].float_type;
+    special_point[5].x=flash_union_buffer[9].float_type;
+    special_point[6].x=flash_union_buffer[10].float_type;
+    special_point[7].x=flash_union_buffer[11].float_type;
+    special_point[8].x=flash_union_buffer[12].float_type;
+    SUB3_right=flash_union_buffer[13].float_type;
+    sub3_len=flash_union_buffer[14].float_type;
+    start_pianyi=flash_union_buffer[15].float_type;
+    SUB3_width=flash_union_buffer[16].float_type;
+}
+
+
+void Menu()
+{
+    static  uint8 Key_number;
+    Key_number=Key();
+    if(Key_number==key_down || Key_number==key_down_long)
+    {
+        func_index = table[func_index].down; //向下翻
+        system_delay_ms (50);
+    }
+    else if(Key_number==key_up || Key_number==key_up_long)
+    {
+         func_index = table[func_index].up     ; //向上翻
+         system_delay_ms (50);
+    }
+    else if(Key_number==key_middle)//确认
+    {
+        func_index = table[func_index].enter;    //确认
+        clear_flag=1;
+    }
+
+    else if(Key_number==key_left|| Key_number==key_left_long)//减
+    {
+        minus_jian();
+        system_delay_ms (50);
+    }
+    else if(Key_number==key_right|| Key_number==key_right_long)//加
+    {
+        plus_jia();
+        system_delay_ms (50);
+    }
+
+    if(func_index !=last_index || Key_number!=0||func_index==SUB_MENU_show_imu_data||func_index==SUB_MENU_SB1_Map_draw||func_index==SUB_MENU_SB1_Map_show_imu||func_index==SUB_MENU_SB2_Map_show_imu||func_index==SUB_MENU_SB3_Map_show_imu)
+    {
+        current_operation_index=table[func_index].current_operation;
+        last_arrow_key=arrow_key;
+        arrow_key=table[func_index].arrow;
+        ips200_show_string(X_0,last_arrow_key,"   ");
+        ips200_show_string(X_18,last_arrow_key," ");
+        if(clear_flag)
+        {
+           clear_flag=0;
+           ips200_clear();
+        }
+        (*current_operation_index)();
+            last_index=func_index;
+    }
+}
+
+
+
+
+附录 C 车模技术检查表
+一、车模技术检查表
+二、车模照片
+1、车模外观照片
+
+
+
+
+
+
+▲ 图1.1 车模照片（从前到后依次为前视图，侧视图，俯视图）
+2、电路板PCB图
+
+
+
+
+
+
+3、电路板原理图
+
+
+
+
+===== TABLE 1 =====
+名称 | 参数
+车模总质量 | 1466g
+车模长度 | 300mm
+车模宽度 | 210mm
+车模高度 | 200mm
+传感器个数 | 7种，7个
+传感器种类 | 陀螺仪模块 GPS模块 摄像头模块 编码器模块 硅麦模块 逐飞串口接收器 逐飞wifi模块
+赛道检测频率 | 100kHZ
+额外伺服器 | 无
+
+===== TABLE 2 =====
+队伍名称 | 杭电单车定向一队 | 杭电单车定向一队 | 杭电单车定向一队 | 杭电单车定向一队
+参赛学校 | 杭州电子科技大学 | 杭州电子科技大学 | 杭州电子科技大学 | 杭州电子科技大学
+赛题组组别 | 单车定向 | 单车定向 | 单车定向 | 单车定向
+检查项目 | 规格 （选手自行填写） | 符合 （） | 不符合（） | 备注
+1.车模类型是什么？ | N1 |  |  | 如果是自制车模，请标明自制。
+车模整体尺寸： （包括传感器在内）长，宽，高(mm) | L*W*H=29.7*5*7cm |  |  | 今年比赛车模尺寸没有限制
+传感器种类、规格(型号)数量。 是否使用自带MCU的成品传感器模块？型号是什么？ | 陀螺仪,icm42688*1 无 |  |  | 
+控制转向舵机型号是否自行改装舵机？ 防伪易损标签是否完整？ | S-D9010 是 |  |  | 
+1. 是否增加伺服电机？ 2. 如果有种类、个数和作用？ | 无 |  |  | 
+电路中微处理器型号和个数？ | TC264，CYT2BL3 |  |  | 
+是否具有其它可编程器件，个数与作用？ | 无 |  |  | 
+是否有无线通讯装置？ 如果有种类和个数？ | 1.有 2.逐飞无线串口 1个 逐飞串口接收器 1个 |  |  | 
+电池的种类、规格和数量？ | GNB高能1100mAh 3S 11.4V |  |  | 
+1. 是否使用GPS导航？ 2. 是否没有使用RTK？ | 1.无 2.无 |  |  | 
+后轮驱动电机是否是原车模电机？ 是否具有防伪易损标签？ | 1.是 2.是 |  |  | 
+轮胎是否是原车同款轮胎？ 轮胎的尺寸（直径和宽度）是否小于等于原车膜尺寸？ | 1.是 2.是 |  |  | 
+车轮轴距、轮距是否改装？ 改装参数是什么？ | 1.否 2.无 |  |  | 
+车模驱动轮传动机构是否改装？ 改装方式是什么？ | 1.否 2.无 |  |  | 
+是否更换过原装车模中的机械元器件？更换后的规格 是什么？ | 1.否 |  |  | 。
+车模电路板个数及功能。 其中是否有购买成品电路板？ | 4，电调*1，主板*1，核心板*1，转接板*1 否 |  |  | 
+自制电路板是否标记有学校名称、队伍名称、制作日期等信息？ 标示信息在PCB的哪一层？ | 1.是 2. 金属层 |  |  | 均标注：杭州电子科技大学 杭电单车定向一队 以及时间
+其它待说明内容 |  |  |  | 
+检查人员签名： | 检查意见： | 检查意见： | 检查意见： | 检查意见：
