@@ -7,6 +7,11 @@ from pathlib import Path,PurePosixPath
 import stat
 import sys
 import zipfile
+import urllib.request
+import urllib.parse
+import urllib.error
+import tempfile
+import shutil
 
 ROOT=Path(__file__).resolve().parents[1]
 
@@ -38,11 +43,27 @@ def read_bytes(repo_id,path):
         raw=expanded.read_bytes();location=str(expanded)
     else:
         archive=ROOT/'assets/upstream-archives'/entry['archive_file']
-        if not archive.is_file():
-            raise ValueError('Full snapshot archive is not installed. Run python tools/download_source_archives.py --repo-id '+repo_id)
-        with zipfile.ZipFile(archive) as package:
-            raw=package.read(key)
-        location=str(archive)+'!/'+key
+        if archive.is_file():
+            with zipfile.ZipFile(archive) as package: raw=package.read(key)
+            location=str(archive)+'!/'+key
+        else:
+            release=source_catalog()['github_release']
+            location='https://raw.githubusercontent.com/'+release['repository']+'/main/assets/upstream/'+repo_id+'/'+urllib.parse.quote(key)
+            try:
+                with urllib.request.urlopen(location,timeout=40) as response: raw=response.read()
+            except urllib.error.HTTPError as error:
+                if error.code!=404: raise
+                location='https://github.com/'+release['repository']+'/releases/download/'+release['tag']+'/'+entry['archive_file']
+                with tempfile.TemporaryDirectory(prefix='smart-car-source-') as temporary:
+                    folder=Path(temporary).resolve()
+                    assert folder.parent==Path(tempfile.gettempdir()).resolve()
+                    downloaded=folder/'snapshot.zip'
+                    with urllib.request.urlopen(location,timeout=60) as response,downloaded.open('wb') as output:
+                        shutil.copyfileobj(response,output,1024*1024)
+                    with downloaded.open('rb') as handle:
+                        if hashlib.file_digest(handle,'sha256').hexdigest()!=entry['archive_sha256']: raise ValueError('Remote archive checksum mismatch')
+                    with zipfile.ZipFile(downloaded) as package: raw=package.read(key)
+                location+='!/'+key
     if hashlib.sha256(raw).hexdigest()!=record['sha256']:
         raise ValueError('Source checksum mismatch. Keep reference snapshots unchanged; edit a working project copy.')
     return raw,record,location
