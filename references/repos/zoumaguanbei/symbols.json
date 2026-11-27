@@ -3,6 +3,171 @@
   "kind": "heuristic definition candidates",
   "symbols": [
     {
+      "name": "seekfree_assistant_sum",
+      "path": "libraries/zf_components/seekfree_assistant.cpp",
+      "line": 77
+    },
+    {
+      "name": "seekfree_assistant_camera_data_send",
+      "path": "libraries/zf_components/seekfree_assistant.cpp",
+      "line": 99
+    },
+    {
+      "name": "seekfree_assistant_camera_dot_send",
+      "path": "libraries/zf_components/seekfree_assistant.cpp",
+      "line": 151
+    },
+    {
+      "name": "seekfree_assistant_oscilloscope_send",
+      "path": "libraries/zf_components/seekfree_assistant.cpp",
+      "line": 190
+    },
+    {
+      "name": "seekfree_assistant_camera_information_config",
+      "path": "libraries/zf_components/seekfree_assistant.cpp",
+      "line": 228
+    },
+    {
+      "name": "seekfree_assistant_camera_boundary_config",
+      "path": "libraries/zf_components/seekfree_assistant.cpp",
+      "line": 257
+    },
+    {
+      "name": "seekfree_assistant_camera_send",
+      "path": "libraries/zf_components/seekfree_assistant.cpp",
+      "line": 373
+    },
+    {
+      "name": "seekfree_assistant_data_analysis",
+      "path": "libraries/zf_components/seekfree_assistant.cpp",
+      "line": 394
+    },
+    {
+      "name": "seekfree_assistant_transfer",
+      "path": "libraries/zf_components/seekfree_assistant_interface.cpp",
+      "line": 61
+    },
+    {
+      "name": "seekfree_assistant_receive",
+      "path": "libraries/zf_components/seekfree_assistant_interface.cpp",
+      "line": 75
+    },
+    {
+      "name": "seekfree_assistant_interface_init",
+      "path": "libraries/zf_components/seekfree_assistant_interface.cpp",
+      "line": 88
+    },
+    {
+      "name": "imu660ra_get_acc",
+      "path": "libraries/zf_device/zf_device_imu660ra.cpp",
+      "line": 10
+    },
+    {
+      "name": "imu660ra_get_gyro",
+      "path": "libraries/zf_device/zf_device_imu660ra.cpp",
+      "line": 17
+    },
+    {
+      "name": "imu660rb_get_acc",
+      "path": "libraries/zf_device/zf_device_imu660rb.cpp",
+      "line": 10
+    },
+    {
+      "name": "imu660rb_get_gyro",
+      "path": "libraries/zf_device/zf_device_imu660rb.cpp",
+      "line": 17
+    },
+    {
+      "name": "imu963ra_get_acc",
+      "path": "libraries/zf_device/zf_device_imu963ra.cpp",
+      "line": 9
+    },
+    {
+      "name": "imu963ra_get_gyro",
+      "path": "libraries/zf_device/zf_device_imu963ra.cpp",
+      "line": 16
+    },
+    {
+      "name": "imu963ra_get_mag",
+      "path": "libraries/zf_device/zf_device_imu963ra.cpp",
+      "line": 23
+    },
+    {
+      "name": "imu_get_dev_info",
+      "path": "libraries/zf_device/zf_device_imu_core.cpp",
+      "line": 34
+    },
+    {
+      "name": "imu_get_raw",
+      "path": "libraries/zf_device/zf_device_imu_core.cpp",
+      "line": 64
+    },
+    {
+      "name": "ips200_clear",
+      "path": "libraries/zf_device/zf_device_ips200_fb.cpp",
+      "line": 19
+    },
+    {
+      "name": "ips200_full",
+      "path": "libraries/zf_device/zf_device_ips200_fb.cpp",
+      "line": 32
+    },
+    {
+      "name": "ips200_draw_point",
+      "path": "libraries/zf_device/zf_device_ips200_fb.cpp",
+      "line": 44
+    },
+    {
+      "name": "ips200_draw_line",
+      "path": "libraries/zf_device/zf_device_ips200_fb.cpp",
+      "line": 60
+    },
+    {
+      "name": "ips200_show_char",
+      "path": "libraries/zf_device/zf_device_ips200_fb.cpp",
+      "line": 107
+    },
+    {
+      "name": "ips200_show_string",
+      "path": "libraries/zf_device/zf_device_ips200_fb.cpp",
+      "line": 142
+    },
+    {
+      "name": "ips200_show_int",
+      "path": "libraries/zf_device/zf_device_ips200_fb.cpp",
+      "line": 153
+    },
+    {
+      "name": "ips200_show_uint",
+      "path": "libraries/zf_device/zf_device_ips200_fb.cpp",
+      "line": 175
+    },
+    {
+      "name": "ips200_show_float",
+      "path": "libraries/zf_device/zf_device_ips200_fb.cpp",
+      "line": 210
+    },
+    {
+      "name": "ips200_show_gray_image",
+      "path": "libraries/zf_device/zf_device_ips200_fb.cpp",
+      "line": 238
+    },
+    {
+      "name": "ips200_init",
+      "path": "libraries/zf_device/zf_device_ips200_fb.cpp",
+      "line": 261
+    },
+    {
+      "name": "uvc_camera_init",
+      "path": "libraries/zf_device/zf_device_uvc.cpp",
+      "line": 28
+    },
+    {
+      "name": "wait_image_refresh",
+      "path": "libraries/zf_device/zf_device_uvc.cpp",
+      "line": 51
+    },
+    {
       "name": "adc_convert",
       "path": "libraries/zf_driver/zf_driver_adc.cpp",
       "line": 5

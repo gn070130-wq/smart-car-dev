@@ -37,22 +37,37 @@ def main():
             if '://' in target or target.startswith('#'):continue
             relative=target.split('#',1)[0]
             assert (path.parent/relative).exists(),(path,target)
+    for path in ROOT.rglob('*'):
+        if not path.is_file() or '.git' in path.parts:continue
+        if path.suffix not in {'.md','.json','.py','.yaml','.csv','.txt'}:continue
+        assert '\ufffd' not in path.read_text(encoding='utf-8-sig',errors='replace'),path
     corpus=ROOT/'references/corpus'
     index=json.loads((corpus/'index.json').read_text(encoding='utf-8'))
     assert [row['id'] for row in index]==list(range(1,54))
     for row in index:
         raw=(corpus/row['text_file']).read_bytes()
         assert hashlib.sha256(raw).hexdigest()==row['text_sha256'],row['id']
-        assert len(raw.decode('utf-8').splitlines())==row['lines']
+        text=raw.decode('utf-8').replace('\r\n','\n')
+        assert len(text.splitlines())==row['lines'],row['id']
+        assert len(text)==row['characters'],row['id']
     catalog=json.loads((ROOT/'references/repos/catalog.json').read_text(encoding='utf-8'))['repositories']
     assert len(catalog)==13
+    files_total=symbols_total=0
     for row in catalog:
         folder=ROOT/'references/repos'/row['id']
         manifest=json.loads((folder/'manifest.json').read_text(encoding='utf-8'))
         symbols=json.loads((folder/'symbols.json').read_text(encoding='utf-8'))['symbols']
         assert manifest['revision']==row['revision']
+        assert len(manifest['files'])==row['files'],row['id']
+        assert len(symbols)==row['symbols'],row['id']
+        assert (ROOT/'references/repos'/row['review']).exists(),row['id']
         known={item['path'] for item in manifest['files']}
         assert all(item['path'] in known and item['line']>0 for item in symbols)
+        files_total+=len(manifest['files'])
+        symbols_total+=len(symbols)
+    validation=json.loads((ROOT/'references/provenance.json').read_text(encoding='utf-8'))['multi_repo_validation']
+    assert files_total==validation['file_or_archive_member_records']
+    assert symbols_total==validation['definition_candidates']
     search=load('search_reports')
     assert search.search('LADRC',[40],limit=1)[0]['id']==40
     lookup=load('lookup_open_source')
@@ -79,7 +94,7 @@ def main():
         analysis=telemetry.analyze(log)
         assert analysis['nonpositive_intervals']==1
         assert analysis['lateral_error']['n']==1
-    print('PASS: portable skill, 53 corpus hashes, 13 repository indexes, links and offline tool behavior.')
+    print('PASS: portable skill, 53 corpus hashes, 13 repository indexes, encoding guards, link and offline tool behavior.')
 
 
 if __name__=='__main__':

@@ -144,5 +144,6 @@
       "symbols": 311,
       "review": "han-zoumaguanbei/review.md"
     }
-  ]
+  ],
+  "notes": "repositories 仅收录第 2 轮 13 个工程。han-zoumaguanbei.alias_of 指向第 1 轮的 zoumaguanbei，其索引位于 ../zoumaguanbei/，来源见 provenance.json 的 open_source_references，不在本表内。"
 }

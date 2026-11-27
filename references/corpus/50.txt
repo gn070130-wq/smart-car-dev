@@ -405,7 +405,7 @@
 0405 }
 0406 break;
 0407 case SHOW_INFO:
-0408 /*鏄剧ず--瑙ｆ瀽鍥�*/
+0408 /*显示--解析图*/
 0409 switch (SpeedwayPath.SpeedwayMotionStatus)
 0410 {
 0411 case STOP:
