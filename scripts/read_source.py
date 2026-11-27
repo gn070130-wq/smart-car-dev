@@ -24,8 +24,14 @@ def source_entry(repo_id):
     catalog=source_catalog()
     entry=next((item for item in catalog['repositories'] if item['id']==repo_id),None)
     if entry is None:raise ValueError(f'Unknown source ID: {repo_id}')
-    with gzip.open(ROOT/entry['file_manifest'],'rt',encoding='utf-8') as handle:
-        manifest=json.load(handle)
+    local=ROOT/entry['file_manifest']
+    if local.is_file():
+        with gzip.open(local,'rt',encoding='utf-8') as handle: manifest=json.load(handle)
+    else:
+        repository=catalog['github_release']['repository']
+        url='https://raw.githubusercontent.com/'+repository+'/main/'+entry['file_manifest']
+        with urllib.request.urlopen(url,timeout=60) as response: packed=response.read()
+        manifest=json.loads(gzip.decompress(packed).decode('utf-8'))
     return entry,manifest
 
 
