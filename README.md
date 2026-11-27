@@ -15,7 +15,7 @@
 - [53份报告来源索引](references/source-map.md)
 - [原始来源与验证范围](references/provenance.json)
 
-本仓库保存技能、原创解析、报告提取文本、元数据与辅助工具。内核、交叉工具链、完整第三方SDK、硬件工程和模型权重不随仓库附带。源码定位使用固定提交链接；本机绝对路径已从JSON元数据中移除。
+本仓库保存技能、解析、报告正文、实际应用源码、模型文件和工具。13份去重的完整上游快照（包括上游提供的内核、工具链、SDK和硬件资料）及53份原始报告保存在同一私有仓库的Release附件中；本机已接入技能离线目录。查看[离线源码与完整附件](references/offline-sources.md)。这不是只有上游网址的索引；上游未提供的文件仍不会被虚构补齐。
 
 ## 安装和使用
 
@@ -40,6 +40,8 @@ assets/                  车模配置、模型契约、日志列模板
 references/              分主题知识、报告正文、项目解析与证据
 scripts/                 报告检索、源码索引、遥测和模型检查
 tools/validate.py        不依赖板卡的仓库完整性与工具行为检查
+assets/upstream/         可直接浏览的实际应用源码及模型
+assets/upstream-archives/ 完整快照，本机已安装；GitHub中位于Release附件
 ```
 
 常用命令：
@@ -47,9 +49,11 @@ tools/validate.py        不依赖板卡的仓库完整性与工具行为检查
 ```bash
 python scripts/search_reports.py --query "角速度" --ids 02,13,53
 python scripts/lookup_open_source.py --repo-id runaccm2025 --query consumer
+python scripts/read_source.py --repo-id smart2026 --path smartCar/code/yolov5_detect.cc
 python scripts/inspect_ncnn_contract.py model.param --input in0 --output out0
 python scripts/analyze_telemetry.py run.csv --expected-period-ms 5
 python scripts/smoke_tflite.py model.tflite
+python tools/download_source_archives.py
 ```
 
 除TFLite冒烟需要NumPy及兼容解释器外，检索和静态检查工具只使用Python标准库。TFLite工具只验证CPU合成输入下的分配与Invoke，不验证识别准确率、TFLM算子覆盖或龙芯时延。
@@ -68,7 +72,7 @@ git commit -m "Improve smart car development guidance"
 git push
 ```
 
-本仓库与此前已经安装的技能是两个副本，不会自动同步。在本仓库完成修改和校验后，将 `SKILL.md`、`agents/`、`assets/`、`references/`、`scripts/` 更新到本机对应技能目录。
+本仓库与已安装技能是两个副本。本次更新已同步技能、元数据、实际应用源码与离线归档入口；以后改动仍需同步。归档缓存较大，保存在D盘并通过目录联接接入技能；迁移电脑时用下载工具恢复归档，不把空联接误认为文件已安装。
 
 验证脚本检查格式、来源/符号关系、53份正文哈希、相对链接，以及检索、遥测、NCNN契约工具的关键行为。目标板编译、模型样本对照和实车试跑仍按具体改动另行执行。
 

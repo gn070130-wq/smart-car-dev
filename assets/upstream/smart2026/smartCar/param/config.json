@@ -1,0 +1,79 @@
+{
+    "_注释_": "第21届智能车竞赛 — 比赛现场只改此文件",
+
+    "摄像头配置": {
+        "img_width": 160, "img_height": 120, "fps": 60
+    },
+
+    "速度配置": {
+        "base_speed": 50, "speed_curve": 38, "speed_inter": 35,
+        "speed_obstacle": 25, "speed_lost": 20
+    },
+
+    "PID_直道": {
+        "kp": 0.70, "ki": 0.003, "kd": 0.80,
+        "i_limit": 40.0, "out_limit": 100.0
+    },
+    "PID_弯道": {
+        "kp": 1.10, "ki": 0.003, "kd": 0.40,
+        "i_limit": 40.0, "out_limit": 100.0
+    },
+
+    "IPM逆透视": {
+        "src": [[15.0,115.0],[145.0,115.0],[105.0,66.0],[55.0,66.0]],
+        "dst": [[20.0,119.0],[140.0,119.0],[140.0,0.0],[20.0,0.0]]
+    },
+
+    "巡线参数": {
+        "row_scan_start": 110, "row_scan_end": 20,
+        "road_width_min": 15, "search_radius": 40,
+        "straight_var_thresh": 5.0
+    },
+
+    "场景检测": {
+        "_十字路口_": "---",
+        "inter_width_thresh": 100,
+        "inter_confirm_frames": 3,
+        "inter_pass_frames": 25,
+
+        "_障碍物_": "---",
+        "obstacle_red_ratio": 0.05,
+        "obstacle_pass_frames": 30,
+        "obstacle_steer": 35,
+
+        "_斑马线_": "---",
+        "zebra_stripe_min": 4,
+        "zebra_confirm_frames": 3,
+        "zebra_cooldown_frames": 40,
+        "_说明_zebra_": "cooldown=40帧(50fps下约0.8秒)，车驶离斑马线后才恢复检测",
+
+        "_环岛_": "---",
+        "roundabout_confirm_frames": 3,
+        "roundabout_entry_frames": 15,
+        "roundabout_pass_frames": 80,
+        "roundabout_steer": 30,
+
+        "_坡道_": "---",
+        "slope_pass_frames": 60,
+        "speed_slope": 30,
+
+        "_目标板_": "---",
+        "target_bypass_frames": 40,
+        "target_steer": 30,
+        "speed_target": 25
+    },
+
+    "YOLO": {
+        "enable": true,
+        "param_path": "./tiny_classifier_fp32.ncnn.param",
+        "model_path": "./tiny_classifier_fp32.ncnn.bin",
+        "prob_thresh": 0.25,
+        "nms_thresh": 0.45
+    },
+
+    "调试开关": {
+        "debug_stream": true,
+        "debug_print_fps": false,
+        "transmission_port": 8080
+    }
+}

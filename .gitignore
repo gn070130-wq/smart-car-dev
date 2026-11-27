@@ -15,3 +15,9 @@ venv/
 *.pt
 *.pth
 *.log
+!assets/upstream/**/*.bin
+!assets/upstream/**/*.tflite
+!assets/upstream/**/*.onnx
+!assets/upstream/**/*.pt
+!assets/upstream/**/*.pth
+/assets/upstream-archives/

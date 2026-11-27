@@ -1,0 +1,14 @@
+{
+    "name": "shufflenetv2_0.5x",
+    "input_width": 64,
+    "input_height": 64,
+    "num_classes": 6,
+    "param_file": "shufflenetv2_0.5x.param",
+    "bin_file": "shufflenetv2_0.5x.bin",
+    "input_name": "input",
+    "output_name": "output",
+    "mean_vals": [123.675, 116.28, 103.53],
+    "norm_vals": [0.0171248, 0.017507, 0.0174292],
+    "class_names": ["gun", "bomb", "first_aid_kit", "telescope", "armored_car", "ambulance"],
+    "action_names": ["left", "left", "right", "right", "straight", "straight"]
+}

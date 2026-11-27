@@ -107,5 +107,21 @@
     "offline_evidence": "multi-repo/offline-evidence.json",
     "runtime_smoke": "multi-repo/tflite-smoke.json",
     "boundary": "Focused static audit and selected offline tests only; no full firmware/vehicle validation."
+  },
+  "installed_source_assets": {
+    "catalog": "source-assets.json",
+    "counts": {
+      "source_repositories": 14,
+      "unique_upstream_snapshots": 13,
+      "expanded_files": 857,
+      "original_reports": 53
+    },
+    "unique_upstream_tracked_files": 191318,
+    "archive_bytes": 3072450982,
+    "github_release": {
+      "repository": "gn070130-wq/smart-car-dev",
+      "tag": "sources-2026-11-27"
+    },
+    "validation": "Complete pinned Git blobs, archive CRC/SHA256, 857 expanded files and 53 original report hashes verified; no hardware execution."
   }
 }

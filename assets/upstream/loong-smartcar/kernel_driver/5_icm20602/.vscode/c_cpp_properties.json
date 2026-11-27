@@ -1,0 +1,19 @@
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "/home/wuwu/loongxin/linux/linux-6.9/include", 
+                "/home/wuwu/loongxin/linux/linux-6.9/arch/loongarch/include", 
+                "/home/wuwu/loongxin/linux/linux-6.9/arch/loongarch/include/generated/"
+            ],
+            "defines": [],
+            "compilerPath": "/usr/bin/clang",
+            "cStandard": "c11",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "clang-x64"
+        }
+    ],
+    "version": 4
+}

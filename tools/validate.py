@@ -7,9 +7,15 @@ import math
 import re
 import sys
 import tempfile
+import gzip
 
 sys.dont_write_bytecode=True
 ROOT=Path(__file__).resolve().parents[1]
+
+
+def is_upstream_data(path):
+    relative=path.relative_to(ROOT).parts
+    return len(relative)>1 and relative[0]=='assets' and relative[1] in ('upstream','upstream-archives','upstream-manifests')
 
 
 def load(name):
@@ -25,12 +31,12 @@ def main():
     assert re.search(r'^name: smart-car-dev$',skill,re.M)
     assert re.search(r'^description: .+',skill,re.M)
     for path in ROOT.rglob('*.json'):
-        if '.git' in path.parts:continue
+        if '.git' in path.parts or is_upstream_data(path):continue
         data=json.loads(path.read_text(encoding='utf-8-sig'))
         assert isinstance(data,(dict,list)),path
         assert not re.search(r'"(?:original_local_path|local_snapshot_path)"\s*:',path.read_text(encoding='utf-8-sig')),path
     for path in ROOT.rglob('*.md'):
-        if '.git' in path.parts:continue
+        if '.git' in path.parts or is_upstream_data(path):continue
         content=path.read_text(encoding='utf-8-sig')
         assert '[TODO:' not in content,path
         for target in re.findall(r'\]\(([^)]+)\)',content):
@@ -73,6 +79,21 @@ def main():
     lookup=load('lookup_open_source')
     assert lookup.lookup('main_run')[0]['path']=='project/src/start.cpp'
     assert lookup.lookup('YoloDetector::load_model',repo_id='smart2026')
+    if (ROOT/'references/source-assets.json').exists():
+        sources=json.loads((ROOT/'references/source-assets.json').read_text(encoding='utf-8'))
+        assert sources['counts']['unique_upstream_snapshots']==13
+        assert sources['counts']['original_reports']==53
+        count=0
+        for entry in sources['repositories']:
+            with gzip.open(ROOT/entry['file_manifest'],'rt',encoding='utf-8') as handle:
+                manifest=json.load(handle)
+            for item in manifest.get('expanded_files',[]):
+                source=ROOT/entry['expanded_root']/item['path']
+                assert hashlib.sha256(source.read_bytes()).hexdigest()==item['sha256'],source
+                count+=1
+        assert count==sources['counts']['expanded_files']
+        actual=lookup.lookup('YoloDetector::load_model',repo_id='smart2026',limit=1)
+        assert actual[0].get('local_source') and actual[0].get('verified_local_context')
     try:
         lookup.lookup('main',repo_id='../outside')
         raise AssertionError('Path-like repository ID accepted')

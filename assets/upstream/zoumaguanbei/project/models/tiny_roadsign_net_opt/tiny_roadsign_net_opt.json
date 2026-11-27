@@ -1,0 +1,14 @@
+{
+    "name": "tiny_roadsign_net_opt",
+    "input_width": 64,
+    "input_height": 64,
+    "num_classes": 3,
+    "param_file": "tiny_roadsign_net_opt.param",
+    "bin_file": "tiny_roadsign_net_opt.bin",
+    "input_name": "input",
+    "output_name": "prob",
+    "mean_vals": [127.5, 127.5, 127.5],
+    "norm_vals": [0.00784314, 0.00784314, 0.00784314],
+    "class_names": ["gun_or_explosive", "first_aid_or_binoculars", "armored_car_or_ambulance"],
+    "action_names": ["bypass_left", "bypass_right", "go_straight"]
+}

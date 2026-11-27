@@ -5,3 +5,5 @@
 *.yaml text eol=lf
 *.csv text eol=lf
 references/corpus/*.txt -text
+assets/upstream/** -text
+assets/upstream-manifests/** -text
