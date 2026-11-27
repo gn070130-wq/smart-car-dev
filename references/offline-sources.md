@@ -13,7 +13,7 @@
 
 ## GitHub中的内容
 
-同一私有GitHub仓库的main分支保存可浏览的应用代码、元数据、说明和工具；完整上游内容与原始报告同时保存于Release `sources-2026-11-27` 的实际ZIP附件。附件位于用户自己的仓库，不依赖上游网址继续可用。大附件没有放入普通Git历史，也未使用收费LFS配额。
+按用户明确选择，同一公开GitHub仓库的main分支保存可浏览的应用代码、元数据、说明和工具；完整上游内容与原始报告同时保存于Release `sources-2026-11-27` 的实际ZIP附件。附件位于用户自己的仓库，不依赖上游网址继续可用。大附件没有放入普通Git历史，也未使用收费LFS配额。
 
 在另一台机器clone后，恢复归档：
 
@@ -23,7 +23,7 @@ python tools/download_source_archives.py --repo-id zoumaguanbei
 python tools/download_source_archives.py --verify-only
 ```
 
-下载器使用GitHub CLI现有登录或本机Git Credential Manager凭据，仅从本仓库Release恢复文件，不执行解压得到的代码；每个归档都按SHA256验证。
+当前公开仓库附件可直接下载，无需GitHub登录；未来改为私有时也支持GitHub CLI或本机Git Credential Manager凭据。下载器仅从本仓库Release恢复文件，不执行解压得到的代码；每个归档都按SHA256验证。
 
 ## 读取实际代码
 

@@ -3,7 +3,8 @@
   "created_date": "2026-11-27",
   "github_release": {
     "repository": "gn070130-wq/smart-car-dev",
-    "tag": "sources-2026-11-27"
+    "tag": "sources-2026-11-27",
+    "visibility": "public"
   },
   "archive_directory": "assets/upstream-archives",
   "repositories": [

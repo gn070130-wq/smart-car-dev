@@ -120,7 +120,8 @@
     "archive_bytes": 3072450982,
     "github_release": {
       "repository": "gn070130-wq/smart-car-dev",
-      "tag": "sources-2026-11-27"
+      "tag": "sources-2026-11-27",
+      "visibility": "public"
     },
     "validation": "Complete pinned Git blobs, archive CRC/SHA256, 857 expanded files and 53 original report hashes verified; no hardware execution."
   }

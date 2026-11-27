@@ -1,4 +1,4 @@
-"""Restore full source assets from this private GitHub repository's release, then verify hashes."""
+"""Restore full source assets from this repository's release, then verify hashes."""
 import argparse
 import hashlib
 import json
@@ -7,6 +7,8 @@ from pathlib import Path
 import re
 import subprocess
 import sys
+import urllib.request
+import urllib.parse
 
 ROOT=Path(__file__).resolve().parents[1]
 
@@ -52,10 +54,19 @@ def main():
             if args.verify_only:raise ValueError(f'Missing archive: {name}')
             release=catalog['github_release']
             if not re.fullmatch(r'[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+',release['repository']):raise ValueError('Invalid GitHub repository.')
-            if env is None:env=github_environment(release['repository'].split('/')[0])
-            result=subprocess.run(['gh','release','download',release['tag'],'--repo',release['repository'],
-                '--pattern',name,'--dir',str(destination)],env=env,capture_output=True,text=True,timeout=1800)
-            if result.returncode:raise ValueError('Release download failed: '+result.stderr.strip())
+            if release.get('visibility')=='public':
+                url=f"https://github.com/{release['repository']}/releases/download/{urllib.parse.quote(release['tag'])}/{urllib.parse.quote(name)}"
+                partial=target.with_suffix(target.suffix+'.partial')
+                request=urllib.request.Request(url,headers={'User-Agent':'smart-car-dev-source-installer'})
+                with urllib.request.urlopen(request,timeout=60) as response,partial.open('wb') as output:
+                    while chunk:=response.read(1024*1024):output.write(chunk)
+                if digest(partial)!=entry['archive_sha256']:raise ValueError(f'Checksum mismatch after download: {name}')
+                partial.replace(target)
+            else:
+                if env is None:env=github_environment(release['repository'].split('/')[0])
+                result=subprocess.run(['gh','release','download',release['tag'],'--repo',release['repository'],
+                    '--pattern',name,'--dir',str(destination)],env=env,capture_output=True,text=True,timeout=1800)
+                if result.returncode:raise ValueError('Release download failed: '+result.stderr.strip())
             if digest(target)!=entry['archive_sha256']:raise ValueError(f'Checksum mismatch after download: {name}')
             print('DOWNLOADED',name)
     except (OSError,ValueError,subprocess.TimeoutExpired) as exc:parser.error(str(exc))
