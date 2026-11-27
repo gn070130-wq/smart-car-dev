@@ -1,0 +1,401 @@
+{
+  "id": "runaccm2025",
+  "source_id": "hccc1203--RunACCM2025",
+  "url": "https://github.com/hccc1203/RunACCM2025",
+  "revision": "23e60c66605f53d6473dd264f16040f43db0178c",
+  "role": "EdgeBoard完全模型组上位机",
+  "files": [
+    {
+      "repo_id": "hccc1203--RunACCM2025",
+      "path": "capture/capture.h",
+      "git_blob": "2d9f06f51553f63b62ffe1eaab2f67a073a41eb0",
+      "bytes": 371,
+      "type": "blob",
+      "sha256": "b30ca6459cb56b50cd25246934ad4bf3427bd41f432fdb38f6e805b9d234695c",
+      "url": "https://github.com/hccc1203/RunACCM2025/blob/23e60c66605f53d6473dd264f16040f43db0178c/capture/capture.h"
+    },
+    {
+      "repo_id": "hccc1203--RunACCM2025",
+      "path": "capture/capture.cpp",
+      "git_blob": "9865398f99739553daa21234f48e6ef42d598ac4",
+      "bytes": 1387,
+      "type": "blob",
+      "sha256": "7062ea4f553b709d84d04f7bb7c7636ac5603bd9c5ee3cefb35ad0cd4ce4db9d",
+      "url": "https://github.com/hccc1203/RunACCM2025/blob/23e60c66605f53d6473dd264f16040f43db0178c/capture/capture.cpp"
+    },
+    {
+      "repo_id": "hccc1203--RunACCM2025",
+      "path": "main.cpp",
+      "git_blob": "08b18ba63d213f17a337b2915e76cb24a5064f28",
+      "bytes": 4979,
+      "type": "blob",
+      "sha256": "ccde9b5f63c0e04809f27dcbea46a3891a80cf32bc5b934b7d1f7a2ebd84dd50",
+      "url": "https://github.com/hccc1203/RunACCM2025/blob/23e60c66605f53d6473dd264f16040f43db0178c/main.cpp"
+    },
+    {
+      "repo_id": "hccc1203--RunACCM2025",
+      "path": "LICENSE",
+      "git_blob": "4ca841c83d14b79eb62c2890f74b5f7d51f95e17",
+      "bytes": 1066,
+      "type": "blob",
+      "sha256": "e3a24a21517f5f70a2dd9d9c5a09650020bf75b18f3dcff47952a799ffe322ec",
+      "url": "https://github.com/hccc1203/RunACCM2025/blob/23e60c66605f53d6473dd264f16040f43db0178c/LICENSE"
+    },
+    {
+      "repo_id": "hccc1203--RunACCM2025",
+      "path": "compile_commands.json",
+      "git_blob": "a4e1404352089fa7e71ac757fc1f6a0d30747d8a",
+      "bytes": 4188,
+      "type": "blob",
+      "sha256": "dfac99368be1182abd68ac97a93b8d2c6e3fc3e6415ff646905e27863035a58a",
+      "url": "https://github.com/hccc1203/RunACCM2025/blob/23e60c66605f53d6473dd264f16040f43db0178c/compile_commands.json"
+    },
+    {
+      "repo_id": "hccc1203--RunACCM2025",
+      "path": "param/config_110.json",
+      "git_blob": "b0b44651ba6af46be3d17fc34434a8fa0111101b",
+      "bytes": 2281,
+      "type": "blob",
+      "sha256": "359068259dd17462904d8a687d142600b221809df43240617c876b42e1588bce",
+      "url": "https://github.com/hccc1203/RunACCM2025/blob/23e60c66605f53d6473dd264f16040f43db0178c/param/config_110.json"
+    },
+    {
+      "repo_id": "hccc1203--RunACCM2025",
+      "path": "docs/runaccm2025-pipeline.architecture.json",
+      "git_blob": "33fde81b2998e198a94cfabd005a1c8a8bd5618f",
+      "bytes": 10498,
+      "type": "blob",
+      "sha256": "a71a8162d917599294306926022413116100d77b881816bc5dd76b431f3dd930",
+      "url": "https://github.com/hccc1203/RunACCM2025/blob/23e60c66605f53d6473dd264f16040f43db0178c/docs/runaccm2025-pipeline.architecture.json"
+    },
+    {
+      "repo_id": "hccc1203--RunACCM2025",
+      "path": "include/uart.hpp",
+      "git_blob": "0de445790f41b9758a24b6ea402d8535161ff3b4",
+      "bytes": 11566,
+      "type": "blob",
+      "sha256": "1dd7173d4460a316ffc6c5bcb88880dcfeabb597f49e402c7155092453b39af1",
+      "url": "https://github.com/hccc1203/RunACCM2025/blob/23e60c66605f53d6473dd264f16040f43db0178c/include/uart.hpp"
+    },
+    {
+      "repo_id": "hccc1203--RunACCM2025",
+      "path": "include/logger.hpp",
+      "git_blob": "ec68b829c69bf6fec4f1d18da13c8060feb96aa9",
+      "bytes": 5687,
+      "type": "blob",
+      "sha256": "dc1fbbeb114a6e94090305deae9a711afc94a7675566e4b1bc4d0ad8c44e8b4d",
+      "url": "https://github.com/hccc1203/RunACCM2025/blob/23e60c66605f53d6473dd264f16040f43db0178c/include/logger.hpp"
+    },
+    {
+      "repo_id": "hccc1203--RunACCM2025",
+      "path": "include/common.hpp",
+      "git_blob": "97dbd819861c51bdb2ae83acdf3fe85594b94302",
+      "bytes": 4998,
+      "type": "blob",
+      "sha256": "26eee81ee74e4e6249d0071d7ed5b1443d544af946b31330f4b96ff33d5aa5a5",
+      "url": "https://github.com/hccc1203/RunACCM2025/blob/23e60c66605f53d6473dd264f16040f43db0178c/include/common.hpp"
+    },
+    {
+      "repo_id": "hccc1203--RunACCM2025",
+      "path": "CMakeLists.txt",
+      "git_blob": "c9346fca3547ede1b83d6d7f47583e94d2d1b70d",
+      "bytes": 1745,
+      "type": "blob",
+      "sha256": "dc2bd31ac11fd5d4ac843bda024bd1637ebf6a4f7fd8c41db08d5a7ef9663b19",
+      "url": "https://github.com/hccc1203/RunACCM2025/blob/23e60c66605f53d6473dd264f16040f43db0178c/CMakeLists.txt"
+    },
+    {
+      "repo_id": "hccc1203--RunACCM2025",
+      "path": "include/detection.hpp",
+      "git_blob": "48cc0e9d03ede423ca0c673ae5c04371a0db92a8",
+      "bytes": 12875,
+      "type": "blob",
+      "sha256": "f13672c616f14de0962313616d0bc868eed4db1d3b56544bbed1d47b19ead2cf",
+      "url": "https://github.com/hccc1203/RunACCM2025/blob/23e60c66605f53d6473dd264f16040f43db0178c/include/detection.hpp"
+    },
+    {
+      "repo_id": "hccc1203--RunACCM2025",
+      "path": "param/config_130.json",
+      "git_blob": "f8a1a6e7f81f71768f46604d3512bec22a81b509",
+      "bytes": 2162,
+      "type": "blob",
+      "sha256": "7f49bdbcc8fd943bf7e76b91937cc1ac99be288bac518d12d7da0d5f269aef88",
+      "url": "https://github.com/hccc1203/RunACCM2025/blob/23e60c66605f53d6473dd264f16040f43db0178c/param/config_130.json"
+    },
+    {
+      "repo_id": "hccc1203--RunACCM2025",
+      "path": "param/config_choose.json",
+      "git_blob": "733cf1d8691bb765d12017656109355911903343",
+      "bytes": 1990,
+      "type": "blob",
+      "sha256": "d5cd5ffc27395dbf12df4b6311a419981f228b675e7ba8746e0cdbd88256b8ec",
+      "url": "https://github.com/hccc1203/RunACCM2025/blob/23e60c66605f53d6473dd264f16040f43db0178c/param/config_choose.json"
+    },
+    {
+      "repo_id": "hccc1203--RunACCM2025",
+      "path": "param/config_150.json",
+      "git_blob": "4be87cc30bf3b8ec8e00caee96f57e706ae29288",
+      "bytes": 1848,
+      "type": "blob",
+      "sha256": "167c3d8d1e1b4b44c181e33e34949d32b4d77ac1aa868d1e2f47d88d572a45b5",
+      "url": "https://github.com/hccc1203/RunACCM2025/blob/23e60c66605f53d6473dd264f16040f43db0178c/param/config_150.json"
+    },
+    {
+      "repo_id": "hccc1203--RunACCM2025",
+      "path": "param/config_ppncnms.json",
+      "git_blob": "938d93b91e64f9b4bd5a58caf582c4035bb521fe",
+      "bytes": 106,
+      "type": "blob",
+      "sha256": "b70f2c7586f89afe04198026e0821ceb9185351cff7b375ac8bb3dc4599834bc",
+      "url": "https://github.com/hccc1203/RunACCM2025/blob/23e60c66605f53d6473dd264f16040f43db0178c/param/config_ppncnms.json"
+    },
+    {
+      "repo_id": "hccc1203--RunACCM2025",
+      "path": "readme.md",
+      "git_blob": "d509e2767e337ec2e7bc6012250ced7a79dfe9fe",
+      "bytes": 7026,
+      "type": "blob",
+      "sha256": "5bd14c5c9faa64cd9f97ed367ed173b703ba65c5df933106e10801c4e2c9f2ce",
+      "url": "https://github.com/hccc1203/RunACCM2025/blob/23e60c66605f53d6473dd264f16040f43db0178c/readme.md"
+    },
+    {
+      "repo_id": "hccc1203--RunACCM2025",
+      "path": "param/config_ppncnna.json",
+      "git_blob": "a7111be9b862ac0ae6c05ba17f9ec6be8eb251e9",
+      "bytes": 115,
+      "type": "blob",
+      "sha256": "7ec93ab7e7289185303e496f3630c40d67c52e74fb3d7c832299a14cfc092d6e",
+      "url": "https://github.com/hccc1203/RunACCM2025/blob/23e60c66605f53d6473dd264f16040f43db0178c/param/config_ppncnna.json"
+    },
+    {
+      "repo_id": "hccc1203--RunACCM2025",
+      "path": "thread/thread.cpp",
+      "git_blob": "01cce9de6b8eba1d8afa3a0cebe78bd33cc54ed3",
+      "bytes": 6730,
+      "type": "blob",
+      "sha256": "10e2381a02ccb157697f623b8f44f291c52a5f4dae18157fe7197ba07924fd14",
+      "url": "https://github.com/hccc1203/RunACCM2025/blob/23e60c66605f53d6473dd264f16040f43db0178c/thread/thread.cpp"
+    },
+    {
+      "repo_id": "hccc1203--RunACCM2025",
+      "path": "param/config_90.json",
+      "git_blob": "f7c1280e6b393b55a0f69629af73c417e6f881cf",
+      "bytes": 2304,
+      "type": "blob",
+      "sha256": "746d466f25dd3f8ecee2921395c219ccd6e74f1f0d362e71359e5b6f3d11dc58",
+      "url": "https://github.com/hccc1203/RunACCM2025/blob/23e60c66605f53d6473dd264f16040f43db0178c/param/config_90.json"
+    },
+    {
+      "repo_id": "hccc1203--RunACCM2025",
+      "path": "track/basic/cross.h",
+      "git_blob": "6c551f4170743318151f256ebf8896dd6ee4b6a4",
+      "bytes": 5456,
+      "type": "blob",
+      "sha256": "7990ca163703aa71f6485170ee0187c4b1d030c12fcc1f806ab61ebea7a72327",
+      "url": "https://github.com/hccc1203/RunACCM2025/blob/23e60c66605f53d6473dd264f16040f43db0178c/track/basic/cross.h"
+    },
+    {
+      "repo_id": "hccc1203--RunACCM2025",
+      "path": "param/param.hpp",
+      "git_blob": "a77d41b03dc325ac68720eb0f3429ebc246b117d",
+      "bytes": 4047,
+      "type": "blob",
+      "sha256": "626a0b28f4f247f5bc0e0e4e6060a0f164e6832bc3b01283e6cb5dcbcd87d6a0",
+      "url": "https://github.com/hccc1203/RunACCM2025/blob/23e60c66605f53d6473dd264f16040f43db0178c/param/param.hpp"
+    },
+    {
+      "repo_id": "hccc1203--RunACCM2025",
+      "path": "thread/thread.h",
+      "git_blob": "8ed13aa8a2b9b5eeabfd2360650a2e43ec4999e7",
+      "bytes": 1929,
+      "type": "blob",
+      "sha256": "f19a71775655c4d1138812247cacb0fe4f7b4ffc356c8c8933c2f6443b5c050d",
+      "url": "https://github.com/hccc1203/RunACCM2025/blob/23e60c66605f53d6473dd264f16040f43db0178c/thread/thread.h"
+    },
+    {
+      "repo_id": "hccc1203--RunACCM2025",
+      "path": "track/basic/cross.cpp",
+      "git_blob": "d54536fc8afe41dca879d07f0201772f868662a4",
+      "bytes": 26166,
+      "type": "blob",
+      "sha256": "c97a81df8c98248b9b7bdab9eaa7f060675c5ce9fb7a84c21880c6d27d80cb3e",
+      "url": "https://github.com/hccc1203/RunACCM2025/blob/23e60c66605f53d6473dd264f16040f43db0178c/track/basic/cross.cpp"
+    },
+    {
+      "repo_id": "hccc1203--RunACCM2025",
+      "path": "track/imgprocess/imgprocess.cpp",
+      "git_blob": "e40f655fca8691a09dc72344f83ea16e1b82581d",
+      "bytes": 3134,
+      "type": "blob",
+      "sha256": "51eae328a952081f3f590ffb951f92250e2d94aab3cf2e087e55372f0770bf90",
+      "url": "https://github.com/hccc1203/RunACCM2025/blob/23e60c66605f53d6473dd264f16040f43db0178c/track/imgprocess/imgprocess.cpp"
+    },
+    {
+      "repo_id": "hccc1203--RunACCM2025",
+      "path": "track/basic/ring.h",
+      "git_blob": "ef06e26c57da13d8adbd0434872d0115fb654339",
+      "bytes": 5310,
+      "type": "blob",
+      "sha256": "6467ae8e85b52d9d0339f450fc8201810e049ec44d3c4f4a6ae5392eed9768c0",
+      "url": "https://github.com/hccc1203/RunACCM2025/blob/23e60c66605f53d6473dd264f16040f43db0178c/track/basic/ring.h"
+    },
+    {
+      "repo_id": "hccc1203--RunACCM2025",
+      "path": "track/imgprocess/imgprocess.h",
+      "git_blob": "15a746c8a592ec6b5a6f201c92ac188275c43198",
+      "bytes": 442,
+      "type": "blob",
+      "sha256": "6dd4f05cfa9b3b129c9bc21d0f9d113c68e141b388dbf4b8417ed650cb8dc821",
+      "url": "https://github.com/hccc1203/RunACCM2025/blob/23e60c66605f53d6473dd264f16040f43db0178c/track/imgprocess/imgprocess.h"
+    },
+    {
+      "repo_id": "hccc1203--RunACCM2025",
+      "path": "track/special/bridge.h",
+      "git_blob": "34092b10132b3a314fe751d5c2f6f508bf02b1cd",
+      "bytes": 1211,
+      "type": "blob",
+      "sha256": "a1954b44406e52f33bfdf806c3faf80493aac7d4c0ff46b4f39f1a7c4c5f6849",
+      "url": "https://github.com/hccc1203/RunACCM2025/blob/23e60c66605f53d6473dd264f16040f43db0178c/track/special/bridge.h"
+    },
+    {
+      "repo_id": "hccc1203--RunACCM2025",
+      "path": "track/special/catering.cpp",
+      "git_blob": "5b7fc802a35df0a81a965e20cd411a517a7f20b4",
+      "bytes": 6905,
+      "type": "blob",
+      "sha256": "605360136c15b3387fbca35339cd8521cf3d2507a2824aaaf4bcf6471a1b7cc2",
+      "url": "https://github.com/hccc1203/RunACCM2025/blob/23e60c66605f53d6473dd264f16040f43db0178c/track/special/catering.cpp"
+    },
+    {
+      "repo_id": "hccc1203--RunACCM2025",
+      "path": "track/special/bridge.cpp",
+      "git_blob": "e8453d38af1bfdc6af9c8f8864328f72be07856e",
+      "bytes": 765,
+      "type": "blob",
+      "sha256": "e525645df95a6ccee8760fc34dbdd540fb7c6cdaa0d97fb89b39a44419eb5b01",
+      "url": "https://github.com/hccc1203/RunACCM2025/blob/23e60c66605f53d6473dd264f16040f43db0178c/track/special/bridge.cpp"
+    },
+    {
+      "repo_id": "hccc1203--RunACCM2025",
+      "path": "track/special/catering.h",
+      "git_blob": "c100e72a84745228edf19b192d0409664e18b0ae",
+      "bytes": 2028,
+      "type": "blob",
+      "sha256": "4b7c0684ffca40d2de17ad56777babf12f29f52288f4bfd94cbc0fce58fc3ad8",
+      "url": "https://github.com/hccc1203/RunACCM2025/blob/23e60c66605f53d6473dd264f16040f43db0178c/track/special/catering.h"
+    },
+    {
+      "repo_id": "hccc1203--RunACCM2025",
+      "path": "track/basic/ring.cpp",
+      "git_blob": "28d5dfe99e670d75d0547a084051d8f63fe048e7",
+      "bytes": 36660,
+      "type": "blob",
+      "sha256": "22189fbbdf77bc64baa1989a7a07d7fbf331b0293471aee6ad37ed871dd7240d",
+      "url": "https://github.com/hccc1203/RunACCM2025/blob/23e60c66605f53d6473dd264f16040f43db0178c/track/basic/ring.cpp"
+    },
+    {
+      "repo_id": "hccc1203--RunACCM2025",
+      "path": "track/special/crosswalk.cpp",
+      "git_blob": "4792f079d629effac86d666bc93016fa3ee49e3b",
+      "bytes": 4206,
+      "type": "blob",
+      "sha256": "3118af8df4a589839c872f2cd153c18d426c0efae5e9a3983a46b899a42f3636",
+      "url": "https://github.com/hccc1203/RunACCM2025/blob/23e60c66605f53d6473dd264f16040f43db0178c/track/special/crosswalk.cpp"
+    },
+    {
+      "repo_id": "hccc1203--RunACCM2025",
+      "path": "track/special/charging.h",
+      "git_blob": "cc50f1ea13c3850602dd472ed4467663d3fd32f3",
+      "bytes": 2474,
+      "type": "blob",
+      "sha256": "4a4b1cbdb60e6adc9dee926431a49f8fe7b7066b8d191a9ab1039c4855579fcf",
+      "url": "https://github.com/hccc1203/RunACCM2025/blob/23e60c66605f53d6473dd264f16040f43db0178c/track/special/charging.h"
+    },
+    {
+      "repo_id": "hccc1203--RunACCM2025",
+      "path": "track/special/crosswalk.h",
+      "git_blob": "02d6a22b8c508569090c0d3bbf1360220c80fb17",
+      "bytes": 1090,
+      "type": "blob",
+      "sha256": "d76db7603bffeb5d7e07318f7edf496544e1168b6c90c265bdbe393441b0a43c",
+      "url": "https://github.com/hccc1203/RunACCM2025/blob/23e60c66605f53d6473dd264f16040f43db0178c/track/special/crosswalk.h"
+    },
+    {
+      "repo_id": "hccc1203--RunACCM2025",
+      "path": "track/special/charging.cpp",
+      "git_blob": "4f06aa8dc261946d703de7bd86c27dc21c5a1343",
+      "bytes": 19316,
+      "type": "blob",
+      "sha256": "3c137ecb4d35f12ec2ca057513ba0fdf9a133e409287b85aeb7c9c8685d81f3f",
+      "url": "https://github.com/hccc1203/RunACCM2025/blob/23e60c66605f53d6473dd264f16040f43db0178c/track/special/charging.cpp"
+    },
+    {
+      "repo_id": "hccc1203--RunACCM2025",
+      "path": "track/special/layby.cpp",
+      "git_blob": "55301552f49827030997d65a316925e009b34235",
+      "bytes": 10052,
+      "type": "blob",
+      "sha256": "22c51f416163f5423e98c4a4306e34b95957db24eb97d54922fe92b46fba712b",
+      "url": "https://github.com/hccc1203/RunACCM2025/blob/23e60c66605f53d6473dd264f16040f43db0178c/track/special/layby.cpp"
+    },
+    {
+      "repo_id": "hccc1203--RunACCM2025",
+      "path": "track/special/layby.h",
+      "git_blob": "7ae21918bf7161a3a8bbe587df8b010ebe571831",
+      "bytes": 1341,
+      "type": "blob",
+      "sha256": "b94ae4b4e7969fc9354e3b985b7b23d38e02e0e532ad18ced64c1b59955a1291",
+      "url": "https://github.com/hccc1203/RunACCM2025/blob/23e60c66605f53d6473dd264f16040f43db0178c/track/special/layby.h"
+    },
+    {
+      "repo_id": "hccc1203--RunACCM2025",
+      "path": "track/special/obstacle.cpp",
+      "git_blob": "87d8028a1ff6916f405c29ae4afb2a3fc984713b",
+      "bytes": 38665,
+      "type": "blob",
+      "sha256": "93a05281d7965f8e8dce1aab22938b608ef34095b956698e3df7f98818995866",
+      "url": "https://github.com/hccc1203/RunACCM2025/blob/23e60c66605f53d6473dd264f16040f43db0178c/track/special/obstacle.cpp"
+    },
+    {
+      "repo_id": "hccc1203--RunACCM2025",
+      "path": "track/special/obstacle.h",
+      "git_blob": "c841bb563251d8081c705bf35a1a78b61ebfef92",
+      "bytes": 1506,
+      "type": "blob",
+      "sha256": "a18e1e3b9615f8518da89bbb9c6af5755dd008da6afc7f0707ffa6335e2f3823",
+      "url": "https://github.com/hccc1203/RunACCM2025/blob/23e60c66605f53d6473dd264f16040f43db0178c/track/special/obstacle.h"
+    },
+    {
+      "repo_id": "hccc1203--RunACCM2025",
+      "path": "track/standard/standard.h",
+      "git_blob": "468feecd452b8edf72102ef2ff494b0fb2aab33c",
+      "bytes": 8459,
+      "type": "blob",
+      "sha256": "f0c7f5f9b9dca19cc16109bb0a270344df526e256d7a196c71e3086312a110c5",
+      "url": "https://github.com/hccc1203/RunACCM2025/blob/23e60c66605f53d6473dd264f16040f43db0178c/track/standard/standard.h"
+    },
+    {
+      "repo_id": "hccc1203--RunACCM2025",
+      "path": "track/standard/general.h",
+      "git_blob": "f47e1eca1aa5df72a83d2f0fdfc978f55a51859b",
+      "bytes": 7403,
+      "type": "blob",
+      "sha256": "9339914ceeb4e7138358a977b38b16d6cf6ada5792e6a21ffd389f1e796f14e9",
+      "url": "https://github.com/hccc1203/RunACCM2025/blob/23e60c66605f53d6473dd264f16040f43db0178c/track/standard/general.h"
+    },
+    {
+      "repo_id": "hccc1203--RunACCM2025",
+      "path": "track/standard/standard.cpp",
+      "git_blob": "f452a14c5043365ef997b280e8ddce1277153188",
+      "bytes": 74282,
+      "type": "blob",
+      "sha256": "419bd659d2de5625d6decbf1cbe5b558f101554c385472420a71efe177607b17",
+      "url": "https://github.com/hccc1203/RunACCM2025/blob/23e60c66605f53d6473dd264f16040f43db0178c/track/standard/standard.cpp"
+    }
+  ],
+  "tree_files": 51,
+  "tree_truncated": false,
+  "scope": "Selected source fetched/hash-verified; focused entrypoint/algorithm/interface review, not exhaustive line-by-line proof.",
+  "runtime_validation": "No full firmware build, hardware execution or vehicle test.",
+  "alias_of": null
+}

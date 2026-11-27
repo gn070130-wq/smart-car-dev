@@ -1,0 +1,148 @@
+{
+  "date": "2026-11-27",
+  "repositories": [
+    {
+      "id": "abandoned",
+      "source_id": "IcksLin--Abandoned",
+      "url": "https://github.com/IcksLin/Abandoned",
+      "revision": "d590c5d09566340d2e3a68171fba37043082b69a",
+      "role": "龙芯差速视觉控制与调试工程",
+      "alias_of": null,
+      "files": 78,
+      "symbols": 303,
+      "review": "abandoned/review.md"
+    },
+    {
+      "id": "runaccm2025",
+      "source_id": "hccc1203--RunACCM2025",
+      "url": "https://github.com/hccc1203/RunACCM2025",
+      "revision": "23e60c66605f53d6473dd264f16040f43db0178c",
+      "role": "EdgeBoard完全模型组上位机",
+      "alias_of": null,
+      "files": 43,
+      "symbols": 95,
+      "review": "runaccm2025/review.md"
+    },
+    {
+      "id": "wuwu99",
+      "source_id": "wuwusama--SmartCar_99Pai_OpenSource",
+      "url": "https://gitee.com/wuwusama/SmartCar_99Pai_OpenSource",
+      "revision": "c0c76f75e8872b2b5506525ebe6d608c9aaf435d",
+      "role": "21届龙芯底层库与示例",
+      "alias_of": null,
+      "files": 45,
+      "symbols": 122,
+      "review": "wuwu99/review.md"
+    },
+    {
+      "id": "loong-smartcar",
+      "source_id": "wuwusama--loong_SmartCar",
+      "url": "https://gitee.com/wuwusama/loong_SmartCar",
+      "revision": "b9973735dc78c9afef3e38e8d5908910fec31586",
+      "role": "20届极速光电舵机与阿克曼控制",
+      "alias_of": null,
+      "files": 58,
+      "symbols": 243,
+      "review": "loong-smartcar/review.md"
+    },
+    {
+      "id": "thl001",
+      "source_id": "dry-flipping-the-sky--THL001",
+      "url": "https://gitee.com/dry-flipping-the-sky/THL001",
+      "revision": "a545ea5dd3290b791a81043766294d21e6e84722",
+      "role": "龙邱库与单循环视觉/电机应用",
+      "alias_of": null,
+      "files": 40,
+      "symbols": 131,
+      "review": "thl001/review.md"
+    },
+    {
+      "id": "ls2k0300",
+      "source_id": "vvsakivv--LS2K0300",
+      "url": "https://gitee.com/vvsakivv/LS2K0300",
+      "revision": "b16ed55a9e1f89c3f8f81090901b18865e57a4d9",
+      "role": "逐飞示例与三类识别差速应用",
+      "alias_of": null,
+      "files": 72,
+      "symbols": 235,
+      "review": "ls2k0300/review.md"
+    },
+    {
+      "id": "car-chao",
+      "source_id": "chao-8xx--car",
+      "url": "https://gitee.com/chao-8xx/car",
+      "revision": "cd8c64c6d7fc75f783264b3006d961b767300541",
+      "role": "基于Wuwu库的多线程竞赛应用",
+      "alias_of": null,
+      "files": 79,
+      "symbols": 472,
+      "review": "car-chao/review.md"
+    },
+    {
+      "id": "smart2026",
+      "source_id": "damon3964--smart2026",
+      "url": "https://gitee.com/damon3964/smart2026",
+      "revision": "e271dd5ddde2f007396c28bec8f1c8802d81d981",
+      "role": "Wuwu设备层上的视觉/场景/检测控制",
+      "alias_of": null,
+      "files": 42,
+      "symbols": 145,
+      "review": "smart2026/review.md"
+    },
+    {
+      "id": "wjlai-test",
+      "source_id": "wjlai--test",
+      "url": "https://gitee.com/wjlai/test",
+      "revision": "0a7ea0e1941b48c59138bd26764effb268cf53c2",
+      "role": "归档中的识别demo和循迹代码",
+      "alias_of": null,
+      "files": 19,
+      "symbols": 101,
+      "review": "wjlai-test/review.md"
+    },
+    {
+      "id": "star-link",
+      "source_id": "winter-blossom-qi--star-link-frontier",
+      "url": "https://gitee.com/winter-blossom-qi/star-link-frontier",
+      "revision": "a64e827328cd69d35ce8e159c5007b3d38e95ab3",
+      "role": "智能车硬件资料集合",
+      "alias_of": null,
+      "files": 2,
+      "symbols": 0,
+      "review": "star-link/review.md"
+    },
+    {
+      "id": "duteryan",
+      "source_id": "duteryan--seekfree_-ls2-k0300_-opensource_-library",
+      "url": "https://gitee.com/duteryan/seekfree_-ls2-k0300_-opensource_-library",
+      "revision": "6c0342d47478ffbc40b16d5b230c238cc5dde1b9",
+      "role": "逐飞工程上的视觉与六类NCNN应用",
+      "alias_of": null,
+      "files": 79,
+      "symbols": 300,
+      "review": "duteryan/review.md"
+    },
+    {
+      "id": "loognson",
+      "source_id": "amireux_fish--Loognson",
+      "url": "https://gitee.com/amireux_fish/Loognson",
+      "revision": "9eba6c613b15b2ad42d60dfbc55e115a0b446aeb",
+      "role": "逐飞视觉元素与TFLM/NCNN候选识别",
+      "alias_of": null,
+      "files": 62,
+      "symbols": 224,
+      "review": "loognson/review.md"
+    },
+    {
+      "id": "han-zoumaguanbei",
+      "source_id": "han-user--ZouMaGuanBei",
+      "url": "https://gitee.com/han-user/ZouMaGuanBei",
+      "revision": "69014373f172a9442f148a853cfb282f454395a9",
+      "role": "已有厦门理工项目的同提交镜像",
+      "alias_of": "zoumaguanbei",
+      "files": 95,
+      "symbols": 311,
+      "review": "han-zoumaguanbei/review.md"
+    }
+  ]
+}

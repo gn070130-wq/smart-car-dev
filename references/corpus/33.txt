@@ -1,0 +1,547 @@
+0001 第二十一届全国大学生
+0002 智能汽车竞赛
+0003 技术报告
+0004 学校：
+0005 四川工商学院
+0006 队伍名称：
+0007 川商白驹
+0008 参赛队员：
+0009 成坤、周梽强、陆阳
+0010 带队老师：
+0011 胡兴平、吴文玲
+0012 关于技术报告和研究论文使用授权说明
+0013 本人已完全了解全国大学生智能汽车竞赛关于保留、使用技术报告和研究论文的规定，即：参赛作品著作权归参赛者本人，比赛组委会可以在相关主页上收录并公开参赛作品的设计方案、技术报告以及参赛模型车的视频、图像资料，并将相关内容编撰收录在组委会出版论文集中。
+0014 参赛队员：
+0015 成坤、周梽强、陆阳
+0016 带队老师：
+0017 胡兴平、吴文玲
+0018 日期：
+0019 2026年8月10日
+0020 目录
+0021 第一章引言1
+0022 第二章智能车总体方案设计2
+0023 1.1整体设计思路2
+0024 1.2车模整体布局及参数2
+0025 第三章机械结构与传感器安装3
+0026 3.1摄像头的安装3
+0027 3.2电池的安装4
+0028 3.3控制板的安装5
+0029 3.4屏幕的安装5
+0030 3.5陀螺仪的安装6
+0031 3.6编码器的安装6
+0032 3.7负压风扇的安装7
+0033 第四章硬件电路设计8
+0034 4.1硬件方案设计8
+0035 4.2控制板部分8
+0036 4.2.1电源稳压电路8
+0037 4.2.2LS2K0300核心板插座9
+0038 4.2.3电机驱动接口、陀螺仪接口、屏幕接口电路9
+0039 4.2.4直流电机DRV7801驱动板10
+0040 4.3STC32主控的无刷电机驱动板11
+0041 4.4电路实物展示11
+0042 第五章软件系统设计13
+0043 5.1路径识别及方向控制13
+0044 5.2PID控制13
+0045 5.3图像识别及执行动作14
+0046 5.4代码设计14
+0047 5.4.1While中部分代码：14
+0048 5.4.2定时器中部分代码：16
+0049 第六章开发工具与制作调试过程16
+0050 6.1工程的介绍17
+0051 6.2代码的编辑与编译17
+0052 6.3上位机的调试18
+0053 第七章车模主要技术参数说明19
+0054 第八章比赛总结20
+0055 附录22
+0056 第二十一届全国大学生智能汽车竞赛-技术报告
+0057 引言
+0058 随着信息技术的发展，汽车的电子化模块越来越多，智能汽车领域受到了大量的关注。受教育部高等教育司委托(教高司函[2005]201 号文)，高等学校自动化专业教学指导分委员会主办全国大学生智能汽车竞赛，以迅猛发展的汽车电子为背景，涵盖了控制、模式识别、传感技术、电子、电气、计算机、 机械等多个学科交叉的科技创意性比赛。 参赛选手须使用竞赛秘书处统一指定并负责采购竞赛车模，自行采用赛题指定微控制器作为核心控制单元，自主构思控制方案及系统设计，包括传感器信号采集处理、控制算法及执行、动力电机驱动、转向舵机控制等，完成智能汽车工程制作及调试，于指定日期与地点参加场地比赛。参赛队伍之名次（成绩）由赛车现场成功完成赛道比赛时间为主，技术方案及制作工程质量评分为辅来决定。
+0059 本篇技术报告主要包括机械系统、硬件系统、软件系统等，详尽地阐述了我们的设计方案，具体表现在硬件电路的创新设计以及控制算法的独特想法，我队参与比赛来的经验之谈，希望能给大家带来帮助。
+0060 智能车总体方案设计
+0061 整体设计思路
+0062 “走马观碑”智能车系统采用‘感知-决策-执行’闭环架构。感知层由彩钻风摄像头完成赛道环境的光学信息的采集，决策层以龙芯中科2K0300微控制器为核心的LS2K0300核心板，执行层由博士威龙F车模中的后轮直流RC380电机提供动力及转向。整体流程为：智能车通过彩钻风摄像头采集前方PVC赛道信息，经过USB数据线将信息传入LS2K0300核心板。核心板对图像数据进行二值化、边沿提取及路径规划，并融合编码器反馈的速度信息，通过PID控制策略生成PWM控制指令。最后由H桥驱动电路将PWM转化为电压控制后轮动力电机，从而实现控制车模前进、转向。
+0063 对于“走马观碑”组别还有另一个要求对路径上的目标板进行识别并作出不同的动作，本车采用独立于循迹摄像头的第二个彩钻风摄像头用于对目标板的识别。核心板会对循迹摄像头采集的道路信息处理后的目标区域使用识别摄像头采集，通过本地化部署AI大模型进行识别，最后做出决策。
+0064 图 1智能车整体框图
+0065 车模整体布局及参数
+0066 本次“走马观碑”组别采用的是博士威龙的F车模，原始尺寸232~272*180*64mm，经过加装之后整体车模的尺寸为275*320*400mm，轮胎直径为64mm，轻便小巧，内填海绵，极好的减震性和耐磨性,所配置的驱动电机为DC 7.2V RS380马达，功率可达20W。
+0067 图 2车模整体外观
+0068 整体布局有以下特点：
+0069 电池放在车子后面，有利于重心分布和增加后轮的摩擦力。
+0070 使用轻便坚固的碳纤杆作为摄像头的固定材料。
+0071 使用碳钎维打印件作为负压无刷风扇的保护罩，既做到了轻便，也保障了安全。
+0072 负压无刷电机安装在动力轴靠前位置，可防止车辆因起步动力过大而出现的翘头现象，还能够提供足够的下压力以增加摩擦，使转向更加灵敏。
+0073 重心越高，小车在过弯时越容易发生抬轮现象，冲出赛道，因此，在小车结构设计中，尽可能降低车身重心高度，以保证车模过弯时的稳定性。
+0074 机械结构与传感器安装
+0075 摄像头的安装
+0076 为了适应本次赛题，摄像头选用两颗彩钻风摄像头在不同的分辨率下实现不同的功能，如160*120是用来做循迹算法，320*240是用来做识别目标板。摄像头是通过碳素杆配合铜柱链接至F车模，有着较高的稳定性，其分布采用上下排布通过USB链接至LS2K0300核心板。
+0077 图 3摄像头的安装
+0078 电池的安装
+0079 对于三轮车模来说，动力轮也是转向轮，拥有比四轮车模更好的机动性。但如果所有重量都压在动力轮之前，就会出现重心靠前导致的转向不足，由于惯性的影响整个车会出现推头的现象，转弯时就像“航母掉头”，从而我们将重量相对较重的电池放在了动力轮之后，目的是将中心控制在转向轮上。此外，本车模还加装有配重块与电池放在同一个位置，也是为了调整重心。
+0080 图 4电池安装位置
+0081 控制板的安装
+0082 核心板采用的是逐飞科技的LS2K0300核心板，安装在用于输入输出的底板上，底板拥有足够完成本赛题的引脚接口。控制板安装在车模动力轮前方空处，通过铜柱与下方底板相连。
+0083 图 5控制板安装位置
+0084 屏幕的安装
+0085 屏幕安装在拓展核心板资源的控制底板上，方便数据的观察。屏幕主要用于观察摄像头数据、各项传感器的值，还可配合按键调试参数。
+0086 图 6屏幕安装位置
+0087 陀螺仪的安装
+0088 陀螺仪拓展核心板资源的控制底板上。在设计时需注意朝向和位置，位置尽量与车模的中轴线在同一垂直位置。读取陀螺仪的数据可以计算得到航向角、俯仰角、翻滚角，可用于辅助车辆行驶和特殊元素的判断。
+0089 图 7陀螺仪安装位置
+0090 编码器的安装
+0091 本车模采用的是1024线带方向的方向编码器，在安装编码器的时候要保证有合适的齿轮咬合。咬合完美的原则是：两个传动齿轮轴保持平行，齿轮间的配合间隙要合适，过松容易打坏齿轮，过紧又会增加传动阻力；传动部分要轻松、顺畅，容易转动。判断齿轮传动是否调整好的一个依据是，听一下电机带动后轮空转时的声音。声音刺耳响亮，说明齿轮间的配合间隙过大，传动中有撞齿现象；声音闷而且有迟滞，则说明齿轮间的配合间隙过小，咬合过紧，或者两齿轮轴不平行，电机负载加大。调整好的齿轮传动噪音小，并且不会有碰撞类的杂音。根据编码器的机械参数，我们采用合适的编码器支架来使编码器与电机适当地咬合在一起。
+0092 图 8编码器安装位置
+0093 负压风扇的安装
+0094 负压风扇安装在动力轮轴线靠前方，使用铜柱加碳纤维打印件固定，保证强度足够。这种安装方式避免了车模在起步的时候翘头，且能够提供足够的下压力使车辆完美转弯。配合负压保护罩具有一定的安全性，在保证风道不受影响的前提下使其不具备伤人性质。
+0095 图 9负压风扇安装位置
+0096 硬件电路设计
+0097 硬件方案设计
+0098 整个智能车控制系统是由搭载LS2K0300核心板的控制板、直流电机DRV7801驱动板、STC32主控的无刷电机驱动板这三部分组成。LS2K0300核心板可以插在控制板上组成处理、电机控制单元。为了减少电机驱动电路带来的干扰，把控制部分和电机驱动部分分别设计。
+0099 控制板主要电路包含：电源稳压电路、LS2K0300核心板插座、电机驱动接口、编码器接口、陀螺仪接口、屏幕接口、电源接口、指示灯、按键开关等。
+0100 控制板部分
+0101 电源稳压电路
+0102 电源转化电路作为系统的能量供给核心，负责将电池电能高效、稳定地转化为各模块所需的不同工作电压，可靠的电源是整个系统稳定运行与算法可靠执行的基石。本设计采用 12.6V 锂电池作为输入，依据各负载特性构建分级稳压架构：首先通过高效率同步降压转换器产生一路 5V 中间母线，为摄像头、编码器及运放等器件供电；再由超低噪声 LDO 将 5V 降压至 3.3V，单独供给高精度模拟前端，以最大限度抑制数字噪声耦合。驱动电机则由电池直接供电，配合大容量电解电容与 MOS 开关控制，确保瞬时大电流下的电压不会跌落。电路布局上，充分考虑了电源纹波抑制、瞬态负载响应、过流与反接保护，有效隔离了电机全速制动时产生的电源串扰，为信号采集与控制回路提供了纯净、可靠的电力环境。
+0103 图 10电源稳压电路
+0104 LS2K0300核心板插座
+0105 核心板是整个智能车的运算与控制中枢。我们通过高密度排针插座，将核心板上的GPIO、SPI、UART等关键外设接口与电源可靠引出，并按信号类型进行分区布局，在确保高速信号完整性的同时，实现了核心板与底板间的稳固连接和便捷维护。
+0106 图 11核心板插座
+0107 电机驱动接口、陀螺仪接口、屏幕接口电路
+0108 主控底板上集成了电机驱动、陀螺仪及显示屏三类专用接口。电机驱动接口输出PWM与方向信号，走线经地线屏蔽以抑制开关噪声；陀螺仪采用SPI通信，电源经独立滤波处理，确保姿态数据不受电机干扰；屏幕通过高速SPI接口连接，支持调试参数的实时显示。
+0109 图 12电机驱动接口、陀螺仪接口、屏幕接口电路
+0110 直流电机DRV7801驱动板
+0111 驱动板采用DRV8701专用栅极驱动芯片搭配外部N沟道MOS管构成H桥，充分利用了MOS管开关速度快、导通内阻低的特性，确保电机在频繁启停与调速过程中的高效与可靠。DRV8701集成的电荷泵与硬件保护功能，简化了电路复杂度，实现了对电机的平滑调速、方向控制与过流保护，适配智能车对驱动系统响应快、发热低的核心要求。
+0112 图 13直流电机DRV7801驱动板
+0113 STC32主控的无刷电机驱动板
+0114 本驱动板以STC32微控制器为本地主控，接收50Hz标准PWM信号作为调速指令，驱动三相无刷直流电机。STC32依据反电动势反馈的转子位置，输出六路PWM信号控制MOS管三相全桥实现六步换相。板载电压、电流检测与硬件保护电路，确保驱动系统在高负载工况下的可靠运行。
+0115 图 14STC32主控的无刷电机驱动板
+0116 电路实物展示
+0117 图 15控制板实物展示
+0118 图 16STC无刷电调实物展示
+0119 图 17DRV7801驱动板实物展示
+0120 软件系统设计
+0121 软件系统是智能车实现自主循迹与稳定行驶的核心，也是整个设计过程中耗时最长、迭代最为密集的部分。本车软件从功能上划分为赛道感知与运动控制两大模块：感知层面，采用彩钻风USB摄像头实时采集赛道图像，经图像预处理、自适应阈值二值化与边沿提取等步骤，拟合出赛道中心线，准确识别直道、弯道及各类元素；控制层面，采用增量式PID算法对驱动电机实施闭环调节，融合编码器速度反馈与弯道减速策略，经反复实车调试整定出一套兼顾响应速度与行驶稳定性的参数，使智能车能够在不同赛道工况下流畅、可靠地完成比赛。
+0122 路径识别及方向控制
+0123 路径识别方面，主控对摄像头采集的赛道图像进行二值化处理，提取赛道两侧边沿线，通过加权平均或最小二乘法拟合出赛道中心线，计算出当前车体相对于中心线的横向偏差与斜率偏差，并对十字、环岛等特殊元素进行状态标记。方向控制方面，将路径偏差输入增量式PID控制器，由控制器解算出所需差速，实时调整转向角度，使车体始终沿赛道中心线行驶。经大量实车测试，该方案在直道加速、弯道切弯及特殊元素通过时均表现出良好的跟踪精度与稳定性。
+0124 PID控制
+0125 PID控制，即比例、积分、微分控制，是工程实践中应用最为广泛的闭环调节算法。其结构简单、稳定性好、参数整定方便，特别适用于难以建立精确数学模型的系统。对于智能车而言，赛道曲率多变、负载时变、机械传动存在间隙等因素使得系统模型难以精确获取，因此PID控制成为电机调速与转向调节的理想方案。
+0126 本车电机速度控制采用增量式PID算法。与位置式PID相比，增量式PID输出的是控制量的变化量而非绝对值，具有天然的抗积分饱和能力，输出变化平缓，可有效避免控制器切换时的冲击，同时便于在线参数调整。编码器实时反馈车轮转速，与目标转速作差后输入增量式PID控制器，控制器计算当前时刻的占空比增量，叠加至上一次输出值，生成电机驱动信号。经反复实车调试，我们整定出一组兼顾响应速度与稳态精度的比例、积分系数，使智能车在直道加速时响应迅速，弯道减速时平稳过渡，全程速度跟踪准确，行驶流畅。
+0127 增量式PID公式具体如下：
+0128 Δu(t)=Kp​(e(t)−e(t−1))+Ki​e(t)+Kd​(e(t)−2e(t−1)+e(t−2))
+0129 Δu(t) 是控制量的增量（即当前控制量与前一次控制量的差值）。
+0130 e(t)、e(t−1)e(t-1)e(t−1)、e(t−2)e(t-2)e(t−2) 分别是当前、前一次和前两次的误差。
+0131 但增量式 PID 也有其不足之处：积分截断效应大，有静态误差；溢出的影响大。使用时，常选择带死区、积分分离等改进 PID 控制算法。
+0132 图像识别及执行动作
+0133 对于此次组别要求的图像识别，图像分为3大类，对每一大类做出不同的动作。如：物质右转，武器左转，交通工具直行。图像前方有红色的提示标识，以便于在循迹过程中精准找出图像的具体位置。
+0134 在循迹过程中，车辆不断对前方路径进行检测，一旦出现红色符合要求的区域进行标记，使用另外一个摄像头采集标记区域，中图像传入大模型进行推理，最后做出对应的动作。
+0135 代码设计
+0136 本次代码由主循环加中断组成，对于需要周期性控制的部分，如编码器的读取、PID控制、等程序，对于不需要精准控制的代码部分则放入主程序while中依次遍历。
+0137 While中部分代码：
+0138 while (true)
+0139 {
+0140 if(!Car_GO)
+0141 {
+0142 if(uvc_dev.wait_image_refresh() < 0)
+0143 {
+0144 exit(0);
+0145 }
+0146 if(uvc_dev_1.wait_image_refresh() < 0)
+0147 {
+0148 exit(0);
+0149 }
+0150 // 获取摄像头采集到的灰度图像数据缓冲区首地址
+0151 rgay_image = uvc_dev.get_gray_image_ptr();
+0152 binary_otsu(rgay_image,OTSU_image,UVC_WIDTH* UVC_HEIGHT,Binarization_Mode,Threshold); //大津法 //137
+0153 Control_Show();
+0154 BrushlessEletric_PWM(Brushless_count);
+0155 // detect_green_print_area();
+0156 // detect_yellow_print_area();
+0157 targetTwo_Speed = 0;
+0158 targetOne_Speed = 0;
+0159 }
+0160 else
+0161 {
+0162 if(uvc_dev.wait_image_refresh() < 0)
+0163 {
+0164 exit(0);
+0165 }
+0166 // 获取摄像头采集到的灰度图像数据缓冲区首地址
+0167 rgay_image = uvc_dev.get_gray_image_ptr();
+0168 binary_otsu(rgay_image, OTSU_image, UVC_WIDTH * UVC_HEIGHT,Binarization_Mode,Threshold); //大津法 //137
+0169 Car_Control();
+0170 if(!sdwea)
+0171 {
+0172 run_model_detection();
+0173 }
+0174 else update_crop_from_red(45,45);
+0175 if(!StopFlag_Flag)
+0176 {
+0177 if(!Red_Flag_Flag)
+0178 {
+0179 if(!Only_Obstacle || CurveLine) // 大弯
+0180 BrushlessEletric_PWM(Brushless_CurveMax);
+0181 else
+0182 BrushlessEletric_PWM(Brushless_Max);
+0183 }
+0184 else BrushlessEletric_PWM(Brushless_RecognitionMax);
+0185 }
+0186 else BrushlessEletric_PWM(0);
+0187 text_led();
+0188 }
+0189 Switch_Interface();
+0190 // Demo_PID_encoder();
+0191 }
+0192 定时器中部分代码：
+0193 void Encoder_callback(void)
+0194 {
+0195 encoder_right = -encoder_dir_1.get_count();
+0196 encoder_left  = encoder_dir_2.get_count();
+0197 if(StopFlag_Flag)
+0198 {
+0199 encoder_left_count++;
+0200 if(encoder_left_count>50)
+0201 {
+0202 targetOne_Speed = 0;
+0203 targetTwo_Speed = 0;
+0204 }
+0205 }
+0206 encoder_dir_1.clear_count();
+0207 encoder_dir_2.clear_count();
+0208 own_motor_pid_conctrl(encoder_left,encoder_right);
+0209 }
+0210 开发工具与制作调试过程
+0211 本次由于组别指定了芯片为龙芯，我们选用的是LS2K0300核心板作为智能车的控制器。开发工具相较于传统的MCU有所不同，这款芯片运行的Linux改的LoongOS，需要搭配龙芯交叉编译链来编译程序并运行，所以我们借助Ubuntu实现程序的编译，使用VSCode编辑程序并下载。
+0212 使用逐飞科技准备好的开源库，里面有各种外设资源的历程，方便我们学习和使用。对于我们需要添加的功能可以直接编写C/C++程序，如果需要使用其他外设资源GPIO等可以自己重新编译内核重构程序。
+0213 工程的介绍
+0214 工程分为驱动代码libraries、代码区code、存放模型区model、文件名输出区out和用户区user。
+0215 图 18软件工程框架
+0216 代码的编辑与编译
+0217 代码的编辑是通过VScode实现的，此开源库时使用的C++程序架构，向下兼容C。
+0218 图 19软件代码编辑
+0219 编译是通过龙芯交叉编译链配合CMake对C程序进行编译并生成LS2K0300可执行文件传输至核心板
+0220 图 20软件代码编译及传输
+0221 上位机的调试
+0222 对于PID来说上位机调试是必不可少的，利用上位机将调试参数传入下位机实现不改动程序的同时还能快速的修改变量，这样不仅方便快捷还能够直观地看见参数变化实际的影响。
+0223 图 21上位机展示
+0224 车模主要技术参数说明
+0225 表格 1技术参数说明
+0226 赛车基本参数
+0227 长
+0228 275mm
+0229 宽
+0230 320mm
+0231 高
+0232 400mm
+0233 重量
+0234 1590g
+0235 电路功耗
+0236 空载（悬空不加负压）
+0237 10W
+0238 带载
+0239 >150W
+0240 电容总容量
+0241 /
+0242 约2300uF
+0243 传感器
+0244 逐飞科技彩钻风摄像头
+0245 2
+0246 1024线编码器
+0247 2
+0248 IMU660陀螺仪
+0249 1
+0250 除了车模原有的驱动电机、舵机之外电机个数
+0251 RSIII 2207无刷电机 2500KV
+0252 2
+0253 除指定芯片外使用的无刷电调指定芯片
+0254 STC32G12K128
+0255 2
+0256 赛道信息
+0257 赛道类型
+0258 PVC-45cm
+0259 进度
+0260 2mm
+0261 比赛总结
+0262 本次智能车竞赛的参赛作品，从方案论证、硬件设计、软件编写到整车联调，历时数月，完整经历了一辆模型智能车从零到稳定行驶的全过程。整车以LS2K0300为核心主控，搭载彩钻风USB摄像头进行赛道感知，采用增量式PID算法实现转向与速度的双闭环控制，配合DRV8701直流电机驱动板与STC32主控的无刷电机电调，构成了完整的“感知-决策-执行”系统架构。经赛道实测，赛车能够在包含直道、弯道、十字路口及坡道的综合赛道上稳定循迹行驶，平均车速达到2.5 m/s，各项技术指标达到预期设计要求。
+0263 回顾整个制作与调试过程，我们也遇到了若干关键问题。一是摄像头图像在赛道光线不均匀时二值化效果不稳定，导致边沿提取出现断续，后通过引入自适应阈值算法得以改善。二是车辆高速过弯时出现转向不足，经分析系车身重心与转向轮位置不匹配所致，最终通过增大前瞻量并加入弯道前馈补偿予以解决。
+0264 受限于时间与实验条件，本车仍存在以下可改进方向：首先，当前控制参数依赖人工经验整定，后续可引入参数自整定策略或模糊自适应PID，以提升对不同赛道环境的适应能力。其次，路径识别算法目前仅基于单帧图像，可升级为多帧关联的赛道记忆与预测算法，提高特殊元素的识别准确率。再次，可加入惯性导航传感器实现姿态融合，为坡道和颠簸路面提供更精确的车身状态估计。最后，在系统可靠性方面，可增加无线调试与数据回传模块，便于实时监控运行状态并快速定位故障。
+0265 通过本次竞赛，我们深刻体会到，智能车的核心不仅在于某一单项技术的领先，更在于感知、控制与执行三大环节的紧密耦合与协同优化。理论与仿真是基础，但只有通过大量实车测试，直面光照变化、机械磨损等实际因素的挑战，才能真正锤炼出一个稳定可靠的系统。这种“实践出真知”的工程历练，也正是大学生智能车竞赛的独特价值所在。
+0266 参考文献
+0267 [1] 卓晴 王盼宝 马莉. 智能车制作 北京：清华大学出版社，2017
+0268 [2] 卓晴，黄开胜，邵贝贝. 学做智能车-挑战“飞思卡尔”杯[M]. 北京：航空航天 大学出版社, 2007.3.
+0269 [3] 邵贝贝. 单片机嵌入式应用的在线开发方法[M]. 北京：清华大学出版社，2004.
+0270 [4]康光华 张林.电子技术基础模拟部分北京：高等教育出版社，2006
+0271 [5]康光华 张林.电子技术基础数字部分北京：高等教育出版社，2006
+0272 [6]孙辉 吴润秀. C语言程序设计（第二版）北京：中国铁道出版社，2016
+0273 [7]林言东 冯伟龙 鲁文铎第十一届“恩智浦”杯全国大学生智能汽车竞赛技术报告 集美大学 2016
+0274 [8]于帮国 王贞 源史朋 威侯辉第十一届“恩智浦”杯全国大学生智能汽车竞赛技术报告 山东科技大学 2016
+0275 [9] 王晓明．电动机的单片机控制 [M] ．北京：北京航空航天大学出版社. 2002.
+0276 附录
+0277 部分程序源代码：
+0278 #include "my_encoder.hpp"
+0279 #include "my_pid.hpp"
+0280 #include "my_model.hpp"
+0281 #include "track_line.hpp"
+0282 #define FILTER_WIN_SIZE 5        // 滑动平均窗口（平滑基础噪声）
+0283 #define MAX_ENCODER_STEP 12      // 【核心】单次最大允许变化值（突变阈值，重点调这个！）
+0284 #define ABS_DECEL_THRESHOLD   5     // 减速度阈值，编码器脉冲差值，超过此值认为即将抱死
+0285 #define ABS_RELEASE_TIME      5     // 释放制动的时间（控制周期次数，例如5次=5*10ms=50ms）
+0286 #define ABS_BRAKE_DUTY        0.6   // 制动占空比，0.6表示反向60%PWM，避免电流过大
+0287 static int16_t left_buf[FILTER_WIN_SIZE] = {0};
+0288 static int16_t right_buf[FILTER_WIN_SIZE] = {0};
+0289 static uint8_t filter_index = 0;
+0290 static int16_t last_left = 0;   // 上一次滤波后的值（限幅用）
+0291 static int16_t last_right = 0;  // 上一次滤波后的值（限幅用)
+0292 int16 encoder_left;
+0293 int16 encoder_right;
+0294 int16 encoder_left_count = 0;
+0295 int16 Recc_count = 0;       //识别总流程的计数
+0296 int16 Detour_count = 0;           //绕行总流程的计数
+0297 int16 Straight_count = 0;   //直走的距离计数
+0298 int16 Backaround_count = 0; //绕回来的距离计数
+0299 int8_t ABS_Flag = 0;    //ABS制动
+0300 bool rec_dour_stree = 0;  //识别前是不是直道
+0301 // float Debug_P = 3.5;   //0.0421
+0302 // float Debug_I = 0.01;  //0.00761
+0303 // float Debug_D = 0.0;  //0.00721
+0304 float Debug_P = 1.58;   //0.0421
+0305 float Debug_I = 0.06;  //0.00761
+0306 float Debug_D = 0.013;  //0.00721
+0307 int16_t Debug_Target = -35;
+0308 zf_driver_encoder encoder_dir_1(ENCODER_DIR_1_PATH);
+0309 zf_driver_encoder encoder_dir_2(ENCODER_DIR_2_PATH);
+0310 zf_driver_pit Encoder_timer;
+0311 static void encoder_filter_process(void)
+0312 {
+0313 int16_t curr_left = encoder_left;
+0314 int16_t curr_right = encoder_right;
+0315 //========== 第一步：限幅滤波（核心！直接砍掉突变毛刺）==========
+0316 // 如果当前值和上一次差值超过阈值，判定为突变，直接用上一次有效值
+0317 if((curr_left - last_left) > MAX_ENCODER_STEP || (last_left - curr_left) > MAX_ENCODER_STEP)
+0318 {
+0319 curr_left = last_left; // 突变无效，保持原值
+0320 }
+0321 if((curr_right - last_right) > MAX_ENCODER_STEP || (last_right - curr_right) > MAX_ENCODER_STEP)
+0322 {
+0323 curr_right = last_right; // 突变无效，保持原值
+0324 }
+0325 //========== 第二步：滑动平均滤波（平滑剩余小噪声）==========
+0326 left_buf[filter_index] = curr_left;
+0327 right_buf[filter_index] = curr_right;
+0328 int32_t sum_left = 0, sum_right = 0;
+0329 for(uint8_t i=0; i<FILTER_WIN_SIZE; i++)
+0330 {
+0331 sum_left += left_buf[i];
+0332 sum_right += right_buf[i];
+0333 }
+0334 // 覆盖原始变量（完全不改变变量名！）
+0335 encoder_left = sum_left / FILTER_WIN_SIZE;
+0336 encoder_right = sum_right / FILTER_WIN_SIZE;
+0337 // 更新上一次值6
+0338 last_left = encoder_left;
+0339 last_right = encoder_right;
+0340 // 循环索引
+0341 filter_index = (filter_index + 1) % FILTER_WIN_SIZE;
+0342 }
+0343 void ABS_Control()  //ABS控制函数
+0344 {
+0345 static int16_t last_left = 0, last_right = 0;
+0346 static uint8_t left_release_cnt = 0, right_release_cnt = 0;
+0347 static uint8_t left_abs_active = 0, right_abs_active = 0;  // 1=正在释放制动
+0348 if((!ABS_Flag && !Red_Flag_Flag)|| class_mid ==1  )
+0349 {
+0350 left_release_cnt = 0;
+0351 right_release_cnt = 0;
+0352 left_abs_active = 0;
+0353 right_abs_active = 0;
+0354 last_left = encoder_left;
+0355 last_right = encoder_right;
+0356 return;
+0357 }
+0358 targetTwo_Speed = 0;
+0359 targetOne_Speed = 0;
+0360 }
+0361 void Encoder_callback(void)
+0362 {
+0363 encoder_right = -encoder_dir_1.get_count();
+0364 encoder_left  = encoder_dir_2.get_count();
+0365 encoder_filter_process();
+0366 if(!sdwea) rec_dour_stree = CurveLine;
+0367 if(sdwea && !Cut_Flag)
+0368 {
+0369 Recc_count ++;
+0370 // Detour_count ++;
+0371 // if(round_state<3 || (round_state>5 && round_state<8))
+0372 // {
+0373 if(rec_dour_stree)
+0374 {
+0375 if(Recc_count >280)  //450
+0376 {
+0377 Recc_count = 0;
+0378 Red_Flag_Flag = 0;
+0379 sdwea = 0;
+0380 }
+0381 }
+0382 else
+0383 {
+0384 if(Recc_count >300)  //450
+0385 {
+0386 // encoder_left_count = 0;
+0387 Recc_count = 0;
+0388 Red_Flag_Flag = 0;
+0389 sdwea = 0;
+0390 }
+0391 }
+0392 }
+0393 if(StopFlag_Flag)
+0394 {
+0395 encoder_left_count++;
+0396 if(encoder_left_count>50)
+0397 {
+0398 targetOne_Speed = 0;
+0399 targetTwo_Speed = 0;
+0400 }
+0401 }
+0402 encoder_dir_1.clear_count();
+0403 encoder_dir_2.clear_count();
+0404 own_motor_pid_conctrl(encoder_left,encoder_right);
+0405 }
+0406 void Creat_PitCallback_encoder()
+0407 {
+0408 Encoder_timer.init_ms(1, Encoder_callback);
+0409 }
+0410 void Demo_PID_encoder()
+0411 {
+0412 for(int i = 4; i < 8; i++)// 遍历
+0413 {
+0414 if(seekfree_assistant_parameter_update_flag[i])
+0415 {
+0416 seekfree_assistant_parameter_update_flag[i] = 0;
+0417 Debug_Target=seekfree_assistant_parameter[4];
+0418 Debug_P=seekfree_assistant_parameter[5];
+0419 Debug_I=seekfree_assistant_parameter[6];
+0420 Debug_D=seekfree_assistant_parameter[7];
+0421 }
+0422 }
+0423 //////////////////////////pid调试/////////////////////////
+0424 pid_two.Kp = Debug_P;
+0425 pid_two.Ki = Debug_I;
+0426 pid_two.Kd = Debug_D;
+0427 targetTwo_Speed = Debug_Target;
+0428 // targetOne_Speed = Debug_I;
+0429 // pid_two.Kd = Debug_D;
+0430 ///////////////////////////////////////////////////////////////////
+0431 seekfree_assistant_oscilloscope_data.data[0] = PWM_Two;
+0432 seekfree_assistant_oscilloscope_data.data[1] = encoder_left;
+0433 seekfree_assistant_oscilloscope_data.data[2] = PWM_One;
+0434 seekfree_assistant_oscilloscope_data.data[3] = encoder_right;
+0435 seekfree_assistant_oscilloscope_data.data[4] = Debug_Target;
+0436 seekfree_assistant_oscilloscope_data.data[5] = pid_two.Kp;
+0437 seekfree_assistant_oscilloscope_data.data[6] = pid_two.Ki;
+0438 seekfree_assistant_oscilloscope_data.data[7] = pid_two.Kd;
+0439 // 设置本次需要发送几个通道的数据
+0440 seekfree_assistant_oscilloscope_data.channel_num = 8;
+0441 //支持8通道
+0442 seekfree_assistant_oscilloscope_send(&seekfree_assistant_oscilloscope_data);
+0443 seekfree_assistant_data_analysis();
+0444 }
+0445 循迹部分
+0446 void Dead_Slow_Ahead_Speed_switch()
+0447 {
+0448 // 长直道检测，检测到则提升基础速度
+0449 Long_straight_flag = Is_Long_Straight_By_Arve();
+0450 if (Long_straight_flag)
+0451 {
+0452 base_speed = 38;   // 长直道高速
+0453 reduce_more = 1.2;
+0454 add_les = 0.8;
+0455 }
+0456 else
+0457 {
+0458 base_speed = 35;   // 默认直道速度
+0459 reduce_more = 1.6;   //1.4
+0460 add_les = 1.0;       //0.6
+0461 }
+0462 // base_speed = 34;    //30
+0463 // printf("curve_Left = %d,curve_Right = %d\n",curve_Left,curve_Right);
+0464 // ========== 红标强制最低速 ==========
+0465 if (Red_Flag_Flag || sdwea)
+0466 {
+0467 if(class_mid != 1)
+0468 {
+0469 base_speed = 22;
+0470 add_les = 1.4f;
+0471 reduce_more = 1.2f;
+0472 if(Compensation_speed<0) //左偏              //38   -10
+0473 {
+0474 targetOne_Speed = base_speed + reduce_more*Compensation_speed;
+0475 targetTwo_Speed = base_speed - add_les*Compensation_speed;
+0476 targetOne_Speed = (targetOne_Speed < 0)?0 : targetOne_Speed;
+0477 targetTwo_Speed = (targetTwo_Speed > 50)?50 : targetTwo_Speed;
+0478 }
+0479 else if(Compensation_speed>0) //右偏
+0480 {
+0481 targetOne_Speed = base_speed + add_les*Compensation_speed;
+0482 targetTwo_Speed = base_speed - reduce_more*Compensation_speed;
+0483 targetOne_Speed = (targetOne_Speed > 50)?50 : targetOne_Speed;
+0484 targetTwo_Speed = (targetTwo_Speed < 0)?0 : targetTwo_Speed;
+0485 }
+0486 else
+0487 {
+0488 targetOne_Speed = base_speed;
+0489 targetTwo_Speed = base_speed;
+0490 }
+0491 return;
+0492 }
+0493 }
+0494 if(curve_Left < -80 || curve_Right < -80) // 大弯
+0495 {
+0496 base_speed = 34;
+0497 add_les = 1.2; // 内侧轮减速系数降低，尽量不反转
+0498 reduce_more = 1.6;     // 外侧轮加速可以再大一些
+0499 if(Compensation_speed < 0) // 左偏，右转
+0500 {
+0501 targetOne_Speed = base_speed - reduce_more * fabs(Compensation_speed);
+0502 targetTwo_Speed = base_speed + add_les * fabs(Compensation_speed);
+0503 }
+0504 else
+0505 {
+0506 targetOne_Speed = base_speed + add_les * fabs(Compensation_speed);
+0507 targetTwo_Speed = base_speed - reduce_more * fabs(Compensation_speed);
+0508 }
+0509 // // 限幅：最高55，最低0（禁止反转）
+0510 targetOne_Speed = (targetOne_Speed > 55) ? 55 : targetOne_Speed;
+0511 targetOne_Speed = (targetOne_Speed < -10)  ? -10  : targetOne_Speed;
+0512 targetTwo_Speed = (targetTwo_Speed > 55) ? 55 : targetTwo_Speed;
+0513 targetTwo_Speed = (targetTwo_Speed < -10)  ? -10  : targetTwo_Speed;
+0514 }
+0515 else
+0516 {
+0517 if(Compensation_speed<0) //左偏              //38   -10
+0518 {
+0519 targetOne_Speed = base_speed + reduce_more*Compensation_speed;
+0520 targetTwo_Speed = base_speed - add_les*Compensation_speed;
+0521 }
+0522 else if(Compensation_speed>0) //右偏
+0523 {
+0524 targetOne_Speed = base_speed + add_les*Compensation_speed;
+0525 targetTwo_Speed = base_speed - reduce_more*Compensation_speed;
+0526 }
+0527 else
+0528 {
+0529 targetOne_Speed = base_speed;
+0530 targetTwo_Speed = base_speed;
+0531 }
+0532 if(!Long_straight_flag)
+0533 {
+0534 targetOne_Speed = (targetOne_Speed > 45)?45 : targetOne_Speed;
+0535 targetTwo_Speed = (targetTwo_Speed < -15)?-15 : targetTwo_Speed;
+0536 targetOne_Speed = (targetOne_Speed < -15)?-15 : targetOne_Speed;
+0537 targetTwo_Speed = (targetTwo_Speed > 45)?45 : targetTwo_Speed;
+0538 }
+0539 else
+0540 {
+0541 targetOne_Speed = (targetOne_Speed > 60) ? 60 : targetOne_Speed;
+0542 targetOne_Speed = (targetOne_Speed < -10) ? -10 : targetOne_Speed;
+0543 targetTwo_Speed = (targetTwo_Speed > 60) ? 60 : targetTwo_Speed;
+0544 targetTwo_Speed = (targetTwo_Speed < -10) ? -10 : targetTwo_Speed;
+0545 }
+0546 }
+0547 }

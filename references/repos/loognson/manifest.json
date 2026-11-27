@@ -1,0 +1,510 @@
+{
+  "id": "loognson",
+  "source_id": "amireux_fish--Loognson",
+  "url": "https://gitee.com/amireux_fish/Loognson",
+  "revision": "9eba6c613b15b2ad42d60dfbc55e115a0b446aeb",
+  "role": "逐飞视觉元素与TFLM/NCNN候选识别",
+  "files": [
+    {
+      "path": "LICENSE",
+      "git_blob": "29f81d812f3e768fa89638d1f72920dbfd1413a8",
+      "bytes": 11558,
+      "type": "blob",
+      "sha256": "1eb85fc97224598dad1852b5d6483bbcf0aa8608790dcc657a5a2a761ae9c8c6",
+      "url": "https://gitee.com/amireux_fish/Loognson/blob/9eba6c613b15b2ad42d60dfbc55e115a0b446aeb/LICENSE"
+    },
+    {
+      "path": "README.md",
+      "git_blob": "ccfbf4a4ce3d39f1a3e2cb6744c98742dbc41f2b",
+      "bytes": 18732,
+      "type": "blob",
+      "sha256": "b1d850f865052a01872c8e610d647695995e27f0cfce2248de5d560c730047ef",
+      "url": "https://gitee.com/amireux_fish/Loognson/blob/9eba6c613b15b2ad42d60dfbc55e115a0b446aeb/README.md"
+    },
+    {
+      "path": "libraries/zf_components/seekfree_assistant/seekfree_assistant.cpp",
+      "git_blob": "dc624b92f7df0f0b82bf9795578be3b5c1cdef1b",
+      "bytes": 21469,
+      "type": "blob",
+      "sha256": "17a6838c21f9bf4e15a678576fad977c8d1423175a452b1828f8025cd1ce9856",
+      "url": "https://gitee.com/amireux_fish/Loognson/blob/9eba6c613b15b2ad42d60dfbc55e115a0b446aeb/libraries/zf_components/seekfree_assistant/seekfree_assistant.cpp"
+    },
+    {
+      "path": "libraries/zf_components/seekfree_assistant/seekfree_assistant.hpp",
+      "git_blob": "a52d21703f8c3f00b395cd9d82c2b2b87b1cbc70",
+      "bytes": 8472,
+      "type": "blob",
+      "sha256": "72618c2157e8b617c95ab2f9394aa638c8f090a5480de96eb4827397ae0a11d5",
+      "url": "https://gitee.com/amireux_fish/Loognson/blob/9eba6c613b15b2ad42d60dfbc55e115a0b446aeb/libraries/zf_components/seekfree_assistant/seekfree_assistant.hpp"
+    },
+    {
+      "path": "libraries/zf_components/seekfree_assistant/seekfree_assistant_interface.cpp",
+      "git_blob": "74e5a29be99b00778b825f350f649ccb65c98cf3",
+      "bytes": 4716,
+      "type": "blob",
+      "sha256": "19e5ce12b353108dede4eb3935add6810c9e4cdf48dcc98fade565e17af071c0",
+      "url": "https://gitee.com/amireux_fish/Loognson/blob/9eba6c613b15b2ad42d60dfbc55e115a0b446aeb/libraries/zf_components/seekfree_assistant/seekfree_assistant_interface.cpp"
+    },
+    {
+      "path": "libraries/zf_components/seekfree_assistant/seekfree_assistant_interface.hpp",
+      "git_blob": "ef51fd460da75dbde35198321a599123511d9d09",
+      "bytes": 2599,
+      "type": "blob",
+      "sha256": "59e8dff92ae68bed94627a996391fb65b50233941e64bdaf75f08b3f4d234efe",
+      "url": "https://gitee.com/amireux_fish/Loognson/blob/9eba6c613b15b2ad42d60dfbc55e115a0b446aeb/libraries/zf_components/seekfree_assistant/seekfree_assistant_interface.hpp"
+    },
+    {
+      "path": "libraries/zf_components/tflm/README.md",
+      "git_blob": "8191af9c4f34f7bb08229b3ce98e21bd21afa34e",
+      "bytes": 1207,
+      "type": "blob",
+      "sha256": "35d40eb09294edeb83246f4ecd35c37861a9c879f9444139a59701c348a20f02",
+      "url": "https://gitee.com/amireux_fish/Loognson/blob/9eba6c613b15b2ad42d60dfbc55e115a0b446aeb/libraries/zf_components/tflm/README.md"
+    },
+    {
+      "path": "libraries/zf_device/zf_device_dl1x.cpp",
+      "git_blob": "d47c65edb3ca6bbeafcaf2860a5bc69681feabfc",
+      "bytes": 8427,
+      "type": "blob",
+      "sha256": "2c92546b133337414f48b581b5faf1b463fb6835fe05fc1df4a590d36cccbca3",
+      "url": "https://gitee.com/amireux_fish/Loognson/blob/9eba6c613b15b2ad42d60dfbc55e115a0b446aeb/libraries/zf_device/zf_device_dl1x.cpp"
+    },
+    {
+      "path": "libraries/zf_device/zf_device_dl1x.hpp",
+      "git_blob": "27ae93b23feeca5a0cd769c1a8a5d53418f92beb",
+      "bytes": 6168,
+      "type": "blob",
+      "sha256": "0e6ad2061b6812698fb000beb17bfde1c7b871424e9cc8fd9b487b51266c162c",
+      "url": "https://gitee.com/amireux_fish/Loognson/blob/9eba6c613b15b2ad42d60dfbc55e115a0b446aeb/libraries/zf_device/zf_device_dl1x.hpp"
+    },
+    {
+      "path": "libraries/zf_device/zf_device_imu.cpp",
+      "git_blob": "e1216dada22b3c478babd5b9f46ff7470e26d083",
+      "bytes": 14666,
+      "type": "blob",
+      "sha256": "2a2fe9dc12ee5239135a69131908107835c49f60b36b71c753f2715c111952ff",
+      "url": "https://gitee.com/amireux_fish/Loognson/blob/9eba6c613b15b2ad42d60dfbc55e115a0b446aeb/libraries/zf_device/zf_device_imu.cpp"
+    },
+    {
+      "path": "libraries/zf_device/zf_device_imu.hpp",
+      "git_blob": "bda1f592c6bddf59883d28153be3b36a9983d69e",
+      "bytes": 11636,
+      "type": "blob",
+      "sha256": "0b164866b1f18576d14b0c101a3688ef4d6119c606b656833e46f7de89ddbb94",
+      "url": "https://gitee.com/amireux_fish/Loognson/blob/9eba6c613b15b2ad42d60dfbc55e115a0b446aeb/libraries/zf_device/zf_device_imu.hpp"
+    },
+    {
+      "path": "libraries/zf_device/zf_device_ips200_fb.cpp",
+      "git_blob": "b3e30f615299886420114ddf193f4172097137c3",
+      "bytes": 21369,
+      "type": "blob",
+      "sha256": "ec8ecfcb710049c3a3370640cf605a835ec8049c06b6613b30d429a765ca2f93",
+      "url": "https://gitee.com/amireux_fish/Loognson/blob/9eba6c613b15b2ad42d60dfbc55e115a0b446aeb/libraries/zf_device/zf_device_ips200_fb.cpp"
+    },
+    {
+      "path": "libraries/zf_device/zf_device_ips200_fb.hpp",
+      "git_blob": "81ad892eefc83da672eb8b119411aaae2a98d63d",
+      "bytes": 17574,
+      "type": "blob",
+      "sha256": "747245f15d3bcb27fbcbb4d80f77a812d3ee07a9e4c6069bcb1922b0bd5a9c37",
+      "url": "https://gitee.com/amireux_fish/Loognson/blob/9eba6c613b15b2ad42d60dfbc55e115a0b446aeb/libraries/zf_device/zf_device_ips200_fb.hpp"
+    },
+    {
+      "path": "libraries/zf_device/zf_device_tft180_fb.cpp",
+      "git_blob": "89db880570a53ecae02d8a3c937d25e8e2717ec1",
+      "bytes": 21174,
+      "type": "blob",
+      "sha256": "b37ab41c779c0e374cd9694a17de95a95d85b7f9fce0dba2bf21538bdbd70359",
+      "url": "https://gitee.com/amireux_fish/Loognson/blob/9eba6c613b15b2ad42d60dfbc55e115a0b446aeb/libraries/zf_device/zf_device_tft180_fb.cpp"
+    },
+    {
+      "path": "libraries/zf_device/zf_device_tft180_fb.hpp",
+      "git_blob": "6d532b6d7e606baafc2d199c3fc7f03292d19ca5",
+      "bytes": 17375,
+      "type": "blob",
+      "sha256": "546c3f68205a334699a53abb308ce4df3cc0ec6739c80958cbe2699313c7c87f",
+      "url": "https://gitee.com/amireux_fish/Loognson/blob/9eba6c613b15b2ad42d60dfbc55e115a0b446aeb/libraries/zf_device/zf_device_tft180_fb.hpp"
+    },
+    {
+      "path": "libraries/zf_device/zf_device_uvc.cpp",
+      "git_blob": "c3a5878fc9a9910071c958194f83f78aa2fb4c71",
+      "bytes": 13968,
+      "type": "blob",
+      "sha256": "1dd26f2bc7de907840a3f23637ea07b7dfc77cd5f0ea1fcf7a1e1506ac430c4c",
+      "url": "https://gitee.com/amireux_fish/Loognson/blob/9eba6c613b15b2ad42d60dfbc55e115a0b446aeb/libraries/zf_device/zf_device_uvc.cpp"
+    },
+    {
+      "path": "libraries/zf_device/zf_device_uvc.hpp",
+      "git_blob": "e5b90783dc241819d386a72b452b236482d08916",
+      "bytes": 10762,
+      "type": "blob",
+      "sha256": "c254a334fc8419d308b291489c6791b96809e40981246c7a9b73a879c47a48cf",
+      "url": "https://gitee.com/amireux_fish/Loognson/blob/9eba6c613b15b2ad42d60dfbc55e115a0b446aeb/libraries/zf_device/zf_device_uvc.hpp"
+    },
+    {
+      "path": "libraries/zf_driver/zf_driver_adc.cpp",
+      "git_blob": "98c7864873c9c0b0c5d1ab1fa4e8c236f7a4e628",
+      "bytes": 4641,
+      "type": "blob",
+      "sha256": "647f27a8e311df92c72c73f10a78d946e93808960cef30a7ff6e2297d2707fb7",
+      "url": "https://gitee.com/amireux_fish/Loognson/blob/9eba6c613b15b2ad42d60dfbc55e115a0b446aeb/libraries/zf_driver/zf_driver_adc.cpp"
+    },
+    {
+      "path": "libraries/zf_driver/zf_driver_adc.hpp",
+      "git_blob": "64227fa0f8b73a8676df25f38bc9604b332c3e29",
+      "bytes": 5631,
+      "type": "blob",
+      "sha256": "34dc7a6d0a199bc0fd73ca5c5b5a70fcd491a8d700757d727f5e5ecdf3a7cfeb",
+      "url": "https://gitee.com/amireux_fish/Loognson/blob/9eba6c613b15b2ad42d60dfbc55e115a0b446aeb/libraries/zf_driver/zf_driver_adc.hpp"
+    },
+    {
+      "path": "libraries/zf_driver/zf_driver_delay.cpp",
+      "git_blob": "c2462bdf4439d73afe5c21bacf2fbb0921dfcb53",
+      "bytes": 1767,
+      "type": "blob",
+      "sha256": "ca5bde2afb42512300dda527b9f17a62478ee9a1bdaf80d6752fe284efd9cd02",
+      "url": "https://gitee.com/amireux_fish/Loognson/blob/9eba6c613b15b2ad42d60dfbc55e115a0b446aeb/libraries/zf_driver/zf_driver_delay.cpp"
+    },
+    {
+      "path": "libraries/zf_driver/zf_driver_delay.hpp",
+      "git_blob": "d685c854c135afc5320b22ee554c217ed7937036",
+      "bytes": 1942,
+      "type": "blob",
+      "sha256": "e01d6b08aa31f3f2733baa4aef8328c6dd1f8bbf62643a68099ad8714b02d596",
+      "url": "https://gitee.com/amireux_fish/Loognson/blob/9eba6c613b15b2ad42d60dfbc55e115a0b446aeb/libraries/zf_driver/zf_driver_delay.hpp"
+    },
+    {
+      "path": "libraries/zf_driver/zf_driver_encoder.cpp",
+      "git_blob": "6084578fe01cc16ac469cddf2eeaac85c554a989",
+      "bytes": 3684,
+      "type": "blob",
+      "sha256": "a36b7eb7bd2b07c6dc1b3e4bbb757cc557ceb150ea955a315b3af2d9290d4e6c",
+      "url": "https://gitee.com/amireux_fish/Loognson/blob/9eba6c613b15b2ad42d60dfbc55e115a0b446aeb/libraries/zf_driver/zf_driver_encoder.cpp"
+    },
+    {
+      "path": "libraries/zf_driver/zf_driver_encoder.hpp",
+      "git_blob": "9f7f62d5c1bc9ec1aaf5d09d43ff603895219506",
+      "bytes": 4113,
+      "type": "blob",
+      "sha256": "000dd12b9b7416dd3f457ca0e68e8cd2d7d9978430e34ace287973c77a98ab7a",
+      "url": "https://gitee.com/amireux_fish/Loognson/blob/9eba6c613b15b2ad42d60dfbc55e115a0b446aeb/libraries/zf_driver/zf_driver_encoder.hpp"
+    },
+    {
+      "path": "libraries/zf_driver/zf_driver_file_buffer.cpp",
+      "git_blob": "9b3b8354cb25f67b7340541f570e2647acb0bace",
+      "bytes": 5891,
+      "type": "blob",
+      "sha256": "a5dc7c40a2f07fe4e45f77a4e239c0c8a5b4b7b5beff5c0f54592d2cbcab4d61",
+      "url": "https://gitee.com/amireux_fish/Loognson/blob/9eba6c613b15b2ad42d60dfbc55e115a0b446aeb/libraries/zf_driver/zf_driver_file_buffer.cpp"
+    },
+    {
+      "path": "libraries/zf_driver/zf_driver_file_buffer.hpp",
+      "git_blob": "80bd72573dc4da78120275f41558db8eb394a413",
+      "bytes": 5032,
+      "type": "blob",
+      "sha256": "f56a39641bac183ae1e1e67bb2f7b697730d9160ad2c627730a5c7a3acc46dfd",
+      "url": "https://gitee.com/amireux_fish/Loognson/blob/9eba6c613b15b2ad42d60dfbc55e115a0b446aeb/libraries/zf_driver/zf_driver_file_buffer.hpp"
+    },
+    {
+      "path": "libraries/zf_driver/zf_driver_file_string.cpp",
+      "git_blob": "c8720708cf9c5ef6fdc4c32c445696d15c8f8d10",
+      "bytes": 5835,
+      "type": "blob",
+      "sha256": "80b773bb0f3f84fec1528e30351dc710d9ef3532ecaeb3bdd29e58e6015d8893",
+      "url": "https://gitee.com/amireux_fish/Loognson/blob/9eba6c613b15b2ad42d60dfbc55e115a0b446aeb/libraries/zf_driver/zf_driver_file_string.cpp"
+    },
+    {
+      "path": "libraries/zf_driver/zf_driver_file_string.hpp",
+      "git_blob": "43de8506b843fa12fdd44544dee503188b10c376",
+      "bytes": 5365,
+      "type": "blob",
+      "sha256": "df7cbcd375d9bdd47bff985b14dce57ed2d1bf585cac856e4734db2804bbd129",
+      "url": "https://gitee.com/amireux_fish/Loognson/blob/9eba6c613b15b2ad42d60dfbc55e115a0b446aeb/libraries/zf_driver/zf_driver_file_string.hpp"
+    },
+    {
+      "path": "libraries/zf_driver/zf_driver_gpio.cpp",
+      "git_blob": "4f409fe9c167f183aef0f43159c5e825cd45ad00",
+      "bytes": 3695,
+      "type": "blob",
+      "sha256": "9cf3b63d55fa6f90ae3dce7f08192957b90eb3a5c3c7f6b3de4454fd3ae06240",
+      "url": "https://gitee.com/amireux_fish/Loognson/blob/9eba6c613b15b2ad42d60dfbc55e115a0b446aeb/libraries/zf_driver/zf_driver_gpio.cpp"
+    },
+    {
+      "path": "libraries/zf_driver/zf_driver_gpio.hpp",
+      "git_blob": "cb08c5074f35b160d5883f6e9d9eaa1d379c6fc0",
+      "bytes": 4378,
+      "type": "blob",
+      "sha256": "24cec66f4624a2c8a51723924f4bf781d09aa9ef25bb3ac65e90ca0a85adb123",
+      "url": "https://gitee.com/amireux_fish/Loognson/blob/9eba6c613b15b2ad42d60dfbc55e115a0b446aeb/libraries/zf_driver/zf_driver_gpio.hpp"
+    },
+    {
+      "path": "libraries/zf_driver/zf_driver_pit.cpp",
+      "git_blob": "946c9401ed59374e773d6bab87b3eedbf94c5f42",
+      "bytes": 11197,
+      "type": "blob",
+      "sha256": "333cf3e19e1f549bc9a6677b596463225a69d8a808c66b5b683dba6178839c21",
+      "url": "https://gitee.com/amireux_fish/Loognson/blob/9eba6c613b15b2ad42d60dfbc55e115a0b446aeb/libraries/zf_driver/zf_driver_pit.cpp"
+    },
+    {
+      "path": "libraries/zf_driver/zf_driver_pit.hpp",
+      "git_blob": "e4c10df278c918be3c25d7a080ce7ca7c0192f1e",
+      "bytes": 6013,
+      "type": "blob",
+      "sha256": "4104c529158b433d606839aa52249c6ef8bf218186ea7002cd42be0855873cfe",
+      "url": "https://gitee.com/amireux_fish/Loognson/blob/9eba6c613b15b2ad42d60dfbc55e115a0b446aeb/libraries/zf_driver/zf_driver_pit.hpp"
+    },
+    {
+      "path": "libraries/zf_driver/zf_driver_pit_fd.cpp",
+      "git_blob": "b5c8df306f98e0c1c0e51fd82c28e3a380842f25",
+      "bytes": 6236,
+      "type": "blob",
+      "sha256": "0c61fe130f30d529dfcb4156829d0ad24e99f65e606b6aae21d53786e8297510",
+      "url": "https://gitee.com/amireux_fish/Loognson/blob/9eba6c613b15b2ad42d60dfbc55e115a0b446aeb/libraries/zf_driver/zf_driver_pit_fd.cpp"
+    },
+    {
+      "path": "libraries/zf_driver/zf_driver_pit_fd.hpp",
+      "git_blob": "9a491c769b2f7d82bb493e4a7f48b39beff73c4f",
+      "bytes": 5104,
+      "type": "blob",
+      "sha256": "48696c55900fbd2ce3bb45aab111c5255d9993eae58e4f827025d0e49cdef605",
+      "url": "https://gitee.com/amireux_fish/Loognson/blob/9eba6c613b15b2ad42d60dfbc55e115a0b446aeb/libraries/zf_driver/zf_driver_pit_fd.hpp"
+    },
+    {
+      "path": "libraries/zf_driver/zf_driver_pwm.cpp",
+      "git_blob": "1b67416d76645ea5c9e0f4425eb02d27bc1e772d",
+      "bytes": 3776,
+      "type": "blob",
+      "sha256": "6fc5302d173369454414ca727060f34d968ba8eb8dc1756b537eb7ecd21a8c93",
+      "url": "https://gitee.com/amireux_fish/Loognson/blob/9eba6c613b15b2ad42d60dfbc55e115a0b446aeb/libraries/zf_driver/zf_driver_pwm.cpp"
+    },
+    {
+      "path": "libraries/zf_driver/zf_driver_pwm.hpp",
+      "git_blob": "77b24953f7b161b95eac985f0277d86242db40f2",
+      "bytes": 4552,
+      "type": "blob",
+      "sha256": "64b60f2c5b800f6b72976f6cd3a2faae1018a92abb278ddc32aff6bd7f75c4f9",
+      "url": "https://gitee.com/amireux_fish/Loognson/blob/9eba6c613b15b2ad42d60dfbc55e115a0b446aeb/libraries/zf_driver/zf_driver_pwm.hpp"
+    },
+    {
+      "path": "libraries/zf_driver/zf_driver_tcp_client.cpp",
+      "git_blob": "0a5d8a468f9c0ec919ba2f880b8ead9092bf483f",
+      "bytes": 10332,
+      "type": "blob",
+      "sha256": "fe818d6ce80c473c18852141b7cf4fc71739ceb76348ec24bbde8ceabd28f356",
+      "url": "https://gitee.com/amireux_fish/Loognson/blob/9eba6c613b15b2ad42d60dfbc55e115a0b446aeb/libraries/zf_driver/zf_driver_tcp_client.cpp"
+    },
+    {
+      "path": "libraries/zf_driver/zf_driver_tcp_client.hpp",
+      "git_blob": "9b5c7175ecef6517d6c85b0ad850e4b1d2b19b2f",
+      "bytes": 6205,
+      "type": "blob",
+      "sha256": "f064608747774943b818be182153abd4ed7ca632b4afc42a3a834229d7f09ff4",
+      "url": "https://gitee.com/amireux_fish/Loognson/blob/9eba6c613b15b2ad42d60dfbc55e115a0b446aeb/libraries/zf_driver/zf_driver_tcp_client.hpp"
+    },
+    {
+      "path": "libraries/zf_driver/zf_driver_udp.cpp",
+      "git_blob": "381a25dc9a8e577af6db5d82e4ff283a798f8f84",
+      "bytes": 6426,
+      "type": "blob",
+      "sha256": "e327a496da7525d7c1135340b7ebaa2e496f9bfd458180339707b6d17b5c8388",
+      "url": "https://gitee.com/amireux_fish/Loognson/blob/9eba6c613b15b2ad42d60dfbc55e115a0b446aeb/libraries/zf_driver/zf_driver_udp.cpp"
+    },
+    {
+      "path": "libraries/zf_driver/zf_driver_udp.hpp",
+      "git_blob": "80028f7904173bbcbeb7ec07b0a9834b21acc055",
+      "bytes": 5442,
+      "type": "blob",
+      "sha256": "aa2f57886afea1ba219d83cad262c20081b3c31476ee9b079fd59fec71f6cbfd",
+      "url": "https://gitee.com/amireux_fish/Loognson/blob/9eba6c613b15b2ad42d60dfbc55e115a0b446aeb/libraries/zf_driver/zf_driver_udp.hpp"
+    },
+    {
+      "path": "project/code/WeChat_APP.cpp",
+      "git_blob": "dc468f6a26cb20d8ed1e2543389864d872663087",
+      "bytes": 658,
+      "type": "blob",
+      "sha256": "5e95b0563b539f85daaa591643960cfda2f328e1367bf3b7a6e690e39c79ebd0",
+      "url": "https://gitee.com/amireux_fish/Loognson/blob/9eba6c613b15b2ad42d60dfbc55e115a0b446aeb/project/code/WeChat_APP.cpp"
+    },
+    {
+      "path": "project/code/WeChat_APP.h",
+      "git_blob": "1b7b3dcc1488f0e2835636ad736d17c80e3cba67",
+      "bytes": 509,
+      "type": "blob",
+      "sha256": "bf5996f7423b541d41db69d7af04d384e922e9797bdc4716ba8d63b31fcd3f38",
+      "url": "https://gitee.com/amireux_fish/Loognson/blob/9eba6c613b15b2ad42d60dfbc55e115a0b446aeb/project/code/WeChat_APP.h"
+    },
+    {
+      "path": "project/code/deal_image.cpp",
+      "git_blob": "2300a9882082cf661c44c95682adae490c3b2db8",
+      "bytes": 116717,
+      "type": "blob",
+      "sha256": "8c0302c5dfffedadf1ac194a9464d80b6cb28fdff396e701fadeff588dd6b00a",
+      "url": "https://gitee.com/amireux_fish/Loognson/blob/9eba6c613b15b2ad42d60dfbc55e115a0b446aeb/project/code/deal_image.cpp"
+    },
+    {
+      "path": "project/code/deal_image.h",
+      "git_blob": "7fcca6f71a963f6dd29562c6d40f156cf9804bb1",
+      "bytes": 5383,
+      "type": "blob",
+      "sha256": "7056c0cd83ebdc2ea0832d108c7b677d3dbb34f8f0a37b18ab06eaa260a5a161",
+      "url": "https://gitee.com/amireux_fish/Loognson/blob/9eba6c613b15b2ad42d60dfbc55e115a0b446aeb/project/code/deal_image.h"
+    },
+    {
+      "path": "project/code/deal_model.cpp",
+      "git_blob": "c9ad7301b67b8fac2c27597a888cefc0c94e8ef0",
+      "bytes": 41612,
+      "type": "blob",
+      "sha256": "69a9ed5e00527adaeb0e3a7cec7896a795e4ca671b0e57f2b57ae67112a34fc2",
+      "url": "https://gitee.com/amireux_fish/Loognson/blob/9eba6c613b15b2ad42d60dfbc55e115a0b446aeb/project/code/deal_model.cpp"
+    },
+    {
+      "path": "project/code/deal_model.h",
+      "git_blob": "5b862c290064764c44c94364d0f5e35632b858cf",
+      "bytes": 11076,
+      "type": "blob",
+      "sha256": "7258131a240e8f1d44b6b0a9fe1767b310bb354c7d3dc0de0565334027fbe230",
+      "url": "https://gitee.com/amireux_fish/Loognson/blob/9eba6c613b15b2ad42d60dfbc55e115a0b446aeb/project/code/deal_model.h"
+    },
+    {
+      "path": "project/code/device.cpp",
+      "git_blob": "246ae87cb40b0d96223110e0163fe92d982a06ed",
+      "bytes": 13492,
+      "type": "blob",
+      "sha256": "92219a5ef84c77eb839e759a0d5bb1c4f0c905c859a34f320e5898fc75cce725",
+      "url": "https://gitee.com/amireux_fish/Loognson/blob/9eba6c613b15b2ad42d60dfbc55e115a0b446aeb/project/code/device.cpp"
+    },
+    {
+      "path": "project/code/device.h",
+      "git_blob": "464ce4ce04562351a42ab7bf94f85622468ff1be",
+      "bytes": 3680,
+      "type": "blob",
+      "sha256": "b06dce53c8c0b3ddb7c1246a99ad3e7cf24b46fbcf60c21319a7d38a64d09787",
+      "url": "https://gitee.com/amireux_fish/Loognson/blob/9eba6c613b15b2ad42d60dfbc55e115a0b446aeb/project/code/device.h"
+    },
+    {
+      "path": "project/code/direction.cpp",
+      "git_blob": "5fb157f7d8b9bf05115fb840e11be0bc2758045e",
+      "bytes": 15231,
+      "type": "blob",
+      "sha256": "2fe93ff9c89dd08a8567ceac62d95f9bcc14f74420b8a611e7bd15fba8f11aab",
+      "url": "https://gitee.com/amireux_fish/Loognson/blob/9eba6c613b15b2ad42d60dfbc55e115a0b446aeb/project/code/direction.cpp"
+    },
+    {
+      "path": "project/code/direction.h",
+      "git_blob": "2524bf90ab8a818428d391c229d71e93ccc1baba",
+      "bytes": 4085,
+      "type": "blob",
+      "sha256": "79d542b3ee8f1e33c33c6080aa63712e9f20c6e2a4de8b2087e676c4479f8e75",
+      "url": "https://gitee.com/amireux_fish/Loognson/blob/9eba6c613b15b2ad42d60dfbc55e115a0b446aeb/project/code/direction.h"
+    },
+    {
+      "path": "project/code/get_image.cpp",
+      "git_blob": "471c05d5b8129af6aa699f7decaae2ae8d643094",
+      "bytes": 36925,
+      "type": "blob",
+      "sha256": "7e30f77bb261808442793e3ea2a51e955e414838f1c47daca3e66d9e7bfff91e",
+      "url": "https://gitee.com/amireux_fish/Loognson/blob/9eba6c613b15b2ad42d60dfbc55e115a0b446aeb/project/code/get_image.cpp"
+    },
+    {
+      "path": "project/code/get_image.h",
+      "git_blob": "b67d1d1b3806738ade585e204afb3599eebba056",
+      "bytes": 7458,
+      "type": "blob",
+      "sha256": "d9172cb4b9b93c994b52de16381696de927698a2f77dca1c9ef2e9e86f630709",
+      "url": "https://gitee.com/amireux_fish/Loognson/blob/9eba6c613b15b2ad42d60dfbc55e115a0b446aeb/project/code/get_image.h"
+    },
+    {
+      "path": "project/code/menu.cpp",
+      "git_blob": "b421b85c1df90d3b3af72679bdf406b96997c1cf",
+      "bytes": 37222,
+      "type": "blob",
+      "sha256": "b834f48b65acd9bd8aac222988935f65cae711039cd93d978d6bb0e7707a576d",
+      "url": "https://gitee.com/amireux_fish/Loognson/blob/9eba6c613b15b2ad42d60dfbc55e115a0b446aeb/project/code/menu.cpp"
+    },
+    {
+      "path": "project/code/menu.h",
+      "git_blob": "a0356a50e542fab29314444f447522b6e779e74d",
+      "bytes": 3655,
+      "type": "blob",
+      "sha256": "178c7b67552d3c701a7df1e70475c939f2c9643568d28a0e47042f78165e86ff",
+      "url": "https://gitee.com/amireux_fish/Loognson/blob/9eba6c613b15b2ad42d60dfbc55e115a0b446aeb/project/code/menu.h"
+    },
+    {
+      "path": "project/code/speed_control.cpp",
+      "git_blob": "907534998771c8418ec62ea837734814fe9fe623",
+      "bytes": 29335,
+      "type": "blob",
+      "sha256": "c9b8722ea5b03176292e2255fa140bdfe3e9ec46508185debfa1989bac2c0a1d",
+      "url": "https://gitee.com/amireux_fish/Loognson/blob/9eba6c613b15b2ad42d60dfbc55e115a0b446aeb/project/code/speed_control.cpp"
+    },
+    {
+      "path": "project/code/speed_control.h",
+      "git_blob": "c0f33f43bb6983ea897ecd3cabb6f69acfe628d0",
+      "bytes": 5857,
+      "type": "blob",
+      "sha256": "a7cdb71ad31412e1a383ecfaa1063f040e4ed4146af338da87ca12468a17c04e",
+      "url": "https://gitee.com/amireux_fish/Loognson/blob/9eba6c613b15b2ad42d60dfbc55e115a0b446aeb/project/code/speed_control.h"
+    },
+    {
+      "path": "project/code/vision.txt",
+      "git_blob": "1fa893c4d011bb4b5a3747ce6f33c2d17fa2dfe6",
+      "bytes": 2894,
+      "type": "blob",
+      "sha256": "750366a1b024ffdfca2fbda3f39ba18d77023205bdfe98a8045680d562bb8a8f",
+      "url": "https://gitee.com/amireux_fish/Loognson/blob/9eba6c613b15b2ad42d60dfbc55e115a0b446aeb/project/code/vision.txt"
+    },
+    {
+      "path": "project/model/loong_cnn_model_simple.h",
+      "git_blob": "2b99b54fa6bff6783f0bcc1e09c256234c7b2e9c",
+      "bytes": 202930,
+      "type": "blob",
+      "sha256": "51e089eeda9101fce00e46c2970398d34f6db04f6e8a5d1fb86dfa5e40930fd1",
+      "url": "https://gitee.com/amireux_fish/Loognson/blob/9eba6c613b15b2ad42d60dfbc55e115a0b446aeb/project/model/loong_cnn_model_simple.h"
+    },
+    {
+      "path": "project/model/本文件夹作用.txt",
+      "git_blob": "e56132f90781f51000a564e17560801c14cfc69f",
+      "bytes": 148,
+      "type": "blob",
+      "sha256": "3b2eecfffe03053f842e809c9fd82b9c753b3c43b0b3ca63368d38cc8de2444d",
+      "url": "https://gitee.com/amireux_fish/Loognson/blob/9eba6c613b15b2ad42d60dfbc55e115a0b446aeb/project/model/本文件夹作用.txt"
+    },
+    {
+      "path": "project/user/CMakeLists.txt",
+      "git_blob": "cfdb34fe601eb3b5bce4664d5f2644a32f69c3b2",
+      "bytes": 3254,
+      "type": "blob",
+      "sha256": "724d1836cba643e31b1947ef09d5fb3b0a64a77dc080c06b5d2a79e8655429f4",
+      "url": "https://gitee.com/amireux_fish/Loognson/blob/9eba6c613b15b2ad42d60dfbc55e115a0b446aeb/project/user/CMakeLists.txt"
+    },
+    {
+      "path": "project/user/build.sh",
+      "git_blob": "eb9bf48fe80401003edbb11aca5f9dbac51644d9",
+      "bytes": 3089,
+      "type": "blob",
+      "sha256": "585ff2597e30ece7f13349e02b45bfd98c11ca469ff78a7e7061ba7b17aa83f9",
+      "url": "https://gitee.com/amireux_fish/Loognson/blob/9eba6c613b15b2ad42d60dfbc55e115a0b446aeb/project/user/build.sh"
+    },
+    {
+      "path": "project/user/cross.cmake",
+      "git_blob": "caa4dd131167426372d649e0ac31cae29276d7cf",
+      "bytes": 636,
+      "type": "blob",
+      "sha256": "80e242a1dda08c2a57a1c7dd046092475e6c652a2ed9ce6a12a7d73fb885cb48",
+      "url": "https://gitee.com/amireux_fish/Loognson/blob/9eba6c613b15b2ad42d60dfbc55e115a0b446aeb/project/user/cross.cmake"
+    },
+    {
+      "path": "project/user/main.cpp",
+      "git_blob": "f167b81081570f88cf8c86ddc73e1f23ecd353b1",
+      "bytes": 12783,
+      "type": "blob",
+      "sha256": "169fa0e3edd53e06c36bbd18e802c979621b693e0d8f1d14f26b61b746e4f2f9",
+      "url": "https://gitee.com/amireux_fish/Loognson/blob/9eba6c613b15b2ad42d60dfbc55e115a0b446aeb/project/user/main.cpp"
+    }
+  ],
+  "tree_files": 739,
+  "tree_truncated": false,
+  "scope": "Selected source fetched/hash-verified; focused entrypoint/algorithm/interface review, not exhaustive line-by-line proof.",
+  "runtime_validation": "No full firmware build, hardware execution or vehicle test.",
+  "alias_of": null
+}

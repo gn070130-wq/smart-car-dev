@@ -1,0 +1,889 @@
+0001 第二十一届全国大学生
+0002 智能汽车竞赛
+0003 技 术 报 告
+0004 学    校：安徽建筑大学
+0005 队伍名称：龙芯真带派
+0006 参赛队员：陈红年、胡其强、陈宇翔
+0007 带队教师：赵阳、颜普
+0008 关于技术报告和研究论文使用授权的说明
+0009 本人完全了解全国大学生智能汽车竞赛关保留、使用技术报告和研究论文的规定，即：参赛作品著作权归参赛者本人，比赛组委会可以在相关主页上收录并公开参赛作品的设计方案、技术报告以及参赛模型车的视频、图像资料，并将相关内容编纂收录在组委会出版论文集中。
+0010 参赛队员签名：陈红年、胡其强、陈宇翔
+0011 带队教师签名：赵阳、颜普
+0012 日        期：2026.8.19
+0013 .
+0014 目录
+0015 第一章 引言1
+0016 1.1全国大学生智能汽车竞赛介绍1
+0017 1.2第二十一届走马观碑组规则介绍1
+0018 第二章 系统结构设计方案2
+0019 2.1系统总体设计方案2
+0020 2.2整车结构设计3
+0021 2.3编码器的选择4
+0022 2.4陀螺仪模块选择4
+0023 2.5测距模块选择5
+0024 2.6有刷电机选择6
+0025 2.7无刷电机选择6
+0026 2.8摄像头选择7
+0027 第三章 硬件电路设计8
+0028 3.1遵循的原则8
+0029 3.2 电源模块设计9
+0030 3.3 主控板介绍及其 PCB11
+0031 3.4 驱动电机模块12
+0032 3.5 驱动板12
+0033 3.6人机交互模块13
+0034 3.7传感器硬件设计15
+0035 第四章 软件设计及控制原理16
+0036 4.1总述16
+0037 4.2程序整体设计框架17
+0038 4.3视觉预处理与赛道边界提取18
+0039 4.4中线生成与纯跟踪算法19
+0040 4.5三级闭环控制20
+0041 4.6特殊赛道元素识别与处理21
+0042 4.7识别与绕行22
+0043 4.8调试接口、边界条件与本章小结23
+0044 第五章 组装调试24
+0045 5.1软件调试24
+0046 5.2硬件设计25
+0047 5.3人机交互工具25
+0048 5.4图传调试26
+0049 第六章 技术指标27
+0050 第七章 结语28
+0051 第八章 参考文献29
+0052 附录 A
+0053 第一章 引言
+0054 1.1全国大学生智能汽车竞赛介绍
+0055 全国大学生智能汽车竞赛是面向国内高校学子开展的高水平工程创新竞赛。赛事秉持 “立足培养、重在参与、鼓励探索、追求卓越” 理念，鼓励学生投身移动机器人研发实践。赛事面向全国全日制本、专科在校大学生，鼓励学生组队开展模型智能车研发，在整车搭建、系统调试的完整流程中开拓创新思路，锤炼动手实践能力，塑造良好的团队协作意识。竞赛交叉融合机械设计、电路开发、嵌入式软件、自动控制、机器视觉与人工智能等诸多学科知识。全面考验参赛队伍系统整合、算法优化与现场问题处置能力。参赛队伍除保障小车稳定运行、完成现场竞速与任务挑战外，还需要梳理研发思路。评审专家结合车辆运行表现、方案创新程度、技术实现难度、资料完整性等维度进行综合打分，评选各级别奖项。[1]
+0056 历经二十余年发展，全国大学生智能汽车竞赛现已成功举办二十余届。赛事搭建起跨校技术交流平台，让广大工科学生得以同台竞技、互通经验，持续点燃青年学子对于智能驾驶与机器人技术的研究兴趣，推动高校工程实践教育不断创新。与此同时，竞赛持续挖掘具备工程实战能力的青年人才，为自动驾驶、智能硬件、智能交通等相关行业输送后备力量，助力国内智能移动机器人相关技术不断向前发展。
+0057 1.2第二十一届走马观碑组规则介绍
+0058 走马观碑组是第二十一届全国大学生智能汽车竞赛的核心室内视觉竞速组别，面向全国本科在校学生开放参赛，全程依托自主研发的三轮智能车完成全自动赛事任务，重点考察学生机器视觉识别与车体运动控制综合能力。[1]
+0059 走马观碑组别以赛事场地为标准化室内赛道，涵盖直道、弯道、十字路口、环岛、坡道等多元路况，赛道区域划分清晰、路况复杂。赛道内随机布设多类目标识别板，分为武器、物资、交通工具三大类别，车辆需通过摄像头实时采集图像、运行自主编写的识别算法，精准判定目标类别并执行对应通行规则，分别完成左侧绕行、右侧绕行、直行通过的差异化行驶操作。
+0060 比赛以全程行驶耗时为核心评分依据，结合违规情况叠加罚时核算最终成绩，识别错误、通行违规、环岛通行异常等均会对应加时，严重偏离赛道无法自主复位则判定赛事失败。参赛队伍可对标准车模进行合规改装，自主搭建外围硬件电路、调试嵌入式算法。该组别聚焦软硬件一体化开发，全方位锻炼学生图像处理、路径规划、闭环控制及工程问题排查能力，是视觉智能车基础研发实践的核心赛事组别。
+0061 第二章 系统结构设计方案
+0062 2.1系统总体设计方案
+0063 本届走马观碑组的主要任务是在稳定的完成所有赛道元素的前提下竞速。故在选择方案上以保证车身的稳定为主要任务。
+0064 图2.1 系统总体方案图
+0065 2.2整车结构设计
+0066 根据第二十一届全国大学生智能汽车竞赛走马观碑组竞赛规范，本团队以赛事指定三轮智能车模为开发载体，整体底盘结构、轮距轴距均严格沿用原厂标准架构。车身主体采用轻量化高强度材料，配合高弹性防滑轮胎，有效提升整车行驶容错率与耐久性能。在整体布局设计上，团队秉持低重心、高对称、稳布局的设计思路，将龙芯主控模块、视觉采集摄像头、姿态检测单元等核心器件集中布置于车身中心区域，同时将电源模块低位内嵌安装，采用锁固式结构避免高速行驶、颠簸路段出现器件松动、位移等问题。针对比赛场景中高频出现的急弯、坡道、连续变道等复杂路况，我们对车辆负压吸附系统进行专项适配调校，通过优化风扇转速与风道结构，强化底盘负压吸附效果，显著削弱高速过弯产生的侧滑趋势，大幅提升车体贴地稳定性与转向跟随精度。经过系统性结构优化与布局迭代，整车具备优秀的直线匀速性能与弯道动态适应性，能够在多变赛道环境中保持稳定行驶，保障视觉识别与路径追踪的精准度，满足赛事高速、稳定、高精度的竞速要求。
+0067 图2.2 龙芯车模
+0068 2.3编码器的选择
+0069 编码器可以使电路更加完善，信号更加精确，编码器功耗低，重量轻，抗冲击抗震动，精度高，寿命长，非常实用，我们选择的是带方向编码器，在车模下方架编码器。
+0070 带方向编码器（Incremental Encoder）是一种常见的编码器类型，用于测量位置和方向信息。它可以提供位置计数和旋转方向（正向或反向）的信号输出。带方向编码器通常由两个输出通道（一般称为A相和B相）组成。当旋转时，这两个通道会产生脉冲信号，并根据脉冲计数和相位关系来确定位置和旋转方向。
+0071 图2.3 编码器
+0072 2.4陀螺仪模块选择
+0073 我们采用的是 ICM42688 六轴 IMU 模块，作为高性能运动传感单元，ICM42688 集成加速度计与陀螺仪，能够高精度采集角速度与线性加速度数据，实现车体姿态信息实时解算。该模块支持多轴同步采样，体积小巧、功耗控制优异，同时拥有低噪声、高测量灵敏度与出色的温度稳定性，能够在智能车高速行驶、震动干扰的赛场环境下持续输出稳定可靠的传感数据。[6]
+0074 图2.4 IMU42688
+0075 2.5测距模块选择
+0076 我们采用 VL53L0X 激光 TOF 测距模块，作为新一代飞行时间距离传感器，VL53L0X 利用红外激光实现非接触式测距检测，能够快速输出精确距离数值。模块依托 IIC 通信协议与主控完成数据交互，支持近距离目标稳定探测，具备体积紧凑、响应迅速、功耗较低的特性，拥有优秀的抗环境光干扰能力，测量结果不易受物体颜色影响。该模块可以实时感知周边障碍物信息，辅助智能车感知赛[7]
+0077 场环境，为车辆路径判断提供可靠的距离数据支撑。可用于检测距离坡道的距离以便提前做出处理。
+0078 图2.5 VL53L0X测距
+0079 2.6有刷电机选择
+0080 本车模驱动系统搭载逐飞380直流有刷高速电机，该电机动力特性优异，拥有空载转速高、动力响应迅速、输出功率充足等优势。电机整体结构精简、自重轻巧，可快速输出强劲驱动力，充分适配走马观碑组别赛道加速、坡道行驶等工况需求。搭配配套减速传动结构后，电机在保留高速行驶能力的同时输出持续稳定扭矩，保障赛车无论是直线冲刺还是高速过弯阶段，都能够拥有充沛动力与可靠的操控性能。
+0081 图2.6 逐飞380电机
+0082 2.7无刷电机选择
+0083 本车模负压系统采用 T-MOTOR 乘风三代 V2207 V3 无刷电机，该型号为高性能航模无刷动力电机，拥有功率密度高、动态响应快、运转振动小等优势。电机整体工艺精密、自重轻便，可以持续提供强劲的吸力，能够在长时间运行工况下保持稳定输出。配合负压风叶组合，V2207 V3 电机在高转速运转时形成底盘负压效应，有效提升车辆下压力，增强轮胎抓地性能，使赛车在高速过弯时抑制侧滑，进一步提升整车行驶稳定性。
+0084 图2.7  无刷电机
+0085 2.8摄像头选择
+0086 本车模视觉采集系统采用灵眼Pro彩色摄像头，该设备搭载全局快门传感器，具备高帧率成像能力，可有效消除高速运动产生的果冻效应。摄像头配备无畸变镜头，成像画面畸变小，依托免驱UVC协议能够直接与主控实现图像传输，大幅降低处理器资源占用。设备成像清晰、响应迅速，能够稳定捕捉赛道标线与各类目标识别板信息，为视觉循迹、目标分类算法提供高质量图像数据源，保障赛车在高速行驶状态下精准完成路径识别与目标判定任务。
+0087 图2.8  USB高频摄像头
+0088 第三章 硬件电路设计
+0089 3.1遵循的原则
+0090 本项目在进行硬件设计时尽可能遵循以下原则：
+0091 1、尽可能选择典型电路，并符合单片机常规用法。为硬件系统的标准化、模块化打下良好的基础。
+0092 2、系统扩展与外围设备的配置水平应充分满足应用系统的功能要求，并留有适当余地，以便进行二次开发。
+0093 3、硬件结构应结合应用软件方案一并考虑。硬件结构与软件方案会产生相互影响，考虑的原则是：软件能实现的功能尽可能由软件实现，以简化硬件结构。但必须注意，由软件实现的硬件功能，一般响应时间比硬件实现长，且占用CPU时间。
+0094 4、系统中的相关器件要尽可能做到性能匹配可靠性及抗干扰设计是硬件设计必不可少的一部分，它包括芯片、器件选择、去耦滤波、印刷电路板布线、通道隔离等。
+0095 5、单片机外围电路较多时，必须考虑其驱动能力。驱动能力不足时，系统工作不可靠，可通过增设线驱动器增强驱动能力或减少芯片功耗来降低总线负载。
+0096 6、尽量朝“单片”方向设计硬件系统。系统器件越多，器件之间相互干扰也越强，功耗也增大，也不可避免地降低了系统的稳定性。随着单片机片内集成的功能越来越强，真正的片上系统SoC已经可以实现。
+0097 7、电路设计需要尽可能简洁，尽量减少元器件使用数量，缩小电路板面积，使电路部分重量轻，易于安装。在设计完原理图后，注重PCB板的布局，优化电路的走线
+0098 最好手动布线，整齐排列元器件，最终做到电路板的简洁。
+0099 3.2 电源模块设计
+0100 走马观碑赛道车模在运行过程中，各类外设需要不同的工作电压，常用的有 5V 和 3.3V。本车模采用 格式-2300mAh-45C-4S 锂电池作为主电源，标准电压为 16.8V，正常工作范围为 14.8V~16.8V，可直接为驱动电机供电。在主控板部分，为满足摄像头、无线通信模块及传感器等外设的用电需求，我们设计了基于 SCT2450STER 芯片的 DC/DC 降压电路，将电池高压稳定转换为 5V 输出。该降压模块支持宽输入电压范围，输出电流可达 5A，采用同步降压拓扑，内置低阻抗功率 MOSFET，具有高效率、低发热和优良的瞬态响应特性。电路中配备了输入/输出滤波电容（220µF、47µF 等）、电感（4.7µH）及肖特基二极管（SS54）以保证输出电压的稳定，同时利用分压电阻网络精确设定输出电压，为高速行驶时外设的稳定工作提供了可靠保障。
+0101 图3.2.1  5V稳压电路
+0102 使用AMS1117-3.3芯片固定输出电压为3.3V，为屏幕、姿态传感、蜂鸣器、按键等供电。AMS1117-3.3 是一款线性稳压器芯片，由 Richtek Technology（锐捷科技）生产。它是一种定电压降压稳压器，能够将输入电压稳定地转换为固定的输出电压。AMS1117-3.3 的 “3.3” 部分表示它的输出电压为 3.3V。根据这个芯片的型号，它提供的输出电压是固定的，即输出为 3.3V。这款芯片具有低压降、低噪声、高精度和高效率的特点。它适用于多种电子设备和电路中，如电源管理、嵌入式系统、消费电子产品等。AMS1117-3.3 的具体特性可能包括过压保护、过热保护、短路保护、低功耗待机模式等功能。
+0103 图3.2.2  降压3.3V
+0104 3.3 主控板介绍及其PCB
+0105 根据设计要求，主板选择了龙芯2K0300处理器作为核心组件，其强大的计算能力和多功能接口支持能够完全满足系统的性能标准。在该系统中，我们的主板制作遵循了最新的工业规范，以确保便捷的调试和安装。主板布局包括电源稳压电路、显示屏接口、单片机模块以及多种传感器接口，确保系统的高效运行。整板的设计借鉴了贝果学习板，适配开发环境，并利用合适的尺寸优化了安装及使用体验，进一步降低了系统的重心。早期设计阶段，传感器接口位于中央，但经过复杂的平衡性计算，为了拓宽传感器的感知范围并减少环境干扰，我们将关键接口移至前端，以实现更好的设备协调和稳定性。具体布局及连接示意图如下：
+0106 图3.3  主板PCB图
+0107 3.4 驱动电机模块
+0108 采用DRV8701E芯片驱动直流电机，是德州仪器（Texas Instruments）推出的一款高电流H桥驱动器芯片。它是专为直流电机驱动应用而设计的，可提供高电流、高效率和高性能的电机驱动解决方案。它支持电机电压范围广泛，其工作电压可以从6V到40V，使其适用于多种应用场景。此芯片具有多种保护功能，如热关断保护和电流限制保护，以保护电机和驱动器免受过热和过负载的损害。它还提供了PWM输入、速度控制和方向控制等接口，可灵活控制驱动器的输出。[8]
+0109 图3.4  驱动原理图
+0110 3.5 驱动板
+0111 对于输入信号，我们采用了以SN74HC125PWR为芯片的PWM缓冲电路，该设备采用CMOS技术，具有平衡的输出驱动能力。它可以提供4个独立的门缓冲器，每个缓冲器可以在5V的电压下承受或提供6mA的电流。此外，每个缓冲器还集成了一个3态输出，即高阻抗输出。通过将相应的OE输入设置为高电平，可以启用设备的3态输出。该设备具有低功耗、快速响应和低输入电流等特点。
+0112 图3.5 驱动板PCB
+0113 3.6人机交互模块
+0114 为了方便调试，在车模上增加了2寸IPS液晶屏、LED 指示灯、按键和拨码开关，可 以通过TFT观察车辆的一些数据，LED 在车模运行时指示某些特殊元素，按键可以用来调参和实现特定功能，拨码开关用于策略调整。
+0115 图3.6.1 按键电路
+0116 图3.6.2 屏幕电路
+0117 3.7传感器硬件设计
+0118 我们重点聚焦于四轮车模的关键传感器功能，包括姿态传感器、图像传感器以及用于测速闭环控制的编码器。对于姿态检测，我们采用了ICM42688传感器模块，安装于车体的一侧，用于精准捕捉和分析车辆的空间姿态。ICM42688是当前最新推出的一款姿态传感器，与传统的MPU6050和ICM20602相比，它具有更出色的数据稳定性。其IIC接口支持更高速的数据读取，提供了更及时的反馈，这对四轮车模在高速运动时的姿态调整至关重要。
+0119 除了姿态传感器，测速闭环控制依赖高精度编码器，这些编码器确保了车模在各种速度下的平稳运行和良好的控制响应。图像传感器的引入则为车模提供了对周围环境的实时视觉感知，帮助实现路径规划及障碍物检测等功能。
+0120 Simulink仿真模型用于分析三轮车模系统的动态行为和传感器数据处理。通过建立仿真模型，我们能够提前测试和优化传感器与控制系统的互动，确保在实际应用中实现稳定的操控和良好的性能表现。仿真模型提供了系统在不同操作条件下的表现预测，帮助识别潜在问题并作出相应的修正，确保车辆的安全可靠运行。
+0121 图3.7.1  simulink仿真模型
+0122 在这个系统中，电机的转速实际上可以通过PID控制器来管理，以保持车辆在不同速度条件下的稳定性。PID控制器可以调节电机的输出，使车辆在加速时不会超出预期速度，从而避免不必要的快速变化，这在路径跟随和驾驶稳定性中至关重要。
+0123 最终，通过对系统的仿真模拟，我们可以预测并优化车辆在不同路况和操作条件下的响应。这种分析有助于提升整个系统的操控品质，确保车辆在不同场景中都能表现出色。图像传感器和位置编码器的反馈信号在这一过程中扮演了重要角色，提供了指引信息以便进一步调整和完善控制策略。
+0124 图3.7.2  PID输出，误差，角速度，角速度期望
+0125 图3.7.3  角速度，角度，速度
+0126 第四章 软件设计及控制原理
+0127 4.1 总述
+0128 本车为基于龙芯 LoongArch Linux 开发板的三轮差速智能车。软件以相机视觉为主要导航信息，以 ICM42688 惯性测量单元、VL53L0X 距离传感器和左右轮编码器作为辅助反馈，通过轻量级多线程完成图像处理、赛道元素识别、路径决策和电机闭环控制。工程采用 C++11 编写，视觉处理依赖 OpenCV，目标分类使用 NCNN 推理框架，底层设备由相机、电机、液晶、按键和通信封装库统一管理。[4]
+0129 系统的输入为 320×240、120 Hz 的彩色相机图像以及角速度、距离和编码器计数；主要输出为左右驱动电机 PWM 和无刷电机占空比。每帧视觉链路先生成左右赛道边界和跟踪中线，再通过纯跟踪算法计算航向角误差。控制链以航向角误差为外环输入，以陀螺仪角速度为中环反馈，以左右轮编码器速度为内环反馈，最终形成差速转向。十字、圆环、坡道、斑马线和目标板等特殊场景由独立状态机改变跟踪边、前瞻点、速度目标及中线偏移。
+0130 4.2 程序整体设计框架
+0131 软件按主程序层、任务层、核心算法层和硬件封装层组织。main.cc 仅负责设备初始化、周期线程启动和主取帧循环；app 目录保存视觉、电机、编码器、IMU、按键和菜单任务；line_track.h 与 cross.h 分别承载巡线、纯跟踪和赛道元素状态机；app_context 统一保存跨任务共享的设备对象与运行状态，app_config 则集中给出可调默认参数。该分层使控制逻辑与硬件访问相互隔离，也便于现场通过菜单或图传页面观察和调整参数。
+0132 图4.2  软件总体架构与任务调度关系
+0133 程序启动时依次检查相机、LCD、按键、电机、无刷电机、ToF 和 IMU。随后创建 1 ms 电机任务、4 ms IMU/ToF 任务、5 ms 编码器任务、1 ms 按键任务和 100 ms 菜单任务。主线程持续取帧并调用 photo_task；若相机连续 5 次取帧失败，则立即将两路驱动电机和无刷电机输出清零。图传服务工作在 8080 端口，可按需显示循迹、分类、灰度阈值、透视边线和红色掩膜，同时回传目标速度、实际速度、PWM、角速度、元素状态和分类结果。
+0134 4.3 视觉预处理与赛道边界提取
+0135 为兼顾感知范围与嵌入式实时性，程序保留一份 320×240 翻转原图供目标板裁剪，同时将图像缩放为 160×120 后执行主循迹算法。小图经 BGR 到灰度转换后，在图像高度约 70% 处选取起始行，并在其上下各 10 行区域内利用 Otsu 最大类间方差法获得黑白分割阈值。算法从图像中心分别向左、向右搜索白色赛道的边缘起点，再使用 15×15 自适应邻域和左右手迷宫规则沿边界向前爬线。为抑制误爬，若边界相对已达到的最高位置向车体方向回退超过 3 px，则在该处截断。[2]
+0136 原图边界坐标通过离线生成的透视查找表映射到鸟瞰坐标系。查找表把相机去畸变和透视映射合并为常数时间的坐标访问，避免每个边界点重复执行矩阵乘法。变换后的左右边界先进行核长为 5 的三角滤波，再以 3 px 间隔进行等距采样，单侧最多保留 100 个有效点。等距点列既保证局部角度估计具有统一尺度，也使前瞻点可直接用索引表示。
+0137 角点检测采用跨 8 个采样点的局部方向变化，并通过非极大值抑制保留突出的局部峰值。当角度突出量处于 70° 至 140° 时，将其判定为 L 型角点。该特征不直接决定车辆动作，而是作为十字、圆环等元素识别和边界截断的几何证据。完整视觉链如图4-2所示。
+0138 图4.3  视觉循迹处理链
+0139 4.4 中线生成与纯跟踪算法
+0140 正常循迹时，程序分别将左边界沿右法向、右边界沿左法向偏移半个赛道宽度，得到两个候选中线。g_track_side 决定优先采用哪一侧边界；当首选边界点数不足且车辆不处于绕行丢线状态时，系统自动退化为另一侧边界。状态机还可通过 g_centerline_offset 改变法向偏移比例，从而在圆环入环、目标板绕行和恢复阶段主动移动参考轨迹。生成的中线再次等距采样，并以车体参考点 (g_cx, g_cy) 归一化起点，减小左右边界切换时的预瞄突变。[3]
+0141 设前瞻点相对车体参考点的横向偏移为 Δx，纵向距离为 Δy，d²=Δx²+Δy²，鸟瞰域轴距参数为 L，则程序采用下式计算纯跟踪航向角误差：
+0142 δ = −atan(2LΔx / d²) × 180 / π                                      (4-1)
+0143 式中负号用于匹配图像横坐标与车辆转向方向：前瞻点位于车体右侧时输出负角，位于左侧时输出正角。普通道路默认前瞻点索引为 7，直道加速为 8，十字与红褐障碍为 12，圆环及 NCNN 绕行为 5，坡道为 3；若中线点数不足，则前瞻索引自动限制在有效范围内。当前代码保留了按实际轮速计算动态前瞻距离的函数，映射关系为“实际前进速度×0.014”，并限制在 12 至 42 px，但主视觉决策仍以按状态设定的固定索引为准。中线完全丢失时，普通状态保持上一次有效纯跟踪角；绕行状态则使用状态机给定的强制转向角，避免突然回正。
+0144 4.5 三级闭环控制
+0145 车辆转向采用角度环、角速度环和左右轮速度环组成的三级闭环，如图4-3所示。角度环每 10 ms 执行一次，将纯跟踪航向角误差转换为目标偏航角速度；角速度环每 5 ms 执行一次，以 ICM42688 的 z 轴角速度为反馈，输出左右轮目标速度差；同一 5 ms 周期内，编码器更新实际轮速，两个增量式速度控制器分别调整左右 PWM。电机任务本身以 1 ms 周期运行，以便完成启动计时、保护判定、蜂鸣器刷新和多速率控制调度。
+0146 图4.5.1  三级闭环差速控制结构
+0147 角度环和角速度环采用位置式 PID 结构。对离散时刻 k 的误差 e(k)，程序分别计算比例、积分和误差差分项，并对三项独立限幅：
+0148 u(k) = satP[Kp e(k)] + satI[Ki Σe(k)] + satD[Kd(e(k)−e(k−1))]                                      (4-2)
+0149 当前普通道路角度环实际使用 PD 参数 Kp=42.5、Ki=0、Kd=35；圆环角度环为 Kp=50.8、Kd=35；目标板绕行为 Kp=21、Kd=4；绕行三次后的加速角度环为 Kp=60、Kd=37。普通角速度环为 Kp=0.2，圆环角速度环为 Kp=0.18，绕行角速度环为 Kp=0.2，三者积分和微分项均关闭。控制器切换依据元素类型、圆环阶段及 NCNN 绕行状态，停车或模式复位时清除全部历史项，防止再次起步时带入旧误差。
+0150 左右轮速度环采用增量式 PI。其单次输出增量为：
+0151 Δu(k)=Kp[e(k)−e(k−1)]+Ki e(k)+Kd[e(k)−2e(k−1)+e(k−2)]                                      (4-3)
+0152 两侧速度环的当前参数均为 Kp=40、Ki=20、Kd=0，单次增量限幅 8500。控制器输出累加到左右 PWM，并限制在 −9000 至 9000；启动斜坡期的负向下限收紧为 −2000。角速度环产生的差速量 Δv 经动态限幅后，与基础左右速度组合为 vL*=vL−Δv、vR*=vR+Δv，再交由速度环跟踪。该结构将路径几何误差、车体旋转响应和轮端执行误差分层处理。
+0153 图4.5.2  串级与常规PID比较
+0154 4.6 特殊赛道元素识别与处理
+0155 十字和圆环均以 L 型角点为主要几何特征，并用多帧确认抑制偶然误检。十字判定包括近角点与同侧远角点同时出现，或左右近角点同时出现且横向间距小于 60 px；当前确认帧数为 4。进入 CROSS_BEGIN 后，算法从角点附近重新搜索远线，并把近、远边界生成的中线连接起来；当近处双边暂时消失时进入 CROSS_RUNNING，在固定远端区域继续搜索左右边界；连续 5 次恢复双边后退出十字。十字状态还设有超时跳转，防止识别失败时长期停留。
+0156 圆环判定要求单侧近 L 角点、该侧无对应远角点、另一侧为长直边界，并且车辆已通过第一个十字。状态依次为 CIRCLE_BEGIN、CIRCLE_APPROACH、CIRCLE_RUNNING、CIRCLE_OUT 和 CIRCLE_END。BEGIN 阶段沿外侧直边前进，并结合编码器累计和内侧边界消失/重现判断入口；APPROACH 阶段沿入口弧线，通过 IMU 偏航积分超过正负 9000 且外侧边界点数大于 15 进入 RUNNING；RUNNING 阶段检测靠近车体的出环角点；OUT 阶段切换跟踪边，当角点消失、边线超过 30 点且恢复长直形态，连续 3 帧后进入 END 并恢复普通循迹。
+0157 坡道由 VL53L0X 距离触发：测距处于 50 至 500 mm 并连续满足 6 帧时进入坡道状态，以目标速度 100 行驶，达到配置的编码器累计距离后退出且不再重复检测。斑马线只在发车 5000 ms 后启用，连续 3 帧确认后将运行标志清零并快速停车。红褐色路障检测沿左右鸟瞰边界逆变换到原图，在赛道内侧 8 px 位置检查灰度跳变和红色像素占比；至少 2 个点命中并连续 5 帧确认后，车辆切换到障碍对侧边界，绕行 500 ms 后恢复。各元素的状态关系见图4-4。
+0158 图4.6 十字、圆环、坡道、斑马线及红褐障碍处理逻辑
+0159 4.7 识别与绕行
+0160 目标板识别采用“几何与颜色定位、轻量分类、动作状态机”三级处理。算法沿逆透视后的道路中线向前搜索红色跳变，并以标准红色 H∈[0,12]∪[170,179] 和棕红色 H∈[8,22] 为主要色相范围，同时要求标准红色饱和度不低于 65、棕红色饱和度不低于 70、亮度不低于 35。候选框宽度至少为 4 px，中心与图像中心偏差不超过 30 px，候选中线索引不大于 40。程序再将红色底边投影到鸟瞰域，根据 45 cm/24 px 的标定比例估算到车头的平面距离；普通路面、十字和圆环的分类距离门限分别为 60、70 和 40 cm。
+0161 满足距离门控后，程序在 320×240 原图中依据红色底边向上构造四边形，并透视展开为 64×64 三通道模型输入。NCNN 采用单线程 CPU 推理，输入由 BGR 转 RGB，并以均值 [123.675,116.28,103.53] 和归一化系数 [0.01712475,0.017507,0.01742919] 标准化。模型输出六类标签：binoculars、bomb、gun、medical、vehicle_black 和 vehicle_write。softmax 最高概率需不低于 0.50；系统收集最多 3 次有效识别结果并多数投票，若前两次结果相同则可提前锁定。gun、bomb 映射为左绕，binoculars、medical 映射为右绕，两类 vehicle 标签映射为直行。[5]
+0162 动作状态机如图4-5所示。IDLE 检测到候选后进入 WAIT_TRIGGER，连续 2 帧满足几何和距离约束后进入 SLOW_CLASSIFY；投票得到有效命令后进入 LOCKED，并冻结高层元素切换。BYPASS 阶段按命令选择左或右边界，修改中线偏移和初始爬线位置，并以编码器累计判断是否越过目标；若所选边界丢失，则暂时施加 ±15° 至 ±30° 的强制转向角。随后 RECOVER 阶段等待左右边界或远线恢复且编码器达到恢复计数，最后在 DONE 中清理锁定标签、偏置角、编码器计数和冻结标志，返回普通循迹。普通道路、十字出口和圆环内使用相同主状态机，但分别采用独立的绕行距离、速度、中线偏移和丢线超时参数。
+0163 图4.7  红色目标板检测、分类与绕行动作状态机
+0164 4.8 调试接口、边界条件与本章小结
+0165 为便于现场调试，系统通过 LCD 多级菜单和网页图传提供循迹、分类、阈值、透视与红色掩膜五种图像视图，并回传 PID 参数、纯跟踪角、角速度、轮速、PWM、边界点数、角点位置、元素状态、分类概率和各视觉阶段耗时。速度环、角速度环、普通角度环和圆环角度环参数可在运行时统一更新，更新后立即清除对应历史状态。图像调试在发车后默认关闭，以减少绘制和网络发送对视觉帧率的影响。
+0166 综上，本工程形成了从赛道边界提取、状态机决策、纯跟踪到三级闭环执行的完整软件链路。该实现的适用边界也较明确：透视查找表依赖当前相机安装姿态和标定点；红色目标定位依赖中线质量及光照下的颜色阈值；多个周期任务通过共享全局状态交换数据，当前代码未对所有读写显式加锁。因此，实车调试时应优先验证相机标定、边线连续性、控制方向和各状态退出条件，并利用现有超时、丢线停车和 PID 复位机制限制异常状态的持续时间。
+0167 第五章 组装调试
+0168 5.1 软件调试
+0169 本项目采用 Visual Studio Code (VS Code) 作为主要的代码编辑与调试平台。VS Code 拥有轻量运行、高度可扩展和集成能力强的特点，适合快速构建嵌入式开发工作流。通过安装相关扩展（如 C/C++ 编辑支持、调试适配扩展等），可实现代码补全（IntelliSense）、版本控制集成以及终端命令管理等功能，让开发体验更加便捷流畅。
+0170 针对龙芯车模开发，我们通过 VS Code 集成 TASKING winIDEA Debug Extension （或类似插件）将 winIDEA 调试功能导入 VS Code，实现与 Infineon AURIX 平台的接口对接。该扩展支持使用 winIDEA 传统调试工具（如 BlueBox）进行远程构建和调试，并直接在 VS Code 中查看寄存器、调用栈、断点等信息，显著简化嵌入式调试流程。
+0171 图5.1  VScode软件界面
+0172 5.2硬件设计
+0173 本车模的电子硬件部分由我使用嘉立创 EDA 进行原理图与 PCB 绘制，结合竞赛需求完成了元器件布局与走线优化，确保信号传输稳定、功率分配合理，并在尺寸与安装孔位上与车体结构精准匹配，为后续调试与运行提供了可靠的硬件基础。
+0174 图5.2  嘉立创EDA绘制PCB
+0175 5.3人机交互工具
+0176 我们设计并采用了基于屏幕与五向按键的人机交互模块。该模块在调试阶段能够实时显示车辆的关键运行数据，这种交互方式不仅避免了每次修改参数都需要重新编译和烧录程序的繁琐流程，还能在比赛现场根据赛道情况和双车配合状态进行即时微调，从而显著提升了车辆在不同赛道环境下的适应性与稳定性。同时，屏幕直观的数据显示也为故障排查和调试提供了有力支持，使我们能够更快地定位问题并验证改动效果，大大提高了整体调试效率与比赛中的应变能力。
+0177 图5.3 屏幕调参
+0178 5.4图传调试
+0179 车在同样的赛道上走过的路都是不一样的，所以无论怎么考虑车的状态都是 不够的，因此需要对运行中的车进行实时监控。以便我们发现问题，解决问题， 所以我们使用上位机进行实时观测车模运行状态。并且利用图传观察裁剪图片效果，并且设置快捷键来迅速拍摄数据集进行训练。
+0180 图5.4  图传
+0181 第六章 技术指标
+0182 参数
+0183 指标
+0184 长度
+0185 25 cm
+0186 宽度
+0187 27 cm
+0188 高度
+0189 33 cm
+0190 摄像头高度
+0191 29 cm
+0192 重量
+0193 1389.6 g
+0194 表6.1 车模技术
+0195 第七章 结语
+0196 在第二十一届全国大学生智能汽车竞赛中，我们团队以龙芯视觉智能车为平台，围绕赛道自主循迹、特殊元素识别和目标板分类等任务，完成了从车模搭建、硬件连接、软件开发到赛道实测优化的全过程。
+0197 在机械与整车结构方面，我们根据三轮差速车模的运动特点，对车体重心、相机视场、传动部件和轮胎抓地性能进行反复调整，使车辆在高速直道、连续弯道、十字路口和圆环等场景下保持较好的稳定性与通过能力。
+0198 在硬件部分，系统以龙芯 LoongArch Linux 开发板为主控，配备 USB 摄像头、ICM42688 惯性测量单元、VL53L0X 测距模块、编码器、电机驱动、无刷电机及 LCD 调试界面。相机以高帧率采集赛道图像，编码器和 IMU 为车辆运动控制提供实时反馈，图传和在线调参功能也提高了现场调试效率。
+0199 在软件与算法层面，我们构建了基于 OpenCV 的视觉循迹系统。程序对图像进行翻转、缩放、灰度化、Otsu 阈值分割、自适应爬线、透视变换、滤波和等距采样，提取赛道左右边界并生成跟踪中线；随后利用纯跟踪算法计算航向误差，并通过角度环、角速度环和左右轮速度环构成三级闭环控制，实现稳定的差速转向和速度跟踪。针对十字、圆环、坡道、斑马线、红褐障碍物等特殊元素，系统设计了相应状态机进行识别、补线、切换跟踪边和调速处理。
+0200 此外，针对竞赛目标板任务，我们结合红色特征定位与 NCNN 轻量化分类模型，实现了目标区域裁剪、分类投票和左绕、右绕、直行等动作决策，使车辆能够在完成循迹任务的同时响应目标识别要求。
+0201 通过本次比赛，我们不仅完成了智能车软硬件协同系统的设计与调试，也提升了视觉算法开发、嵌入式控制、赛道参数整定和团队协作能力。感谢指导老师在方案设计和测试阶段给予的指导。未来我们将持续深耕智能驾驶与移动机器人技术，不断精进技术方案，探索更高效、更智能化的控制系统，持续积累工程实践经验。
+0202 第八章 参考文献
+0203 [1] 全国大学生智能汽车竞赛组委会. 第二十一届全国大学生智能汽车竞赛走马观碑组竞赛规则[S]. 2026.
+0204 [2] Otsu N. A Threshold Selection Method from Gray-Level Histograms[J]. IEEE Transactions on Systems, Man, and Cybernetics, 1979, 9(1): 62-66. DOI:10.1109/TSMC.1979.4310076.
+0205 [3] Coulter R C. Implementation of the Pure Pursuit Path Tracking Algorithm[R]. Pittsburgh: Carnegie Mellon University, 1992.
+0206 [4] Bradski G. The OpenCV Library[J]. Dr. Dobb's Journal of Software Tools, 2000.
+0207 [5] Tencent. ncnn: A high-performance neural network inference framework optimized for the mobile platform[EB/OL]. https://github.com/Tencent/ncnn, 2026-08-18.
+0208 [6] TDK InvenSense. ICM-42688-P: High Performance 6-Axis MEMS MotionTracking Device: Datasheet[EB/OL]. https://invensense.tdk.com/, 2026-08-18.
+0209 [7] STMicroelectronics. VL53L0X: Time-of-Flight Ranging Sensor: Datasheet[EB/OL]. https://www.st.com/, 2026-08-18.
+0210 [8] Texas Instruments. DRV8701 5.9-A Brushed DC Motor Gate Driver with Current Shunt Amplifier: Datasheet[EB/OL]. https://www.ti.com/, 2026-08-18.
+0211 附录A
+0212 //main代码
+0213 int main()
+0214 {
+0215 Menu menu(&lcd);
+0216 g_menu = &menu;
+0217 if (!camera.is_cam_opened()) { fprintf(stderr, "摄像头初始化失败\n"); return -1; }
+0218 if (lcd.lcd_init() < 0) { fprintf(stderr, "初始化失败\n"); return -1; }
+0219 if (key.key_init() < 0) { fprintf(stderr, "KEY初始化失败\n"); return -1; }
+0220 if (motor.motor_init() < 0) { fprintf(stderr, "电机初始化失败\n"); return -1; }
+0221 if (brush.brushless_init() < 0) { fprintf(stderr, "无刷电机初始化失败\n"); return -1; }
+0222 if (tof.tof_init() < 0) { fprintf(stderr, "TOF初始化失败\n"); return -1; }
+0223 if (buzzer_1.buzzer_init() < 0) { fprintf(stderr, "蜂鸣器初始化失败\n"); return -1; }
+0224 if (imu.icm42688_init() < 0) { fprintf(stderr, "IMU初始化失败\n"); return -1; }
+0225 // if (seekfree_client.connect_server("10.131.69.64", 8086) < 0) {
+0226 //     if (seekfree_client.connect_server("192.168.93.64", 8086) < 0) {
+0227 //     printf("连接失败\n");
+0228 //     return -1;
+0229 // }
+0230 // buzzer_1.set_duty_freq(50, 50);
+0231 // usleep(300000);  // 响 300ms
+0232 // buzzer_1.set_duty_freq(50, 1000);
+0233 // usleep(300000);  // 响 300ms
+0234 // buzzer_1.set_duty(50);
+0235 // usleep(3000000);  // 响 300ms
+0236 // lcd.clearScreen();
+0237 // seekfree_client.init_protocol();
+0238 // 周期任务拆分后，主函数只负责创建和启动线程。
+0239 TimerThread imu_tof_thread(imu_task, nullptr, 4);
+0240 TimerThread motor_thread(motor_task, nullptr, 1);
+0241 TimerThread key_thread(key_task, nullptr, 1);
+0242 TimerThread menu_thread(menu_task, nullptr, 100);
+0243 TimerThread encoder_thread(encoder_get_task, nullptr, 5);
+0244 // TimerThread recv_thread(recv_task, nullptr, 10);
+0245 motor_thread.start();
+0246 key_thread.start();
+0247 menu_thread.start();
+0248 imu_tof_thread.start();
+0249 encoder_thread.start();
+0250 // recv_thread.start();
+0251 // 巡线透视参数初始化。
+0252 camera_param_init();
+0253 menu.refresh();
+0254 brush.set_duty(0);
+0255 if (camera_server.start_server(8080) < 0) {
+0256 printf("图传服务器启动失败\n");
+0257 return -1;
+0258 };
+0259 printf("图传服务器已启动，浏览器访问 http://192.168.250.227:8080 查看画面\n");
+0260 int camera_fail_count = 0;
+0261 while (camera_server.is_running()) {
+0262 // while (1) {
+0263 if (!camera.get_frame(frame)) {
+0264 camera_fail_count++;
+0265 if (camera_fail_count >= 5) {
+0266 printf("摄像头连续读取失败 %d 次，停止电机并退出\n", camera_fail_count);
+0267 motor.set_motor1(0, 0);
+0268 motor.set_motor2(0, 0);
+0269 brush.set_duty(0);
+0270 break;
+0271 }
+0272 usleep(1000);
+0273 continue;
+0274 }
+0275 camera_fail_count = 0;
+0276 // 视觉任务单独成文件后，主循环只保留取帧和调用。
+0277 photo_task();
+0278 if(param_photo_flag && g_visual_debug_enable) {
+0279 // 根据图像显示模式选择发送的图像
+0280 cv::Mat display_main = g_photo_frame_full.empty() ? frame : g_photo_frame_full;
+0281 cv::Mat display_persp = perspective_frame;
+0282 switch (g_image_display_mode) {
+0283 case 1: // Classify: 显示红色模型裁剪输入
+0284 if (!g_red_model_input_40.empty()) {
+0285 cv::Mat classify_view;
+0286 cv::resize(g_red_model_input_40, classify_view, cv::Size(160, 160), 0, 0, cv::INTER_LANCZOS4);
+0287 cv::copyMakeBorder(classify_view, display_persp, 0, 0, 0, 0, cv::BORDER_CONSTANT);
+0288 // 底部叠加分类结果
+0289 std::string label_text = "Label:" + g_ncnn_locked_label;
+0290 char score_buf[16];
+0291 snprintf(score_buf, sizeof(score_buf), " %.2f", g_ncnn_locked_score);
+0292 label_text += score_buf;
+0293 cv::putText(display_main, label_text, cv::Point(5, 230),
+0294 cv::FONT_HERSHEY_SIMPLEX, 0.4, cv::Scalar(0, 255, 255), 1);
+0295 }
+0296 break;
+0297 case 2: // Threshold: 二值化图像
+0298 if (!gray.empty()) {
+0299 cv::Mat gray_3ch;
+0300 cv::cvtColor(gray, gray_3ch, cv::COLOR_GRAY2BGR);
+0301 display_persp = gray_3ch;
+0302 }
+0303 break;
+0304 case 3: // Perspective: 透视变换图（已经是 perspective_frame）
+0305 break;
+0306 case 4: // RedMask: 红色HSV掩膜
+0307 update_red_hsv_mask_debug_view(frame);
+0308 if (!g_red_hsv_mask_debug.empty()) {
+0309 display_persp = g_red_hsv_mask_debug;
+0310 }
+0311 break;
+0312 default: // 0=LineTrack: 默认，已有寻线标注
+0313 break;
+0314 }
+0315 camera_server.update_frame(display_main, display_persp, camera_telemetry);
+0316 }
+0317 }
+0318 // sleep(0.001);
+0319 printf("\n已退出\n");
+0320 return 0;
+0321 }
+0322 //部分PID控制代码
+0323 #pragma once
+0324 #include <cmath>
+0325 #include <float.h>
+0326 #define PID_MIN(a,b)        ((a)<(b)?(a):(b))
+0327 #define PID_MAX(a,b)        ((a)>(b)?(a):(b))
+0328 #define PID_CLAMP(x,lo,hi)  PID_MIN(PID_MAX((x),(lo)),(hi))
+0329 /**
+0330 * 位置式 PID 控制器结构体
+0331 typedef struct {
+0332 float kp,ki, kd;
+0333 float p_max, i_max, d_max;
+0334 float low_pass;     // D 项低通滤波系数
+0335 float kp_2;
+0336 // 内部状态（不要手动修改）
+0337 float out_p;        // 上一次误差（用于计算 D 项）
+0338 float out_i;        // 积分累加值
+0339 float out_d;        // 滤波后的 D 项
+0340 } pid_positional_t;
+0341 * pid_positional_init() — 初始化位置式 PID 参数
+0342 *
+0343 * 示例（角度环）：
+0344 *   pid_positional_init(&angle_pid, 1.5f, 0.0f, 1.0f, 0.8f, 30.0f, 0.0f, 30.0f);
+0345 *
+0346 * 示例（速度环）：
+0347 *   pid_positional_init(&speed_pid, 50.0f, 0.5f, 0.0f, 1.0f, 8000.0f, 8000.0f, 8000.0f);
+0348 */
+0349 static inline void pid_positional_init(pid_positional_t *p,
+0350 float kp, float ki, float kd, float low_pass,
+0351 float p_max, float i_max, float d_max)
+0352 {
+0353 p->kp = kp; p->ki = ki; p->kd = kd;
+0354 p->low_pass = low_pass;
+0355 p->p_max = p_max; p->i_max = i_max; p->d_max = d_max;
+0356 p->out_p = p->out_i = p->out_d = 0;
+0357 }
+0358 * pid_positional_solve() — 位置式 PID 计算（每个控制周期调用一次）
+0359 *
+0360 * @param error  当前误差 = 目标值 - 实际值
+0361 * @return       PID 输出（P/I/D 分项独立限幅后）
+0362 *
+0363 * 计算过程：
+0364 *   D 项 = (error - prev_error) * low_pass + prev_D * (1 - low_pass)
+0365 *   I 项 += error（积分限幅）
+0366 *   输出 = kp * error + ki * I + kd * D
+0367 */
+0368 static inline float pid_positional_solve(pid_positional_t *p, float error) {
+0369 // D 项：(当前误差 - 上次误差) 做低通滤波
+0370 p->out_d = (error - p->out_p);
+0371 p->out_p = error;   // 保存本次误差供下次计算 D 项
+0372 // I 项：累加误差，并限幅防止积分饱和
+0373 p->out_i += error;
+0374 if (p->ki != 0 && p->i_max > 0) {
+0375 float ki_abs = p->ki > 0 ? p->ki : -p->ki;
+0376 p->out_i = PID_CLAMP(p->out_i, -p->i_max / ki_abs, p->i_max / ki_abs);
+0377 }
+0378 float out_p = p->kp * p->out_p;
+0379 float out_i = p->ki * p->out_i;
+0380 float out_d = p->kd * p->out_d;
+0381 if (p->p_max > 0)
+0382 out_p = PID_CLAMP(out_p, -p->p_max, p->p_max);
+0383 if (p->i_max > 0)
+0384 out_i = PID_CLAMP(out_i, -p->i_max, p->i_max);
+0385 if (p->d_max > 0)
+0386 out_d = PID_CLAMP(out_d, -p->d_max, p->d_max);
+0387 return out_p + out_i + out_d;
+0388 }
+0389 /**
+0390 * pid_positional_solve() — 位置式 PID 计算（每个控制周期调用一次）
+0391 *
+0392 * @param error  当前误差 = 目标值 - 实际值
+0393 * @return       PID 输出（P/I/D 分项独立限幅后）
+0394 *
+0395 * 计算过程：
+0396 *   D 项 = (error - prev_error) * low_pass + prev_D * (1 - low_pass)
+0397 *   I 项 += error（积分限幅）
+0398 *   输出 = kp * error + ki * I + kd * D
+0399 */
+0400 static inline float pid_positional_solve_Error2(pid_positional_t *p, float error) {
+0401 // D 项：(当前误差 - 上次误差) 做低通滤波
+0402 p->out_d = (error - p->out_p);
+0403 p->out_p = error;   // 保存本次误差供下次计算 D 项
+0404 // I 项：累加误差，并限幅防止积分饱和
+0405 p->out_i += error;
+0406 if (p->ki != 0 && p->i_max > 0) {
+0407 float ki_abs = p->ki > 0 ? p->ki : -p->ki;
+0408 p->out_i = PID_CLAMP(p->out_i, -p->i_max / ki_abs, p->i_max / ki_abs);
+0409 }
+0410 float out_p = p->kp * p->out_p;
+0411 float out_i = p->ki * p->out_i;
+0412 float out_d = p->kd * p->out_d;
+0413 float out_2 = p->kp_2 * std::fabs(p->out_p) * p->out_p;
+0414 if (p->p_max > 0)
+0415 out_p = PID_CLAMP(out_p, -p->p_max, p->p_max);
+0416 if (p->i_max > 0)
+0417 out_i = PID_CLAMP(out_i, -p->i_max, p->i_max);
+0418 if (p->d_max > 0)
+0419 out_d = PID_CLAMP(out_d, -p->d_max, p->d_max);
+0420 return out_p + out_i + out_d + out_2;
+0421 }
+0422 // // 兼容旧代码的别名
+0423 // static inline float pid_solve(pid_t *p, float error) {
+0424 //     return pid_positional_solve(p, error);
+0425 // }
+0426 /**
+0427 * pid_positional_reset() — 清除积分和 D 项
+0428 *
+0429 * 在以下情况调用：
+0430 *   - 模式切换（如从巡线切换到停车）
+0431 *   - 长时间停止后重新启动
+0432 *   - 防止积分饱和冲击
+0433 */
+0434 static inline void pid_positional_reset(pid_positional_t *p) {
+0435 p->out_i = 0;
+0436 p->out_d = 0;
+0437 ）
+0438 typedef struct {
+0439 float kp, ki, kd;
+0440 float out_max;          // 单次增量输出限幅
+0441 // 历史误差（用于计算增量）
+0442 float err_last;         // e[k-1]：上一次误差
+0443 float err_last2;        // e[k-2]：上上次误差
+0444 } pid_incremental_t;
+0445 static inline void pid_incremental_init(pid_incremental_t *p,
+0446 float kp, float ki, float kd, float out_max)
+0447 {
+0448 p->kp = kp;
+0449 p->ki = ki;
+0450 p->kd = kd;
+0451 p->out_max = out_max;
+0452 p->err_last = 0;
+0453 p->err_last2 = 0;
+0454 }
+0455 static inline float pid_incremental_solve(pid_incremental_t *p, float error) {
+0456 // 增量式 PID 公式
+0457 float delta = p->kp * (error - p->err_last)                    // P 项增量
+0458 + p->ki * error                                     // I 项
+0459 + p->kd * (error - 2.0f * p->err_last + p->err_last2);  // D 项增量
+0460 // 限幅（防止单次变化过大）
+0461 delta = PID_CLAMP(delta, -p->out_max, p->out_max);
+0462 // 更新历史误差
+0463 p->err_last2 = p->err_last;
+0464 p->err_last = error;
+0465 return delta;
+0466 }
+0467 /**
+0468 * pid_incremental_reset() — 清除历史误差
+0469 */
+0470 static inline void pid_incremental_reset(pid_incremental_t *p) {
+0471 p->err_last = 0;
+0472 p->err_last2 = 0;
+0473 }
+0474 //部分视觉代码
+0475 void look_ahead_point_decision()
+0476 {
+0477 if(start_flag && g_launch_ramp_elapsed_ms < g_launch_ramp_ms) // 起步斜坡期固定前瞻，避免低速抖动
+0478 {
+0479 look_ahead_point = g_line_lookahead_straight;
+0480 }
+0481 else if(straight_accel_active && g_ncnn_action_state == NCNN_ACT_IDLE) //是直道
+0482 {
+0483 look_ahead_point = 8;
+0484 }
+0485 else //不是直道
+0486 {
+0487 switch(g_elem_type)
+0488 {
+0489 case ELEM_CROSS:
+0490 look_ahead_point = 12;
+0491 break;
+0492 case ELEM_OBSTACLE:
+0493 look_ahead_point = 12;
+0494 // printf("look_ahead_point %d\r\n",look_ahead_point);
+0495 break;
+0496 case ELEM_RAMP:
+0497 look_ahead_point = 3;
+0498 break;
+0499 case ELEM_NONE:
+0500 {
+0501 //计算前瞻点
+0502 // look_ahead_point = calc_speed_related_look_ahead_point(lookahead_speed);
+0503 if(g_ncnn_action_state == NCNN_ACT_LOCKED || g_ncnn_action_state == NCNN_ACT_BYPASS || g_ncnn_action_state == NCNN_ACT_RECOVER)
+0504 {
+0505 look_ahead_point = 5;
+0506 }
+0507 else
+0508 look_ahead_point = 7;
+0509 break;
+0510 }
+0511 case ELEM_CIRCLE:
+0512 switch (g_circle_state)
+0513 {
+0514 case CIRCLE_BEGIN:
+0515 look_ahead_point = 5;
+0516 break;
+0517 case CIRCLE_APPROACH:
+0518 look_ahead_point = 5;
+0519 break;
+0520 case CIRCLE_RUNNING:
+0521 look_ahead_point = 5;
+0522 break;
+0523 case CIRCLE_OUT:
+0524 look_ahead_point = 5;
+0525 break;
+0526 case CIRCLE_END:
+0527 look_ahead_point = 5;
+0528 break;
+0529 default:
+0530 look_ahead_point = LOOK_AHEAD_POINT_EN;
+0531 break;
+0532 }
+0533 break;
+0534 }
+0535 }
+0536 if (line_point < look_ahead_point) //基本上没有点了
+0537 {
+0538 look_ahead_point = PID_MIN(look_ahead_point, line_point);
+0539 }
+0540 }
+0541 extern float g_pure_angle_last;
+0542 void photo_task()
+0543 {
+0544 // 帧率统计：每秒打印一次实际 FPS
+0545 static auto fps_last_time = std::chrono::steady_clock::now();
+0546 static int fps_frame_count = 0;
+0547 fps_frame_count++;
+0548 auto fps_now = std::chrono::steady_clock::now();
+0549 auto fps_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(fps_now - fps_last_time).count();
+0550 if (fps_elapsed >= 1000) {
+0551 printf("[FPS] %d\n", fps_frame_count);
+0552 fps_frame_count = 0;
+0553 fps_last_time = fps_now;
+0554 }
+0555 // const auto algo_start = std::chrono::high_resolution_clock::now();
+0556 // ensure_photo_buffers_ready();
+0557 // 保留一份 320x240 翻转原图给后续模型裁剪，再缩到 160x120 跑主算法。
+0558 cv::flip(frame, g_photo_frame_full, -1);
+0559 cv::resize(g_photo_frame_full, g_photo_frame_small, cv::Size(IMG_W, IMG_H), 0, 0, cv::INTER_LINEAR);
+0560 cv::cvtColor(g_photo_frame_small, gray, cv::COLOR_BGR2GRAY);
+0561 // 巡线和元素识别继续使用 160x120 小图。
+0562 frame = g_photo_frame_small;
+0563 g_red_box_full = cv::Rect();
+0564 g_red_model_box_full = cv::Rect();
+0565 g_red_box_corners_valid = false;
+0566 g_red_model_input_ready = false;
+0567 // 视觉主链路顺序：
+0568 // 先巡线，再识别元素并生成当前帧候选中线，
+0569 // 然后统一提交中线，最后算纯跟踪误差。
+0570 process_image(gray);
+0571 red_obstacle_process(g_photo_frame_small, gray);
+0572 element_task();
+0573 detect_ramp();
+0574 if(g_elem_type == ELEM_NONE) run_none();
+0575 else if (g_elem_type == ELEM_OBSTACLE) run_obstacle();
+0576 else if (g_elem_type == ELEM_RAMP) run_ramp();
+0577 else if (g_cross_state != CROSS_NONE && g_elem_type == ELEM_CROSS) run_cross();
+0578 else if (g_circle_state != CIRCLE_NONE && g_elem_type == ELEM_CIRCLE) run_circle();
+0579 track_task();
+0580 // calc_pure_pursuit();
+0581 look_ahead_point_decision();//前瞻决策
+0582 g_pure_angle_near = calc_pure_pursuit_better(look_ahead_point);
+0583 const int ff_far_offset = PID_MAX(g_curve_ff_far_offset, 1);
+0584 // const int look_ahead_far = clip(look_ahead_point + ff_far_offset, 0, POINTS_MAX - 1);
+0585 // g_pure_angle_far = calc_pure_pursuit_preview(look_ahead_far, g_pure_angle_near);
+0586 // g_pure_angle_ff_delta = g_pure_angle_near - g_pure_angle_far;
+0587 g_pure_angle = g_pure_angle_near;
+0588 // 坡道期间透视变换不可靠，限幅防止歪线打飞方向
+0589 if (g_elem_type == ELEM_RAMP) {
+0590 if (g_pure_angle > 2.0f) g_pure_angle = 0.0f;
+0591 else if (g_pure_angle < -2.0f) g_pure_angle = -0.0f;
+0592 }
+0593 if(g_elem_type == ELEM_CROSS)
+0594 {
+0595 g_pure_angle = g_pure_angle * 0.5 + g_pure_angle_last * 0.5;
+0596 g_pure_angle_last = g_pure_angle;
+0597 }
+0598 // 这样现场调 PID 时，即使不画叠加线，也能看到实时控制量。
+0599 // if(0) return;
+0600 // 即使不开调试，也为 LCD 菜单预览生成透视图（仅在 Image 菜单激活时，发车后不更新）
+0601 if (g_image_preview_active && g_image_display_mode == 3 && !start_flag) {
+0602 cv::Mat persp_simple = cv::Mat::zeros(gray.size(), CV_8UC3);
+0603 for (int i = 0; i < g_rpts0s_num - 1; i++) {
+0604 cv::line(persp_simple,
+0605 cv::Point(static_cast<int>(g_rpts0s[i][0]), static_cast<int>(g_rpts0s[i][1])),
+0606 cv::Point(static_cast<int>(g_rpts0s[i + 1][0]), static_cast<int>(g_rpts0s[i + 1][1])),
+0607 cv::Scalar(0, 255, 0), 1);
+0608 }
+0609 for (int i = 0; i < g_rpts1s_num - 1; i++) {
+0610 cv::line(persp_simple,
+0611 cv::Point(static_cast<int>(g_rpts1s[i][0]), static_cast<int>(g_rpts1s[i][1])),
+0612 cv::Point(static_cast<int>(g_rpts1s[i + 1][0]), static_cast<int>(g_rpts1s[i + 1][1])),
+0613 cv::Scalar(255, 0, 0), 1);
+0614 }
+0615 for (int i = 0; i < g_rptsn_num - 1; i++) {
+0616 cv::line(persp_simple,
+0617 cv::Point(static_cast<int>(g_rptsn[i][0]), static_cast<int>(g_rptsn[i][1])),
+0618 cv::Point(static_cast<int>(g_rptsn[i + 1][0]), static_cast<int>(g_rptsn[i + 1][1])),
+0619 cv::Scalar(0, 0, 255), 2);
+0620 }
+0621 perspective_frame = persp_simple;
+0622 }
+0623 if(!pesrsp_photo_flag || !g_visual_debug_enable || start_flag) return;
+0624 g_photo_debug_us = 0;
+0625 const auto debug_start = std::chrono::high_resolution_clock::now();
+0626 update_camera_telemetry();
+0627 perspective_frame.release();
+0628 //部分识别代码
+0629 void clear_last_classification_state()
+0630 {
+0631 g_red_model_last_label.clear();
+0632 g_red_model_last_score = 0.0f;
+0633 g_red_model_last_probs.clear();
+0634 g_red_model_last_probs_text.clear();
+0635 }
+0636 bool load_labels(std::vector<std::string>& labels)
+0637 {
+0638 std::ifstream ifs(g_labels_path.c_str());
+0639 if (!ifs.is_open()) return false;
+0640 labels.clear();
+0641 std::string line;
+0642 while (std::getline(ifs, line)) {
+0643 if (!line.empty() && line.back() == '\r') {
+0644 line.pop_back();
+0645 }
+0646 if (!line.empty()) {
+0647 labels.push_back(line);
+0648 }
+0649 }
+0650 return !labels.empty();
+0651 }
+0652 std::string dirname_of(const std::string& path)
+0653 {
+0654 const size_t pos = path.find_last_of('/');
+0655 if (pos == std::string::npos) return ".";
+0656 if (pos == 0) return "/";
+0657 return path.substr(0, pos);
+0658 }
+0659 std::string join_path(const std::string& dir, const std::string& name)
+0660 {
+0661 if (dir.empty() || dir == ".") {
+0662 return std::string("./") + name;
+0663 }
+0664 if (dir.back() == '/') {
+0665 return dir + name;
+0666 }
+0667 return dir + "/" + name;
+0668 }
+0669 std::string resolve_executable_dir()
+0670 {
+0671 char exe_path[PATH_MAX] = {};
+0672 const ssize_t len = readlink("/proc/self/exe", exe_path, sizeof(exe_path) - 1);
+0673 if (len <= 0) return ".";
+0674 exe_path[len] = '\0';
+0675 return dirname_of(std::string(exe_path));
+0676 }
+0677 bool file_exists(const std::string& path)
+0678 {
+0679 return access(path.c_str(), F_OK) == 0;
+0680 }
+0681 bool resolve_classifier_paths()
+0682 {
+0683 const std::string exe_dir = resolve_executable_dir();
+0684 const std::string cwd_dir = ".";
+0685 const std::string param_in_exe_dir = join_path(exe_dir, kModelParamName);
+0686 const std::string bin_in_exe_dir = join_path(exe_dir, kModelBinName);
+0687 const std::string labels_in_exe_dir = join_path(exe_dir, kLabelsName);
+0688 const std::string param_in_cwd = join_path(cwd_dir, kModelParamName);
+0689 const std::string bin_in_cwd = join_path(cwd_dir, kModelBinName);
+0690 const std::string labels_in_cwd = join_path(cwd_dir, kLabelsName);
+0691 g_model_param_path = file_exists(param_in_exe_dir) ? param_in_exe_dir : param_in_cwd;
+0692 g_model_bin_path = file_exists(bin_in_exe_dir) ? bin_in_exe_dir : bin_in_cwd;
+0693 g_labels_path = file_exists(labels_in_exe_dir) ? labels_in_exe_dir : labels_in_cwd;
+0694 printf("[NCNN] classifier asset probe: exe_dir=%s cwd=.\n", exe_dir.c_str());
+0695 printf("[NCNN] classifier asset path: param=%s %s\n",
+0696 g_model_param_path.c_str(), file_exists(g_model_param_path) ? "(found)" : "(missing)");
+0697 printf("[NCNN] classifier asset path: bin=%s %s\n",
+0698 g_model_bin_path.c_str(), file_exists(g_model_bin_path) ? "(found)" : "(missing)");
+0699 printf("[NCNN] classifier asset path: labels=%s %s\n",
+0700 g_labels_path.c_str(), file_exists(g_labels_path) ? "(found)" : "(missing)");
+0701 return file_exists(g_model_param_path)
+0702 && file_exists(g_model_bin_path)
+0703 && file_exists(g_labels_path);
+0704 }
+0705 bool init_classifier_once()
+0706 {
+0707 if (g_classifier_initialized) {
+0708 return g_classifier_available;
+0709 }
+0710 g_classifier_initialized = true;
+0711 g_classifier_net.opt.use_vulkan_compute = false;
+0712 g_classifier_net.opt.num_threads = 1;
+0713 if (!resolve_classifier_paths()) {
+0714 fprintf(stderr, "[NCNN] classifier assets missing, please verify deployed model files\n");
+0715 return false;
+0716 }
+0717 if (g_classifier_net.load_param(g_model_param_path.c_str()) != 0) {
+0718 fprintf(stderr, "[NCNN] load param failed: %s\n", g_model_param_path.c_str());
+0719 return false;
+0720 }
+0721 if (g_classifier_net.load_model(g_model_bin_path.c_str()) != 0) {
+0722 fprintf(stderr, "[NCNN] load model failed: %s\n", g_model_bin_path.c_str());
+0723 return false;
+0724 }
+0725 if (!load_labels(g_classifier_labels)) {
+0726 fprintf(stderr, "[NCNN] load labels failed: %s\n", g_labels_path.c_str());
+0727 return false;
+0728 }
+0729 const std::vector<const char*>& input_names = g_classifier_net.input_names();
+0730 const std::vector<const char*>& output_names = g_classifier_net.output_names();
+0731 if (input_names.empty() || output_names.empty()) {
+0732 fprintf(stderr, "[NCNN] invalid model io definition\n");
+0733 return false;
+0734 }
+0735 g_classifier_available = true;
+0736 printf("[NCNN] classifier ready: input=%s output=%s labels=%zu\n",
+0737 input_names[0], output_names[0], g_classifier_labels.size());
+0738 return true;
+0739 }
+0740 int argmax_score(const ncnn::Mat& out, float& best_score)
+0741 {
+0742 best_score = -1e30f;
+0743 int best_idx = -1;
+0744 for (int i = 0; i < out.w; ++i) {
+0745 const float score = out[i];
+0746 if (score > best_score) {
+0747 best_score = score;
+0748 best_idx = i;
+0749 }
+0750 }
+0751 return best_idx;
+0752 }
+0753 std::vector<float> softmax_scores(const ncnn::Mat& out)
+0754 {
+0755 std::vector<float> probs;
+0756 if (out.w <= 0) return probs;
+0757 probs.resize(out.w);
+0758 float max_logit = out[0];
+0759 for (int i = 1; i < out.w; ++i) {
+0760 if (out[i] > max_logit) {
+0761 max_logit = out[i];
+0762 }
+0763 }
+0764 float sum = 0.0f;
+0765 for (int i = 0; i < out.w; ++i) {
+0766 probs[i] = std::exp(out[i] - max_logit);
+0767 sum += probs[i];
+0768 }
+0769 if (sum <= 0.0f) {
+0770 probs.assign(out.w, 0.0f);
+0771 return probs;
+0772 }
+0773 for (size_t i = 0; i < probs.size(); ++i) {
+0774 probs[i] /= sum;
+0775 }
+0776 return probs;
+0777 }
+0778 std::string format_probabilities(const std::vector<float>& probs)
+0779 {
+0780 std::ostringstream oss;
+0781 oss << std::fixed << std::setprecision(6);
+0782 for (size_t i = 0; i < probs.size(); ++i) {
+0783 if (i > 0) {
+0784 oss << " ";
+0785 }
+0786 const std::string label = i < g_classifier_labels.size()
+0787 ? g_classifier_labels[i]
+0788 : ("class_" + std::to_string(i));
+0789 oss << label << "=" << probs[i];
+0790 }
+0791 return oss.str();
+0792 }
+0793 bool run_inference_with_pixel_type(int pixel_type, ncnn::Mat& out)
+0794 {
+0795 const std::vector<const char*>& input_names = g_classifier_net.input_names();
+0796 const std::vector<const char*>& output_names = g_classifier_net.output_names();
+0797 if (input_names.empty() || output_names.empty()) {
+0798 return false;
+0799 }
+0800 ncnn::Mat in = ncnn::Mat::from_pixels_resize(
+0801 g_red_model_input_40.data,
+0802 pixel_type,
+0803 g_red_model_input_40.cols,
+0804 g_red_model_input_40.rows,
+0805 kClassifierInputSize,
+0806 kClassifierInputSize);
+0807 in.substract_mean_normalize(kMeanVals, kNormVals);
+0808 ncnn::Extractor ex = g_classifier_net.create_extractor();
+0809 ex.set_light_mode(true);
+0810 ex.input(input_names[0], in);
+0811 return ex.extract(output_names[0], out) == 0 && !out.empty();
+0812 }
+0813 }  // namespace
+0814 bool run_red_model_classification_if_needed(void)
+0815 {
+0816 if (!g_red_model_classify_enabled || !g_red_model_input_ready || g_red_model_input_40.empty()) {
+0817 return false;
+0818 }
+0819 if (!init_classifier_once()) {
+0820 if (!g_classifier_warned_unavailable) {
+0821 g_classifier_warned_unavailable = true;
+0822 fprintf(stderr, "[NCNN] classifier unavailable, skip inference\n");
+0823 }
+0824 clear_last_classification_state();
+0825 return false;
+0826 }
+0827 ncnn::Mat out;
+0828 auto t_preprocess = std::chrono::high_resolution_clock::now();
+0829 if (!run_inference_with_pixel_type(ncnn::Mat::PIXEL_BGR2RGB, out)) {
+0830 fprintf(stderr, "[NCNN] extract failed\n");
+0831 clear_last_classification_state();
+0832 return false;
+0833 }
+0834 auto t_inference = std::chrono::high_resolution_clock::now();
+0835 printf("[NCNN] preprocess+inference=%.2fms\n",
+0836 std::chrono::duration_cast<std::chrono::microseconds>(t_inference - t_preprocess).count() / 1000.0f);
+0837 float best_score = 0.0f;
+0838 const int best_idx = argmax_score(out, best_score);
+0839 if (best_idx < 0) {
+0840 clear_last_classification_state();
+0841 return false;
+0842 }
+0843 g_red_model_last_probs = softmax_scores(out);
+0844 if (best_idx >= 0 && best_idx < static_cast<int>(g_red_model_last_probs.size())) {
+0845 g_red_model_last_score = g_red_model_last_probs[best_idx];
+0846 } else {
+0847 g_red_model_last_score = 0.0f;
+0848 }
+0849 if (best_idx >= 0 && best_idx < static_cast<int>(g_classifier_labels.size())) {
+0850 g_red_model_last_label = g_classifier_labels[best_idx];
+0851 } else {
+0852 g_red_model_last_label = "class_" + std::to_string(best_idx);
+0853 }
+0854 g_red_model_last_probs_text = format_probabilities(g_red_model_last_probs);
+0855 printf("[NCNN] red roi probs: %s\n", g_red_model_last_probs_text.c_str());
+0856 if (g_red_model_last_label != g_classifier_last_printed_label) {
+0857 g_classifier_last_printed_label = g_red_model_last_label;
+0858 printf("[NCNN] red roi classify: label=%s score=%.6f box=(%d,%d,%d,%d)\n",
+0859 g_red_model_last_label.c_str(),
+0860 g_red_model_last_score,
+0861 g_red_model_box_full.x,
+0862 g_red_model_box_full.y,
+0863 g_red_model_box_full.width,
+0864 g_red_model_box_full.height);
+0865 }
+0866 g_red_model_cycle_done = true;
+0867 // 计算从框选裁剪到识别完成的耗时
+0868 {
+0869 auto now = std::chrono::high_resolution_clock::now();
+0870 g_crop_to_classify_ms = std::chrono::duration_cast<std::chrono::microseconds>(
+0871 now - g_crop_start_time).count() / 1000.0f;
+0872 printf("[NCNN] crop-to-classify: %.2f ms\n", g_crop_to_classify_ms);
+0873 }
+0874 // 保存每次识别的裁剪图片用于验证（g_ncnn_save_crops=1 时开启）
+0875 if (g_ncnn_save_crops) {
+0876 static int s_save_idx = 0;
+0877 static bool s_dir_created = false;
+0878 if (!s_dir_created) {
+0879 system("mkdir -p /root/ncnn_crops");
+0880 s_dir_created = true;
+0881 }
+0882 char path[128];
+0883 snprintf(path, sizeof(path), "/root/ncnn_crops/%03d_%s_%.1fcm.png",
+0884 s_save_idx++, g_red_model_last_label.c_str(), g_ncnn_red_distance_cm);
+0885 if (!g_red_model_input_40.empty()) {
+0886 cv::imwrite(path, g_red_model_input_40);
+0887 }
+0888 }
+0889 return true;

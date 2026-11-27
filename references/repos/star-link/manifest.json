@@ -1,0 +1,30 @@
+{
+  "id": "star-link",
+  "source_id": "winter-blossom-qi--star-link-frontier",
+  "url": "https://gitee.com/winter-blossom-qi/star-link-frontier",
+  "revision": "a64e827328cd69d35ce8e159c5007b3d38e95ab3",
+  "role": "智能车硬件资料集合",
+  "files": [
+    {
+      "path": "README.en.md",
+      "git_blob": "3908854821209f4b5df76ad1956463a0e0f6e20e",
+      "bytes": 914,
+      "type": "blob",
+      "sha256": "1704d6095c042b15c16c5545b6219b2f350a33b7d8984e4bad549ecf878a2fa9",
+      "url": "https://gitee.com/winter-blossom-qi/star-link-frontier/blob/a64e827328cd69d35ce8e159c5007b3d38e95ab3/README.en.md"
+    },
+    {
+      "path": "README.md",
+      "git_blob": "74902306a737db7500968699847f8d7f0735ca14",
+      "bytes": 1003,
+      "type": "blob",
+      "sha256": "941d65e3491fd0482e82a3e1a7796ebe19d05df6ba7104ccfda5ced17039e5c7",
+      "url": "https://gitee.com/winter-blossom-qi/star-link-frontier/blob/a64e827328cd69d35ce8e159c5007b3d38e95ab3/README.md"
+    }
+  ],
+  "tree_files": 356,
+  "tree_truncated": false,
+  "scope": "Selected source fetched/hash-verified; focused entrypoint/algorithm/interface review, not exhaustive line-by-line proof.",
+  "runtime_validation": "No full firmware build, hardware execution or vehicle test.",
+  "alias_of": null
+}

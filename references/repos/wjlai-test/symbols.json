@@ -1,0 +1,511 @@
+{
+  "revision": "0a7ea0e1941b48c59138bd26764effb268cf53c2",
+  "kind": "heuristic definition candidates, may include commented/inactive code",
+  "symbols": [
+    {
+      "name": "ClassifierInit",
+      "path": "_archives/aidemo/testdemo/project/code/ncnn_app.cpp",
+      "line": 12
+    },
+    {
+      "name": "CameraInit",
+      "path": "_archives/aidemo/testdemo/project/code/ncnn_app.cpp",
+      "line": 34
+    },
+    {
+      "name": "center_crop_square",
+      "path": "_archives/aidemo/testdemo/project/code/ncnn_app.cpp",
+      "line": 50
+    },
+    {
+      "name": "CaptureAndClassify",
+      "path": "_archives/aidemo/testdemo/project/code/ncnn_app.cpp",
+      "line": 65
+    },
+    {
+      "name": "NcnnClassifier::init",
+      "path": "_archives/aidemo/testdemo/project/code/ncnn_classifier.cpp",
+      "line": 26
+    },
+    {
+      "name": "NcnnClassifier::argmax",
+      "path": "_archives/aidemo/testdemo/project/code/ncnn_classifier.cpp",
+      "line": 50
+    },
+    {
+      "name": "NcnnClassifier::softmax_inplace",
+      "path": "_archives/aidemo/testdemo/project/code/ncnn_classifier.cpp",
+      "line": 66
+    },
+    {
+      "name": "signal_handler",
+      "path": "_archives/aidemo/testdemo/project/user/main.cpp",
+      "line": 41
+    },
+    {
+      "name": "main",
+      "path": "_archives/aidemo/testdemo/project/user/main.cpp",
+      "line": 47
+    },
+    {
+      "name": "check_Zheng_CrossRoad",
+      "path": "_archives/rar/cross.cpp",
+      "line": 10
+    },
+    {
+      "name": "check_In_CrossRoad",
+      "path": "_archives/rar/cross.cpp",
+      "line": 47
+    },
+    {
+      "name": "crossRoad_processing",
+      "path": "_archives/rar/cross.cpp",
+      "line": 117
+    },
+    {
+      "name": "front_in_crossRoad_Line",
+      "path": "_archives/rar/cross.cpp",
+      "line": 151
+    },
+    {
+      "name": "in_crossRoad_pullLine",
+      "path": "_archives/rar/cross.cpp",
+      "line": 180
+    },
+    {
+      "name": "front_in_Lup_LDown_Link",
+      "path": "_archives/rar/cross.cpp",
+      "line": 208
+    },
+    {
+      "name": "front_in_Rup_RDown_Link",
+      "path": "_archives/rar/cross.cpp",
+      "line": 224
+    },
+    {
+      "name": "calculateMembership",
+      "path": "_archives/rar/fuzzy.cpp",
+      "line": 99
+    },
+    {
+      "name": "get_degree_of_membership",
+      "path": "_archives/rar/fuzzy.cpp",
+      "line": 132
+    },
+    {
+      "name": "upPIDdata_pd",
+      "path": "_archives/rar/fuzzy.cpp",
+      "line": 162
+    },
+    {
+      "name": "get_updataPD_pid",
+      "path": "_archives/rar/fuzzy.cpp",
+      "line": 189
+    },
+    {
+      "name": "otsuThreshold",
+      "path": "_archives/rar/image.cpp",
+      "line": 83
+    },
+    {
+      "name": "image_draw_rectan",
+      "path": "_archives/rar/image.cpp",
+      "line": 142
+    },
+    {
+      "name": "max_White_Line",
+      "path": "_archives/rar/image.cpp",
+      "line": 161
+    },
+    {
+      "name": "l_basepoint",
+      "path": "_archives/rar/image.cpp",
+      "line": 298
+    },
+    {
+      "name": "r_basepoint",
+      "path": "_archives/rar/image.cpp",
+      "line": 334
+    },
+    {
+      "name": "reMaxWhite",
+      "path": "_archives/rar/image.cpp",
+      "line": 371
+    },
+    {
+      "name": "use_Whiteline_find_leftline",
+      "path": "_archives/rar/image.cpp",
+      "line": 446
+    },
+    {
+      "name": "use_Whiteline_find_rightline",
+      "path": "_archives/rar/image.cpp",
+      "line": 478
+    },
+    {
+      "name": "findline_lefthand_adaptive",
+      "path": "_archives/rar/image.cpp",
+      "line": 515
+    },
+    {
+      "name": "findline_righthand_adaptive",
+      "path": "_archives/rar/image.cpp",
+      "line": 570
+    },
+    {
+      "name": "dispose_Edgeline",
+      "path": "_archives/rar/image.cpp",
+      "line": 625
+    },
+    {
+      "name": "dispose_line",
+      "path": "_archives/rar/image.cpp",
+      "line": 900
+    },
+    {
+      "name": "checking_Normal_straightaway",
+      "path": "_archives/rar/image.cpp",
+      "line": 935
+    },
+    {
+      "name": "checking_curve_to_straightaway",
+      "path": "_archives/rar/image.cpp",
+      "line": 973
+    },
+    {
+      "name": "left_plus_right_2midline",
+      "path": "_archives/rar/image.cpp",
+      "line": 1001
+    },
+    {
+      "name": "rightLine_plus_halfWide",
+      "path": "_archives/rar/image.cpp",
+      "line": 1026
+    },
+    {
+      "name": "rightLine_plus_HOWhalfWide",
+      "path": "_archives/rar/image.cpp",
+      "line": 1040
+    },
+    {
+      "name": "leftLine_plus_HOWhalfWide",
+      "path": "_archives/rar/image.cpp",
+      "line": 1054
+    },
+    {
+      "name": "leftLine_plus_halfWide",
+      "path": "_archives/rar/image.cpp",
+      "line": 1068
+    },
+    {
+      "name": "leftLine",
+      "path": "_archives/rar/image.cpp",
+      "line": 1081
+    },
+    {
+      "name": "rightLine",
+      "path": "_archives/rar/image.cpp",
+      "line": 1098
+    },
+    {
+      "name": "normalRoad_decusion",
+      "path": "_archives/rar/image.cpp",
+      "line": 1115
+    },
+    {
+      "name": "zebraCrossing_checking",
+      "path": "_archives/rar/image.cpp",
+      "line": 1162
+    },
+    {
+      "name": "get_roadError",
+      "path": "_archives/rar/image.cpp",
+      "line": 1219
+    },
+    {
+      "name": "image_process",
+      "path": "_archives/rar/image.cpp",
+      "line": 1250
+    },
+    {
+      "name": "generate_color_image_for_upload",
+      "path": "_archives/rar/image.cpp",
+      "line": 1289
+    },
+    {
+      "name": "drawPixelOnColor",
+      "path": "_archives/rar/image.cpp",
+      "line": 1303
+    },
+    {
+      "name": "drawFilledCircleOnColor",
+      "path": "_archives/rar/image.cpp",
+      "line": 1309
+    },
+    {
+      "name": "drawLineOnColor",
+      "path": "_archives/rar/image.cpp",
+      "line": 1319
+    },
+    {
+      "name": "draw_digit_on_color",
+      "path": "_archives/rar/image.cpp",
+      "line": 1457
+    },
+    {
+      "name": "display_status_top_left",
+      "path": "_archives/rar/image.cpp",
+      "line": 1487
+    },
+    {
+      "name": "gyro_integrator_init",
+      "path": "_archives/rar/imu.cpp",
+      "line": 25
+    },
+    {
+      "name": "gyro_integrator_calibrate",
+      "path": "_archives/rar/imu.cpp",
+      "line": 38
+    },
+    {
+      "name": "gyro_integrator_update",
+      "path": "_archives/rar/imu.cpp",
+      "line": 61
+    },
+    {
+      "name": "gyro_integration_clean",
+      "path": "_archives/rar/imu.cpp",
+      "line": 84
+    },
+    {
+      "name": "motor_distance_clean",
+      "path": "_archives/rar/imu.cpp",
+      "line": 93
+    },
+    {
+      "name": "tcp_send_wrap",
+      "path": "_archives/rar/main.cpp",
+      "line": 56
+    },
+    {
+      "name": "tcp_read_wrap",
+      "path": "_archives/rar/main.cpp",
+      "line": 61
+    },
+    {
+      "name": "signal_handler",
+      "path": "_archives/rar/main.cpp",
+      "line": 66
+    },
+    {
+      "name": "cleanup",
+      "path": "_archives/rar/main.cpp",
+      "line": 89
+    },
+    {
+      "name": "pit_callback",
+      "path": "_archives/rar/main.cpp",
+      "line": 121
+    },
+    {
+      "name": "main",
+      "path": "_archives/rar/main.cpp",
+      "line": 228
+    },
+    {
+      "name": "Key_GetNum",
+      "path": "_archives/rar/menu.cpp",
+      "line": 12
+    },
+    {
+      "name": "CheckRedBaffle",
+      "path": "_archives/rar/ncnn_app.cpp",
+      "line": 10
+    },
+    {
+      "name": "Position_Init",
+      "path": "_archives/rar/pid.cpp",
+      "line": 18
+    },
+    {
+      "name": "Gyro_PID_Init",
+      "path": "_archives/rar/pid.cpp",
+      "line": 29
+    },
+    {
+      "name": "Incremental_Motor_Init",
+      "path": "_archives/rar/pid.cpp",
+      "line": 40
+    },
+    {
+      "name": "Positional_PID_Calc",
+      "path": "_archives/rar/pid.cpp",
+      "line": 53
+    },
+    {
+      "name": "Gyro_PID_Calc",
+      "path": "_archives/rar/pid.cpp",
+      "line": 78
+    },
+    {
+      "name": "Incremental_Motor_Calc",
+      "path": "_archives/rar/pid.cpp",
+      "line": 104
+    },
+    {
+      "name": "Motor_Control",
+      "path": "_archives/rar/pid.cpp",
+      "line": 125
+    },
+    {
+      "name": "crop_and_resize_bilinear",
+      "path": "_archives/rar/preprocess.cpp",
+      "line": 10
+    },
+    {
+      "name": "calculate_slopeK",
+      "path": "_archives/rar/preprocess.cpp",
+      "line": 25
+    },
+    {
+      "name": "calculate_slopeB",
+      "path": "_archives/rar/preprocess.cpp",
+      "line": 33
+    },
+    {
+      "name": "Ring_init",
+      "path": "_archives/rar/ring.cpp",
+      "line": 36
+    },
+    {
+      "name": "check_Right_intoRing_weak",
+      "path": "_archives/rar/ring.cpp",
+      "line": 70
+    },
+    {
+      "name": "check_Right_intoRing",
+      "path": "_archives/rar/ring.cpp",
+      "line": 115
+    },
+    {
+      "name": "check_Right_inRing",
+      "path": "_archives/rar/ring.cpp",
+      "line": 152
+    },
+    {
+      "name": "check_Right_ReadyoutRing",
+      "path": "_archives/rar/ring.cpp",
+      "line": 165
+    },
+    {
+      "name": "check_Right_outRing",
+      "path": "_archives/rar/ring.cpp",
+      "line": 191
+    },
+    {
+      "name": "check_Out_RightRing",
+      "path": "_archives/rar/ring.cpp",
+      "line": 200
+    },
+    {
+      "name": "RightRing_State_checking",
+      "path": "_archives/rar/ring.cpp",
+      "line": 211
+    },
+    {
+      "name": "check_Left_intoRing_weak",
+      "path": "_archives/rar/ring.cpp",
+      "line": 278
+    },
+    {
+      "name": "check_Left_intoRing",
+      "path": "_archives/rar/ring.cpp",
+      "line": 322
+    },
+    {
+      "name": "check_Left_inRing",
+      "path": "_archives/rar/ring.cpp",
+      "line": 361
+    },
+    {
+      "name": "check_Left_ReadyoutRing",
+      "path": "_archives/rar/ring.cpp",
+      "line": 371
+    },
+    {
+      "name": "check_Left_outRing",
+      "path": "_archives/rar/ring.cpp",
+      "line": 382
+    },
+    {
+      "name": "check_Out_LeftRing",
+      "path": "_archives/rar/ring.cpp",
+      "line": 392
+    },
+    {
+      "name": "LeftRing_State_checking",
+      "path": "_archives/rar/ring.cpp",
+      "line": 403
+    },
+    {
+      "name": "creat_fixedLeftLine",
+      "path": "_archives/rar/ring.cpp",
+      "line": 471
+    },
+    {
+      "name": "Right_intoRing_processing",
+      "path": "_archives/rar/ring.cpp",
+      "line": 505
+    },
+    {
+      "name": "Right_inRing_processing",
+      "path": "_archives/rar/ring.cpp",
+      "line": 511
+    },
+    {
+      "name": "Right_ReadyoutRing_processing",
+      "path": "_archives/rar/ring.cpp",
+      "line": 518
+    },
+    {
+      "name": "Right_outRing_processing",
+      "path": "_archives/rar/ring.cpp",
+      "line": 524
+    },
+    {
+      "name": "creat_fixedRightLine",
+      "path": "_archives/rar/ring.cpp",
+      "line": 534
+    },
+    {
+      "name": "creat_fixedRightLine2",
+      "path": "_archives/rar/ring.cpp",
+      "line": 559
+    },
+    {
+      "name": "Left_intoRing_processing",
+      "path": "_archives/rar/ring.cpp",
+      "line": 584
+    },
+    {
+      "name": "Left_inRing_processing",
+      "path": "_archives/rar/ring.cpp",
+      "line": 592
+    },
+    {
+      "name": "Left_ReadyoutRing_processing",
+      "path": "_archives/rar/ring.cpp",
+      "line": 600
+    },
+    {
+      "name": "Left_outRing_processing",
+      "path": "_archives/rar/ring.cpp",
+      "line": 607
+    },
+    {
+      "name": "ring_processing",
+      "path": "_archives/rar/ring.cpp",
+      "line": 614
+    }
+  ]
+}

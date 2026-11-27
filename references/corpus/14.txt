@@ -1,0 +1,1047 @@
+0001 第二十一届全国大学生智能汽车竞赛
+0002 技 术 报 告
+0003 学    校：深圳职业技术大学
+0004 队伍名称：观碑逐速队
+0005 参赛队员：刘浩铭、劳星霖、黄帮珏
+0006 带队教师：黄长伟、杨黎
+0007 关于技术报告和研究论文使用授权的说明
+0008 本人完全了解全国大学生智能汽车竞赛关保留、使用技术报告和研究论文的规定，即：参赛作品著作权归参赛者本人，比赛组委会可以在相关主页上收录并公开参赛作品的设计方案、技术报告以及参赛模型车的视频、图像资料，并将相关内容编纂收录在组委会出版论文集中。
+0009 参赛队员签名：刘浩铭、劳星霖、黄帮珏
+0010 带队教师签名：黄长伟、杨黎
+0011 日        期：2026.8.15
+0012 目录
+0013 第一章 引言4
+0014 1.1全国大学生智能汽车竞赛介绍4
+0015 1.2第二十一届走马观碑组竞速规则介绍4
+0016 第二章 系统结构设计方案5
+0017 2.1系统总体设计方案5
+0018 2.2整车结构设计5
+0019 2.3编码器的选择6
+0020 2.4陀螺仪模块选择7
+0021 2.5差速转向方案7
+0022 2.6电机选择8
+0023 2.7摄像头选择8
+0024 第三章 硬件电路设计9
+0025 3.1遵循的原则9
+0026 3.2 电源模块设计10
+0027 3.3 主驱一体拓展板及其PCB11
+0028 3.4 驱动电机模块12
+0029 3.5外设与负压风扇供电电路13
+0030 3.6人机交互模块14
+0031 3.7传感器硬件设计14
+0032 第四章 软件设计及控制原理16
+0033 4.1总述16
+0034 4.2程序整体设计框架17
+0035 4.3PID控制算法17
+0036 4.4图像处理算法18
+0037 4.5循迹处理19
+0038 4.6八邻域跟踪算法19
+0039 第五章 组装调试20
+0040 5.1软件调试20
+0041 5.2硬件设计21
+0042 5.3人机交互工具21
+0043 5.4运行状态观察22
+0044 第六章 技术指标23
+0045 第七章 结语23
+0046 第八章 附录24
+0047 8.1部分软件代码24
+0048 8.2车模技术检查表32
+0049 第一章 引言
+0050 1.1全国大学生智能汽车竞赛介绍
+0051 全国大学生智能汽车竞赛以“立足培养、重在参与、鼓励探索、追求卓越”为指导思想，是面向全国大学生的探索性工程实践赛事，现已举办二十一届。竞赛覆盖电子工程、自动控制、计算机、人工智能等多学科，由各高校学生组队参赛。队伍自主完成智能车的设计、制作与调试，展现车辆感知、决策、控制相关技术能力，以及对整车系统的综合运用水平。
+0052 参赛队伍需遵循竞赛规范，开发各类功能模块，依托传感器与算法实现自主导航、环境感知、路径规划、目标识别等核心功能。第二十一届赛事更加突出自主可控与工程实践，主控平台大量采用国产龙芯处理器，设置燕过留痕、走马观碑等竞赛组别。其中“走马观碑”组要求赛车高速行进时识别赛道随机目标板并完成绕行；赛事新增硬件、软件盲盒任务，考验队伍临场设计调试能力。
+0053 竞赛除技术实现外，还要求参赛团队完成项目演示与技术报告撰写，评委结合各项表现综合评审确定奖项。
+0054 该赛事吸引了大量高校队伍参与，为大学生搭建起技术实践与交流平台，激发学生对智能车技术的研究热情，助力相关技术创新发展，同时锻炼学生创新思维、协作意识与工程实践素养，为智能汽车领域输送高素质人才。
+0055 1.2第二十一届走马观碑组竞速规则介绍
+0056 第二十一届全国大学生智能汽车竞赛走马观碑组在封闭室内赛道竞速，考核赛车高速状态下路径识别、目标板（“碑”）检测与自主绕行决策能力。赛车限定三轮结构，采用官方指定车模底盘，传动结构、轮距、轴距不得改动，允许结构加固与外观优化；主控使用国产龙芯2K0300/久久派开发板，以灵眼Pro摄像头为主感知设备，搭配龙邱LQ6050v3陀螺仪、LQ_1024线方向mini编码器，实现巡线、目标板识别、轮速闭环与差速转向控制。·
+0057 竞速赛道包含直道、弯道、十字路口、环岛、坡道、砖红色路障。赛车行驶中识别随机摆放的目标板：识别“武器”向左绕行，识别“物资”向右绕行，识别“交通工具”直行，按完成用时排名。车辆脱轨、静止超时、严重碰撞标志物即判定失误。全程由车载系统自主控制，禁止人工干预、外部通信与预设路径，目标板位置每次发车前随机更换。
+0058 第二章 系统结构设计方案
+0059 2.1系统总体设计方案
+0060 本届走马观碑组的核心任务是在保证竞速速度的同时，完成赛道巡线、目标板识别与自主绕行决策。因此，本车模方案以 F 车模三轮结构的高速稳定性为基础，围绕视觉识别、路径规划、左右轮差速度闭环和两轮差速转向控制进行设计；车模前轮为万向轮，主要起支撑和随动导向作用，两个后轮由主驱一体拓展板上的电机驱动电路控制并通过速度差实现转向。整车实际使用的板卡主要包括 2K0300 主板、主驱一体拓展板和无刷电调，其中 2K0300 主板承担图像处理、路径决策与运动控制任务，主驱一体拓展板完成电源分配、外设接口引出和后轮直流电机驱动，无刷电调用于负压风扇驱动控制。
+0061 系统总体方案图
+0062 2.2整车结构设计
+0063 根据第二十一届全国大学生智能汽车竞赛“走马观碑组”的竞赛要求，我们采用官方指定 F 车模三轮结构平台为基础进行搭建，底盘结构、轮距与轴距保持规则允许范围内的原始规格，并围绕高速巡线和目标板绕行任务进行结构加固与重心优化。车体合理布置 2K0300 主板、主驱一体拓展板、无刷电调、灵眼 Pro 摄像头、LQ6050v3 陀螺仪模块、LQ_1024线方向mini编码器、3S 电池及双负压风扇等核心部件，使整车在直道加速、连续弯道、目标板绕行和坡道等场景下兼顾响应速度与姿态稳定性。其中，前轮采用万向轮结构，两个后轮由主驱一体拓展板上的电机驱动电路控制；控制器通过调节左右后轮电机 PWM 输出形成速度差，从而实现小车转向。双负压风扇通过无刷电调接入 3S 电池供电，形成下压力以增强轮胎贴地性，降低高速转向和避障绕行时的侧滑风险。
+0064 龙芯车模
+0065 2.3编码器的选择
+0066 编码器用于获取驱动轮转速和运动方向信息，是左右轮差速度闭环与两轮差速转向控制的重要反馈来源。本车模采用 LQ_1024线方向mini编码器，对后轮运动状态进行检测。该编码器具有体积小、分辨率高、响应稳定等特点，能够为后轮电机转速控制、直线校正和绕行过程中的差速分配提供可靠数据。
+0067 LQ_1024线方向mini编码器带有方向输出信号，控制器在采集编码器脉冲数量计算轮速的同时，可通过方向引脚的高低电平判断电机当前旋转方向，从而区分正转与反转。在本车模中，编码器反馈与后轮电机输出共同构成左右轮差速度闭环，使车辆能够在不同赛道元素下保持稳定速度，并通过两个后轮的速度差实现转向半径调整。
+0068 LQ_1024线方向mini编码器
+0069 2.4陀螺仪模块选择
+0070 我们采用的是龙邱科技 LQ6050v3 陀螺仪模块，用于采集车模运行过程中的角速度和加速度信息。该模块体积小、安装方便，能够为车辆在高速转向、坡道通过和目标板绕行过程中的姿态变化提供实时反馈。在软件处理中，我们对模块输出的数据进行零偏校准、互补滤波和滑动滤波处理，降低振动和瞬时噪声对控制量的影响，从而为差速转向补偿、速度控制和状态判断提供稳定可靠的姿态参考。
+0071 LQ6050v3陀螺仪模块
+0072 2.5差速转向方案
+0073 本车模采用前轮万向轮、后轮两轮差速的转向方案。前轮万向轮主要承担支撑和随动作用，不参与主动转向；两个后轮由主驱一体拓展板上的电机驱动电路控制，控制器根据赛道中心偏差、目标板绕行策略和车辆姿态反馈，调节两侧后轮电机 PWM 输出，通过后轮速度差实现车辆转向。该方案结构简单、响应直接，减少了机械转向机构带来的装配误差，并便于在直线、弯道和目标板绕行过程中通过软件策略动态调整转向强度。
+0074 前轮万向轮与后轮差速转向结构
+0075 2.6电机选择
+0076 本车模驱动系统采用智能车竞赛官方指定直流电机，两个后轮由主驱一体拓展板上的电机驱动电路控制。该驱动方式能够同时完成车辆前进动力输出和转向控制：当前轮万向轮随动、两个后轮速度一致时，车辆保持直线行驶；当两个后轮形成速度差时，车辆产生转向趋势，从而实现两轮差速转向。配合编码器速度反馈和 PID 控制，后轮直流电机能够在直线加速、坡道通过、目标板绕行和赛道回正过程中保持稳定响应。
+0077 官方指定直流电机
+0078 2.7摄像头选择
+0079 本车模视觉系统采用灵眼 Pro 摄像头作为主要图像感知设备，用于采集赛道边界、目标板和障碍物等视觉信息。灵眼 Pro 具备较高的图像采集稳定性和嵌入式应用适配性，能够在高速行驶过程中提供连续的图像输入。摄像头与龙芯2K0300 / 久久派开发板配合工作，为巡线、目标板识别、路径规划和绕行决策提供可靠的视觉基础。
+0080 灵眼 Pro 摄像头
+0081 第三章 硬件电路设计
+0082 3.1遵循的原则
+0083 本项目在进行硬件设计时尽可能遵循以下原则：
+0084 1、尽可能选择典型电路，并符合单片机常规用法。为硬件系统的标准化、模块化打下良好的基础。
+0085 2、系统扩展与外围设备的配置水平应充分满足应用系统的功能要求，并留有适当余地，以便进行二次开发。
+0086 3、硬件结构应结合应用软件方案一并考虑。硬件结构与软件方案会产生相互影响，考虑的原则是：软件能实现的功能尽可能由软件实现，以简化硬件结构。但必须注意，由软件实现的硬件功能，一般响应时间比硬件实现长，且占用CPU时间。
+0087 4、系统中的相关器件要尽可能做到性能匹配可靠性及抗干扰设计是硬件设计必不可少的一部分，它包括芯片、器件选择、去耦滤波、印刷电路板布线、通道隔离等。
+0088 5、单片机外围电路较多时，必须考虑其驱动能力。驱动能力不足时，系统工作不可靠，可通过增设线驱动器增强驱动能力或减少芯片功耗来降低总线负载。
+0089 6、尽量朝“单片”方向设计硬件系统。系统器件越多，器件之间相互干扰也越强，功耗也增大，也不可避免地降低了系统的稳定性。随着单片机片内集成的功能越来越强，真正的片上系统SoC已经可以实现。
+0090 7、电路设计需要尽可能简洁，尽量减少元器件使用数量，缩小电路板面积，使电路部分重量轻，易于安装。在设计完原理图后，注重PCB板的布局，优化电路的走线
+0091 最好手动布线，整齐排列元器件，最终做到电路板的简洁。
+0092 3.2 电源模块设计
+0093 走马观碑组车模在运行过程中，各类模块需要不同的工作电压，主要包括电池电压、5V 和 3.3V。本车模采用 格氏ACE-2200mAh-50C-11.1V-3S1P 锂电池作为主电源，电池标称电压为 11.1V，满电电压约为 12.6V，可为后轮直流电机和双负压风扇提供主要能量来源。其中，两个负压风扇通过无刷电调由 3S 电池供电，以获得足够的风量和下压力；主驱一体拓展板上设计了基于 TPS54331D 芯片的 DC/DC 降压电路，将电池电压稳定转换为 5V 输出，用于为需要 5V 的外设模块供电。3.3V 电源部分未在主驱一体拓展板上单独设计稳压电路，而是直接从 2K0300 主板的 3.3V 输出端取电，为 LQ6050v3 陀螺仪模块、按键等低压外设提供工作电压。
+0094 5V稳压电路
+0095 主驱一体拓展板未单独设计 3.3V 稳压电路。车模中需要 3.3V 的低压外设直接从 2K0300 主板的 3.3V 电源输出端取电，再通过主驱一体拓展板引出至对应接口，为 LQ6050v3 陀螺仪模块、按键等模块提供工作电压。这种方式减少了主驱一体拓展板上的稳压器件数量，降低了板上电源设计复杂度和成本，同时利用 2K0300 主板已有的 3.3V 稳压输出保证低压外设供电稳定。
+0096 3.3V电源取自2K0300主板
+0097 3.3 主驱一体拓展板及其PCB
+0098 根据设计要求，整车控制核心采用 2K0300 主板完成主要控制与运算任务。2K0300 主板负责运行视觉处理、路径判断、目标板识别以及运动控制等程序，其计算能力和接口资源能够满足走马观碑组的实时控制需求。本文所设计的 PCB 为主驱一体拓展板，承担 2K0300 主板的接口拓展、电源分配和后轮电机驱动功能，用于完成 5V 电源输出、后轮直流电机驱动、编码器信号接入、LQ6050v3 陀螺仪模块接口、LQ_1.8寸LCD 显示接口以及按键等外设连接。在系统连接关系上，灵眼 Pro 摄像头直接连接至 2K0300 主板，由主控平台完成图像采集与处理；主驱一体拓展板主要负责将2K0300主板的控制信号、电源信号和外设接口进行集中引出，并通过板载电机驱动电路控制两个后轮电机，实现两轮差速转向。无刷电调用于两个负压风扇的驱动控制，使负压风扇能够由 3S 电池提供高功率输出。三类板卡分工明确，便于整车装配、调试和维护。具体布局及连接示意图如下：
+0099 主驱一体拓展板PCB图
+0100 3.4 驱动电机模块
+0101 采用 DRV8701E 芯片驱动后轮直流电机。DRV8701E 是一款高电流 H 桥驱动器芯片，适用于直流电机驱动应用，可提供高电流、高效率和高性能的电机驱动解决方案。本车模的电机驱动电路集成在主驱一体拓展板上，通过 PWM 调节两个后轮电机输出，实现左右轮差速度闭环和两轮差速转向。该芯片支持较宽的电机电压范围，并具有热关断保护、电流限制保护等功能，可提升电机驱动系统在高速竞速和频繁差速调整过程中的可靠性。
+0102 主驱一体拓展板电机驱动原理图
+0103 3.5外设与负压风扇供电电路
+0104 在设计车模供电系统时，外设供电、后轮电机供电与负压风扇供电需要分开考虑。后轮直流电机由主驱一体拓展板上的电机驱动电路控制，两个负压风扇通过无刷电调由 3S 锂电池提供主要能量，以保证高速运行和绕行动作中的下压力需求。主驱一体拓展板上的 TPS54331D 降压电路负责提供稳定的 5V 电源；LQ6050v3 陀螺仪模块、按键等 3.3V 低压外设则直接从 2K0300 主板的 3.3V 输出端取电。
+0105 外设与负压风扇供电电路
+0106 3.6人机交互模块
+0107 为了方便调试，在车模上设置了两个按键和一个 LQ_1.8寸LCD 显示模块。LCD 屏幕用于显示车辆运行状态、关键参数、传感器数据和调试信息；两个按键用于菜单切换、参数调整和功能确认。现场调参主要通过按键与 LCD 屏幕完成，结构简单且便于比赛现场快速操作。
+0108 按键电路
+0109 屏幕电路
+0110 人机交互模块电路
+0111 3.7 传感器硬件设计
+0112 本文重点研究走马观碑组三轮车模的关键传感器：灵眼 Pro 摄像头、LQ6050v3陀螺仪模块，以及实现左右轮差速闭环控制的LQ_1024线方向mini编码器。灵眼 Pro摄像头采集赛道边界、目标板、障碍物等视觉信息，是“观碑”识别与绕行决策的核心输入。龙邱LQ6050v3陀螺仪负责采集角速度与加速度数据，辅助检测车模高速转向、坡道及绕行时的姿态变化；编码器反馈左右后轮的转速与转向信息，为差速闭环、差速分配提供数据支撑。
+0113 左右轮差速闭环依靠LQ_1024线方向mini编码器的反馈，保障后轮可以稳定跟踪目标转速，为差速转向提供实时依据。摄像头与陀螺仪分别提供视觉感知和姿态反馈，完成路径规划、目标板绕行以及复杂赛道工况处理。
+0114 控制参数依靠实车赛道调试、分阶段整定得到。控制方案采用无电流环的三串级PID：最内环为左右轮差速度环，以后轮电机转速作为反馈，调节后轮转速差，输出控制电机驱动板；中间为角速度环，读取陀螺仪输出的实际角速度，补偿差速转向带来的动态误差；最外环是方向环，以视觉解算的赛道中线偏差或绕行偏移量为反馈，输出期望角速度。
+0115 第四章 软件设计及控制原理
+0116 4.1总述
+0117 本项目在竞赛要求的基础上，搭建了一个面向走马观碑任务的视觉感知与运动控制系统。系统的关键在于高速巡线、目标板识别、绕行决策和车辆稳定控制之间的协同。硬件上，我们使用灵眼 Pro 摄像头获取赛道和目标板图像，使用 LQ_1024线方向mini编码器完成后轮电机转速反馈，并使用龙邱科技 LQ6050v3 陀螺仪模块提供角速度和加速度信息。软件控制算法采用三串级 PID 结构，不设置电流环；最内环为左右轮差速度环，中间环为角速度环，最外环为方向环。系统同时结合互补滤波、滑动滤波和状态机策略，管理巡线、识别、绕行、回正等阶段，使车辆能够在高速行驶中根据目标板信息完成可靠通过。
+0118 4.2程序整体设计框架
+0119 一个完整稳定的系统软件控制框架能够提升智能车程序的可读性和可靠性。系统软件主要由视觉处理、目标板识别、状态机决策、左右轮差速度环、角速度环和方向环等部分组成。程序设计整体流程图如下所示：
+0120 程序整体设计框架
+0121 4.3 PID控制算法
+0122 我们针对三轮车模的两轮差速转向控制设计了三串级 PID 控制策略。控制系统由内到外依次为左右轮差速度环、角速度环和方向环。左右轮差速度环是最内环，其反馈值为编码器采集到的左右后轮电机转速，用于保证两个后轮能够按照给定的基础速度和差速量快速跟随目标；角速度环位于中间层，其反馈值为 LQ6050v3 陀螺仪测得的实际角速度，用于修正车辆转向过程中的角速度误差；方向环位于最外层，其反馈值为视觉算法得到的赛道中线偏差，并结合目标板绕行策略计算期望角速度，从而为角速度环提供目标值。
+0123 在实际运行中，视觉算法首先根据赛道边界和目标板位置计算赛道中线偏差或绕行偏移量，方向环 PID 将该偏差转换为期望角速度；角速度环 PID 再结合陀螺仪测得的实际角速度，计算车辆需要的左右轮差速控制量；最内层左右轮差速度环根据左右电机转速反馈，将基础速度与差速量分配到两个后轮，并通过主驱一体拓展板上的电机驱动电路控制电机 PWM 输出。该控制结构没有电流环，电机电流不作为闭环反馈量，主要依靠编码器转速、陀螺仪角速度和视觉中线偏差完成分层控制。
+0124 三串级 PID 控制系统如图所示，最内层左右轮差速度环负责后轮电机转速跟随与差速输出，中间角速度环负责抑制转向动态误差，最外层方向环负责路径跟踪与绕行决策。当视觉系统识别到目标板后，决策模块根据目标板类别生成左侧、右侧或中间通过策略，并将目标路径偏移量叠加到赛道中线偏差中送入方向环；方向环输出期望角速度，角速度环计算差速需求，左右轮差速度环最终通过主驱一体拓展板上的电机驱动电路完成左右后轮电机输出控制，从而实现稳定、连续的绕行动作。
+0125 PID流程图
+0126 4.4图像处理算法
+0127 灵眼 Pro 摄像头直接连接至龙芯2K0300 / 久久派开发板，可满足视觉信息实时采集需求。在嵌入式视觉系统中，稳定的图像输入能够降低高速运动带来的感知延迟，有助于路径跟踪、目标板识别和复杂赛道元素处理的稳定性。
+0128 在基本图像处理完成后，就要从图像中提取出有效的赛道信息，也就是赛道边缘，以此来完成小车的行驶路径和特殊元素的识别。特殊元素的循迹思路如下：
+0129 1.对于十字回环,由于只能搜到赛道一边的拐点，确定找点的初始位置，选择另一边进行补线处理，然后给左右面积乘以某个系数，同时根据矫正图像滤除十字回环拐角线，从而顺利连线；
+0130 2.对于圆环，能够找到圆环的一边边界的列数会有较大的差异，从而补线让其进入圆环内；
+0131 4.5八邻域跟踪算法
+0132 在本项目中，我们主要采用八邻域跟踪算法实现巡线，八邻域跟踪算法基本思想是，遍历图像找到第一个非零像素点，那么这个点一定是边界点。设这个点为起始点x，按照0->1->2->3->4顺时针查找该点八邻域内遇到的第一个非零像素点x’（点x’也为边界点）。令x=x’，再进行邻域内的顺时针查找，查找的起点为刚刚x到x’过程中x’前一个零点。
+0133 八邻域算法流程
+0134 第五章 组装调试
+0135 5.1软件调试
+0136 本项目采用 Visual Studio Code (VS Code) 作为主要的代码编辑与调试平台。VS Code 拥有轻量运行、高度可扩展和集成能力强的特点，适合快速构建嵌入式开发工作流。通过安装相关扩展（如 C/C++ 编辑支持、调试适配扩展等），可实现代码补全（IntelliSense）、版本控制集成以及终端命令管理等功能，让开发体验更加便捷流畅。
+0137 针对龙芯车模开发，我们采用 Visual Studio Code 作为代码编辑与调试平台，并结合交叉编译工具链、串口终端和本地日志输出完成程序构建、下载与运行状态观察。在调试过程中，VS Code 可用于代码补全、版本管理和终端命令管理，LCD 显示模块与串口日志则用于查看图像处理结果、PID 参数、目标板识别状态和车辆运行信息，从而提高龙芯平台下软件开发与现场调参的效率。
+0138 VScode软件界面
+0139 5.2硬件设计
+0140 本车模的主驱一体拓展板由我使用嘉立创 EDA 进行原理图与 PCB 绘制，结合竞赛需求完成电源分配、外设接口、后轮电机驱动等部分的元器件布局和走线优化，确保电源分配、电机驱动控制和传感器信号传输稳定，并在尺寸与安装孔位上与 F 车模三轮结构精准匹配，为后续调试与运行提供可靠的硬件基础。
+0141 嘉立创EDA绘制主驱一体拓展板PCB
+0142 5.3人机交互工具
+0143 在调试过程中需要不断修改变量的值来达到整定参数的作用。对此，我们采用两个按键配合 LQ_1.8寸LCD 屏幕的方式进行现场调参。LCD 用于显示当前菜单、传感器数据、速度参数和目标板识别状态，按键用于切换参数项、修改数值和确认功能。该方式结构简单、可靠性高，能够满足比赛现场快速调参和状态查看的需求。
+0144 5.4运行状态观察
+0145 车模在同一赛道上多次运行时，由于速度、入弯角度、光照和目标板位置等因素不同，实际状态会存在差异。因此，在调试过程中需要持续观察车辆运行状态。我们主要通过 LQ_1.8寸LCD 屏幕和串口日志查看关键变量，包括左右电机输出、编码器速度、陀螺仪角速度、目标板识别状态和路径偏差等信息，以便及时发现问题并调整参数。
+0146 第六章 技术指标
+0147 长：26cm
+0148 宽：19cm
+0149 高：22cm
+0150 摄像头高度：22cm
+0151 第七章 结语
+0152 在第二十一届全国大学生智能汽车竞赛中，我们团队以走马观碑组车模为平台，围绕三轮底盘结构、龙芯主控、视觉识别、目标板决策和运动控制等内容投入了大量时间与精力，完成了结构设计、硬件研发、软件调试与赛道优化等一系列工作。
+0153 在机械结构方面，我们结合三轮车模的尺寸与重量分布特点，采用低重心设计并合理分配质量，提升整车高速运行和绕行过程中的稳定性。同时对轮胎、传动系统以及双负压风扇组件进行优化，使小车在急弯、坡道和目标板绕行等复杂场景中具备更好的抓地力与通过性。
+0154 在硬件部分，整车实际使用的板卡包括 2K0300 主板、主驱一体拓展板和无刷电调。核心控制部分基于 2K0300 主板，灵眼 Pro 摄像头直接连接至该主控平台完成赛道图像采集与实时处理；主驱一体拓展板由我们使用嘉立创平台完成原理图与布线设计，负责外设接口引出、电源分配以及两个后轮直流电机的驱动控制，从而以两轮差速方式实现转向；无刷电调用于双负压风扇驱动。供电系统采用 2200mAh 高倍率 3S 锂电池，主驱一体拓展板提供稳定 5V 电源，3.3V 低压外设直接从 2K0300 主板取电，两个负压风扇通过无刷电调由 3S 电池供电。
+0155 在软件与算法层面，我们实现了基于灵眼 Pro 摄像头的视觉识别系统，采用灰度化、边缘检测等处理方法提取赛道信息，并利用三串级 PID 控制实现左右轮差速度控制、角速度稳定和方向跟踪。同时，我们针对不同赛道元素（如直道、高速弯、环形路段、坡道和目标板绕行等）进行了特征识别与参数自适应调整，使小车能够灵活应对不同场景。
+0156 通过本次比赛，我们不仅达成了稳定、高速的竞速目标，更在实践中锤炼了软硬件协同开发、项目管理以及问题快速定位与解决的能力。感谢指导老师在每个关键阶段给予的建议与鼓励，也感谢队友们在无数个深夜坚持调试、反复试验的付出。未来，我们将继续在智能汽车领域深耕，探索更高速度、更高智能化水平的技术方案，为智能交通的发展贡献力量。
+0157 第八章 附录
+0158 8.1部分软件代码
+0159 #include "main.hpp"
+0160 //(jijiubao_front)
+0161 bool app_stopped = false;
+0162 void sigint_handler(int sig)
+0163 {
+0164 if (sig == SIGINT)
+0165 {
+0166 pwm1.pwm_set_duty(0);
+0167 pwm2.pwm_set_duty(0);
+0168 std::cout << "ctrl+c pressed!" << std::endl;
+0169 app_stopped = true;
+0170 }
+0171 }
+0172 void timer_thread()
+0173 {
+0174 while (true)
+0175 {
+0176 if (app_stopped)
+0177 {
+0178 pwm1.pwm_set_duty(0);
+0179 pwm2.pwm_set_duty(0);
+0180 return;
+0181 }
+0182 Speed();
+0183 this_thread::sleep_for(chrono::milliseconds(5));
+0184 }
+0185 }
+0186 Mat frame, resized_frame, red_detect_frame, gray_frame;
+0187 lq_i2c_mpu6050 *mpu6050 = nullptr; // 指针，All_Init加载驱动后再初始化
+0188 cv::VideoCapture cap;
+0189 ls_gpio gpio44(PIN_44, GPIO_MODE_IN);
+0190 ls_gpio gpio45(PIN_45, GPIO_MODE_IN);
+0191 int main()
+0192 {
+0193 beepclose;
+0194 signal(SIGINT, sigint_handler);
+0195 beepopen;
+0196 this_thread::sleep_for(chrono::seconds(1));
+0197 beepclose;
+0198 // 输出5V 9V
+0199 // while (1)
+0200 // {
+0201 //     // pwm2.pwm_set_duty((uint32_t)(7900));//直流左边9V
+0202 //     pwm2.pwm_set_duty((uint32_t)(5500)); // 直流左边5V
+0203 //     // pwm2.pwm_set_duty((uint32_t)(2900));//直流左边3.3V
+0204 //     printf("5V 9V\r\n");
+0205 // }
+0206 pwm4.gtim_pwm_set_duty(0); // 等待按键期间舵机/刷子不转
+0207 bool key_now = (gpio45.gpio_level_get() == GPIO_HIGH);
+0208 while (key_now)
+0209 {
+0210 key_now = (gpio45.gpio_level_get() == GPIO_HIGH);
+0211 if (app_stopped)
+0212 {
+0213 pwm1.pwm_set_duty(0);
+0214 pwm2.pwm_set_duty(0);
+0215 break;
+0216 }
+0217 }
+0218 this_thread::sleep_for(chrono::seconds(2)); // 按键后延时2秒再发车
+0219 pwm4.gtim_pwm_set_duty(750);                // 按键按下后启动舵机/刷子
+0220 cap.open(0);
+0221 if (!cap.isOpened())
+0222 {
+0223 cerr << "Could not open the camera" << endl;
+0224 return -1;
+0225 }
+0226 All_Init();                     // 全部初始化
+0227 mpu6050 = new lq_i2c_mpu6050(); // 驱动加载后再初始化陀螺仪
+0228 /***********************************摄像头初始化******************************* */
+0229 cap.set(cv::CAP_PROP_FRAME_WIDTH, 320);                                    // 设置分辨率宽度为160
+0230 cap.set(cv::CAP_PROP_FRAME_HEIGHT, 240);                                   // 设置分辨率高度为120
+0231 cap.set(cv::CAP_PROP_FOURCC, cv::VideoWriter::fourcc('M', 'J', 'P', 'G')); // 设置视频编码格式为MJPG
+0232 cap.set(cv::CAP_PROP_FPS, 90);                                             // 设置帧率为90FPS
+0233 /***********************************摄像头初始化******************************* */
+0234 /***************************** 绿色卡发车检测 *******************************/
+0235 /*
+0236 // 展示绿色卡→卡住等待，移开绿色卡连续5帧→发车
+0237 printf("Waiting for green card removed...\n");
+0238 {
+0239 int crop_x2 = 0, crop_y2 = 20, crop_w2 = 320, crop_h2 = 140;
+0240 int green_no_cnt = 0;
+0241 Mat temp_frame, temp_crop, temp_resized;
+0242 // 前5帧空跑，等画面稳定
+0243 for (int i = 0; i < 5; i++)
+0244 cap >> temp_frame;
+0245 while (true)
+0246 {
+0247 cap >> temp_frame;
+0248 if (temp_frame.empty()) continue;
+0249 Rect roi(crop_x2, crop_y2, crop_w2, crop_h2);
+0250 temp_crop = temp_frame(roi);
+0251 resize(temp_crop, temp_resized, Size(80, 60));
+0252 // 扫描 20~50行 × 20~60列 的绿色像素
+0253 int green_cnt = 0;
+0254 for (int r = 20; r < 50; r++)
+0255 {
+0256 const uint8_t *row = temp_resized.ptr<uint8_t>(r);
+0257 for (int c = 20; c < 60; c++)
+0258 {
+0259 const uint8_t *p = row + c * 3;
+0260 uint8_t B = p[0], G = p[1], R = p[2];
+0261 if (G > 100 && (G - R) > 20 && (G - B) > 20)
+0262 green_cnt++;
+0263 }
+0264 }
+0265 printf("green=%d\r\n", green_cnt);
+0266 if (green_cnt > 50)
+0267 {
+0268 green_no_cnt = 0; // 绿色卡还在，清零计数，卡住
+0269 }
+0270 else
+0271 {
+0272 green_no_cnt++;
+0273 if (green_no_cnt >= 5)
+0274 {
+0275 printf("Green card removed, go!\n");
+0276 break;
+0277 }
+0278 }
+0279 }
+0280 }
+0281 */
+0282 /***************************** 绿色卡发车检测结束 *****************************/
+0283 /***********************************摄像头预热******************************* */
+0284 static constexpr int kWarmupFrames = 30;
+0285 for (int i = 0; i < kWarmupFrames; ++i)
+0286 {
+0287 if (!cap.read(frame))
+0288 {
+0289 cerr << "Could not read warm-up frame from the camera" << endl;
+0290 return -1;
+0291 }
+0292 }
+0293 /***********************************摄像头预热******************************* */
+0294 int x = 36;       // 裁剪区域左上角X坐标
+0295 int y = 20;       // 裁剪区域左上角Y坐标S
+0296 int width = 256;  // 裁剪区域宽度
+0297 int height = 140; // 裁剪区域高度
+0298 int crop_x = 0;        // 裁剪区域左上角X坐标
+0299 int crop_y = 20;       // 裁剪区域左上角Y坐标
+0300 int crop_width = 320;  // 裁剪区域宽度
+0301 int crop_height = 140; // 裁剪区域高度
+0302 DetectResult res_ncn = once_ncnn_jiance();
+0303 Motor_Init();
+0304 this_thread::sleep_for(chrono::milliseconds(100));
+0305 thread t(timer_thread);
+0306 // beepclose;
+0307 while (ls_system_running.load())
+0308 {
+0309 cap >> frame;
+0310 if (frame.empty())
+0311 {
+0312 cerr << "Could not read a frame from the camera" << endl;
+0313 app_stopped = true;
+0314 break;
+0315 }
+0316 // 翻转180度
+0317 rotate(frame, frame, ROTATE_180);
+0318 // 红色检测专用帧：独立裁剪参数，resize到80x60
+0319 Rect red_crop_region(crop_x, crop_y, crop_width, crop_height);
+0320 Mat red_cropped = frame(red_crop_region);
+0321 resize(red_cropped, red_detect_frame, Size(80, 60));
+0322 // 执行裁剪
+0323 Rect crop_region(x, y, width, height);
+0324 Mat cropped_frame = frame(crop_region);
+0325 resize(cropped_frame, resized_frame, Size(80, 60));
+0326 // 转换为灰度图像
+0327 cvtColor(resized_frame, gray_frame, COLOR_BGR2GRAY);
+0328 // 将二值化后的图像的像素值赋给heheImage
+0329 for (int i = 0; i < gray_frame.rows; i++)
+0330 {
+0331 for (int j = 0; j < gray_frame.cols; j++)
+0332 {
+0333 Cramp_image[i][j] = gray_frame.at<uchar>(i, j);
+0334 }
+0335 }
+0336 ImageProcess();
+0337 if (app_stopped)
+0338 {
+0339 pwm1.pwm_set_duty(0);
+0340 pwm2.pwm_set_duty(0);
+0341 break;
+0342 }
+0343 // printf("%d\r\n", ImageParameter.Det_True);
+0344 }
+0345 t.join();
+0346 return 0;
+0347 }
+0348 /********************************************************
+0349 函数功能：右圆环视觉处理（状态机控制）
+0350 状态流程：1准备进环 → 2 → 5进环 → 6 → 7环内 → 8出环 → 9结束 → 0复位
+0351 ********************************************************/
+0352 void Element_Handle_Right_Rings()
+0353 {
+0354 /********************* 圆环预判断 *********************/
+0355 int num = 0;
+0356 // 扫描55~30行，统计右侧白线数量
+0357 for (int Ysite = 55; Ysite > 30; Ysite--)
+0358 {
+0359 if (RowAttribute[Ysite].IsRightFind == 'W')
+0360 num++;
+0361 // 检测到连续右侧特征，退出扫描
+0362 if (RowAttribute[Ysite + 3].IsRightFind == 'W' && RowAttribute[Ysite + 2].IsRightFind == 'W' && RowAttribute[Ysite + 1].IsRightFind == 'W' && RowAttribute[Ysite].IsRightFind == 'T')
+0363 break;
+0364 }
+0365 /********************* 状态机流转 *********************/
+0366 // 状态1→2：准备进环
+0367 if (ImageParameter.image_element_rings_flag == 1 && num > 10)
+0368 {
+0369 ImageParameter.image_element_rings_flag = 2;
+0370 }
+0371 // 右边界明显向左收，说明车已经接近右环入口
+0372 if (ImageParameter.image_element_rings_flag == 2 && num < 1)
+0373 {
+0374 ImageParameter.image_element_rings_flag = 5;
+0375 }
+0376 // 状态5→6：进环中
+0377 if (ImageParameter.image_element_rings_flag == 5 && ImageParameter.WhiteLine_L > 20)
+0378 {
+0379 ImageParameter.image_element_rings_flag = 6;
+0380 }
+0381 // 状态6→7：进入圆环内部
+0382 if (ImageParameter.image_element_rings_flag == 6 && ImageParameter.WhiteLine_L < 1)
+0383 {
+0384 ImageParameter.image_element_rings_flag = 7;
+0385 }
+0386 /********************* 状态7：环内峰值检测*********************/
+0387 if (ImageParameter.image_element_rings_flag == 7)
+0388 {
+0389 Point_Xsite = 0;
+0390 Point_Ysite = 0;
+0391 for (int Ysite = 55; Ysite > ImageParameter.OFFLine; Ysite--) // 扩大扫描范围
+0392 {
+0393 // 只比较上下2行，放宽X范围
+0394 if (RowAttribute[Ysite].LeftBorder >= RowAttribute[Ysite + 2].LeftBorder &&
+0395 RowAttribute[Ysite].LeftBorder >= RowAttribute[Ysite - 2].LeftBorder &&
+0396 RowAttribute[Ysite].LeftBorder > 5 && RowAttribute[Ysite].LeftBorder < 120) // 放宽范围
+0397 {
+0398 Point_Xsite = RowAttribute[Ysite].LeftBorder;
+0399 Point_Ysite = Ysite;
+0400 break;
+0401 }
+0402 }
+0403 if (Point_Ysite > 0) // 只要找到就转状态8
+0404 {
+0405 ImageParameter.image_element_rings_flag = 8;
+0406 }
+0407 }
+0408 // cout << "flag:" << ImageParameter.image_element_rings_flag << "    WhiteLine_L:" << ImageParameter.WhiteLine_L
+0409 //      << "    num:" << num << endl;
+0410 /********************* 状态8：出环判断*********************/
+0411 if (ImageParameter.image_element_rings_flag == 8)
+0412 {
+0413 // printf("%.2f    %d    %d\r\n", Straight_Judge(1, ImageParameter.OFFLine + 3, 50), ImageParameter.WhiteLine_L, ImageParameter.OFFLine);
+0414 // 绕行触发过→放宽出环条件（车偏离中心更远）；否则用默认参数
+0415 int straight_start = (ring_overtake_right_flag || ring_overtake_right_right_flag)
+0416 ? ImageParameter.OFFLine + 11
+0417 : ImageParameter.OFFLine + 7;
+0418 if (Straight_Judge(1, straight_start, 55) < 1 && ImageParameter.WhiteLine_L < 10 && ImageParameter.OFFLine < 7)
+0419 {
+0420 ImageParameter.image_element_rings_flag = 9;
+0421 }
+0422 }
+0423 /********************* 状态9：结束圆环，复位参数 *********************/
+0424 if (ImageParameter.image_element_rings_flag == 9)
+0425 {
+0426 int num = 0;
+0427 for (int Ysite = 58; Ysite > 8; Ysite--)
+0428 {
+0429 if (RowAttribute[Ysite].IsRightFind == 'W')
+0430 num++;
+0431 }
+0432 if (num < 15)
+0433 {
+0434 ImageParameter.image_element_rings_flag = 0;
+0435 ImageParameter.image_element_rings = 0;
+0436 ImageParameter.ring_big_small = 0;
+0437 ring_overtake_right_flag = 0;
+0438 ring_overtake_right_right_flag = 0;
+0439 ring_overtake_left_flag = 0;
+0440 ring_overtake_left_right_flag = 0;
+0441 ring_overtake_block = 0;
+0442 beepclose;
+0443 circle_count_flag++;
+0444 }
+0445 }
+0446 /********************* 路径处理：准备进环 半宽计算 *********************/
+0447 if (ImageParameter.image_element_rings_flag == 1 || ImageParameter.image_element_rings_flag == 2 || ImageParameter.image_element_rings_flag == 3 || ImageParameter.image_element_rings_flag == 4)
+0448 {
+0449 for (int Ysite = 59; Ysite > ImageParameter.OFFLine; Ysite--)
+0450 {
+0451 RowAttribute[Ysite].Center = RowAttribute[Ysite].LeftBorder + Half_Road_Wide[Ysite];
+0452 }
+0453 }
+0454 /********************* 路径处理：进环补线 *********************/
+0455 if (ImageParameter.image_element_rings_flag == 5 || ImageParameter.image_element_rings_flag == 6)
+0456 {
+0457 int flag_Xsite_1 = 0;
+0458 int flag_Ysite_1 = 0;
+0459 float Slope_Right_Rings = 0;
+0460 for (int Ysite = 55; Ysite > ImageParameter.OFFLine; Ysite--)
+0461 {
+0462 for (int Xsite = RowAttribute[Ysite].LeftBorder + 1; Xsite < RowAttribute[Ysite].RightBorder - 1; Xsite++)
+0463 {
+0464 if (heheImage[Ysite][Xsite] == 1 && heheImage[Ysite][Xsite + 1] == 0)
+0465 {
+0466 flag_Ysite_1 = Ysite;
+0467 flag_Xsite_1 = Xsite;
+0468 Slope_Right_Rings = (float)(0 - flag_Xsite_1) / (float)(59 - flag_Ysite_1);
+0469 break;
+0470 }
+0471 }
+0472 if (flag_Ysite_1 != 0)
+0473 break;
+0474 }
+0475 // 备用补线方案
+0476 if (flag_Ysite_1 == 0)
+0477 {
+0478 for (int Ysite = ImageParameter.OFFLine + 1; Ysite < 30; Ysite++)
+0479 {
+0480 if (RowAttribute[Ysite].IsRightFind == 'T' && RowAttribute[Ysite + 1].IsRightFind == 'T' && RowAttribute[Ysite + 2].IsRightFind == 'W' && abs(RowAttribute[Ysite].RightBorder - RowAttribute[Ysite + 2].RightBorder) > 10)
+0481 {
+0482 flag_Ysite_1 = Ysite;
+0483 flag_Xsite_1 = RowAttribute[flag_Ysite_1].RightBorder;
+0484 ImageParameter.OFFLine = (uint8_t)Ysite;
+0485 Slope_Right_Rings = (float)(0 - flag_Xsite_1) / (float)(59 - flag_Ysite_1);
+0486 break;
+0487 }
+0488 }
+0489 }
+0490 // 执行补线
+0491 if (flag_Ysite_1 != 0)
+0492 {
+0493 for (int Ysite = flag_Ysite_1; Ysite < 60; Ysite++)
+0494 {
+0495 RowAttribute[Ysite].LeftBorder = flag_Xsite_1 + Slope_Right_Rings * (Ysite - flag_Ysite_1);
+0496 int wide = RowAttribute[Ysite].RightBorder - RowAttribute[Ysite].LeftBorder;
+0497 // 动态内切
+0498 float k = 0.5f + 0.3f * (Ysite / 60.0f);
+0499 RowAttribute[Ysite].Center = RowAttribute[Ysite].LeftBorder + k * wide;
+0500 }
+0501 RowAttribute[flag_Ysite_1].LeftBorder = flag_Xsite_1;
+0502 // 上方扫线修正
+0503 for (int Ysite = flag_Ysite_1 - 1; Ysite > 10; Ysite--)
+0504 {
+0505 for (int Xsite = RowAttribute[Ysite + 1].LeftBorder + 8; Xsite > RowAttribute[Ysite + 1].LeftBorder - 4; Xsite--)
+0506 {
+0507 if (heheImage[Ysite][Xsite] == 1 && heheImage[Ysite][Xsite - 1] == 0)
+0508 {
+0509 RowAttribute[Ysite].LeftBorder = Xsite;
+0510 RowAttribute[Ysite].Wide = RowAttribute[Ysite].RightBorder - RowAttribute[Ysite].LeftBorder;
+0511 RowAttribute[Ysite].Center = (RowAttribute[Ysite].LeftBorder + RowAttribute[Ysite].RightBorder) / 2;
+0512 break;
+0513 }
+0514 }
+0515 if (RowAttribute[Ysite].Wide > 8 && RowAttribute[Ysite].LeftBorder > RowAttribute[Ysite + 2].LeftBorder)
+0516 {
+0517 continue;
+0518 }
+0519 else
+0520 {
+0521 ImageParameter.OFFLine = Ysite + 2;
+0522 break;
+0523 }
+0524 }
+0525 }
+0526 }
+0527 /********************* 状态7：环内不处理 *********************/
+0528 if (ImageParameter.image_element_rings_flag == 7)
+0529 {
+0530 for (int Ysite = 59; Ysite > ImageParameter.OFFLine; Ysite--)
+0531 {
+0532 int wide = RowAttribute[Ysite].RightBorder - RowAttribute[Ysite].LeftBorder;
+0533 float k = 0.65;
+0534 RowAttribute[Ysite].Center = RowAttribute[Ysite].LeftBorder + k * wide;
+0535 }
+0536 }
+0537 /********************* 出环补线：大圆环*********************/
+0538 if (ImageParameter.image_element_rings_flag == 8 && ImageParameter.ring_big_small == 1)
+0539 {
+0540 Repair_Point_Xsite = 60;
+0541 Repair_Point_Ysite = 0;
+0542 for (int Ysite = 50; Ysite > 5; Ysite--)
+0543 {
+0544 if (heheImage[Ysite][57] == 1 && heheImage[Ysite - 1][57] == 0)
+0545 {
+0546 Repair_Point_Xsite = 57;
+0547 Repair_Point_Ysite = Ysite - 1;
+0548 ImageParameter.OFFLine = Ysite + 1;
+0549 break;
+0550 }
+0551 }
+0552 for (int Ysite = 57; Ysite > Repair_Point_Ysite - 3; Ysite--)
+0553 {
+0554 RowAttribute[Ysite].LeftBorder = (RowAttribute[58].LeftBorder - Repair_Point_Xsite) * (Ysite - 58) / (58 - Repair_Point_Ysite) + RowAttribute[58].LeftBorder;
+0555 if (ring_overtake_right_flag || ring_overtake_right_right_flag)
+0556 {
+0557 // 绕行后左边界补线不可信，只用右边界 - 半宽表算中线
+0558 RowAttribute[Ysite].Center = RowAttribute[Ysite].RightBorder - 0.8 * Half_Road_Wide[Ysite];
+0559 }
+0560 else
+0561 {
+0562 int wide = RowAttribute[Ysite].RightBorder - RowAttribute[Ysite].LeftBorder;
+0563 float k = 0.6;
+0564 RowAttribute[Ysite].Center = RowAttribute[Ysite].LeftBorder + k * wide;
+0565 }
+0566 }
+0567 }
+0568 /********************* 已出环：恢复正常半宽处理 *********************/
+0569 if (ImageParameter.image_element_rings_flag == 9 || ImageParameter.image_element_rings_flag == 10)
+0570 {
+0571 for (int Ysite = 59; Ysite > ImageParameter.OFFLine; Ysite--)
+0572 {
+0573 RowAttribute[Ysite].Center = RowAttribute[Ysite].LeftBorder + Half_Road_Wide[Ysite];
+0574 }
+0575 }
+0576 }
+0577 void Red_Border_chuli(void)
+0578 {
+0579 // printf("[RedTask] %d\n", VisionTask.RedState);
+0580 // 障碍物绕行中：立即重置状态，打断任何进行中的红色框绕行流程
+0581 if (zhangai_active)
+0582 {
+0583 VisionTask.RedState = RedTask_Idle;
+0584 VisionTask.StateTick = 0;
+0585 VisionTask.Need_Overtake = 0;
+0586 VisionTask.Overtake_Dir = 0;
+0587 VisionTask.ModelResult = Model_None;
+0588 VisionTask.TuXiang_ISNULL_Flag = 0;
+0589 return;
+0590 }
+0591 if (Red_Flag == 1 && VisionTask.RedState == RedTask_Idle && !red_border_done)
+0592 {
+0593 VisionTask.RedState = RedTask_SlowDown;
+0594 VisionTask.StateTick = 0;
+0595 VisionTask.Need_Overtake = 0;
+0596 VisionTask.Overtake_Dir = 0;
+0597 Red_Flag = 0;
+0598 // SystemData.Stop = 1; // 看到红色框，停车
+0599 }
+0600 switch (VisionTask.RedState)
+0601 {
+0602 case RedTask_SlowDown:
+0603 {
+0604 // if (60 - red_max_y > 38)
+0605 // {
+0606 //     // printf("%d\r\n", 60 - red_max_y);
+0607 //     return;
+0608 // }
+0609 // uint8_t kSlowDownTicks = (road_turn_dir == 0) ? 3 : 1; // 直道8，弯道2
+0610 // if (VisionTask.StateTick < kSlowDownTicks)
+0611 // {
+0612 //     VisionTask.StateTick++;
+0613 //     return;
+0614 // }
+0615 // VisionTask.StateTick = 0;
+0616 VisionTask.RedState = RedTask_ModelDetect;
+0617 return;
+0618 }
+0619 case RedTask_ModelDetect:
+0620 {
+0621 // 距离+偏离联合判断：offset越大越可能是干扰，阈值收紧
+0622 int dist2 = 0;
+0623 if (g_red_count > 0)
+0624 {
+0625 int center_x = g_red_sum_x / g_red_count;
+0626 int center_y = g_red_sum_y / g_red_count;
+0627 int dx = center_x - 40;
+0628 int dy = center_y - 60;
+0629 dist2 = dx * dx + dy * dy; // 平方距离
+0630 int max_dist2;
+0631 if (ImageParameter.image_element_rings_flag != 0)
+0632 {
+0633 max_dist2 = 1300; // 连续弯/偏离大
+0634 }
+0635 else if (overtake_turn_dir == 0 || overtake_turn_dir == 2)
+0636 {
+0637 // 直道：可稍远
+0638 max_dist2 = 1500;
+0639 }
+0640 else
+0641 {
+0642 // 弯道：居中
+0643 if (g_red_offset <= 10)
+0644 max_dist2 = 1500; // 斜弯/近中心
+0645 else if (g_red_offset < 25)
+0646 max_dist2 = 1600; // u型弯
+0647 else
+0648 max_dist2 = 1600; // 连续弯/偏离大
+0649 }
+0650 if (dist2 > max_dist2)
+0651 return;
+0652 }
+0653 else
+0654 {
+0655 // g_red_count == 0：连续无红色则退出（圆环100帧，其他50帧）
+0656 static int no_red_cnt2 = 0;
+0657 uint8_t no_red_max = (ImageParameter.image_element_rings_flag != 0) ? 100 : 50;
+0658 no_red_cnt2++;
+0659 if (no_red_cnt2 >= no_red_max)
+0660 {
+0661 no_red_cnt2 = 0;
+0662 VisionTask.RedState = RedTask_Idle;
+0663 // printf("[RED_FALSE] 距离判断阶段连续%d帧无红色,退回空闲\r\n", no_red_max);
+0664 }
+0665 return;
+0666 }
+0667 // 方向描述：弯道方向 + 绕行方向
+0668 const char *cap_dir;
+0669 if (overtake_turn_dir == -1)
+0670 cap_dir = "左弯";
+0671 else if (overtake_turn_dir == 1)
+0672 cap_dir = "右弯";
+0673 else if (overtake_turn_dir == 2)
+0674 cap_dir = "十字";
+0675 else
+0676 cap_dir = "直道";
+0677 // printf("[RED_CAP] 方向=%s | 计数=%d dist2=%d offset=%d → 捕获\r\n",
+0678 // cap_dir,
+0679 // g_red_count, dist2, g_red_offset);
+0680 // SystemData.Stop = 1; // 看到红色框，停车
+0681 // return;
+0682 video_capture();
+0683 // BGR 直入（HSV 检测 + YUYV 几何管线）
+0684 Red_Target_t result = Find_Target_Board_From_BGR(
+0685 bgr_frame.data,
+0686 bgr_frame.total() * bgr_frame.elemSize(),
+0687 bgr_frame.step,
+0688 bgr_frame.cols,
+0689 bgr_frame.rows,
+0690 nullptr, nullptr,
+0691 true);
+0692 // 画框（直接在 bgr_frame 上画）
+0693 if (result.found)
+0694 {
+0695 //===== 绿色框 IPM 面积 =====
+0696 double green_area = 0.0;
+0697 for (int i = 0; i < 4; ++i)
+0698 {
+0699 int j = (i + 1) % 4;
+0700 green_area += result.ipm_corners[i].x * result.ipm_corners[j].y;
+0701 green_area -= result.ipm_corners[j].x * result.ipm_corners[i].y;
+0702 }
+0703 green_area = std::abs(green_area) * 0.5;
+0704 // ===== 黄色框 IPM 面积 =====
+0705 double yellow_area = 0.0;
+0706 for (int i = 0; i < 4; ++i)
+0707 {
+0708 int j = (i + 1) % 4;
+0709 yellow_area += result.crop_ipm_pts[i].x * result.crop_ipm_pts[j].y;
+0710 yellow_area -= result.crop_ipm_pts[j].x * result.crop_ipm_pts[i].y;
+0711 }
+0712 yellow_area = std::abs(yellow_area) * 0.5;
+0713 double sum = green_area + yellow_area;
+0714 // printf("[BGR] 方向=%s IPM面积: 绿框=%.1f  黄框=%.1f  合计=%.1f\n",
+0715 // cap_dir,
+0716 // green_area, yellow_area, sum);
+0717 // 大面积红色目标 → 障碍物，直接触发绕行
+0718 if (sum > 6000)
+0719 {
+0720 // 图像坐标判断障碍物在左还是右：目标中心离哪边边界近就是哪边
+0721 int red_cx = result.red_rect.x + result.red_rect.width / 2;
+0722 int red_by = result.red_rect.y + result.red_rect.height;
+0723 int tcol = (red_cx - 36) * 80 / 256; // 320→80 映射
+0724 int trow = (red_by - 20) * 60 / 140; // 240→60 映射
+0725 if (tcol < 0)
+0726 tcol = 0;
+0727 else if (tcol > 79)
+0728 tcol = 79;
+0729 if (trow < 0)
+0730 trow = 0;
+0731 else if (trow > 59)
+0732 trow = 59;
+0733 int dl = abs(tcol - RowAttribute[trow].LeftBorder);
+0734 int dr = abs(tcol - RowAttribute[trow].RightBorder);
+0735 zhangai_active = 1;
+0736 zhangai_active_side = (dl < dr) ? 1 : 2; // 离左边界近=左障碍，离右边界近=右障碍
+0737 zhangai_start_encoder = encoder_distance;
+0738 zhangai_last_side = zhangai_active_side;
+0739 VisionTask.RedState = RedTask_Recover;
+0740 return;
+0741 }
+0742 /*
+0743 else if (sum > 2500) {
+0744 // 中等面积红色 → 急救包，跳过模型识别
+0745 ShiBie_result = supplies;
+0746 VisionTask.ModelResult = Model_Supplies;
+0747 VisionTask.RedState = RedTask_ModelJudge;
+0748 return;
+0749 }
+0750 */
+0751 }
+0752 // if (!result.target_roi_valid)
+0753 // {
+0754 //     VisionTask.TuXiang_ISNULL_Flag = 1;
+0755 //     VisionTask.ModelResult = Model_None;
+0756 //     VisionTask.RedState = RedTask_Recover;
+0757 //     return;
+0758 // }
+0759 model_frame = cv::Mat(result.target_roi_height, result.target_roi_width,
+0760 CV_8UC3, result.target_roi_rgb); // BGR 直出
+0761 DetectResult res_ncn = once_ncnn_jiance();
+0762 std::string res = res_ncn.class_name;
+0763 // 分类打印模型识别结果
+0764 if (res == "jijiubao" || res == "wangyuanjing")
+0765 printf("Target is supplies\n");
+0766 else if (res == "qiangzhi" || res == "zhayao")
+0767 printf("Target is weapon\n");
+0768 else
+0769 printf("Target is vehicle\n");
+0770 if (res == "qiangzhi" || res == "zhayao")
+0771 {
+0772 ShiBie_result = weapon; // 识别为武器
+0773 VisionTask.ModelResult = Model_Weapon;
+0774 }
+0775 else if (res == "jijiubao" || res == "wangyuanjing")
+0776 {
+0777 ShiBie_result = supplies; // 识别为物资
+0778 VisionTask.ModelResult = Model_Supplies;
+0779 }
+0780 else
+0781 {
+0782 ShiBie_result = vehicle; // 识别为车辆/无目标
+0783 VisionTask.ModelResult = Model_Vehicle;
+0784 }
+0785 VisionTask.TuXiang_ISNULL_Flag = 0;
+0786 VisionTask.RedState = RedTask_ModelJudge;
+0787 return;
+0788 }
+0789 case RedTask_ModelJudge:
+0790 {
+0791 if (VisionTask.ModelResult == Model_Weapon)
+0792 {
+0793 VisionTask.Need_Overtake = 1;
+0794 VisionTask.Overtake_Dir = 1;
+0795 // 圆环内置标志位，供圆环补线用
+0796 if (ImageParameter.image_element_rings == 2)
+0797 ring_overtake_right_flag = 1;
+0798 else if (ImageParameter.image_element_rings == 1)
+0799 ring_overtake_left_flag = 1;
+0800 }
+0801 else if (VisionTask.ModelResult == Model_Supplies)
+0802 {
+0803 VisionTask.Need_Overtake = 1;
+0804 VisionTask.Overtake_Dir = 2;
+0805 // 圆环内置标志位，供圆环补线用
+0806 if (ImageParameter.image_element_rings == 2)
+0807 ring_overtake_right_right_flag = 1;
+0808 else if (ImageParameter.image_element_rings == 1)
+0809 ring_overtake_left_right_flag = 1;
+0810 }
+0811 else
+0812 {
+0813 VisionTask.Need_Overtake = 0;
+0814 VisionTask.Overtake_Dir = 0;
+0815 }
+0816 // 打印弯道方向和绕行方向信息
+0817 {
+0818 const char *turn_str = "未知";
+0819 if (overtake_turn_dir == -1)
+0820 turn_str = "左弯";
+0821 else if (overtake_turn_dir == 0)
+0822 turn_str = "直道";
+0823 else if (overtake_turn_dir == 1)
+0824 turn_str = "右弯";
+0825 else if (overtake_turn_dir == 2)
+0826 turn_str = "十字";
+0827 const char *detour_str = "不绕";
+0828 if (VisionTask.Overtake_Dir == 1)
+0829 detour_str = "左绕";
+0830 else if (VisionTask.Overtake_Dir == 2)
+0831 detour_str = "右绕";
+0832 // printf("[ModelJudge] 弯道:%s  绕行:%s\r\n", turn_str, detour_str);
+0833 }
+0834 VisionTask.StateTick = 0;
+0835 // 不饶也进 RedTask_Overtake：通过 Need_Overtake 区分延时和速度策略
+0836 VisionTask.RedState = RedTask_Overtake;
+0837 return;
+0838 }
+0839 case RedTask_Overtake:
+0840 {
+0841 if (VisionTask.StateTick == 0)
+0842 {
+0843 // 圆环内绕行：记录屏蔽标志，本次绕行完成后圆环内不再重复检测红色
+0844 if (ImageParameter.image_element_rings_flag != 0)
+0845 ring_overtake_block = 1;
+0846 // 圆环内按实际环方向强制弯道：右环→右弯，左环→左弯
+0847 if (ImageParameter.image_element_rings == 2)
+0848 VisionTask.Overtake_RoadDir = 1; // 右圆环强制右弯
+0849 else if (ImageParameter.image_element_rings == 1)
+0850 VisionTask.Overtake_RoadDir = -1; // 左圆环强制左弯
+0851 else
+0852 VisionTask.Overtake_RoadDir = overtake_turn_dir; // 弯道检测
+0853 // 写死检测顺序（备选）：第1右弯，2/3/4直道，4个目标
+0854 static int image_seq_cnt = 0;
+0855 image_seq_cnt++;
+0856 overtake_then_cross = 0; // 每次绕行默认清0，仅下面某个分支手动置1
+0857 if (image_seq_cnt == 1)
+0858 {
+0859 overtake_then_cross = 1; // 第1个目标绕行后紧跟十字
+0860 VisionTask.Overtake_RoadDir = 0;   // 直道
+0861 }
+0862 else if (image_seq_cnt == 2)
+0863 {
+0864 // overtake_then_cross = 1; // 第2个目标绕行后紧跟十字
+0865 VisionTask.Overtake_RoadDir = 1;   // 右弯
+0866 }
+0867 else if (image_seq_cnt == 3)
+0868 {
+0869 // overtake_then_cross = 1; // 第3个目标绕行后紧跟十字
+0870 VisionTask.Overtake_RoadDir = 0;   // 直道
+0871 }
+0872 else if (image_seq_cnt == 4)
+0873 {
+0874 // overtake_then_cross = 1; // 第4个目标绕行后紧跟十字
+0875 VisionTask.Overtake_RoadDir = 0;   // 直道
+0876 red_border_done = 1;               // 4个目标完成，关闭红色检测
+0877 }
+0878 }
+0879 // 绕行用 OvertakeHoldTicks()，不饶用延时慢慢恢复速度（每2帧+1，到55需50帧）
+0880 uint8_t hold_ticks = VisionTask.Need_Overtake ? OvertakeHoldTicks() : 50;
+0881 if (VisionTask.StateTick < hold_ticks)
+0882 {
+0883 VisionTask.StateTick++;
+0884 return;
+0885 }
+0886 VisionTask.StateTick = 0;
+0887 VisionTask.RedState = RedTask_Recover;
+0888 return;
+0889 }
+0890 case RedTask_Recover:
+0891 {
+0892 // 特殊写死恢复：绕行后紧跟十字，两段固定偏置 + 编码器距离恢复
+0893 if (overtake_then_cross)
+0894 {
+0895 if (cross_recover_phase == 0)
+0896 {
+0897 // 首帧：锁定恢复方向（左绕→向右恢复，右绕→向左恢复），启动第一段(回中)
+0898 cross_recover_sign = (VisionTask.Overtake_Dir == 1) ? 1 : -1;
+0899 cross_recover_start_encoder = encoder_distance;
+0900 cross_recover_phase = 1;
+0901 cross_recover_bias = cross_recover_sign * CROSS_RECOVER_SEG1_BIAS;
+0902 }
+0903 else if (cross_recover_phase == 1)
+0904 {
+0905 // 第一段(回中)跑完 → 第二段(反方向回正车头)
+0906 if ((encoder_distance - cross_recover_start_encoder) >= CROSS_RECOVER_SEG1_DIST)
+0907 {
+0908 cross_recover_start_encoder = encoder_distance;
+0909 cross_recover_phase = 2;
+0910 cross_recover_bias = -cross_recover_sign * CROSS_RECOVER_SEG2_BIAS;
+0911 }
+0912 }
+0913 else // cross_recover_phase == 2
+0914 {
+0915 // 第二段(回正车头)跑完 → 恢复完成，清空回空闲
+0916 if ((encoder_distance - cross_recover_start_encoder) >= CROSS_RECOVER_SEG2_DIST)
+0917 {
+0918 cross_recover_phase = 0;
+0919 cross_recover_sign = 0;
+0920 cross_recover_bias = 0.0f;
+0921 overtake_then_cross = 0;
+0922 VisionTask.TuXiang_ISNULL_Flag = 0;
+0923 VisionTask.Need_Overtake = 0;
+0924 VisionTask.Overtake_Dir = 0;
+0925 VisionTask.ModelResult = Model_None;
+0926 VisionTask.RedState = RedTask_Idle;
+0927 return;
+0928 }
+0929 }
+0930 return; // 恢复期间保持 RedTask_Recover，不清状态
+0931 }
+0932 // 原版：4帧保护，避免绕行刚结束立刻再次触发红色矩形框识别
+0933 static int recover_cnt = 0;
+0934 recover_cnt++;
+0935 if (recover_cnt < 5)
+0936 return;
+0937 recover_cnt = 0;
+0938 VisionTask.TuXiang_ISNULL_Flag = 0;
+0939 VisionTask.Need_Overtake = 0;
+0940 VisionTask.Overtake_Dir = 0;
+0941 VisionTask.ModelResult = Model_None;
+0942 VisionTask.RedState = RedTask_Idle;
+0943 return;
+0944 }
+0945 case RedTask_Idle:
+0946 default:
+0947 break;
+0948 }
+0949 }
+0950 8.2车模技术检查表
+0951 第二十一届全国大学生智能汽车竞赛
+0952 车模技术检查表
+0953 一、车模技术检查表
+0954 队伍名称
+0955 观碑逐速队
+0956 参赛学校
+0957 深圳职业技术大学
+0958 赛题组组别
+0959 走马观碑赛道
+0960 检查项目
+0961 规格
+0962 （选手自行填写）
+0963 符合
+0964 （）
+0965 不符合（）
+0966 备注
+0967 1.车模类型是什么？
+0968 F车模
+0969 限制只能使用F车模
+0970 车模整体尺寸：
+0971 （包括传感器在内）
+0972 长，宽，高(mm)
+0973 长：260
+0974 宽：190
+0975 高：220
+0976 今年比赛车模尺寸没有限制
+0977 传感器种类、规格(型号)数量。
+0978 是否使用自带MCU的成品传感器模块？型号是什么？
+0979 1.陀螺仪：龙邱科技 LQ6050v3，1个  编码器：LQ_1024线方向mini编码器，2个  摄像头：灵眼 Pro，1个2.无
+0980 防伪易损标签是否完整？
+0981 1.完整
+0982 1. 是否增加伺服电机？
+0983 2. 如果有种类、个数和作用？
+0984 无
+0985 电路中微处理器型号和个数？
+0986 龙芯2K0300，1个（安装于2K0300主板）
+0987 STC32G12K128，2个（各安装于两个无刷电调）
+0988 是否具有其它可编程器件，个数与作用？
+0989 无
+0990 是否有无线通讯装置？
+0991 如果有种类和个数？
+0992 无
+0993 电池的种类、规格和数量？
+0994 锂电池，
+0995 ACE-2200mAh-50C-11.1V-3S1P，
+0996 1个
+0997 1. 是否使用GPS导航？
+0998 2. 是否没有使用RTK？
+0999 否
+1000 后轮驱动电机是否是原车模电机？
+1001 是否具有防伪易损标签？
+1002 是
+1003 是
+1004 轮胎是否是原车同款轮胎？
+1005 轮胎的尺寸（直径和宽度）是否小于等于原车膜尺寸？
+1006 否，轮胎使用原车轮胎软化打磨后形成的光头胎
+1007 是
+1008 车轮轴距、轮距是否改装？
+1009 改装参数是什么？
+1010 否
+1011 车模驱动轮传动机构是否改装？
+1012 改装方式是什么？
+1013 否
+1014 是否更换过原装车模中的机械元器件？更换后的规格 是什么？
+1015 否
+1016 。
+1017 车模电路板个数及功能。
+1018 其中是否有购买成品电路板？
+1019 1、4块（2K0300久久派一块、主驱拓展板一块、无刷电调两块）。其中，2K0300 久久派开发板作为整车主控单元，运行视觉识别、目标判断与 PID 控制算法，输出控制指令。主驱拓展板集成电机驱动模块，完成信号转接、接口扩展与电源分配，驱动后轮电机，输出电调控制信号。无刷电调驱动无刷电机，产生负压下压力，提升车模抓地性能。
+1020 2、是，仅购买2K0300久久派
+1021 核心板可以使用成品电路板
+1022 自制电路板是否标记有学校名称、队伍名称、制作日期等信息？
+1023 标示信息在PCB的哪一层？
+1024 标记信息
+1025 深圳职业技术大学/深职大
+1026 观碑逐速队
+1027 参赛年份：2026
+1028 2.顶层覆铜层
+1029 请在表格中注明电路板队伍信息的内容。
+1030 其它待说明内容
+1031 无
+1032 检查人员签名：
+1033 检查意见：
+1034 二、车模照片
+1035 1、车模外观照片
+1036 以下是车模平放时，前视图，俯视图，右视图照片
+1037 图1.1 车模照片
+1038 2、电路板PCB图
+1039 以下为车模中主要电路板正反面照片，顺序为：主驱一体拓展板、无刷电调；2K0300主板为成品主控板，随车安装使用。
+1040 图2.1 主驱一体拓展板（正面）
+1041 图2.2 主驱一体拓展板（反面）
+1042 图2.3 无刷电调（正面）
+1043 图2.4 无刷电调（反面）
+1044 3、电路板原理图
+1045 以下为车模中相关电路板原理图，顺序为：主驱一体拓展板、无刷电调；2K0300主板为成品主控板，不在本附录中展开原理图。
+1046 图3.1主驱一体拓展板原理图
+1047 图3.2无刷电调原理图

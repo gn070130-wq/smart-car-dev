@@ -1,0 +1,614 @@
+0001 第二十一届全国大学生
+0002 智能汽车竞赛
+0003 技 术 报 告
+0004 学    校：    南京信息工程大学
+0005 队伍名称：     NATG2026
+0006 参赛队员：     钟  晨
+0007 孟奥凯
+0008 朱  旭
+0009 带队教师：     张  菀
+0010 刘  佳
+0011 关于技术报告和研究论文使用授权的说明
+0012 本人完全了解全国大学生智能汽车竞赛关保留、使用技术报告和研究论文的规定，即：参赛作品著作权归参赛者本人，比赛组委会可以在相关主页上收录并公开参赛作品的设计方案、技术报告以及参赛模型车的视频、图像资料，并将相关内容编纂收录在组委会出版论文集中。
+0013 参赛队员签名：钟晨
+0014 孟奥凯
+0015 朱旭
+0016 带队教师签名：张菀 刘佳
+0017 日        期：2026.8.15
+0018 目录
+0019 第一章 引言１
+0020 第二章 方案设计２
+0021 2.1 系统的主要设计方案２
+0022 2.2 系统总体方案设计２
+0023 第三章 智能车机械结构调整与优化３
+0024 3.1  智能车车体机械建模３
+0025 3.2  智能车后轮定位的调整４
+0026 3.3 编码器的安装６
+0027 3.4智能车重心位置的调整６
+0028 第四章 电路设计说明６
+0029 4.1 无刷电机驱动模块（ESC）６
+0030 4.2 电机驱动模块（H桥）７
+0031 第五章 智能车控制软件设计说明８
+0032 5.1 软件设计总体框架８
+0033 5.2 采集传感器信息及处理９
+0034 5.2.1 摄像头采集赛道信息９
+0035 5.2.2 一般路径处理１０
+0036 5.2.3 环岛识别及处理１０
+0037 5.2.4 十字识别及处理１０
+0038 5.2.5  坡道识别及处理１０
+0039 5.2.6 避障识别及处理１０
+0040 5.3 速度控制部分１１
+0041 5.4 PID算法介绍１１
+0042 5.5 基于NCNN的目标识别模型１３
+0043 5.5.1 NCNN框架与模型部署１３
+0044 5.5.2 红色色条定位与目标区域裁剪１３
+0045 5.5.3 推理决策与状态机１４
+0046 第六章 系统的开发环境与车模调试１４
+0047 6.1 调试工具及调试方法１４
+0048 第七章 主要技术参数说明１４
+0049 总结１８
+0050 参考文献１９
+0051 附录２０
+0052 第一章 引言
+0053 本文介绍了南京信息工程大学NATG2026队员们在参与第二十一届全国大学生智能汽车竞赛中的工作成果。报告介绍了我们关于智能车整体设计过程，我们采用了在C车模上进行简单改造，通过摄像头对赛道边线信息进行采集分析，使用VMware，VS code作为软件开发工具，使用PID算法对智能车转向以及速度进行闭环控制，并基于NCNN深度学习框架部署轻量级图像分类模型，对赛道“碑”上的目标图片进行实时识别，从而实现准确快速自动循迹与目标识别的有机结合。主要从系统设计、机械结构、软件设计等方面进行对本次比赛过程中所学所感的说明和总结。
+0054 第二章 方案设计
+0055 本章内容主要介绍智能车系统的设计思路和设计方案，主要由机械结构、控制模块，程序算法以及基于NCNN的目标识别模型四部分构成智能车系统。
+0056 2.1 系统的主要设计方案
+0057 此次比赛我们采用F型车模搭建小车，主控制器采用龙芯2k0300久久派作为核心控制器，在Linux环境下进行软件设计。使用Altium Designer 进行电路板的设计与绘制。主要通过车上的摄像头来采集赛道信息，传入板卡内部进行算法来决策小车的电机处理不同的赛道元素。通过编码器测速模块来检测车速，电机转速控制采用 PID 控制，通过 PWM 控制驱动电路调整电机的转速，完成智能车速度的闭环控制，IPS液晶屏作为显示器辅助调试，增加按键调参。
+0058 电池电池2.2 系统总体方案设计
+0059 电池
+0060 电池
+0061 电源模块电源模块
+0062 电源模块
+0063 电源模块
+0064 摄像头摄像头拨码开关拨码开关2k03002k0300
+0065 摄像头
+0066 摄像头
+0067 拨码开关
+0068 拨码开关
+0069 2k0300
+0070 2k0300
+0071 陀螺仪陀螺仪IPS屏幕IPS屏幕编码器编码器电机电机LED灯LED灯按键按键
+0072 陀螺仪
+0073 陀螺仪
+0074 IPS屏幕
+0075 IPS屏幕
+0076 编码器
+0077 编码器
+0078 电机
+0079 电机
+0080 LED灯
+0081 LED灯
+0082 按键
+0083 按键
+0084 图2.2.1电路整体设计方案
+0085 本系统主要由2k0300作为核心控制，通过摄像头循迹，电机驱动测速模块以及基于NCNN的目标识别模块构成。
+0086 Stc32g核心控制模块：负责给各个模块提供电能及主控制器给各个模块输出决策信息，控制驱动电机和伺服器。
+0087 摄像头模块：负责作为智能车的“感官”，收集赛道信息。
+0088 电机驱动测速模块：驱动直流电机完成智能车的加减速控制和转向控制，并用编码器对智能车速度进行采集，进行闭环控制。
+0089 NCNN识别模块：基于 NCNN 框架部署轻量级卷积神经网络，对赛道“碑”上的目标图片进行分类识别，为绕行动作提供决策依据。
+0090 第三章 智能车机械结构调整与优化
+0091 智能车系统任何的控制都是在一定的机械结构基础上实现的，因此在设计整个软件架构和算法之前一定要对整个车模的机械结构有一个整体的想法和认识。从而再针对具体的设计方案来调整赛车的机械结构，并在实际的调试过程中不断的改进和提高。本章将主要介绍智能车车模的机械结构和调整方案。
+0092 3.1  智能车车体机械建模
+0093 此次比赛选用的赛车车模采用基于F型车模。赛车机械结构使用竞赛提供车模的底盘部分及转向和驱动部分,搭配负压风扇。控制采用后轮差速。
+0094 我们对机械结构的要求是：在符合规则的前提下以及机械结构的合理性下，让结构简单高效，在不断地修改尝试下，最终确定了结构设计方案：
+0095 图3.1
+0096 最后电路板安装（如图3.1所示）就是一个比较核心的问题，因为需要要考虑车的稳定性以及车的重心，若重心太高的话，容易导致翻车，重心太低的话，就会影响车的速度。同时，电路板安装必须保证十分稳固。我们所使用的基于f车模进行改造，主板安装在车模前部，然后通过3D打印件与电路板连接在一起，同时将电池固定在车后面，这样设计出来重心不会过于偏高也不会偏低，提高了车的稳定性。
+0097 3.2  智能车后轮定位的调整
+0098 现代汽车在正常行驶过程中，为了使汽车直线行驶稳定，转向轻便，转向后能自动回正，减少轮胎和转向系零件的磨损等，在转向轮、转向节和前轴之间须形成一定的相对安装位置，叫车轮定位，其主要的参数有：主销后倾、主销内倾、车轮外倾和前束。智能车竞赛模型车的四项参数都可以调整，但是由于模型车加工和制造精度的问题，在通用的规律中还存在着一些偶然性。
+0099 3.3 编码器的安装
+0100 为了提高精度，本车没有选用编码盘，而采用逐飞1024线的编码器，使用与编码器配套的编码器安装支架与车模连接，调节编码器齿轮与差速器齿轮的咬合，保证两个齿轮的平顺性。
+0101 3.4智能车重心位置的调整
+0102 经过多次试验，智能车的重心前移或者后移都会影响智能车行驶时的稳定，因此，为了重心不外移，在设计主板和安装舵机以及电池的安装时都把重心问题慎重的考虑进去了。
+0103 第四章 电路设计说明
+0104 4.1 无刷电机驱动模块（ESC）
+0105 为了驱动车模上的涵道为车模提供额外的下压力，车模上安装了两块无刷电机驱动模块，以STC32G为主控，FD6288Q为MOS预驱，驱动3个半桥，驱动无刷电机。
+0106 图4.1.1
+0107 4.2 电机驱动模块（H桥）
+0108 我们使用双H桥驱动，通过SN74HC125PWR隔离芯片发送信号控制DRV8701，驱动H桥，实现控制电动机的工作转矩和转速。
+0109 图4.2.1
+0110 4.3 系统主板设计
+0111 主控设计时，使用了很多的外设传感器，大部分通过其数据手册分析性能等，最后把模块化的分布在一起，形成了主控，主控原理图如下
+0112 图4.3.1
+0113 第五章 智能车控制软件设计说明
+0114 5.1 软件设计总体框架
+0115 本智能车系统的软件基本实现流程为：（1）各个模块的初始化。（2）摄像头采集赛道信息进行分析和处理，进行循迹轨迹的计算，再进行转向和驱动的控制，输出处理过的PWM波值控制舵机和电机。流程图如图：
+0116 初 始 化初 始 化
+0117 初 始 化
+0118 初 始 化
+0119 十    字十    字避    障避    障
+0120 十    字
+0121 十    字
+0122 避    障
+0123 避    障
+0124 参数设置参数设置
+0125 参数设置
+0126 参数设置
+0127 环    岛环    岛元素检测处理元素检测处理边线信息边线信息
+0128 环    岛
+0129 环    岛
+0130 元素检测处理
+0131 元素检测处理
+0132 边线信息
+0133 边线信息
+0134 坡    道坡    道
+0135 坡    道
+0136 坡    道
+0137 编码器编码器方向控制方向控制
+0138 编码器
+0139 编码器
+0140 方向控制
+0141 方向控制
+0142 驱动控制驱动控制
+0143 驱动控制
+0144 驱动控制
+0145 图5.1.1
+0146 5.2 采集传感器信息及处理
+0147 我们主要用摄像头采集赛道的边线信息来进行赛道的识别。
+0148 根据判断赛道类型，我们将进行直道加速，弯道减速的思想来控制电机转速，由此能使直道尽可能的加速通过，减少比赛用时，同时又能使小车于弯道减速得以顺利过弯。
+0149 5.2.1 摄像头采集赛道信息
+0150 我们通过摄像头来得到边线信息，从而进行元素的判断和处理。摄像头得到图像之后，我们通过大津法得到阈值，对图像进行二值化处理；接着通过迷宫巡线、计算最长白列、透视变化、边线滤波、等距采样得到基本边线信息用于巡线；最后计算边线局部角度变化率，进行非极大值抑制，得到角点、直弯道信息用于元素的判断处理。
+0151 5.2.2 一般路径处理
+0152 一般路径包括普通的直道和弯道，由左右两路处理后的边线拟合中线，再由当前车辆位置和前瞻处的中线点坐标构成向量，采用纯跟踪算法得出偏航角pure_angle，最后通过经典的PID算法根据pure_angle值来计算出需要对舵机输出的PWM值，保证小车在赛道上的平稳运行。
+0153 编码器采集到小车的实时速度反馈给单片机，单片机内部算法做出决策，达到直道加速，弯道减速的目的。
+0154 5.2.3 环岛识别及处理
+0155 先通过左边线较大角点和右边线为长直道判断出处于圆环状态；之后通过边线角点坐标值、边线所含点的数量、最长白列数、丢线次数等来切换圆环状态；最后通过差速处理等完成环岛赛道。右环岛同理。
+0156 5.2.4 十字识别及处理
+0157 十字元素规则上是不能左右转。我们当识别到边线上两个近角点，或者一个近角点、一个远角点时，将其置为十字状态。之后通过近角点和远角点的坐标值、赛道宽度、长直道判断等进行十字状态切换，最后相当于一般路径处理，确保其走直线。
+0158 5.2.5  坡道识别及处理
+0159 通过不同位置的赛道宽度、宽度差、边线最大角度值等判断坡道状态，加速上坡，再通过路程长度计算来清空坡道状态。
+0160 5.2.6 避障识别及处理
+0161 当识别到左边线小角点，右边线长直道时，判断为障碍，修改边线拟合中线的偏移量，从而保证不会撞到障碍；再通过路程计算清空障碍状态。
+0162 5.3 速度控制部分
+0163 我们根据不同的赛道类型使用不同的速度，直道加速，弯道减速，对圆环、S弯等特殊元素给予不同速度。
+0164 5.4 PID算法介绍
+0165 在现代自动控制技术中应用最广泛的调节方式是PID调控方式，该控制原理如下图5.4.1所示。在本课题中智能车的转向、速度都不同程度的引用PID算法思想。对于PID控制结构简单，稳定性高。但是采用PID算法需要有个繁琐的参数调整过程，但是可行性算高。相比较其他控制方式占很大优势。
+0166 图5.4.1  PID控制原理图
+0167 原理图对应计算公式如下所示：
+0168 公式（5.4.1）
+0169 公式（5.4.2）
+0170 式中：
+0171 ——采样序号，k = 0，1，2…；      ——第k次给定值；
+0172 ——第k次实际输出值；          —— 第k次输出控制量；
+0173 —— 第k次偏差；               —— 第k-1次偏差；
+0174 ——比例系数；                   ——积分时间常数；
+0175 ——微分时间常数；                ——采样周期。
+0176 PID算法中各个参数的作用如下：
+0177 比例调节（Kp）：对偏差的快速调整，智能车测量得实际值与设定允许值产生偏比例控制立即对此时刻误差发生控制，根据偏差的大小直接按比例的输出相应的控制。朝着偏差减少方向变化。由此可见偏差调整的快慢取决于Kp比例值得大小，Kp值越大系统调整速度就越快，但是容易导致系统过调，使得系统震荡，稳定性下降。比例值过小，使得系统震荡减小，但是偏差调节变慢，不利于一些追求速度的系统。
+0178 积分调节（Ki）：对系统的历史偏差积分计算，当系统一直存在偏差时，积分调节将对系统进行调整，调整直到没有误差才会停止。积分调节的强度取决于积分时间Ti,，Ti越小，积分调整强度越大，反之越小。
+0179 微分调节（Kd）：微分是反映一个系统的偏差变化率，表明偏差的变化趋势，由此可见它是能超前比例和和积分调节，但是微分是反映变化率，当偏差没有发生变化时，微分作用也不存在，所以不可单独使用，必须结合使用。
+0180 数字PID控制算法通常分为位置式PID控制算法和增量式PID控制算法。
+0181 1、位置式PID
+0182 位置式PID中，由于计算机输出的u(k)直接去控制执行机构(如阀门)u(k)的值和执行机构的位置(如阀门开度)是一一对应的，所以通常称公式(5.4.2)为位置式PID控制算法。
+0183 位置式PID控制算法的缺点是：
+0184 由于全量输出，所以每次输出均与过去的状态有关，计算时要对过去e(k)进行累加，计算机工作量大；而且因为计算机输出的u(k)对应的是执行机构的实际位置，如计算机出现故障，u(k)的大幅度变化，会引起执行机构位置的大幅度变化，这种情况往往是生产实践中不允许的，在某些场合，还可能造成严重的生产事故。因而产生了增量式PID 控制的控制算法，所谓增量式PID 是指数字控制器的输出只是控制量的增量。
+0185 增量式PID
+0186 当执行机构需要的是控制量的增量(例如：驱动步进电机)时，可由式(5.4.2)推导出提供增量的PID控制算式。由式(5.4.2)可以推出式(5.4.3)，式(5.4.2)减去式(5.4.3)可得式(5.4.4)。
+0187 (公式5.4.3)
+0188 (公式5.4.4)
+0189 式中；；
+0190 公式(5.4.4)称为增量式PID控制算法，可以看出由于一般计算机控制系统采用恒定的采样周期，一旦确定了、 、，只要使用前后三次测量值的偏差，即可由式(5.4.4)求出控制增量。
+0191 5.5 基于NCNN的目标识别模型
+0192 在“走马观碑”任务中，智能车需要在行进过程中对赛道旁“碑”上的目标图片进行识别，并根据识别结果（钻头、胶带、扳手）执行相应的绕行动作。传统的图像处理方法难以稳定地区分这些目标类别，因此本系统引入基于 NCNN 框架的轻量级卷积神经网络分类模型，在龙芯 2k0300 平台上完成端侧推理，实现目标的实时、准确识别。
+0193 5.5.1 NCNN框架与模型部署
+0194 NCNN 是腾讯开源的高性能神经网络前向计算框架，无第三方依赖、轻量高效，适合在算力受限的嵌入式平台上部署深度学习模型。本系统将训练好的图像分类模型转换为 NCNN 格式，输入为 64×64 的 RGB 图像，输出钻头、胶带、扳手三个类别。软件中封装 LQ_NCNN 类对模型统一管理，Init() 负责加载模型，Infer() 完成图像预处理与推理，经 Softmax 归一化后取最大概率类别作为识别结果。
+0195 5.5.2 红色色条定位与目标区域裁剪
+0196 “碑”上的待识别图片通过一条红色色条进行定位。系统在 HSV 颜色空间提取红色区域，经透视变换与最小外接矩形定位到色条的上边缘，再沿其法向偏移并做透视校正，截取出 64×64 的待识别图像送入模型。
+0197 5.5.3 推理决策与状态机
+0198 识别流程采用有限状态机实现，分为未发现、减速拍照推理、绕行、退出四个状态。小车检测到红色色条后减速拍照，先根据色条位置与面积快速判定是否为胶带，否则送入模型分类；再按识别结果执行对应距离的绕行，完成后复位等待下一次识别。
+0199 第六章 系统的开发环境与车模调试
+0200 在系统的设计制作和调试的过程中，不管是软件的开发还是硬件电路的仿真和电路板的制作都离不开PC 机。所以对于PC 机上的各种辅助设计软件必须要有一定的熟悉程度。这样可以提高开发的效率。
+0201 6.1 调试工具及调试方法
+0202 串口调试工具在车模过程中起着非常要的作用，无线通信串口模块在车模调试过程中起着非常重要的作用，我们采用的是基于 433M 频率的无线通信串口模 块，此块传输距离可达 1000 米，最高波特率可支持 194000b/s 。
+0203 第七章 主要技术参数说明
+0204 队伍名称
+0205 NATG2026
+0206 参赛学校
+0207 南京信息工程大学
+0208 赛题组组别
+0209 走马观碑（龙芯）组
+0210 检查项目
+0211 规格
+0212 （选手自行填写）
+0213 符合
+0214 （）
+0215 不符合（）
+0216 备注
+0217 1.车模类型是什么？
+0218 F型车模
+0219 车模整体尺寸：
+0220 1.（包括传感器在内）长，宽，高(mm)
+0221 2. 摄像头组标明镜头距离地面高度。
+0222 长宽高：240*260*380
+0223 镜头距地面380
+0224 传感器种类、规格(型号)数量。
+0225 是否使用自带MCU的成品传感器模块？型号是什么？
+0226 摄像头两个，陀螺仪IMU660RA一个
+0227 1. 是否增加伺服电机？
+0228 2. 如果有那么种类、个数和作用？
+0229 未增加伺服电机
+0230 电路中微处理器型号和个数？
+0231 2颗STC32G12K128,1块2k0300
+0232 是否具有其它可编程器件，个数与作用？
+0233 无
+0234 是否有无线通讯装置？
+0235 如果有，那么种类和个数？
+0236 未使用无线通讯装置
+0237 电池的种类、规格和数量？
+0238 150c 1300mah 4s
+0239 1. 是否使用GPS导航？
+0240 2. 是否没有使用RTK？
+0241 未使用GPS导航未使用RTK
+0242 后轮驱动电机是否是原车模电机？
+0243 是否具有防伪易损标签？
+0244 是
+0245 是
+0246 车模轮胎是否原有的纹理可辨析？
+0247 轮胎表面是否具有粘性物质？
+0248 对于麦克纳姆轮是否更换过小轮胶皮？
+0249 轮胎纹理不可辨轮胎表面无粘性物质未使用麦克纳姆轮
+0250 车模底盘是否是原车模底盘？
+0251 是否有大面积切割？
+0252 原车底盘
+0253 否
+0254 车轮轴距、轮距是否改装？
+0255 改装参数是什么？
+0256 无
+0257 车模驱动轮传动机构是否改装？
+0258 改装方式是什么？
+0259 无
+0260 车模差速器是否改装？
+0261 改装方式是什么？
+0262 无
+0263 是否更换过原装车模中的机械元器件？更换后的规格 是什么？
+0264 未更换
+0265 。
+0266 车模电路板个数及功能。
+0267 其中是否有购买成品、哪一些？
+0268 本车模包含5块电路板，功能分别为：电源管理与后轮驱动、承载核心板与各模块、无刷电调、姿态检测
+0269 自制电路板是否标记有学校名称、队伍名称、制作日期等信息？
+0270 标示信息在PCB的哪一层？
+0271 包含，均标示在PCB顶层
+0272 请在表格中注明电路板队伍信息的内容。
+0273 其它待说明内容
+0274 总结
+0275 智能车竞赛是一个多学科、综合性的比赛，其中设计涉及了控制、传感技术、电子信息、模式识别、深度学习、汽车电子、机械等多个学科，在整个准备的过程中，我们不仅仅把所学的理论知识应用于实际，还自学了大量包括 NCNN 神经网络部署在内的新知识。不仅开拓了视野，使我们的动手能力、运用知识的能力、分析解决问题的能力也有了很大的提高。
+0276 参考文献
+0277 [1]邵贝贝. 单片机嵌入式应用的在线开发方法. 北京, 清华大学出版社, 2001
+0278 [2]刘慧银, 龚光华, 王云飞等. Motorola(Freescale)微控制器MC68HC08原理及其嵌入式应用(新版). 北京, 清华大学出版社,1993
+0279 [3]卓晴, 黄开胜, 邵贝贝等. 学做智能车. 北京, 北京航空航天大学出版社, 2001
+0280 [4]潘新民, 王燕芳. 微型计算机控制技术. 北京, 高等教育出版社, 2001
+0281 [5]何立民. 单片机应用系统设计. 北京, 北京航天航空大学出版社, 1997
+0282 附录
+0283 部分程序代码
+0284 void motion_control::motion_control_track(process_image track)
+0285 {
+0286 fitting(track);
+0287 pure_suit();
+0288 printf("pure_angle:%f",pure_angle);
+0289 speed_control(track);
+0290 posture_control(track);
+0291 }
+0292 /**
+0293 * @brief Get the Scene object
+0294 *
+0295 * @param scene
+0296 * @return string
+0297 */
+0298 string getScene(Scene scene)
+0299 {
+0300 switch (scene)
+0301 {
+0302 case Scene::NormalScene:
+0303 return "Normal";
+0304 case Scene::CrossScene:
+0305 return "Crossroad";
+0306 case Scene::RingScene:
+0307 return "Ring";
+0308 default:
+0309 return "Error";
+0310 }
+0311 }
+0312 /**
+0313 * @brief 贝塞尔曲线
+0314 *
+0315 * @param dt
+0316 * @param input
+0317 * @return vector<POINT>
+0318 */
+0319 vector<POINT> Bezier(double dt, vector<POINT> input)
+0320 {
+0321 vector<POINT> output;
+0322 double t = 0;
+0323 while (t <= 1)
+0324 {
+0325 POINT p;
+0326 double x_sum = 0.0;
+0327 double y_sum = 0.0;
+0328 int i = 0;
+0329 int n = input.size() - 1;
+0330 while (i <= n)
+0331 {
+0332 double k =
+0333 factorial(n) / (factorial(i) * factorial(n - i)) * pow(t, i) * pow(1 - t, n - i);
+0334 x_sum += k * input[i].x;
+0335 y_sum += k * input[i].y;
+0336 i++;
+0337 }
+0338 p.x = x_sum;
+0339 p.y = y_sum;
+0340 output.push_back(p);
+0341 t += dt;
+0342 }
+0343 return output;
+0344 }
+0345 auto formatDoble2String(double val, int fixed)
+0346 {
+0347 auto str = std::to_string(val);
+0348 return str.substr(0, str.find(".") + fixed + 1);
+0349 }
+0350 void motion_control::fitting(process_image track)
+0351 {
+0352 is_straight_road = track.is_left_straight & track.is_right_straight;
+0353 CenterEdge_size = 0;
+0354 CenterEdge.clear();
+0355 track_type=1;
+0356 //track_line_choose();
+0357 //无元素边线选择
+0358 // if(element_type==ELEMENT_NONE&&track.t_pointsEdgeLeft_size > 3 && track.t_pointsEdgeRight_size > 3&&track.is_left_straight&&track.is_right_straight)
+0359 // {
+0360 //     track_type = 2;
+0361 // }
+0362 if (element_type==ELEMENT_NONE&&track.t_pointsEdgeLeft_size > track.t_pointsEdgeRight_size )
+0363 {
+0364 track_type = 0;
+0365 }
+0366 else if (element_type==ELEMENT_NONE&&track.t_pointsEdgeRight_size > track.t_pointsEdgeLeft_size )
+0367 {
+0368 track_type = 1;
+0369 }
+0370 //右环岛拟合
+0371 if(circle_type==CIRCLE_BEGIN_R)
+0372 {
+0373 centerCompute(track.t_pointsEdgeLeft,track.t_pointsEdgeLeft_size, 0);
+0374 CenterEdge_size = CenterEdge.size();
+0375 }
+0376 else if(circle_type==CIRCLE_LOSELINE_R)
+0377 {
+0378 centerCompute(track.t_pointsEdgeLeft,track.t_pointsEdgeLeft_size, 0);
+0379 CenterEdge_size = CenterEdge.size();
+0380 }
+0381 else if(circle_type==CIRCLE_IN_R)
+0382 {
+0383 if(!track.is_right_straight)
+0384 {
+0385 centerCompute(track.t_pointsEdgeRight,track.t_pointsEdgeRight_size, 1);
+0386 }
+0387 centerCompute(t_circle_pointsEdgeLeft,t_circle_pointsEdgeLeft_size, 1);
+0388 //t_far_pointsEdgeLeft.erase(t_far_pointsEdgeLeft.begin(),t_far_pointsEdgeLeft.begin()+far_Lpt0_rpts0s_id_left);
+0389 if(!track.is_right_straight)
+0390 {
+0391 CenterEdge.erase(CenterEdge.begin(),CenterEdge.begin()+left_max_id);
+0392 }
+0393 CenterEdge_size = CenterEdge.size();
+0394 }
+0395 else if(circle_type==CIRCLE_RUN_R)
+0396 {
+0397 centerCompute(track.t_pointsEdgeLeft,track.t_pointsEdgeLeft_size, 0);
+0398 CenterEdge_size = CenterEdge.size();
+0399 }
+0400 else if(circle_type==CIRCLE_OUT_R)
+0401 {
+0402 centerCompute(t_out_pointsEdgeLeft,t_out_pointsEdgeLeft_size, 0);
+0403 CenterEdge_size = CenterEdge.size();
+0404 }
+0405 else if(circle_type==CIRCLE_END_R)
+0406 {
+0407 centerCompute(track.t_pointsEdgeLeft,track.t_pointsEdgeLeft_size, 0);
+0408 CenterEdge_size = CenterEdge.size();
+0409 }
+0410 //左环岛拟合
+0411 if(circle_type==CIRCLE_BEGIN_L)
+0412 {
+0413 centerCompute(track.t_pointsEdgeRight,track.t_pointsEdgeRight_size, 1);
+0414 CenterEdge_size = CenterEdge.size();
+0415 }
+0416 else if(circle_type==CIRCLE_LOSELINE_L)
+0417 {
+0418 centerCompute(track.t_pointsEdgeRight,track.t_pointsEdgeRight_size, 1);
+0419 CenterEdge_size = CenterEdge.size();
+0420 }
+0421 else if(circle_type==CIRCLE_IN_L)
+0422 {
+0423 if(!track.is_left_straight)
+0424 {
+0425 centerCompute(track.t_pointsEdgeLeft,track.t_pointsEdgeLeft_size, 0);
+0426 }
+0427 centerCompute(t_circle_pointsEdgeRight,t_circle_pointsEdgeRight_size, 0);
+0428 //t_far_pointsEdgeLeft.erase(t_far_pointsEdgeLeft.begin(),t_far_pointsEdgeLeft.begin()+far_Lpt0_rpts0s_id_left);
+0429 if(!track.is_left_straight)
+0430 {
+0431 CenterEdge.erase(CenterEdge.begin(),CenterEdge.begin()+right_max_id);
+0432 }
+0433 CenterEdge_size = CenterEdge.size();
+0434 // centerCompute(t_circle_pointsEdgeRight,t_circle_pointsEdgeRight_size, 0);
+0435 // CenterEdge_size = CenterEdge.size();
+0436 }
+0437 else if(circle_type==CIRCLE_RUN_L)
+0438 {
+0439 centerCompute(track.t_pointsEdgeRight,track.t_pointsEdgeRight_size, 1);
+0440 CenterEdge_size = CenterEdge.size();
+0441 }
+0442 else if(circle_type==CIRCLE_OUT_L)
+0443 {
+0444 centerCompute_line(track.t_pointsEdgeRight,track.t_pointsEdgeRight_size, 1,t_pointsEdgeRight_k);
+0445 CenterEdge_size = CenterEdge.size();
+0446 }
+0447 else if(circle_type==CIRCLE_END_L)
+0448 {
+0449 centerCompute(track.t_pointsEdgeRight,track.t_pointsEdgeRight_size, 1);
+0450 CenterEdge_size = CenterEdge.size();
+0451 }
+0452 //右小环岛拟合
+0453 if(annulet_type==ANNULET_BEGIN_R)
+0454 {
+0455 centerCompute(track.t_pointsEdgeLeft,track.t_pointsEdgeLeft_size, 0);
+0456 CenterEdge_size = CenterEdge.size();
+0457 }
+0458 else if(annulet_type==ANNULET_LOSELINE_R)
+0459 {
+0460 centerCompute(track.t_pointsEdgeLeft,track.t_pointsEdgeLeft_size, 0);
+0461 CenterEdge_size = CenterEdge.size();
+0462 }
+0463 else if(annulet_type==ANNULET_IN_R)
+0464 {
+0465 centerCompute(t_annulet_pointsEdgeLeft,t_annulet_pointsEdgeLeft_size, 1);
+0466 CenterEdge_size = CenterEdge.size();
+0467 }
+0468 else if(annulet_type==ANNULET_RUN_R)
+0469 {
+0470 centerCompute(track.t_pointsEdgeLeft,track.t_pointsEdgeLeft_size, 0);
+0471 CenterEdge_size = CenterEdge.size();
+0472 }
+0473 else if(annulet_type==ANNULET_OUT_R)
+0474 {
+0475 centerCompute(t_out_pointsEdgeLeft,t_out_pointsEdgeLeft_size, 0);
+0476 CenterEdge_size = CenterEdge.size();
+0477 }
+0478 else if(annulet_type==ANNULET_END_R)
+0479 {
+0480 centerCompute(track.t_pointsEdgeLeft,track.t_pointsEdgeLeft_size, 0);
+0481 CenterEdge_size = CenterEdge.size();
+0482 }
+0483 //左小环岛拟合
+0484 if(annulet_type==ANNULET_BEGIN_L)
+0485 {
+0486 centerCompute(track.t_pointsEdgeRight,track.t_pointsEdgeRight_size, 1);
+0487 CenterEdge_size = CenterEdge.size();
+0488 }
+0489 else if(annulet_type==ANNULET_LOSELINE_L)
+0490 {
+0491 centerCompute(track.t_pointsEdgeRight,track.t_pointsEdgeRight_size, 1);
+0492 CenterEdge_size = CenterEdge.size();
+0493 }
+0494 else if(annulet_type==ANNULET_IN_L)
+0495 {
+0496 centerCompute(t_annulet_pointsEdgeRight,t_annulet_pointsEdgeRight_size, 0);
+0497 CenterEdge_size = CenterEdge.size();
+0498 // centerCompute(t_circle_pointsEdgeRight,t_circle_pointsEdgeRight_size, 0);
+0499 // CenterEdge_size = CenterEdge.size();
+0500 }
+0501 else if(annulet_type==ANNULET_RUN_L)
+0502 {
+0503 centerCompute(track.t_pointsEdgeRight,track.t_pointsEdgeRight_size, 1);
+0504 CenterEdge_size = CenterEdge.size();
+0505 }
+0506 else if(annulet_type==ANNULET_OUT_L)
+0507 {
+0508 centerCompute(t_out_pointsEdgeRight,t_out_pointsEdgeRight_size, 1);
+0509 CenterEdge_size = CenterEdge.size();
+0510 }
+0511 else if(annulet_type==ANNULET_END_L)
+0512 {
+0513 centerCompute(track.t_pointsEdgeRight,track.t_pointsEdgeRight_size, 1);
+0514 CenterEdge_size = CenterEdge.size();
+0515 }
+0516 //十字拟合
+0517 if(cross_type==CROSS_IN&&far_Lpt0_found_left&&far_Lpt1_found_left&&Lpt0_found_left)
+0518 {
+0519 centerCompute(t_far_pointsEdgeLeft,t_far_pointsEdgeLeft_size,0);
+0520 CenterEdge_size = CenterEdge.size();
+0521 }
+0522 else if(cross_type==CROSS_IN&&far_Lpt0_found_left&&far_Lpt1_found_left&&Lpt1_found_left)
+0523 {
+0524 centerCompute(t_far_pointsEdgeRight,t_far_pointsEdgeRight_size,1);
+0525 CenterEdge_size = CenterEdge.size();
+0526 }
+0527 else if(cross_type==CROSS_IN&&Lpt0_found_left&&t_far_pointsEdgeLeft_size>=6)
+0528 {
+0529 centerCompute(t_far_pointsEdgeLeft,t_far_pointsEdgeLeft_size,0);
+0530 CenterEdge_size = CenterEdge.size();
+0531 }
+0532 else if(cross_type==CROSS_IN&&Lpt1_found_left&&t_far_pointsEdgeRight_size>=6)
+0533 {
+0534 centerCompute(t_far_pointsEdgeRight,t_far_pointsEdgeRight_size,1);
+0535 CenterEdge_size = CenterEdge.size();
+0536 }
+0537 else if(cross_type==CROSS_IN&&far_Lpt0_found_left)
+0538 {
+0539 centerCompute(t_far_pointsEdgeLeft,t_far_pointsEdgeLeft_size,0);
+0540 CenterEdge_size = CenterEdge.size();
+0541 }
+0542 else if(cross_type==CROSS_IN&&far_Lpt1_found_left)
+0543 {
+0544 centerCompute(t_far_pointsEdgeRight,t_far_pointsEdgeRight_size,1);
+0545 CenterEdge_size = CenterEdge.size();
+0546 }
+0547 else if(cross_type==CROSS_IN&&t_far_pointsEdgeLeft_size>t_far_pointsEdgeRight_size)
+0548 {
+0549 centerCompute(t_far_pointsEdgeLeft,t_far_pointsEdgeLeft_size,0);
+0550 CenterEdge_size = CenterEdge.size();
+0551 }
+0552 else if(cross_type==CROSS_IN&&t_far_pointsEdgeLeft_size<t_far_pointsEdgeRight_size)
+0553 {
+0554 centerCompute(t_far_pointsEdgeRight,t_far_pointsEdgeRight_size,1);
+0555 CenterEdge_size = CenterEdge.size();
+0556 }
+0557 //障碍拟合
+0558 if(obs_type==OBS_IN_L)
+0559 {
+0560 centerCompute_obstacle(track.t_pointsEdgeRight,track.t_pointsEdgeRight_size, 1);
+0561 CenterEdge_size = CenterEdge.size();
+0562 }
+0563 else if(obs_type==OBS_IN_R)
+0564 {
+0565 centerCompute_obstacle(track.t_pointsEdgeLeft,track.t_pointsEdgeLeft_size, 0);
+0566 CenterEdge_size = CenterEdge.size();
+0567 }
+0568 else if(obs_type==OBS_OUT_L)
+0569 {
+0570 centerCompute_obstacle(track.t_pointsEdgeRight,track.t_pointsEdgeRight_size, 1);
+0571 CenterEdge_size = CenterEdge.size();
+0572 }
+0573 else if(obs_type==OBS_OUT_R)
+0574 {
+0575 centerCompute_obstacle(track.t_pointsEdgeLeft,track.t_pointsEdgeLeft_size, 0);
+0576 CenterEdge_size = CenterEdge.size();
+0577 }
+0578 if(ramp_type==RAMP_BEGIN&&track.t_pointsEdgeLeft_size>3&&track.t_pointsEdgeRight_size>3)
+0579 {
+0580 track_both_edge(track);
+0581 CenterEdge_size = CenterEdge.size();
+0582 }
+0583 else if(ramp_type==RAMP_IN&&track.t_pointsEdgeLeft_size>3&&track.t_pointsEdgeRight_size>3)
+0584 {
+0585 track_both_edge(track);
+0586 CenterEdge_size = CenterEdge.size();
+0587 }
+0588 //无元素拟合
+0589 if((element_type==ELEMENT_NONE||element_type==ZEBRA)&&track_type == 0)
+0590 {
+0591 centerCompute(track.t_pointsEdgeLeft,track.t_pointsEdgeLeft_size, 0);
+0592 CenterEdge_size = CenterEdge.size();
+0593 }
+0594 else if((element_type==ELEMENT_NONE||element_type==ZEBRA)&&track_type == 1)
+0595 {
+0596 centerCompute(track.t_pointsEdgeRight,track.t_pointsEdgeRight_size, 1);
+0597 CenterEdge_size = CenterEdge.size();
+0598 }
+0599 else if((element_type==ELEMENT_NONE||element_type==ZEBRA)&&track_type == 2)
+0600 {
+0601 track_both_edge(track);
+0602 CenterEdge_size = CenterEdge.size();
+0603 }
+0604 // if(track_type == 3)
+0605 // {
+0606 //     track_both_edge_circle_R(track);
+0607 // }
+0608 // else if(track_type == 3)
+0609 // {
+0610 //     centerCompute(t_circle_pointsEdgeLeft,t_circle_pointsEdgeLeft_size,1);
+0611 //     CenterEdge_size = CenterEdge.size();
+0612 // }
+0613 //printf("centerEdge_size:%d\n",CenterEdge_size);
+0614 }

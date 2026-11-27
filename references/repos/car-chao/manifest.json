@@ -1,0 +1,646 @@
+{
+  "id": "car-chao",
+  "source_id": "chao-8xx--car",
+  "url": "https://gitee.com/chao-8xx/car",
+  "revision": "cd8c64c6d7fc75f783264b3006d961b767300541",
+  "role": "基于Wuwu库的多线程竞赛应用",
+  "files": [
+    {
+      "path": "LICENSE",
+      "git_blob": "f98830299cad181a82c5aec85ec2147bbf90f1af",
+      "bytes": 336,
+      "type": "blob",
+      "sha256": "fe33e3229fc6994929add4be60453503bb14224cb4a3f5a600aeee03c2999dd9",
+      "url": "https://gitee.com/chao-8xx/car/blob/cd8c64c6d7fc75f783264b3006d961b767300541/LICENSE"
+    },
+    {
+      "path": "README.md",
+      "git_blob": "7907285f7691a0ca3ec7df676e02363b95066944",
+      "bytes": 6685,
+      "type": "blob",
+      "sha256": "675f31bea23516ed0ff0000357b672be7d9b39daa572af916457ba515dd228b1",
+      "url": "https://gitee.com/chao-8xx/car/blob/cd8c64c6d7fc75f783264b3006d961b767300541/README.md"
+    },
+    {
+      "path": "THIRD_PARTY_NOTICES.md",
+      "git_blob": "4bc2a6e942fe155ad6c7fd7913058b99da01db91",
+      "bytes": 1463,
+      "type": "blob",
+      "sha256": "e425c126948fad859be878086994c8ba224ea8b7c43a087dc32735f9f371bbd8",
+      "url": "https://gitee.com/chao-8xx/car/blob/cd8c64c6d7fc75f783264b3006d961b767300541/THIRD_PARTY_NOTICES.md"
+    },
+    {
+      "path": "WuwuSama_Icar_Project/smartCar/code/music.cc",
+      "git_blob": "098bbe053bb5a53f8d0923e321e9247c46ac43ee",
+      "bytes": 13281,
+      "type": "blob",
+      "sha256": "541cd02f40b462a25e0c309bbabb546274b978fbd66e102cf2eca364b4503b35",
+      "url": "https://gitee.com/chao-8xx/car/blob/cd8c64c6d7fc75f783264b3006d961b767300541/WuwuSama_Icar_Project/smartCar/code/music.cc"
+    },
+    {
+      "path": "WuwuSama_Icar_Project/smartCar/code/music.h",
+      "git_blob": "27a53a5c316b8adb34afdb2867c2a5d49d6936af",
+      "bytes": 1270,
+      "type": "blob",
+      "sha256": "8ebce53cfef5c941189530e69a3007adee63b487467bff7b5af65e27bbd9bd9b",
+      "url": "https://gitee.com/chao-8xx/car/blob/cd8c64c6d7fc75f783264b3006d961b767300541/WuwuSama_Icar_Project/smartCar/code/music.h"
+    },
+    {
+      "path": "WuwuSama_Icar_Project/smartCar/code/本文件夹说明.txt",
+      "git_blob": "567e858e88b9fbccfee0cb4d51ffd81a456c9fee",
+      "bytes": 49,
+      "type": "blob",
+      "sha256": "8cacce2fd869984bc52a888734b8826ee589d2fb9c5aab965ac7d965a72ba36e",
+      "url": "https://gitee.com/chao-8xx/car/blob/cd8c64c6d7fc75f783264b3006d961b767300541/WuwuSama_Icar_Project/smartCar/code/本文件夹说明.txt"
+    },
+    {
+      "path": "WuwuSama_Icar_Project/smartCar/include/headfile.h",
+      "git_blob": "7e105783aaad271f5b46cb00cf37d3483042be1b",
+      "bytes": 3708,
+      "type": "blob",
+      "sha256": "a8fba59fa48104c578a6f67b0c588fc78a7966548fa5228935c91bfb6e4e478a",
+      "url": "https://gitee.com/chao-8xx/car/blob/cd8c64c6d7fc75f783264b3006d961b767300541/WuwuSama_Icar_Project/smartCar/include/headfile.h"
+    },
+    {
+      "path": "WuwuSama_Icar_Project/smartCar/include/ww_brushless.h",
+      "git_blob": "a15b0fbf7f9ae4d814a19919bd5aa830edd1810d",
+      "bytes": 3355,
+      "type": "blob",
+      "sha256": "32df710beee999bb97c4611d4cd052d1680b90c075eed03590d3763c8b10cebf",
+      "url": "https://gitee.com/chao-8xx/car/blob/cd8c64c6d7fc75f783264b3006d961b767300541/WuwuSama_Icar_Project/smartCar/include/ww_brushless.h"
+    },
+    {
+      "path": "WuwuSama_Icar_Project/smartCar/include/ww_buzzer.h",
+      "git_blob": "3fbf72d2d65cd7fd7a1b574571418f5cf8976f60",
+      "bytes": 3797,
+      "type": "blob",
+      "sha256": "6da89c7bd47fa88e88787430850db2e89c93fda16ad949fa583573962a42862f",
+      "url": "https://gitee.com/chao-8xx/car/blob/cd8c64c6d7fc75f783264b3006d961b767300541/WuwuSama_Icar_Project/smartCar/include/ww_buzzer.h"
+    },
+    {
+      "path": "WuwuSama_Icar_Project/smartCar/include/ww_camera.h",
+      "git_blob": "c0a0acd3baf77a9cda55ab2aed844bef21ce68cd",
+      "bytes": 10066,
+      "type": "blob",
+      "sha256": "3e6ddad606194561ed0b6045f7d2f68568360bd2f97bf6fa1d8cfa32cd14bfc0",
+      "url": "https://gitee.com/chao-8xx/car/blob/cd8c64c6d7fc75f783264b3006d961b767300541/WuwuSama_Icar_Project/smartCar/include/ww_camera.h"
+    },
+    {
+      "path": "WuwuSama_Icar_Project/smartCar/include/ww_camera_server.h",
+      "git_blob": "90420a1239d058267d735f3cd5174af63648323c",
+      "bytes": 6861,
+      "type": "blob",
+      "sha256": "1004a7dd6a46a16f404ebb18bf98d9b9c647d6bddd19bec8f2e7b86b5a3e86b2",
+      "url": "https://gitee.com/chao-8xx/car/blob/cd8c64c6d7fc75f783264b3006d961b767300541/WuwuSama_Icar_Project/smartCar/include/ww_camera_server.h"
+    },
+    {
+      "path": "WuwuSama_Icar_Project/smartCar/include/ww_icm42688.h",
+      "git_blob": "566f36231a8047ea94171e95e0311ab28e03c4be",
+      "bytes": 6043,
+      "type": "blob",
+      "sha256": "26aec76bd673476182d150e0cef841fca1747baa46aef0e1626b2434da97739c",
+      "url": "https://gitee.com/chao-8xx/car/blob/cd8c64c6d7fc75f783264b3006d961b767300541/WuwuSama_Icar_Project/smartCar/include/ww_icm42688.h"
+    },
+    {
+      "path": "WuwuSama_Icar_Project/smartCar/include/ww_ioctl.h",
+      "git_blob": "1e0decdcddd530eb0e683bd67d4c5d7ba8c10d79",
+      "bytes": 6782,
+      "type": "blob",
+      "sha256": "4beddd4784ad7266ba1a6a37c9095f7b9ff74638bc70a8be8212178f71c6ee08",
+      "url": "https://gitee.com/chao-8xx/car/blob/cd8c64c6d7fc75f783264b3006d961b767300541/WuwuSama_Icar_Project/smartCar/include/ww_ioctl.h"
+    },
+    {
+      "path": "WuwuSama_Icar_Project/smartCar/include/ww_key.h",
+      "git_blob": "86475740f35ecf14e24a81b1b3714c795442ecd3",
+      "bytes": 2546,
+      "type": "blob",
+      "sha256": "66da0e5ccfc03cbdf86fc3f7f64067cac3c8fbd551f6a68592b67e46592843b3",
+      "url": "https://gitee.com/chao-8xx/car/blob/cd8c64c6d7fc75f783264b3006d961b767300541/WuwuSama_Icar_Project/smartCar/include/ww_key.h"
+    },
+    {
+      "path": "WuwuSama_Icar_Project/smartCar/include/ww_lcd.h",
+      "git_blob": "34bad42f4b06d205aeed4b57f721c8d3764527dc",
+      "bytes": 10277,
+      "type": "blob",
+      "sha256": "3ede52723bf1b75b7f7d4c9b94d7cbee2ba6bd56636221fdbe0150465081df8c",
+      "url": "https://gitee.com/chao-8xx/car/blob/cd8c64c6d7fc75f783264b3006d961b767300541/WuwuSama_Icar_Project/smartCar/include/ww_lcd.h"
+    },
+    {
+      "path": "WuwuSama_Icar_Project/smartCar/include/ww_motor.h",
+      "git_blob": "7086bd71a71fb8597d4347cf45a2ee1095233d10",
+      "bytes": 5515,
+      "type": "blob",
+      "sha256": "50f268c05008fdabd15c3159bbb0f6fd9ecc4c0d442feb35217444f637b4b61f",
+      "url": "https://gitee.com/chao-8xx/car/blob/cd8c64c6d7fc75f783264b3006d961b767300541/WuwuSama_Icar_Project/smartCar/include/ww_motor.h"
+    },
+    {
+      "path": "WuwuSama_Icar_Project/smartCar/include/ww_tcp_client.h",
+      "git_blob": "bd16e06fc0d81568aba73ca24c0252a3154632b1",
+      "bytes": 6092,
+      "type": "blob",
+      "sha256": "01d3c7b14a309249a5e5ac4c4657db6e8df6363bd25f31cc71675281254c97ad",
+      "url": "https://gitee.com/chao-8xx/car/blob/cd8c64c6d7fc75f783264b3006d961b767300541/WuwuSama_Icar_Project/smartCar/include/ww_tcp_client.h"
+    },
+    {
+      "path": "WuwuSama_Icar_Project/smartCar/include/ww_timerThread.h",
+      "git_blob": "7514c127ab55e72a3b9a1396747fb85c98c593ac",
+      "bytes": 3174,
+      "type": "blob",
+      "sha256": "fa278e48974a3b3d5345636edcd7770f2637c45a212053e2b963f268d000bda6",
+      "url": "https://gitee.com/chao-8xx/car/blob/cd8c64c6d7fc75f783264b3006d961b767300541/WuwuSama_Icar_Project/smartCar/include/ww_timerThread.h"
+    },
+    {
+      "path": "WuwuSama_Icar_Project/smartCar/include/ww_vl53l0x.h",
+      "git_blob": "9fdd872ffd9765a9a4ac93fed7130953f0b84bad",
+      "bytes": 3415,
+      "type": "blob",
+      "sha256": "f5029c6cf597e9d67c7b6fa32e9a8740700457c44036c7967d254a06759af81f",
+      "url": "https://gitee.com/chao-8xx/car/blob/cd8c64c6d7fc75f783264b3006d961b767300541/WuwuSama_Icar_Project/smartCar/include/ww_vl53l0x.h"
+    },
+    {
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_brushless.cc",
+      "git_blob": "9c13e1cfff072357bc7364c3b04c2865998d82e0",
+      "bytes": 3853,
+      "type": "blob",
+      "sha256": "fc775a72deb5bea646909425b3eacf2eb898b060db8aee02f453f8175687ce83",
+      "url": "https://gitee.com/chao-8xx/car/blob/cd8c64c6d7fc75f783264b3006d961b767300541/WuwuSama_Icar_Project/smartCar/wuwu_library/ww_brushless.cc"
+    },
+    {
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_buzzer.cc",
+      "git_blob": "4d330b7f5c2648d1e97db82dca682a650d8a569b",
+      "bytes": 4945,
+      "type": "blob",
+      "sha256": "28dd6514d9978a4f894d02d265723e7bf869847a8306983c5177db1ab62fe9a4",
+      "url": "https://gitee.com/chao-8xx/car/blob/cd8c64c6d7fc75f783264b3006d961b767300541/WuwuSama_Icar_Project/smartCar/wuwu_library/ww_buzzer.cc"
+    },
+    {
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_camera.cc",
+      "git_blob": "c7afcd9a415497214d3658066d1ed6afe1e51d3e",
+      "bytes": 16791,
+      "type": "blob",
+      "sha256": "24746549e18eadf45d1134932bf4170e62fe0232c2911238ba00d782b03a404f",
+      "url": "https://gitee.com/chao-8xx/car/blob/cd8c64c6d7fc75f783264b3006d961b767300541/WuwuSama_Icar_Project/smartCar/wuwu_library/ww_camera.cc"
+    },
+    {
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_camera_server.cc",
+      "git_blob": "c94d190ff06bc612643023a3b489ed8b31216d53",
+      "bytes": 57251,
+      "type": "blob",
+      "sha256": "2269350cc493d59d56fdf62d58b5b371b2113fb2351c7179808d389d43bf461e",
+      "url": "https://gitee.com/chao-8xx/car/blob/cd8c64c6d7fc75f783264b3006d961b767300541/WuwuSama_Icar_Project/smartCar/wuwu_library/ww_camera_server.cc"
+    },
+    {
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_icm42688.cc",
+      "git_blob": "f4ee5ba50fce44a6c159bf560b5d1b2f66c2521b",
+      "bytes": 13051,
+      "type": "blob",
+      "sha256": "019ac27eaf0d1629d8027d2108d6f7a59c658f2a505fc225f5eca64ff73eb6e3",
+      "url": "https://gitee.com/chao-8xx/car/blob/cd8c64c6d7fc75f783264b3006d961b767300541/WuwuSama_Icar_Project/smartCar/wuwu_library/ww_icm42688.cc"
+    },
+    {
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_key.cc",
+      "git_blob": "78cb56f3f3cf11d987e42ca21131fe8d8e3e2485",
+      "bytes": 5382,
+      "type": "blob",
+      "sha256": "9148b3bc16051beb934f14e7ab39da42e57dd06f3396ed96d70bca1973bda735",
+      "url": "https://gitee.com/chao-8xx/car/blob/cd8c64c6d7fc75f783264b3006d961b767300541/WuwuSama_Icar_Project/smartCar/wuwu_library/ww_key.cc"
+    },
+    {
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_lcd.cc",
+      "git_blob": "c86b1111b20ccd155c86a014774d7f9530b874f6",
+      "bytes": 46874,
+      "type": "blob",
+      "sha256": "20500c4e9fc7ee3c41ca485988788b5f63b82f3f7040c8b0d115255a1116ca9f",
+      "url": "https://gitee.com/chao-8xx/car/blob/cd8c64c6d7fc75f783264b3006d961b767300541/WuwuSama_Icar_Project/smartCar/wuwu_library/ww_lcd.cc"
+    },
+    {
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_motor.cc",
+      "git_blob": "30f58a3e4a5a307eb4e5a71be3567678f72a88ec",
+      "bytes": 6878,
+      "type": "blob",
+      "sha256": "56ec60881542c5b75e7886b96c095877b146a56607493d530b90f4b7922616ef",
+      "url": "https://gitee.com/chao-8xx/car/blob/cd8c64c6d7fc75f783264b3006d961b767300541/WuwuSama_Icar_Project/smartCar/wuwu_library/ww_motor.cc"
+    },
+    {
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_tcp_client.cc",
+      "git_blob": "371d22214f54d3a560f6f08645e876678330c5e8",
+      "bytes": 8382,
+      "type": "blob",
+      "sha256": "3323d9436aa728a68f28413a6bd8348557b80b10114f4c5132b372cfe9a2ec53",
+      "url": "https://gitee.com/chao-8xx/car/blob/cd8c64c6d7fc75f783264b3006d961b767300541/WuwuSama_Icar_Project/smartCar/wuwu_library/ww_tcp_client.cc"
+    },
+    {
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_timerThread.cc",
+      "git_blob": "6e31992d4f14872fb7e0b5957d2423c11fe76f91",
+      "bytes": 3481,
+      "type": "blob",
+      "sha256": "10d6d706edb2497bcef5b3c788af2074632e53ce2bfa0ae4c912618f4c4c27e6",
+      "url": "https://gitee.com/chao-8xx/car/blob/cd8c64c6d7fc75f783264b3006d961b767300541/WuwuSama_Icar_Project/smartCar/wuwu_library/ww_timerThread.cc"
+    },
+    {
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_vl53l0x.cc",
+      "git_blob": "e538af44a8b0191528db74748b3e888fdb5f9e2f",
+      "bytes": 3795,
+      "type": "blob",
+      "sha256": "c269ea52efe44f221fe0ca33fa4953f17b5833a8122af8959ad17dc92557ad82",
+      "url": "https://gitee.com/chao-8xx/car/blob/cd8c64c6d7fc75f783264b3006d961b767300541/WuwuSama_Icar_Project/smartCar/wuwu_library/ww_vl53l0x.cc"
+    },
+    {
+      "path": "run/CMakeLists.txt",
+      "git_blob": "1f3ec1e3d700052973450e0e2ce4641495b290ad",
+      "bytes": 2700,
+      "type": "blob",
+      "sha256": "7b8f805440d2e1f7546f499e066aea4c7ddda9d21eabdb727f97e9410f83b749",
+      "url": "https://gitee.com/chao-8xx/car/blob/cd8c64c6d7fc75f783264b3006d961b767300541/run/CMakeLists.txt"
+    },
+    {
+      "path": "run/README.md",
+      "git_blob": "9e24c6149e54f28508300b62855bd828bbbf69a9",
+      "bytes": 9927,
+      "type": "blob",
+      "sha256": "27b296737751579bdab3226721d0cf8b424feaa01cdfc10d096fb700f1b779d7",
+      "url": "https://gitee.com/chao-8xx/car/blob/cd8c64c6d7fc75f783264b3006d961b767300541/run/README.md"
+    },
+    {
+      "path": "run/build.sh",
+      "git_blob": "9563dfb7c052299e75626bcb108336d3689d7412",
+      "bytes": 608,
+      "type": "blob",
+      "sha256": "ab097c33fc513e35f0052fe87fa3010525466aec93f58908785744f4634ee4fe",
+      "url": "https://gitee.com/chao-8xx/car/blob/cd8c64c6d7fc75f783264b3006d961b767300541/run/build.sh"
+    },
+    {
+      "path": "run/inr/Madgwick_control.h",
+      "git_blob": "626412ff15d21e27097a59bbcb6a2cee51c64469",
+      "bytes": 829,
+      "type": "blob",
+      "sha256": "b489b040f70a76e94c2425ebd9dd567c71ec237c54ae5389db57dfb81398f268",
+      "url": "https://gitee.com/chao-8xx/car/blob/cd8c64c6d7fc75f783264b3006d961b767300541/run/inr/Madgwick_control.h"
+    },
+    {
+      "path": "run/inr/Mymenu.h",
+      "git_blob": "79575935b0e48f66edf7677950b71aa2e4ecfea7",
+      "bytes": 387,
+      "type": "blob",
+      "sha256": "56c68c1c52594f5ee0b3957d0aba74d4586a5d4121f3ef42ca4dcd3dea3a0396",
+      "url": "https://gitee.com/chao-8xx/car/blob/cd8c64c6d7fc75f783264b3006d961b767300541/run/inr/Mymenu.h"
+    },
+    {
+      "path": "run/inr/basic_control.h",
+      "git_blob": "286a0e81eeab06f08e03e77d4bcb7390681d8950",
+      "bytes": 1172,
+      "type": "blob",
+      "sha256": "5492780dbeeac19a7e97055cb89a61099f4192c560d97a7ff47723c5bd0d4a1b",
+      "url": "https://gitee.com/chao-8xx/car/blob/cd8c64c6d7fc75f783264b3006d961b767300541/run/inr/basic_control.h"
+    },
+    {
+      "path": "run/inr/buzzer_remind.h",
+      "git_blob": "83e26fa50ccb15d4c21e884cb469b2a528a60819",
+      "bytes": 940,
+      "type": "blob",
+      "sha256": "e5addc8753bc47fb584e36c71d500dc198b2aa057b8f5139be759288171335e1",
+      "url": "https://gitee.com/chao-8xx/car/blob/cd8c64c6d7fc75f783264b3006d961b767300541/run/inr/buzzer_remind.h"
+    },
+    {
+      "path": "run/inr/control_decision.h",
+      "git_blob": "8af4a40d2692557a6faf826bb9b10e3d3d9740ba",
+      "bytes": 1193,
+      "type": "blob",
+      "sha256": "5aea01f5167ddcbba5fe253a646a4faa59576d0befd87fdc2fa9f79f592c2caf",
+      "url": "https://gitee.com/chao-8xx/car/blob/cd8c64c6d7fc75f783264b3006d961b767300541/run/inr/control_decision.h"
+    },
+    {
+      "path": "run/inr/element_control.h",
+      "git_blob": "35b5d1ddca9689ad57f57977e8eb56c2792d31bb",
+      "bytes": 2901,
+      "type": "blob",
+      "sha256": "d4e9beced2f97c07c7db6825bc52b6bcdb3ebe4f7178fbc5eefc556525f4b7b2",
+      "url": "https://gitee.com/chao-8xx/car/blob/cd8c64c6d7fc75f783264b3006d961b767300541/run/inr/element_control.h"
+    },
+    {
+      "path": "run/inr/filter.h",
+      "git_blob": "e4ccc74d61e920c9ad93ce81e8c5782fa4565f42",
+      "bytes": 2727,
+      "type": "blob",
+      "sha256": "57c413a38a5b47b44fb3b886e415328e3df5358d736208c571b04cbaffb43b7d",
+      "url": "https://gitee.com/chao-8xx/car/blob/cd8c64c6d7fc75f783264b3006d961b767300541/run/inr/filter.h"
+    },
+    {
+      "path": "run/inr/global.h",
+      "git_blob": "7ef39dac26c3bd733092dfa327e2763012f0cacc",
+      "bytes": 4067,
+      "type": "blob",
+      "sha256": "4a630e4deae94009ae6df32ce5a3f5314f25c30caaffad42ad3c6b55b4a198ce",
+      "url": "https://gitee.com/chao-8xx/car/blob/cd8c64c6d7fc75f783264b3006d961b767300541/run/inr/global.h"
+    },
+    {
+      "path": "run/inr/ladrc.h",
+      "git_blob": "a66ae8bd0b6aa261f2c2fee4dd41a919fa93f865",
+      "bytes": 1799,
+      "type": "blob",
+      "sha256": "40084bc7323099099b9e718557bb339100b63dc0ee64599db418c50eb2a54526",
+      "url": "https://gitee.com/chao-8xx/car/blob/cd8c64c6d7fc75f783264b3006d961b767300541/run/inr/ladrc.h"
+    },
+    {
+      "path": "run/inr/menu.h",
+      "git_blob": "fc49113b23a1b5b430b311de1d565f37b9e10f0e",
+      "bytes": 1595,
+      "type": "blob",
+      "sha256": "07efd76355d1c20b0480d1a234a337a0cf97cc13bc1550df32a6a132b2652355",
+      "url": "https://gitee.com/chao-8xx/car/blob/cd8c64c6d7fc75f783264b3006d961b767300541/run/inr/menu.h"
+    },
+    {
+      "path": "run/inr/pid.h",
+      "git_blob": "9253eab0b8c43b33fb6a9986f9ee49eec3c5bc9d",
+      "bytes": 5969,
+      "type": "blob",
+      "sha256": "95684b2d3273464b2b9293c373e32c52ba88e6467c32bc6ba9739027ba79d98a",
+      "url": "https://gitee.com/chao-8xx/car/blob/cd8c64c6d7fc75f783264b3006d961b767300541/run/inr/pid.h"
+    },
+    {
+      "path": "run/inr/preprocess.h",
+      "git_blob": "e9b0bca8edc117d7cbe7b294d85b401db43eb157",
+      "bytes": 13011,
+      "type": "blob",
+      "sha256": "4a34d63df52aecb6ce3db8ed5f31a625badf0247daef1ae41620fa8bc7b67bd5",
+      "url": "https://gitee.com/chao-8xx/car/blob/cd8c64c6d7fc75f783264b3006d961b767300541/run/inr/preprocess.h"
+    },
+    {
+      "path": "run/inr/pthread_control.h",
+      "git_blob": "765d2577646fbc33d6ae6a7cce6113a1a1e1b9b0",
+      "bytes": 619,
+      "type": "blob",
+      "sha256": "a508df00107f3f1d27eac5920fcd4673b9342c0ae9eb53e50d633a476a4b368a",
+      "url": "https://gitee.com/chao-8xx/car/blob/cd8c64c6d7fc75f783264b3006d961b767300541/run/inr/pthread_control.h"
+    },
+    {
+      "path": "run/inr/vision_biaoding_auto.h",
+      "git_blob": "f41a33814696d26d49d9950517f64c639d6e7fea",
+      "bytes": 1193,
+      "type": "blob",
+      "sha256": "095a2c12e6431e0591cb9a76dda025d76bbf8be6960617e2f7b52d58fdda09de",
+      "url": "https://gitee.com/chao-8xx/car/blob/cd8c64c6d7fc75f783264b3006d961b767300541/run/inr/vision_biaoding_auto.h"
+    },
+    {
+      "path": "run/inr/vision_element_state.h",
+      "git_blob": "1550e87e001acb6f646f02859ead947e7ed6b3af",
+      "bytes": 14779,
+      "type": "blob",
+      "sha256": "74ffad96a076f49ad6b30a66099391ea49dcdd25c2822b5f62b81694bf8ee59e",
+      "url": "https://gitee.com/chao-8xx/car/blob/cd8c64c6d7fc75f783264b3006d961b767300541/run/inr/vision_element_state.h"
+    },
+    {
+      "path": "run/inr/vision_model.h",
+      "git_blob": "c94f42003109de441c41af7be11ed361d2771440",
+      "bytes": 11702,
+      "type": "blob",
+      "sha256": "be752d65600ab81fdc50201034a75363bc4512163171967c991c0bfd7d1c330c",
+      "url": "https://gitee.com/chao-8xx/car/blob/cd8c64c6d7fc75f783264b3006d961b767300541/run/inr/vision_model.h"
+    },
+    {
+      "path": "run/inr/vision_model_calibration.h",
+      "git_blob": "ddef5915c973df88f5cccbe794dd16361b89d8d6",
+      "bytes": 2154,
+      "type": "blob",
+      "sha256": "cf14bb69a006f885bf1752c3e7d635ab2598704ed5cc2000e5561ce9cfefb91d",
+      "url": "https://gitee.com/chao-8xx/car/blob/cd8c64c6d7fc75f783264b3006d961b767300541/run/inr/vision_model_calibration.h"
+    },
+    {
+      "path": "run/inr/vision_model_queue.h",
+      "git_blob": "7f45d28a26180be237495b99ad90351de6c96202",
+      "bytes": 1267,
+      "type": "blob",
+      "sha256": "2c2ba83e82bbf50fb3108c26d9cd3f237203b983f5c2f2cad8363b25d322beb2",
+      "url": "https://gitee.com/chao-8xx/car/blob/cd8c64c6d7fc75f783264b3006d961b767300541/run/inr/vision_model_queue.h"
+    },
+    {
+      "path": "run/inr/vision_point_state.h",
+      "git_blob": "7ed9fa9e604edba3d9ca9c61df9b5f0fa8caa72a",
+      "bytes": 13668,
+      "type": "blob",
+      "sha256": "be15bbdb33338f31f2c32ca340f8a8c7693fdf9949d58a604a161c89183664f4",
+      "url": "https://gitee.com/chao-8xx/car/blob/cd8c64c6d7fc75f783264b3006d961b767300541/run/inr/vision_point_state.h"
+    },
+    {
+      "path": "run/inr/vision_tracking_base.h",
+      "git_blob": "4cc63343c8cce9a13ec4f03701b77403608b98a5",
+      "bytes": 10370,
+      "type": "blob",
+      "sha256": "2800cd1e1c4a9320ecdd05aceb6c39926c7c6c95c5188e546a041ecd16b76d3e",
+      "url": "https://gitee.com/chao-8xx/car/blob/cd8c64c6d7fc75f783264b3006d961b767300541/run/inr/vision_tracking_base.h"
+    },
+    {
+      "path": "run/inr/vofa.h",
+      "git_blob": "a842a8c9ee5278839f890c6fb6695f41346d9c8e",
+      "bytes": 406,
+      "type": "blob",
+      "sha256": "4880e9c36e104bb5cf27ec1493351f0caadf056d7d82e123dcb1f21befe7dc50",
+      "url": "https://gitee.com/chao-8xx/car/blob/cd8c64c6d7fc75f783264b3006d961b767300541/run/inr/vofa.h"
+    },
+    {
+      "path": "run/ipm_config.json",
+      "git_blob": "f7ad9828f12501386de4baece93d7860f849af0e",
+      "bytes": 331,
+      "type": "blob",
+      "sha256": "e4fa443d8f1491da995c97245beb7d04cb5287305a6603d6ad46092e2700ed0b",
+      "url": "https://gitee.com/chao-8xx/car/blob/cd8c64c6d7fc75f783264b3006d961b767300541/run/ipm_config.json"
+    },
+    {
+      "path": "run/main.cc",
+      "git_blob": "dccb35ef3936b087a4f2982e9dce773ccf62d36d",
+      "bytes": 39292,
+      "type": "blob",
+      "sha256": "7a46c0b91b2e0c4168283e2103c3666838344247d8d7a6cfc244b1ae2b450984",
+      "url": "https://gitee.com/chao-8xx/car/blob/cd8c64c6d7fc75f783264b3006d961b767300541/run/main.cc"
+    },
+    {
+      "path": "run/note.txt",
+      "git_blob": "12c432bba7e3f92bb5de9ce80b937757ebf85aa0",
+      "bytes": 7152,
+      "type": "blob",
+      "sha256": "fabbe149628d9c001696dd748683a6bb772cbd74ef57f7700a985a1b7dd9babd",
+      "url": "https://gitee.com/chao-8xx/car/blob/cd8c64c6d7fc75f783264b3006d961b767300541/run/note.txt"
+    },
+    {
+      "path": "run/preprocess.json",
+      "git_blob": "09043602e39e03259586b54564985207e850007f",
+      "bytes": 5281,
+      "type": "blob",
+      "sha256": "343cf95af96cb68aaab3b11718f4cd47d79bf6235a16d3f2ed2d1ff10e916992",
+      "url": "https://gitee.com/chao-8xx/car/blob/cd8c64c6d7fc75f783264b3006d961b767300541/run/preprocess.json"
+    },
+    {
+      "path": "run/src/Madgwick_control.cc",
+      "git_blob": "43890ebccd684cd36911ec31cae4758e4993e17e",
+      "bytes": 7448,
+      "type": "blob",
+      "sha256": "9ead9619e2a57ffc7435743d640198809fc8b54f9f6c84fc20e89adb868e5a1a",
+      "url": "https://gitee.com/chao-8xx/car/blob/cd8c64c6d7fc75f783264b3006d961b767300541/run/src/Madgwick_control.cc"
+    },
+    {
+      "path": "run/src/Mymenu.cc",
+      "git_blob": "ef0208c478e77a7bfc739bf364c7edd63af380da",
+      "bytes": 41946,
+      "type": "blob",
+      "sha256": "9c8951bfaeb0e1cca7e608facb047874ed6e66647544ef313549c0e66a71c7f6",
+      "url": "https://gitee.com/chao-8xx/car/blob/cd8c64c6d7fc75f783264b3006d961b767300541/run/src/Mymenu.cc"
+    },
+    {
+      "path": "run/src/basic_control.cc",
+      "git_blob": "ec46b422e9c07bc9918d96b552f10dd8dac772cc",
+      "bytes": 12743,
+      "type": "blob",
+      "sha256": "e503221a129188e190fab2a55afc55930b24e175eaa9c1855aa70753924b7f10",
+      "url": "https://gitee.com/chao-8xx/car/blob/cd8c64c6d7fc75f783264b3006d961b767300541/run/src/basic_control.cc"
+    },
+    {
+      "path": "run/src/buzzer_remind.cc",
+      "git_blob": "a242faca1ee453c66ec01d5a0a294bd9c2b08299",
+      "bytes": 3927,
+      "type": "blob",
+      "sha256": "a86c81a725400fee9445d04bad87254733440322e9b546b3840718c73913eedc",
+      "url": "https://gitee.com/chao-8xx/car/blob/cd8c64c6d7fc75f783264b3006d961b767300541/run/src/buzzer_remind.cc"
+    },
+    {
+      "path": "run/src/control_decision.cc",
+      "git_blob": "ba772ab14327a7b1abcd0a838ed0fe62966139ed",
+      "bytes": 20636,
+      "type": "blob",
+      "sha256": "dbaf1c14da331ff37117bf03bc0f98c7a637e732aef7637fba51b5c29353d2dc",
+      "url": "https://gitee.com/chao-8xx/car/blob/cd8c64c6d7fc75f783264b3006d961b767300541/run/src/control_decision.cc"
+    },
+    {
+      "path": "run/src/element_control.cc",
+      "git_blob": "e9c9ec1939ae8ce16b4ee0ddad64301eebf5520f",
+      "bytes": 83911,
+      "type": "blob",
+      "sha256": "93fbc2e9fee972b1438433e423566b58ccb2e4bf9f9f8c5ccaea7790693e72d8",
+      "url": "https://gitee.com/chao-8xx/car/blob/cd8c64c6d7fc75f783264b3006d961b767300541/run/src/element_control.cc"
+    },
+    {
+      "path": "run/src/filter.cc",
+      "git_blob": "62a1a33499c8fcd2d891853bd24f2498bc7a6091",
+      "bytes": 5011,
+      "type": "blob",
+      "sha256": "bb13d67d9cc3f5b6a49b179c7471702a3a4d6582b07dc96832a25fd9f61c13e9",
+      "url": "https://gitee.com/chao-8xx/car/blob/cd8c64c6d7fc75f783264b3006d961b767300541/run/src/filter.cc"
+    },
+    {
+      "path": "run/src/global.cc",
+      "git_blob": "eeff2713e2f29de36e34e0f9fa326a0aaac5d096",
+      "bytes": 5676,
+      "type": "blob",
+      "sha256": "5aa2c631de00a7ca94ecc38e486b2f8991fc43de8a6e8575ec1255c5b842d2f8",
+      "url": "https://gitee.com/chao-8xx/car/blob/cd8c64c6d7fc75f783264b3006d961b767300541/run/src/global.cc"
+    },
+    {
+      "path": "run/src/ladrc.cc",
+      "git_blob": "ff4375c371e0f93bc6741b04c474ca3c730ec79b",
+      "bytes": 11144,
+      "type": "blob",
+      "sha256": "a937fb62b19cd55670958719d2bcecbdfc952092d8cecd6bd6afcb1ba485145a",
+      "url": "https://gitee.com/chao-8xx/car/blob/cd8c64c6d7fc75f783264b3006d961b767300541/run/src/ladrc.cc"
+    },
+    {
+      "path": "run/src/menu.cc",
+      "git_blob": "3a93196da31eff2d1744c8eec71b939aa0d2edfa",
+      "bytes": 2295,
+      "type": "blob",
+      "sha256": "30ee217abc2cbab065e6dc051f9fbd3ba0be6000b3987824dc3d1f9c2c2a3eef",
+      "url": "https://gitee.com/chao-8xx/car/blob/cd8c64c6d7fc75f783264b3006d961b767300541/run/src/menu.cc"
+    },
+    {
+      "path": "run/src/pid.cc",
+      "git_blob": "394f93ee89d3e0d3a83095b28e7aeea5d9d892a6",
+      "bytes": 17815,
+      "type": "blob",
+      "sha256": "9f127f7f3270fd380fccda4aaa311cc2dcb71332dd568c185a76b4d9ec65a557",
+      "url": "https://gitee.com/chao-8xx/car/blob/cd8c64c6d7fc75f783264b3006d961b767300541/run/src/pid.cc"
+    },
+    {
+      "path": "run/src/preprocess.cc",
+      "git_blob": "eebcd1f0b285aac4c9f44bc92b8a6ca239a6fcb4",
+      "bytes": 45088,
+      "type": "blob",
+      "sha256": "1e61cd418f548ec3d8be63bbeb44017f1df315971f4411589baaf814c643ea3f",
+      "url": "https://gitee.com/chao-8xx/car/blob/cd8c64c6d7fc75f783264b3006d961b767300541/run/src/preprocess.cc"
+    },
+    {
+      "path": "run/src/pthread_control.cc",
+      "git_blob": "32e513884a26500f04790d7c665ecac3fca89c4e",
+      "bytes": 11083,
+      "type": "blob",
+      "sha256": "09b6d72f212c3dcaf0e03280da89b2aa6dc2272e5c244b61270f0c8fd7587b5f",
+      "url": "https://gitee.com/chao-8xx/car/blob/cd8c64c6d7fc75f783264b3006d961b767300541/run/src/pthread_control.cc"
+    },
+    {
+      "path": "run/src/vision_biaoding_auto.cc",
+      "git_blob": "3e82f9d11c43a69029fced7f112f23c804e0930a",
+      "bytes": 8145,
+      "type": "blob",
+      "sha256": "856b2b7d8a8720d77e68c9d64bc6e068c445490ab6eb2fc3b3691baaf0bc95e6",
+      "url": "https://gitee.com/chao-8xx/car/blob/cd8c64c6d7fc75f783264b3006d961b767300541/run/src/vision_biaoding_auto.cc"
+    },
+    {
+      "path": "run/src/vision_element_state.cc",
+      "git_blob": "1e02c8b4afedac7123bc044a13ce89deae12c41d",
+      "bytes": 125017,
+      "type": "blob",
+      "sha256": "5b54f3e67c05f449077f59fb34b3899be5dd05b60344400942120a496e0eec54",
+      "url": "https://gitee.com/chao-8xx/car/blob/cd8c64c6d7fc75f783264b3006d961b767300541/run/src/vision_element_state.cc"
+    },
+    {
+      "path": "run/src/vision_model.cc",
+      "git_blob": "7ca74627920ba93c197f48f5e659c6432d7160d2",
+      "bytes": 120353,
+      "type": "blob",
+      "sha256": "d0e1a6196bf10f585c626f4fe401386916fa9bb787fb5981cedd92fffab9907a",
+      "url": "https://gitee.com/chao-8xx/car/blob/cd8c64c6d7fc75f783264b3006d961b767300541/run/src/vision_model.cc"
+    },
+    {
+      "path": "run/src/vision_model_calibration.cc",
+      "git_blob": "e6eadef3c459d7d79a4141c91718f8e212da1cec",
+      "bytes": 12416,
+      "type": "blob",
+      "sha256": "0c3228d7abd147c1dca7a280841581c43439b5da441122728a59c235e7f8f60f",
+      "url": "https://gitee.com/chao-8xx/car/blob/cd8c64c6d7fc75f783264b3006d961b767300541/run/src/vision_model_calibration.cc"
+    },
+    {
+      "path": "run/src/vision_model_queue.cc",
+      "git_blob": "d71435cfd181fd4ade87e10782886527c9d7afdc",
+      "bytes": 2909,
+      "type": "blob",
+      "sha256": "c7827ffdf1736092e2859c7f3604ea255f1e08d68733dca13b4fb18f93bbc56e",
+      "url": "https://gitee.com/chao-8xx/car/blob/cd8c64c6d7fc75f783264b3006d961b767300541/run/src/vision_model_queue.cc"
+    },
+    {
+      "path": "run/src/vision_point_state.cc",
+      "git_blob": "17a55b7e23260786fc0e40110381552fb154d64d",
+      "bytes": 112641,
+      "type": "blob",
+      "sha256": "25942d0c597f331f0f1b6509779e184483b6b126921f6d90c65efcab80036521",
+      "url": "https://gitee.com/chao-8xx/car/blob/cd8c64c6d7fc75f783264b3006d961b767300541/run/src/vision_point_state.cc"
+    },
+    {
+      "path": "run/src/vision_tracking_base.cc",
+      "git_blob": "480c231e81a144de2585954d96c987de43d7bf15",
+      "bytes": 97700,
+      "type": "blob",
+      "sha256": "c2b14d3ff79a4e0d91a0a0e88af8702dbacd49e390d3d7a632ee10f8ed13976e",
+      "url": "https://gitee.com/chao-8xx/car/blob/cd8c64c6d7fc75f783264b3006d961b767300541/run/src/vision_tracking_base.cc"
+    },
+    {
+      "path": "run/src/vofa.cc",
+      "git_blob": "29af8e4c3745ee96d9c481655bfab6d19ecf9003",
+      "bytes": 1374,
+      "type": "blob",
+      "sha256": "0a3a7ef579d95364a9b0875ffcd821b4de8d37e8ca4b613c605713af72e50ad6",
+      "url": "https://gitee.com/chao-8xx/car/blob/cd8c64c6d7fc75f783264b3006d961b767300541/run/src/vofa.cc"
+    }
+  ],
+  "tree_files": 100035,
+  "tree_truncated": false,
+  "scope": "Selected source fetched/hash-verified; focused entrypoint/algorithm/interface review, not exhaustive line-by-line proof.",
+  "runtime_validation": "No full firmware build, hardware execution or vehicle test.",
+  "alias_of": null
+}

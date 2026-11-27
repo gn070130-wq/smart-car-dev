@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "task": null,
+  "engine": null,
+  "engine_version": null,
+  "platform": null,
+  "model_files": [],
+  "inputs": [
+    {
+      "name": null,
+      "shape": null,
+      "shape_signature": null,
+      "layout": null,
+      "dtype": null,
+      "source_color": null,
+      "tensor_color": null,
+      "resize_mode": null,
+      "mean": null,
+      "normalization_scale": null,
+      "quantization_scale": null,
+      "zero_point": null
+    }
+  ],
+  "outputs": [
+    {
+      "name": null,
+      "shape": null,
+      "dtype": null,
+      "meaning": null,
+      "already_softmax": null
+    }
+  ],
+  "postprocess": {
+    "decoder": null,
+    "anchors": null,
+    "strides": null,
+    "nms": null,
+    "coordinate_mapping": null
+  },
+  "labels_in_output_order": null,
+  "label_to_semantic_action": null,
+  "temporal": {
+    "source_frame_required": true,
+    "clock_domain": null,
+    "max_age_ms": null,
+    "confirmation_rule": null
+  },
+  "validation": {
+    "graph_contract": null,
+    "runtime_invoke": null,
+    "pc_board_parity": null,
+    "held_out_accuracy": null,
+    "end_to_end_latency": null,
+    "vehicle_task_success": null
+  }
+}

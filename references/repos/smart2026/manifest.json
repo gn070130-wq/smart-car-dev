@@ -1,0 +1,350 @@
+{
+  "id": "smart2026",
+  "source_id": "damon3964--smart2026",
+  "url": "https://gitee.com/damon3964/smart2026",
+  "revision": "e271dd5ddde2f007396c28bec8f1c8802d81d981",
+  "role": "Wuwu设备层上的视觉/场景/检测控制",
+  "files": [
+    {
+      "path": "CMakeLists.txt",
+      "git_blob": "e559c92a99a8bbfe4799a0680456adc3168097c5",
+      "bytes": 1794,
+      "type": "blob",
+      "sha256": "a616583f1cf1f079adf3e25ec27155f9f9b81543b62f5d10fa32d18d6ad0d14b",
+      "url": "https://gitee.com/damon3964/smart2026/blob/e271dd5ddde2f007396c28bec8f1c8802d81d981/CMakeLists.txt"
+    },
+    {
+      "path": "README.md",
+      "git_blob": "0cb50958858b162dec39753eed49a509fbf1633a",
+      "bytes": 2838,
+      "type": "blob",
+      "sha256": "30ab348aa61421882219cd651e3047767c67f31f63d5b3657e43e9d21af3650b",
+      "url": "https://gitee.com/damon3964/smart2026/blob/e271dd5ddde2f007396c28bec8f1c8802d81d981/README.md"
+    },
+    {
+      "path": "smartCar/code/car_control.cc",
+      "git_blob": "071a25e4d879f734802aeacdd0a499741933ecf5",
+      "bytes": 2007,
+      "type": "blob",
+      "sha256": "ddba4e37bd40511b920a9eb924135a733406b47ea2d5880e33def1735184069c",
+      "url": "https://gitee.com/damon3964/smart2026/blob/e271dd5ddde2f007396c28bec8f1c8802d81d981/smartCar/code/car_control.cc"
+    },
+    {
+      "path": "smartCar/code/image_proc.cc",
+      "git_blob": "0991d69634b5872b6d97d7a5ab0bb811d766d291",
+      "bytes": 4666,
+      "type": "blob",
+      "sha256": "f197984900af8aa68eb399c6a7cbbbf1992f157aacf3c33d45f9c115e69186b0",
+      "url": "https://gitee.com/damon3964/smart2026/blob/e271dd5ddde2f007396c28bec8f1c8802d81d981/smartCar/code/image_proc.cc"
+    },
+    {
+      "path": "smartCar/code/line_detect.cc",
+      "git_blob": "a950d137493ec7b7b9f5250722f00a9f6f7e9576",
+      "bytes": 6409,
+      "type": "blob",
+      "sha256": "05db0c86658b89fa5f140881874dc4ed97ee8665582f86c88ec493cc17040e73",
+      "url": "https://gitee.com/damon3964/smart2026/blob/e271dd5ddde2f007396c28bec8f1c8802d81d981/smartCar/code/line_detect.cc"
+    },
+    {
+      "path": "smartCar/code/pid.cc",
+      "git_blob": "2572aefd5df3a05962d97a032a742796523788b8",
+      "bytes": 2467,
+      "type": "blob",
+      "sha256": "15c820edd0859c60c7038be78129241a601e5a514295cf09279767ac25c87719",
+      "url": "https://gitee.com/damon3964/smart2026/blob/e271dd5ddde2f007396c28bec8f1c8802d81d981/smartCar/code/pid.cc"
+    },
+    {
+      "path": "smartCar/code/scene_detect.cc",
+      "git_blob": "fced7203e0fa9070f2d59db4d2739ef0319977eb",
+      "bytes": 14368,
+      "type": "blob",
+      "sha256": "3788e36ed8e80e8758479b587134ff1c3147fa4816284881598b4cca445adbcf",
+      "url": "https://gitee.com/damon3964/smart2026/blob/e271dd5ddde2f007396c28bec8f1c8802d81d981/smartCar/code/scene_detect.cc"
+    },
+    {
+      "path": "smartCar/code/yolov5_detect.cc",
+      "git_blob": "b7a860c62dfb9607f8bdb03fd2d30cce817ff499",
+      "bytes": 10300,
+      "type": "blob",
+      "sha256": "544502820fb9a534a019091dc166765f198ca9da5a42596b50dd7fc9ba9eb8e5",
+      "url": "https://gitee.com/damon3964/smart2026/blob/e271dd5ddde2f007396c28bec8f1c8802d81d981/smartCar/code/yolov5_detect.cc"
+    },
+    {
+      "path": "smartCar/include/car_control.h",
+      "git_blob": "2b8b988adf30a8cace96dd3704903f5c4dadeda8",
+      "bytes": 645,
+      "type": "blob",
+      "sha256": "805ef1f69cbff82457339ea1171d7d3078d781b7b8bf910e2cc14c04b2ab3d62",
+      "url": "https://gitee.com/damon3964/smart2026/blob/e271dd5ddde2f007396c28bec8f1c8802d81d981/smartCar/include/car_control.h"
+    },
+    {
+      "path": "smartCar/include/headfile.h",
+      "git_blob": "bcf54fc030e813677378895514e4d4edadb2f176",
+      "bytes": 2870,
+      "type": "blob",
+      "sha256": "7dd37bb4faf91efcb8921cb2f792d6239aabf61c5ca20d5cea0e68e16a34a307",
+      "url": "https://gitee.com/damon3964/smart2026/blob/e271dd5ddde2f007396c28bec8f1c8802d81d981/smartCar/include/headfile.h"
+    },
+    {
+      "path": "smartCar/include/image_proc.h",
+      "git_blob": "9500d830dd24ccc767511584e6c0de65bc1b5d60",
+      "bytes": 2118,
+      "type": "blob",
+      "sha256": "be5084402742e9adaea32afafacab69c7474c875499536c983c1bce180e80895",
+      "url": "https://gitee.com/damon3964/smart2026/blob/e271dd5ddde2f007396c28bec8f1c8802d81d981/smartCar/include/image_proc.h"
+    },
+    {
+      "path": "smartCar/include/line_detect.h",
+      "git_blob": "03af44502c5b32e5b11d68f18d88930a52cc3796",
+      "bytes": 3083,
+      "type": "blob",
+      "sha256": "f33cffe6a7056dab0a5c5bb5fea18fb4a9afead4c4a9f9ae7f8214b76a91470d",
+      "url": "https://gitee.com/damon3964/smart2026/blob/e271dd5ddde2f007396c28bec8f1c8802d81d981/smartCar/include/line_detect.h"
+    },
+    {
+      "path": "smartCar/include/pid.h",
+      "git_blob": "6be73188c9731887385b218abd5b2e3c0110800f",
+      "bytes": 780,
+      "type": "blob",
+      "sha256": "3e3f7c1372578b82ae9b70e5ae00753d62707ede3d3f2c02035472848128f15f",
+      "url": "https://gitee.com/damon3964/smart2026/blob/e271dd5ddde2f007396c28bec8f1c8802d81d981/smartCar/include/pid.h"
+    },
+    {
+      "path": "smartCar/include/scene_detect.h",
+      "git_blob": "3fd84837f4d8071315c7d08913f57b190e8e2484",
+      "bytes": 3886,
+      "type": "blob",
+      "sha256": "b240f2c0f3a855aaa3ab6490c3fc55bc5f86380dd3b70aed2b8cb73a57663cbb",
+      "url": "https://gitee.com/damon3964/smart2026/blob/e271dd5ddde2f007396c28bec8f1c8802d81d981/smartCar/include/scene_detect.h"
+    },
+    {
+      "path": "smartCar/include/ww_brushless.h",
+      "git_blob": "00c5d6ae436287b2f11cf442f1ad7a1d823fcbc3",
+      "bytes": 3332,
+      "type": "blob",
+      "sha256": "6206ec0064aa3211b4eb7eed0510ac6d6cf74a5f9061885ef20fc0e3a3f53606",
+      "url": "https://gitee.com/damon3964/smart2026/blob/e271dd5ddde2f007396c28bec8f1c8802d81d981/smartCar/include/ww_brushless.h"
+    },
+    {
+      "path": "smartCar/include/ww_buzzer.h",
+      "git_blob": "3fbf72d2d65cd7fd7a1b574571418f5cf8976f60",
+      "bytes": 3797,
+      "type": "blob",
+      "sha256": "6da89c7bd47fa88e88787430850db2e89c93fda16ad949fa583573962a42862f",
+      "url": "https://gitee.com/damon3964/smart2026/blob/e271dd5ddde2f007396c28bec8f1c8802d81d981/smartCar/include/ww_buzzer.h"
+    },
+    {
+      "path": "smartCar/include/ww_camera.h",
+      "git_blob": "62763990005da7c2625fc6d9a70b6601b7ac2426",
+      "bytes": 7028,
+      "type": "blob",
+      "sha256": "0901f91c075946a05c1575f7f2578816957105676a6a013e98c3acb35cc487c3",
+      "url": "https://gitee.com/damon3964/smart2026/blob/e271dd5ddde2f007396c28bec8f1c8802d81d981/smartCar/include/ww_camera.h"
+    },
+    {
+      "path": "smartCar/include/ww_icm42688.h",
+      "git_blob": "e3dea56570d550e65fe03928f06c9a63002f671a",
+      "bytes": 4804,
+      "type": "blob",
+      "sha256": "3d179abb1062609208c31e71e9958be8343397f4ef491c3be901b2f19e909486",
+      "url": "https://gitee.com/damon3964/smart2026/blob/e271dd5ddde2f007396c28bec8f1c8802d81d981/smartCar/include/ww_icm42688.h"
+    },
+    {
+      "path": "smartCar/include/ww_ioctl.h",
+      "git_blob": "1e0decdcddd530eb0e683bd67d4c5d7ba8c10d79",
+      "bytes": 6782,
+      "type": "blob",
+      "sha256": "4beddd4784ad7266ba1a6a37c9095f7b9ff74638bc70a8be8212178f71c6ee08",
+      "url": "https://gitee.com/damon3964/smart2026/blob/e271dd5ddde2f007396c28bec8f1c8802d81d981/smartCar/include/ww_ioctl.h"
+    },
+    {
+      "path": "smartCar/include/ww_key.h",
+      "git_blob": "86475740f35ecf14e24a81b1b3714c795442ecd3",
+      "bytes": 2546,
+      "type": "blob",
+      "sha256": "66da0e5ccfc03cbdf86fc3f7f64067cac3c8fbd551f6a68592b67e46592843b3",
+      "url": "https://gitee.com/damon3964/smart2026/blob/e271dd5ddde2f007396c28bec8f1c8802d81d981/smartCar/include/ww_key.h"
+    },
+    {
+      "path": "smartCar/include/ww_lcd.h",
+      "git_blob": "c4139c1d21c720053cfd3fdb8b1fc6844cfeb86e",
+      "bytes": 8627,
+      "type": "blob",
+      "sha256": "256de65cb6630ad2256c759fa217cabf2fd1176c6fce6ae238b9e9030ae7e1d0",
+      "url": "https://gitee.com/damon3964/smart2026/blob/e271dd5ddde2f007396c28bec8f1c8802d81d981/smartCar/include/ww_lcd.h"
+    },
+    {
+      "path": "smartCar/include/ww_motor.h",
+      "git_blob": "7086bd71a71fb8597d4347cf45a2ee1095233d10",
+      "bytes": 5515,
+      "type": "blob",
+      "sha256": "50f268c05008fdabd15c3159bbb0f6fd9ecc4c0d442feb35217444f637b4b61f",
+      "url": "https://gitee.com/damon3964/smart2026/blob/e271dd5ddde2f007396c28bec8f1c8802d81d981/smartCar/include/ww_motor.h"
+    },
+    {
+      "path": "smartCar/include/ww_tcp_client.h",
+      "git_blob": "025238c904bb2ddc751f1e731ad7478dc35cfe64",
+      "bytes": 6091,
+      "type": "blob",
+      "sha256": "12b32293008a02ed22ae1c63df8e8f5ae72a4c139ef0e43896c18f4fe82be95c",
+      "url": "https://gitee.com/damon3964/smart2026/blob/e271dd5ddde2f007396c28bec8f1c8802d81d981/smartCar/include/ww_tcp_client.h"
+    },
+    {
+      "path": "smartCar/include/ww_timerThread.h",
+      "git_blob": "a266db975d495fa30a98239055380db139621f77",
+      "bytes": 3009,
+      "type": "blob",
+      "sha256": "d98a85ebb381dab5a0ae1200a5748415beaf7626a121b55f6dc25bf9cae4eab3",
+      "url": "https://gitee.com/damon3964/smart2026/blob/e271dd5ddde2f007396c28bec8f1c8802d81d981/smartCar/include/ww_timerThread.h"
+    },
+    {
+      "path": "smartCar/include/ww_transmission.h",
+      "git_blob": "cbe2856dfaabd6eda7e0ddeea22f72d1dc7547f0",
+      "bytes": 5797,
+      "type": "blob",
+      "sha256": "edaa7081e9b0a0da85efbe3630466be71b244949162cbdb8b52a8e9c9dec7a4c",
+      "url": "https://gitee.com/damon3964/smart2026/blob/e271dd5ddde2f007396c28bec8f1c8802d81d981/smartCar/include/ww_transmission.h"
+    },
+    {
+      "path": "smartCar/include/ww_vl53l0x.h",
+      "git_blob": "a2f5fa77ba0b3f3a10bafb5ebf15f80cfffbc6c1",
+      "bytes": 3416,
+      "type": "blob",
+      "sha256": "e6345b214c4ab047b57af37af22364485cb9332610525abb52de90cf65da6c3f",
+      "url": "https://gitee.com/damon3964/smart2026/blob/e271dd5ddde2f007396c28bec8f1c8802d81d981/smartCar/include/ww_vl53l0x.h"
+    },
+    {
+      "path": "smartCar/include/yolov5_detect.h",
+      "git_blob": "d8aea2346c7d1237dab9c0400eeda9087e80f113",
+      "bytes": 2262,
+      "type": "blob",
+      "sha256": "ee5cd38f91e945a4fbefa210fd8fc7eb961250cc6c10767b5382400b9dc78bd2",
+      "url": "https://gitee.com/damon3964/smart2026/blob/e271dd5ddde2f007396c28bec8f1c8802d81d981/smartCar/include/yolov5_detect.h"
+    },
+    {
+      "path": "smartCar/main.cc",
+      "git_blob": "1d91eb79c5d264a170b813bddc530d4d81a18cf7",
+      "bytes": 14251,
+      "type": "blob",
+      "sha256": "e5080525d2ccfa57b4bcf6ebc1f1820d365bbda33579340e6aef53976dbbb520",
+      "url": "https://gitee.com/damon3964/smart2026/blob/e271dd5ddde2f007396c28bec8f1c8802d81d981/smartCar/main.cc"
+    },
+    {
+      "path": "smartCar/param/config.json",
+      "git_blob": "74182167d33262a0a298024cf0d78683ba86d7bb",
+      "bytes": 2142,
+      "type": "blob",
+      "sha256": "a8d748402d490ee4fb63fcc0acd78b80c4ae9a794d9fa6be76717cbf93682538",
+      "url": "https://gitee.com/damon3964/smart2026/blob/e271dd5ddde2f007396c28bec8f1c8802d81d981/smartCar/param/config.json"
+    },
+    {
+      "path": "smartCar/param/param.hpp",
+      "git_blob": "31e4c2713f83499ed9b5fca45cfd913c97cbb5c7",
+      "bytes": 8980,
+      "type": "blob",
+      "sha256": "0df663fcc1d4f3eff34f6af73b9c99bef1a5e9a48aea1c262e5097d8d4f7ba03",
+      "url": "https://gitee.com/damon3964/smart2026/blob/e271dd5ddde2f007396c28bec8f1c8802d81d981/smartCar/param/param.hpp"
+    },
+    {
+      "path": "smartCar/tiny_classifier_fp32.ncnn.param",
+      "git_blob": "ad8b2b6903de1bfaef4ee7473b11bbca8d1f923e",
+      "bytes": 1729,
+      "type": "blob",
+      "sha256": "efa5f9bf2c880eaf57ab332dca58212d7e417a11d62947ca1de8818d1153fb01",
+      "url": "https://gitee.com/damon3964/smart2026/blob/e271dd5ddde2f007396c28bec8f1c8802d81d981/smartCar/tiny_classifier_fp32.ncnn.param"
+    },
+    {
+      "path": "smartCar/wuwu_library/ww_brushless.cc",
+      "git_blob": "bc42f468e14253e773637c3a7b5c5df008a0316a",
+      "bytes": 3836,
+      "type": "blob",
+      "sha256": "4c410b2458f9aa162f53772fcbb7739f75d4b2618139bacacfa5b57594553824",
+      "url": "https://gitee.com/damon3964/smart2026/blob/e271dd5ddde2f007396c28bec8f1c8802d81d981/smartCar/wuwu_library/ww_brushless.cc"
+    },
+    {
+      "path": "smartCar/wuwu_library/ww_buzzer.cc",
+      "git_blob": "4d330b7f5c2648d1e97db82dca682a650d8a569b",
+      "bytes": 4945,
+      "type": "blob",
+      "sha256": "28dd6514d9978a4f894d02d265723e7bf869847a8306983c5177db1ab62fe9a4",
+      "url": "https://gitee.com/damon3964/smart2026/blob/e271dd5ddde2f007396c28bec8f1c8802d81d981/smartCar/wuwu_library/ww_buzzer.cc"
+    },
+    {
+      "path": "smartCar/wuwu_library/ww_camera.cc",
+      "git_blob": "0d017fe6519fc184917d29d9cc606e012277a249",
+      "bytes": 13005,
+      "type": "blob",
+      "sha256": "1685ca83ac98bc8c5fb9382ef40ea9f11f47a0a08415b44c540afc351ff61cb7",
+      "url": "https://gitee.com/damon3964/smart2026/blob/e271dd5ddde2f007396c28bec8f1c8802d81d981/smartCar/wuwu_library/ww_camera.cc"
+    },
+    {
+      "path": "smartCar/wuwu_library/ww_icm42688.cc",
+      "git_blob": "28eaaa14aef13aaa1f086adffa8377ee1e972788",
+      "bytes": 8490,
+      "type": "blob",
+      "sha256": "61fcafab830e2e15311e9948f0017aa595ebd11bf7d51677b551edec5ee5a71f",
+      "url": "https://gitee.com/damon3964/smart2026/blob/e271dd5ddde2f007396c28bec8f1c8802d81d981/smartCar/wuwu_library/ww_icm42688.cc"
+    },
+    {
+      "path": "smartCar/wuwu_library/ww_key.cc",
+      "git_blob": "38f4963fa4fac91f2320afcd3c24b185ca27031a",
+      "bytes": 3424,
+      "type": "blob",
+      "sha256": "d0980db11c3724a55e862d019298761b0b6fea8142ff7c33cb8a46d3c94c568a",
+      "url": "https://gitee.com/damon3964/smart2026/blob/e271dd5ddde2f007396c28bec8f1c8802d81d981/smartCar/wuwu_library/ww_key.cc"
+    },
+    {
+      "path": "smartCar/wuwu_library/ww_lcd.cc",
+      "git_blob": "79ad76d5e6ba8d8dae8542a2e54f98700b2964e5",
+      "bytes": 18320,
+      "type": "blob",
+      "sha256": "dba0e76b7e371be0e178eb1c3041c322400254d150a215ec953e1c5f9fd3e72a",
+      "url": "https://gitee.com/damon3964/smart2026/blob/e271dd5ddde2f007396c28bec8f1c8802d81d981/smartCar/wuwu_library/ww_lcd.cc"
+    },
+    {
+      "path": "smartCar/wuwu_library/ww_motor.cc",
+      "git_blob": "5809946416fb1bdd527a9d0d2718362572bcef85",
+      "bytes": 6789,
+      "type": "blob",
+      "sha256": "8ae45a9e78ffb8d16a93f1cdb9ea6c068ce50ae0c80ed2a0935bf294873847d7",
+      "url": "https://gitee.com/damon3964/smart2026/blob/e271dd5ddde2f007396c28bec8f1c8802d81d981/smartCar/wuwu_library/ww_motor.cc"
+    },
+    {
+      "path": "smartCar/wuwu_library/ww_tcp_client.cc",
+      "git_blob": "84be40ef40c91409598f105413ab5a7d7d9268fb",
+      "bytes": 8353,
+      "type": "blob",
+      "sha256": "8e112f947d2bc9fb4ef87e26bd64230cdecd1f7245fddce5211f4d15d1291f90",
+      "url": "https://gitee.com/damon3964/smart2026/blob/e271dd5ddde2f007396c28bec8f1c8802d81d981/smartCar/wuwu_library/ww_tcp_client.cc"
+    },
+    {
+      "path": "smartCar/wuwu_library/ww_timerThread.cc",
+      "git_blob": "dc3a69b8560c814093ad20048a0d762f45d551f9",
+      "bytes": 3482,
+      "type": "blob",
+      "sha256": "4a60bda01a9bfd416e4ed9cdd79a06497d0eae256759927854aa604de29c69c8",
+      "url": "https://gitee.com/damon3964/smart2026/blob/e271dd5ddde2f007396c28bec8f1c8802d81d981/smartCar/wuwu_library/ww_timerThread.cc"
+    },
+    {
+      "path": "smartCar/wuwu_library/ww_transmission.cc",
+      "git_blob": "0a8957f993ad86f088abc4a3b654f58b91e1b460",
+      "bytes": 36032,
+      "type": "blob",
+      "sha256": "c1e1488817017c9282a0d92612fc0e27b7b368488a075d2895636e41ffd23a0a",
+      "url": "https://gitee.com/damon3964/smart2026/blob/e271dd5ddde2f007396c28bec8f1c8802d81d981/smartCar/wuwu_library/ww_transmission.cc"
+    },
+    {
+      "path": "smartCar/wuwu_library/ww_vl53l0x.cc",
+      "git_blob": "aed2cc50d389f8984e02a0b6f12c74f5fce63c2d",
+      "bytes": 3574,
+      "type": "blob",
+      "sha256": "680c9ba27a7834bae48b5bb13e442054670ddfb147053c2deb15f0ba6ccdd5f1",
+      "url": "https://gitee.com/damon3964/smart2026/blob/e271dd5ddde2f007396c28bec8f1c8802d81d981/smartCar/wuwu_library/ww_vl53l0x.cc"
+    }
+  ],
+  "tree_files": 624,
+  "tree_truncated": false,
+  "scope": "Selected source fetched/hash-verified; focused entrypoint/algorithm/interface review, not exhaustive line-by-line proof.",
+  "runtime_validation": "No full firmware build, hardware execution or vehicle test.",
+  "alias_of": null
+}

@@ -1,0 +1,481 @@
+{
+  "revision": "23e60c66605f53d6473dd264f16040f43db0178c",
+  "kind": "heuristic definition candidates, may include commented/inactive code",
+  "symbols": [
+    {
+      "name": "Capture::getImage",
+      "path": "capture/capture.cpp",
+      "line": 35
+    },
+    {
+      "name": "Set_Config",
+      "path": "main.cpp",
+      "line": 67
+    },
+    {
+      "name": "main",
+      "path": "main.cpp",
+      "line": 114
+    },
+    {
+      "name": "receiveBytes",
+      "path": "include/uart.hpp",
+      "line": 102
+    },
+    {
+      "name": "transmitByte",
+      "path": "include/uart.hpp",
+      "line": 131
+    },
+    {
+      "name": "open",
+      "path": "include/uart.hpp",
+      "line": 186
+    },
+    {
+      "name": "startReceive",
+      "path": "include/uart.hpp",
+      "line": 237
+    },
+    {
+      "name": "close",
+      "path": "include/uart.hpp",
+      "line": 254
+    },
+    {
+      "name": "receiveCheck",
+      "path": "include/uart.hpp",
+      "line": 271
+    },
+    {
+      "name": "dataTransform",
+      "path": "include/uart.hpp",
+      "line": 331
+    },
+    {
+      "name": "carControl",
+      "path": "include/uart.hpp",
+      "line": 352
+    },
+    {
+      "name": "main",
+      "path": "include/logger.hpp",
+      "line": 49
+    },
+    {
+      "name": "main",
+      "path": "include/logger.hpp",
+      "line": 61
+    },
+    {
+      "name": "main",
+      "path": "include/logger.hpp",
+      "line": 74
+    },
+    {
+      "name": "getCurrentTime",
+      "path": "include/logger.hpp",
+      "line": 96
+    },
+    {
+      "name": "name",
+      "path": "include/logger.hpp",
+      "line": 111
+    },
+    {
+      "name": "setNewWindow",
+      "path": "include/common.hpp",
+      "line": 123
+    },
+    {
+      "name": "show",
+      "path": "include/common.hpp",
+      "line": 166
+    },
+    {
+      "name": "inference",
+      "path": "include/detection.hpp",
+      "line": 125
+    },
+    {
+      "name": "buildNms",
+      "path": "include/detection.hpp",
+      "line": 136
+    },
+    {
+      "name": "transposeAndCopyToTensor",
+      "path": "include/detection.hpp",
+      "line": 160
+    },
+    {
+      "name": "run",
+      "path": "include/detection.hpp",
+      "line": 199
+    },
+    {
+      "name": "get_output",
+      "path": "include/detection.hpp",
+      "line": 263
+    },
+    {
+      "name": "render",
+      "path": "include/detection.hpp",
+      "line": 267
+    },
+    {
+      "name": "drawBox",
+      "path": "include/detection.hpp",
+      "line": 299
+    },
+    {
+      "name": "getCvcolor",
+      "path": "include/detection.hpp",
+      "line": 324
+    },
+    {
+      "name": "callbackSignal",
+      "path": "thread/thread.cpp",
+      "line": 25
+    },
+    {
+      "name": "producer",
+      "path": "thread/thread.cpp",
+      "line": 31
+    },
+    {
+      "name": "AIConsumer",
+      "path": "thread/thread.cpp",
+      "line": 58
+    },
+    {
+      "name": "consumer",
+      "path": "thread/thread.cpp",
+      "line": 103
+    },
+    {
+      "name": "drawBox",
+      "path": "thread/thread.cpp",
+      "line": 163
+    },
+    {
+      "name": "debugDataConsumer",
+      "path": "thread/thread.cpp",
+      "line": 183
+    },
+    {
+      "name": "uartReceive",
+      "path": "thread/thread.cpp",
+      "line": 196
+    },
+    {
+      "name": "getCvcolor",
+      "path": "thread/thread.cpp",
+      "line": 216
+    },
+    {
+      "name": "Cross::Cross_Check",
+      "path": "track/basic/cross.cpp",
+      "line": 17
+    },
+    {
+      "name": "Cross::Cross_Run",
+      "path": "track/basic/cross.cpp",
+      "line": 40
+    },
+    {
+      "name": "Cross::cross_find_farline",
+      "path": "track/basic/cross.cpp",
+      "line": 107
+    },
+    {
+      "name": "Cross::calculate_s_i",
+      "path": "track/basic/cross.cpp",
+      "line": 301
+    },
+    {
+      "name": "Cross::findline_lefthand_adaptive",
+      "path": "track/basic/cross.cpp",
+      "line": 331
+    },
+    {
+      "name": "Cross::findline_righthand_adaptive",
+      "path": "track/basic/cross.cpp",
+      "line": 394
+    },
+    {
+      "name": "Cross::blur_points",
+      "path": "track/basic/cross.cpp",
+      "line": 460
+    },
+    {
+      "name": "Cross::resample_points",
+      "path": "track/basic/cross.cpp",
+      "line": 514
+    },
+    {
+      "name": "Cross::find_corners",
+      "path": "track/basic/cross.cpp",
+      "line": 548
+    },
+    {
+      "name": "Cross::local_angle_points",
+      "path": "track/basic/cross.cpp",
+      "line": 622
+    },
+    {
+      "name": "Cross::nms_angle",
+      "path": "track/basic/cross.cpp",
+      "line": 655
+    },
+    {
+      "name": "Cross::Slope_Calculate",
+      "path": "track/basic/cross.cpp",
+      "line": 676
+    },
+    {
+      "name": "ImageProcess::matilluminationChange",
+      "path": "track/imgprocess/imgprocess.cpp",
+      "line": 10
+    },
+    {
+      "name": "ImageProcess::processImage",
+      "path": "track/imgprocess/imgprocess.cpp",
+      "line": 40
+    },
+    {
+      "name": "ImageProcess::mapPerspective",
+      "path": "track/imgprocess/imgprocess.cpp",
+      "line": 63
+    },
+    {
+      "name": "Catering::check_catering",
+      "path": "track/special/catering.cpp",
+      "line": 25
+    },
+    {
+      "name": "Catering::run_catering",
+      "path": "track/special/catering.cpp",
+      "line": 85
+    },
+    {
+      "name": "Bridge::check_bridge",
+      "path": "track/special/bridge.cpp",
+      "line": 18
+    },
+    {
+      "name": "Bridge::run_bridge",
+      "path": "track/special/bridge.cpp",
+      "line": 30
+    },
+    {
+      "name": "Ring::reset",
+      "path": "track/basic/ring.cpp",
+      "line": 16
+    },
+    {
+      "name": "Ring::Ring_Check",
+      "path": "track/basic/ring.cpp",
+      "line": 46
+    },
+    {
+      "name": "Ring::Ring_Run",
+      "path": "track/basic/ring.cpp",
+      "line": 214
+    },
+    {
+      "name": "Ring::ring_find_line",
+      "path": "track/basic/ring.cpp",
+      "line": 527
+    },
+    {
+      "name": "Ring::find_right_mid",
+      "path": "track/basic/ring.cpp",
+      "line": 650
+    },
+    {
+      "name": "Ring::findline_lefthand_adaptive",
+      "path": "track/basic/ring.cpp",
+      "line": 712
+    },
+    {
+      "name": "Ring::findline_righthand_adaptive",
+      "path": "track/basic/ring.cpp",
+      "line": 764
+    },
+    {
+      "name": "Ring::resample_points",
+      "path": "track/basic/ring.cpp",
+      "line": 873
+    },
+    {
+      "name": "Ring::entering_track_far_line",
+      "path": "track/basic/ring.cpp",
+      "line": 903
+    },
+    {
+      "name": "Ring::exiting_track_far_line",
+      "path": "track/basic/ring.cpp",
+      "line": 966
+    },
+    {
+      "name": "Crosswalk::check_crosswalk",
+      "path": "track/special/crosswalk.cpp",
+      "line": 18
+    },
+    {
+      "name": "Crosswalk::run_crosswalk",
+      "path": "track/special/crosswalk.cpp",
+      "line": 87
+    },
+    {
+      "name": "Charging::check_charging",
+      "path": "track/special/charging.cpp",
+      "line": 32
+    },
+    {
+      "name": "Charging::run_charging",
+      "path": "track/special/charging.cpp",
+      "line": 68
+    },
+    {
+      "name": "Layby::check_layby",
+      "path": "track/special/layby.cpp",
+      "line": 20
+    },
+    {
+      "name": "Layby::run_layby",
+      "path": "track/special/layby.cpp",
+      "line": 66
+    },
+    {
+      "name": "Obstacle::check_obstacle",
+      "path": "track/special/obstacle.cpp",
+      "line": 30
+    },
+    {
+      "name": "Obstacle::run_obstacle",
+      "path": "track/special/obstacle.cpp",
+      "line": 190
+    },
+    {
+      "name": "clip",
+      "path": "track/standard/general.h",
+      "line": 64
+    },
+    {
+      "name": "savePicture",
+      "path": "track/standard/general.h",
+      "line": 70
+    },
+    {
+      "name": "factorial",
+      "path": "track/standard/general.h",
+      "line": 95
+    },
+    {
+      "name": "Bezier",
+      "path": "track/standard/general.h",
+      "line": 105
+    },
+    {
+      "name": "sigma",
+      "path": "track/standard/general.h",
+      "line": 133
+    },
+    {
+      "name": "filter",
+      "path": "track/standard/general.h",
+      "line": 153
+    },
+    {
+      "name": "pid_realize_a",
+      "path": "track/standard/general.h",
+      "line": 164
+    },
+    {
+      "name": "transf",
+      "path": "track/standard/general.h",
+      "line": 207
+    },
+    {
+      "name": "Reverse_transf",
+      "path": "track/standard/general.h",
+      "line": 233
+    },
+    {
+      "name": "all",
+      "path": "track/standard/standard.cpp",
+      "line": 102
+    },
+    {
+      "name": "Standard::run",
+      "path": "track/standard/standard.cpp",
+      "line": 108
+    },
+    {
+      "name": "Standard::trackRecognition",
+      "path": "track/standard/standard.cpp",
+      "line": 1211
+    },
+    {
+      "name": "Standard::findline_lefthand_adaptive",
+      "path": "track/standard/standard.cpp",
+      "line": 1518
+    },
+    {
+      "name": "Standard::findline_righthand_adaptive",
+      "path": "track/standard/standard.cpp",
+      "line": 1581
+    },
+    {
+      "name": "Standard::line_straight_detection",
+      "path": "track/standard/standard.cpp",
+      "line": 1648
+    },
+    {
+      "name": "Standard::find_corners",
+      "path": "track/standard/standard.cpp",
+      "line": 1713
+    },
+    {
+      "name": "Standard::fitting",
+      "path": "track/standard/standard.cpp",
+      "line": 1795
+    },
+    {
+      "name": "Standard::blur_points",
+      "path": "track/standard/standard.cpp",
+      "line": 1834
+    },
+    {
+      "name": "Standard::resample_points",
+      "path": "track/standard/standard.cpp",
+      "line": 1888
+    },
+    {
+      "name": "Standard::local_angle_points",
+      "path": "track/standard/standard.cpp",
+      "line": 1921
+    },
+    {
+      "name": "Standard::nms_angle",
+      "path": "track/standard/standard.cpp",
+      "line": 1954
+    },
+    {
+      "name": "Standard::centerCompute",
+      "path": "track/standard/standard.cpp",
+      "line": 1981
+    },
+    {
+      "name": "Standard::track_both_edge",
+      "path": "track/standard/standard.cpp",
+      "line": 2021
+    },
+    {
+      "name": "Standard::DynamicAimDisCal",
+      "path": "track/standard/standard.cpp",
+      "line": 2056
+    }
+  ]
+}

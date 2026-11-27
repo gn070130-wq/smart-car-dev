@@ -1,0 +1,182 @@
+{
+  "id": "wjlai-test",
+  "source_id": "wjlai--test",
+  "url": "https://gitee.com/wjlai/test",
+  "revision": "0a7ea0e1941b48c59138bd26764effb268cf53c2",
+  "role": "归档中的识别demo和循迹代码",
+  "files": [
+    {
+      "path": "AIdemo.zip",
+      "git_blob": "bbe18cec4a463c986ce1cc700df593c6376d4512",
+      "bytes": 9235323,
+      "type": "blob",
+      "sha256": "529e6ec19da8302f408f23ab1f6ce4766b138759c4631b39ca555a64a881cd77",
+      "url": "https://gitee.com/wjlai/test/blob/0a7ea0e1941b48c59138bd26764effb268cf53c2/AIdemo.zip"
+    },
+    {
+      "path": "README.md",
+      "git_blob": "c682eb4cfe9a79ab2a6c662d3cd85df02d49e730",
+      "bytes": 205,
+      "type": "blob",
+      "sha256": "095af079e18cdfbb5514ed753bd3560990aade952a94e999dac76b8a82a5f935",
+      "url": "https://gitee.com/wjlai/test/blob/0a7ea0e1941b48c59138bd26764effb268cf53c2/README.md"
+    },
+    {
+      "path": "代码/按键发车.rar",
+      "git_blob": "5869c54543908a72cc94901211e30a1b44ffe65a",
+      "bytes": 6551366,
+      "type": "blob",
+      "sha256": "4c3898f0c1d29474f6afdae55d4046489677daf14f1dc383838b5268fd0c0638",
+      "url": "https://gitee.com/wjlai/test/blob/0a7ea0e1941b48c59138bd26764effb268cf53c2/代码/按键发车.rar"
+    },
+    {
+      "path": "_archives/aidemo/testdemo/project/code/ncnn_app.cpp",
+      "bytes": 2513,
+      "sha256": "0d3bf3bce70a065a3c184c1a3e36e3d2e0a6bf7248bb5f890b26b9526036c674",
+      "git_blob": null,
+      "container": "AIdemo.zip",
+      "member": "testdemo/project/code/ncnn_app.cpp",
+      "url": "https://gitee.com/wjlai/test/blob/0a7ea0e1941b48c59138bd26764effb268cf53c2/AIdemo.zip"
+    },
+    {
+      "path": "_archives/aidemo/testdemo/project/code/ncnn_app.hpp",
+      "bytes": 1173,
+      "sha256": "1c408f4fa235cea9eb42d71432ad1309bae99aa32313be20cb0feffbf1eebcc3",
+      "git_blob": null,
+      "container": "AIdemo.zip",
+      "member": "testdemo/project/code/ncnn_app.hpp",
+      "url": "https://gitee.com/wjlai/test/blob/0a7ea0e1941b48c59138bd26764effb268cf53c2/AIdemo.zip"
+    },
+    {
+      "path": "_archives/aidemo/testdemo/project/code/ncnn_classifier.cpp",
+      "bytes": 3039,
+      "sha256": "fb596d7a4f7b5538354c93477a54dd24e02a566fb6898a468776714b838f440f",
+      "git_blob": null,
+      "container": "AIdemo.zip",
+      "member": "testdemo/project/code/ncnn_classifier.cpp",
+      "url": "https://gitee.com/wjlai/test/blob/0a7ea0e1941b48c59138bd26764effb268cf53c2/AIdemo.zip"
+    },
+    {
+      "path": "_archives/aidemo/testdemo/project/code/ncnn_classifier.hpp",
+      "bytes": 1575,
+      "sha256": "2a6604f53885b20e503baf4f0109d15e279407c3892c1bc357a853b5a5f9b0fa",
+      "git_blob": null,
+      "container": "AIdemo.zip",
+      "member": "testdemo/project/code/ncnn_classifier.hpp",
+      "url": "https://gitee.com/wjlai/test/blob/0a7ea0e1941b48c59138bd26764effb268cf53c2/AIdemo.zip"
+    },
+    {
+      "path": "_archives/aidemo/testdemo/project/user/main.cpp",
+      "bytes": 2734,
+      "sha256": "71051a47bf199db8e7e831916330fa545f3ff7b6babec2d247181380782aa65e",
+      "git_blob": null,
+      "container": "AIdemo.zip",
+      "member": "testdemo/project/user/main.cpp",
+      "url": "https://gitee.com/wjlai/test/blob/0a7ea0e1941b48c59138bd26764effb268cf53c2/AIdemo.zip"
+    },
+    {
+      "path": "_archives/rar/cross.cpp",
+      "bytes": 6706,
+      "sha256": "0dffc8031c8d2c3806497468f568ef2ae63ed7107b5c044775414a33d9115b2b",
+      "git_blob": null,
+      "container": "代码/按键发车.rar",
+      "member": "cross.cpp",
+      "url": "https://gitee.com/wjlai/test/blob/0a7ea0e1941b48c59138bd26764effb268cf53c2/代码/按键发车.rar"
+    },
+    {
+      "path": "_archives/rar/fuzzy.cpp",
+      "bytes": 8758,
+      "sha256": "3b2f5d9d7623e32460065d37f5c445f0119329f2be7f4b790d939f6c3fa98280",
+      "git_blob": null,
+      "container": "代码/按键发车.rar",
+      "member": "fuzzy.cpp",
+      "url": "https://gitee.com/wjlai/test/blob/0a7ea0e1941b48c59138bd26764effb268cf53c2/代码/按键发车.rar"
+    },
+    {
+      "path": "_archives/rar/image.cpp",
+      "bytes": 49769,
+      "sha256": "12040f65c323a662c48a8c63acce1fb7418cafede62e1457b879475089d951a9",
+      "git_blob": null,
+      "container": "代码/按键发车.rar",
+      "member": "image.cpp",
+      "url": "https://gitee.com/wjlai/test/blob/0a7ea0e1941b48c59138bd26764effb268cf53c2/代码/按键发车.rar"
+    },
+    {
+      "path": "_archives/rar/imu.cpp",
+      "bytes": 3548,
+      "sha256": "b9b6ce624a35f50452977782d3f9ba5ab330d3de4c26a54b38173306b0c7ed57",
+      "git_blob": null,
+      "container": "代码/按键发车.rar",
+      "member": "imu.cpp",
+      "url": "https://gitee.com/wjlai/test/blob/0a7ea0e1941b48c59138bd26764effb268cf53c2/代码/按键发车.rar"
+    },
+    {
+      "path": "_archives/rar/main.cpp",
+      "bytes": 15482,
+      "sha256": "78d3e54023bc47be3f08ca2d9efcd60a79f3cc44fbb055e664a2531458b9566b",
+      "git_blob": null,
+      "container": "代码/按键发车.rar",
+      "member": "main.cpp",
+      "url": "https://gitee.com/wjlai/test/blob/0a7ea0e1941b48c59138bd26764effb268cf53c2/代码/按键发车.rar"
+    },
+    {
+      "path": "_archives/rar/menu.cpp",
+      "bytes": 1049,
+      "sha256": "cd1ca68df375730f5d384ba93409be2ae88841cd79e895c6d466b7b0ddf6be5b",
+      "git_blob": null,
+      "container": "代码/按键发车.rar",
+      "member": "menu.cpp",
+      "url": "https://gitee.com/wjlai/test/blob/0a7ea0e1941b48c59138bd26764effb268cf53c2/代码/按键发车.rar"
+    },
+    {
+      "path": "_archives/rar/ncnn_app.cpp",
+      "bytes": 1648,
+      "sha256": "bb39e7066a32e8c79ce840f185a3fbc4fd45431a3ba05789f08fee421cae9bf0",
+      "git_blob": null,
+      "container": "代码/按键发车.rar",
+      "member": "ncnn_app.cpp",
+      "url": "https://gitee.com/wjlai/test/blob/0a7ea0e1941b48c59138bd26764effb268cf53c2/代码/按键发车.rar"
+    },
+    {
+      "path": "_archives/rar/ncnn_app.hpp",
+      "bytes": 160,
+      "sha256": "e0ca957bb1d5e50bf8034aa4df8a423a512604e29b9021c0c61321761c7dce88",
+      "git_blob": null,
+      "container": "代码/按键发车.rar",
+      "member": "ncnn_app.hpp",
+      "url": "https://gitee.com/wjlai/test/blob/0a7ea0e1941b48c59138bd26764effb268cf53c2/代码/按键发车.rar"
+    },
+    {
+      "path": "_archives/rar/pid.cpp",
+      "bytes": 4683,
+      "sha256": "54d32fa4e1789dcb35552bf7c158d9726557e8d5c1b5f369d3d61b029a7faf43",
+      "git_blob": null,
+      "container": "代码/按键发车.rar",
+      "member": "pid.cpp",
+      "url": "https://gitee.com/wjlai/test/blob/0a7ea0e1941b48c59138bd26764effb268cf53c2/代码/按键发车.rar"
+    },
+    {
+      "path": "_archives/rar/preprocess.cpp",
+      "bytes": 824,
+      "sha256": "d22512b28793e124d39bcd112d9d3529c7d24392d553d1a659e2b2be31ab0976",
+      "git_blob": null,
+      "container": "代码/按键发车.rar",
+      "member": "preprocess.cpp",
+      "url": "https://gitee.com/wjlai/test/blob/0a7ea0e1941b48c59138bd26764effb268cf53c2/代码/按键发车.rar"
+    },
+    {
+      "path": "_archives/rar/ring.cpp",
+      "bytes": 14438,
+      "sha256": "ffca222397b27c376494fb941edbe5e7926c15777a94d70a79d7a022c4f39774",
+      "git_blob": null,
+      "container": "代码/按键发车.rar",
+      "member": "ring.cpp",
+      "url": "https://gitee.com/wjlai/test/blob/0a7ea0e1941b48c59138bd26764effb268cf53c2/代码/按键发车.rar"
+    }
+  ],
+  "tree_files": 4,
+  "tree_truncated": false,
+  "scope": "Selected source fetched/hash-verified; focused entrypoint/algorithm/interface review, not exhaustive line-by-line proof.",
+  "runtime_validation": "No full firmware build, hardware execution or vehicle test.",
+  "alias_of": null
+}

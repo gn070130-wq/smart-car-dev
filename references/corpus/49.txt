@@ -1,0 +1,533 @@
+0001 第二十一届全国大学生
+0002 智能汽车竞赛
+0003 技 术 报 告
+0004 学    校：中国计量大学
+0005 队伍名称：仰仪-龙行天下
+0006 参赛队员：汪博
+0007 郭成弘
+0008 王文沅
+0009 带队教师：陈锡爱
+0010 曾涛
+0011 关于技术报告和研究论文使用授权的说明
+0012 本人完全了解全国大学生智能汽车竞赛关保留、使用技术报告和研究论文的规定，即：参赛作品著作权归参赛者本人，比赛组委会可以在相关主页上收录并公开参赛作品的设计方案、技术报告以及参赛模型车的视频、图像资料，并将相关内容编纂收录在组委会出版论文集中。
+0013 参赛队员签名： 汪博 郭成弘 王文沅
+0014 带队教师签名： 陈锡爱 曾涛
+0015 日期：2026年 8 月 13日
+0016 摘 要
+0017 本文设计了一种以龙芯2K0300为核心控制单元、以STC32G12K128单片机为无刷电调主控的智能车系统。系统通过USB摄像头实时采集赛道信息，采用灰度化处理与动态阈值算法生成二值化图像，并提取黑色引导线，实现赛道识别与路径跟踪。系统利用方向编码器检测车辆实时速度，并通过PID控制算法调节左右驱动电机转速，实现车辆速度与运动方向的闭环控制。针对赛道中央的目标识别任务，系统结合赛道边线检测与逆透视变换，对赛道中的红色色块进行处理，截取赛道中央的目标模型图像，并根据识别结果完成减速、目标识别及绕行等控制。
+0018 为提高车辆运行速度与系统控制稳定性，采用上位机、按键模块和IPS114显示屏等调试工具，开展了大量软硬件联合测试。实验结果表明，该系统能够完成预期功能，具有较好的可行性与稳定性。
+0019 目录
+0020 摘 要II
+0021 引 言1
+0022 第一章模型车设计思路与技术方案概述2
+0023 1.1机械设计思路2
+0024 1.2  硬件设计思路2
+0025 1.3  软件设计思路2
+0026 第二章模型车整体结构设计3
+0027 2.1 机械部分安装及改造3
+0028 2.1.1 车前轮减震装置改造3
+0029 2.1.2 电池槽安装3
+0030 2.1.3 无刷安装4
+0031 2.2 传感器的设计安装4
+0032 2.2.1 摄像头安装4
+0033 2.2.2 编码器安装5
+0034 2.2.3 陀螺仪安装5
+0035 2.3 系统电路板的固定及连接6
+0036 2.3.1 灯板安装6
+0037 2.3.2 主控安装6
+0038 2.3.3 驱动电调安装6
+0039 第三章电路设计说明7
+0040 3.1 龙芯LS2K0300核心板主控扩展板7
+0041 3.1.1 电池电源7
+0042 3.1.2 5V稳压电路7
+0043 3.1.3 3V电源电路8
+0044 3.1.4 核心板8
+0045 3.2 DRV8701驱动板8
+0046 3.2.1 电源9
+0047 3.2.2 双路H桥电路9
+0048 3.2.3 栅极驱动电路9
+0049 3.2.4 休眠模式9
+0050 3.3 STC32G12K电调9
+0051 3.3.1 单片机控制10
+0052 3.3.2 PWM输入10
+0053 3.3.3 FD6288D三相栅极驱动10
+0054 3.3.4 三相 MOSFET 功率级11
+0055 3.4 分电板11
+0056 3.5 灯板11
+0057 第四章软件设计说明13
+0058 4.1 软件控制总流程13
+0059 4.2 图像处理13
+0060 4.2.1 图像二值化与基础扫线13
+0061 4.2.2 元素处理14
+0062 4.3 速度与转向控制14
+0063 4.3.1 转向误差的获取14
+0064 4.3.2 三串环14
+0065 4.3.3 速度决策15
+0066 4.3.4 动态前瞻16
+0067 4.4 红块处理与模型识别16
+0068 4.4.1 数据集采集16
+0069 4.4.2 模型训练与部署17
+0070 4.4.3 红块处理17
+0071 4.4.4 图像裁剪18
+0072 第五章开发工具使用说明19
+0073 5.1 开发工具19
+0074 5.1.1 WSL19
+0075 5.1.2 VMware Workstation19
+0076 5.1.3 Vscode19
+0077 5.2 上位机显示19
+0078 5.2.1 Vofa+19
+0079 5.2.2 逐飞助手19
+0080 第六章主要技术参数说明20
+0081 总结21
+0082 附录A 程序部分源代码22
+0083 引 言
+0084 全国大学生智能汽车竞赛是以“立足培养、重在参与、鼓励探索、追求卓越”为宗旨，鼓励创新的一项科技竞赛活动。赛题走马观碑要求在F车模上，使用龙芯2K0300作为核心控制模块，通过使用摄像头陀螺仪等传感器获取赛道信息，增设驱动模块，编写相应控制程序，制作出一辆能够自主运行的智能车。
+0085 在本次比赛中，本组根据规则使用F车模，采用龙芯2K0300，实现了一套能够自主识别路线和模型的完备系统。
+0086 在制作小车的过程中，我们对小车的整体构架进行了深入的研究，分别在机械、硬件和软件上都进行过改进。硬件上主要是改进电路。软件上反复改动控制算法，从PID到串级控制系统,再到模糊PID都进行了一些研究。机械上为了运行更加稳定进行了多轮的改进。
+0087 在这份报告中，我们通过对整体方案、机械、硬件、软件等方面的介绍，详细阐述我队在此次智能汽车竞赛备赛过程中的思路想法。我队成员涉及自动化及测控等专业，在准备比赛的过程中，队员查阅了大量的资料，学习各个队伍的经验，反复调试各项参数。所有队员都为此次智能汽车竞赛付出了相当多的努力。
+0088 模型车设计思路与技术方案概述
+0089 机械设计思路
+0090 （1）车身长度尽量缩短，降低转向需要的角速度。
+0091 （2）整车重心尽量低，防止车辆运行时跳轮。
+0092 （3）整车纵向重心偏向于后轮，保持在后轮轴前端左右，便于转向。
+0093 （4）整车横向重心尽量在两轮中心的轴线上，使车辆运行时不易左右晃动。
+0094 （5）尽量减小车身前部的重量，减少转向所需转动惯量。
+0095 （6）在后轮上方增加负压，增加转向轮摩擦力，便于转向。
+0096 （7）前轮将弹簧换成无弹性的3D打印件，防止前轮上下弹动，避免反复翘头。
+0097 1.2  硬件设计思路
+0098 （1）尽量缩小电路板体积，减小车体重量。
+0099 （2）尽量缩小各个电路板之间的距离，使用长度短的通信线和电源线互相连接。
+0100 （3）合理布局按键，开关等交互式元器件位置，便于调试。
+0101 （4）保障各个模块供电稳定，使用多种稳压方案保持MCU及外设正常使用。
+0102 （5）选用大封装电容电阻用于滤波以及单点接地。
+0103 1.3  软件设计思路
+0104 （1）通过陀螺仪读取加速度与角速度。
+0105 （2）通过编码器与图形处理确定电机速度。
+0106 （3）通过摄像头采集图像，对赛道的图像进行处理，获得准确的行进路线。
+0107 （4）根据获取的路线对小车的转向和速度进行控制。
+0108 模型车整体结构设计
+0109 2.1 机械部分安装及改造
+0110 2.1.1 车前轮减震装置改造
+0111 由于三轮车在大幅度加速或者转向的时候会出现翘头现象，而车模前部的弹簧会导致车前轮抖动更加剧烈。为了减小翘头的影响，提供更好的图像和控制条件，我们选择将弹簧替换为硬质的打印件。
+0112 图2.1 前轮减震装置改造
+0113 2.1.2 电池槽安装
+0114 电池槽为打印件。打印件设计了四个孔便于安装到车模后部，并且孔周围设计有凹槽，便于收纳多出来的螺丝头。设计长条孔，便于魔术贴通过，并且在打印件底部也设计有凹槽，用于容纳从底部通过的魔术贴。电池槽左边短右边长，便于有电池线的一端收纳。使用大量圆角设计，避免打印件在剧烈运动下断裂。
+0115 图2.2 电池槽安装                      图2.3 电池槽打印件
+0116 2.1.3 无刷安装
+0117 为了便于车模转向，避免翘头，我们将负压安装在轮胎上方，增加轮胎的摩擦力和转向力。无刷通过打印件和碳板组合而成的结构体安装在车的轴承架上。碳板质地坚硬，能够更好的将风扇的力压到车模上。
+0118 图 2.4 实车风扇安装
+0119 2.2 传感器的设计安装
+0120 2.2.1 摄像头安装
+0121 摄像头的固定选择碳素杆，强度高质量轻。加装双层偏振片并使用打印件固定，防止反光对循迹和模型识别等的影响。摄像头架的比较高，角度较低，有利于绕行控制和模型识别。使用热熔胶对容易活动的部位做了加固，防止摄像头松动。
+0122 图 2.5 摄像头安装示意图
+0123 2.2.2 编码器安装
+0124 编码器直接在车模自带的孔位上进行安装，安装位置根据齿轮啮合情况来决定，不能啮合过紧导致转动困难，也不能啮合过松导致传导低效。使用没有滑丝的螺丝进行固定，防止运行时滑齿。
+0125 图 2.6 编码器安装示意图
+0126 2.2.3 陀螺仪安装
+0127 陀螺仪在主控的下方进行安装，放置在整车重心附近，有利于陀螺仪获取到的值更有利于控制。这样设计也节约了空间。
+0128 图 2.7 陀螺仪安装示意图
+0129 2.3 系统电路板的固定及连接
+0130 2.3.1 灯板安装
+0131 灯板安装在碳素杆上，便于直观的观察车辆的运行状况。
+0132 图 2.8 灯板安装示意图
+0133 2.3.2 主控安装
+0134 主控放置在车模后部，使用尼龙柱进行安装支撑。使重心偏向于车模后部，便于转向。
+0135 图 2.9 主控安装示意图
+0136 2.3.3 驱动电调安装
+0137 驱动和电调安装在车模前部，使用一个支撑板叠在一起，使车辆更加整洁。
+0138 图 2.10 驱动电调安装示意图
+0139 电路设计说明
+0140 3.1 龙芯LS2K0300核心板主控扩展板
+0141 图3.1 主控原理图
+0142 图3.2 主控PCB图
+0143 总述：面向搭载龙芯 LS2K0300 核心板的控制系统，原理图按电源、核心板、传感器、执行器和人机交互功能分区。双路 5V 供电用于降低外围负载对主控电源的扰动。
+0144 3.1.1 电池电源
+0145 电池电源由XT30（CN1） 接入 VCC_IN。输入端并联 470µF电解电容（C15）及多只滤波电容，用于降低线缆阻抗和开关电源脉动。稳压二极管BZT52C16、HY19P03B与 拨动开关 构成输入保护及开关相关电路，下拉电阻R1、上拉电阻R34 用于栅极偏置和控制节点约束。
+0146 3.1.2 5V稳压电路
+0147 U2 采用 SCT24500STER 降压芯片。VCC_BAT 经肖特基二极管（SS54）进入输入端，C13（100uF）、C6（4.7µF）和 C7（100nF）滤波；开关节点经 电感（4.7µH）和 C10/C14 输出，再由 肖特基二极管（SS54）形成 VCC_5V，同时防止电源倒灌进芯片引起芯片发烫。R11 与 LED5V 指示5V电源状态。
+0148 3.1.3 3V电源电路
+0149 使用 RT9013-33GB 将 VCC_5V 稳压为 VCC_3V3。输入侧设置 C11（10µF）和 C3（100nF），输出侧设置 C12（10µF）及 C4（100nF），共同为输入电源和输出电源滤波，使引出的3V电源稳定。R12 与 LED3V3 用于3V电源指示。
+0150 3.1.4 核心板
+0151 删去空闲引脚，改用排母紧凑排列。同时5V电源为核心板供电前先通过1206封装的100nF和10uF以及1uF的钽电容进行滤波处理，防止核心板因为5V供电不稳引起死机。
+0152 3.2 DRV8701驱动板
+0153 图3.3 驱动原理图
+0154 图3.4 驱动PCB图
+0155 总述：电路以 VM 作为电机功率母线，采用“栅极驱动器 + 外置功率 MOSFET”的结构实现两路全桥。每路电机由一颗 DRV8701 和四颗 TPH1R403NL 构成，左右两路拓扑对称。
+0156 3.2.1 电源
+0157 使用 XT30U-M连接器接入功率电源，正端连接 VM，负端连接 GND。C36（220µF）并联在 VM 与 GND 之间，为两路 H 桥换相和电机启动提供局部储能，并抑制母线电压突变。电池电源 经 电阻（2kΩ）送入 3.3V 节点，经过稳压二极管（BZT52C3V3）对地钳位；R7（1kΩ）与“电源指示”LED 串联到地。
+0158 3.2.2 双路H桥电路
+0159 左右两路结构一致，每路使用四颗 TPH1R403NL N 沟道 MOSFET：两颗高侧、两颗低侧；两桥臂中点连接电机端子。DRV8701 分别输出 GH、SH 和 GL 信号控制桥臂。高侧漏极接 VM，低侧源极接 GND，桥臂中点输出到电机。
+0160 3.2.3 栅极驱动电路
+0161 采用 DRV8701驱动芯片。VM 为驱动器功率输入，8701与外部电容组成电荷泵，为高侧 N 沟道 MOSFET 提供栅极驱动；DVDD/VREF 旁路电容稳定芯片内部逻辑与参考节点。
+0162 3.2.4 休眠模式
+0163 两颗 DRV8701 的 NSLEEP 均连接到拨动开关。开关控制3.3V 与 NSLEEP 控制入口，NSLEEP 同时经 限流电阻（330Ω）连接“使能指示”LED。NSLEEP 有效时两路驱动器工作并点亮指示；无效时进入休眠并关闭栅极驱动输出。
+0164 3.3 STC32G12K电调
+0165 图3.5 电调原理图
+0166 图3.6 电调PCB图
+0167 总述：左右通道分别完成控制运算、三相互补 PWM 生成、栅极驱动、六管逆变以及电机状态采样。两侧共用 VBAT 功率母线与 VCC5V 辅助电源，控制和采样网络按通道编号 1、2 分开。
+0168 3.3.1 单片机控制
+0169 采用 STC32G12K128 系列 LQFP48 控制器。两颗控制器分别连接 PWMAH/PWMAL、PWMBH/PWMBL、PWMCH/PWMCL 六路互补驱动信号，以及 VBATADC、ABMF、BBMF、CBMF、PWM 输入和 LED 网络。VCC5V 通过 0Ω 电阻送入控制器供电端，10µF 与 100nF 电容就近去耦。LPCAP 引脚配置 100nF 电容到地，按原图稳定内部电源/参考节点。LED1、LED2 分别由 VCC5V 经发光二极管与 10kΩ 电阻连接到控制器网络，用于通道状态指示。
+0170 3.3.2 PWM输入
+0171 左右通道三针输入接口。PWM 信号先经 100Ω 串联电阻进入单片机；VCC5V 经 B5819WS 肖特基二极管引至接口电源脚，另一脚连接 GND。
+0172 3.3.3 FD6288D三相栅极驱动
+0173 预区输出 HOA/HOB/HOC 与 LOA/LOB/LOC，分别驱动 A、B、C 三个半桥。VCC 接 VCC5V，COM 接 GND；VB1/VS1、VB2/VS2、VB3/VS3 构成三组高侧自举驱动。每个高侧自举支路采用 B5819WS 二极管和 2.2µF 电容，为高侧栅极提供浮动驱动电源。驱动器本地配置 2.2µF 去耦电容；功率驱动电源经 R43/R42（4.7Ω）与 TVS/钳位器件进行滤波和保护。
+0174 3.3.4 三相 MOSFET 功率级
+0175 每个通道使用六颗TPH1R403NL沟道 MOSFET 组成三相全桥。上管漏极接 VBAT，下管源极接 GND；每组上下管中点形成 VSA、VSB、VSC 三相输出并连接电机端子
+0176 3.4 分电板
+0177 图3.7 电调PCB图
+0178 图3.8 电调PCB图
+0179 总述：采用XT30，XT60对电池电源进行分电处理，同时加入HY19P03P用于开关处理
+0180 3.5 灯板
+0181 图3.9 灯板原理图
+0182 图3.10 灯板PCB图
+0183 总述：作指示灯作用，判断各种元素，亮度大，明显。
+0184 软件设计说明
+0185 4.1 软件控制总流程
+0186 图 3.1 初始化示意图                       图 3.2 主循环示意图
+0187 如图，由于龙芯久久派上运行的是LoongOS系统，我们采用C++编写代码，在ubuntu交叉编译产生可执行文件，传输至板卡中时开机自启动，通过按键来调参发车等。程序分为两个部分，初始化、主循环，具体功能如上图。
+0188 4.2 图像处理
+0189 4.2.1 图像二值化与基础扫线
+0190 摄像头读取320 * 240大小的一帧图像之后先进行裁剪得到60 * 80大小的图像，拷贝进数组之后进行二值化处理。这里我们选用了大津法动态阈值算法，同时针对赛道可能出现的过暗或过曝对二值化阈值进行了专门的处理。在基础扫线部分，由于图像畸变的原因，靠近车的那部分图像较为稳定而远离车的那部分容易受到干扰，所以我们采用了先扫最底边5行找到左右边界得到中线再以底边5行为基准往上找到顶边行的策略。
+0191 4.2.2 元素处理
+0192 十字：
+0193 我们观察道十字的特点是两边的缺口是白色的没有边，我们主要就是把两边的缺口补斜线；补线的思路是找到缺口的上端点和下端点，根据两个端点的横纵坐标能够计算出要补的线的斜率，算出斜率后补线。
+0194 圆环：
+0195 通过观察我们可知圆环的特点是一边是完整的一条边，而另一边是有两个缺口的边，以此特点我们根据两个缺口丢边数的变化来判断圆环。
+0196 路障：
+0197 对于路障场景，图像的特点是一边是正常边线；另一边的边线会突然内收，以此特点我们可以找到内收点的横纵坐标偏倚中线进行处理。
+0198 坡道：
+0199 对于坡道场景，图像上与长直道较为相似，坡道主要的特点集中在顶边行附近的左右边界的宽度比正常赛道宽，以此为特点和其他条件的辅助即可完成坡道的处理。
+0200 斑马线：
+0201 对于斑马线场景，当初次检测道斑马线后不做任何处理并进行延时防止多次识别，当第二次识别到多个“白黑白“跳变点时判断为终点斑马线。
+0202 模型绕行：
+0203 对于模型绕行的场景，我们采用了单边巡线的方案，当检测到模型减速之后，将边界直接赋值给中线，同时编码器记录车运行的距离，当距离到达预设值后退出模型绕行状态机。
+0204 4.3 速度与转向控制
+0205 4.3.1 转向误差的获取
+0206 当图像处理完成后将实际中线与理论中线（39）做差得到转向偏差。
+0207 4.3.2 三串环
+0208 图 3.3 角速度环代码节选
+0209 图 3.4 位置环代码节选
+0210 图 3.5 速度环代码节选
+0211 我们采用了转向环串角速度环串速度环方案，图像处理得到的转向偏差输入给转向环得到目标角速度；目标角速度与陀螺仪采集的实际角速度做差算出angle_out；得到左右轮的目标速度后，左右轮的目标速度输入到速度环中计算出控制电机的占空比完成对电机的控制。
+0212 4.3.3 速度决策
+0213 速度决策的目的时让车在实际运行时直道加速弯道减速的效果。在进入不同的元素时会对目标速度进行额外处理。
+0214 图 3.6 速度决策代码节选
+0215 4.3.4 动态前瞻
+0216 前瞻行在小车的运行控制方面至关重要，它取决于车到哪里开始计算误差转弯。固定前瞻在车高速运行时会出现路径外切反应迟钝等特点，由此我们采用了动态前瞻的方案。实现的效果是直道时前瞻变远弯道时前瞻变近。
+0217 图 3.7 动态前瞻代码节选
+0218 4.4 红块处理与模型识别
+0219 4.4.1 数据集采集
+0220 我们采集数据集时，采用了识别到红色就保存一次320x240原图的方法，直接保存在板卡的文件夹上，拍摄好之后传输到PC端，使用能够批量处理图片的脚本再做二次处理。这样既能保证拍到的图片是自己需要的，也能便于在PC端上使用脚本反复改进红色截图等处理。只要摄像头高度角度不变，这些原图也能一直用得上。
+0221 图 3.8 数据集示意图
+0222 4.4.2 模型训练与部署
+0223 考虑到模型识别需要，我选择了320x240的摄像头分辨率和逆透视方案，一方面能够使可用像素点更加丰富，另一方面使背景都是蓝白赛道，此外还使不同距离下的图片增添了相似性，有利于模型学习。在制作模型的时候，通过对混淆矩阵、易错图片的观察，以及实车部署与电脑端检验的对比测试，我们逐渐发现在模型中更加注重图片边缘特征和内部纹理有利于模型更好的识别，并且在实车部署时有很大的提升。此外由于车模运动时图片会出现模糊，为了增加鲁棒性，我们做数据增广时加入了一定的模糊处理和色彩变化等处理。在训练时，我们还选择了GPU和租聘服务器加速训练，以便于快速得到结果。为了推理速度更快，我们使用了onnx2ncnn转化，最终实测实车部署16ms左右。
+0224 4.4.3 红块处理
+0225 考虑到赛题要求识别后绕行，所以这需要我们尽可能缩减循环一次的时间，与此同时增加红块识别的距离。所以在红块识别上，我们花费了很大的功夫来缩减时间和提高截图精度。在缩减时间方面，一开始我们使用的是HSV，但是在测试时，我们发现一帧320x240图像RGB转HSV需要7-8ms，所以最后我们选用了RGB范围判断检测红色来节约时间。在增加识别距离上，我们在60cm处进行模型识别，80cm处进行减速，给控制留足余量。
+0226 此外,为了避免红色判断到隔壁的道路上,我们对跑赛道的边线做了反逆透视变换,红色点只在边线内部搜索。
+0227 对于路障和模型上的红块,我们通过红色中心点和边线的关系来进行判断,红色路障在边线的外部,而模型红块在边线内,一旦找到足量的红色点就进行区分判断,如果不是路障就进一步判断。
+0228 图3.9 路障判断示意图
+0229 4.4.4 图像裁剪
+0230 根据搜索到的最左点、最右点、最下点的原图对应的点，判断应该向左还是向右裁剪。裁剪图像大小为64x64，边长为8（16）的倍数，便于特征保留提取。
+0231 图3.10 识别部分裁剪示意图              图3.11 上位机裁剪测试示意图
+0232 开发工具使用说明
+0233 5.1 开发工具
+0234 5.1.1 WSL
+0235 Windows子系统，可直接在Windows上运行Linux环境，无需虚拟机，能执行Linux命令、跑开发程序，兼顾Windows生态与Linux开发环境。
+0236 5.1.2 VMware Workstation
+0237 桌面端虚拟化软件，能在一台电脑创建多台虚拟机，独立运行Windows、Linux等系统，多用于开发调试、系统测试与学习实验。
+0238 5.1.3 Vscode
+0239 程序的开发是在Vscode下进行的，包括源程序的编写、编译和链接，并最终生成可执行文件。
+0240 5.2 上位机显示
+0241 5.2.1 Vofa+
+0242 VOFA+是免费上位机调试软件，支持串口、网口通信，可把单片机数据实时绘成波形，常用于PID调参、传感器数据观测。
+0243 5.2.2 逐飞助手
+0244 上位机，集成串口调试、虚拟示波器、WiFi图传功能，适配智能车竞赛，可看传感器波形、调PID、接收摄像头图像数据。
+0245 主要技术参数说明
+0246 车模类型
+0247 F车模
+0248 车模整体尺寸：
+0249 长，宽，高(mm)
+0250 长：235mm
+0251 宽：293mm
+0252 高：352mm
+0253 传感器种类、规格(型号)数量
+0254 摄像头：逐飞彩钻风，1个
+0255 陀螺仪：呆萌侠电子科技icm42688，1个
+0256 编码器：普地带方向抗磁PD1503-SDI-K1 512线，2个
+0257 电路中微处理器型号和个数
+0258 龙芯2k0300，1个
+0259 其它可编程器件，个数与作用
+0260 stc32g12k,2个，无刷控制
+0261 电池的种类、规格和数量
+0262 CODDAR鹰氪CD3S2200140
+0263 普压2200MAH 3S 11.1V 140C
+0264 1个
+0265 是否是原车模电机
+0266 是否具有防伪易损标签
+0267 是
+0268 是
+0269 轮胎是否是原车同款轮胎
+0270 轮胎的尺寸（直径和宽度）是否小于等于原车膜尺寸
+0271 是
+0272 是
+0273 车模电路板个数及功能。
+0274 5个。主控（运算控制），分电板（分电稳压），二合一电调（调速），电机驱动（驱动电机），灯板（灯光提示）。
+0275 自制电路板是否标记有学校名称、队伍名称、制作日期等信息？
+0276 标示信息在PCB的哪一层？
+0277 是
+0278 顶层和顶层阻焊层
+0279 总结
+0280 本技术报告概述了智能车竞赛备赛的核心思路，涵盖机械、硬件与软件。从秋天到夏天，团队在近一年的备赛过程中积累了宝贵经验，攻克了许多技术难题，使整车性能逐日完善。智能车比赛极大地提升了我们的实践能力与团队协作精神。谨此衷心感谢中国计量大学仰仪智能车协会的指导老师、学长学姐的倾力指导，以及主办方提供的宝贵竞赛平台。
+0281 附录A 程序部分源代码
+0282 #include "zf_common_headfile.hpp"
+0283 #include "global.hpp"
+0284 using namespace std;
+0285 uint8_t image_copy[60][80];
+0286 zf_driver_gpio motor2(ZF_GPIO_MOTOR_2,O_RDWR);
+0287 zf_driver_gpio motor1(ZF_GPIO_MOTOR_1,O_RDWR);
+0288 zf_driver_gpio LED(ZF_GPIO_BEEP,O_RDWR);
+0289 zf_driver_pit pit1;
+0290 zf_driver_pit pit2;
+0291 zf_driver_pit pit3;
+0292 zf_device_uvc uvc;
+0293 zf_device_ips200 ips200;
+0294 zf_driver_pwm pwm1(ZF_PWM_MOTOR_1,O_RDWR);
+0295 zf_driver_pwm pwm2(ZF_PWM_MOTOR_2,O_RDWR);
+0296 zf_driver_pwm pwm_1(ZF_PWM_ESC_1,O_RDWR);
+0297 zf_driver_pwm pwm_2(ZF_PWM_ESC_2,O_RDWR);
+0298 zf_driver_encoder encoder1(ZF_ENCODER_DIR_1 ,O_RDWR);
+0299 zf_driver_encoder encoder2(ZF_ENCODER_DIR_2 ,O_RDWR);
+0300 zf_driver_tcp_client tcp;
+0301 Yi_device_imu imu;
+0302 Yi_device_ips114 ips114;
+0303 Yangyi_tcp_vofa vofa;
+0304 LS_NCNN ncnn_detect;
+0305 Pit_Flag pit_flag;
+0306 void cleanup()
+0307 {
+0308 printf("程序异常退出，执行清理操作\n");
+0309 pit1.stop();
+0310 pit2.stop();
+0311 pit3.stop();
+0312 SystemData.MotorOK = 1;
+0313 }
+0314 void sigint_handler(int signum)
+0315 {
+0316 printf("收到Ctrl+C，程序即将退出\n");
+0317 cleanup();
+0318 exit(0);
+0319 }
+0320 void print_test()
+0321 {
+0322 // std::cout<< "OFFOF" << ImageStatus.Det_True-ImageStatus.MiddleLine <<std::endl;
+0323 // std::cout<< "ImageFlag.image_element_rings_flag  " << ImageFlag.image_element_rings_flag <<std::endl;
+0324 // std::cout<< "ImageFlag.iamge_Ramp_flag = " << ImageFlag.iamge_Ramp_flag <<std::endl;
+0325 // std::cout<< "ImageStatus.OFFLine   " << int(ImageStatus.OFFLine) <<std::endl;
+0326 // std::cout<< "ImageStatus.Left_Line   " << int(ImageStatus.Left_Line) <<std::endl;
+0327 // std::cout<< "ImageStatus.Right_Line   " << int(ImageStatus.Right_Line) <<std::endl;
+0328 // std::cout<< "SystemData.Stop   " << (int)SystemData.Stop <<std::endl;
+0329 std::cout<< "ImageStatus.Road_type  " << ImageStatus.Road_type <<std::endl;
+0330 // std::cout<< "SystemData.Stop  " << (int)SystemData.Stop <<std::endl;
+0331 // printf("%d\n",ImageDeal[52].LeftBorder);
+0332 // printf("%d    %.2f    %.2f \r\n",ImageStatus.OFFLine,ImageStatus.Det_True-ImageStatus.MiddleLine ,(1-ImageStatus.Longest_White_Line/60.0));
+0333 //  std::cout << "  x:  " << GyroData.x << "  y:  " << GyroData.y << "  z:  " << GyroData.z << std::endl;
+0334 // cout << "temp =  " << imu.imu_get_temp() << endl;
+0335 // cout << "GyroData_Zero_Drift_x = " << GyroData_Zero_Drift.x << endl;
+0336 // cout << "GyroData_Zero_Drift_y = " << GyroData_Zero_Drift.y << endl;
+0337 // cout << "GyroData_Zero_Drift_z = " << GyroData_Zero_Drift.z << endl;
+0338 // std::cout<< "  x:  " << GyroData.x <<std::endl;
+0339 // std::cout<< "  x:  " << EulerAngles.roll <<std::endl;
+0340 // std::cout << "SystemData.Stop: " << (int)SystemData.Stop << std::endl;
+0341 // std::cout << "SystemData.MotorOK: " << (int)SystemData.MotorOK << std::endl;
+0342 // std::cout << "Speed_Goal: " << Speed_Goal << std::endl;
+0343 // std::cout << "Speed_PID_OUT_l: " << Speed_PID_OUT_l << " " <<  "Speed_PID_OUT_r: " << Speed_PID_OUT_r << std::endl;
+0344 // cout << "ImageStatus.Longest_White_Line: " << ImageStatus.Longest_White_Line << endl;
+0345 // std::cout << "ImageStatus.WhiteLine: " << ImageStatus.WhiteLine << std::endl;
+0346 // cout << "Gyro_z = " << GyroData.z << endl;
+0347 // cout << "Su400_out = " << Su400_out << endl;
+0348 // cout << "angle_out = " << angle_out << endl;
+0349 // cout << "imu_gyro_x = " << imu_gyro_x <<  "imu_gyro_y = " << imu_gyro_y << "imu_gyro_z = " << imu_gyro_z << endl;
+0350 // cout << ImageStatus.Det_True - ImageStatus.MiddleLine << endl;
+0351 // cout << "Speed_Goal_r = " << Speed_Goal_r << " " << "Speed_Goal_l = " << Speed_Goal_l << endl;
+0352 // cout << "angle_error = " << angle_error << endl;
+0353 // cout << ratio_lut_l[266] << " " << ratio_lut_r[266] << endl;
+0354 // cout << "ImageFlag.RoadBlock_Flag = " << ImageFlag.RoadBlock_Flag << endl;
+0355 // cout << Straight_Judge(2, 30, 55) << endl;
+0356 // cout << "yaw = " << EulerAngles.yaw << endl;
+0357 // cout << "roll = " << EulerAngles.roll << endl;
+0358 // cout << "yaw = " << EulerAngles.yaw << " " << "pitch = " << EulerAngles.pitch << " " << "roll = " << EulerAngles.roll << endl;
+0359 // cout << "RoadBlock_L_Jump = " << (int)RoadBlock_L_Jump  << " " << "RoadBlock_R_Jump = " << (int)RoadBlock_R_Jump  << " " << "ImageFlag.RoadBlock_Flag =  " << ImageFlag.RoadBlock_Flag << endl;
+0360 // cout << "ImageStatus.Detour_length = " << ImageStatus.Detour_length << endl;
+0361 // cout << red_flag << endl;
+0362 // cout << "ImageFlag.image_model_flag = " << ImageFlag.image_model_flag << endl;
+0363 // cout << "ImageFlag.Zebra_Flag = " << ImageFlag.Zebra_Flag << endl;
+0364 // cout << "model_count = " << model_count << endl;
+0365 // cout << "ImageStatus.Threshold = " << ImageStatus.Threshold << endl;
+0366 // cout << "ImageStatus.Actual_Distance = " << (int)ImageStatus.Actual_Distance << endl;
+0367 // printf("%d\r\n",ImageStatus.Longest_White_Line);
+0368 // printf("%c\r\n",ImageDeal[23].IsRightFind);
+0369 // cout << "Straight_Judge(1, 10, 30) = " << Straight_Judge(1, 10, 30) << endl;
+0370 // cout << "Straight_Judge(2, 10, 30) = " << Straight_Judge(2, 10, 30) << endl;
+0371 // cout <<"ImageStatus.Actual_Distance_pressure = " << ImageStatus.Actual_Distance_pressure << endl;
+0372 // cout << "ImageDeal[ImageStatus.OFFLine + 1].wide = " << ImageDeal[ImageStatus.OFFLine + 1].Wide << endl;
+0373 // cout << Straight_Judge(1, ImageData.OFFLine, 59) << endl;
+0374 // cout << "element_judge.Ramp_check_number = " << element_judge.Ramp_check_number << endl;
+0375 // cout << ImageDeal[59].RightBorder << " " << ImageDeal[59].LeftBorder << " " << ImageDeal[59].Wide << endl;
+0376 // cout << "Pixle[59][39] = " << (int)Pixle[59][39] << endl;
+0377 // printf("detour_subtype: %d\n", ImageFlag.detour_subtype);
+0378 // cout << ImageStatus.Detour_length << endl;
+0379 // cout << "ImageStatus.straight_acc = " << ImageStatus.straight_acc << endl;
+0380 // cout << "pts.x_max_y = " << pts.x_max_y << " " << "pts.x_max = " << pts.x_max << endl;
+0381 // cout << "Straight_Curve_Flag = " << static_cast<int>(Straight_Curve.Straight_Curve_Flag) << endl;
+0382 // cout << "Straight_Curve.L_score = " << Straight_Curve.L_score << endl;
+0383 // cout << "Straight_Curve.R_score = " << Straight_Curve.R_score << endl;
+0384 // cout << "Straight_Curve.L_Border = " << Straight_Curve.L_Border << endl;
+0385 // cout << "Straight_Curve.L_Border - Straight_Curve.R_Border = " << Straight_Curve.L_Border - Straight_Curve.R_Border << endl;
+0386 // cout << "Straight_Curve.diff = " << Straight_Curve.diff << endl;
+0387 // cout << "ImageStatus.Det_True = " << ImageStatus.Det_True << endl;
+0388 // printf("Det_True=%.2f offset=%.2f Center[45]=%d\n",
+0389 // ImageStatus.Det_True,
+0390 // ImageStatus.Det_True - 39,
+0391 // ImageDeal[59].Center);
+0392 // printf("flag=%d len=%.1f s1=%d s2=%d goal=%d\n",ImageFlag.image_model_flag,ImageStatus.Detour_length,speed1, speed2, Speed_Goal);
+0393 // cout << "ImageFlag.Cross_Flag = " << (int)ImageFlag.Cross_Flag << endl;
+0394 // cout << " Straight_Judge(1,55,ImageStatus.OFFLine + 1) = " <<  Straight_Judge(1,ImageStatus.OFFLine,55) << endl;
+0395 // cout << "ImageStatus.OFFLineBoundary = " << ImageStatus.OFFLineBoundary << endl;
+0396 // cout << "ImageStatus.WhiteLine = " << ImageStatus.WhiteLine_R << endl;
+0397 // cout << "ImageDeal[ImageStatus.OFFLine + 10].RightBorder = " << ImageDeal[ImageStatus.OFFLine + 10].RightBorder << endl;
+0398 cout << "Speed_Decision.Speed_Modeltemp = " << Speed_Decision.Speed_Modeltemp << endl;
+0399 }
+0400 // void image_transmission()
+0401 // {
+0402 //     if(Gray_image.empty() ||
+0403 //        Gray_image.cols != 80 ||
+0404 //        Gray_image.rows != 60 ||
+0405 //        !Gray_image.isContinuous())
+0406 //     {
+0407 //         return;
+0408 //     }
+0409 //     memcpy(image_copy[0], Gray_image.data, sizeof(image_copy));
+0410 //     for(uint8_t i = 0; i < 60; i++)
+0411 //     {
+0412 //         if(ImageDeal[i].LeftBorder < 80)
+0413 //         {
+0414 //             image_copy[i][ImageDeal[i].LeftBorder] = 150;
+0415 //         }
+0416 //         if(ImageDeal[i].RightBorder < 80)
+0417 //         {
+0418 //             image_copy[i][ImageDeal[i].RightBorder] = 150;
+0419 //         }
+0420 //         if(ImageDeal[i].Center < 80)
+0421 //         {
+0422 //             image_copy[i][ImageDeal[i].Center] = 150;
+0423 //         }
+0424 //     }
+0425 //     seekfree_assistant_camera_send();
+0426 // }
+0427 void image_transmission()
+0428 {
+0429 for(uint8_t i = 0;i < 60; i++)
+0430 {
+0431 for(uint8_t j = 0;j < 80;j++)
+0432 {
+0433 Pixle[i][j] = (Pixle[i][j] > 0) ? 255 : 0;
+0434 Pixle[i][ImageDeal[i].RightBorder] =  150;
+0435 Pixle[i][ImageDeal[i].LeftBorder] =  150;
+0436 Pixle[i][ImageDeal[i].Center] =  150;
+0437 }
+0438 }
+0439 memcpy(image_copy[0], Pixle[0], 80 * 60);
+0440 seekfree_assistant_camera_send();
+0441 }
+0442 void set_pit()
+0443 {
+0444 pit1.init_ms(5,Sideslip_and_Angularveloocity_Error);
+0445 pit2.init_ms(5,speed_measure);
+0446 pit3.init_ms(5,Integrate_Gyro_Trapezoidal);
+0447 }
+0448 uint32 my_tcp_send(const uint8 *buff, uint32 len) {
+0449 return tcp.send_data(buff, len);
+0450 }
+0451 uint32 my_tcp_read(uint8 *buff, uint32 len) {
+0452 return tcp.read_data(buff, len);
+0453 }
+0454 int main(int, char**)
+0455 {
+0456 if(uvc.init(UVC_PATH) < 0)
+0457 {
+0458 return -1;
+0459 }
+0460 atexit(cleanup);
+0461 signal(SIGINT, sigint_handler);
+0462 Data_Settings();
+0463 Initialize_Ratio_LUT(Speed_arr_Length);
+0464 MOTOR_init();
+0465 imu.imu_init();
+0466 // menu_init();
+0467 // vofa.vofa_init(SERVER_IP,SERVER_PORT);
+0468 model_init();
+0469 Zero_Drift_Detection();
+0470 Speed_Parameter();
+0471 calculateQuadraticCoefficients(ImageStatus.Prospect_Longest_White_Line_Farthest,ImageStatus.Prospect_Farthest,ImageStatus.White_Line_To_Prospect_Middle_White_Line,ImageStatus.White_Line_To_Prospect_Middle_Prospect,ImageStatus.Prospect_Longest_White_Line_Nearest,ImageStatus.Prospect_Nearest,&ImageStatus);
+0472 set_pit();
+0473 BGR_ImagePerspective_Init();
+0474 // for(int i = 0;i < Speed_arr_Length;i++)`
+0475 // {
+0476 //     // printf("%f\r\n", ratio_lut_l[i]);
+0477 //     printf("idx=%d, rL=%.4f, rR=%.4f\n", i, ratio_lut_l[i], ratio_lut_r[i]);
+0478 // }
+0479 #if 0
+0480 if(tcp.init(SERVER_IP, PORT) == 0)
+0481 {
+0482 printf("tcp_client ok\r\n");
+0483 }
+0484 else
+0485 {
+0486 printf("tcp_client error\r\n");
+0487 return -1;
+0488 }
+0489 seekfree_assistant_interface_init(my_tcp_send, my_tcp_read);
+0490 seekfree_assistant_camera_information_config(
+0491 SEEKFREE_ASSISTANT_GRAY,
+0492 image_copy,
+0493 80,
+0494 60
+0495 );
+0496 #endif
+0497 #if 0
+0498 if(tcp.init(SERVER_IP, PORT) == 0)
+0499 {
+0500 printf("tcp_client ok\r\n");
+0501 }
+0502 else
+0503 {
+0504 printf("tcp_client error\r\n");
+0505 return -1;
+0506 }
+0507 seekfree_assistant_interface_init(my_tcp_send, my_tcp_read);
+0508 seekfree_assistant_camera_information_config(SEEKFREE_ASSISTANT_MT9V03X, image_copy[0], 80, 60);
+0509 seekfree_assistant_camera_information_config(SEEKFREE_ASSISTANT_RGB565, uvc.get_rgb_image_ptr(), 320, 240);
+0510 #endif
+0511 while(1)
+0512 {
+0513 // if (SystemData.screen_OK==1) menu_open();
+0514 // if (SystemData.GO_OK==1)
+0515 // {
+0516 if(uvc.wait_image_refresh() < 0)
+0517 {
+0518 exit(0);
+0519 }
+0520 // auto start = std::chrono::high_resolution_clock::now();
+0521 pit_flag.speed_pitflag = 1;
+0522 ImageProcess();
+0523 // image_transmission();
+0524 Gyro_Work();
+0525 print_test();
+0526 // if(ImageStatus.Road_type == Zebra)
+0527 // {
+0528 //     SystemData.screen_OK = 1;
+0529 // }
+0530 // }
+0531 }
+0532 return 0;
+0533 }

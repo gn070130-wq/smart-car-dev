@@ -1,0 +1,479 @@
+[
+  {
+    "id": 1,
+    "name": "集美大学诚毅学院_深闳铜炉鸡_走马观碑(1).docx",
+    "text_file": "01.txt",
+    "lines": 624,
+    "characters": 27096,
+    "original_sha256": "7e56f0b1dd9150ec099d2f73dfe3999382972a2ec563688a66598a03a6a69deb",
+    "text_sha256": "b183026608c14397a8be538a4453017d1a8ce1fb6a0ecd79b2676644e340c617"
+  },
+  {
+    "id": 2,
+    "name": "长春理工大学-追风五队2026-走马观碑.docx",
+    "text_file": "02.txt",
+    "lines": 1021,
+    "characters": 33022,
+    "original_sha256": "deca12dd8fb45fc1bef7727471877795f1a2b8856bad32b388eb6f502d088235",
+    "text_sha256": "1f540ef50bf0079c3536cb0958aa216cc32f7434231788ad294f45cf9f2bce9e"
+  },
+  {
+    "id": 3,
+    "name": "重庆大学_北极星_走马观碑.docx",
+    "text_file": "03.txt",
+    "lines": 400,
+    "characters": 14741,
+    "original_sha256": "f2d4f1236e925d33fc70f257fe5dcf8db203d6b203156f8b6188ac0e691aaebd",
+    "text_sha256": "4ee2e5af5b24e0c59aab81c5be356aa6e4081949def2754a00348a0dcfd75a0c"
+  },
+  {
+    "id": 4,
+    "name": "辽宁科技大学-走马观碑-千山一队.docx",
+    "text_file": "04.txt",
+    "lines": 309,
+    "characters": 10138,
+    "original_sha256": "b9238bf04ace427e241b4edea98d47bbfa7263ac74c4c972c638a58d4dab9771",
+    "text_sha256": "523d9631aed89cbc43dac67d3398d4f7b24bfcc60d77bf5a9e3002f09c06b99f"
+  },
+  {
+    "id": 5,
+    "name": "走马观碑组_广东东软学院_打上花火.docx",
+    "text_file": "05.txt",
+    "lines": 484,
+    "characters": 19371,
+    "original_sha256": "6a5e749986fbccdbcfba66a6912df2571fc2ba81bbcef6041cb396e965271fec",
+    "text_sha256": "3001f691e3364f1f21155a437809324103d16d74943a389df72772b69193d94c"
+  },
+  {
+    "id": 6,
+    "name": "走马观碑-安徽师范大学-驰逐零队-车模检查技术报告.pdf",
+    "text_file": "06.txt",
+    "lines": 935,
+    "characters": 24855,
+    "original_sha256": "4900d4fbfc74fd8007b8ba555ef67693003bf1ba4b2076146e96e34566318944",
+    "text_sha256": "4033ec914ebec94a5795fc0206be9fc585c084d7e51e412e113bedb2a95578ee"
+  },
+  {
+    "id": 7,
+    "name": "赣南科技学院_睡个好觉_走马观碑_技术报告.docx",
+    "text_file": "07.txt",
+    "lines": 763,
+    "characters": 22792,
+    "original_sha256": "f37ebeaa2e8670bf6df85462e50521938efa45942bdfdea8fc1f34c3173e8d97",
+    "text_sha256": "9d6226899f76b1a0407de4991ae57b936584cfe8ef82943afab4d1b8c25809c7"
+  },
+  {
+    "id": 8,
+    "name": "西华大学_无限恒星号_走马观碑.docx",
+    "text_file": "08.txt",
+    "lines": 250,
+    "characters": 12515,
+    "original_sha256": "d16dc2b1faede1887c6ee3a1ea4bd1edac9463b1826f9c979d1742d3d520691f",
+    "text_sha256": "8a0f2614a922ff88b971fea81d23f2c7099a9d8ef65a3e2722645bcf87669d46"
+  },
+  {
+    "id": 9,
+    "name": "电子科技大学_BaoY Dream It's MyCAR!!!_走马观碑.docx",
+    "text_file": "09.txt",
+    "lines": 160,
+    "characters": 7741,
+    "original_sha256": "09a7e45b2d68279d571bc980b08403932db82c1398285bbe42f40486297618cb",
+    "text_sha256": "e14668379f3bcce1b7b33fb40fa7490e53481c2a04f77bd62c59ed0fb7443e40"
+  },
+  {
+    "id": 10,
+    "name": "烟台南山学院-东风一队-走马观碑组.docx",
+    "text_file": "10.txt",
+    "lines": 360,
+    "characters": 12762,
+    "original_sha256": "04b404b530ddf9cc5769e976bea62ca8c523aade85b3c9233904057ee871b98c",
+    "text_sha256": "8beac92b722477de0a6d6c958a921ca40aba09b061cc97aaf5dec7c760f87874"
+  },
+  {
+    "id": 11,
+    "name": "湖南科技大学潇湘学院_走马观碑_蓝色空间队.docx",
+    "text_file": "11.txt",
+    "lines": 611,
+    "characters": 22719,
+    "original_sha256": "09a67d09aa55015f029617ee7dc2d5d3e9b13b9e5d28f88e663145145e220753",
+    "text_sha256": "2f211d181368694ce0a0f225046fcf5332e5c4c3b111d242d482a84cbb30f45d"
+  },
+  {
+    "id": 12,
+    "name": "湖南科技大学-走马观碑-湖科二队.docx",
+    "text_file": "12.txt",
+    "lines": 720,
+    "characters": 31966,
+    "original_sha256": "e5ac3f4deef842ad5b1a2e3195110bf9b4a0821d6b2f53c8321a1469a6502fb7",
+    "text_sha256": "ea2ff0b3d4ea6855041fb05ba0ba5faffe35210a0aac837e6f7710848dda5250"
+  },
+  {
+    "id": 13,
+    "name": "湖北文理学院-走马观碑-湖文卧龙九队.docx",
+    "text_file": "13.txt",
+    "lines": 745,
+    "characters": 30689,
+    "original_sha256": "e4bc53f5e9eeafc6ff11af0e273c4a14a0e4edba78d3173c38da91e90cbbb516",
+    "text_sha256": "b27d677f501a361d1f0cd07385c3d67cfda38fce677dd082fd26f3ebdbddf1ee"
+  },
+  {
+    "id": 14,
+    "name": "深圳职业技术大学_观碑逐速队_走马观碑.docx",
+    "text_file": "14.txt",
+    "lines": 1047,
+    "characters": 37668,
+    "original_sha256": "7fdcd33dbcd6f72b1a5b24e2014d0d3e24aafc2758243bb795f0050a20acba96",
+    "text_sha256": "d53bcf92c22ea26104e2e7aaf2a9b02ae390d9c400c5d231bba380329f5fe73f"
+  },
+  {
+    "id": 15,
+    "name": "河北工程大学-走马观碑-Crush队.docx",
+    "text_file": "15.txt",
+    "lines": 372,
+    "characters": 23410,
+    "original_sha256": "af9e3a4c1bbbb57777bc3d0b5d7937df69638c03e2fbcad2d985b91fe1c70f1a",
+    "text_sha256": "feec1e5d6c210b4135e1449daa9d1fbde1e38fb730aab9dc3cc9fec7295cee63"
+  },
+  {
+    "id": 16,
+    "name": "江西水利电力大学_我不会配环境_走马观碑.docx",
+    "text_file": "16.txt",
+    "lines": 709,
+    "characters": 45385,
+    "original_sha256": "5aadd4a9cd150015b12479c636e88b1f0239c91050cd26b90441f240a942953a",
+    "text_sha256": "8f72e06f73d2878334b4e2e32c9255f09c0d118c44e2974d6000c4681dda677c"
+  },
+  {
+    "id": 17,
+    "name": "江苏理工学院-凌波.道曜-走马观碑技术报告.docx",
+    "text_file": "17.txt",
+    "lines": 285,
+    "characters": 12481,
+    "original_sha256": "a82ada820adb7f3ed0b09eccaf3a8e8d579ba764b4699c1d11219cc2a04e9680",
+    "text_sha256": "087cff99aa729953e43dd152f80d7402f86b737ce4d7aeb1df8097371d3d20e6"
+  },
+  {
+    "id": 18,
+    "name": "桂林信息科技学院-走马观辈-诡影·驰承.docx",
+    "text_file": "18.txt",
+    "lines": 359,
+    "characters": 13967,
+    "original_sha256": "440c92bd3cd26dadf050d476936690544b8cc6e2d9ac55fa50978b990db34708",
+    "text_sha256": "47b762847614ccdbd6ae94508fc278d051f690ceb8bc83dd5ad37216ce335dd9"
+  },
+  {
+    "id": 19,
+    "name": "杭州电子科技大学-走马观碑-杭电走马观碑一队_技术报告.pdf",
+    "text_file": "19.txt",
+    "lines": 747,
+    "characters": 17709,
+    "original_sha256": "ade324ef4572a543f77f0c492d9b9869c1637516535b96adfadfbbaa34fee589",
+    "text_sha256": "3a0c441e26de6bb8758b8ce1a1c4d1d1befe0b731c4b7354ba4d3eb53969857c"
+  },
+  {
+    "id": 20,
+    "name": "曲阜师范大学（日照校区）_走马观碑_曲师一队.docx",
+    "text_file": "20.txt",
+    "lines": 500,
+    "characters": 22499,
+    "original_sha256": "0d33b64cae1526a2c0f25eeddeda403934c87f042c62e3c355bf9507f3913e25",
+    "text_sha256": "6e52124533a5eaba2a9204c4c53a1f0edb6ce921b5accc48c4e85c9735df7757"
+  },
+  {
+    "id": 21,
+    "name": "无锡太湖学院_太湖C栈_走马观碑.docx",
+    "text_file": "21.txt",
+    "lines": 343,
+    "characters": 18352,
+    "original_sha256": "85e80f3c20908836e41c78c498fc2cb9564d708a66092558f045bf89c7f4a392",
+    "text_sha256": "c653b533c880123767f061db91794f9c115600afd1502b59907b8f1451b21e38"
+  },
+  {
+    "id": 22,
+    "name": "新疆大学-宇智波天生善良的小鬼队-走马观碑.docx",
+    "text_file": "22.txt",
+    "lines": 241,
+    "characters": 8150,
+    "original_sha256": "8fdca2189397ade9f3b6cfbdb10f417fc461b7c240fe5e7880c7d256b24a7726",
+    "text_sha256": "23db40ccfc03e90b307426b066020d6a71aacadaad4600cb22cc84f43fac717d"
+  },
+  {
+    "id": 23,
+    "name": "成都工业学院_走马观碑_六六大顺队.docx",
+    "text_file": "23.txt",
+    "lines": 477,
+    "characters": 22563,
+    "original_sha256": "135be2f584176e873ad1e59cb80d615260a7081f290700121018ee7b1e132a3b",
+    "text_sha256": "796b401b561602068a58f3b74a661e4708c2e8d645c50eb83ff7900d11a6c73b"
+  },
+  {
+    "id": 24,
+    "name": "成都大学_青龙湖一队_走马观碑.docx",
+    "text_file": "24.txt",
+    "lines": 425,
+    "characters": 16376,
+    "original_sha256": "83c8190ffde7cb95aedd8cab38300c853d5cf4cb1d328161980ca37d44c8d016",
+    "text_sha256": "c94057e50c0ae98a84aacdffb74c23ebfb8f9fd0279f65c4732c404dccc11d10"
+  },
+  {
+    "id": 25,
+    "name": "惠州学院_东江-白鹭_走马观碑_技术报告.docx",
+    "text_file": "25.txt",
+    "lines": 286,
+    "characters": 9762,
+    "original_sha256": "e74725c664d8a0a6387ece9983a8a801875d5ad624db4c5bff3852961370c5c9",
+    "text_sha256": "e1ec26d89d03da03e2fa742eaab99be25e8bb3636b9997097e284a2df9c0069d"
+  },
+  {
+    "id": 26,
+    "name": "山东大学（威海）山魂四队 走马观碑.pdf",
+    "text_file": "26.txt",
+    "lines": 672,
+    "characters": 23932,
+    "original_sha256": "e6bcc31597b7e6e957e888e29c13b3637c9bd4a6ba4f1d61d9010f13527a248e",
+    "text_sha256": "ceb730c0b35f844236d0648e21d3a4b008eaa58a1d6ec2917c11e938166884ae"
+  },
+  {
+    "id": 27,
+    "name": "安徽建筑大学_龙芯真带派_走马观碑组.docx",
+    "text_file": "27.txt",
+    "lines": 889,
+    "characters": 40113,
+    "original_sha256": "c046d6b54f1a2c8504e7da2366d0f746379983c3c8570726c6fe17f6644ef39d",
+    "text_sha256": "adc6baebea2e8562d6d56de119935dc5b035ca095fba478f8b2b18ebea0be739"
+  },
+  {
+    "id": 28,
+    "name": "安徽工业大学_飞呀飞_走马观碑.docx",
+    "text_file": "28.txt",
+    "lines": 1974,
+    "characters": 91538,
+    "original_sha256": "44716f96931568274543a8b9562d7a13515a8fb1869f272c3eff00cdee0e1239",
+    "text_sha256": "137bbfdcea6a76d91aacc13fb731ffd80c7c33bad226032f39d9405411e8b755"
+  },
+  {
+    "id": 29,
+    "name": "太原理工大学_晋豹四队_走马观碑组.docx",
+    "text_file": "29.txt",
+    "lines": 331,
+    "characters": 11632,
+    "original_sha256": "aea3370372c551972b9e017bc880d6e243827c8f72959d6c9ad0991765aa5794",
+    "text_sha256": "43effe6320f5ae5e08ff693c2346f52ca828ccd52b4ef21129c76623606c1466"
+  },
+  {
+    "id": 30,
+    "name": "太原工业学院_晋速-掠芒星_走马观碑.docx",
+    "text_file": "30.txt",
+    "lines": 1082,
+    "characters": 28299,
+    "original_sha256": "f89661d288d3a1f915e4d00e2ea2ed7558dd3ad7e089718e7fa1c6f2203171a9",
+    "text_sha256": "c29b8d375818834246d1ea5220767e899023de96b693b00dcbf1bf0904b6d1ea"
+  },
+  {
+    "id": 31,
+    "name": "太原学院_力行-千里_走马观碑.docx",
+    "text_file": "31.txt",
+    "lines": 308,
+    "characters": 12790,
+    "original_sha256": "77bd6c2bd57c5ee02fd09d9462ca034b5a15143cb6568944658aa0edfb54f04f",
+    "text_sha256": "a0d1edba0f89b6bf0c298e600e664e905cde8a50ace24422a91a25ab0974655a"
+  },
+  {
+    "id": 32,
+    "name": "大连东软信息学院_鹏启,星驰队_走马观碑组.docx",
+    "text_file": "32.txt",
+    "lines": 117,
+    "characters": 8076,
+    "original_sha256": "0b51ab741002ca575bcf23a66ab04d507af330967918311f401459621b2ca8f2",
+    "text_sha256": "570fe70031415004ab7903710ae77b6316ecd361e79b51949b75b4389443f32c"
+  },
+  {
+    "id": 33,
+    "name": "四川工商学院-走马观碑-川商白驹.docx",
+    "text_file": "33.txt",
+    "lines": 547,
+    "characters": 19616,
+    "original_sha256": "09259853e681f34246dfacc039ebfd60747f67f86cdf6e5a406e61937c559824",
+    "text_sha256": "affa7913c8a9375dd2ab94b5d8b115bf9077baf5e522e6fc6a630e6fb189f731"
+  },
+  {
+    "id": 34,
+    "name": "四川大学锦江学院-走马观碑组-锦江三队.docx",
+    "text_file": "34.txt",
+    "lines": 405,
+    "characters": 18857,
+    "original_sha256": "80f3cd08218f62687a62c27c990d81ea6ab55fe46c93746b4ef62fe5b78db6a0",
+    "text_sha256": "6c6974ce9acf0fa1e0c92d5795660656d61ee67ce040d2794392fad606af5334"
+  },
+  {
+    "id": 35,
+    "name": "哈尔滨工业大学_走马观碑_紫丁香六队.docx",
+    "text_file": "35.txt",
+    "lines": 397,
+    "characters": 15210,
+    "original_sha256": "e621c4adc1c3764ac12aeb4a1cb96e046a1187c390a39a93d2b2e53befd5a9c6",
+    "text_sha256": "feb5b82f3b372cfe9213be7344b8891a9e91246047df20f5ac70539615eb78b4"
+  },
+  {
+    "id": 36,
+    "name": "合肥大学-走马观碑-攀高一队.docx",
+    "text_file": "36.txt",
+    "lines": 95,
+    "characters": 6066,
+    "original_sha256": "77b1b979021844dc41aa97c5d10ba5853a52e756a998599a1c1a0cfb8809073c",
+    "text_sha256": "3e6ac6a4a17bac916c1f0fc3ad4c8115f5d4b543f15f6aadbadd073eaa774494"
+  },
+  {
+    "id": 37,
+    "name": "厦门理工学院_索罗芬-阳光青提_走马观碑.docx",
+    "text_file": "37.txt",
+    "lines": 693,
+    "characters": 24042,
+    "original_sha256": "dd91c38e52b4498f32b0aa4b7f37588b767a87bf8cbbacbc043f3538f9ff13bc",
+    "text_sha256": "28890c1541f9a12258936d247a6a0c68b1a3bf3aa0e3ad1c771a002dac434a12"
+  },
+  {
+    "id": 38,
+    "name": "南昌大学_走走走gogogo_走马观碑.docx",
+    "text_file": "38.txt",
+    "lines": 237,
+    "characters": 10485,
+    "original_sha256": "5d4c37b4a14c89032902bf8dd1b9a90cda0678f928eedf38d3bce720bc892dfd",
+    "text_sha256": "1335406844d1d22e16732dab5ec4a33646d266292254914c4a50a652c670631c"
+  },
+  {
+    "id": 39,
+    "name": "南京信息工程大学_走马观碑(龙芯)组_NATG2026.docx",
+    "text_file": "39.txt",
+    "lines": 614,
+    "characters": 20214,
+    "original_sha256": "f9efe6ea9f974e42c1f10988809f0b7539cb0f356c95af0bd2e9e9be9c921170",
+    "text_sha256": "aedcbf860db731b64a41a030b3d6b2e7f5272adf1685c2b3ac6f016899812a86"
+  },
+  {
+    "id": 40,
+    "name": "华北电力大学（保定）_走马观碑_AlexNet_EIN.docx",
+    "text_file": "40.txt",
+    "lines": 281,
+    "characters": 16352,
+    "original_sha256": "ae63764949971e93ba49c4350c620c10f4ac1b18966db4d731158d757dc7be70",
+    "text_sha256": "2452f4e78fdc0347e4225e984e926b7663e0dd50a5511730fd524ded5eac09bd"
+  },
+  {
+    "id": 41,
+    "name": "华北理工大学-走马观碑-大米公司_技术报告.docx",
+    "text_file": "41.txt",
+    "lines": 196,
+    "characters": 11352,
+    "original_sha256": "01a38218c9280e6e234e8c87723a5d7cd0f1e22d6f68117e1c09a4673ae6e609",
+    "text_sha256": "b45b0584eb55bfceae5448a423eee02d26772d543f64dd2aa8116e78a1a77e11"
+  },
+  {
+    "id": 42,
+    "name": "华侨大学 走马观碑 有感觉吗队技术报告.docx",
+    "text_file": "42.txt",
+    "lines": 204,
+    "characters": 11576,
+    "original_sha256": "154263a9bc33a4975b893e27f61d7f04b8e17b6310ad016d2bab02b94914c57c",
+    "text_sha256": "40f8f14511b4b5664e6ed974409ef91c45a59d0d3398132f90628ca53e410e09"
+  },
+  {
+    "id": 43,
+    "name": "华东交通大学_走马观碑组_小马快跑队_技术报告.pdf",
+    "text_file": "43.txt",
+    "lines": 1132,
+    "characters": 37458,
+    "original_sha256": "e1b06bc262d103ae8ede6ff9c60cc999ab1e66824d51e98c8fdeecee6dd17cd6",
+    "text_sha256": "03b519a6538cba8ade6091318e3f377045840cf2837477e8f116d55abcac6f6a"
+  },
+  {
+    "id": 44,
+    "name": "北华航天工业学院-彭彭旂-龙骧-走马观碑组.docx",
+    "text_file": "44.txt",
+    "lines": 553,
+    "characters": 23888,
+    "original_sha256": "b0db17239d20eac28135bfb96bf067182eb2f2858500c566cf6d1ab2d8cda967",
+    "text_sha256": "92bb23d263ea75663b2dc860fd7a4749e5cd190d8b4b77060fddf679b5ede97c"
+  },
+  {
+    "id": 45,
+    "name": "北京科技大学-北京科技大学走马观碑组-走马观碑(1).docx",
+    "text_file": "45.txt",
+    "lines": 353,
+    "characters": 18106,
+    "original_sha256": "5175310374e8070f69e1515a7781462766398b11ca9ad45979b1e25d1fc93d63",
+    "text_sha256": "3d6f241d459e8f904371bba52db5bfd0f8c5aca243105907e0d81dcb4982985c"
+  },
+  {
+    "id": 46,
+    "name": "乐山师范学院-乐师-走马观碑-走马观碑组.docx",
+    "text_file": "46.txt",
+    "lines": 214,
+    "characters": 12955,
+    "original_sha256": "8ca6afe68139641900ee7e6ae1f240e235e61d8b9f4d201068460cb099d0b953",
+    "text_sha256": "84b68cd6899c28c064b9793ab5b49b0fddc0cb75fc3ec14314d8341bc2e467c3"
+  },
+  {
+    "id": 47,
+    "name": "临沂大学_走马观碑_obsidian.docx",
+    "text_file": "47.txt",
+    "lines": 228,
+    "characters": 10836,
+    "original_sha256": "85478da950e35880bebad94d3c0ada47e26fabe6cdfd77ae8a6a2fea8e3bb79f",
+    "text_sha256": "aace5d3996cc0e20718ed209026959355e5fec7406e85cb1d2dfa46c49c0b455"
+  },
+  {
+    "id": 48,
+    "name": "中国计量大学现代科技学院_格物·往里豪_走马观碑组副本.docx",
+    "text_file": "48.txt",
+    "lines": 347,
+    "characters": 14908,
+    "original_sha256": "d5c9aa8df8b7e3e05209a14d27680c3d32844addd0168c4c87f4835a4b7be6ec",
+    "text_sha256": "41248228d89d93f0ea6cb3cb51597636f063d29de2d0accc06571cba5cca1419"
+  },
+  {
+    "id": 49,
+    "name": "中国计量大学_仰仪-龙行天下_走马观碑副本.docx",
+    "text_file": "49.txt",
+    "lines": 533,
+    "characters": 22082,
+    "original_sha256": "fbf9eaadf9061052d0271cbfede757aaa5a74cc34254cfc9ec06605e3058240a",
+    "text_sha256": "e09e31793f7e0111ab95f4479f56556bbf26521ac1bb1c36ea36b45d9212907f"
+  },
+  {
+    "id": 50,
+    "name": "中国计量大学-赛博-10技术报告.docx",
+    "text_file": "50.txt",
+    "lines": 584,
+    "characters": 23441,
+    "original_sha256": "448f75fb623f6a9c3fa2467df95a933da1624792d7f4f984350495b50072127e",
+    "text_sha256": "281ef3fc127433d5020325ebd0930873d3774363209f5bf49283dfa7f9bd586a"
+  },
+  {
+    "id": 51,
+    "name": "中国石油大学(华东)走马观碑-技术报告_绝影副本.docx",
+    "text_file": "51.txt",
+    "lines": 298,
+    "characters": 12125,
+    "original_sha256": "34b8117b041a6117070e5174c24ac8f719051fe13c4f0f9b2dfc707e86ee4a29",
+    "text_sha256": "8e1de94fce4a31d6507c5340e21ce9268149556d84b1002b5bd11cc74e9b3f18"
+  },
+  {
+    "id": 52,
+    "name": "中国地质大学（武汉）-走马观碑-地大吹风队.docx",
+    "text_file": "52.txt",
+    "lines": 513,
+    "characters": 31987,
+    "original_sha256": "ed471b70eafe0a9f070de62ebab43c0d0f21bf646c13a2cb5739a36b13d0cc31",
+    "text_sha256": "84d447f68041e3660dc8806e058ce2a6917c3d2be81201af7023f4b9c41fb848"
+  },
+  {
+    "id": 53,
+    "name": "中原工学院_逐鹿-win_走马观碑.(1).docx",
+    "text_file": "53.txt",
+    "lines": 454,
+    "characters": 17083,
+    "original_sha256": "356ecf84e9ad4418cf50958515b8bb82aadf384f87ef66ddd3c3222d3b5482c7",
+    "text_sha256": "a978f5256ae6e95135f2f5fbfa805c7c11a724b85bb71756e59ae77522fccf97"
+  }
+]

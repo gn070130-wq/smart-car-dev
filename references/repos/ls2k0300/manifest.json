@@ -1,0 +1,590 @@
+{
+  "id": "ls2k0300",
+  "source_id": "vvsakivv--LS2K0300",
+  "url": "https://gitee.com/vvsakivv/LS2K0300",
+  "revision": "b16ed55a9e1f89c3f8f81090901b18865e57a4d9",
+  "role": "逐飞示例与三类识别差速应用",
+  "files": [
+    {
+      "path": "README.md",
+      "git_blob": "dc128501342977b9aeb6efea5aca307fc9b99938",
+      "bytes": 1956,
+      "type": "blob",
+      "sha256": "d2586b1b602babdd208834daa20ec91ea87e8331ec8098215e990b5c2e329193",
+      "url": "https://gitee.com/vvsakivv/LS2K0300/blob/b16ed55a9e1f89c3f8f81090901b18865e57a4d9/README.md"
+    },
+    {
+      "path": "Seekfree_LS2K0300_Opensource_Library/dataset_capture_demo/README.md",
+      "git_blob": "181a9946fc55b7b0f0edbc3b57c3636c448a02fb",
+      "bytes": 11534,
+      "type": "blob",
+      "sha256": "2e70b21ab8dee3f0bd0ba5d021253329b344bb3b6efd73113f8f7aada33323a0",
+      "url": "https://gitee.com/vvsakivv/LS2K0300/blob/b16ed55a9e1f89c3f8f81090901b18865e57a4d9/Seekfree_LS2K0300_Opensource_Library/dataset_capture_demo/README.md"
+    },
+    {
+      "path": "Seekfree_LS2K0300_Opensource_Library/dataset_capture_demo/pc/receive_dataset.py",
+      "git_blob": "36476581a1ca985cc8937d27c14694969b1b59c4",
+      "bytes": 6850,
+      "type": "blob",
+      "sha256": "715647b12155f8ec48c97a0e2f142e68c24a90c6ee62aa29b7194d43e6f177f9",
+      "url": "https://gitee.com/vvsakivv/LS2K0300/blob/b16ed55a9e1f89c3f8f81090901b18865e57a4d9/Seekfree_LS2K0300_Opensource_Library/dataset_capture_demo/pc/receive_dataset.py"
+    },
+    {
+      "path": "Seekfree_LS2K0300_Opensource_Library/dataset_capture_demo/user/CMakeLists.txt",
+      "git_blob": "a905a779f2e9662dd15bc6dac58483448506a126",
+      "bytes": 1675,
+      "type": "blob",
+      "sha256": "19ab1c06cda6575ad936b58ca188eb3385c619f3fe4e6d351fae182e874b39dc",
+      "url": "https://gitee.com/vvsakivv/LS2K0300/blob/b16ed55a9e1f89c3f8f81090901b18865e57a4d9/Seekfree_LS2K0300_Opensource_Library/dataset_capture_demo/user/CMakeLists.txt"
+    },
+    {
+      "path": "Seekfree_LS2K0300_Opensource_Library/dataset_capture_demo/user/build.sh",
+      "git_blob": "79d70f4542e8881273c66dfda205431a71c30526",
+      "bytes": 469,
+      "type": "blob",
+      "sha256": "26ea9e48c7c849c34cc7d32801ab3e5f3265480074d4e8fb84e1fc80c14d7448",
+      "url": "https://gitee.com/vvsakivv/LS2K0300/blob/b16ed55a9e1f89c3f8f81090901b18865e57a4d9/Seekfree_LS2K0300_Opensource_Library/dataset_capture_demo/user/build.sh"
+    },
+    {
+      "path": "Seekfree_LS2K0300_Opensource_Library/dataset_capture_demo/user/cross.cmake",
+      "git_blob": "d7e875d7dfbe4fa404c922cc71c5e742f303966d",
+      "bytes": 486,
+      "type": "blob",
+      "sha256": "1fc55bfb513d0fcb696d5ddff4654dc46c3d235f8782f8f950895e66fc6860d7",
+      "url": "https://gitee.com/vvsakivv/LS2K0300/blob/b16ed55a9e1f89c3f8f81090901b18865e57a4d9/Seekfree_LS2K0300_Opensource_Library/dataset_capture_demo/user/cross.cmake"
+    },
+    {
+      "path": "Seekfree_LS2K0300_Opensource_Library/dataset_capture_demo/user/main.cpp",
+      "git_blob": "fd63b28fb385850a97ae3269e09559b37e114cef",
+      "bytes": 30894,
+      "type": "blob",
+      "sha256": "153b2cf936c783864677464279f31f521e5c6f1d808cfb9e6933b40449c9ae5f",
+      "url": "https://gitee.com/vvsakivv/LS2K0300/blob/b16ed55a9e1f89c3f8f81090901b18865e57a4d9/Seekfree_LS2K0300_Opensource_Library/dataset_capture_demo/user/main.cpp"
+    },
+    {
+      "path": "Seekfree_LS2K0300_Opensource_Library/libraries/zf_components/seekfree_assistant/seekfree_assistant.cpp",
+      "git_blob": "dc624b92f7df0f0b82bf9795578be3b5c1cdef1b",
+      "bytes": 21469,
+      "type": "blob",
+      "sha256": "17a6838c21f9bf4e15a678576fad977c8d1423175a452b1828f8025cd1ce9856",
+      "url": "https://gitee.com/vvsakivv/LS2K0300/blob/b16ed55a9e1f89c3f8f81090901b18865e57a4d9/Seekfree_LS2K0300_Opensource_Library/libraries/zf_components/seekfree_assistant/seekfree_assistant.cpp"
+    },
+    {
+      "path": "Seekfree_LS2K0300_Opensource_Library/libraries/zf_components/seekfree_assistant/seekfree_assistant.hpp",
+      "git_blob": "a52d21703f8c3f00b395cd9d82c2b2b87b1cbc70",
+      "bytes": 8472,
+      "type": "blob",
+      "sha256": "72618c2157e8b617c95ab2f9394aa638c8f090a5480de96eb4827397ae0a11d5",
+      "url": "https://gitee.com/vvsakivv/LS2K0300/blob/b16ed55a9e1f89c3f8f81090901b18865e57a4d9/Seekfree_LS2K0300_Opensource_Library/libraries/zf_components/seekfree_assistant/seekfree_assistant.hpp"
+    },
+    {
+      "path": "Seekfree_LS2K0300_Opensource_Library/libraries/zf_components/seekfree_assistant/seekfree_assistant_interface.cpp",
+      "git_blob": "74e5a29be99b00778b825f350f649ccb65c98cf3",
+      "bytes": 4716,
+      "type": "blob",
+      "sha256": "19e5ce12b353108dede4eb3935add6810c9e4cdf48dcc98fade565e17af071c0",
+      "url": "https://gitee.com/vvsakivv/LS2K0300/blob/b16ed55a9e1f89c3f8f81090901b18865e57a4d9/Seekfree_LS2K0300_Opensource_Library/libraries/zf_components/seekfree_assistant/seekfree_assistant_interface.cpp"
+    },
+    {
+      "path": "Seekfree_LS2K0300_Opensource_Library/libraries/zf_components/seekfree_assistant/seekfree_assistant_interface.hpp",
+      "git_blob": "ef51fd460da75dbde35198321a599123511d9d09",
+      "bytes": 2599,
+      "type": "blob",
+      "sha256": "59e8dff92ae68bed94627a996391fb65b50233941e64bdaf75f08b3f4d234efe",
+      "url": "https://gitee.com/vvsakivv/LS2K0300/blob/b16ed55a9e1f89c3f8f81090901b18865e57a4d9/Seekfree_LS2K0300_Opensource_Library/libraries/zf_components/seekfree_assistant/seekfree_assistant_interface.hpp"
+    },
+    {
+      "path": "Seekfree_LS2K0300_Opensource_Library/libraries/zf_components/tflm/README.md",
+      "git_blob": "8191af9c4f34f7bb08229b3ce98e21bd21afa34e",
+      "bytes": 1207,
+      "type": "blob",
+      "sha256": "35d40eb09294edeb83246f4ecd35c37861a9c879f9444139a59701c348a20f02",
+      "url": "https://gitee.com/vvsakivv/LS2K0300/blob/b16ed55a9e1f89c3f8f81090901b18865e57a4d9/Seekfree_LS2K0300_Opensource_Library/libraries/zf_components/tflm/README.md"
+    },
+    {
+      "path": "Seekfree_LS2K0300_Opensource_Library/libraries/zf_device/zf_device_dl1x.cpp",
+      "git_blob": "d47c65edb3ca6bbeafcaf2860a5bc69681feabfc",
+      "bytes": 8427,
+      "type": "blob",
+      "sha256": "2c92546b133337414f48b581b5faf1b463fb6835fe05fc1df4a590d36cccbca3",
+      "url": "https://gitee.com/vvsakivv/LS2K0300/blob/b16ed55a9e1f89c3f8f81090901b18865e57a4d9/Seekfree_LS2K0300_Opensource_Library/libraries/zf_device/zf_device_dl1x.cpp"
+    },
+    {
+      "path": "Seekfree_LS2K0300_Opensource_Library/libraries/zf_device/zf_device_dl1x.hpp",
+      "git_blob": "27ae93b23feeca5a0cd769c1a8a5d53418f92beb",
+      "bytes": 6168,
+      "type": "blob",
+      "sha256": "0e6ad2061b6812698fb000beb17bfde1c7b871424e9cc8fd9b487b51266c162c",
+      "url": "https://gitee.com/vvsakivv/LS2K0300/blob/b16ed55a9e1f89c3f8f81090901b18865e57a4d9/Seekfree_LS2K0300_Opensource_Library/libraries/zf_device/zf_device_dl1x.hpp"
+    },
+    {
+      "path": "Seekfree_LS2K0300_Opensource_Library/libraries/zf_device/zf_device_imu.cpp",
+      "git_blob": "98bb1869fb7a79b7db446eb2d766f147ceb4697c",
+      "bytes": 20138,
+      "type": "blob",
+      "sha256": "db2003978a87e16078057ab1cdfaf6ec317ed0607f0755c5b8fe796bca165dc8",
+      "url": "https://gitee.com/vvsakivv/LS2K0300/blob/b16ed55a9e1f89c3f8f81090901b18865e57a4d9/Seekfree_LS2K0300_Opensource_Library/libraries/zf_device/zf_device_imu.cpp"
+    },
+    {
+      "path": "Seekfree_LS2K0300_Opensource_Library/libraries/zf_device/zf_device_imu.hpp",
+      "git_blob": "df2650b19cf163b6af2aa53af917f5a30218d399",
+      "bytes": 12720,
+      "type": "blob",
+      "sha256": "71cee5d2ffd93f14aa5ad2cdce653bd9c8d56e88741f0404aed03625be999766",
+      "url": "https://gitee.com/vvsakivv/LS2K0300/blob/b16ed55a9e1f89c3f8f81090901b18865e57a4d9/Seekfree_LS2K0300_Opensource_Library/libraries/zf_device/zf_device_imu.hpp"
+    },
+    {
+      "path": "Seekfree_LS2K0300_Opensource_Library/libraries/zf_device/zf_device_ips200_fb.cpp",
+      "git_blob": "cdcee65ed9baebcb35a05c00819c58c851ccf45c",
+      "bytes": 21944,
+      "type": "blob",
+      "sha256": "28861314939d6175fc3681e1b6d5e4f132663b87542bf8283a380e1d6bf61c71",
+      "url": "https://gitee.com/vvsakivv/LS2K0300/blob/b16ed55a9e1f89c3f8f81090901b18865e57a4d9/Seekfree_LS2K0300_Opensource_Library/libraries/zf_device/zf_device_ips200_fb.cpp"
+    },
+    {
+      "path": "Seekfree_LS2K0300_Opensource_Library/libraries/zf_device/zf_device_ips200_fb.hpp",
+      "git_blob": "84cefb4384ab3d7705c7ab70874dc93d8183ea5c",
+      "bytes": 17394,
+      "type": "blob",
+      "sha256": "cc017975dc0a3b7a377687a9fdcc42052b871d1aea05469bff5b3e047cf1fff5",
+      "url": "https://gitee.com/vvsakivv/LS2K0300/blob/b16ed55a9e1f89c3f8f81090901b18865e57a4d9/Seekfree_LS2K0300_Opensource_Library/libraries/zf_device/zf_device_ips200_fb.hpp"
+    },
+    {
+      "path": "Seekfree_LS2K0300_Opensource_Library/libraries/zf_device/zf_device_tft180_fb.cpp",
+      "git_blob": "5e1a1e28780505611e3003f2db24f4a7637fa03e",
+      "bytes": 21753,
+      "type": "blob",
+      "sha256": "b071cc4f6c47498b619781b161756bcea8706947e6a89f0e30c523390bb6584f",
+      "url": "https://gitee.com/vvsakivv/LS2K0300/blob/b16ed55a9e1f89c3f8f81090901b18865e57a4d9/Seekfree_LS2K0300_Opensource_Library/libraries/zf_device/zf_device_tft180_fb.cpp"
+    },
+    {
+      "path": "Seekfree_LS2K0300_Opensource_Library/libraries/zf_device/zf_device_tft180_fb.hpp",
+      "git_blob": "209db69ea0b9c5602d43ca04b2da9f6b3ef9a4a8",
+      "bytes": 17375,
+      "type": "blob",
+      "sha256": "53f942a6f477a688432314dda3a0b10f9a7b18e6f23e5d481cd734f1986baeda",
+      "url": "https://gitee.com/vvsakivv/LS2K0300/blob/b16ed55a9e1f89c3f8f81090901b18865e57a4d9/Seekfree_LS2K0300_Opensource_Library/libraries/zf_device/zf_device_tft180_fb.hpp"
+    },
+    {
+      "path": "Seekfree_LS2K0300_Opensource_Library/libraries/zf_device/zf_device_uvc.cpp",
+      "git_blob": "182338db6da88450e928d4cd3602f3dc1e794c12",
+      "bytes": 14784,
+      "type": "blob",
+      "sha256": "e2061b8311e28050ec0a276cc50e31d41d6f9a8d4de10a7e13023e47d66aae3c",
+      "url": "https://gitee.com/vvsakivv/LS2K0300/blob/b16ed55a9e1f89c3f8f81090901b18865e57a4d9/Seekfree_LS2K0300_Opensource_Library/libraries/zf_device/zf_device_uvc.cpp"
+    },
+    {
+      "path": "Seekfree_LS2K0300_Opensource_Library/libraries/zf_device/zf_device_uvc.hpp",
+      "git_blob": "e812e1471a80250a7d8cd11ee0e665dbe8e61107",
+      "bytes": 11413,
+      "type": "blob",
+      "sha256": "04ebcb1da596335f80f21ba86019f5e26c6425588e202bd4c491da6146eae546",
+      "url": "https://gitee.com/vvsakivv/LS2K0300/blob/b16ed55a9e1f89c3f8f81090901b18865e57a4d9/Seekfree_LS2K0300_Opensource_Library/libraries/zf_device/zf_device_uvc.hpp"
+    },
+    {
+      "path": "Seekfree_LS2K0300_Opensource_Library/libraries/zf_driver/zf_driver_adc.cpp",
+      "git_blob": "98c7864873c9c0b0c5d1ab1fa4e8c236f7a4e628",
+      "bytes": 4641,
+      "type": "blob",
+      "sha256": "647f27a8e311df92c72c73f10a78d946e93808960cef30a7ff6e2297d2707fb7",
+      "url": "https://gitee.com/vvsakivv/LS2K0300/blob/b16ed55a9e1f89c3f8f81090901b18865e57a4d9/Seekfree_LS2K0300_Opensource_Library/libraries/zf_driver/zf_driver_adc.cpp"
+    },
+    {
+      "path": "Seekfree_LS2K0300_Opensource_Library/libraries/zf_driver/zf_driver_adc.hpp",
+      "git_blob": "64227fa0f8b73a8676df25f38bc9604b332c3e29",
+      "bytes": 5631,
+      "type": "blob",
+      "sha256": "34dc7a6d0a199bc0fd73ca5c5b5a70fcd491a8d700757d727f5e5ecdf3a7cfeb",
+      "url": "https://gitee.com/vvsakivv/LS2K0300/blob/b16ed55a9e1f89c3f8f81090901b18865e57a4d9/Seekfree_LS2K0300_Opensource_Library/libraries/zf_driver/zf_driver_adc.hpp"
+    },
+    {
+      "path": "Seekfree_LS2K0300_Opensource_Library/libraries/zf_driver/zf_driver_delay.cpp",
+      "git_blob": "c2462bdf4439d73afe5c21bacf2fbb0921dfcb53",
+      "bytes": 1767,
+      "type": "blob",
+      "sha256": "ca5bde2afb42512300dda527b9f17a62478ee9a1bdaf80d6752fe284efd9cd02",
+      "url": "https://gitee.com/vvsakivv/LS2K0300/blob/b16ed55a9e1f89c3f8f81090901b18865e57a4d9/Seekfree_LS2K0300_Opensource_Library/libraries/zf_driver/zf_driver_delay.cpp"
+    },
+    {
+      "path": "Seekfree_LS2K0300_Opensource_Library/libraries/zf_driver/zf_driver_delay.hpp",
+      "git_blob": "d685c854c135afc5320b22ee554c217ed7937036",
+      "bytes": 1942,
+      "type": "blob",
+      "sha256": "e01d6b08aa31f3f2733baa4aef8328c6dd1f8bbf62643a68099ad8714b02d596",
+      "url": "https://gitee.com/vvsakivv/LS2K0300/blob/b16ed55a9e1f89c3f8f81090901b18865e57a4d9/Seekfree_LS2K0300_Opensource_Library/libraries/zf_driver/zf_driver_delay.hpp"
+    },
+    {
+      "path": "Seekfree_LS2K0300_Opensource_Library/libraries/zf_driver/zf_driver_encoder.cpp",
+      "git_blob": "6084578fe01cc16ac469cddf2eeaac85c554a989",
+      "bytes": 3684,
+      "type": "blob",
+      "sha256": "a36b7eb7bd2b07c6dc1b3e4bbb757cc557ceb150ea955a315b3af2d9290d4e6c",
+      "url": "https://gitee.com/vvsakivv/LS2K0300/blob/b16ed55a9e1f89c3f8f81090901b18865e57a4d9/Seekfree_LS2K0300_Opensource_Library/libraries/zf_driver/zf_driver_encoder.cpp"
+    },
+    {
+      "path": "Seekfree_LS2K0300_Opensource_Library/libraries/zf_driver/zf_driver_encoder.hpp",
+      "git_blob": "9f7f62d5c1bc9ec1aaf5d09d43ff603895219506",
+      "bytes": 4113,
+      "type": "blob",
+      "sha256": "000dd12b9b7416dd3f457ca0e68e8cd2d7d9978430e34ace287973c77a98ab7a",
+      "url": "https://gitee.com/vvsakivv/LS2K0300/blob/b16ed55a9e1f89c3f8f81090901b18865e57a4d9/Seekfree_LS2K0300_Opensource_Library/libraries/zf_driver/zf_driver_encoder.hpp"
+    },
+    {
+      "path": "Seekfree_LS2K0300_Opensource_Library/libraries/zf_driver/zf_driver_file_buffer.cpp",
+      "git_blob": "9b3b8354cb25f67b7340541f570e2647acb0bace",
+      "bytes": 5891,
+      "type": "blob",
+      "sha256": "a5dc7c40a2f07fe4e45f77a4e239c0c8a5b4b7b5beff5c0f54592d2cbcab4d61",
+      "url": "https://gitee.com/vvsakivv/LS2K0300/blob/b16ed55a9e1f89c3f8f81090901b18865e57a4d9/Seekfree_LS2K0300_Opensource_Library/libraries/zf_driver/zf_driver_file_buffer.cpp"
+    },
+    {
+      "path": "Seekfree_LS2K0300_Opensource_Library/libraries/zf_driver/zf_driver_file_buffer.hpp",
+      "git_blob": "80bd72573dc4da78120275f41558db8eb394a413",
+      "bytes": 5032,
+      "type": "blob",
+      "sha256": "f56a39641bac183ae1e1e67bb2f7b697730d9160ad2c627730a5c7a3acc46dfd",
+      "url": "https://gitee.com/vvsakivv/LS2K0300/blob/b16ed55a9e1f89c3f8f81090901b18865e57a4d9/Seekfree_LS2K0300_Opensource_Library/libraries/zf_driver/zf_driver_file_buffer.hpp"
+    },
+    {
+      "path": "Seekfree_LS2K0300_Opensource_Library/libraries/zf_driver/zf_driver_file_string.cpp",
+      "git_blob": "c8720708cf9c5ef6fdc4c32c445696d15c8f8d10",
+      "bytes": 5835,
+      "type": "blob",
+      "sha256": "80b773bb0f3f84fec1528e30351dc710d9ef3532ecaeb3bdd29e58e6015d8893",
+      "url": "https://gitee.com/vvsakivv/LS2K0300/blob/b16ed55a9e1f89c3f8f81090901b18865e57a4d9/Seekfree_LS2K0300_Opensource_Library/libraries/zf_driver/zf_driver_file_string.cpp"
+    },
+    {
+      "path": "Seekfree_LS2K0300_Opensource_Library/libraries/zf_driver/zf_driver_file_string.hpp",
+      "git_blob": "43de8506b843fa12fdd44544dee503188b10c376",
+      "bytes": 5365,
+      "type": "blob",
+      "sha256": "df7cbcd375d9bdd47bff985b14dce57ed2d1bf585cac856e4734db2804bbd129",
+      "url": "https://gitee.com/vvsakivv/LS2K0300/blob/b16ed55a9e1f89c3f8f81090901b18865e57a4d9/Seekfree_LS2K0300_Opensource_Library/libraries/zf_driver/zf_driver_file_string.hpp"
+    },
+    {
+      "path": "Seekfree_LS2K0300_Opensource_Library/libraries/zf_driver/zf_driver_gpio.cpp",
+      "git_blob": "4f409fe9c167f183aef0f43159c5e825cd45ad00",
+      "bytes": 3695,
+      "type": "blob",
+      "sha256": "9cf3b63d55fa6f90ae3dce7f08192957b90eb3a5c3c7f6b3de4454fd3ae06240",
+      "url": "https://gitee.com/vvsakivv/LS2K0300/blob/b16ed55a9e1f89c3f8f81090901b18865e57a4d9/Seekfree_LS2K0300_Opensource_Library/libraries/zf_driver/zf_driver_gpio.cpp"
+    },
+    {
+      "path": "Seekfree_LS2K0300_Opensource_Library/libraries/zf_driver/zf_driver_gpio.hpp",
+      "git_blob": "df2d6d39da5b7f2d098ee60020998632c1a708ab",
+      "bytes": 4318,
+      "type": "blob",
+      "sha256": "74118f164b1be7870bdab6e5b47abed643bb43cdbb6ab5471b9fdf54db2bea08",
+      "url": "https://gitee.com/vvsakivv/LS2K0300/blob/b16ed55a9e1f89c3f8f81090901b18865e57a4d9/Seekfree_LS2K0300_Opensource_Library/libraries/zf_driver/zf_driver_gpio.hpp"
+    },
+    {
+      "path": "Seekfree_LS2K0300_Opensource_Library/libraries/zf_driver/zf_driver_pit.cpp",
+      "git_blob": "946c9401ed59374e773d6bab87b3eedbf94c5f42",
+      "bytes": 11197,
+      "type": "blob",
+      "sha256": "333cf3e19e1f549bc9a6677b596463225a69d8a808c66b5b683dba6178839c21",
+      "url": "https://gitee.com/vvsakivv/LS2K0300/blob/b16ed55a9e1f89c3f8f81090901b18865e57a4d9/Seekfree_LS2K0300_Opensource_Library/libraries/zf_driver/zf_driver_pit.cpp"
+    },
+    {
+      "path": "Seekfree_LS2K0300_Opensource_Library/libraries/zf_driver/zf_driver_pit.hpp",
+      "git_blob": "e4c10df278c918be3c25d7a080ce7ca7c0192f1e",
+      "bytes": 6013,
+      "type": "blob",
+      "sha256": "4104c529158b433d606839aa52249c6ef8bf218186ea7002cd42be0855873cfe",
+      "url": "https://gitee.com/vvsakivv/LS2K0300/blob/b16ed55a9e1f89c3f8f81090901b18865e57a4d9/Seekfree_LS2K0300_Opensource_Library/libraries/zf_driver/zf_driver_pit.hpp"
+    },
+    {
+      "path": "Seekfree_LS2K0300_Opensource_Library/libraries/zf_driver/zf_driver_pit_fd.cpp",
+      "git_blob": "b5c8df306f98e0c1c0e51fd82c28e3a380842f25",
+      "bytes": 6236,
+      "type": "blob",
+      "sha256": "0c61fe130f30d529dfcb4156829d0ad24e99f65e606b6aae21d53786e8297510",
+      "url": "https://gitee.com/vvsakivv/LS2K0300/blob/b16ed55a9e1f89c3f8f81090901b18865e57a4d9/Seekfree_LS2K0300_Opensource_Library/libraries/zf_driver/zf_driver_pit_fd.cpp"
+    },
+    {
+      "path": "Seekfree_LS2K0300_Opensource_Library/libraries/zf_driver/zf_driver_pit_fd.hpp",
+      "git_blob": "9a491c769b2f7d82bb493e4a7f48b39beff73c4f",
+      "bytes": 5104,
+      "type": "blob",
+      "sha256": "48696c55900fbd2ce3bb45aab111c5255d9993eae58e4f827025d0e49cdef605",
+      "url": "https://gitee.com/vvsakivv/LS2K0300/blob/b16ed55a9e1f89c3f8f81090901b18865e57a4d9/Seekfree_LS2K0300_Opensource_Library/libraries/zf_driver/zf_driver_pit_fd.hpp"
+    },
+    {
+      "path": "Seekfree_LS2K0300_Opensource_Library/libraries/zf_driver/zf_driver_pwm.cpp",
+      "git_blob": "1b67416d76645ea5c9e0f4425eb02d27bc1e772d",
+      "bytes": 3776,
+      "type": "blob",
+      "sha256": "6fc5302d173369454414ca727060f34d968ba8eb8dc1756b537eb7ecd21a8c93",
+      "url": "https://gitee.com/vvsakivv/LS2K0300/blob/b16ed55a9e1f89c3f8f81090901b18865e57a4d9/Seekfree_LS2K0300_Opensource_Library/libraries/zf_driver/zf_driver_pwm.cpp"
+    },
+    {
+      "path": "Seekfree_LS2K0300_Opensource_Library/libraries/zf_driver/zf_driver_pwm.hpp",
+      "git_blob": "77b24953f7b161b95eac985f0277d86242db40f2",
+      "bytes": 4552,
+      "type": "blob",
+      "sha256": "64b60f2c5b800f6b72976f6cd3a2faae1018a92abb278ddc32aff6bd7f75c4f9",
+      "url": "https://gitee.com/vvsakivv/LS2K0300/blob/b16ed55a9e1f89c3f8f81090901b18865e57a4d9/Seekfree_LS2K0300_Opensource_Library/libraries/zf_driver/zf_driver_pwm.hpp"
+    },
+    {
+      "path": "Seekfree_LS2K0300_Opensource_Library/libraries/zf_driver/zf_driver_tcp_client.cpp",
+      "git_blob": "0a5d8a468f9c0ec919ba2f880b8ead9092bf483f",
+      "bytes": 10332,
+      "type": "blob",
+      "sha256": "fe818d6ce80c473c18852141b7cf4fc71739ceb76348ec24bbde8ceabd28f356",
+      "url": "https://gitee.com/vvsakivv/LS2K0300/blob/b16ed55a9e1f89c3f8f81090901b18865e57a4d9/Seekfree_LS2K0300_Opensource_Library/libraries/zf_driver/zf_driver_tcp_client.cpp"
+    },
+    {
+      "path": "Seekfree_LS2K0300_Opensource_Library/libraries/zf_driver/zf_driver_tcp_client.hpp",
+      "git_blob": "9b5c7175ecef6517d6c85b0ad850e4b1d2b19b2f",
+      "bytes": 6205,
+      "type": "blob",
+      "sha256": "f064608747774943b818be182153abd4ed7ca632b4afc42a3a834229d7f09ff4",
+      "url": "https://gitee.com/vvsakivv/LS2K0300/blob/b16ed55a9e1f89c3f8f81090901b18865e57a4d9/Seekfree_LS2K0300_Opensource_Library/libraries/zf_driver/zf_driver_tcp_client.hpp"
+    },
+    {
+      "path": "Seekfree_LS2K0300_Opensource_Library/libraries/zf_driver/zf_driver_udp.cpp",
+      "git_blob": "381a25dc9a8e577af6db5d82e4ff283a798f8f84",
+      "bytes": 6426,
+      "type": "blob",
+      "sha256": "e327a496da7525d7c1135340b7ebaa2e496f9bfd458180339707b6d17b5c8388",
+      "url": "https://gitee.com/vvsakivv/LS2K0300/blob/b16ed55a9e1f89c3f8f81090901b18865e57a4d9/Seekfree_LS2K0300_Opensource_Library/libraries/zf_driver/zf_driver_udp.cpp"
+    },
+    {
+      "path": "Seekfree_LS2K0300_Opensource_Library/libraries/zf_driver/zf_driver_udp.hpp",
+      "git_blob": "80028f7904173bbcbeb7ec07b0a9834b21acc055",
+      "bytes": 5442,
+      "type": "blob",
+      "sha256": "aa2f57886afea1ba219d83cad262c20081b3c31476ee9b079fd59fec71f6cbfd",
+      "url": "https://gitee.com/vvsakivv/LS2K0300/blob/b16ed55a9e1f89c3f8f81090901b18865e57a4d9/Seekfree_LS2K0300_Opensource_Library/libraries/zf_driver/zf_driver_udp.hpp"
+    },
+    {
+      "path": "Seekfree_LS2K0300_Opensource_Library/model_test_demo/README.md",
+      "git_blob": "41220174214321b65d9a325cddaa59d4829213a0",
+      "bytes": 1127,
+      "type": "blob",
+      "sha256": "db45b47dd888f41e6af451fcd54f98254367f73e4a49b9d591d9236e8a5ce3f7",
+      "url": "https://gitee.com/vvsakivv/LS2K0300/blob/b16ed55a9e1f89c3f8f81090901b18865e57a4d9/Seekfree_LS2K0300_Opensource_Library/model_test_demo/README.md"
+    },
+    {
+      "path": "Seekfree_LS2K0300_Opensource_Library/model_test_demo/user/CMakeLists.txt",
+      "git_blob": "5732f2fe3801ae9dc4b6096bedf1f921591866eb",
+      "bytes": 2941,
+      "type": "blob",
+      "sha256": "baad204acc32cf5346b613a9df1dc5aeacd4fef67ba321cd3a06cff50cf5a915",
+      "url": "https://gitee.com/vvsakivv/LS2K0300/blob/b16ed55a9e1f89c3f8f81090901b18865e57a4d9/Seekfree_LS2K0300_Opensource_Library/model_test_demo/user/CMakeLists.txt"
+    },
+    {
+      "path": "Seekfree_LS2K0300_Opensource_Library/model_test_demo/user/build.sh",
+      "git_blob": "b3c7d88b7a925163ebeb2ef14f0aca8f628b9019",
+      "bytes": 254,
+      "type": "blob",
+      "sha256": "c4aa1eec43fdb14cbf64394e3673a912ecb9887ffe03139602a3fbc99a0d65f7",
+      "url": "https://gitee.com/vvsakivv/LS2K0300/blob/b16ed55a9e1f89c3f8f81090901b18865e57a4d9/Seekfree_LS2K0300_Opensource_Library/model_test_demo/user/build.sh"
+    },
+    {
+      "path": "Seekfree_LS2K0300_Opensource_Library/model_test_demo/user/cross.cmake",
+      "git_blob": "d7e875d7dfbe4fa404c922cc71c5e742f303966d",
+      "bytes": 486,
+      "type": "blob",
+      "sha256": "1fc55bfb513d0fcb696d5ddff4654dc46c3d235f8782f8f950895e66fc6860d7",
+      "url": "https://gitee.com/vvsakivv/LS2K0300/blob/b16ed55a9e1f89c3f8f81090901b18865e57a4d9/Seekfree_LS2K0300_Opensource_Library/model_test_demo/user/cross.cmake"
+    },
+    {
+      "path": "Seekfree_LS2K0300_Opensource_Library/model_test_demo/user/main.cpp",
+      "git_blob": "c0547749d1187ec8444f369696f7216c1346b4ba",
+      "bytes": 18787,
+      "type": "blob",
+      "sha256": "4230deb16f9de63ee1394c2ed9e89136f50b0b201db9f314e9b5939e607b3fc0",
+      "url": "https://gitee.com/vvsakivv/LS2K0300/blob/b16ed55a9e1f89c3f8f81090901b18865e57a4d9/Seekfree_LS2K0300_Opensource_Library/model_test_demo/user/main.cpp"
+    },
+    {
+      "path": "Seekfree_LS2K0300_Opensource_Library/project/code/本文件夹作用.txt",
+      "git_blob": "23e503a131a235dea25b91dd9a2afc553aa3fca6",
+      "bytes": 25,
+      "type": "blob",
+      "sha256": "faf01e8d36ca055d457b67b8d66c5e4ab4add11a9f3e5b7e3125ae4307e657d0",
+      "url": "https://gitee.com/vvsakivv/LS2K0300/blob/b16ed55a9e1f89c3f8f81090901b18865e57a4d9/Seekfree_LS2K0300_Opensource_Library/project/code/本文件夹作用.txt"
+    },
+    {
+      "path": "Seekfree_LS2K0300_Opensource_Library/project/model/loong_cnn_model_simple.h",
+      "git_blob": "36540820bdf25fd5eae0df04adf95eee9cccac15",
+      "bytes": 101230,
+      "type": "blob",
+      "sha256": "7ad0fdc359ee1d71aa54a16dbde62861294c82d5eebdfa06df1047ef4722064d",
+      "url": "https://gitee.com/vvsakivv/LS2K0300/blob/b16ed55a9e1f89c3f8f81090901b18865e57a4d9/Seekfree_LS2K0300_Opensource_Library/project/model/loong_cnn_model_simple.h"
+    },
+    {
+      "path": "Seekfree_LS2K0300_Opensource_Library/project/model/本文件夹作用.txt",
+      "git_blob": "e56132f90781f51000a564e17560801c14cfc69f",
+      "bytes": 148,
+      "type": "blob",
+      "sha256": "3b2eecfffe03053f842e809c9fd82b9c753b3c43b0b3ca63368d38cc8de2444d",
+      "url": "https://gitee.com/vvsakivv/LS2K0300/blob/b16ed55a9e1f89c3f8f81090901b18865e57a4d9/Seekfree_LS2K0300_Opensource_Library/project/model/本文件夹作用.txt"
+    },
+    {
+      "path": "Seekfree_LS2K0300_Opensource_Library/project/user/CMakeLists.txt",
+      "git_blob": "6b020aea2ea34ea97ca6191f85d398086b986890",
+      "bytes": 3760,
+      "type": "blob",
+      "sha256": "6963604bc9c7f8af36476da6af6ea40a5451f89c5bbcd10b5fd60a4d351013c3",
+      "url": "https://gitee.com/vvsakivv/LS2K0300/blob/b16ed55a9e1f89c3f8f81090901b18865e57a4d9/Seekfree_LS2K0300_Opensource_Library/project/user/CMakeLists.txt"
+    },
+    {
+      "path": "Seekfree_LS2K0300_Opensource_Library/project/user/Seeekfree_assistant.cpp",
+      "git_blob": "208cf390e2cb170f12f781e9b50273a733a99dd2",
+      "bytes": 7947,
+      "type": "blob",
+      "sha256": "6724fc7eb67c50490469b86c08c01f7ca8103903bf20054795470208e2ca75ce",
+      "url": "https://gitee.com/vvsakivv/LS2K0300/blob/b16ed55a9e1f89c3f8f81090901b18865e57a4d9/Seekfree_LS2K0300_Opensource_Library/project/user/Seeekfree_assistant.cpp"
+    },
+    {
+      "path": "Seekfree_LS2K0300_Opensource_Library/project/user/Seeekfree_assistant.hpp",
+      "git_blob": "d81035c6aba5e44d37b3207fbae658815fbaa348",
+      "bytes": 854,
+      "type": "blob",
+      "sha256": "8eddc2af4d959410dc4d576066939cdb7d8c54d1981824ee31e7e9eeca46c50c",
+      "url": "https://gitee.com/vvsakivv/LS2K0300/blob/b16ed55a9e1f89c3f8f81090901b18865e57a4d9/Seekfree_LS2K0300_Opensource_Library/project/user/Seeekfree_assistant.hpp"
+    },
+    {
+      "path": "Seekfree_LS2K0300_Opensource_Library/project/user/build.sh",
+      "git_blob": "d217f566896c7b0ad991bd6f2c71128a90cd4d09",
+      "bytes": 3009,
+      "type": "blob",
+      "sha256": "c5ea4478d48c92132b6eb6cd51827b18ccbb728e4c091482c4e8775bc146ce10",
+      "url": "https://gitee.com/vvsakivv/LS2K0300/blob/b16ed55a9e1f89c3f8f81090901b18865e57a4d9/Seekfree_LS2K0300_Opensource_Library/project/user/build.sh"
+    },
+    {
+      "path": "Seekfree_LS2K0300_Opensource_Library/project/user/chassis.cpp",
+      "git_blob": "5ddbeec3fd50ea3f1f1c11901f5bc82b0ea9f459",
+      "bytes": 19207,
+      "type": "blob",
+      "sha256": "73de893b748470ca6656bef588b8ee2b4fc86d5b942ce4fbfb0a41370463d4f8",
+      "url": "https://gitee.com/vvsakivv/LS2K0300/blob/b16ed55a9e1f89c3f8f81090901b18865e57a4d9/Seekfree_LS2K0300_Opensource_Library/project/user/chassis.cpp"
+    },
+    {
+      "path": "Seekfree_LS2K0300_Opensource_Library/project/user/chassis.hpp",
+      "git_blob": "17b23101e4ffa587d2e85b4b68bd0a595d8b1455",
+      "bytes": 1180,
+      "type": "blob",
+      "sha256": "9d02cede301fa1968967b3d8bae668adcbfd442f6edc84e5cec2d0006f492b43",
+      "url": "https://gitee.com/vvsakivv/LS2K0300/blob/b16ed55a9e1f89c3f8f81090901b18865e57a4d9/Seekfree_LS2K0300_Opensource_Library/project/user/chassis.hpp"
+    },
+    {
+      "path": "Seekfree_LS2K0300_Opensource_Library/project/user/cross.cmake",
+      "git_blob": "caa4dd131167426372d649e0ac31cae29276d7cf",
+      "bytes": 636,
+      "type": "blob",
+      "sha256": "80e242a1dda08c2a57a1c7dd046092475e6c652a2ed9ce6a12a7d73fb885cb48",
+      "url": "https://gitee.com/vvsakivv/LS2K0300/blob/b16ed55a9e1f89c3f8f81090901b18865e57a4d9/Seekfree_LS2K0300_Opensource_Library/project/user/cross.cmake"
+    },
+    {
+      "path": "Seekfree_LS2K0300_Opensource_Library/project/user/display_image.cpp",
+      "git_blob": "711ff63e33ec7c647452918ca77bdd6a87e82056",
+      "bytes": 2629,
+      "type": "blob",
+      "sha256": "0b0a13baf2d3e9a319b20c5310bafcc26eb8b4ff31435f519772f3271c7b7b18",
+      "url": "https://gitee.com/vvsakivv/LS2K0300/blob/b16ed55a9e1f89c3f8f81090901b18865e57a4d9/Seekfree_LS2K0300_Opensource_Library/project/user/display_image.cpp"
+    },
+    {
+      "path": "Seekfree_LS2K0300_Opensource_Library/project/user/display_image.hpp",
+      "git_blob": "537cb51f8dc5a09df917de6341bd9c7bff108a8b",
+      "bytes": 247,
+      "type": "blob",
+      "sha256": "fb5d383d75b39c0cca2fb3ec919ebab5299927c5538d4b0b961c32da1fe315ad",
+      "url": "https://gitee.com/vvsakivv/LS2K0300/blob/b16ed55a9e1f89c3f8f81090901b18865e57a4d9/Seekfree_LS2K0300_Opensource_Library/project/user/display_image.hpp"
+    },
+    {
+      "path": "Seekfree_LS2K0300_Opensource_Library/project/user/display_text.cpp",
+      "git_blob": "06a7162caa66d2ef216674298bb09b300b077738",
+      "bytes": 3922,
+      "type": "blob",
+      "sha256": "c8ebd521dc3c4aa614f239b414a4bb3e0a97a1477d71ad2bd093268d08a9f3e1",
+      "url": "https://gitee.com/vvsakivv/LS2K0300/blob/b16ed55a9e1f89c3f8f81090901b18865e57a4d9/Seekfree_LS2K0300_Opensource_Library/project/user/display_text.cpp"
+    },
+    {
+      "path": "Seekfree_LS2K0300_Opensource_Library/project/user/display_text.hpp",
+      "git_blob": "98ec5f612e5a27a45b6e954496eaa09e9df352a9",
+      "bytes": 229,
+      "type": "blob",
+      "sha256": "0f8cf4687f88bc01fb46a443f29c645e26a2f652dc4af3289c17ad1fd4c02d88",
+      "url": "https://gitee.com/vvsakivv/LS2K0300/blob/b16ed55a9e1f89c3f8f81090901b18865e57a4d9/Seekfree_LS2K0300_Opensource_Library/project/user/display_text.hpp"
+    },
+    {
+      "path": "Seekfree_LS2K0300_Opensource_Library/project/user/esc.cpp",
+      "git_blob": "2f5cf1b3ae5966eb8d57c81678c8dc40f1d04585",
+      "bytes": 2808,
+      "type": "blob",
+      "sha256": "92ef8cc69e1f7ea6daca3304a8a8fd2c58f6a6597f255e4f6063c62d64cb10f1",
+      "url": "https://gitee.com/vvsakivv/LS2K0300/blob/b16ed55a9e1f89c3f8f81090901b18865e57a4d9/Seekfree_LS2K0300_Opensource_Library/project/user/esc.cpp"
+    },
+    {
+      "path": "Seekfree_LS2K0300_Opensource_Library/project/user/esc.hpp",
+      "git_blob": "5474adc1d31cd7b3540842b1e1532b1a0b58ec49",
+      "bytes": 711,
+      "type": "blob",
+      "sha256": "91d076aa15eeade351207ea62baea87017002213c016276bcb2b60a0b63b53b5",
+      "url": "https://gitee.com/vvsakivv/LS2K0300/blob/b16ed55a9e1f89c3f8f81090901b18865e57a4d9/Seekfree_LS2K0300_Opensource_Library/project/user/esc.hpp"
+    },
+    {
+      "path": "Seekfree_LS2K0300_Opensource_Library/project/user/image_recognition.cpp",
+      "git_blob": "0e17003108ac48709d818cf42b7d13f355cc1725",
+      "bytes": 5531,
+      "type": "blob",
+      "sha256": "c811b534802bcb1c9e789c79b3ac761ed7557298c3b16fd6dfb235ff2526c490",
+      "url": "https://gitee.com/vvsakivv/LS2K0300/blob/b16ed55a9e1f89c3f8f81090901b18865e57a4d9/Seekfree_LS2K0300_Opensource_Library/project/user/image_recognition.cpp"
+    },
+    {
+      "path": "Seekfree_LS2K0300_Opensource_Library/project/user/image_recognition.hpp",
+      "git_blob": "98357ae0e3c28159551d5ab4ca9d28990e247fc3",
+      "bytes": 592,
+      "type": "blob",
+      "sha256": "42b7ebc943d1d692887b3c86ea9fcd153f2b5ae73052b2c4cea802f9a0f14830",
+      "url": "https://gitee.com/vvsakivv/LS2K0300/blob/b16ed55a9e1f89c3f8f81090901b18865e57a4d9/Seekfree_LS2K0300_Opensource_Library/project/user/image_recognition.hpp"
+    },
+    {
+      "path": "Seekfree_LS2K0300_Opensource_Library/project/user/lq_ncnn.cpp",
+      "git_blob": "484ec8eec994554d80d43364d2a1096981a538d7",
+      "bytes": 6817,
+      "type": "blob",
+      "sha256": "ea37be1094f564faf3e31867b6e2e787ed857ee545f878e0181b1955e3d1b4d6",
+      "url": "https://gitee.com/vvsakivv/LS2K0300/blob/b16ed55a9e1f89c3f8f81090901b18865e57a4d9/Seekfree_LS2K0300_Opensource_Library/project/user/lq_ncnn.cpp"
+    },
+    {
+      "path": "Seekfree_LS2K0300_Opensource_Library/project/user/lq_ncnn.hpp",
+      "git_blob": "0fdcc51ad4ad88ff771509600e8ba7ef1c86e044",
+      "bytes": 1580,
+      "type": "blob",
+      "sha256": "41b5b7ea5567bbfac9ee964914c44eb86e8a95e4b8158f50c8af7374bd086347",
+      "url": "https://gitee.com/vvsakivv/LS2K0300/blob/b16ed55a9e1f89c3f8f81090901b18865e57a4d9/Seekfree_LS2K0300_Opensource_Library/project/user/lq_ncnn.hpp"
+    },
+    {
+      "path": "Seekfree_LS2K0300_Opensource_Library/project/user/main.cpp",
+      "git_blob": "12969394253338bec3c134b1c00c61d9e87c05d0",
+      "bytes": 8110,
+      "type": "blob",
+      "sha256": "a9a330c049ff9f772a01d616ddc0531b1fa28e6e290a298fedcad52a9d6e29ac",
+      "url": "https://gitee.com/vvsakivv/LS2K0300/blob/b16ed55a9e1f89c3f8f81090901b18865e57a4d9/Seekfree_LS2K0300_Opensource_Library/project/user/main.cpp"
+    },
+    {
+      "path": "Seekfree_LS2K0300_Opensource_Library/project/user/vision.cpp",
+      "git_blob": "2740f025bae22dac1ca4338e6250e2a8c48ac335",
+      "bytes": 65450,
+      "type": "blob",
+      "sha256": "80b8c4add333961d6fa6b28db808bcf8f62a552c0496798011607d0a3c7fe92e",
+      "url": "https://gitee.com/vvsakivv/LS2K0300/blob/b16ed55a9e1f89c3f8f81090901b18865e57a4d9/Seekfree_LS2K0300_Opensource_Library/project/user/vision.cpp"
+    },
+    {
+      "path": "Seekfree_LS2K0300_Opensource_Library/project/user/vision.hpp",
+      "git_blob": "c74fb85d6e8dff53686be7fd76cb2f35dadab464",
+      "bytes": 8420,
+      "type": "blob",
+      "sha256": "bcc471cb00f80462b0e845d0b12917197bcd7701e8ed178d3f3e40fc2c2160f8",
+      "url": "https://gitee.com/vvsakivv/LS2K0300/blob/b16ed55a9e1f89c3f8f81090901b18865e57a4d9/Seekfree_LS2K0300_Opensource_Library/project/user/vision.hpp"
+    }
+  ],
+  "tree_files": 8077,
+  "tree_truncated": false,
+  "scope": "Selected source fetched/hash-verified; focused entrypoint/algorithm/interface review, not exhaustive line-by-line proof.",
+  "runtime_validation": "No full firmware build, hardware execution or vehicle test.",
+  "alias_of": null
+}

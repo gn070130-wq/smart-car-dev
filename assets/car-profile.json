@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "platform": {
+    "board_model": null,
+    "os": null,
+    "sdk": null,
+    "toolchain": null,
+    "build_command": null
+  },
+  "chassis": {
+    "steering_type": null,
+    "wheel_track_m": null,
+    "wheel_diameter_m": null,
+    "encoder_effective_counts_per_wheel_rev": null,
+    "encoder_shaft": null,
+    "motor_revs_per_wheel_rev": null
+  },
+  "coordinates": {
+    "forward_axis": null,
+    "left_axis": null,
+    "positive_yaw": null,
+    "imu_yaw_unit": null,
+    "path_frame": null,
+    "path_unit": null
+  },
+  "camera": {
+    "model": null,
+    "pixel_format": null,
+    "width_px": null,
+    "height_px": null,
+    "capture_fps": null,
+    "exposure": null,
+    "calibration_file": null,
+    "mount_height_m": null,
+    "mount_pitch_deg": null
+  },
+  "model": {
+    "engine": null,
+    "param_file": null,
+    "weights_file": null,
+    "input_shape": null,
+    "channel_order": null,
+    "mean": null,
+    "normalization_scale": null,
+    "output_is_logits": null,
+    "labels": null,
+    "label_to_action": null
+  },
+  "timing": {
+    "vision_period_ms": null,
+    "direction_period_ms": null,
+    "yaw_period_ms": null,
+    "wheel_period_ms": null,
+    "vision_max_age_ms": null,
+    "clock_domain": null
+  },
+  "actuation": {
+    "driver_model": null,
+    "pwm_unit": null,
+    "pwm_frequency_hz": null,
+    "pwm_limit": null,
+    "enable_polarity": null,
+    "stop_semantics": null,
+    "fan_stop_value": null
+  },
+  "sensors": {
+    "imu_model": null,
+    "imu_interface": null,
+    "tof_model": null,
+    "tof_interface": null
+  },
+  "provenance": {},
+  "notes": [
+    "填写当前实物、代码或测量值；未知项保留null。报告数值不能直接当作当前车模参数。"
+  ]
+}

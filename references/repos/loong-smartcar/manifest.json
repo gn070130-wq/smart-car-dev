@@ -1,0 +1,478 @@
+{
+  "id": "loong-smartcar",
+  "source_id": "wuwusama--loong_SmartCar",
+  "url": "https://gitee.com/wuwusama/loong_SmartCar",
+  "revision": "b9973735dc78c9afef3e38e8d5908910fec31586",
+  "role": "20届极速光电舵机与阿克曼控制",
+  "files": [
+    {
+      "path": "CMakeLists.txt",
+      "git_blob": "14a08992000177529db839f0c62027717efce820",
+      "bytes": 1207,
+      "type": "blob",
+      "sha256": "94208554fb1314fac8a06d719b93fd844af3952ed8f1f437b7d9442fcaca6453",
+      "url": "https://gitee.com/wuwusama/loong_SmartCar/blob/b9973735dc78c9afef3e38e8d5908910fec31586/CMakeLists.txt"
+    },
+    {
+      "path": "LICENSE",
+      "git_blob": "f6c26977bbb993b180afd759658dcf5ea6619cd0",
+      "bytes": 9441,
+      "type": "blob",
+      "sha256": "5d2bed72b295522b941633247c6f63dee7a3223650635edb55d9156f866dc659",
+      "url": "https://gitee.com/wuwusama/loong_SmartCar/blob/b9973735dc78c9afef3e38e8d5908910fec31586/LICENSE"
+    },
+    {
+      "path": "README.md",
+      "git_blob": "dabe8aa7a7fa50a0acc4e24a45d723e852c07c53",
+      "bytes": 1698,
+      "type": "blob",
+      "sha256": "719b8ae354272635171dbbcf0b5ebcb6f10969e240af2aa687d22d8a61524add",
+      "url": "https://gitee.com/wuwusama/loong_SmartCar/blob/b9973735dc78c9afef3e38e8d5908910fec31586/README.md"
+    },
+    {
+      "path": "kernel_driver/1_pwm/Makefile",
+      "git_blob": "f2c2b576eb720c0f8fb08cea9f889309d8525aec",
+      "bytes": 243,
+      "type": "blob",
+      "sha256": "fa1024cd24422f17300280bc7cdd9dfef691b5abedf78c5ce9681343aabfcea5",
+      "url": "https://gitee.com/wuwusama/loong_SmartCar/blob/b9973735dc78c9afef3e38e8d5908910fec31586/kernel_driver/1_pwm/Makefile"
+    },
+    {
+      "path": "kernel_driver/1_pwm/wuwu_servo.c",
+      "git_blob": "da3585bb7bae41e31281aa1ad0a62901a8c0aa7f",
+      "bytes": 4435,
+      "type": "blob",
+      "sha256": "61d4db961263ecd02f4df96d4d432c7886a5dfaae341923aaa2a8f23e9e0aff3",
+      "url": "https://gitee.com/wuwusama/loong_SmartCar/blob/b9973735dc78c9afef3e38e8d5908910fec31586/kernel_driver/1_pwm/wuwu_servo.c"
+    },
+    {
+      "path": "kernel_driver/2_motor/Makefile",
+      "git_blob": "15765e1464c229444cd644f6e4284c4e1ac1c219",
+      "bytes": 243,
+      "type": "blob",
+      "sha256": "5134d96ef38e6ac6ceed2e86185e59cba62b5760fd83b02cd7d9500e3c7f93b9",
+      "url": "https://gitee.com/wuwusama/loong_SmartCar/blob/b9973735dc78c9afef3e38e8d5908910fec31586/kernel_driver/2_motor/Makefile"
+    },
+    {
+      "path": "kernel_driver/2_motor/wuwu_motor.c",
+      "git_blob": "11efb491dda533302603b4e253b0ef6ff000b83e",
+      "bytes": 17986,
+      "type": "blob",
+      "sha256": "137b1c728098637f08fc95ff6f599ff28b613c340b03596149de5990379f0739",
+      "url": "https://gitee.com/wuwusama/loong_SmartCar/blob/b9973735dc78c9afef3e38e8d5908910fec31586/kernel_driver/2_motor/wuwu_motor.c"
+    },
+    {
+      "path": "kernel_driver/3_encoder/Makefile",
+      "git_blob": "444c2c919082e47d937a9744fd03bea675de8f45",
+      "bytes": 247,
+      "type": "blob",
+      "sha256": "adb40c496c408056e38ce0aa3f7384243dd811b5fa70fdd734de4d11eb363b17",
+      "url": "https://gitee.com/wuwusama/loong_SmartCar/blob/b9973735dc78c9afef3e38e8d5908910fec31586/kernel_driver/3_encoder/Makefile"
+    },
+    {
+      "path": "kernel_driver/3_encoder/encoder.c",
+      "git_blob": "f52d7ec240eccadc2db42eeeb1a67df9206ad6ca",
+      "bytes": 5993,
+      "type": "blob",
+      "sha256": "ee35efa33866c6a10efa72d8e7e9565e2c157caa8be0d0a3b08b05d0e2cd73c0",
+      "url": "https://gitee.com/wuwusama/loong_SmartCar/blob/b9973735dc78c9afef3e38e8d5908910fec31586/kernel_driver/3_encoder/encoder.c"
+    },
+    {
+      "path": "kernel_driver/4_oled/Makefile",
+      "git_blob": "ac49863849860415e722ce572ca350573a69f706",
+      "bytes": 242,
+      "type": "blob",
+      "sha256": "af9e0ba29afdd5dcda4c1568d75fdad0ad5fea26f1f386c835daed7ab0cd80a2",
+      "url": "https://gitee.com/wuwusama/loong_SmartCar/blob/b9973735dc78c9afef3e38e8d5908910fec31586/kernel_driver/4_oled/Makefile"
+    },
+    {
+      "path": "kernel_driver/4_oled/oled.c",
+      "git_blob": "b2c744e3cb9f203ed1e81289f6ede4847cdd5437",
+      "bytes": 9245,
+      "type": "blob",
+      "sha256": "3c8a9cc10fba602a437327aed6648e28c2320618df4743850e89eb1e5b1f1a38",
+      "url": "https://gitee.com/wuwusama/loong_SmartCar/blob/b9973735dc78c9afef3e38e8d5908910fec31586/kernel_driver/4_oled/oled.c"
+    },
+    {
+      "path": "kernel_driver/4_oled/oled.h",
+      "git_blob": "02cab49d0a006ce27e5c66e58fd8c88073da3959",
+      "bytes": 812,
+      "type": "blob",
+      "sha256": "ce4917f8cfc8ad6b390f520a6adfd8f53db1ae8c61cbb6cb0cd012f08030815f",
+      "url": "https://gitee.com/wuwusama/loong_SmartCar/blob/b9973735dc78c9afef3e38e8d5908910fec31586/kernel_driver/4_oled/oled.h"
+    },
+    {
+      "path": "kernel_driver/4_oled/oledapp.cpp",
+      "git_blob": "25f199597c4f7b695b6bdd7de5583e7082fd3529",
+      "bytes": 694,
+      "type": "blob",
+      "sha256": "0f48556ac1a7f62ca8113137497ddd6ca0c5256c6c0eaf9201a369a3e28598ff",
+      "url": "https://gitee.com/wuwusama/loong_SmartCar/blob/b9973735dc78c9afef3e38e8d5908910fec31586/kernel_driver/4_oled/oledapp.cpp"
+    },
+    {
+      "path": "kernel_driver/5_icm20602/Makefile",
+      "git_blob": "dfe7689b75ee5becb7e4c8015a2ffca06cbcd296",
+      "bytes": 246,
+      "type": "blob",
+      "sha256": "cc09daa6686ee6e6f8e382f808df58e29d984bea127ed94856f89a0452070bea",
+      "url": "https://gitee.com/wuwusama/loong_SmartCar/blob/b9973735dc78c9afef3e38e8d5908910fec31586/kernel_driver/5_icm20602/Makefile"
+    },
+    {
+      "path": "kernel_driver/5_icm20602/imc20602.h",
+      "git_blob": "f3ec2a095cc85b278ec48b32473ef4b32b19f9b9",
+      "bytes": 7109,
+      "type": "blob",
+      "sha256": "9598b6c1999ba5af132fa446ba3861f1b66314e2bef4d254fcc7a602de953c46",
+      "url": "https://gitee.com/wuwusama/loong_SmartCar/blob/b9973735dc78c9afef3e38e8d5908910fec31586/kernel_driver/5_icm20602/imc20602.h"
+    },
+    {
+      "path": "kernel_driver/5_icm20602/wuwu_imc20602.c",
+      "git_blob": "e4fc8ccf5a80ceb551bdd40f3057c653cc05d1c0",
+      "bytes": 11653,
+      "type": "blob",
+      "sha256": "49239eab3719f1bfc5281d450e4eeaddfcbc49d725553f5206255aefc00caabe",
+      "url": "https://gitee.com/wuwusama/loong_SmartCar/blob/b9973735dc78c9afef3e38e8d5908910fec31586/kernel_driver/5_icm20602/wuwu_imc20602.c"
+    },
+    {
+      "path": "kernel_driver/6_fans/Makefile",
+      "git_blob": "848f6c178846197e1c8c59789af8a32b6e58cd34",
+      "bytes": 247,
+      "type": "blob",
+      "sha256": "594eeb6f286ce0347c432aa97639b46bb31ba2597dfede74b705ea29ac5361ad",
+      "url": "https://gitee.com/wuwusama/loong_SmartCar/blob/b9973735dc78c9afef3e38e8d5908910fec31586/kernel_driver/6_fans/Makefile"
+    },
+    {
+      "path": "kernel_driver/6_fans/fans_test.c",
+      "git_blob": "c0c2fc993f97798eb90cf730729a4da2c4e9d260",
+      "bytes": 677,
+      "type": "blob",
+      "sha256": "e3d33f5009ee27af6e11a728b86e6118a753cf5db8f517db6391ea932df48db1",
+      "url": "https://gitee.com/wuwusama/loong_SmartCar/blob/b9973735dc78c9afef3e38e8d5908910fec31586/kernel_driver/6_fans/fans_test.c"
+    },
+    {
+      "path": "kernel_driver/6_fans/wuwu_fans.c",
+      "git_blob": "3d27de81687bf7279938d58ad81032e77287ea04",
+      "bytes": 4134,
+      "type": "blob",
+      "sha256": "1b78af6294796d34139d2815cc6f04df7a62ff105c60a2e45990f44cd759efd7",
+      "url": "https://gitee.com/wuwusama/loong_SmartCar/blob/b9973735dc78c9afef3e38e8d5908910fec31586/kernel_driver/6_fans/wuwu_fans.c"
+    },
+    {
+      "path": "smartCar/code/common_Mymenu.cc",
+      "git_blob": "7a2b340487e039aaef1a12590b7fb66028e93676",
+      "bytes": 21235,
+      "type": "blob",
+      "sha256": "733294169416f7fcab7b8f7f546d3f69f85d242b206eb7c5248fc73543e280c0",
+      "url": "https://gitee.com/wuwusama/loong_SmartCar/blob/b9973735dc78c9afef3e38e8d5908910fec31586/smartCar/code/common_Mymenu.cc"
+    },
+    {
+      "path": "smartCar/code/common_menu.cc",
+      "git_blob": "05da559020f55652580ff2ad51fe9b2453f1ff89",
+      "bytes": 6697,
+      "type": "blob",
+      "sha256": "d9fa39cba2a2bb924cfb9928ae12344a0a164a9b9946af9023adcfc3b895d168",
+      "url": "https://gitee.com/wuwusama/loong_SmartCar/blob/b9973735dc78c9afef3e38e8d5908910fec31586/smartCar/code/common_menu.cc"
+    },
+    {
+      "path": "smartCar/code/control_FuzzyCtrl.cc",
+      "git_blob": "2c94f6dbdb553d2371e6c1292be3944b1f83cde8",
+      "bytes": 6345,
+      "type": "blob",
+      "sha256": "14bc45f94e1e4324f7be967767c71877056c1c60540781e9fbcc715dad60670a",
+      "url": "https://gitee.com/wuwusama/loong_SmartCar/blob/b9973735dc78c9afef3e38e8d5908910fec31586/smartCar/code/control_FuzzyCtrl.cc"
+    },
+    {
+      "path": "smartCar/code/control_ackerman.cc",
+      "git_blob": "907756bcb244ddc3ca09e79eb839925a5816398f",
+      "bytes": 1595,
+      "type": "blob",
+      "sha256": "9bf7f7e198551b81fa472ffdc449ce8b4d9e94d2f6c5c6bdcb4b5db16359465d",
+      "url": "https://gitee.com/wuwusama/loong_SmartCar/blob/b9973735dc78c9afef3e38e8d5908910fec31586/smartCar/code/control_ackerman.cc"
+    },
+    {
+      "path": "smartCar/code/control_lcdshow.cc",
+      "git_blob": "f285acdab5fb5014c9a2840fdb4c295180db5507",
+      "bytes": 4637,
+      "type": "blob",
+      "sha256": "05c6fd038d3c4f3abebb54bd623192f9aaf4976a613d60f796c3c57c66ea3d89",
+      "url": "https://gitee.com/wuwusama/loong_SmartCar/blob/b9973735dc78c9afef3e38e8d5908910fec31586/smartCar/code/control_lcdshow.cc"
+    },
+    {
+      "path": "smartCar/code/control_pid.cc",
+      "git_blob": "ffbacd57cbb4ad46bb5dd46bae753d3cff70ce84",
+      "bytes": 3343,
+      "type": "blob",
+      "sha256": "91e969a1722f907a94b3717dc3533674aa604a73e6b444923d200b17cda39eba",
+      "url": "https://gitee.com/wuwusama/loong_SmartCar/blob/b9973735dc78c9afef3e38e8d5908910fec31586/smartCar/code/control_pid.cc"
+    },
+    {
+      "path": "smartCar/code/control_thread.cc",
+      "git_blob": "f578c976edca1757e98d1cc03bac9aab521e2ef5",
+      "bytes": 9445,
+      "type": "blob",
+      "sha256": "63f603f7b52a1687bc213574929335d9f611d7d841c141ea94d66a5f8dd2d98b",
+      "url": "https://gitee.com/wuwusama/loong_SmartCar/blob/b9973735dc78c9afef3e38e8d5908910fec31586/smartCar/code/control_thread.cc"
+    },
+    {
+      "path": "smartCar/code/device_fans.cc",
+      "git_blob": "91608be0f0e692f7920d441eff20c031450f7fc8",
+      "bytes": 632,
+      "type": "blob",
+      "sha256": "329da9e9c7ae999cf12f9272077f1f22c4ed6fab34b826858b2f4263de95847a",
+      "url": "https://gitee.com/wuwusama/loong_SmartCar/blob/b9973735dc78c9afef3e38e8d5908910fec31586/smartCar/code/device_fans.cc"
+    },
+    {
+      "path": "smartCar/code/device_font.cc",
+      "git_blob": "f9e34ee85ed72b4c39949a0cac6ebdc6750fe219",
+      "bytes": 16484,
+      "type": "blob",
+      "sha256": "2860487984f8c5aac508addf85d25b0040bf70917a1389afb624f6854984a368",
+      "url": "https://gitee.com/wuwusama/loong_SmartCar/blob/b9973735dc78c9afef3e38e8d5908910fec31586/smartCar/code/device_font.cc"
+    },
+    {
+      "path": "smartCar/code/device_icm20602.cc",
+      "git_blob": "28f2fbac3cc7a44f14c49c08e5225a93b15a7de5",
+      "bytes": 4146,
+      "type": "blob",
+      "sha256": "27c38ce7b13e8f7ffdebe4f19d250f6d7341194f9c9f4b333ab5fd2d9203627c",
+      "url": "https://gitee.com/wuwusama/loong_SmartCar/blob/b9973735dc78c9afef3e38e8d5908910fec31586/smartCar/code/device_icm20602.cc"
+    },
+    {
+      "path": "smartCar/code/device_keyCtl.cc",
+      "git_blob": "12380d5c372372731a799d65e01549ebf3bb505e",
+      "bytes": 2026,
+      "type": "blob",
+      "sha256": "97155af026e80646bc2edb02b50520406f921f3ba8c8c9be44f03a7feb997f1d",
+      "url": "https://gitee.com/wuwusama/loong_SmartCar/blob/b9973735dc78c9afef3e38e8d5908910fec31586/smartCar/code/device_keyCtl.cc"
+    },
+    {
+      "path": "smartCar/code/device_motor.cc",
+      "git_blob": "4fe40af79eade4ac966858edc86168d4b42a4cbf",
+      "bytes": 1584,
+      "type": "blob",
+      "sha256": "dc8ebf8df06b616abeda2bfe9107d35c1bdf76cd1a8783a8f30e50bd50b6b5a0",
+      "url": "https://gitee.com/wuwusama/loong_SmartCar/blob/b9973735dc78c9afef3e38e8d5908910fec31586/smartCar/code/device_motor.cc"
+    },
+    {
+      "path": "smartCar/code/device_servo.cc",
+      "git_blob": "386b74dcf3a7f6df9cc3ef64d43fe8520519aaf1",
+      "bytes": 1105,
+      "type": "blob",
+      "sha256": "f8a46f499735eff03f37ec3b5ac42b9478c9c22d45eed1b65770d68b7a659825",
+      "url": "https://gitee.com/wuwusama/loong_SmartCar/blob/b9973735dc78c9afef3e38e8d5908910fec31586/smartCar/code/device_servo.cc"
+    },
+    {
+      "path": "smartCar/code/device_tft180.cc",
+      "git_blob": "f16810cd3ba81b927b14a943c80abe442e97801b",
+      "bytes": 13388,
+      "type": "blob",
+      "sha256": "d45dd6676977c3e2a846c2f015b825bfc2e2d4b3733134a354b112662edf3bcb",
+      "url": "https://gitee.com/wuwusama/loong_SmartCar/blob/b9973735dc78c9afef3e38e8d5908910fec31586/smartCar/code/device_tft180.cc"
+    },
+    {
+      "path": "smartCar/code/preprocess.cc",
+      "git_blob": "f75236fcda3a5cc0d27facb7594406fa40580836",
+      "bytes": 9060,
+      "type": "blob",
+      "sha256": "1e3beb8695ad1d18b57b94930c1310c01500edc4c3d88222e247f788239e331c",
+      "url": "https://gitee.com/wuwusama/loong_SmartCar/blob/b9973735dc78c9afef3e38e8d5908910fec31586/smartCar/code/preprocess.cc"
+    },
+    {
+      "path": "smartCar/code/tracking_base.cc",
+      "git_blob": "115a7526a7851bbb43874f50e89bc256f3c19169",
+      "bytes": 48783,
+      "type": "blob",
+      "sha256": "ba4cc50437818bdefd5c61d761ba55d04c0c569a540318282f2f4da49a10d8be",
+      "url": "https://gitee.com/wuwusama/loong_SmartCar/blob/b9973735dc78c9afef3e38e8d5908910fec31586/smartCar/code/tracking_base.cc"
+    },
+    {
+      "path": "smartCar/code/tracking_crossRoad.cc",
+      "git_blob": "ea32eb0686d9aa2dfc06150e953d2233ac1e915f",
+      "bytes": 6607,
+      "type": "blob",
+      "sha256": "c8290d549cb6143495fb1a0df64400de76f9cb053b027494093fb18df04a7b7b",
+      "url": "https://gitee.com/wuwusama/loong_SmartCar/blob/b9973735dc78c9afef3e38e8d5908910fec31586/smartCar/code/tracking_crossRoad.cc"
+    },
+    {
+      "path": "smartCar/code/tracking_ring.cc",
+      "git_blob": "2d38b48e562e89203af843fb8c130f58e3c4b125",
+      "bytes": 15206,
+      "type": "blob",
+      "sha256": "7abdb019106c971df0c3ec63cdc85c2c2dedf1d61adaf9d99a5df51bfd62f21f",
+      "url": "https://gitee.com/wuwusama/loong_SmartCar/blob/b9973735dc78c9afef3e38e8d5908910fec31586/smartCar/code/tracking_ring.cc"
+    },
+    {
+      "path": "smartCar/include/common_Mymenu.h",
+      "git_blob": "e4a3449ff33abc4c1f325f38156878585ffba2dc",
+      "bytes": 565,
+      "type": "blob",
+      "sha256": "5a8bbeebe6d7aff811a542dcea20883c0b32f8074d3439c3507d4958e88bc90d",
+      "url": "https://gitee.com/wuwusama/loong_SmartCar/blob/b9973735dc78c9afef3e38e8d5908910fec31586/smartCar/include/common_Mymenu.h"
+    },
+    {
+      "path": "smartCar/include/common_menu.h",
+      "git_blob": "99afab24852c70f407ab72e19baded077ec36243",
+      "bytes": 1532,
+      "type": "blob",
+      "sha256": "8efb76f44d24c36a7b728292a07a22549282dd53f290625bc64dd0fa51401776",
+      "url": "https://gitee.com/wuwusama/loong_SmartCar/blob/b9973735dc78c9afef3e38e8d5908910fec31586/smartCar/include/common_menu.h"
+    },
+    {
+      "path": "smartCar/include/control_FuzzyCtrl.h",
+      "git_blob": "141801002d02aad1b07c2ac49ed5c111e79c7a0e",
+      "bytes": 4265,
+      "type": "blob",
+      "sha256": "4cbd902584f3d9d0943c4f517d192a8406aa2ca7a716f5e705e59276b3dcdfbd",
+      "url": "https://gitee.com/wuwusama/loong_SmartCar/blob/b9973735dc78c9afef3e38e8d5908910fec31586/smartCar/include/control_FuzzyCtrl.h"
+    },
+    {
+      "path": "smartCar/include/control_ackerman.h",
+      "git_blob": "a15229390a95df7a5c1e1774545a817b322e3266",
+      "bytes": 268,
+      "type": "blob",
+      "sha256": "43bb11de36b7b2e756cd5b0c4e94ba7e5aeca5d2534df4c636d060867869998b",
+      "url": "https://gitee.com/wuwusama/loong_SmartCar/blob/b9973735dc78c9afef3e38e8d5908910fec31586/smartCar/include/control_ackerman.h"
+    },
+    {
+      "path": "smartCar/include/control_lcdshow.h",
+      "git_blob": "04d5b5897e6409e07caacf90108076b1f5068969",
+      "bytes": 136,
+      "type": "blob",
+      "sha256": "5218364f70fa6ffdedf1e3880b02aa865e2033a96e4f625feec80d04a53c7478",
+      "url": "https://gitee.com/wuwusama/loong_SmartCar/blob/b9973735dc78c9afef3e38e8d5908910fec31586/smartCar/include/control_lcdshow.h"
+    },
+    {
+      "path": "smartCar/include/control_pid.h",
+      "git_blob": "d69bf0212f1645a23c0b575d0a7ec86f8474d3dc",
+      "bytes": 714,
+      "type": "blob",
+      "sha256": "48c58b204d604bdb4b34334888385fd999df5b4f0778d9ae4f14e70b9cb4a7b4",
+      "url": "https://gitee.com/wuwusama/loong_SmartCar/blob/b9973735dc78c9afef3e38e8d5908910fec31586/smartCar/include/control_pid.h"
+    },
+    {
+      "path": "smartCar/include/control_thread.h",
+      "git_blob": "d949f7983328bb151983a0d881f82a0d9ccd3ed5",
+      "bytes": 1023,
+      "type": "blob",
+      "sha256": "937853d8c97ebeade4e03ef60892abc65c0393dd6881feaea911c8e12555f0d8",
+      "url": "https://gitee.com/wuwusama/loong_SmartCar/blob/b9973735dc78c9afef3e38e8d5908910fec31586/smartCar/include/control_thread.h"
+    },
+    {
+      "path": "smartCar/include/device_fans.h",
+      "git_blob": "62ea0f781d0b01b5487c7ee9f9a31f40650a5848",
+      "bytes": 652,
+      "type": "blob",
+      "sha256": "aa0844f54febc0d0ecf9b5f199a907ca6030157d4e8c6c67f4aba6a5a8df8757",
+      "url": "https://gitee.com/wuwusama/loong_SmartCar/blob/b9973735dc78c9afef3e38e8d5908910fec31586/smartCar/include/device_fans.h"
+    },
+    {
+      "path": "smartCar/include/device_font.h",
+      "git_blob": "d06c3dbeced4cab8a3c230e799b54f9e4e51844d",
+      "bytes": 1690,
+      "type": "blob",
+      "sha256": "855893ed1d4e956d9f117d5a39f305c53a333005a6d6c299b575f646bc92ab7b",
+      "url": "https://gitee.com/wuwusama/loong_SmartCar/blob/b9973735dc78c9afef3e38e8d5908910fec31586/smartCar/include/device_font.h"
+    },
+    {
+      "path": "smartCar/include/device_icm20602.h",
+      "git_blob": "544a9355ebac490d734c0e77fd769c806b1cb559",
+      "bytes": 4686,
+      "type": "blob",
+      "sha256": "5e6a57caebaced9a9a70ec23ee1974147c9aac05eee2f4ed390df4cc121d55be",
+      "url": "https://gitee.com/wuwusama/loong_SmartCar/blob/b9973735dc78c9afef3e38e8d5908910fec31586/smartCar/include/device_icm20602.h"
+    },
+    {
+      "path": "smartCar/include/device_keyCtl.h",
+      "git_blob": "1b3d87bb1e4f4d494efacbd12a2f2d9fbe80607b",
+      "bytes": 188,
+      "type": "blob",
+      "sha256": "038fce52081afab4b5cc91f4604338405c7d9b1d9a68b37573ce53780ba64103",
+      "url": "https://gitee.com/wuwusama/loong_SmartCar/blob/b9973735dc78c9afef3e38e8d5908910fec31586/smartCar/include/device_keyCtl.h"
+    },
+    {
+      "path": "smartCar/include/device_motor.h",
+      "git_blob": "17072ae84ac6cb62f2e22e5a0075f2560477cd88",
+      "bytes": 1099,
+      "type": "blob",
+      "sha256": "df50696cd39abc0a542264ce30cc7582f08a1b1370c13b5442a4b4085b5c48cd",
+      "url": "https://gitee.com/wuwusama/loong_SmartCar/blob/b9973735dc78c9afef3e38e8d5908910fec31586/smartCar/include/device_motor.h"
+    },
+    {
+      "path": "smartCar/include/device_servo.h",
+      "git_blob": "1260e878953c7b90f69270e1c1495803674a8d91",
+      "bytes": 789,
+      "type": "blob",
+      "sha256": "b9d91168bcf8a06dcab1934d727b394cd8ed3aff10b79b6a54cbfb045bfc7094",
+      "url": "https://gitee.com/wuwusama/loong_SmartCar/blob/b9973735dc78c9afef3e38e8d5908910fec31586/smartCar/include/device_servo.h"
+    },
+    {
+      "path": "smartCar/include/device_tft180.h",
+      "git_blob": "9a441d5cfa9436cd6ed07001079ed9b81b6f2cd0",
+      "bytes": 9354,
+      "type": "blob",
+      "sha256": "da7270bd71624d4ae3cfc4e1cbca89a572bb02716c3f1a565f3640c6618daa01",
+      "url": "https://gitee.com/wuwusama/loong_SmartCar/blob/b9973735dc78c9afef3e38e8d5908910fec31586/smartCar/include/device_tft180.h"
+    },
+    {
+      "path": "smartCar/include/headfile.h",
+      "git_blob": "362bb5515e488f1d29030f3a696fd19ef1be3ad7",
+      "bytes": 1059,
+      "type": "blob",
+      "sha256": "645085c1f19330020c21e04aea38dc1f467102c445cf872f6e60ac2634f13279",
+      "url": "https://gitee.com/wuwusama/loong_SmartCar/blob/b9973735dc78c9afef3e38e8d5908910fec31586/smartCar/include/headfile.h"
+    },
+    {
+      "path": "smartCar/include/preprocess.h",
+      "git_blob": "883105cf7a89777c85687a07ece03759cf638e74",
+      "bytes": 3421,
+      "type": "blob",
+      "sha256": "ef7541486e3278ceafa00e4428fa1e5c72d415fc27d124b22a60a399d8ca4bf4",
+      "url": "https://gitee.com/wuwusama/loong_SmartCar/blob/b9973735dc78c9afef3e38e8d5908910fec31586/smartCar/include/preprocess.h"
+    },
+    {
+      "path": "smartCar/include/tracking_base.h",
+      "git_blob": "bd3933da7e148e20b9d7a4b2d0a75ea3c628bc18",
+      "bytes": 4329,
+      "type": "blob",
+      "sha256": "7b2fe7044d630a4c0c31b99b7e764c0759bf4fb562fbad81e3eb7ab25f9a42ba",
+      "url": "https://gitee.com/wuwusama/loong_SmartCar/blob/b9973735dc78c9afef3e38e8d5908910fec31586/smartCar/include/tracking_base.h"
+    },
+    {
+      "path": "smartCar/include/tracking_crossRoad.h",
+      "git_blob": "1af873d2b3948cff5604d4e576355d99aecc5448",
+      "bytes": 426,
+      "type": "blob",
+      "sha256": "7488471fdeca493f6d905bc5b041ec4e9b1377d5bf315661d651823167470efe",
+      "url": "https://gitee.com/wuwusama/loong_SmartCar/blob/b9973735dc78c9afef3e38e8d5908910fec31586/smartCar/include/tracking_crossRoad.h"
+    },
+    {
+      "path": "smartCar/include/tracking_ring.h",
+      "git_blob": "af33b58a811a160befe1f6d82a0e83c95a06c0a7",
+      "bytes": 1269,
+      "type": "blob",
+      "sha256": "61e77a97cc7d2086af3da6abf78bfa8d1e99477a15e33b470b4b64cd29fdde17",
+      "url": "https://gitee.com/wuwusama/loong_SmartCar/blob/b9973735dc78c9afef3e38e8d5908910fec31586/smartCar/include/tracking_ring.h"
+    },
+    {
+      "path": "smartCar/src/main.cc",
+      "git_blob": "9d5e567c09f4fa881cdf3b7dfc98ab8105179d05",
+      "bytes": 8017,
+      "type": "blob",
+      "sha256": "1c3161ecb0f48642cff6b68ab9e29a4276dec594c5e39538198c8a448d2be6bc",
+      "url": "https://gitee.com/wuwusama/loong_SmartCar/blob/b9973735dc78c9afef3e38e8d5908910fec31586/smartCar/src/main.cc"
+    },
+    {
+      "path": "smartCar/src/preprocess.json",
+      "git_blob": "053d32f8c93e1f0d71cf95da13fee73d81732b0d",
+      "bytes": 1397,
+      "type": "blob",
+      "sha256": "ae830426136556a7a83290b074f57a82ed7ac4c8505c156196e2cd452d818fc4",
+      "url": "https://gitee.com/wuwusama/loong_SmartCar/blob/b9973735dc78c9afef3e38e8d5908910fec31586/smartCar/src/preprocess.json"
+    }
+  ],
+  "tree_files": 545,
+  "tree_truncated": false,
+  "scope": "Selected source fetched/hash-verified; focused entrypoint/algorithm/interface review, not exhaustive line-by-line proof.",
+  "runtime_validation": "No full firmware build, hardware execution or vehicle test.",
+  "alias_of": null
+}

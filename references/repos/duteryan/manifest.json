@@ -1,0 +1,646 @@
+{
+  "id": "duteryan",
+  "source_id": "duteryan--seekfree_-ls2-k0300_-opensource_-library",
+  "url": "https://gitee.com/duteryan/seekfree_-ls2-k0300_-opensource_-library",
+  "revision": "6c0342d47478ffbc40b16d5b230c238cc5dde1b9",
+  "role": "逐飞工程上的视觉与六类NCNN应用",
+  "files": [
+    {
+      "path": "README.md",
+      "git_blob": "17f9bec3397e179b8e3db1f02d2c306a812f11cc",
+      "bytes": 986,
+      "type": "blob",
+      "sha256": "4f6c07686d29c3b7a2347e77b75f27314341e635854c7b15c36a7013c1692b5c",
+      "url": "https://gitee.com/duteryan/seekfree_-ls2-k0300_-opensource_-library/blob/6c0342d47478ffbc40b16d5b230c238cc5dde1b9/README.md"
+    },
+    {
+      "path": "libraries/zf_components/seekfree_assistant/seekfree_assistant.cpp",
+      "git_blob": "ec43667c8ca934c5662410fcda10372df0927c98",
+      "bytes": 21025,
+      "type": "blob",
+      "sha256": "0eb289c2665d09f644ff13d1e8a61dbcc2c1939877726bb6005da9389aa8c23c",
+      "url": "https://gitee.com/duteryan/seekfree_-ls2-k0300_-opensource_-library/blob/6c0342d47478ffbc40b16d5b230c238cc5dde1b9/libraries/zf_components/seekfree_assistant/seekfree_assistant.cpp"
+    },
+    {
+      "path": "libraries/zf_components/seekfree_assistant/seekfree_assistant.hpp",
+      "git_blob": "6cc67cf815f35edf44d246e866acc5540cc2e68b",
+      "bytes": 8308,
+      "type": "blob",
+      "sha256": "3d4b3dfb3237f3eb93d9c7445531f47c26190ffbee0ca3a93dfdef3e13a0e6ac",
+      "url": "https://gitee.com/duteryan/seekfree_-ls2-k0300_-opensource_-library/blob/6c0342d47478ffbc40b16d5b230c238cc5dde1b9/libraries/zf_components/seekfree_assistant/seekfree_assistant.hpp"
+    },
+    {
+      "path": "libraries/zf_components/seekfree_assistant/seekfree_assistant_interface.cpp",
+      "git_blob": "1d7b442a80ea447c0050389d5571b5c3752b5034",
+      "bytes": 4624,
+      "type": "blob",
+      "sha256": "89ebe6ff70f891a68f77c54e93bacf2e497a03f96a3b54e2ccda403e50f13d40",
+      "url": "https://gitee.com/duteryan/seekfree_-ls2-k0300_-opensource_-library/blob/6c0342d47478ffbc40b16d5b230c238cc5dde1b9/libraries/zf_components/seekfree_assistant/seekfree_assistant_interface.cpp"
+    },
+    {
+      "path": "libraries/zf_components/seekfree_assistant/seekfree_assistant_interface.hpp",
+      "git_blob": "a1199f5bcdc7c0b4da55aff47dd5aaaa3f805121",
+      "bytes": 2545,
+      "type": "blob",
+      "sha256": "68df14d03ec7578adae31bf44e9ec60d76448cb3d82912e1749cd644a16e2226",
+      "url": "https://gitee.com/duteryan/seekfree_-ls2-k0300_-opensource_-library/blob/6c0342d47478ffbc40b16d5b230c238cc5dde1b9/libraries/zf_components/seekfree_assistant/seekfree_assistant_interface.hpp"
+    },
+    {
+      "path": "libraries/zf_components/tflm/README.md",
+      "git_blob": "8191af9c4f34f7bb08229b3ce98e21bd21afa34e",
+      "bytes": 1207,
+      "type": "blob",
+      "sha256": "35d40eb09294edeb83246f4ecd35c37861a9c879f9444139a59701c348a20f02",
+      "url": "https://gitee.com/duteryan/seekfree_-ls2-k0300_-opensource_-library/blob/6c0342d47478ffbc40b16d5b230c238cc5dde1b9/libraries/zf_components/tflm/README.md"
+    },
+    {
+      "path": "libraries/zf_device/zf_device_dl1x.cpp",
+      "git_blob": "9ccd98e8d4c8493d8f358197f609fbb37e30abed",
+      "bytes": 8244,
+      "type": "blob",
+      "sha256": "bd95b214566257558f4be63ae753e831f9d02757b40eeea68e2fc60ace86108e",
+      "url": "https://gitee.com/duteryan/seekfree_-ls2-k0300_-opensource_-library/blob/6c0342d47478ffbc40b16d5b230c238cc5dde1b9/libraries/zf_device/zf_device_dl1x.cpp"
+    },
+    {
+      "path": "libraries/zf_device/zf_device_dl1x.hpp",
+      "git_blob": "62069d52217d14972d90e31472c92047a44bb1b8",
+      "bytes": 6052,
+      "type": "blob",
+      "sha256": "8e9537a58a146628b13560c691bd42444daec8e96409167e5239514645a37484",
+      "url": "https://gitee.com/duteryan/seekfree_-ls2-k0300_-opensource_-library/blob/6c0342d47478ffbc40b16d5b230c238cc5dde1b9/libraries/zf_device/zf_device_dl1x.hpp"
+    },
+    {
+      "path": "libraries/zf_device/zf_device_imu.cpp",
+      "git_blob": "e70adb76a159c7edfedf3fa0171fa2e77d23ce3f",
+      "bytes": 14348,
+      "type": "blob",
+      "sha256": "cfd0fb114f807e0f3b257dc1ae6567c40d489d5c5c593bcaeeedc1ba9e184046",
+      "url": "https://gitee.com/duteryan/seekfree_-ls2-k0300_-opensource_-library/blob/6c0342d47478ffbc40b16d5b230c238cc5dde1b9/libraries/zf_device/zf_device_imu.cpp"
+    },
+    {
+      "path": "libraries/zf_device/zf_device_imu.hpp",
+      "git_blob": "6aee3ad4c8795fb847648615cb489eb665eddbc3",
+      "bytes": 11428,
+      "type": "blob",
+      "sha256": "3d7dc3f7559f30e28990ef5d07d9a11e9f9a68ec760ef60d1d16341da614c68d",
+      "url": "https://gitee.com/duteryan/seekfree_-ls2-k0300_-opensource_-library/blob/6c0342d47478ffbc40b16d5b230c238cc5dde1b9/libraries/zf_device/zf_device_imu.hpp"
+    },
+    {
+      "path": "libraries/zf_device/zf_device_ips200_fb.cpp",
+      "git_blob": "b3e30f615299886420114ddf193f4172097137c3",
+      "bytes": 21369,
+      "type": "blob",
+      "sha256": "ec8ecfcb710049c3a3370640cf605a835ec8049c06b6613b30d429a765ca2f93",
+      "url": "https://gitee.com/duteryan/seekfree_-ls2-k0300_-opensource_-library/blob/6c0342d47478ffbc40b16d5b230c238cc5dde1b9/libraries/zf_device/zf_device_ips200_fb.cpp"
+    },
+    {
+      "path": "libraries/zf_device/zf_device_ips200_fb.hpp",
+      "git_blob": "84cefb4384ab3d7705c7ab70874dc93d8183ea5c",
+      "bytes": 17394,
+      "type": "blob",
+      "sha256": "cc017975dc0a3b7a377687a9fdcc42052b871d1aea05469bff5b3e047cf1fff5",
+      "url": "https://gitee.com/duteryan/seekfree_-ls2-k0300_-opensource_-library/blob/6c0342d47478ffbc40b16d5b230c238cc5dde1b9/libraries/zf_device/zf_device_ips200_fb.hpp"
+    },
+    {
+      "path": "libraries/zf_device/zf_device_tft180_fb.cpp",
+      "git_blob": "89db880570a53ecae02d8a3c937d25e8e2717ec1",
+      "bytes": 21174,
+      "type": "blob",
+      "sha256": "b37ab41c779c0e374cd9694a17de95a95d85b7f9fce0dba2bf21538bdbd70359",
+      "url": "https://gitee.com/duteryan/seekfree_-ls2-k0300_-opensource_-library/blob/6c0342d47478ffbc40b16d5b230c238cc5dde1b9/libraries/zf_device/zf_device_tft180_fb.cpp"
+    },
+    {
+      "path": "libraries/zf_device/zf_device_tft180_fb.hpp",
+      "git_blob": "209db69ea0b9c5602d43ca04b2da9f6b3ef9a4a8",
+      "bytes": 17375,
+      "type": "blob",
+      "sha256": "53f942a6f477a688432314dda3a0b10f9a7b18e6f23e5d481cd734f1986baeda",
+      "url": "https://gitee.com/duteryan/seekfree_-ls2-k0300_-opensource_-library/blob/6c0342d47478ffbc40b16d5b230c238cc5dde1b9/libraries/zf_device/zf_device_tft180_fb.hpp"
+    },
+    {
+      "path": "libraries/zf_device/zf_device_uvc.cpp",
+      "git_blob": "9cb002103f35c887ec91e227b7b465d3713d7a89",
+      "bytes": 21987,
+      "type": "blob",
+      "sha256": "fbf4e17cc7c47a2f94c9d9f6c6a924250c6cad0f84e16be3f0b3aa54c9b12658",
+      "url": "https://gitee.com/duteryan/seekfree_-ls2-k0300_-opensource_-library/blob/6c0342d47478ffbc40b16d5b230c238cc5dde1b9/libraries/zf_device/zf_device_uvc.cpp"
+    },
+    {
+      "path": "libraries/zf_device/zf_device_uvc.hpp",
+      "git_blob": "34eab4dbcd7516683bb7e5eb4644f3dee7a9b91b",
+      "bytes": 3733,
+      "type": "blob",
+      "sha256": "4e2dc41fce1c7eb78e5e3816823d7720509da3ec707cc09911db6548da85cdbd",
+      "url": "https://gitee.com/duteryan/seekfree_-ls2-k0300_-opensource_-library/blob/6c0342d47478ffbc40b16d5b230c238cc5dde1b9/libraries/zf_device/zf_device_uvc.hpp"
+    },
+    {
+      "path": "libraries/zf_driver/zf_driver_adc.cpp",
+      "git_blob": "be7e9828f5564823ae18851df31ca66787a0ba6f",
+      "bytes": 4541,
+      "type": "blob",
+      "sha256": "b7a51169fc36c4b8639f0c6c446b30c5475fd4042172b1f30af92b19f141f8a9",
+      "url": "https://gitee.com/duteryan/seekfree_-ls2-k0300_-opensource_-library/blob/6c0342d47478ffbc40b16d5b230c238cc5dde1b9/libraries/zf_driver/zf_driver_adc.cpp"
+    },
+    {
+      "path": "libraries/zf_driver/zf_driver_adc.hpp",
+      "git_blob": "b0c514144516ad583c7dfb9e6254609c53ff5654",
+      "bytes": 5532,
+      "type": "blob",
+      "sha256": "0b0c431495e64885092cc6e41c8fdabbfeda0e007392839dad3bc71957e235cc",
+      "url": "https://gitee.com/duteryan/seekfree_-ls2-k0300_-opensource_-library/blob/6c0342d47478ffbc40b16d5b230c238cc5dde1b9/libraries/zf_driver/zf_driver_adc.hpp"
+    },
+    {
+      "path": "libraries/zf_driver/zf_driver_delay.cpp",
+      "git_blob": "965be9371cb8f6fed2271382ec7bb5cbce611c9e",
+      "bytes": 1733,
+      "type": "blob",
+      "sha256": "d3749f026c75dab8777b860b516835693253836a13ccff8097b7b32ccfbcf18f",
+      "url": "https://gitee.com/duteryan/seekfree_-ls2-k0300_-opensource_-library/blob/6c0342d47478ffbc40b16d5b230c238cc5dde1b9/libraries/zf_driver/zf_driver_delay.cpp"
+    },
+    {
+      "path": "libraries/zf_driver/zf_driver_delay.hpp",
+      "git_blob": "b6d18490980eeb554a27cd0a20ce304d756526f0",
+      "bytes": 1898,
+      "type": "blob",
+      "sha256": "b206a3661d1786b6e794e48b3708bf40b3f9cab2bdc6802ef053197653baccfd",
+      "url": "https://gitee.com/duteryan/seekfree_-ls2-k0300_-opensource_-library/blob/6c0342d47478ffbc40b16d5b230c238cc5dde1b9/libraries/zf_driver/zf_driver_delay.hpp"
+    },
+    {
+      "path": "libraries/zf_driver/zf_driver_encoder.cpp",
+      "git_blob": "074ad0ffb1d864e039f68e9cf8fc689ee2e33b04",
+      "bytes": 3610,
+      "type": "blob",
+      "sha256": "89ce80d60021574abd1573eed10ce3085e54a0140c385d32c2fb3e4df2f54559",
+      "url": "https://gitee.com/duteryan/seekfree_-ls2-k0300_-opensource_-library/blob/6c0342d47478ffbc40b16d5b230c238cc5dde1b9/libraries/zf_driver/zf_driver_encoder.cpp"
+    },
+    {
+      "path": "libraries/zf_driver/zf_driver_encoder.hpp",
+      "git_blob": "119d693e71ff12c5c37a60d5c02c0678a9000a89",
+      "bytes": 4029,
+      "type": "blob",
+      "sha256": "7eec17fd66645935ff895e5451e61ca0d2f68a8c0cd855919024c31aa9485fa7",
+      "url": "https://gitee.com/duteryan/seekfree_-ls2-k0300_-opensource_-library/blob/6c0342d47478ffbc40b16d5b230c238cc5dde1b9/libraries/zf_driver/zf_driver_encoder.hpp"
+    },
+    {
+      "path": "libraries/zf_driver/zf_driver_file_buffer.cpp",
+      "git_blob": "d50b117104ef58215299f98471b2741cc5030a16",
+      "bytes": 5758,
+      "type": "blob",
+      "sha256": "62492ed1c30fdb51b7acdfc93867d9f8d137ae890aacf0e7d59368e22f3d2a4e",
+      "url": "https://gitee.com/duteryan/seekfree_-ls2-k0300_-opensource_-library/blob/6c0342d47478ffbc40b16d5b230c238cc5dde1b9/libraries/zf_driver/zf_driver_file_buffer.cpp"
+    },
+    {
+      "path": "libraries/zf_driver/zf_driver_file_buffer.hpp",
+      "git_blob": "b018213feaabe1c314549a7b34350204a81398d0",
+      "bytes": 4934,
+      "type": "blob",
+      "sha256": "97d0440984246971aba69b7bc2d5142e87c58abb2b3c34221c833cdf8a2d9bcb",
+      "url": "https://gitee.com/duteryan/seekfree_-ls2-k0300_-opensource_-library/blob/6c0342d47478ffbc40b16d5b230c238cc5dde1b9/libraries/zf_driver/zf_driver_file_buffer.hpp"
+    },
+    {
+      "path": "libraries/zf_driver/zf_driver_file_string.cpp",
+      "git_blob": "a75e6b29679d7411a66f86e3544babf5183d2060",
+      "bytes": 5695,
+      "type": "blob",
+      "sha256": "5c5717ea5c722d8973338ea3aa7e6be42d6d50cc47cd812f6d57c647125e9773",
+      "url": "https://gitee.com/duteryan/seekfree_-ls2-k0300_-opensource_-library/blob/6c0342d47478ffbc40b16d5b230c238cc5dde1b9/libraries/zf_driver/zf_driver_file_string.cpp"
+    },
+    {
+      "path": "libraries/zf_driver/zf_driver_file_string.hpp",
+      "git_blob": "2a86ac8eb8e5f1273d031c0ac54c1115261196ea",
+      "bytes": 5260,
+      "type": "blob",
+      "sha256": "1d69fcc3efb47b22e559a880653a64819fb99d70ad09755b09e08d69507e90c2",
+      "url": "https://gitee.com/duteryan/seekfree_-ls2-k0300_-opensource_-library/blob/6c0342d47478ffbc40b16d5b230c238cc5dde1b9/libraries/zf_driver/zf_driver_file_string.hpp"
+    },
+    {
+      "path": "libraries/zf_driver/zf_driver_gpio.cpp",
+      "git_blob": "c9c08ab9c83fb0038d755360e5119d8e3d019430",
+      "bytes": 3621,
+      "type": "blob",
+      "sha256": "7c146ad3c0a89d5be94849bf756d4f0e3c1cd22640aecfd39b3969c5f426e5ef",
+      "url": "https://gitee.com/duteryan/seekfree_-ls2-k0300_-opensource_-library/blob/6c0342d47478ffbc40b16d5b230c238cc5dde1b9/libraries/zf_driver/zf_driver_gpio.cpp"
+    },
+    {
+      "path": "libraries/zf_driver/zf_driver_gpio.hpp",
+      "git_blob": "4b74d3c6d88adf90ba1e7fb5e527f24ce530682c",
+      "bytes": 4281,
+      "type": "blob",
+      "sha256": "76b3c9910cda29d2c6d62f8cb6a651525b262365bda3bf3f0c3467d83dfaf0a6",
+      "url": "https://gitee.com/duteryan/seekfree_-ls2-k0300_-opensource_-library/blob/6c0342d47478ffbc40b16d5b230c238cc5dde1b9/libraries/zf_driver/zf_driver_gpio.hpp"
+    },
+    {
+      "path": "libraries/zf_driver/zf_driver_pit.cpp",
+      "git_blob": "4fa9ec40eae842953c78715b9e381a5efed339ad",
+      "bytes": 10908,
+      "type": "blob",
+      "sha256": "93cfd808580911358b2ffd3db1467b84d7fb428dfe66993dd4e5b9b388a46261",
+      "url": "https://gitee.com/duteryan/seekfree_-ls2-k0300_-opensource_-library/blob/6c0342d47478ffbc40b16d5b230c238cc5dde1b9/libraries/zf_driver/zf_driver_pit.cpp"
+    },
+    {
+      "path": "libraries/zf_driver/zf_driver_pit.hpp",
+      "git_blob": "e3bfb50c48cfb0901b8ec1721f372446cc730a26",
+      "bytes": 5898,
+      "type": "blob",
+      "sha256": "82af5b482c62fe9979720f4ff3d85f70d80354489b6d5d6c37555ff9b437ff12",
+      "url": "https://gitee.com/duteryan/seekfree_-ls2-k0300_-opensource_-library/blob/6c0342d47478ffbc40b16d5b230c238cc5dde1b9/libraries/zf_driver/zf_driver_pit.hpp"
+    },
+    {
+      "path": "libraries/zf_driver/zf_driver_pit_fd.cpp",
+      "git_blob": "b5c8df306f98e0c1c0e51fd82c28e3a380842f25",
+      "bytes": 6236,
+      "type": "blob",
+      "sha256": "0c61fe130f30d529dfcb4156829d0ad24e99f65e606b6aae21d53786e8297510",
+      "url": "https://gitee.com/duteryan/seekfree_-ls2-k0300_-opensource_-library/blob/6c0342d47478ffbc40b16d5b230c238cc5dde1b9/libraries/zf_driver/zf_driver_pit_fd.cpp"
+    },
+    {
+      "path": "libraries/zf_driver/zf_driver_pit_fd.hpp",
+      "git_blob": "9a491c769b2f7d82bb493e4a7f48b39beff73c4f",
+      "bytes": 5104,
+      "type": "blob",
+      "sha256": "48696c55900fbd2ce3bb45aab111c5255d9993eae58e4f827025d0e49cdef605",
+      "url": "https://gitee.com/duteryan/seekfree_-ls2-k0300_-opensource_-library/blob/6c0342d47478ffbc40b16d5b230c238cc5dde1b9/libraries/zf_driver/zf_driver_pit_fd.hpp"
+    },
+    {
+      "path": "libraries/zf_driver/zf_driver_pwm.cpp",
+      "git_blob": "d3e35485fa16bd350b73d13e84229c5276395149",
+      "bytes": 3702,
+      "type": "blob",
+      "sha256": "c17e945fbef086ac61bcd3fadeb6883c564ea122b6a3b9121bb94e4e9139995d",
+      "url": "https://gitee.com/duteryan/seekfree_-ls2-k0300_-opensource_-library/blob/6c0342d47478ffbc40b16d5b230c238cc5dde1b9/libraries/zf_driver/zf_driver_pwm.cpp"
+    },
+    {
+      "path": "libraries/zf_driver/zf_driver_pwm.hpp",
+      "git_blob": "f9ae758a86a3c696999df7c7c4980ae8a90335ff",
+      "bytes": 4454,
+      "type": "blob",
+      "sha256": "975f73ad7075f08c7e405233ed1565caabecfed1cc4c396b5c5682c6b2787947",
+      "url": "https://gitee.com/duteryan/seekfree_-ls2-k0300_-opensource_-library/blob/6c0342d47478ffbc40b16d5b230c238cc5dde1b9/libraries/zf_driver/zf_driver_pwm.hpp"
+    },
+    {
+      "path": "libraries/zf_driver/zf_driver_tcp_client.cpp",
+      "git_blob": "168f3b83e1ec8bc27687671b14524bd07faba09f",
+      "bytes": 10094,
+      "type": "blob",
+      "sha256": "c8856cac90bbcf8d9ef44b0d7fd4580f3b0e8a2b8976cbe04384464d6c988fe5",
+      "url": "https://gitee.com/duteryan/seekfree_-ls2-k0300_-opensource_-library/blob/6c0342d47478ffbc40b16d5b230c238cc5dde1b9/libraries/zf_driver/zf_driver_tcp_client.cpp"
+    },
+    {
+      "path": "libraries/zf_driver/zf_driver_tcp_client.hpp",
+      "git_blob": "8c144942bcdfba664125f095732fca5cec754936",
+      "bytes": 6093,
+      "type": "blob",
+      "sha256": "c381fb0e252536404f9e5beea3cc7c1254c09ee8f6416213beaee1d72573a8b1",
+      "url": "https://gitee.com/duteryan/seekfree_-ls2-k0300_-opensource_-library/blob/6c0342d47478ffbc40b16d5b230c238cc5dde1b9/libraries/zf_driver/zf_driver_tcp_client.hpp"
+    },
+    {
+      "path": "libraries/zf_driver/zf_driver_udp.cpp",
+      "git_blob": "1a0f6d7ece06118c32206b0653ec3f541cc0924c",
+      "bytes": 6288,
+      "type": "blob",
+      "sha256": "b51daab393e6907c666377e3e08a671810a8597491e2c6dce0093ea9750ee842",
+      "url": "https://gitee.com/duteryan/seekfree_-ls2-k0300_-opensource_-library/blob/6c0342d47478ffbc40b16d5b230c238cc5dde1b9/libraries/zf_driver/zf_driver_udp.cpp"
+    },
+    {
+      "path": "libraries/zf_driver/zf_driver_udp.hpp",
+      "git_blob": "2042d6e75d16d4f258b50dbe98845e634477e6d2",
+      "bytes": 5337,
+      "type": "blob",
+      "sha256": "cb9950483d26ccc6577c4f486e98d6404d40153193c871f253a726adbfdf20db",
+      "url": "https://gitee.com/duteryan/seekfree_-ls2-k0300_-opensource_-library/blob/6c0342d47478ffbc40b16d5b230c238cc5dde1b9/libraries/zf_driver/zf_driver_udp.hpp"
+    },
+    {
+      "path": "project/code/Fuzzy.cpp",
+      "git_blob": "cda818db0eddef119ff99f67d7ed1b357c69eb8c",
+      "bytes": 5788,
+      "type": "blob",
+      "sha256": "61f9eab4e8fb7e672daafbd0597ca7d4e2ca0aa4bc170259cfc0a0c339332584",
+      "url": "https://gitee.com/duteryan/seekfree_-ls2-k0300_-opensource_-library/blob/6c0342d47478ffbc40b16d5b230c238cc5dde1b9/project/code/Fuzzy.cpp"
+    },
+    {
+      "path": "project/code/Fuzzy.hpp",
+      "git_blob": "7287b1abf96a11eef7f4b9caa3643fac46b549ba",
+      "bytes": 169,
+      "type": "blob",
+      "sha256": "48b7c1a7ade47a29f49b945cd66a14e9da9b69283bfe1b1c8a7811fb6912eaf4",
+      "url": "https://gitee.com/duteryan/seekfree_-ls2-k0300_-opensource_-library/blob/6c0342d47478ffbc40b16d5b230c238cc5dde1b9/project/code/Fuzzy.hpp"
+    },
+    {
+      "path": "project/code/black_region_detect.cpp",
+      "git_blob": "a563a038f978e6112ab2e3775cbb56617030910f",
+      "bytes": 27476,
+      "type": "blob",
+      "sha256": "19286ab8b497d56ec8053909178f6c7cc63b653847b0502c7108fb85ae919ac3",
+      "url": "https://gitee.com/duteryan/seekfree_-ls2-k0300_-opensource_-library/blob/6c0342d47478ffbc40b16d5b230c238cc5dde1b9/project/code/black_region_detect.cpp"
+    },
+    {
+      "path": "project/code/black_region_detect.hpp",
+      "git_blob": "cf0ee5fff7e162a558d5bc8d961d3a58f0526b0f",
+      "bytes": 2006,
+      "type": "blob",
+      "sha256": "347d76b3fa0ffc9f5c1ed81cfaf40404dd3b83e1a86de76ed7ac276f65d62589",
+      "url": "https://gitee.com/duteryan/seekfree_-ls2-k0300_-opensource_-library/blob/6c0342d47478ffbc40b16d5b230c238cc5dde1b9/project/code/black_region_detect.hpp"
+    },
+    {
+      "path": "project/code/camara_send.hpp",
+      "git_blob": "6735bb2e320d26e6fd179cc154506cd07033c1b3",
+      "bytes": 1231,
+      "type": "blob",
+      "sha256": "f658fe6d9a1ac478f6c4b22a3a50b8ea14291b24de227c73b9b0772f15f00f3b",
+      "url": "https://gitee.com/duteryan/seekfree_-ls2-k0300_-opensource_-library/blob/6c0342d47478ffbc40b16d5b230c238cc5dde1b9/project/code/camara_send.hpp"
+    },
+    {
+      "path": "project/code/carama_send.cpp",
+      "git_blob": "0abca3262d574552115995bca79a7480cd62a747",
+      "bytes": 9363,
+      "type": "blob",
+      "sha256": "5150a6c184c55cba080f13e935c2216c5936388799c34d0ee6e11dc7b826884c",
+      "url": "https://gitee.com/duteryan/seekfree_-ls2-k0300_-opensource_-library/blob/6c0342d47478ffbc40b16d5b230c238cc5dde1b9/project/code/carama_send.cpp"
+    },
+    {
+      "path": "project/code/conctrol.cpp",
+      "git_blob": "72e298510928cb3effb17104ef19e3a50d93a9aa",
+      "bytes": 73466,
+      "type": "blob",
+      "sha256": "c3c5cf62b2cba26840a7b5bee3669e01a1ce008c4bb430c4679b2fa88e7dbf1f",
+      "url": "https://gitee.com/duteryan/seekfree_-ls2-k0300_-opensource_-library/blob/6c0342d47478ffbc40b16d5b230c238cc5dde1b9/project/code/conctrol.cpp"
+    },
+    {
+      "path": "project/code/conctrol.hpp",
+      "git_blob": "20dca2c116e7621dc0d861f416a2d0b58c3df997",
+      "bytes": 9702,
+      "type": "blob",
+      "sha256": "2654e0480508a9a9769f8e4b2ffa754c08338939777d4a859c29a281f32def6c",
+      "url": "https://gitee.com/duteryan/seekfree_-ls2-k0300_-opensource_-library/blob/6c0342d47478ffbc40b16d5b230c238cc5dde1b9/project/code/conctrol.hpp"
+    },
+    {
+      "path": "project/code/flash.cpp",
+      "git_blob": "b3718bfda0ee11f90f1b4957a38b2e22bab127e7",
+      "bytes": 5370,
+      "type": "blob",
+      "sha256": "bdd4fd6a2af27fbcb20a100a7e3920101f4a6f14b1ddae6ec9b9a6a1a93b3b7b",
+      "url": "https://gitee.com/duteryan/seekfree_-ls2-k0300_-opensource_-library/blob/6c0342d47478ffbc40b16d5b230c238cc5dde1b9/project/code/flash.cpp"
+    },
+    {
+      "path": "project/code/flash.hpp",
+      "git_blob": "4c55e141500d6787c71a0e5375228af84847ecb0",
+      "bytes": 431,
+      "type": "blob",
+      "sha256": "d8a223021fb0285fdb3e70db2c90686db66ec82020485a916dff3b7023ed3f7a",
+      "url": "https://gitee.com/duteryan/seekfree_-ls2-k0300_-opensource_-library/blob/6c0342d47478ffbc40b16d5b230c238cc5dde1b9/project/code/flash.hpp"
+    },
+    {
+      "path": "project/code/fps.cpp",
+      "git_blob": "0a3bf9f2de427452d896dfbfdbd5b49c1abf2749",
+      "bytes": 913,
+      "type": "blob",
+      "sha256": "2b8e9bf6186788abe54962a449d177d89f64c73cb37fc3bb1269eb001d1f07de",
+      "url": "https://gitee.com/duteryan/seekfree_-ls2-k0300_-opensource_-library/blob/6c0342d47478ffbc40b16d5b230c238cc5dde1b9/project/code/fps.cpp"
+    },
+    {
+      "path": "project/code/fps.hpp",
+      "git_blob": "4cc59aec9a75001b4dd5a88f35b97c4642aa8199",
+      "bytes": 220,
+      "type": "blob",
+      "sha256": "caa8bf2f16801f6ee16d3f68a224c240b6415eb5204ad8a888a504f0bacf096d",
+      "url": "https://gitee.com/duteryan/seekfree_-ls2-k0300_-opensource_-library/blob/6c0342d47478ffbc40b16d5b230c238cc5dde1b9/project/code/fps.hpp"
+    },
+    {
+      "path": "project/code/image.cpp",
+      "git_blob": "b57940c4083403586838bbc13c901405f58df246",
+      "bytes": 295075,
+      "type": "blob",
+      "sha256": "f0cd96d22a63275f6fc0149648791e01dc3714d151f14163e5b5833ccd3c3d1c",
+      "url": "https://gitee.com/duteryan/seekfree_-ls2-k0300_-opensource_-library/blob/6c0342d47478ffbc40b16d5b230c238cc5dde1b9/project/code/image.cpp"
+    },
+    {
+      "path": "project/code/image.hpp",
+      "git_blob": "f7c66affc645c96ec879782f8d810c28d6b2447c",
+      "bytes": 5631,
+      "type": "blob",
+      "sha256": "2ff99992d80a61fab3218aa1fa484fd15d53cf3f94d045c6f13fd6fb2ff5473c",
+      "url": "https://gitee.com/duteryan/seekfree_-ls2-k0300_-opensource_-library/blob/6c0342d47478ffbc40b16d5b230c238cc5dde1b9/project/code/image.hpp"
+    },
+    {
+      "path": "project/code/image_cropper.cpp",
+      "git_blob": "4ede52d3ed153312add3b673155f7fb32986f69c",
+      "bytes": 11054,
+      "type": "blob",
+      "sha256": "0c810547092270625598753b734ec92811b9d6ace0d787dc0a875ebd609d46c8",
+      "url": "https://gitee.com/duteryan/seekfree_-ls2-k0300_-opensource_-library/blob/6c0342d47478ffbc40b16d5b230c238cc5dde1b9/project/code/image_cropper.cpp"
+    },
+    {
+      "path": "project/code/image_cropper.hpp",
+      "git_blob": "2ef60dd4b35a20c57489b8e22f7769cbb94b1e33",
+      "bytes": 513,
+      "type": "blob",
+      "sha256": "4643d9d98746973899ec419a8a79628f5ff1778b189f535a279a614ebbcc8090",
+      "url": "https://gitee.com/duteryan/seekfree_-ls2-k0300_-opensource_-library/blob/6c0342d47478ffbc40b16d5b230c238cc5dde1b9/project/code/image_cropper.hpp"
+    },
+    {
+      "path": "project/code/init.cpp",
+      "git_blob": "0ee2562f47f42eb0f58cfbf5390d0b2ff19ae2c1",
+      "bytes": 1391,
+      "type": "blob",
+      "sha256": "08dfb281cc4e5f2e660d1ce5b73e562c397e95c6176bdaf8da3a0de9fca4049b",
+      "url": "https://gitee.com/duteryan/seekfree_-ls2-k0300_-opensource_-library/blob/6c0342d47478ffbc40b16d5b230c238cc5dde1b9/project/code/init.cpp"
+    },
+    {
+      "path": "project/code/init.hpp",
+      "git_blob": "1155ccea98c6764dc90879fe03e94eaf6170df80",
+      "bytes": 577,
+      "type": "blob",
+      "sha256": "2015b34cb895d36043bad62e1c56d83e70f71f2ad6de623e6e04c016e8fa0daf",
+      "url": "https://gitee.com/duteryan/seekfree_-ls2-k0300_-opensource_-library/blob/6c0342d47478ffbc40b16d5b230c238cc5dde1b9/project/code/init.hpp"
+    },
+    {
+      "path": "project/code/key.cpp",
+      "git_blob": "1b00757342e756c5ee16a2446cfb2cbbec35f16d",
+      "bytes": 8515,
+      "type": "blob",
+      "sha256": "e13a3dac4a4ae1695ae24313898e1eb55af872a57aa1cc41bca81314cc53fc40",
+      "url": "https://gitee.com/duteryan/seekfree_-ls2-k0300_-opensource_-library/blob/6c0342d47478ffbc40b16d5b230c238cc5dde1b9/project/code/key.cpp"
+    },
+    {
+      "path": "project/code/key.hpp",
+      "git_blob": "e7e10340032027370660bfb0ab28e645da2b24cd",
+      "bytes": 709,
+      "type": "blob",
+      "sha256": "1d9055474289ad3e5232e0fd062e18eddd6e4d7cb8b8670a2c2a92bc068b9854",
+      "url": "https://gitee.com/duteryan/seekfree_-ls2-k0300_-opensource_-library/blob/6c0342d47478ffbc40b16d5b230c238cc5dde1b9/project/code/key.hpp"
+    },
+    {
+      "path": "project/code/math_helpers.cpp",
+      "git_blob": "25cf6a1f084209c1d0b113374bee669e2adb9d20",
+      "bytes": 585,
+      "type": "blob",
+      "sha256": "95374129c6cb3dfc8dd3ac950d206e89a824d282b86c2a170b88cccd6896762b",
+      "url": "https://gitee.com/duteryan/seekfree_-ls2-k0300_-opensource_-library/blob/6c0342d47478ffbc40b16d5b230c238cc5dde1b9/project/code/math_helpers.cpp"
+    },
+    {
+      "path": "project/code/math_helpers.hpp",
+      "git_blob": "5082342ebbe34e3f2dd13290f6fa617781cc48b3",
+      "bytes": 215,
+      "type": "blob",
+      "sha256": "c80af27cb62c222bb545797dd810119dc35b290f94971de2884b829e99626987",
+      "url": "https://gitee.com/duteryan/seekfree_-ls2-k0300_-opensource_-library/blob/6c0342d47478ffbc40b16d5b230c238cc5dde1b9/project/code/math_helpers.hpp"
+    },
+    {
+      "path": "project/code/menu.cpp",
+      "git_blob": "213479e8db339ea1a2d796f8e09d4ab5e8852cae",
+      "bytes": 23789,
+      "type": "blob",
+      "sha256": "cebc5e68964e5368bf41af9854a5361b18faf42c35eb0618711718c56d1dfeaa",
+      "url": "https://gitee.com/duteryan/seekfree_-ls2-k0300_-opensource_-library/blob/6c0342d47478ffbc40b16d5b230c238cc5dde1b9/project/code/menu.cpp"
+    },
+    {
+      "path": "project/code/menu.hpp",
+      "git_blob": "a81dc490b436e902d7b34f9d25e969bdce1fcd5f",
+      "bytes": 3521,
+      "type": "blob",
+      "sha256": "41260e9cca7edbfafb5247a4747378a0102b9d7212cf34cd275325eaa143ffb4",
+      "url": "https://gitee.com/duteryan/seekfree_-ls2-k0300_-opensource_-library/blob/6c0342d47478ffbc40b16d5b230c238cc5dde1b9/project/code/menu.hpp"
+    },
+    {
+      "path": "project/code/ncnn_model.cpp",
+      "git_blob": "0e0c94f8d8f3cf29ada0a5bf159057f6256e591b",
+      "bytes": 41497,
+      "type": "blob",
+      "sha256": "b1a845721c9a866697b9e528ace678b390ec6f3d4cc825c6eaaad1e8b1228b57",
+      "url": "https://gitee.com/duteryan/seekfree_-ls2-k0300_-opensource_-library/blob/6c0342d47478ffbc40b16d5b230c238cc5dde1b9/project/code/ncnn_model.cpp"
+    },
+    {
+      "path": "project/code/ncnn_model.hpp",
+      "git_blob": "08ed4f2e444da76378efc1c9fd195b8e868010f4",
+      "bytes": 2823,
+      "type": "blob",
+      "sha256": "ac692b4fce742fb6ac89d5f62b4062d4493dc48d7e977080bd17ffb669f86255",
+      "url": "https://gitee.com/duteryan/seekfree_-ls2-k0300_-opensource_-library/blob/6c0342d47478ffbc40b16d5b230c238cc5dde1b9/project/code/ncnn_model.hpp"
+    },
+    {
+      "path": "project/code/red_region_verify.cpp",
+      "git_blob": "c47d12b2bfe68ff919d13ef09cd1c8ccff69762f",
+      "bytes": 52852,
+      "type": "blob",
+      "sha256": "7ef9ed46ac886bb562392ad5e7c1d74a542f5d3ddf86d28986ef96593e78376c",
+      "url": "https://gitee.com/duteryan/seekfree_-ls2-k0300_-opensource_-library/blob/6c0342d47478ffbc40b16d5b230c238cc5dde1b9/project/code/red_region_verify.cpp"
+    },
+    {
+      "path": "project/code/red_region_verify.hpp",
+      "git_blob": "06a7b725c37bba60ebaf3fc765b06587c813f2e1",
+      "bytes": 3161,
+      "type": "blob",
+      "sha256": "632cc56ecb13e8d96106b2d4590931db0cca4d310e718dfecceea58a2086a03c",
+      "url": "https://gitee.com/duteryan/seekfree_-ls2-k0300_-opensource_-library/blob/6c0342d47478ffbc40b16d5b230c238cc5dde1b9/project/code/red_region_verify.hpp"
+    },
+    {
+      "path": "project/code/ww_camera_server.cc",
+      "git_blob": "e4125b8b670486ab6b9012545781aa518c2eebad",
+      "bytes": 47546,
+      "type": "blob",
+      "sha256": "70584a1d4db20cda2fe92fbf5f4762396b9abc55bc6f41dbbcdb80d69f38bbb1",
+      "url": "https://gitee.com/duteryan/seekfree_-ls2-k0300_-opensource_-library/blob/6c0342d47478ffbc40b16d5b230c238cc5dde1b9/project/code/ww_camera_server.cc"
+    },
+    {
+      "path": "project/code/ww_camera_server.h",
+      "git_blob": "3b4fa7efff373f9d795fceebbbb45048b8daced8",
+      "bytes": 7038,
+      "type": "blob",
+      "sha256": "23a753e8e591b028a7b872f5beed772059aa8ebc1c4206c526ff748b3f1cdd64",
+      "url": "https://gitee.com/duteryan/seekfree_-ls2-k0300_-opensource_-library/blob/6c0342d47478ffbc40b16d5b230c238cc5dde1b9/project/code/ww_camera_server.h"
+    },
+    {
+      "path": "project/code/本文件夹作用.txt",
+      "git_blob": "23e503a131a235dea25b91dd9a2afc553aa3fca6",
+      "bytes": 25,
+      "type": "blob",
+      "sha256": "faf01e8d36ca055d457b67b8d66c5e4ab4add11a9f3e5b7e3125ae4307e657d0",
+      "url": "https://gitee.com/duteryan/seekfree_-ls2-k0300_-opensource_-library/blob/6c0342d47478ffbc40b16d5b230c238cc5dde1b9/project/code/本文件夹作用.txt"
+    },
+    {
+      "path": "project/model/loong_cnn_model_simple.h",
+      "git_blob": "36540820bdf25fd5eae0df04adf95eee9cccac15",
+      "bytes": 101230,
+      "type": "blob",
+      "sha256": "7ad0fdc359ee1d71aa54a16dbde62861294c82d5eebdfa06df1047ef4722064d",
+      "url": "https://gitee.com/duteryan/seekfree_-ls2-k0300_-opensource_-library/blob/6c0342d47478ffbc40b16d5b230c238cc5dde1b9/project/model/loong_cnn_model_simple.h"
+    },
+    {
+      "path": "project/model/本文件夹作用.txt",
+      "git_blob": "e56132f90781f51000a564e17560801c14cfc69f",
+      "bytes": 148,
+      "type": "blob",
+      "sha256": "3b2eecfffe03053f842e809c9fd82b9c753b3c43b0b3ca63368d38cc8de2444d",
+      "url": "https://gitee.com/duteryan/seekfree_-ls2-k0300_-opensource_-library/blob/6c0342d47478ffbc40b16d5b230c238cc5dde1b9/project/model/本文件夹作用.txt"
+    },
+    {
+      "path": "project/user/CMakeLists.txt",
+      "git_blob": "05b41a408b2b757178dd3d0513bddaa494819011",
+      "bytes": 4326,
+      "type": "blob",
+      "sha256": "5e6d22b17097e3025ca3328c53c7eb2ac0f8b7f20d631e8f6abb04ce26b431cb",
+      "url": "https://gitee.com/duteryan/seekfree_-ls2-k0300_-opensource_-library/blob/6c0342d47478ffbc40b16d5b230c238cc5dde1b9/project/user/CMakeLists.txt"
+    },
+    {
+      "path": "project/user/build.sh",
+      "git_blob": "0ed6f756945c8f22e451aa0021b8398c3067494d",
+      "bytes": 2234,
+      "type": "blob",
+      "sha256": "9713bf657a30b50bc3ed821813ca693fa242f3febb3503143d174067d71441cb",
+      "url": "https://gitee.com/duteryan/seekfree_-ls2-k0300_-opensource_-library/blob/6c0342d47478ffbc40b16d5b230c238cc5dde1b9/project/user/build.sh"
+    },
+    {
+      "path": "project/user/cross.cmake",
+      "git_blob": "caa4dd131167426372d649e0ac31cae29276d7cf",
+      "bytes": 636,
+      "type": "blob",
+      "sha256": "80e242a1dda08c2a57a1c7dd046092475e6c652a2ed9ce6a12a7d73fb885cb48",
+      "url": "https://gitee.com/duteryan/seekfree_-ls2-k0300_-opensource_-library/blob/6c0342d47478ffbc40b16d5b230c238cc5dde1b9/project/user/cross.cmake"
+    },
+    {
+      "path": "project/user/isr.cpp",
+      "git_blob": "3722ea777743f1a21564acfaab0b8dca959ff2dc",
+      "bytes": 6579,
+      "type": "blob",
+      "sha256": "17b9631f1ba768f863be84a8614b51882a2a5ea681ed3e3a9c427c03998027f8",
+      "url": "https://gitee.com/duteryan/seekfree_-ls2-k0300_-opensource_-library/blob/6c0342d47478ffbc40b16d5b230c238cc5dde1b9/project/user/isr.cpp"
+    },
+    {
+      "path": "project/user/isr.hpp",
+      "git_blob": "04aae153de70d4069ffd7b32369e52b2f1b6d286",
+      "bytes": 481,
+      "type": "blob",
+      "sha256": "9a30a1ae3611d21d2d18aa26971bfe7f3bbce5456e3d1c3ff0f0e9095c07741d",
+      "url": "https://gitee.com/duteryan/seekfree_-ls2-k0300_-opensource_-library/blob/6c0342d47478ffbc40b16d5b230c238cc5dde1b9/project/user/isr.hpp"
+    },
+    {
+      "path": "project/user/main.cpp",
+      "git_blob": "8d0ff747ef1268a64a0501c2a8e5c6bdde464c3e",
+      "bytes": 10152,
+      "type": "blob",
+      "sha256": "76f23c41baf56cf40a3a61b3ba00437d4da0959d88753ba01a26021d4426aaa9",
+      "url": "https://gitee.com/duteryan/seekfree_-ls2-k0300_-opensource_-library/blob/6c0342d47478ffbc40b16d5b230c238cc5dde1b9/project/user/main.cpp"
+    },
+    {
+      "path": "project/user/parameter.txt",
+      "git_blob": "341f4ab642ab28777bff33b47c7a61f901db8396",
+      "bytes": 216,
+      "type": "blob",
+      "sha256": "3694c4125aa2620990b9b137312a918d1f245d03e6fc3c03add99ce6d7770814",
+      "url": "https://gitee.com/duteryan/seekfree_-ls2-k0300_-opensource_-library/blob/6c0342d47478ffbc40b16d5b230c238cc5dde1b9/project/user/parameter.txt"
+    },
+    {
+      "path": "project/user/parameter_new.txt",
+      "git_blob": "c2670bb8faad757bb20a4305b4ab3f39400aea5e",
+      "bytes": 229,
+      "type": "blob",
+      "sha256": "c8a0370b4a35632294b9a21d4fa2fefd5d3cb86a772cdfad93cd2dede269110f",
+      "url": "https://gitee.com/duteryan/seekfree_-ls2-k0300_-opensource_-library/blob/6c0342d47478ffbc40b16d5b230c238cc5dde1b9/project/user/parameter_new.txt"
+    }
+  ],
+  "tree_files": 2101,
+  "tree_truncated": false,
+  "scope": "Selected source fetched/hash-verified; focused entrypoint/algorithm/interface review, not exhaustive line-by-line proof.",
+  "runtime_validation": "No full firmware build, hardware execution or vehicle test.",
+  "alias_of": null
+}

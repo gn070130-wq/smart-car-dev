@@ -1,0 +1,661 @@
+{
+  "revision": "a545ea5dd3290b791a81043766294d21e6e84722",
+  "kind": "heuristic definition candidates, may include commented/inactive code",
+  "symbols": [
+    {
+      "name": "lq_gpio_output_demo",
+      "path": "Loongson_2K300_301_LIB/example/src/01_lq_gpio_basic_demo.cpp",
+      "line": 19
+    },
+    {
+      "name": "lq_gpio_input_demo",
+      "path": "Loongson_2K300_301_LIB/example/src/01_lq_gpio_basic_demo.cpp",
+      "line": 59
+    },
+    {
+      "name": "lq_pwm_demo",
+      "path": "Loongson_2K300_301_LIB/example/src/02_lq_pwm_demo.cpp",
+      "line": 19
+    },
+    {
+      "name": "lq_gtim_pwm_demo",
+      "path": "Loongson_2K300_301_LIB/example/src/03_lq_gtim_pwm_demo.cpp",
+      "line": 19
+    },
+    {
+      "name": "lq_atim_pwm_demo",
+      "path": "Loongson_2K300_301_LIB/example/src/04_lq_atim_pwm_demo.cpp",
+      "line": 20
+    },
+    {
+      "name": "lq_encoder_pwm_demo",
+      "path": "Loongson_2K300_301_LIB/example/src/05_lq_encoder_pwm_demo.cpp",
+      "line": 19
+    },
+    {
+      "name": "get_time_str",
+      "path": "Loongson_2K300_301_LIB/example/src/06_lq_canfd_demo.cpp",
+      "line": 22
+    },
+    {
+      "name": "CAN_RxCallback",
+      "path": "Loongson_2K300_301_LIB/example/src/06_lq_canfd_demo.cpp",
+      "line": 30
+    },
+    {
+      "name": "lq_canfd_demo",
+      "path": "Loongson_2K300_301_LIB/example/src/06_lq_canfd_demo.cpp",
+      "line": 46
+    },
+    {
+      "name": "get_time_str",
+      "path": "Loongson_2K300_301_LIB/example/src/07_lq_ncnn_demo.cpp",
+      "line": 16
+    },
+    {
+      "name": "lq_ncnn_demo",
+      "path": "Loongson_2K300_301_LIB/example/src/07_lq_ncnn_demo.cpp",
+      "line": 23
+    },
+    {
+      "name": "lq_ncnn_photo_demo",
+      "path": "Loongson_2K300_301_LIB/example/src/07_lq_ncnn_demo.cpp",
+      "line": 78
+    },
+    {
+      "name": "lq_ips20_demo",
+      "path": "Loongson_2K300_301_LIB/example/src/08_lq_ips20_demo.cpp",
+      "line": 20
+    },
+    {
+      "name": "lq_mpu6050_demo",
+      "path": "Loongson_2K300_301_LIB/example/src/09_lq_mpu6050_demo.cpp",
+      "line": 21
+    },
+    {
+      "name": "lq_lsm6dsr_demo",
+      "path": "Loongson_2K300_301_LIB/example/src/10_lq_lsm6dsr_demo.cpp",
+      "line": 21
+    },
+    {
+      "name": "lq_vl53l0x_demo",
+      "path": "Loongson_2K300_301_LIB/example/src/11_lq_vl53l0x_demo.cpp",
+      "line": 21
+    },
+    {
+      "name": "lq_udp_img_trans_demo",
+      "path": "Loongson_2K300_301_LIB/example/src/12_lq_udp_img_trans_demo.cpp",
+      "line": 36
+    },
+    {
+      "name": "lq_udp_wavefrom_demo",
+      "path": "Loongson_2K300_301_LIB/example/src/13_lq_udp_wavefrom_demo.cpp",
+      "line": 28
+    },
+    {
+      "name": "lq_icm42688_demo",
+      "path": "Loongson_2K300_301_LIB/example/src/14_lq_icm42688_demo.cpp",
+      "line": 21
+    },
+    {
+      "name": "lq_ntp_demo",
+      "path": "Loongson_2K300_301_LIB/example/src/15_lq_ntp_demo.cpp",
+      "line": 20
+    },
+    {
+      "name": "my_timer_callback",
+      "path": "Loongson_2K300_301_LIB/example/src/16_lq_timer_demo.cpp",
+      "line": 14
+    },
+    {
+      "name": "lq_timer_demo",
+      "path": "Loongson_2K300_301_LIB/example/src/16_lq_timer_demo.cpp",
+      "line": 26
+    },
+    {
+      "name": "lq_module_load_demo",
+      "path": "Loongson_2K300_301_LIB/example/src/17_lq_module_load_demo.cpp",
+      "line": 21
+    },
+    {
+      "name": "lq_ips20_show_img_demo",
+      "path": "Loongson_2K300_301_LIB/example/src/18_lq_ips20_show_img_demo.cpp",
+      "line": 20
+    },
+    {
+      "name": "lq_motor_demo",
+      "path": "Loongson_2K300_301_LIB/example/src/19_lq_motor_demo.cpp",
+      "line": 15
+    },
+    {
+      "name": "lq_image_demo",
+      "path": "Loongson_2K300_301_LIB/example/src/20_lq_image_demo.cpp",
+      "line": 12
+    },
+    {
+      "name": "lq_image_motor_demo",
+      "path": "Loongson_2K300_301_LIB/example/src/21_lq_image_motor_demo.cpp",
+      "line": 3
+    },
+    {
+      "name": "main",
+      "path": "Loongson_2K300_301_LIB/main/main.cpp",
+      "line": 24
+    },
+    {
+      "name": "CarRuntime_Init",
+      "path": "Loongson_2K300_301_LIB/user_app/car_runtime.cpp",
+      "line": 17
+    },
+    {
+      "name": "CarRuntime_Shutdown",
+      "path": "Loongson_2K300_301_LIB/user_app/car_runtime.cpp",
+      "line": 36
+    },
+    {
+      "name": "CarRuntime_ProcessFrame",
+      "path": "Loongson_2K300_301_LIB/user_app/car_runtime.cpp",
+      "line": 47
+    },
+    {
+      "name": "CarRuntime_ProcessFrame",
+      "path": "Loongson_2K300_301_LIB/user_app/car_runtime.cpp",
+      "line": 64
+    },
+    {
+      "name": "CarRuntime_RunCameraLoop",
+      "path": "Loongson_2K300_301_LIB/user_app/car_runtime.cpp",
+      "line": 87
+    },
+    {
+      "name": "ClampInt",
+      "path": "Loongson_2K300_301_LIB/user_app/image.cpp",
+      "line": 144
+    },
+    {
+      "name": "ClampMetric99",
+      "path": "Loongson_2K300_301_LIB/user_app/image.cpp",
+      "line": 157
+    },
+    {
+      "name": "ClampSignedMetric99",
+      "path": "Loongson_2K300_301_LIB/user_app/image.cpp",
+      "line": 162
+    },
+    {
+      "name": "ImageDebugNowMs",
+      "path": "Loongson_2K300_301_LIB/user_app/image.cpp",
+      "line": 167
+    },
+    {
+      "name": "ImageDebugModeName",
+      "path": "Loongson_2K300_301_LIB/user_app/image.cpp",
+      "line": 174
+    },
+    {
+      "name": "FindBestWhiteRunInRow",
+      "path": "Loongson_2K300_301_LIB/user_app/image.cpp",
+      "line": 219
+    },
+    {
+      "name": "RunDistanceToPreferred",
+      "path": "Loongson_2K300_301_LIB/user_app/image.cpp",
+      "line": 266
+    },
+    {
+      "name": "FindBestComponentRunInRow",
+      "path": "Loongson_2K300_301_LIB/user_app/image.cpp",
+      "line": 279
+    },
+    {
+      "name": "ClearBottomRoadComponent",
+      "path": "Loongson_2K300_301_LIB/user_app/image.cpp",
+      "line": 325
+    },
+    {
+      "name": "FindBottomRoadSeed",
+      "path": "Loongson_2K300_301_LIB/user_app/image.cpp",
+      "line": 336
+    },
+    {
+      "name": "BuildBottomRoadComponent",
+      "path": "Loongson_2K300_301_LIB/user_app/image.cpp",
+      "line": 361
+    },
+    {
+      "name": "AverageCenterInRows",
+      "path": "Loongson_2K300_301_LIB/user_app/image.cpp",
+      "line": 407
+    },
+    {
+      "name": "CountWideRoadRows",
+      "path": "Loongson_2K300_301_LIB/user_app/image.cpp",
+      "line": 434
+    },
+    {
+      "name": "CountBothEdgeOpenRows",
+      "path": "Loongson_2K300_301_LIB/user_app/image.cpp",
+      "line": 454
+    },
+    {
+      "name": "CountMultiRunRows",
+      "path": "Loongson_2K300_301_LIB/user_app/image.cpp",
+      "line": 474
+    },
+    {
+      "name": "CenterSpanInRows",
+      "path": "Loongson_2K300_301_LIB/user_app/image.cpp",
+      "line": 512
+    },
+    {
+      "name": "CountEdgeTouchRows",
+      "path": "Loongson_2K300_301_LIB/user_app/image.cpp",
+      "line": 542
+    },
+    {
+      "name": "CenterCurveAccumulationInRows",
+      "path": "Loongson_2K300_301_LIB/user_app/image.cpp",
+      "line": 562
+    },
+    {
+      "name": "BStyleResetInfo",
+      "path": "Loongson_2K300_301_LIB/user_app/image.cpp",
+      "line": 592
+    },
+    {
+      "name": "BStyleResetRows",
+      "path": "Loongson_2K300_301_LIB/user_app/image.cpp",
+      "line": 604
+    },
+    {
+      "name": "BStyleDrawBlackSideline",
+      "path": "Loongson_2K300_301_LIB/user_app/image.cpp",
+      "line": 630
+    },
+    {
+      "name": "BStyleFindImageTopAndMaxColumn",
+      "path": "Loongson_2K300_301_LIB/user_app/image.cpp",
+      "line": 643
+    },
+    {
+      "name": "BStyleSideValid",
+      "path": "Loongson_2K300_301_LIB/user_app/image.cpp",
+      "line": 682
+    },
+    {
+      "name": "BStyleWriteRow",
+      "path": "Loongson_2K300_301_LIB/user_app/image.cpp",
+      "line": 701
+    },
+    {
+      "name": "BStyleRefreshLineStats",
+      "path": "Loongson_2K300_301_LIB/user_app/image.cpp",
+      "line": 727
+    },
+    {
+      "name": "BStyleSetCorner",
+      "path": "Loongson_2K300_301_LIB/user_app/image.cpp",
+      "line": 767
+    },
+    {
+      "name": "BStyleFindCorners",
+      "path": "Loongson_2K300_301_LIB/user_app/image.cpp",
+      "line": 778
+    },
+    {
+      "name": "BStyleFindStraightAnchor",
+      "path": "Loongson_2K300_301_LIB/user_app/image.cpp",
+      "line": 826
+    },
+    {
+      "name": "BStyleSideDeviationCount",
+      "path": "Loongson_2K300_301_LIB/user_app/image.cpp",
+      "line": 849
+    },
+    {
+      "name": "BStyleStraightJudge",
+      "path": "Loongson_2K300_301_LIB/user_app/image.cpp",
+      "line": 899
+    },
+    {
+      "name": "BStyleScanLines",
+      "path": "Loongson_2K300_301_LIB/user_app/image.cpp",
+      "line": 909
+    },
+    {
+      "name": "BStyleRefreshRoadElements",
+      "path": "Loongson_2K300_301_LIB/user_app/image.cpp",
+      "line": 1012
+    },
+    {
+      "name": "DecideRingSideFromGeometry",
+      "path": "Loongson_2K300_301_LIB/user_app/image.cpp",
+      "line": 1019
+    },
+    {
+      "name": "ComputeRingSideScores",
+      "path": "Loongson_2K300_301_LIB/user_app/image.cpp",
+      "line": 1047
+    },
+    {
+      "name": "DecideRingSideFromLoss",
+      "path": "Loongson_2K300_301_LIB/user_app/image.cpp",
+      "line": 1070
+    },
+    {
+      "name": "DecideRingSideForJudgmentOrder",
+      "path": "Loongson_2K300_301_LIB/user_app/image.cpp",
+      "line": 1087
+    },
+    {
+      "name": "ClearRingState",
+      "path": "Loongson_2K300_301_LIB/user_app/image.cpp",
+      "line": 1108
+    },
+    {
+      "name": "SetRingState",
+      "path": "Loongson_2K300_301_LIB/user_app/image.cpp",
+      "line": 1116
+    },
+    {
+      "name": "CurrentRingSide",
+      "path": "Loongson_2K300_301_LIB/user_app/image.cpp",
+      "line": 1141
+    },
+    {
+      "name": "MaintainRingState",
+      "path": "Loongson_2K300_301_LIB/user_app/image.cpp",
+      "line": 1156
+    },
+    {
+      "name": "IsCrossIslandCandidate",
+      "path": "Loongson_2K300_301_LIB/user_app/image.cpp",
+      "line": 1199
+    },
+    {
+      "name": "ComputeTurnBackMetrics",
+      "path": "Loongson_2K300_301_LIB/user_app/image.cpp",
+      "line": 1215
+    },
+    {
+      "name": "IsTurnBackShapeCandidate",
+      "path": "Loongson_2K300_301_LIB/user_app/image.cpp",
+      "line": 1229
+    },
+    {
+      "name": "IsTurnBackCandidate",
+      "path": "Loongson_2K300_301_LIB/user_app/image.cpp",
+      "line": 1243
+    },
+    {
+      "name": "HasRingEntryEvidence",
+      "path": "Loongson_2K300_301_LIB/user_app/image.cpp",
+      "line": 1263
+    },
+    {
+      "name": "TryRingJudgment",
+      "path": "Loongson_2K300_301_LIB/user_app/image.cpp",
+      "line": 1298
+    },
+    {
+      "name": "KeepCrossState",
+      "path": "Loongson_2K300_301_LIB/user_app/image.cpp",
+      "line": 1317
+    },
+    {
+      "name": "KeepTurnBackState",
+      "path": "Loongson_2K300_301_LIB/user_app/image.cpp",
+      "line": 1324
+    },
+    {
+      "name": "ProjectCentersToConnectedWhiteRoad",
+      "path": "Loongson_2K300_301_LIB/user_app/image.cpp",
+      "line": 1331
+    },
+    {
+      "name": "ApplyStraightThroughCenter",
+      "path": "Loongson_2K300_301_LIB/user_app/image.cpp",
+      "line": 1408
+    },
+    {
+      "name": "ApplyRingCenterGuide",
+      "path": "Loongson_2K300_301_LIB/user_app/image.cpp",
+      "line": 1432
+    },
+    {
+      "name": "SmoothCenterLine",
+      "path": "Loongson_2K300_301_LIB/user_app/image.cpp",
+      "line": 1472
+    },
+    {
+      "name": "ApplySpecialElementPath",
+      "path": "Loongson_2K300_301_LIB/user_app/image.cpp",
+      "line": 1502
+    },
+    {
+      "name": "my_abs",
+      "path": "Loongson_2K300_301_LIB/user_app/image.cpp",
+      "line": 1522
+    },
+    {
+      "name": "Image_Process",
+      "path": "Loongson_2K300_301_LIB/user_app/image.cpp",
+      "line": 1531
+    },
+    {
+      "name": "Data_Settings",
+      "path": "Loongson_2K300_301_LIB/user_app/image.cpp",
+      "line": 1567
+    },
+    {
+      "name": "cleanup",
+      "path": "Loongson_2K300_301_LIB/user_app/image.cpp",
+      "line": 1608
+    },
+    {
+      "name": "compressimage",
+      "path": "Loongson_2K300_301_LIB/user_app/image.cpp",
+      "line": 1620
+    },
+    {
+      "name": "Threshold_deal",
+      "path": "Loongson_2K300_301_LIB/user_app/image.cpp",
+      "line": 1645
+    },
+    {
+      "name": "ThresholdDealSafe",
+      "path": "Loongson_2K300_301_LIB/user_app/image.cpp",
+      "line": 1702
+    },
+    {
+      "name": "Get01change_dajin",
+      "path": "Loongson_2K300_301_LIB/user_app/image.cpp",
+      "line": 1754
+    },
+    {
+      "name": "Pixle_Filter",
+      "path": "Loongson_2K300_301_LIB/user_app/image.cpp",
+      "line": 1780
+    },
+    {
+      "name": "GetJumpPointFromDet",
+      "path": "Loongson_2K300_301_LIB/user_app/image.cpp",
+      "line": 1802
+    },
+    {
+      "name": "DrawLinesFirst",
+      "path": "Loongson_2K300_301_LIB/user_app/image.cpp",
+      "line": 1871
+    },
+    {
+      "name": "DrawLinesProcess",
+      "path": "Loongson_2K300_301_LIB/user_app/image.cpp",
+      "line": 1985
+    },
+    {
+      "name": "Search_Bottom_Line_OTSU",
+      "path": "Loongson_2K300_301_LIB/user_app/image.cpp",
+      "line": 2371
+    },
+    {
+      "name": "Search_Left_and_Right_Lines",
+      "path": "Loongson_2K300_301_LIB/user_app/image.cpp",
+      "line": 2409
+    },
+    {
+      "name": "Search_Border_OTSU",
+      "path": "Loongson_2K300_301_LIB/user_app/image.cpp",
+      "line": 2599
+    },
+    {
+      "name": "Element_Judgment_Left_Rings",
+      "path": "Loongson_2K300_301_LIB/user_app/image.cpp",
+      "line": 2658
+    },
+    {
+      "name": "Element_Judgment_Right_Rings",
+      "path": "Loongson_2K300_301_LIB/user_app/image.cpp",
+      "line": 2744
+    },
+    {
+      "name": "Element_Handle_Left_Rings",
+      "path": "Loongson_2K300_301_LIB/user_app/image.cpp",
+      "line": 2819
+    },
+    {
+      "name": "Element_Handle_Right_Rings",
+      "path": "Loongson_2K300_301_LIB/user_app/image.cpp",
+      "line": 3128
+    },
+    {
+      "name": "Element_Test",
+      "path": "Loongson_2K300_301_LIB/user_app/image.cpp",
+      "line": 3365
+    },
+    {
+      "name": "Element_Handle",
+      "path": "Loongson_2K300_301_LIB/user_app/image.cpp",
+      "line": 3421
+    },
+    {
+      "name": "RouteFilter",
+      "path": "Loongson_2K300_301_LIB/user_app/image.cpp",
+      "line": 3431
+    },
+    {
+      "name": "DrawLine",
+      "path": "Loongson_2K300_301_LIB/user_app/image.cpp",
+      "line": 3460
+    },
+    {
+      "name": "GetDet",
+      "path": "Loongson_2K300_301_LIB/user_app/image.cpp",
+      "line": 3499
+    },
+    {
+      "name": "ImageProcess",
+      "path": "Loongson_2K300_301_LIB/user_app/image.cpp",
+      "line": 3575
+    },
+    {
+      "name": "DisplayDebug",
+      "path": "Loongson_2K300_301_LIB/user_app/image.cpp",
+      "line": 3680
+    },
+    {
+      "name": "lq_i2c_vl53l0x::get_vl53l0x_dis",
+      "path": "Loongson_2K300_301_LIB/user_app/lq_i2c_vl53l0x.cpp",
+      "line": 33
+    },
+    {
+      "name": "clamp_pwm",
+      "path": "Loongson_2K300_301_LIB/user_app/motor.cpp",
+      "line": 63
+    },
+    {
+      "name": "clamp_pid_output",
+      "path": "Loongson_2K300_301_LIB/user_app/motor.cpp",
+      "line": 77
+    },
+    {
+      "name": "ensure_motor_ready",
+      "path": "Loongson_2K300_301_LIB/user_app/motor.cpp",
+      "line": 91
+    },
+    {
+      "name": "reset_speed_control_state",
+      "path": "Loongson_2K300_301_LIB/user_app/motor.cpp",
+      "line": 172
+    },
+    {
+      "name": "stop_motor_output",
+      "path": "Loongson_2K300_301_LIB/user_app/motor.cpp",
+      "line": 190
+    },
+    {
+      "name": "update_speed_pid",
+      "path": "Loongson_2K300_301_LIB/user_app/motor.cpp",
+      "line": 210
+    },
+    {
+      "name": "Encoder_Left1",
+      "path": "Loongson_2K300_301_LIB/user_app/motor.cpp",
+      "line": 273
+    },
+    {
+      "name": "Encoder_Right1",
+      "path": "Loongson_2K300_301_LIB/user_app/motor.cpp",
+      "line": 281
+    },
+    {
+      "name": "Encoder_Test1",
+      "path": "Loongson_2K300_301_LIB/user_app/motor.cpp",
+      "line": 289
+    },
+    {
+      "name": "Motor_Argument",
+      "path": "Loongson_2K300_301_LIB/user_app/motor.cpp",
+      "line": 297
+    },
+    {
+      "name": "Motor_Init1",
+      "path": "Loongson_2K300_301_LIB/user_app/motor.cpp",
+      "line": 315
+    },
+    {
+      "name": "Left_Motor_Pwm1",
+      "path": "Loongson_2K300_301_LIB/user_app/motor.cpp",
+      "line": 353
+    },
+    {
+      "name": "Right_Motor_Pwm1",
+      "path": "Loongson_2K300_301_LIB/user_app/motor.cpp",
+      "line": 363
+    },
+    {
+      "name": "Motor_Disable1",
+      "path": "Loongson_2K300_301_LIB/user_app/motor.cpp",
+      "line": 373
+    },
+    {
+      "name": "Motor_Control",
+      "path": "Loongson_2K300_301_LIB/user_app/motor.cpp",
+      "line": 390
+    },
+    {
+      "name": "Motor_PID_Left",
+      "path": "Loongson_2K300_301_LIB/user_app/motor.cpp",
+      "line": 437
+    },
+    {
+      "name": "Motor_PID_Right",
+      "path": "Loongson_2K300_301_LIB/user_app/motor.cpp",
+      "line": 468
+    },
+    {
+      "name": "Motor_Diff_Pid1",
+      "path": "Loongson_2K300_301_LIB/user_app/motor.cpp",
+      "line": 498
+    }
+  ]
+}

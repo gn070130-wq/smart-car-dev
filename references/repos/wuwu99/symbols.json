@@ -1,0 +1,616 @@
+{
+  "revision": "c0c76f75e8872b2b5506525ebe6d608c9aaf435d",
+  "kind": "heuristic definition candidates, may include commented/inactive code",
+  "symbols": [
+    {
+      "name": "set_beep_hz",
+      "path": "WuwuSama_Icar_Project/smartCar/code/music.cc",
+      "line": 74
+    },
+    {
+      "name": "beep_stop",
+      "path": "WuwuSama_Icar_Project/smartCar/code/music.cc",
+      "line": 79
+    },
+    {
+      "name": "play_note",
+      "path": "WuwuSama_Icar_Project/smartCar/code/music.cc",
+      "line": 85
+    },
+    {
+      "name": "play_music",
+      "path": "WuwuSama_Icar_Project/smartCar/code/music.cc",
+      "line": 98
+    },
+    {
+      "name": "playback_start",
+      "path": "WuwuSama_Icar_Project/smartCar/include/ww_camera.h",
+      "line": 114
+    },
+    {
+      "name": "playback_stop",
+      "path": "WuwuSama_Icar_Project/smartCar/include/ww_camera.h",
+      "line": 123
+    },
+    {
+      "name": "playback_restart",
+      "path": "WuwuSama_Icar_Project/smartCar/include/ww_camera.h",
+      "line": 132
+    },
+    {
+      "name": "main",
+      "path": "WuwuSama_Icar_Project/smartCar/main.cc",
+      "line": 4
+    },
+    {
+      "name": "fd",
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_brushless.cc",
+      "line": 30
+    },
+    {
+      "name": "Brushless::brushless_init",
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_brushless.cc",
+      "line": 55
+    },
+    {
+      "name": "Brushless::set_duty",
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_brushless.cc",
+      "line": 78
+    },
+    {
+      "name": "Brushless::get_duty",
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_brushless.cc",
+      "line": 104
+    },
+    {
+      "name": "fd",
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_buzzer.cc",
+      "line": 33
+    },
+    {
+      "name": "Buzzer::buzzer_init",
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_buzzer.cc",
+      "line": 58
+    },
+    {
+      "name": "Buzzer::set_duty",
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_buzzer.cc",
+      "line": 81
+    },
+    {
+      "name": "Buzzer::set_freq",
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_buzzer.cc",
+      "line": 109
+    },
+    {
+      "name": "Buzzer::set_duty_freq",
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_buzzer.cc",
+      "line": 137
+    },
+    {
+      "name": "Camera::init",
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_camera.cc",
+      "line": 72
+    },
+    {
+      "name": "Camera::capture_frame",
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_camera.cc",
+      "line": 148
+    },
+    {
+      "name": "Camera::playback_init",
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_camera.cc",
+      "line": 206
+    },
+    {
+      "name": "Camera::playback_save",
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_camera.cc",
+      "line": 226
+    },
+    {
+      "name": "Camera::request_buffers",
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_camera.cc",
+      "line": 294
+    },
+    {
+      "name": "Camera::destroy_buffers",
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_camera.cc",
+      "line": 353
+    },
+    {
+      "name": "Camera::start_capturing",
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_camera.cc",
+      "line": 381
+    },
+    {
+      "name": "Camera::stop_capturing",
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_camera.cc",
+      "line": 398
+    },
+    {
+      "name": "fd",
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_icm42688.cc",
+      "line": 90
+    },
+    {
+      "name": "ICM42688::icm42688_init",
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_icm42688.cc",
+      "line": 173
+    },
+    {
+      "name": "ICM42688::upDataAcc",
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_icm42688.cc",
+      "line": 192
+    },
+    {
+      "name": "ICM42688::upDataGyro",
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_icm42688.cc",
+      "line": 220
+    },
+    {
+      "name": "ICM42688::thread_syn",
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_icm42688.cc",
+      "line": 248
+    },
+    {
+      "name": "KEY1_CallBack",
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_key.cc",
+      "line": 31
+    },
+    {
+      "name": "KEY2_CallBack",
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_key.cc",
+      "line": 36
+    },
+    {
+      "name": "KEY3_CallBack",
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_key.cc",
+      "line": 41
+    },
+    {
+      "name": "KEY4_CallBack",
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_key.cc",
+      "line": 46
+    },
+    {
+      "name": "KEY5_CallBack",
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_key.cc",
+      "line": 51
+    },
+    {
+      "name": "Key::key_init",
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_key.cc",
+      "line": 78
+    },
+    {
+      "name": "Key::key_listeners",
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_key.cc",
+      "line": 95
+    },
+    {
+      "name": "LCD::lcd_init",
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_lcd.cc",
+      "line": 54
+    },
+    {
+      "name": "LCD::drawPoint",
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_lcd.cc",
+      "line": 96
+    },
+    {
+      "name": "LCD::clearScreen",
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_lcd.cc",
+      "line": 106
+    },
+    {
+      "name": "LCD::showChar",
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_lcd.cc",
+      "line": 123
+    },
+    {
+      "name": "LCD::showString",
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_lcd.cc",
+      "line": 169
+    },
+    {
+      "name": "LCD::showInt",
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_lcd.cc",
+      "line": 194
+    },
+    {
+      "name": "LCD::showUInt",
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_lcd.cc",
+      "line": 226
+    },
+    {
+      "name": "LCD::showDouble",
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_lcd.cc",
+      "line": 257
+    },
+    {
+      "name": "LCD::showCVImage",
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_lcd.cc",
+      "line": 286
+    },
+    {
+      "name": "LCD::drawPixel",
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_lcd.cc",
+      "line": 355
+    },
+    {
+      "name": "LCD::func_int_to_str",
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_lcd.cc",
+      "line": 366
+    },
+    {
+      "name": "LCD::func_uint_to_str",
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_lcd.cc",
+      "line": 404
+    },
+    {
+      "name": "LCD::func_double_to_str",
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_lcd.cc",
+      "line": 435
+    },
+    {
+      "name": "fd",
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_motor.cc",
+      "line": 30
+    },
+    {
+      "name": "Motor::motor_init",
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_motor.cc",
+      "line": 58
+    },
+    {
+      "name": "Motor::set_gpio_level",
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_motor.cc",
+      "line": 78
+    },
+    {
+      "name": "Motor::set_pwm_duty",
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_motor.cc",
+      "line": 102
+    },
+    {
+      "name": "Motor::set_motor1",
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_motor.cc",
+      "line": 127
+    },
+    {
+      "name": "Motor::set_motor2",
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_motor.cc",
+      "line": 152
+    },
+    {
+      "name": "Motor::update_encoders",
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_motor.cc",
+      "line": 173
+    },
+    {
+      "name": "Motor::thread_syn",
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_motor.cc",
+      "line": 196
+    },
+    {
+      "name": "sock_fd",
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_tcp_client.cc",
+      "line": 36
+    },
+    {
+      "name": "TcpClient::connect_server",
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_tcp_client.cc",
+      "line": 65
+    },
+    {
+      "name": "TcpClient::send_bytes",
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_tcp_client.cc",
+      "line": 115
+    },
+    {
+      "name": "TcpClient::send_string",
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_tcp_client.cc",
+      "line": 158
+    },
+    {
+      "name": "TcpClient::disconnect_server",
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_tcp_client.cc",
+      "line": 170
+    },
+    {
+      "name": "TcpClient::is_connected",
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_tcp_client.cc",
+      "line": 195
+    },
+    {
+      "name": "TcpClient",
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_tcp_client.cc",
+      "line": 211
+    },
+    {
+      "name": "VofaClient::send_firewater",
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_tcp_client.cc",
+      "line": 236
+    },
+    {
+      "name": "TimerThread::start",
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_timerThread.cc",
+      "line": 57
+    },
+    {
+      "name": "TimerThread::thread_entry",
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_timerThread.cc",
+      "line": 73
+    },
+    {
+      "name": "takeSnapshot",
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_transmission.cc",
+      "line": 101
+    },
+    {
+      "name": "reconnect",
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_transmission.cc",
+      "line": 132
+    },
+    {
+      "name": "toggleFullscreen",
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_transmission.cc",
+      "line": 136
+    },
+    {
+      "name": "updateStats",
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_transmission.cc",
+      "line": 169
+    },
+    {
+      "name": "server_sock_fd",
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_transmission.cc",
+      "line": 218
+    },
+    {
+      "name": "TransmissionStreamServer::get_local_ip",
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_transmission.cc",
+      "line": 247
+    },
+    {
+      "name": "TransmissionStreamServer::close_server_socket",
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_transmission.cc",
+      "line": 328
+    },
+    {
+      "name": "TransmissionStreamServer::now_ms",
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_transmission.cc",
+      "line": 344
+    },
+    {
+      "name": "TransmissionStreamServer::format_timestamp",
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_transmission.cc",
+      "line": 358
+    },
+    {
+      "name": "TransmissionStreamServer::send_response",
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_transmission.cc",
+      "line": 380
+    },
+    {
+      "name": "TransmissionStreamServer::send_stats_response",
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_transmission.cc",
+      "line": 397
+    },
+    {
+      "name": "TransmissionStreamServer::send_mjpeg_stream",
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_transmission.cc",
+      "line": 422
+    },
+    {
+      "name": "TransmissionStreamServer::handle_snapshot_request",
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_transmission.cc",
+      "line": 477
+    },
+    {
+      "name": "TransmissionStreamServer::handle_client_request",
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_transmission.cc",
+      "line": 547
+    },
+    {
+      "name": "TransmissionStreamServer::client_thread_func",
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_transmission.cc",
+      "line": 633
+    },
+    {
+      "name": "TransmissionStreamServer::server_thread_func",
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_transmission.cc",
+      "line": 658
+    },
+    {
+      "name": "TransmissionStreamServer::start_server",
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_transmission.cc",
+      "line": 754
+    },
+    {
+      "name": "TransmissionStreamServer::update_frame_mat",
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_transmission.cc",
+      "line": 787
+    },
+    {
+      "name": "TransmissionStreamServer::update_frame_jpeg",
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_transmission.cc",
+      "line": 842
+    },
+    {
+      "name": "TransmissionStreamServer::stop_server",
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_transmission.cc",
+      "line": 891
+    },
+    {
+      "name": "TransmissionStreamServer::is_running",
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_transmission.cc",
+      "line": 914
+    },
+    {
+      "name": "fd",
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_vl53l0x.cc",
+      "line": 30
+    },
+    {
+      "name": "VL53L0X::tof_init",
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_vl53l0x.cc",
+      "line": 58
+    },
+    {
+      "name": "VL53L0X::upData",
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_vl53l0x.cc",
+      "line": 75
+    },
+    {
+      "name": "VL53L0X::thread_syn",
+      "path": "WuwuSama_Icar_Project/smartCar/wuwu_library/ww_vl53l0x.cc",
+      "line": 97
+    },
+    {
+      "name": "main",
+      "path": "example/Lcd_main.cc",
+      "line": 18
+    },
+    {
+      "name": "main",
+      "path": "example/Motor_main.cc",
+      "line": 21
+    },
+    {
+      "name": "motor_ctrl",
+      "path": "example/Motor_main.cc",
+      "line": 41
+    },
+    {
+      "name": "main",
+      "path": "example/buzzer_main.cc",
+      "line": 23
+    },
+    {
+      "name": "buzzer_ctrl",
+      "path": "example/buzzer_main.cc",
+      "line": 45
+    },
+    {
+      "name": "sigint_handler",
+      "path": "example/camera_save_video_main.cc",
+      "line": 17
+    },
+    {
+      "name": "system_init",
+      "path": "example/camera_save_video_main.cc",
+      "line": 18
+    },
+    {
+      "name": "main",
+      "path": "example/camera_save_video_main.cc",
+      "line": 26
+    },
+    {
+      "name": "sigint_handler",
+      "path": "example/camera_zeroCopy_main.cc",
+      "line": 17
+    },
+    {
+      "name": "system_init",
+      "path": "example/camera_zeroCopy_main.cc",
+      "line": 18
+    },
+    {
+      "name": "main",
+      "path": "example/camera_zeroCopy_main.cc",
+      "line": 26
+    },
+    {
+      "name": "main",
+      "path": "example/encoder_main.cc",
+      "line": 27
+    },
+    {
+      "name": "get_encoder",
+      "path": "example/encoder_main.cc",
+      "line": 51
+    },
+    {
+      "name": "main",
+      "path": "example/icm42688_main.cc",
+      "line": 25
+    },
+    {
+      "name": "getIMU_Data",
+      "path": "example/icm42688_main.cc",
+      "line": 54
+    },
+    {
+      "name": "intersection_area",
+      "path": "example/ncnn_yolov5n_example/yolov5n_ncnn_main.cc",
+      "line": 10
+    },
+    {
+      "name": "qsort_descent_inplace",
+      "path": "example/ncnn_yolov5n_example/yolov5n_ncnn_main.cc",
+      "line": 16
+    },
+    {
+      "name": "qsort_descent_inplace",
+      "path": "example/ncnn_yolov5n_example/yolov5n_ncnn_main.cc",
+      "line": 53
+    },
+    {
+      "name": "nms_sorted_bboxes",
+      "path": "example/ncnn_yolov5n_example/yolov5n_ncnn_main.cc",
+      "line": 61
+    },
+    {
+      "name": "sigmoid",
+      "path": "example/ncnn_yolov5n_example/yolov5n_ncnn_main.cc",
+      "line": 98
+    },
+    {
+      "name": "generate_proposals",
+      "path": "example/ncnn_yolov5n_example/yolov5n_ncnn_main.cc",
+      "line": 103
+    },
+    {
+      "name": "detect_yolov5",
+      "path": "example/ncnn_yolov5n_example/yolov5n_ncnn_main.cc",
+      "line": 177
+    },
+    {
+      "name": "draw_objects",
+      "path": "example/ncnn_yolov5n_example/yolov5n_ncnn_main.cc",
+      "line": 330
+    },
+    {
+      "name": "main",
+      "path": "example/ncnn_yolov5n_example/yolov5n_ncnn_main.cc",
+      "line": 378
+    },
+    {
+      "name": "main",
+      "path": "example/tcp_client_main.cc",
+      "line": 29
+    },
+    {
+      "name": "main",
+      "path": "example/transmission/transmission_main.cc",
+      "line": 29
+    },
+    {
+      "name": "sigint_handler",
+      "path": "example/transmission/transmission_zeroCopy_main.cc",
+      "line": 46
+    },
+    {
+      "name": "system_init",
+      "path": "example/transmission/transmission_zeroCopy_main.cc",
+      "line": 47
+    },
+    {
+      "name": "main",
+      "path": "example/transmission/transmission_zeroCopy_main.cc",
+      "line": 55
+    }
+  ]
+}

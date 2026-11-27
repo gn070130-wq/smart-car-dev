@@ -1,0 +1,17 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+.env.*
+!.env.example
+/local/
+/runs/
+/models/
+/dist/
+*.bin
+*.tflite
+*.onnx
+*.pt
+*.pth
+*.log

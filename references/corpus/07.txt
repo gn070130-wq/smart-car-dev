@@ -1,0 +1,763 @@
+0001 第二十届全国大学生
+0002 智能汽车竞赛
+0003 技 术 报 告
+0004 学    校：赣南科技学院
+0005 队伍名称：睡个好觉
+0006 参赛队员：黄浩铭、黄月、徐尚志
+0007 带队教师：曾钰清
+0008 关于技术报告和研究论文使用授权的说明
+0009 本人完全了解全国大学生智能汽车竞赛关保留、使用技术报告和研究论文的规定，即：参赛作品著作权归参赛者本人，比赛组委会可以在相关主页上收录并公开参赛作品的设计方案、技术报告以及参赛模型车的视频、图像资料，并将相关内容编纂收录在组委会出版论文集中。
+0010 参赛队员签名：黄浩铭、黄月、徐尚志
+0011 带队教师签名：         曾钰清
+0012 日        期：  2026年8月20日
+0013 目录
+0014 第一章：引言7
+0015 1.1赛事介绍7
+0016 1.2赛事规则简介与方案介绍7
+0017 1.3技术报告内容安排8
+0018 第二章：正文9
+0019 2.1模型车设计制作的主要思路以及实现的技术概要9
+0020 2.2模型车机械部分安装及改造、传感器的设计安装、系统电路板的固定及连接等9
+0021 2.3电路设计说明10
+0022 2.3.1主控板电路设计10
+0023 2.3.2电调板电路设计15
+0024 2.4微处理器控制软件主要理论、算法说明及代码设计介绍17
+0025 2.4.1 摄像头图像处理17
+0026 2.4.2 硬件二值化与自适应环境判断17
+0027 2.4.3基于行扫描的边界检测与丢线判断17
+0028 2.4.4最长白列与透视前瞻模型18
+0029 2.5开发工具说明18
+0030 2.6模型车的主要技术参数说明19
+0031 2.6.1改造后的车模总体重量，长、宽、高尺寸等基本参数19
+0032 2.6.2电路功耗19
+0033 2.6.3传感器种类以及个数19
+0034 2.6.4除了车模原有的驱动电机、舵机之外伺服电机个数19
+0035 第三章：结论20
+0036 3.1模型车在制作过程整体情况和技术指标20
+0037 3.1.1制作过程整体情况20
+0038 3.2存在的问题20
+0039 3.2.1机械问题20
+0040 3.2.2硬件问题20
+0041 3.2.3软件问题以及改善方法20
+0042 3.3进一步改进方法21
+0043 3.3.1机械部分21
+0044 3.3.2驱动发热改进21
+0045 3.3.3开关改进21
+0046 3.3.4摄像头图像改进21
+0047 参考文献22
+0048 第四章：附录A、B23
+0049 附录A：23
+0050 附录B39
+0051 40
+0052 41
+0053 45
+0054 第一章：引言
+0055 1.1赛事介绍
+0056 全国大学生智能汽车竞赛是以智能汽车为研究对象的创意性科技竞赛，是面向全国大学生的一种具有探索性工程实践活动，是教育部倡导的大学生科技竞赛之一。竞赛以“立足培养，重在参与，鼓励探索，追求卓越”为指导思想，旨在促进高等学校素质教育，培养大学生的综合知识运用能力、基本工程实践能力和创新意识，激发大学生从事科学研究与探索的兴趣和潜能，倡导理论联系实际、求真务实的学风和团队协作的人文精神，为优秀人才的脱颖而出创造条件。自2006年创办以来，该竞赛已成功举办二十一届，每届有600余所院校的近4000支队伍参加，已成为国家教学质量与教学改革工程最受欢迎的项目之一。
+0057 第二十一届全国大学生智能汽车竞赛在传统竞速组别的基础上，增设了多个特色赛题，涵盖室内赛道与室外赛道两大类别。室内赛道共设五个组别：飞檐走壁、疯狂电路、蚂蚁搬家、飞跃雷区、走马观碑、雁过留痕、人工智能视觉及人工智能模型。其中，“走马观碑”作为本届竞赛新增的视觉类特色组别，区别于传统纯竞速赛道，融合了高速行驶与智能视觉识别双重考核要求。该组别要求参赛队伍基于国产龙芯处理器构建核心控制平台，进一步推动国产自主技术在教育与竞赛领域的深度应用。
+0058 1.2赛事规则简介与方案介绍
+0059 “走马观碑”组别要求参赛队伍制作一辆三轮竞速车模，在包含直道、弯道、坡道、环岛、十字路口、障碍物等元素的室内PVC赛道上完成完整一圈的自主循迹行驶。赛道面积约为5.5米×6.5米，赛道总长度约41米。区别于传统竞速组别，走马观碑在赛道沿线设置了若干目标识别板，车模在高速行驶过程中需通过机器视觉算法实时识别目标板上的图案标识，并根据识别结果执行相应的绕行或动作逻辑。预赛阶段设置3到5个目标识别点，决赛阶段增至5到8个。比赛采用无裁判循环赛制，每次发车前由参赛同学或志愿者随机更换目标板图片内容，确保比赛的公平性与技术挑战性。
+0060 本次我们小组的智能车系统以龙芯LS2K0300为主控制核心，通过彩色摄像头作为视觉传感器完成赛道循迹与目标板识别任务，以编码器作为速度采集传感器，采用脉冲宽度调制（PWM）对电机进行精确控制。在图像识别方面，系统部署轻量化神经网络模型（如YOLOv5）完成目标板图案的实时检测与分类；在运动控制方面，采用PID算法对小车的转向和速度进行闭环控制和修正，提高智能车在复杂赛道中的寻迹速度与稳定性，最终实现高速自主循迹与目标识别的双重功能，完成比赛任务。
+0061 1.3技术报告内容安排
+0062 本技术报告共分为三个部分。第一部分是引言部分，对第二十一届全国大学生智能汽车竞赛的赛事概况、走马观碑组别的竞赛规则以及本小组的技术方案进行介绍。第二部分是正文部分，对模型车系统结构进行详细说明，主要介绍主控电路、视觉处理模块、电机驱动电路的设计说明，以及模型车的主要技术参数和核心算法子程序（包括图像预处理、目标检测与识别、PID控制算法等）。第三部分是结论部分，对本次参赛过程中遇到的问题与解决方案进行总结，并对进一步改进的方向进行探讨。
+0063 第二章：正文
+0064 2.1模型车设计制作的主要思路以及实现的技术概要
+0065 实现的过程，大概就是通过一系列传感器获取赛道数据后传入到2K0300控制核心内通过软件处理数据后反馈给电机和编码器等相应模块，由此感应出模型车的转向和速度的变化，完成赛道任务。
+0066 2.2模型车机械部分安装及改造、传感器的设计安装、系统电路板的固定及连接等
+0067 模型车车模使用的是F型车模。
+0068 以下是车模的分布情况图：
+0069 图2.2.1 车模的分布情况图
+0070 :摄像头    ② :风扇   ③ :电调板      ④ :编码器
+0071 ⑤ :TOF    ⑥ :龙芯2K0300核心板
+0072 2.3电路设计说明
+0073 该模型车硬件主要由主板、电调板、驱动板等组成
+0074 2.3.1主控板电路设计
+0075 2.3.1.1主板电源部分
+0076 主板电源采用SCT2450-5.0电源芯片。
+0077 输入：直流4到35V（输入电压必须要比输出电压高1.5V以上）。
+0078 输出：直流5V，高效率最大输出电流为3A。
+0079 SCT2450系列是5A电流输出降压开关型集成稳压芯片，它内含固定频率（500KHZ）和基准稳压器（1.23v），并具有完善的保护电路、电流限制、热关断电路等。利用该器件只需极少的外围器件便可构成高效稳压电路。
+0080 图2.3.3  LM2450-5.0电源原理图
+0081 本主控板共使用3个电源，一个给主板上其他5V模块供电，以及核心板供电，一个给主板上其他3.3V模块供电，一个给舵机模块供电，3.3V电源芯片采用的是9013-3.3V。
+0082 3.3V电源采用的是RT9013，采用SOT23-5封装，RT9013是一款超低噪声，超低压差，超快响应速度稳压器。
+0083 以下是电路原理图。
+0084 图2.3.4  RT9013电路原理图
+0085 3.3V是由SCT2450-5.0提供的5V电源再通过RT9013稳压成3.3V。
+0086 最后为了直观地显示电路的工作状态，在5V和3.3V各加了一个电源指示灯。
+0087 2.3.1.2主控板接口部分
+0088 主板有一个2K0300核心板插口、一个摄像头模块，一对电机编码器、IPS彩屏、陀螺仪接口、并加了一个2位拨码开关和五向按键进行调节，串口和无线串口各一个。原理图、PCB图如下：
+0089 图2.3.5主板接口部分原理图
+0090 图2.3.6主板PCB正面
+0091 图2.3.7主板PCB背面
+0092 2.3.1.3主板驱动电源部分
+0093 电源由电池输入，经SCT2450-5.0稳压成5V，由电池12V电源驱动H桥式驱动电路，驱动电机进行正反转。
+0094 采用稳压电源调节器RT9013-3.3V，该芯片可提供负载电流具有过热保护电路和限流保护电路，且转换效率极高，外围电路也相对简单。
+0095 2.3.1.4主板驱动控制部分
+0096 从主板输出的PWM信号分别加一个1K的电阻接地，然后接入74HC125PWR，经过隔离后到4个IR2104，通过4个IR2104驱动8个IR7843MOS管构成H桥驱动电机。
+0097 图2.3.10 驱动74HC125PWR原理图
+0098 74HC125PWR是带三态输出的四路缓冲器/线路驱动器，由输出使能输入(OE)进行控制。OE上的高电平使输出呈高阻抗关断状态。其能使用限流电阻将输入连接到高于VCC的电压。
+0099 图2.3.11  BTN7971驱动H桥式电路原理图
+0100 BTN7971型半桥驱动芯片能够驱动高端和低端两个N沟道MOSFET，能提供较大的栅极驱动电流，并具有硬件死区、硬件防同臂导通等功用。运用四片BTN79714型半桥驱动芯片能够组成完好的直流电机H桥式驱动电路，而且BTN7971价钱低廉，功用完善，输出功率相对HIP4082较低，此计划采用较多。IR7843是N沟道金属氧化物场效应管，内阻极低，仅有3.3毫欧，单颗最大功率可达140W，极限电流160A，具有十分优良的性能。
+0101 2.3.2电调板电路设计
+0102 2.3.2.1电调电源部分
+0103 电调采用的是SE8650供电，采用SOT23-5封装，SE8650是一款超低噪声，超低压差，超快响应速度稳压器，具有很小的波动性。
+0104 以下是供电原理图：
+0105 2.3.1.2主控板接口部分
+0106 电调板只有两个接口，分别为信号进入口和共地口。原理图、PCB图如下：
+0107 2.3.1.4电调板电路部分
+0108 电调板通过STC32G芯片驱动mos换相，主板给STC32G芯片信号，PWM占空比，经过32G芯片处理，从而实现无刷电机的转动。原理图、PCB图如下：
+0109 2.4微处理器控制软件主要理论、算法说明及代码设计介绍
+0110 2.4.1 摄像头图像处理
+0111 我们使用的是采用龙邱“灵眼-Pro”全局快门彩色摄像头，负责高速采集赛道环境图像。在软件层面，充分利用摄像头的硬件特性。通过龙芯主控的低层硬件接口（DMA直接内存访问），直接读取摄像头内部的硬件二值化图像数组。由于无需在CPU中进行复杂的YUV转灰度及阈值分割，系统实现了“无延迟”图像获取，为后续控制争取了宝贵的时间片。
+0112 2.4.2 硬件二值化与自适应环境判断
+0113 理论依据：由于摄像头硬件已输出稳定的黑白二值图像，软件无需做复杂的滤波与灰度处理。Sao_xian() 函数内置了环境自适应机制。代码通过统计底部边缘的黑点数量（Black_num）和斑马线跳变点（zebra），判断当前环境是否处于“停止线”、“斑马线”或常规赛道，从而动态决定扫描策略，防止因环境光（如强反光）导致的全黑或全白误判。
+0114 2.4.3基于行扫描的边界检测与丢线判断
+0115 算法原理：核心采用“中心发散法”或“全行搜索法”（Sao_xian_0, Sao_xian_1 等）。以图像中心 zx = 79 像素为基准，向左寻找第一个“黑-白”跳变点作为左边界，向右寻找“白-黑”跳变点作为右边界。
+0116 丢线判断：若找不到对应的跳变，则标记为丢线状态。代码中建立了 Left_Lost_Flag 和 Right_Lost_Flag 数组，精确记录丢失线段所在的行数（left_lost_start, right_lost_end），这是后续复杂转弯补线的基础数据。
+0117 2.4.4最长白列与透视前瞻模型
+0118 算法原理：Longest_White_Column() 函数计算图像中“纵向连续白像素”最长的一列。这代表了车辆前方视野最开阔、最可靠的直线区域。
+0119 应用价值：通过这个函数获取 Search_Stop_Line（搜索截止行）和 Longest_fist（最长白列所在的列），系统能够知道有多远的路是安全的。这在入圆环前判断是否达到识别深度，以及在直道提速（speed_gogogo 判断）时起到了决定性的作用。
+0120 2.5开发工具说明
+0121 此次智能车大赛的软件VS code。其使用界面如下图所示：
+0122 图2.5.1 VS code使用界面
+0123 利用龙芯2k0300的无线WIFi进行代码的烧录和其他一系列的调试工作，便利我们快速使用。
+0124 2.6模型车的主要技术参数说明
+0125 2.6.1改造后的车模总体重量，长、宽、高尺寸等基本参数
+0126 总体重量(带电池)：约1.5kg
+0127 长：28cm
+0128 宽：19cm
+0129 高：40cm
+0130 2.6.2电路功耗
+0131 最大电流约11A(含两个电机),整个电路功率最大功耗约88w。
+0132 2.6.3传感器种类以及个数
+0133 编码器*2
+0134 摄像头*1
+0135 陀螺仪*1
+0136 姿态传感器*1
+0137 2.6.4除了车模原有的驱动电机、舵机之外伺服电机个数
+0138 除了车模原有的驱动电机之外，并无额外的伺服电机。
+0139 第三章：结论
+0140 3.1模型车在制作过程整体情况和技术指标
+0141 3.1.1制作过程整体情况
+0142 我们先是从网上购买了龙芯组用的F车模，再通过一些成品核心板母板、成品驱动对车模性能进行简单测试，经一系列测试、经验累积之后，我们再从成品模块向自制PCB板上进行转变。
+0143 3.2存在的问题
+0144 3.2.1机械问题
+0145 一、车模转弯时容易打滑
+0146 经过测试，我们发现F车模的在快速行进的状态下，遭遇急弯情况时，车模轮胎容易打滑，导致车模冲出赛道。
+0147 二、前驱打滑严重
+0148 经过测试，发现F车模在快速转弯时，打滑严重容易飘出赛道，改为后驱之后打滑现象减小。
+0149 3.2.2硬件问题
+0150 一、发烫的驱动板及电机
+0151 硬件问题首要就是驱动板的发热问题，驱动发热严重可能是后轮电机主动差速进行频繁的加速减速导致的发热量增加。在实验室跑一段时间就使电机和驱动板达到了烫手的温度。
+0152 二、打不开关不掉的电源开关
+0153 此问题是在车子长时间工作或电机堵转时，开关会经常坏掉，需要三天两头更换开关。
+0154 3.2.3软件问题以及改善方法
+0155 元素识别条件给少了容易误识别，给多了就会漏识别，所以要根据现场情况进行一定的取舍。例如蓝底在二值化图像里本是黑色的，但由于这次赛道反光严重，会出现大量白色的噪点，所以使用一块纯黑色区域来作为判断条件可能会漏识别。
+0156 问题最大的是斑马线，在实验室里斑马线黑白跳变数量一行能有15个以上，但由于这次赛道反光严重，有几个黑色胶布完全是白色的，所以我把一行黑白跳变数量调成了10个，同时识别多行数据来判断斑马线。
+0157 由于赛道上反光严重，大津法计算出的阈值不准确，容易把赛道外面的蓝底也算成白色，如果将大津法算出来的阈值直接再加上10，会有一定的改善。
+0158 3.3进一步改进方法
+0159 3.3.1机械部分
+0160 一、改善轮胎打滑
+0161 我们通过给F车轮胎轮毂和胎皮用硅橡胶固定，经常擦拭轮胎，消除轮胎上的静电的方式，打滑现象得到了明显改善。
+0162 3.3.2驱动发热改进
+0163 一、减小发热
+0164 在减小发热方面我们做的努力是把驱动的电源线尽量加粗，有必要加粗但没有空间的采用双面走线的方法，而且在尽量不影响信号的情况下，在PCB上开窗溏锡。
+0165 3.3.3开关改进
+0166 一、更换大电流开关
+0167 在经过多次验证之后，我们用线外接一个大电流开关，这样方便更换。
+0168 3.3.4摄像头图像改进
+0169 使用其它算法或多种算法相结合，如改用sobel算子等。
+0170 更改摄像头曝光值。
+0171 不进行二值化处理，直接用灰度图像进行识别。
+0172 参考文献
+0173 卓晴，黄开胜，邵贝贝等.学做智能汽车[M].北京：北京航空航天出版社，2007
+0174 谭浩强·C程序设计[M]·北京：清华大学出版社，2001
+0175 童诗白·模拟电子技术基础[M]·北京：高等教育出版社，2001
+0176 阎石·数字电子技术基础[M]·北京：高等教育出版社，1998
+0177 胡汉才·单片机原理及其接口技术（第二版）[M]·北京：清华大学出版社，2004
+0178 刘金琨. 先进PID控制及其MATLAB仿真[M]·北京: 电子工业出版社, 2003
+0179 邵贝贝·单片机嵌入式应用的在线开发方法[M]·北京：清华大学出版社，2004
+0180 [8]王伟·PID参数先进整定方法综述[J]·沈阳：自动化学报，2000
+0181 [9]吴宏鑫·PID控制的应用与理论依据[J]·北京：控制工程，2003
+0182 第四章：附录A、B
+0183 附录A：
+0184 void Longest_White_Column() // 最长白列巡线
+0185 {
+0186 int16 i = 0, j = 0;
+0187 uint8_t left_border = 0, right_border = 0;
+0188 uint8 White_fist = 0;
+0189 uint8_t start_column = start_l[0];
+0190 uint8_t end_column = start_r[0];
+0191 left_lost_start = 0;
+0192 left_lost_end = 0;
+0193 right_lost_start = 0;
+0194 right_lost_end = 0;
+0195 right_lost_num = 0;
+0196 left_lost_num = 0;
+0197 Search_Stop_Line = 0;
+0198 //=======================
+0199 //=======================
+0200 // 初始化数组
+0201 for (i = 0; i <= image_H - 1; i++)
+0202 {
+0203 Right_Lost_Flag[i] = 0;
+0204 Left_Lost_Flag[i] = 0;
+0205 Left_Line_c[i] = 0;
+0206 Right_Line_c[i] = image_W - 1;
+0207 }
+0208 //printf("st:%d      %d\n",start_column,end_column);
+0209 // 计算每列的白点数量
+0210 if(ring_state == 5 && ring_flag == 1 && start_l[0] < 100)
+0211 {
+0212 end_column = 100;
+0213 }
+0214 else if(ring_state == 5 && ring_flag == 2 && start_r[0] > 55)
+0215 {
+0216 start_column = 55;
+0217 }
+0218 if(Model_run_flag == 1)
+0219 {
+0220 start_column = 79;
+0221 }
+0222 else if(Model_run_flag == 3)
+0223 {
+0224 end_column = 79;
+0225 }
+0226 Longest_fist[0] = 0;
+0227 Longest_fist[1] = 0;
+0228 for (j = start_column; j <= end_column; j+=2)
+0229 {
+0230 White_fist = 0;
+0231 for (i = image_H - 1; i > 0; i--)
+0232 {
+0233 if (image[i][j] == 0)
+0234 break;
+0235 else
+0236 White_fist++;
+0237 }
+0238 if(Longest_fist[0] <= White_fist)
+0239 {
+0240 Longest_fist[0] = White_fist;
+0241 Longest_fist[1] = j;
+0242 }
+0243 }
+0244 Search_Stop_Line = Longest_fist[0];
+0245 X_length = Search_Stop_Line;
+0246 // printf("%d   %d\n",Longest_fist[0],Longest_fist[1]);
+0247 //printf("%d      %d\n",Longest_Column[0], Longest_Column[1]);
+0248 // 边界检测
+0249 for (i = image_H - 1; i >= (image_H - Search_Stop_Line) && i >= SXT_Nofound; i--)
+0250 {
+0251 // 右边界检测
+0252 bool right_found = false;
+0253 for (j = Longest_fist[1]; j < image_W - 2; j++)
+0254 {
+0255 if (image[i][j] != 0 && image[i][j + 1] == 0 && image[i][j + 2] == 0 )
+0256 {
+0257 right_border = j;
+0258 Right_Lost_Flag[i] = 0;
+0259 right_found = true;
+0260 break;
+0261 }
+0262 }
+0263 if (!right_found)
+0264 {
+0265 right_border = image_W - 1;
+0266 Right_Lost_Flag[i] = 1;
+0267 }
+0268 // 左边界检测
+0269 bool left_found = false;
+0270 for (j = Longest_fist[1]; j >= 2; j--)
+0271 {
+0272 if (image[i][j] != 0 && image[i][j - 1] == 0 && image[i][j - 2] == 0)
+0273 {
+0274 left_border = j;
+0275 Left_Lost_Flag[i] = 0;
+0276 left_found = true;
+0277 break;
+0278 }
+0279 }
+0280 if (!left_found)
+0281 {
+0282 left_border = 0;
+0283 Left_Lost_Flag[i] = 1;
+0284 }
+0285 if(left_found == 0 && left_lost_start == 0 && i < image_H - 1)
+0286 {
+0287 left_lost_start = i;
+0288 //printf("2:%d\n",left_lost_start);
+0289 }
+0290 if(left_found != 0 && left_lost_end == 0 && left_lost_start != 0)
+0291 {
+0292 left_lost_end = i;
+0293 // printf("%d\n",left_lost_end);
+0294 }
+0295 if(right_found == 0 && right_lost_start == 0 && i < image_H - 1)
+0296 {
+0297 //printf("start:%d\n",i);
+0298 right_lost_start = i;
+0299 }
+0300 if(right_found != 0 && right_lost_end == 0 && right_lost_start != 0)
+0301 {
+0302 right_lost_end = i;
+0303 }
+0304 Left_Line_c[i] = left_border;
+0305 Right_Line_c[i] = right_border;
+0306 }
+0307 if(right_lost_start != 0 && right_lost_end == 0)
+0308 {
+0309 right_lost_end = Min_Search + 1;
+0310 }
+0311 if(left_lost_start != 0 && left_lost_end == 0)
+0312 {
+0313 left_lost_end = Min_Search + 1;
+0314 }
+0315 // 统计双边丢线数
+0316 for (i = image_H - 1; i >= 0; i--)
+0317 {
+0318 if (Left_Lost_Flag[i] == 1 && Right_Lost_Flag[i] == 1)
+0319 {
+0320 both_lost_num++;
+0321 }
+0322 if(Left_Lost_Flag[i] == 1 && i > left_lost_end)
+0323 {
+0324 left_lost_num++;
+0325 }
+0326 if(Right_Lost_Flag[i] == 1 && i > right_lost_end)
+0327 {
+0328 right_lost_num++;
+0329 }
+0330 }
+0331 // printf("%d\n",left_lost_end);
+0332 // if(left_lost_start_2 > 45 && left_lost_start_2 < 100 && left_lost_num < 15)
+0333 // {
+0334 //     left_lost_start = left_lost_start_2;
+0335 //     left_lost_end = left_lost_end_2;
+0336 //     left_lost_num = left_lost_num_2;
+0337 // }
+0338 // if(right_lost_start_2 > 45 && right_lost_start_2 < 100  && right_lost_num < 15)
+0339 // {
+0340 //     //printf("riss:%d\n",right_lost_start_2);
+0341 //     right_lost_start = right_lost_start_2;
+0342 //     right_lost_end = right_lost_end_2;
+0343 //     right_lost_num = right_lost_num_2;
+0344 // }
+0345 //     printf("%d   %d   %d   %d\n",left_lost_start,left_lost_end,left_lost_num,right_lost_end);
+0346 // printf("%d   %d   %d   %d\n",left_lost_start_2,left_lost_end_2,left_lost_num_2,right_lost_end);
+0347 }    void image_process(void)
+0348 {
+0349 both_lost_num = 0;
+0350 shizi_flag2 = 0;
+0351 Sao_xian();  // 扫描底行找起始点
+0352 if(model_stop_flag == 0 && Model_run_flag == 0 && Model_state == 6)
+0353 {
+0354 Model_state = 0;
+0355 raoxin_mode = 0;
+0356 target = model_target;
+0357 model_sudu_huizhen = 1;
+0358 }
+0359 //printf("red:%d\n",red_check.get_red_pixel_count());
+0360 // if(zebra_flag == 1)
+0361 // {
+0362 //     return;
+0363 // }
+0364 //Get_Longest_white_num();
+0365 Longest_White_Column(); // 最长白列巡线
+0366 Car_MGF(start_r[0], start_r[1], start_l[0], start_l[1]);  // 迷宫法扫描
+0367 Get_Right_line(r_data_statics);
+0368 Get_Left_line(l_data_statics);
+0369 // if(dl1x_distance_raw < 450)
+0370 // {
+0371 //     printf("podao\n");
+0372 //     podao_flag = 1;
+0373 //     podao_time = 0;
+0374 // }
+0375 if((right_lost_num != 0 || left_lost_num != 0 || ring_state != 0) && zhangai_flag == 0 && podao_flag == 0)
+0376 {
+0377 //printf("%d \n",Model_state);
+0378 if(red_check.get_red_pixel_count() < 30 && Model_state != 1 && fachi_weichi_flag == 1 && zebra_flag == 0)
+0379 {
+0380 YuanHuan_Check();
+0381 }
+0382 // if((Min_Search < left_lost_end - 7 && left_lost_end != 0) ||
+0383 // ((Min_Search > left_lost_end - 7) && left_lost_num > 50))
+0384 // {
+0385 //     flag = 1;
+0386 // }
+0387 // if((Min_Search < right_lost_end - 7 && right_lost_end != 0) ||
+0388 // (Min_Search > right_lost_end - 7 && right_lost_num > 50))
+0389 // {
+0390 //     flag = 1;
+0391 // }
+0392 if(ring_state >= 3 && ring_state <= 4 && ring_flag == 1)
+0393 {
+0394 //printf("Longest_White_Left\n");
+0395 Longest_White_Left_jinhuan();
+0396 }
+0397 else if(ring_state >= 6 && ring_state < 8 && ring_flag == 1)
+0398 {
+0399 Longest_White_Left_chuhuan();
+0400 }
+0401 else if(ring_state >= 3 && ring_state <= 4 && ring_flag == 2)
+0402 {
+0403 // printf("Longest_White_Right\n");
+0404 Longest_White_Right_jinhuan();
+0405 }
+0406 else if(ring_state >= 6 && ring_state < 8  && ring_flag == 2)
+0407 {
+0408 Longest_White_Right_chuhuan();
+0409 }
+0410 if(ring_state == 0 || ring_state == 10)
+0411 {
+0412 //printf("Longest_White_Column\n");
+0413 Cross_ZCBL();
+0414 if(enter_corner == 1)
+0415 {
+0416 //printf("123\n");
+0417 shizi();
+0418 shizi_flag2 = 1;
+0419 // printf("2\n");
+0420 if(red_check.get_red_pixel_count() < 20 && (Model_state != 1)&& shizi_flag == 0)
+0421 {
+0422 shizi_flag = 1;
+0423 shizi_time = 0;
+0424 }
+0425 //fmg_num = 1;
+0426 //printf("shizi\n");
+0427 //fmg_flag = 1;
+0428 }
+0429 }
+0430 //printf("3\n");
+0431 if(ring_flag != 0 && ring_state != 0)
+0432 {
+0433 // printf("4\n");
+0434 // if(ring_flag != 0 && Model_state != 0)
+0435 // {
+0436 //     ring_state = 6;
+0437 // }
+0438 if(ring_flag == 1 && Model_state == 0)
+0439 {
+0440 //fmg_flag = 1;
+0441 // printf("L:%d  %.1f\n",ring_state,pid_wz.error);
+0442 YuanHuan_Left();
+0443 }
+0444 else if(ring_flag == 2 && Model_state == 0)
+0445 {
+0446 //fmg_flag = 1;
+0447 printf("R:%d  %.1f\n",ring_state,pid_wz.error);
+0448 YuanHuan_Right();
+0449 }
+0450 }
+0451 else
+0452 {
+0453 //printf("5\n");
+0454 //fmg_num = 0;
+0455 }
+0456 }
+0457 else
+0458 {
+0459 if(Model_run_flag == 0)
+0460 {
+0461 shizi_flag = 0;
+0462 }
+0463 enter_corner = 0;
+0464 }
+0465 //printf("E:%d  %d   %d   %d\n",enter_corner,red_num,left_lost_num,right_lost_num);
+0466 Model_run_flag_2 = Model_run_flag;
+0467 if(fachi_weichi_flag == 1)
+0468 {
+0469 All_check();
+0470 }
+0471 if(Chushihua >= kaiji_fache && fachi_weichi_flag == 0)
+0472 {
+0473 speed_gogogo = 0;
+0474 }
+0475 else
+0476 {
+0477 if(red_num < 20 && ring_flag == 0 && abs(pid_wz.error) < 13)
+0478 {
+0479 gogogo();
+0480 }
+0481 else
+0482 {
+0483 speed_gogogo = 0;
+0484 }
+0485 if(zebra_flag_1 == 1)
+0486 {
+0487 speed_gogogo = 1;
+0488 }
+0489 }
+0490 // zebra_flag = 0;
+0491 // if(shizi_flag == 1 && abs(pid_wz.error) < 13)
+0492 // {
+0493 //     speed_gogogo = 1;
+0494 // }
+0495 // else if(shizi_flag == 1)
+0496 // {
+0497 //     speed_gogogo = 0;
+0498 // }
+0499 //printf("%d\n",speed_gogogo);
+0500 if(Model_run_flag != 0)
+0501 {
+0502 fmg_num = 1;
+0503 }
+0504 else if(ring_flag != 0)
+0505 {
+0506 fmg_num = 1;
+0507 }
+0508 else
+0509 {
+0510 fmg_num = 0;
+0511 }
+0512 beep.set_level(fmg_num);
+0513 //printf("%d   %d\n",fmg_flag,Model_run_flag);
+0514 // static int sp = 0;
+0515 // if(speed_gogogo == 1)
+0516 // {
+0517 //     sp++;
+0518 //     printf(":%d\n",sp);
+0519 // }
+0520 // printf("Lxu:%d,Lyu:%d\n",Left_Line_c[Left_Up_Find],Left_Up_Find);
+0521 // printf("Rxu:%d,Ryu:%d\n",Right_Line_c[Right_Up_Find],Right_Up_Find);
+0522 // printf("Lxd:%d,Lyd:%d\n",Left_Line_c[Left_Down_Find],Left_Down_Find);
+0523 // printf("Rxd:%d,Ryd:%d\n",Right_Line_c[Right_Down_Find],Right_Down_Find);
+0524 // printf("\n");
+0525 //printf("S:%d , x:%d\n",Search_Stop_Line,Longest_fist[1]);
+0526 // printf("--------------\n");
+0527 // printf("%d,%d,%d\n",l_lost_num,l_lost_start,l_lost_end);
+0528 // printf("%d,%d,%d\n",r_lost_num,r_lost_start,r_lost_end);
+0529 Get_Mid_Line();
+0530 if(Chushihua <= kaiji_fache)
+0531 {
+0532 Chushihua++;
+0533 }
+0534 }
+0535 void Get_Mid_Line(void)
+0536 {
+0537 uint8_t i = 0;
+0538 //uint8 buxian_mode = Get_buxian_mode();// 0 不丢线时迷宫法补线 1 丢线长白列补线
+0539 // 2 根据右边半宽补线（直行） 3 根据左边半圆环补线（入左圆环）
+0540 // 4 根据左边半宽补线（直行） 5 根据右边半圆环补线（入右圆环）
+0541 //=============================================================================
+0542 // 初始化中线
+0543 for (i = 0; i < image_H - 1; i++)
+0544 {
+0545 z_line[i][0] = 0;  // 默认中心
+0546 z_line[i][1] = image_H - 2 - i;
+0547 }
+0548 //   printf("================\n");
+0549 // for(i=0;i<120;i++)
+0550 // {
+0551 //     if(i%10 == 0)
+0552 //     {
+0553 //         printf("\n");
+0554 //     }
+0555 //     printf("%d,",Right_Line_c[i] - Left_Line_c[i] );
+0556 // }
+0557 // 计算中线
+0558 int16 start = std::max(image_H - 1 - Search_Stop_Line,SXT_Nofound);
+0559 for (i = start ; i < image_H - 1; i++)
+0560 {
+0561 //printf("2\n");
+0562 if(Model_run_flag != 0)
+0563 {
+0564 if((Model_run_flag == 1 && Model_state == 1))
+0565 {
+0566 if(ring_state > 0 && ring_state < 10 && ring_flag != 0)
+0567 {
+0568 z_line[i][0] = (Left_Line_m[i] + Right_Line_m[i])/2 - 40;
+0569 }
+0570 else
+0571 {
+0572 if(abs(red_angle) < 10 || (shizi_flag == 1 && abs(red_angle) > 25))
+0573 {
+0574 z_line[i][0] = (Left_Line_m[i] + Right_Line_m[i])/2 - 40;
+0575 }
+0576 else if(red_angle > 20)
+0577 {
+0578 z_line[i][0] = (Left_Line_m[i] + Right_Line_m[i])/2 - 38;
+0579 }
+0580 else
+0581 {
+0582 z_line[i][0] = (Left_Line_m[i] + Right_Line_m[i])/2 - 40;
+0583 }
+0584 }
+0585 if(z_line[i][0] < 0)
+0586 {
+0587 z_line[i][0] = 0;
+0588 }
+0589 }
+0590 else if(Model_run_flag == 3 && Model_state == 1)
+0591 {
+0592 if(abs(red_angle) < 10 || (shizi_flag == 1 && abs(red_angle) > 25))
+0593 {
+0594 z_line[i][0] = (Left_Line_m[i] + Right_Line_m[i])/2 + 40;
+0595 }
+0596 else if(red_angle > 25)
+0597 {
+0598 z_line[i][0] = (Left_Line_m[i] + Right_Line_m[i])/2 + 38;
+0599 }
+0600 else
+0601 {
+0602 z_line[i][0] = (Left_Line_m[i] + Right_Line_m[i])/2 + 38;
+0603 }
+0604 if(z_line[i][0] > image_W - 1)
+0605 {
+0606 z_line[i][0] = image_W - 1;
+0607 }
+0608 }
+0609 else if(Model_run_flag == 2)
+0610 {
+0611 if(red_num > 20)
+0612 {
+0613 z_line[i][0] = (Left_Line_m[i] + Right_Line_m[i]) / 2;
+0614 }
+0615 else
+0616 {
+0617 z_line[i][0] = (Left_Line_c[i] + Right_Line_c[i]) / 2;
+0618 }
+0619 }
+0620 else
+0621 {
+0622 if(Model_run_flag == 1)
+0623 {
+0624 if(ring_state > 0 && ring_state < 10 && ring_flag != 0)
+0625 {
+0626 z_line[i][0] = (Left_Line_m[i] + Right_Line_m[i])/2;
+0627 }
+0628 else
+0629 {
+0630 if(Left_Up_Find > 20 || Right_Up_Find > 20)
+0631 {
+0632 if(abs(red_angle) > 25)
+0633 {
+0634 z_line[i][0] = (Left_Line_c[i] + Right_Line_c[i]) / 2 - 15 + (raoxin_time/(70 + red_angle/2))*10;
+0635 }
+0636 else
+0637 {
+0638 z_line[i][0] = (Left_Line_c[i] + Right_Line_c[i]) / 2 - 15 + (raoxin_time/(70 + red_angle/2))*10;
+0639 }
+0640 }
+0641 else
+0642 {
+0643 if(abs(red_angle) > 25)
+0644 {
+0645 z_line[i][0] = (Left_Line_c[i] + Right_Line_c[i]) / 2 - 15 + (raoxin_time/(70 + red_angle/2))*10;
+0646 }
+0647 else
+0648 {
+0649 z_line[i][0] = (Left_Line_c[i] + Right_Line_c[i]) / 2 - 15 + (raoxin_time/(70 + red_angle/2))*10;
+0650 }
+0651 }
+0652 }
+0653 if(z_line[i][0] < 0)
+0654 {
+0655 z_line[i][0] = 0;
+0656 }
+0657 }
+0658 if(Model_run_flag == 3)
+0659 {
+0660 if(ring_state > 0 && ring_state < 10 && ring_flag != 0)
+0661 {
+0662 z_line[i][0] = (Left_Line_m[i] + Right_Line_m[i])/2;
+0663 }
+0664 else
+0665 {
+0666 if(Left_Up_Find > 20 || Right_Up_Find > 20)
+0667 {
+0668 if(abs(red_angle) > 25)
+0669 {
+0670 z_line[i][0] = (Left_Line_c[i] + Right_Line_c[i]) / 2 + 15 - (raoxin_time/(70 + red_angle/2))*10;
+0671 }
+0672 else
+0673 {
+0674 z_line[i][0] = (Left_Line_c[i] + Right_Line_c[i]) / 2 + 15 - (raoxin_time/(70 + red_angle/2))*10;
+0675 }
+0676 }
+0677 else
+0678 {
+0679 if(abs(red_angle) > 25)
+0680 {
+0681 z_line[i][0] = (Left_Line_c[i] + Right_Line_c[i]) / 2 + 15 - (raoxin_time/(70 + red_angle/2))*10;
+0682 }
+0683 else
+0684 {
+0685 z_line[i][0] = (Left_Line_c[i] + Right_Line_c[i]) / 2 + 15 - (raoxin_time/(70 + red_angle/2))*10;
+0686 }
+0687 // z_line[i][0] = (Left_Line_c[i] + Right_Line_c[i]) / 2 + 20 + abs(red_angle)/2;
+0688 }
+0689 }
+0690 if(z_line[i][0] > image_W - 1)
+0691 {
+0692 z_line[i][0] = image_W - 1;
+0693 }
+0694 }
+0695 }
+0696 }
+0697 else
+0698 {
+0699 if(zhangai_state == 2  && zhangai_flag != 0)
+0700 {
+0701 z_line[i][0] = (Right_Line_c[i] - Standard_Road_Wide[i]/ 2);
+0702 }
+0703 else if(zhangai_state == 1 && zhangai_flag != 0)
+0704 {
+0705 z_line[i][0] = (Left_Line_c[i] + Standard_Road_Wide[i]/ 2);
+0706 }
+0707 if((ring_state == 1 || ring_state == 2) && ring_flag == 1)
+0708 {
+0709 z_line[i][0] = (Right_Line_c[i] - Standard_Road_Wide[i]/ 2);
+0710 }
+0711 // else if(ring_state == 5 && ring_flag == 1 )
+0712 // {
+0713 //     z_line[i][0] = (0 + Right_Line_c[i]) / 2;
+0714 // }
+0715 else if(ring_state == 9 && ring_flag == 1)
+0716 {
+0717 z_line[i][0] = (0 + Right_Line_c[i]) / 2;
+0718 }
+0719 else if((ring_state == 1 || ring_state == 2) && ring_flag == 2)
+0720 {
+0721 z_line[i][0] = (Left_Line_c[i] + Standard_Road_Wide[i]/ 2);
+0722 }
+0723 else if(ring_state == 9 && ring_flag == 2)
+0724 {
+0725 z_line[i][0] = (Left_Line_c[i] +  Right_Line_c[i]) / 2;
+0726 }
+0727 else
+0728 {
+0729 z_line[i][0] = (Left_Line_c[i] + Right_Line_c[i]) / 2;
+0730 }
+0731 }
+0732 //printf("1\n");
+0733 // for(i=0;i<120;i++)
+0734 // {
+0735 //     z_line[i][0] = (Left_Line_c[i] + Standard_Road_Wide[i]/ 2);
+0736 // }
+0737 if(z_line[i][0] < 0)
+0738 {
+0739 z_line[i][0] = 0;
+0740 }
+0741 else if(z_line[i][0] > image_W - 1)
+0742 {
+0743 z_line[i][0] = image_W - 1;
+0744 }
+0745 z_line[i][1] = i;
+0746 //printf("%d   %d   %d   %d \n",Left_Line_c[i],Right_Line_c[i],z_line[i][0],i);
+0747 }
+0748 //  printf("================\n");
+0749 // for(i=0;i<120;i++)
+0750 // {
+0751 //     // if(i%10 == 0)
+0752 //     // {
+0753 //     //     printf("\n");
+0754 //     // }
+0755 //     printf("%d,%d,%d,%d\n,",Right_Line_c[i],Left_Line_c[i],z_line[i][0],i);
+0756 // }
+0757 //printf("z:%d,r:%d,l:%d\n",z_line[qianzhan][0],r_line[qianzhan][0],l_line[qianzhan][0]);
+0758 // 调试显示
+0759 }
+0760 附录B
+0761 1、车模外观照片
+0762 2、电路板PCB图
+0763 3、电路板原理图

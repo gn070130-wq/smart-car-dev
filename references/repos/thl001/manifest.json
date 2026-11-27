@@ -1,0 +1,334 @@
+{
+  "id": "thl001",
+  "source_id": "dry-flipping-the-sky--THL001",
+  "url": "https://gitee.com/dry-flipping-the-sky/THL001",
+  "revision": "a545ea5dd3290b791a81043766294d21e6e84722",
+  "role": "龙邱库与单循环视觉/电机应用",
+  "files": [
+    {
+      "path": "Loongson_2K300_301_LIB/docs/Version_V2.1.0.txt",
+      "git_blob": "0c36364fa338fb58e6cd0228eaf4da8c45c57044",
+      "bytes": 105,
+      "type": "blob",
+      "sha256": "b3403ba8203366546e964616a9f12ed974da2d44ac45976441d93ddb872dfb12",
+      "url": "https://gitee.com/dry-flipping-the-sky/THL001/blob/a545ea5dd3290b791a81043766294d21e6e84722/Loongson_2K300_301_LIB/docs/Version_V2.1.0.txt"
+    },
+    {
+      "path": "Loongson_2K300_301_LIB/docs/存放文档文件夹.txt",
+      "git_blob": "9568a934052f80919c0507e802d558079415898e",
+      "bytes": 10,
+      "type": "blob",
+      "sha256": "fef98b84d7b92cbb2de6ae6061c40ccc497018e9f58faf45e92e86add4756e78",
+      "url": "https://gitee.com/dry-flipping-the-sky/THL001/blob/a545ea5dd3290b791a81043766294d21e6e84722/Loongson_2K300_301_LIB/docs/存放文档文件夹.txt"
+    },
+    {
+      "path": "Loongson_2K300_301_LIB/example/inc/lq_all_demo.hpp",
+      "git_blob": "efd9eeb28e5f62cdc7b4a6f0a5322e5d140e668b",
+      "bytes": 1565,
+      "type": "blob",
+      "sha256": "881a41eb8c540c1787483e3f0fd10a33a0fa7fb86cd2b620fa4aeed41e63fc6b",
+      "url": "https://gitee.com/dry-flipping-the-sky/THL001/blob/a545ea5dd3290b791a81043766294d21e6e84722/Loongson_2K300_301_LIB/example/inc/lq_all_demo.hpp"
+    },
+    {
+      "path": "Loongson_2K300_301_LIB/example/src/01_lq_gpio_basic_demo.cpp",
+      "git_blob": "5cd2bcaecefed581ff866031c3502b977068597a",
+      "bytes": 2247,
+      "type": "blob",
+      "sha256": "9a51a071d88509a071bc3ddb3620a7290ca2d43c50a818724be6c4d644323f57",
+      "url": "https://gitee.com/dry-flipping-the-sky/THL001/blob/a545ea5dd3290b791a81043766294d21e6e84722/Loongson_2K300_301_LIB/example/src/01_lq_gpio_basic_demo.cpp"
+    },
+    {
+      "path": "Loongson_2K300_301_LIB/example/src/02_lq_pwm_demo.cpp",
+      "git_blob": "a0d245aaaa2a5037ac128935fbacf8594fc8ad15",
+      "bytes": 1559,
+      "type": "blob",
+      "sha256": "92c686831ad69f0a08d7ae5b60cecd4cc08be778e2e2cb85fd084965af0fef1c",
+      "url": "https://gitee.com/dry-flipping-the-sky/THL001/blob/a545ea5dd3290b791a81043766294d21e6e84722/Loongson_2K300_301_LIB/example/src/02_lq_pwm_demo.cpp"
+    },
+    {
+      "path": "Loongson_2K300_301_LIB/example/src/03_lq_gtim_pwm_demo.cpp",
+      "git_blob": "04edc1be8d235726755e2b89b8b4524cd983cd06",
+      "bytes": 1394,
+      "type": "blob",
+      "sha256": "77041c778216f5aff3829811a13d29828241e893bcaa3343591defffcfe32ec0",
+      "url": "https://gitee.com/dry-flipping-the-sky/THL001/blob/a545ea5dd3290b791a81043766294d21e6e84722/Loongson_2K300_301_LIB/example/src/03_lq_gtim_pwm_demo.cpp"
+    },
+    {
+      "path": "Loongson_2K300_301_LIB/example/src/04_lq_atim_pwm_demo.cpp",
+      "git_blob": "689b9cfa4e31451e56f5ae68c3d100bc8c54a671",
+      "bytes": 1761,
+      "type": "blob",
+      "sha256": "e8bc6a865629f0f20df614896ba8a7cfa3687da80219b83d4dcbaae70bd9cd4a",
+      "url": "https://gitee.com/dry-flipping-the-sky/THL001/blob/a545ea5dd3290b791a81043766294d21e6e84722/Loongson_2K300_301_LIB/example/src/04_lq_atim_pwm_demo.cpp"
+    },
+    {
+      "path": "Loongson_2K300_301_LIB/example/src/05_lq_encoder_pwm_demo.cpp",
+      "git_blob": "7ec6318dedea7add5da92cbf0000ba82c72b87ba",
+      "bytes": 1144,
+      "type": "blob",
+      "sha256": "c83e6f52b86bdb8df880c9812f1d6185787c11f9f12c4d7b62388d3b5f342278",
+      "url": "https://gitee.com/dry-flipping-the-sky/THL001/blob/a545ea5dd3290b791a81043766294d21e6e84722/Loongson_2K300_301_LIB/example/src/05_lq_encoder_pwm_demo.cpp"
+    },
+    {
+      "path": "Loongson_2K300_301_LIB/example/src/06_lq_canfd_demo.cpp",
+      "git_blob": "12daae679a60e361b30012b79ac8b8f33c3911cd",
+      "bytes": 2228,
+      "type": "blob",
+      "sha256": "0f79e0d5aebded96d226c0762873bddf586a92f2452fe00249ba0e6cfd7878c4",
+      "url": "https://gitee.com/dry-flipping-the-sky/THL001/blob/a545ea5dd3290b791a81043766294d21e6e84722/Loongson_2K300_301_LIB/example/src/06_lq_canfd_demo.cpp"
+    },
+    {
+      "path": "Loongson_2K300_301_LIB/example/src/07_lq_ncnn_demo.cpp",
+      "git_blob": "83829999cf98a20d82ae256d7a41faac20b70664",
+      "bytes": 5385,
+      "type": "blob",
+      "sha256": "966f0686be4c505de7390ef977fb646840d5e759c2a95c3e02c18e765546dc95",
+      "url": "https://gitee.com/dry-flipping-the-sky/THL001/blob/a545ea5dd3290b791a81043766294d21e6e84722/Loongson_2K300_301_LIB/example/src/07_lq_ncnn_demo.cpp"
+    },
+    {
+      "path": "Loongson_2K300_301_LIB/example/src/08_lq_ips20_demo.cpp",
+      "git_blob": "b9eddbdfbfe566d680ad64804d46c27f3886d20b",
+      "bytes": 1034,
+      "type": "blob",
+      "sha256": "1f29dc1e8bfebc7937298cc69236311c55b1d93136b0adf272124b54219b1ff2",
+      "url": "https://gitee.com/dry-flipping-the-sky/THL001/blob/a545ea5dd3290b791a81043766294d21e6e84722/Loongson_2K300_301_LIB/example/src/08_lq_ips20_demo.cpp"
+    },
+    {
+      "path": "Loongson_2K300_301_LIB/example/src/09_lq_mpu6050_demo.cpp",
+      "git_blob": "bcfd261f030149cff6b527700a44423fdfb1c948",
+      "bytes": 1357,
+      "type": "blob",
+      "sha256": "663d8d3e5485e0f1f42d8de04be0fbd2c99485561624094ed006239cd41a3120",
+      "url": "https://gitee.com/dry-flipping-the-sky/THL001/blob/a545ea5dd3290b791a81043766294d21e6e84722/Loongson_2K300_301_LIB/example/src/09_lq_mpu6050_demo.cpp"
+    },
+    {
+      "path": "Loongson_2K300_301_LIB/example/src/10_lq_lsm6dsr_demo.cpp",
+      "git_blob": "d57a00d4d20e587c2a3518c62ea100f8ae90b560",
+      "bytes": 1353,
+      "type": "blob",
+      "sha256": "c3d880442deb451e904f5f11121964cba82212aa072d7a8a45311a81bf2a77a1",
+      "url": "https://gitee.com/dry-flipping-the-sky/THL001/blob/a545ea5dd3290b791a81043766294d21e6e84722/Loongson_2K300_301_LIB/example/src/10_lq_lsm6dsr_demo.cpp"
+    },
+    {
+      "path": "Loongson_2K300_301_LIB/example/src/11_lq_vl53l0x_demo.cpp",
+      "git_blob": "54cc8487dfc3a95f1dc948c38a334c1411332597",
+      "bytes": 1191,
+      "type": "blob",
+      "sha256": "4206661e554829c9937b78c2ae51760c1bfa2a4391933068b3a40c5e39ca8a4c",
+      "url": "https://gitee.com/dry-flipping-the-sky/THL001/blob/a545ea5dd3290b791a81043766294d21e6e84722/Loongson_2K300_301_LIB/example/src/11_lq_vl53l0x_demo.cpp"
+    },
+    {
+      "path": "Loongson_2K300_301_LIB/example/src/12_lq_udp_img_trans_demo.cpp",
+      "git_blob": "355ef8932df0309f45ced71216cef7b9e0222122",
+      "bytes": 3967,
+      "type": "blob",
+      "sha256": "e94f926d0fe1f36e0ba28511b17dfe61fba0beaee98ca76a46d3dfb13ec25659",
+      "url": "https://gitee.com/dry-flipping-the-sky/THL001/blob/a545ea5dd3290b791a81043766294d21e6e84722/Loongson_2K300_301_LIB/example/src/12_lq_udp_img_trans_demo.cpp"
+    },
+    {
+      "path": "Loongson_2K300_301_LIB/example/src/13_lq_udp_wavefrom_demo.cpp",
+      "git_blob": "897b11b7269ae02109c8213132d249290ed2e698",
+      "bytes": 2848,
+      "type": "blob",
+      "sha256": "e66f80ba270642fa676b5bcf2a8953765fd46c34a1ceca1e5faa5d0e55708f00",
+      "url": "https://gitee.com/dry-flipping-the-sky/THL001/blob/a545ea5dd3290b791a81043766294d21e6e84722/Loongson_2K300_301_LIB/example/src/13_lq_udp_wavefrom_demo.cpp"
+    },
+    {
+      "path": "Loongson_2K300_301_LIB/example/src/14_lq_icm42688_demo.cpp",
+      "git_blob": "68c46e05d4aee9a5e30ff44b4e00124d65272169",
+      "bytes": 1424,
+      "type": "blob",
+      "sha256": "419942ba2c0ada180ca89ef07b5a79684011b438ecb2a4192e4d27c38471ef79",
+      "url": "https://gitee.com/dry-flipping-the-sky/THL001/blob/a545ea5dd3290b791a81043766294d21e6e84722/Loongson_2K300_301_LIB/example/src/14_lq_icm42688_demo.cpp"
+    },
+    {
+      "path": "Loongson_2K300_301_LIB/example/src/15_lq_ntp_demo.cpp",
+      "git_blob": "481d577ff9164832d23f5b30d4308a4877f1274c",
+      "bytes": 1948,
+      "type": "blob",
+      "sha256": "6014d1622b6d61567c107beb15421e5a415796ff581b90cb41b10eab367320ce",
+      "url": "https://gitee.com/dry-flipping-the-sky/THL001/blob/a545ea5dd3290b791a81043766294d21e6e84722/Loongson_2K300_301_LIB/example/src/15_lq_ntp_demo.cpp"
+    },
+    {
+      "path": "Loongson_2K300_301_LIB/example/src/16_lq_timer_demo.cpp",
+      "git_blob": "f7d49b5df5303e3c6f16bdad4f552bb3f3374efd",
+      "bytes": 1745,
+      "type": "blob",
+      "sha256": "b7d533c130360d016c7cf9ee72dacd0dc18a12e42df8af9f6393f1eb290610f5",
+      "url": "https://gitee.com/dry-flipping-the-sky/THL001/blob/a545ea5dd3290b791a81043766294d21e6e84722/Loongson_2K300_301_LIB/example/src/16_lq_timer_demo.cpp"
+    },
+    {
+      "path": "Loongson_2K300_301_LIB/example/src/17_lq_module_load_demo.cpp",
+      "git_blob": "76d61e307e008b1188cca8a42a58ce590d802df2",
+      "bytes": 1328,
+      "type": "blob",
+      "sha256": "2174193d9f910b7709c3ed68d4f04880b8452f29a24cee2d5f1b9ad26f34d310",
+      "url": "https://gitee.com/dry-flipping-the-sky/THL001/blob/a545ea5dd3290b791a81043766294d21e6e84722/Loongson_2K300_301_LIB/example/src/17_lq_module_load_demo.cpp"
+    },
+    {
+      "path": "Loongson_2K300_301_LIB/example/src/18_lq_ips20_show_img_demo.cpp",
+      "git_blob": "ad42f7410009b17adb466bfad667e57d246b9de8",
+      "bytes": 1427,
+      "type": "blob",
+      "sha256": "b588ba04c62d9eced02c677b1d3c54748a81a4062eca6e31ea5bd5e37debb98f",
+      "url": "https://gitee.com/dry-flipping-the-sky/THL001/blob/a545ea5dd3290b791a81043766294d21e6e84722/Loongson_2K300_301_LIB/example/src/18_lq_ips20_show_img_demo.cpp"
+    },
+    {
+      "path": "Loongson_2K300_301_LIB/example/src/19_lq_motor_demo.cpp",
+      "git_blob": "cf7dbe326fe10a6d5ec587414a959775de90ffd7",
+      "bytes": 1604,
+      "type": "blob",
+      "sha256": "9f712c1f35901ad089c5e0edf1ee466cde42de60ba97221dda17425a046d42c7",
+      "url": "https://gitee.com/dry-flipping-the-sky/THL001/blob/a545ea5dd3290b791a81043766294d21e6e84722/Loongson_2K300_301_LIB/example/src/19_lq_motor_demo.cpp"
+    },
+    {
+      "path": "Loongson_2K300_301_LIB/example/src/20_lq_image_demo.cpp",
+      "git_blob": "dc2b91ea1db410c5b9cedebfecba4eae3a6d4439",
+      "bytes": 514,
+      "type": "blob",
+      "sha256": "15b4b337499f3b2d9d015e16cb01f24f12a2a6180ae5c10980b4ee48496c3201",
+      "url": "https://gitee.com/dry-flipping-the-sky/THL001/blob/a545ea5dd3290b791a81043766294d21e6e84722/Loongson_2K300_301_LIB/example/src/20_lq_image_demo.cpp"
+    },
+    {
+      "path": "Loongson_2K300_301_LIB/example/src/21_lq_image_motor_demo.cpp",
+      "git_blob": "4a7bf8775c1c5ba657d2cce746c7170fbb8f716a",
+      "bytes": 148,
+      "type": "blob",
+      "sha256": "02cf6a75c5edb89a130b838c1a7b32df0ab128d6c31ea89e29d918543858736d",
+      "url": "https://gitee.com/dry-flipping-the-sky/THL001/blob/a545ea5dd3290b791a81043766294d21e6e84722/Loongson_2K300_301_LIB/example/src/21_lq_image_motor_demo.cpp"
+    },
+    {
+      "path": "Loongson_2K300_301_LIB/example/例程文件夹.txt",
+      "git_blob": "7d2a40541d7778c5784d0c6959e7869d790715c9",
+      "bytes": 27,
+      "type": "blob",
+      "sha256": "5a13295faf5b9d4a4a4a71ad31a010d2236d5e16624b553f48b0351face2fea5",
+      "url": "https://gitee.com/dry-flipping-the-sky/THL001/blob/a545ea5dd3290b791a81043766294d21e6e84722/Loongson_2K300_301_LIB/example/例程文件夹.txt"
+    },
+    {
+      "path": "Loongson_2K300_301_LIB/main/CMakeLists.txt",
+      "git_blob": "0d7da9594d40bc24202411980e59f2e5c2f0791f",
+      "bytes": 6236,
+      "type": "blob",
+      "sha256": "3ffe4471b675d18061f8ce98a2f26c9e3d8610f948c6f9306b8206be50b611b4",
+      "url": "https://gitee.com/dry-flipping-the-sky/THL001/blob/a545ea5dd3290b791a81043766294d21e6e84722/Loongson_2K300_301_LIB/main/CMakeLists.txt"
+    },
+    {
+      "path": "Loongson_2K300_301_LIB/main/build.sh",
+      "git_blob": "7e158b650b6ba4807f2188dab9eaf105605e64c0",
+      "bytes": 32796,
+      "type": "blob",
+      "sha256": "fa5b27f307f3a1acf024ad563b91dc9bba425d4094cc2cbedc54aab87eeb552b",
+      "url": "https://gitee.com/dry-flipping-the-sky/THL001/blob/a545ea5dd3290b791a81043766294d21e6e84722/Loongson_2K300_301_LIB/main/build.sh"
+    },
+    {
+      "path": "Loongson_2K300_301_LIB/main/clean_project.sh",
+      "git_blob": "3d86c9170a9522f5605274f40320c2943cc05f44",
+      "bytes": 1793,
+      "type": "blob",
+      "sha256": "928d1205bd8223687638361c08fb9d32f7a703e6cfac2a1c50180a96cafbd69c",
+      "url": "https://gitee.com/dry-flipping-the-sky/THL001/blob/a545ea5dd3290b791a81043766294d21e6e84722/Loongson_2K300_301_LIB/main/clean_project.sh"
+    },
+    {
+      "path": "Loongson_2K300_301_LIB/main/main.cpp",
+      "git_blob": "31f2c6a1665cd9d63f75665986d2cb18650c4af5",
+      "bytes": 1773,
+      "type": "blob",
+      "sha256": "f40222559c8220d35fa6e4e0855916c86f6aac01551763a6b150605eadf4e5e1",
+      "url": "https://gitee.com/dry-flipping-the-sky/THL001/blob/a545ea5dd3290b791a81043766294d21e6e84722/Loongson_2K300_301_LIB/main/main.cpp"
+    },
+    {
+      "path": "Loongson_2K300_301_LIB/main/main.hpp",
+      "git_blob": "499c04afda24d21d6d220b85476a4ac672094d1a",
+      "bytes": 313,
+      "type": "blob",
+      "sha256": "009130fd8b690d9de8d00a339e6dd8a0bad78ebe31de8822f90bc69255681975",
+      "url": "https://gitee.com/dry-flipping-the-sky/THL001/blob/a545ea5dd3290b791a81043766294d21e6e84722/Loongson_2K300_301_LIB/main/main.hpp"
+    },
+    {
+      "path": "Loongson_2K300_301_LIB/main/更新日志.md",
+      "git_blob": "27b256c427fc4124809206f5f6339922b976b6c5",
+      "bytes": 10219,
+      "type": "blob",
+      "sha256": "6d438b3948e241e2cf3eb4a6fb630c341c6b467164fce17edc94f5b4fb9cfb9f",
+      "url": "https://gitee.com/dry-flipping-the-sky/THL001/blob/a545ea5dd3290b791a81043766294d21e6e84722/Loongson_2K300_301_LIB/main/更新日志.md"
+    },
+    {
+      "path": "Loongson_2K300_301_LIB/user_app/car_runtime.cpp",
+      "git_blob": "1778c6bf783fea6ae7383112974f1d1227ab8a1a",
+      "bytes": 2696,
+      "type": "blob",
+      "sha256": "a9afa3d11517529a6b19a04f1c7ddf38c416c9b46364234f4ce443112c390f58",
+      "url": "https://gitee.com/dry-flipping-the-sky/THL001/blob/a545ea5dd3290b791a81043766294d21e6e84722/Loongson_2K300_301_LIB/user_app/car_runtime.cpp"
+    },
+    {
+      "path": "Loongson_2K300_301_LIB/user_app/car_runtime.hpp",
+      "git_blob": "8485d40a804a02cf0f4c2047916c0cf1dcf9521f",
+      "bytes": 892,
+      "type": "blob",
+      "sha256": "cd136b90ace194d37bf2adc6e0944f3737aa44e45069863990a2522e7c81711a",
+      "url": "https://gitee.com/dry-flipping-the-sky/THL001/blob/a545ea5dd3290b791a81043766294d21e6e84722/Loongson_2K300_301_LIB/user_app/car_runtime.hpp"
+    },
+    {
+      "path": "Loongson_2K300_301_LIB/user_app/image.cpp",
+      "git_blob": "0d2908423200570c38b473e4425585a5b8810fb1",
+      "bytes": 137277,
+      "type": "blob",
+      "sha256": "bee0c6928e60fea6dc13e0b974623b50ee1d3ccdc3ce757d54aa3777efbf79a2",
+      "url": "https://gitee.com/dry-flipping-the-sky/THL001/blob/a545ea5dd3290b791a81043766294d21e6e84722/Loongson_2K300_301_LIB/user_app/image.cpp"
+    },
+    {
+      "path": "Loongson_2K300_301_LIB/user_app/image.hpp",
+      "git_blob": "9bf3c892d09344aca3f89ec0c82ceea32112ff09",
+      "bytes": 4363,
+      "type": "blob",
+      "sha256": "131bf89479377b0c661c333761d89ed9892196862aeffa21c2626dc831be244b",
+      "url": "https://gitee.com/dry-flipping-the-sky/THL001/blob/a545ea5dd3290b791a81043766294d21e6e84722/Loongson_2K300_301_LIB/user_app/image.hpp"
+    },
+    {
+      "path": "Loongson_2K300_301_LIB/user_app/lq_app_inc.hpp",
+      "git_blob": "07d6836072a4bc3e7f46c9876f2f311487a69113",
+      "bytes": 307,
+      "type": "blob",
+      "sha256": "c7db77879319d8ace550ecd97306bd98681e59530a43dcece02ea3966aa1c821",
+      "url": "https://gitee.com/dry-flipping-the-sky/THL001/blob/a545ea5dd3290b791a81043766294d21e6e84722/Loongson_2K300_301_LIB/user_app/lq_app_inc.hpp"
+    },
+    {
+      "path": "Loongson_2K300_301_LIB/user_app/lq_i2c_vl53l0x.cpp",
+      "git_blob": "664f9abd137eeecdfc87414dbae84395d3d11a4e",
+      "bytes": 1304,
+      "type": "blob",
+      "sha256": "1ab69c6066e3bdc6e2d139876707e7d4fa926090db6055defeb034bafa7e7127",
+      "url": "https://gitee.com/dry-flipping-the-sky/THL001/blob/a545ea5dd3290b791a81043766294d21e6e84722/Loongson_2K300_301_LIB/user_app/lq_i2c_vl53l0x.cpp"
+    },
+    {
+      "path": "Loongson_2K300_301_LIB/user_app/lq_i2c_vl53l0x.hpp",
+      "git_blob": "6837d0734192a3ac4a74a9a11aa2dee8a79712e2",
+      "bytes": 1375,
+      "type": "blob",
+      "sha256": "9e02b1185ad44d141694b3e33c7aaae8ec12cfbba95aad86febe207e6a95a82f",
+      "url": "https://gitee.com/dry-flipping-the-sky/THL001/blob/a545ea5dd3290b791a81043766294d21e6e84722/Loongson_2K300_301_LIB/user_app/lq_i2c_vl53l0x.hpp"
+    },
+    {
+      "path": "Loongson_2K300_301_LIB/user_app/motor.cpp",
+      "git_blob": "45c6e12e7e5ff88affe6b1ad4786545231cb326d",
+      "bytes": 20229,
+      "type": "blob",
+      "sha256": "b26a255214ef8da766e4a6c2fac9bfd2b887ffa4621b938f66bfdde3433986fc",
+      "url": "https://gitee.com/dry-flipping-the-sky/THL001/blob/a545ea5dd3290b791a81043766294d21e6e84722/Loongson_2K300_301_LIB/user_app/motor.cpp"
+    },
+    {
+      "path": "Loongson_2K300_301_LIB/user_app/motor.hpp",
+      "git_blob": "2b62f9fe772e8bba6c50ddd86719f80b61777b6e",
+      "bytes": 601,
+      "type": "blob",
+      "sha256": "e9381be714169647d8c152553c0b2248d27a2d7c51eea1a5032915a9157a21f5",
+      "url": "https://gitee.com/dry-flipping-the-sky/THL001/blob/a545ea5dd3290b791a81043766294d21e6e84722/Loongson_2K300_301_LIB/user_app/motor.hpp"
+    }
+  ],
+  "tree_files": 4777,
+  "tree_truncated": false,
+  "scope": "Selected source fetched/hash-verified; focused entrypoint/algorithm/interface review, not exhaustive line-by-line proof.",
+  "runtime_validation": "No full firmware build, hardware execution or vehicle test.",
+  "alias_of": null
+}
