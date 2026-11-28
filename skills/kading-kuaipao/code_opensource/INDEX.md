@@ -20,3 +20,6 @@
 
 <!-- collect 20261128_053535_253861 -->
 | · | 待核/链 | `届次待核_卡丁快跑__github__OuYang-187569__-` | https://github.com/OuYang-187569/- |
+
+<!-- collect 20261128_065347_052583 -->
+| · | 待核/链 | `届次待核_卡丁快跑__gitee__beijing-keyu---jiangxi__KEYU_SmartCar21_KartRacing3DPrintParts` | https://gitee.com/beijing-keyu---jiangxi/KEYU_SmartCar21_KartRacing3DPrintParts |

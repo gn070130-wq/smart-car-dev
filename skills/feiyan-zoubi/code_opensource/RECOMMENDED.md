@@ -41,3 +41,5 @@
 - （搜集入库）[https://gitee.com/aur0r4/Project_smartcar_21](https://gitee.com/aur0r4/Project_smartcar_21) — verdict=`accept_meta`，完整树可本机再 clone
 
 - （搜集入库）[https://gitee.com/manlian921/zhang_guoqing_vs_jay_chou](https://gitee.com/manlian921/zhang_guoqing_vs_jay_chou) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://gitee.com/zhou-siran/mechanical-structure-warehouse](https://gitee.com/zhou-siran/mechanical-structure-warehouse) — verdict=`accept_meta`，完整树可本机再 clone

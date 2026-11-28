@@ -22,3 +22,9 @@
 
 <!-- collect 20261128_065053_996043 -->
 | · | 待核/链 | `届次待核_智能模型__gitee__bjsstech__SASU-ICAR-Match2024-Kits` | https://gitee.com/bjsstech/SASU-ICAR-Match2024-Kits |
+
+<!-- collect 20261128_065347_052583 -->
+| · | 待核/链 | `届次待核_智能模型__github__Daigui233__SYSU_DDL` | https://github.com/Daigui233/SYSU_DDL |
+
+<!-- collect 20261128_065347_052583 -->
+| · | 待核/链 | `届次待核_智能模型__github__Y0un__tag_detect` | https://github.com/Y0un/tag_detect |

@@ -17,3 +17,5 @@
 - （搜集入库）[https://gitee.com/sjdkj/djtu_carding_car](https://gitee.com/sjdkj/djtu_carding_car) — verdict=`accept_meta`，完整树可本机再 clone
 
 - （搜集入库）[https://github.com/OuYang-187569/-](https://github.com/OuYang-187569/-) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://gitee.com/beijing-keyu---jiangxi/KEYU_SmartCar21_KartRacing3DPrintParts](https://gitee.com/beijing-keyu---jiangxi/KEYU_SmartCar21_KartRacing3DPrintParts) — verdict=`accept_meta`，完整树可本机再 clone

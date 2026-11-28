@@ -35,3 +35,6 @@
 
 <!-- collect 20261128_053749_631188 -->
 | · | 待核/链 | `届次待核_雁过留痕__gitee__seekfree__STC32G144K246_100Pin_Library` | https://gitee.com/seekfree/STC32G144K246_100Pin_Library |
+
+<!-- collect 20261128_065347_052583 -->
+| · | 待核/链 | `届次待核_雁过留痕__gitee__beijing-keyu---jiangxi__KEYU_SmartCar21_YanGuoLiuHen3DPrintParts` | https://gitee.com/beijing-keyu---jiangxi/KEYU_SmartCar21_YanGuoLiuHen3DPrintParts |

@@ -88,5 +88,7 @@ _kb_raw/collect/
 ## 扩充发现源
 
 - 主源：`_kb_raw/discovery.json`（可继续追加仓库条目后重跑 discover）
+- GitHub 补源：`python _kb_raw/collect/_ingest_github_search.py`（注意 API 限流）
+- 永久跳过误匹配：`_kb_raw/collect/skip_urls.json`（`reject` 后写入，discover 不再入候选）
 - 手工：往 inbox JSON 的 `candidates` 塞 URL，再 `collect_evaluate.py`
 - 安装：`install_opensource_by_track.py` 仅在你明确 `accept_clone` 且要本机树时用

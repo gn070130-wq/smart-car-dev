@@ -15,3 +15,7 @@
 - （搜集入库）[https://github.com/rokkieluo/PaddleSeg_guide](https://github.com/rokkieluo/PaddleSeg_guide) — verdict=`accept_meta`，完整树可本机再 clone
 
 - （搜集入库）[https://gitee.com/bjsstech/SASU-ICAR-Match2024-Kits](https://gitee.com/bjsstech/SASU-ICAR-Match2024-Kits) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://github.com/Daigui233/SYSU_DDL](https://github.com/Daigui233/SYSU_DDL) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://github.com/Y0un/tag_detect](https://github.com/Y0un/tag_detect) — verdict=`accept_meta`，完整树可本机再 clone

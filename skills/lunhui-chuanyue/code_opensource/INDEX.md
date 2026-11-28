@@ -42,3 +42,6 @@
 
 <!-- collect 20261128_053747_978371 -->
 | · | 待核/链 | `届次待核_轮腿穿越__web__ytc0729__project_iwcnunoy` | https://oshwhub.com/ytc0729/project_iwcnunoy |
+
+<!-- collect 20261128_065347_052583 -->
+| · | 待核/链 | `届次待核_轮腿穿越__gitee__bbbb_Luck__21st-smartcar` | https://gitee.com/bbbb_Luck/21st-smartcar |

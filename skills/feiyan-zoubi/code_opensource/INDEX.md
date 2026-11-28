@@ -71,3 +71,6 @@
 
 <!-- collect 20261128_054216_606678 -->
 | · | 待核/链 | `届次待核_飞檐走壁__gitee__manlian921__zhang_guoqing_vs_jay_chou` | https://gitee.com/manlian921/zhang_guoqing_vs_jay_chou |
+
+<!-- collect 20261128_065347_052583 -->
+| · | 待核/链 | `届次待核_飞檐走壁__gitee__zhou-siran__mechanical-structure-warehouse` | https://gitee.com/zhou-siran/mechanical-structure-warehouse |
