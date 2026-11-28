@@ -21,3 +21,12 @@
 |  | 完整 | `届次待核_蚂蚁搬家__gitee__kinglongfun__crush-shooting` | 5 |
 |  | 偏薄 | `届次待核_蚂蚁搬家__gitee__wudx__ridicule` | 4 |
 |  | 偏薄 | `届次待核_蚂蚁搬家__gitee__wudx__mock_trade` | 1 |
+
+<!-- collect 20261128_051603 -->
+| · | 待核/链 | `届次待核_蚂蚁搬家__gitee__the-21st-smart-car-jing-si-a__bbb-groups-warehouse` | https://gitee.com/the-21st-smart-car-jing-si-a/bbb-groups-warehouse |
+
+<!-- collect 20261128_051603 -->
+| · | 待核/链 | `届次待核_蚂蚁搬家__gitee__cao-haibin__21jieironaniuyingjiankaiyuan` | https://gitee.com/cao-haibin/21jieironaniuyingjiankaiyuan |
+
+<!-- collect 20261128_051603 -->
+| · | 待核/链 | `届次待核_蚂蚁搬家__gitee__dzxs---ant-moving__snow-creek` | https://gitee.com/dzxs---ant-moving/snow-creek |

@@ -9,3 +9,12 @@
 | ★ | 完整 | `21届_人工智能视觉__gitee__leo-lzx__visual-group` | 540 |
 | ★ | 完整 | `21届_人工智能视觉__github__Surfersunny__SmartcarRaceIntelligentVision` | 515 |
 | ★ | 完整 | `21届_人工智能视觉__gitee__aiml3ssb0t__Jupiter` | 93 |
+
+<!-- collect 20261128_051602 -->
+| · | 待核/链 | `届次待核_智能视觉__gitee__meng-dong-liu-liu-liu-liu__21smcar` | https://gitee.com/meng-dong-liu-liu-liu-liu/21smcar |
+
+<!-- collect 20261128_051602 -->
+| · | 待核/链 | `届次待核_智能视觉__gitee__oyc521__smart-ycar` | https://gitee.com/oyc521/smart-ycar |
+
+<!-- collect 20261128_051602 -->
+| · | 待核/链 | `届次待核_智能视觉__github__Hey9990__SmartCar-VR-DatasetGenerator` | https://github.com/Hey9990/SmartCar-VR-DatasetGenerator |

@@ -11,3 +11,9 @@
 4. `21届_蚂蚁搬家__gitee__kouyafu__eleven_team`  · 完整 · 源码~156
 
 5. `21届_蚂蚁搬家__github__jirencai__ants_smartcar`  · 完整 · 源码~133
+
+- （搜集入库）[https://gitee.com/the-21st-smart-car-jing-si-a/bbb-groups-warehouse](https://gitee.com/the-21st-smart-car-jing-si-a/bbb-groups-warehouse) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://gitee.com/cao-haibin/21jieironaniuyingjiankaiyuan](https://gitee.com/cao-haibin/21jieironaniuyingjiankaiyuan) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://gitee.com/dzxs---ant-moving/snow-creek](https://gitee.com/dzxs---ant-moving/snow-creek) — verdict=`accept_meta`，完整树可本机再 clone

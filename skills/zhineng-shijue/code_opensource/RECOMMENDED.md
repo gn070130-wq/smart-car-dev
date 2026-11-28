@@ -11,3 +11,9 @@
 4. `21届_人工智能视觉__github__Surfersunny__SmartcarRaceIntelligentVision`  · 完整 · 源码~515
 
 5. `21届_人工智能视觉__gitee__aiml3ssb0t__Jupiter`  · 完整 · 源码~93
+
+- （搜集入库）[https://gitee.com/meng-dong-liu-liu-liu-liu/21smcar](https://gitee.com/meng-dong-liu-liu-liu-liu/21smcar) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://gitee.com/oyc521/smart-ycar](https://gitee.com/oyc521/smart-ycar) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://github.com/Hey9990/SmartCar-VR-DatasetGenerator](https://github.com/Hey9990/SmartCar-VR-DatasetGenerator) — verdict=`accept_meta`，完整树可本机再 clone

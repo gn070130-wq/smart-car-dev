@@ -24,3 +24,15 @@
 |  | 完整 | `届次待核_飞跃雷区__github__BaiYouShiWo__AutoPilot_FeiYueLeiQu_GCS` | 25 |
 |  | 完整 | `21届_飞跃雷区__github__mikumiku02__21st-leap-over-the-minefield` | 22 |
 |  | 完整 | `届次待核_飞跃雷区__github__mikumiku02__leap-over-the-minefield` | 21 |
+
+<!-- collect 20261128_051604 -->
+| · | 待核/链 | `届次待核_飞跃雷区__gitee__lirosequeen__fly-leiqu-aircraft` | https://gitee.com/lirosequeen/fly-leiqu-aircraft |
+
+<!-- collect 20261128_051604 -->
+| · | 待核/链 | `届次待核_飞跃雷区__gitee__cao-haibin__21jieironaniuyingjiankaiyuan` | https://gitee.com/cao-haibin/21jieironaniuyingjiankaiyuan |
+
+<!-- collect 20261128_051604 -->
+| · | 待核/链 | `届次待核_飞跃雷区__gitee__xzy521030__21car_fly` | https://gitee.com/xzy521030/21car_fly |
+
+<!-- collect 20261128_051604 -->
+| · | 待核/链 | `届次待核_飞跃雷区__gitee__namelesstech__maplepilot_infineon_cyt2bl3` | https://gitee.com/namelesstech/maplepilot_infineon_cyt2bl3 |

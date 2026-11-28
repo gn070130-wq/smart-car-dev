@@ -11,3 +11,11 @@
 4. `21届_飞跃雷区__gitee__hecatefake__21st-smartcar-flying-minefield`  · 完整 · 源码~1174
 
 5. `21届_飞跃雷区__github__HecateFake__21st-smartcar-flying-minefield`  · 完整 · 源码~1174
+
+- （搜集入库）[https://gitee.com/lirosequeen/fly-leiqu-aircraft](https://gitee.com/lirosequeen/fly-leiqu-aircraft) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://gitee.com/cao-haibin/21jieironaniuyingjiankaiyuan](https://gitee.com/cao-haibin/21jieironaniuyingjiankaiyuan) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://gitee.com/xzy521030/21car_fly](https://gitee.com/xzy521030/21car_fly) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://gitee.com/namelesstech/maplepilot_infineon_cyt2bl3](https://gitee.com/namelesstech/maplepilot_infineon_cyt2bl3) — verdict=`accept_meta`，完整树可本机再 clone
