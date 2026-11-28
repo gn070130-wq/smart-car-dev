@@ -53,3 +53,4 @@
 - （搜集入库）[https://gitee.com/winter-blossom-qi/star-link-frontier](https://gitee.com/winter-blossom-qi/star-link-frontier) — verdict=`accept_meta`，完整树可本机再 clone
 
 - （搜集入库）[https://gitee.com/Wuwu129/SmartCar_99Pai_OpenSource](https://gitee.com/Wuwu129/SmartCar_99Pai_OpenSource) — verdict=`accept_meta`，完整树可本机再 clone
+- （搜集入库）[https://oshwhub.com/xiangwu/project_cqbkxtph](https://oshwhub.com/xiangwu/project_cqbkxtph) — verdict=`accept_meta`，完整树可本机再 clone

@@ -45,3 +45,6 @@
 
 <!-- collect 20261128_065347_052583 -->
 | · | 待核/链 | `届次待核_轮腿穿越__gitee__bbbb_Luck__21st-smartcar` | https://gitee.com/bbbb_Luck/21st-smartcar |
+
+<!-- collect web -->
+| · | 待核/链 | `届次待核_轮腿穿越__oshwhub__bt2005__project_qyjwaaob` | https://oshwhub.com/bt2005/project_qyjwaaob |

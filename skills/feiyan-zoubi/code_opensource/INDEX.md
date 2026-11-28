@@ -74,3 +74,9 @@
 
 <!-- collect 20261128_065347_052583 -->
 | · | 待核/链 | `届次待核_飞檐走壁__gitee__zhou-siran__mechanical-structure-warehouse` | https://gitee.com/zhou-siran/mechanical-structure-warehouse |
+
+<!-- collect web -->
+| · | 待核/链 | `届次待核_飞檐走壁__oshwhub__saved1314__project_fvgblelj` | https://oshwhub.com/saved1314/project_fvgblelj |
+
+<!-- collect web -->
+| · | 待核/链 | `届次待核_飞檐走壁__oshwhub__xchunb123__project_dflsubcu` | https://oshwhub.com/xchunb123/project_dflsubcu |

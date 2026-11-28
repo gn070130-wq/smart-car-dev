@@ -32,3 +32,4 @@
 - （搜集入库）[https://oshwhub.com/ytc0729/project_iwcnunoy](https://oshwhub.com/ytc0729/project_iwcnunoy) — verdict=`accept_meta`，完整树可本机再 clone
 
 - （搜集入库）[https://gitee.com/bbbb_Luck/21st-smartcar](https://gitee.com/bbbb_Luck/21st-smartcar) — verdict=`accept_meta`，完整树可本机再 clone
+- （搜集入库）[https://oshwhub.com/bt2005/project_qyjwaaob](https://oshwhub.com/bt2005/project_qyjwaaob) — verdict=`accept_meta`，完整树可本机再 clone

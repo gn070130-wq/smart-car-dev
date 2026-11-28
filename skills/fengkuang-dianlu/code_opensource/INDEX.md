@@ -52,3 +52,6 @@
 
 <!-- collect 20261128_054216_606678 -->
 | · | 待核/链 | `届次待核_疯狂电路__gitee__x2576080434__fengkuangdianluwansai` | https://gitee.com/x2576080434/fengkuangdianluwansai |
+
+<!-- collect web -->
+| · | 待核/链 | `届次待核_疯狂电路__oshwhub__l-f-y__project_qooamotu` | https://oshwhub.com/l-f-y/project_qooamotu |

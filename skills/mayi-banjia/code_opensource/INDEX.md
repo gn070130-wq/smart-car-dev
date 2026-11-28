@@ -57,3 +57,6 @@
 
 <!-- collect 20261128_054216_606678 -->
 | · | 待核/链 | `届次待核_蚂蚁搬家__github__shy121306-ui__MYPY` | https://github.com/shy121306-ui/MYPY |
+
+<!-- collect web -->
+| · | 待核/链 | `届次待核_蚂蚁搬家__oshwhub__wangyutian2007__project_blgzmcnb` | https://oshwhub.com/wangyutian2007/project_blgzmcnb |

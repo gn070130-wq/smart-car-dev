@@ -5,3 +5,6 @@
 | ★ | 完整度 | 目录 | 源码 |
 |---|--------|------|------|
 | ★ | 完整 | `21届_智慧城市__gitee__chuxiao-dyf__2026_-robotaxi` | 59 |
+
+<!-- collect web -->
+| · | 待核/链 | `届次待核_智慧城市__github__ittuann__Awesome-IntelligentCarRace` | https://github.com/ittuann/Awesome-IntelligentCarRace |

@@ -74,3 +74,6 @@
 
 <!-- collect 20261128_065055_652236 -->
 | · | 待核/链 | `届次待核_走马观碑__gitee__Wuwu129__SmartCar_99Pai_OpenSource` | https://gitee.com/Wuwu129/SmartCar_99Pai_OpenSource |
+
+<!-- collect web -->
+| · | 待核/链 | `届次待核_走马观碑__oshwhub__xiangwu__project_cqbkxtph` | https://oshwhub.com/xiangwu/project_cqbkxtph |

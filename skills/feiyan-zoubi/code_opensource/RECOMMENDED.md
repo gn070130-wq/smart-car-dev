@@ -43,3 +43,5 @@
 - （搜集入库）[https://gitee.com/manlian921/zhang_guoqing_vs_jay_chou](https://gitee.com/manlian921/zhang_guoqing_vs_jay_chou) — verdict=`accept_meta`，完整树可本机再 clone
 
 - （搜集入库）[https://gitee.com/zhou-siran/mechanical-structure-warehouse](https://gitee.com/zhou-siran/mechanical-structure-warehouse) — verdict=`accept_meta`，完整树可本机再 clone
+- （搜集入库）[https://oshwhub.com/saved1314/project_fvgblelj](https://oshwhub.com/saved1314/project_fvgblelj) — verdict=`accept_meta`，完整树可本机再 clone
+- （搜集入库）[https://oshwhub.com/xchunb123/project_dflsubcu](https://oshwhub.com/xchunb123/project_dflsubcu) — verdict=`accept_meta`，完整树可本机再 clone

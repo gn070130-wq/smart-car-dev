@@ -31,3 +31,4 @@
 - （搜集入库）[https://github.com/hxq060807/JBD_2026_Crazy_Circuit](https://github.com/hxq060807/JBD_2026_Crazy_Circuit) — verdict=`accept_meta`，完整树可本机再 clone
 
 - （搜集入库）[https://gitee.com/x2576080434/fengkuangdianluwansai](https://gitee.com/x2576080434/fengkuangdianluwansai) — verdict=`accept_meta`，完整树可本机再 clone
+- （搜集入库）[https://oshwhub.com/l-f-y/project_qooamotu](https://oshwhub.com/l-f-y/project_qooamotu) — verdict=`accept_meta`，完整树可本机再 clone

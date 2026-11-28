@@ -35,3 +35,4 @@
 - （搜集入库）[https://github.com/gn070130-wq/SmartCar_Ant2026](https://github.com/gn070130-wq/SmartCar_Ant2026) — verdict=`accept_meta`，完整树可本机再 clone
 
 - （搜集入库）[https://github.com/shy121306-ui/MYPY](https://github.com/shy121306-ui/MYPY) — verdict=`accept_meta`，完整树可本机再 clone
+- （搜集入库）[https://oshwhub.com/wangyutian2007/project_blgzmcnb](https://oshwhub.com/wangyutian2007/project_blgzmcnb) — verdict=`accept_meta`，完整树可本机再 clone

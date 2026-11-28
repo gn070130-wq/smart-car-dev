@@ -24,4 +24,4 @@
 | Â· | å¾…æ ¸/é“¾ | `å±Šæ¬¡å¾…æ ¸_å•è½¦å®šå‘__gitee__feather-falls-under-the-tree__bicycle---tianying-star` | https://gitee.com/feather-falls-under-the-tree/bicycle---tianying-star |
 
 <!-- collect web -->
-| ¡¤ | ´ıºË/Á´ | `½ì´Î´ıºË_µ¥³µ¶¨Ïò__gitee__giggling-happy-hippo__bike-navigation` | https://gitee.com/giggling-happy-hippo/bike-navigation |
+| Â· | å¾…æ ¸/é“¾ | `å±Šæ¬¡å¾…æ ¸_å•è½¦å®šå‘__gitee__giggling-happy-hippo__bike-navigation` | https://gitee.com/giggling-happy-hippo/bike-navigation |
