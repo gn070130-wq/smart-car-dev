@@ -4,3 +4,4 @@
 
 1. `21届_智慧城市__gitee__chuxiao-dyf__2026_-robotaxi`  · 完整 · 源码~59
 - （搜集入库）[https://github.com/ittuann/Awesome-IntelligentCarRace](https://github.com/ittuann/Awesome-IntelligentCarRace) — verdict=`accept_meta`，完整树可本机再 clone
+- （搜集入库）[https://github.com/indulgeuuu-del/baidu-smart-traffic-online-champion-playbook](https://github.com/indulgeuuu-del/baidu-smart-traffic-online-champion-playbook) — verdict=`accept_meta`，完整树可本机再 clone

@@ -8,3 +8,6 @@
 
 <!-- collect web -->
 | · | 待核/链 | `届次待核_智慧城市__github__ittuann__Awesome-IntelligentCarRace` | https://github.com/ittuann/Awesome-IntelligentCarRace |
+
+<!-- collect web -->
+| · | 待核/链 | `届次待核_智慧城市__github__indulgeuuu-del__baidu-smart-traffic-online-champion-playbook` | https://github.com/indulgeuuu-del/baidu-smart-traffic-online-champion-playbook |
