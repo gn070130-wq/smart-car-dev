@@ -17,3 +17,5 @@
 - ï¼ˆæœé›†å…¥åº“ï¼‰[https://gitee.com/feather-falls-under-the-tree/bicycle---tianying-star](https://gitee.com/feather-falls-under-the-tree/bicycle---tianying-star) â€” verdict=`accept_meta`ï¼Œå®Œæ•´æ ‘å¯æœ¬æœºå† clone
 
 - ï¼ˆæœé›†å…¥åº“ï¼‰[https://github.com/AmashiroNya13/pure-inertial-navigation-car](https://github.com/AmashiroNya13/pure-inertial-navigation-car) â€” verdict=`accept_meta`ï¼Œå®Œæ•´æ ‘å¯æœ¬æœºå† clone
+
+- £¨ËÑ¼¯Èë¿â£©[https://gitee.com/giggling-happy-hippo/bike-navigation](https://gitee.com/giggling-happy-hippo/bike-navigation) ¡ª verdict=ccept_meta£¬¹úÒ»µ¥³µ¶¨Ïò²Î¿¼
