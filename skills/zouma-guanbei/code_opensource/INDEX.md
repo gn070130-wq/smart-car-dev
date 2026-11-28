@@ -47,3 +47,15 @@
 
 <!-- collect 20261128_052242 -->
 | · | 待核/链 | `届次待核_走马观碑__github__YannicYang__SmartCar_VirtualMachine` | https://github.com/YannicYang/SmartCar_VirtualMachine |
+
+<!-- collect 20261128_053411_219923 -->
+| · | 待核/链 | `届次待核_走马观碑__github__li-dev-ship-it__zou-ma-guan-bei-open-source` | https://github.com/li-dev-ship-it/zou-ma-guan-bei-open-source |
+
+<!-- collect 20261128_053411_219923 -->
+| · | 待核/链 | `届次待核_走马观碑__github__Soldier-28__zmgb` | https://github.com/Soldier-28/zmgb |
+
+<!-- collect 20261128_053411_219923 -->
+| · | 待核/链 | `届次待核_走马观碑__github__chning6__smart_car_loogson` | https://github.com/chning6/smart_car_loogson |
+
+<!-- collect 20261128_053411_219923 -->
+| · | 待核/链 | `届次待核_走马观碑__github__CoConutMilkSoy__ZouMaGuanBei` | https://github.com/CoConutMilkSoy/ZouMaGuanBei |

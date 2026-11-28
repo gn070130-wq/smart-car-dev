@@ -45,3 +45,9 @@
 
 <!-- collect 20261128_052242 -->
 | · | 待核/链 | `届次待核_飞跃雷区__gitee__Viny22__smart_car` | https://gitee.com/Viny22/smart_car |
+
+<!-- collect 20261128_053411_219923 -->
+| · | 待核/链 | `届次待核_飞跃雷区__github__ZhangStudyLife__HDUASC-SmartCar-21st-FlyOverMinefield` | https://github.com/ZhangStudyLife/HDUASC-SmartCar-21st-FlyOverMinefield |
+
+<!-- collect 20261128_053536_080110 -->
+| · | 待核/链 | `届次待核_飞跃雷区__github__ZhangStudyLife__HDUASC-SmartCar-21st-FlyOverMinefield` | https://github.com/ZhangStudyLife/HDUASC-SmartCar-21st-FlyOverMinefield |

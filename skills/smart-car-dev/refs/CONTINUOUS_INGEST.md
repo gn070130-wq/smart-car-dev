@@ -27,7 +27,10 @@ python _kb_raw/collect/collect_run.py --all --limit 20
 python _kb_raw/collect/collect_discover.py --track 轮腿穿越
 python _kb_raw/collect/collect_evaluate.py --batch <batch_id>
 
-# 你编辑 decisions/<batch_id>.json 的 verdict 后：
+# 可选：按 INDEX 去重后自动勾选高分 accept_meta（仍可再手改）
+python _kb_raw/collect/auto_select.py --batch <batch_id> --min-score 20 --max-accept 35
+
+# 编辑 decisions/<batch_id>.json 的 verdict 后：
 python _kb_raw/collect/collect_apply.py --batch <batch_id> --dry-run
 python _kb_raw/collect/collect_apply.py --batch <batch_id>
 

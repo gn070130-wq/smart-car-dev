@@ -13,3 +13,12 @@
 
 <!-- collect 20261128_051959 -->
 | · | 待核/链 | `届次待核_单车定向__github__fluidheart__TC264-Bicycle-Directional-Car` | https://github.com/fluidheart/TC264-Bicycle-Directional-Car |
+
+<!-- collect 20261128_053411_219923 -->
+| · | 待核/链 | `届次待核_单车定向__gitee__feather-falls-under-the-tree__bicycle---tianying-star` | https://gitee.com/feather-falls-under-the-tree/bicycle---tianying-star |
+
+<!-- collect 20261128_053533_666908 -->
+| · | 待核/链 | `届次待核_单车定向__github__AmashiroNya13__pure-inertial-navigation-car` | https://github.com/AmashiroNya13/pure-inertial-navigation-car |
+
+<!-- collect 20261128_053533_666908 -->
+| · | 待核/链 | `届次待核_单车定向__gitee__feather-falls-under-the-tree__bicycle---tianying-star` | https://gitee.com/feather-falls-under-the-tree/bicycle---tianying-star |

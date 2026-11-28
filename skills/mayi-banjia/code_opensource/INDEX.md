@@ -36,3 +36,9 @@
 
 <!-- collect 20261128_052242 -->
 | · | 待核/链 | `届次待核_蚂蚁搬家__gitee__David--Xie__ants-moving-house-rental` | https://gitee.com/David--Xie/ants-moving-house-rental |
+
+<!-- collect 20261128_053411_219923 -->
+| · | 待核/链 | `届次待核_蚂蚁搬家__github__lwxbzjqmz__auto_label_tool` | https://github.com/lwxbzjqmz/auto_label_tool |
+
+<!-- collect 20261128_053411_219923 -->
+| · | 待核/链 | `届次待核_蚂蚁搬家__github__wangxuanxiang__21st_SmartCar_mybj_OpenSource` | https://github.com/wangxuanxiang/21st_SmartCar_mybj_OpenSource |

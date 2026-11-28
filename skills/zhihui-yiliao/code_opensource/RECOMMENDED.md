@@ -31,3 +31,7 @@
 - （搜集入库）[https://github.com/vtacstro/c](https://github.com/vtacstro/c) — verdict=`accept_meta`，完整树可本机再 clone
 
 - （搜集入库）[https://github.com/xiejiasheng666/-X5](https://github.com/xiejiasheng666/-X5) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://github.com/jinghuang1/smart_medical_competition](https://github.com/jinghuang1/smart_medical_competition) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://github.com/ZHUI-MO/xunguang-rdk-x5-medical-robot](https://github.com/ZHUI-MO/xunguang-rdk-x5-medical-robot) — verdict=`accept_meta`，完整树可本机再 clone

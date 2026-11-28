@@ -35,3 +35,11 @@
 - （搜集入库）[https://github.com/HaliFax-Desk/SmartCar21-Loongson](https://github.com/HaliFax-Desk/SmartCar21-Loongson) — verdict=`accept_meta`，完整树可本机再 clone
 
 - （搜集入库）[https://github.com/YannicYang/SmartCar_VirtualMachine](https://github.com/YannicYang/SmartCar_VirtualMachine) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://github.com/li-dev-ship-it/zou-ma-guan-bei-open-source](https://github.com/li-dev-ship-it/zou-ma-guan-bei-open-source) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://github.com/Soldier-28/zmgb](https://github.com/Soldier-28/zmgb) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://github.com/chning6/smart_car_loogson](https://github.com/chning6/smart_car_loogson) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://github.com/CoConutMilkSoy/ZouMaGuanBei](https://github.com/CoConutMilkSoy/ZouMaGuanBei) — verdict=`accept_meta`，完整树可本机再 clone

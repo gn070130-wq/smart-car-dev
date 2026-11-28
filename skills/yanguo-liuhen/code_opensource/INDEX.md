@@ -29,3 +29,6 @@
 
 <!-- collect 20261128_052242 -->
 | · | 待核/链 | `届次待核_雁过留痕__github__ZORE-dlfd__21st-smart-car-yan-guo-liu-hen-8of10-2.6mps` | https://github.com/ZORE-dlfd/21st-smart-car-yan-guo-liu-hen-8of10-2.6mps |
+
+<!-- collect 20261128_053411_219923 -->
+| · | 待核/链 | `届次待核_雁过留痕__github__Lscyzq__HFK_STC32G144K` | https://github.com/Lscyzq/HFK_STC32G144K |

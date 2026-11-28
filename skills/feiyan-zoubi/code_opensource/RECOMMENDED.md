@@ -23,3 +23,9 @@
 - （搜集入库）[https://gitee.com/tezwaa/SYSU_YXS](https://gitee.com/tezwaa/SYSU_YXS) — verdict=`accept_meta`，完整树可本机再 clone
 
 - （搜集入库）[https://gitee.com/wild-azu/wall-climbing-vehicle](https://gitee.com/wild-azu/wall-climbing-vehicle) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://github.com/1A762/smartcar](https://github.com/1A762/smartcar) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://github.com/xigua862/SMARTCAR2](https://github.com/xigua862/SMARTCAR2) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://github.com/zx115/VoltRiders](https://github.com/zx115/VoltRiders) — verdict=`accept_meta`，完整树可本机再 clone

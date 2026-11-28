@@ -13,3 +13,7 @@
 5. `21届_单车定向__github__Amy-hub-creator__21-`  · 完整 · 源码~23
 
 - （搜集入库）[https://github.com/fluidheart/TC264-Bicycle-Directional-Car](https://github.com/fluidheart/TC264-Bicycle-Directional-Car) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://gitee.com/feather-falls-under-the-tree/bicycle---tianying-star](https://gitee.com/feather-falls-under-the-tree/bicycle---tianying-star) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://github.com/AmashiroNya13/pure-inertial-navigation-car](https://github.com/AmashiroNya13/pure-inertial-navigation-car) — verdict=`accept_meta`，完整树可本机再 clone

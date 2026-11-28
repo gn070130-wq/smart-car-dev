@@ -43,3 +43,9 @@
 
 <!-- collect 20261128_052242 -->
 | · | 待核/链 | `届次待核_智慧医疗__github__xiejiasheng666__-X5` | https://github.com/xiejiasheng666/-X5 |
+
+<!-- collect 20261128_053534_471899 -->
+| · | 待核/链 | `届次待核_智慧医疗__github__jinghuang1__smart_medical_competition` | https://github.com/jinghuang1/smart_medical_competition |
+
+<!-- collect 20261128_053534_471899 -->
+| · | 待核/链 | `届次待核_智慧医疗__github__ZHUI-MO__xunguang-rdk-x5-medical-robot` | https://github.com/ZHUI-MO/xunguang-rdk-x5-medical-robot |

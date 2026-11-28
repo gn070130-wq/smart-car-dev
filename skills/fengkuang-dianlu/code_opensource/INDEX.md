@@ -43,3 +43,9 @@
 
 <!-- collect 20261128_052242 -->
 | · | 待核/链 | `届次待核_疯狂电路__github__fangyangyang565__crazy_car500` | https://github.com/fangyangyang565/crazy_car500 |
+
+<!-- collect 20261128_053411_219923 -->
+| · | 待核/链 | `届次待核_疯狂电路__github__yuhao2236__crazy_circuit_volt_plus` | https://github.com/yuhao2236/crazy_circuit_volt_plus |
+
+<!-- collect 20261128_053411_219923 -->
+| · | 待核/链 | `届次待核_疯狂电路__github__hxq060807__JBD_2026_Crazy_Circuit` | https://github.com/hxq060807/JBD_2026_Crazy_Circuit |

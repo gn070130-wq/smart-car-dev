@@ -25,3 +25,7 @@
 - （搜集入库）[https://github.com/Theliangyue/fengkuangdianlu](https://github.com/Theliangyue/fengkuangdianlu) — verdict=`accept_meta`，完整树可本机再 clone
 
 - （搜集入库）[https://github.com/fangyangyang565/crazy_car500](https://github.com/fangyangyang565/crazy_car500) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://github.com/yuhao2236/crazy_circuit_volt_plus](https://github.com/yuhao2236/crazy_circuit_volt_plus) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://github.com/hxq060807/JBD_2026_Crazy_Circuit](https://github.com/hxq060807/JBD_2026_Crazy_Circuit) — verdict=`accept_meta`，完整树可本机再 clone

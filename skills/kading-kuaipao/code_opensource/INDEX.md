@@ -17,3 +17,6 @@
 
 <!-- collect 20261128_052242 -->
 | · | 待核/链 | `届次待核_卡丁快跑__gitee__sjdkj__djtu_carding_car` | https://gitee.com/sjdkj/djtu_carding_car |
+
+<!-- collect 20261128_053535_253861 -->
+| · | 待核/链 | `届次待核_卡丁快跑__github__OuYang-187569__-` | https://github.com/OuYang-187569/- |

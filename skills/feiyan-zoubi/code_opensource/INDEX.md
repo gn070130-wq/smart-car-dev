@@ -44,3 +44,12 @@
 
 <!-- collect 20261128_052242 -->
 | · | 待核/链 | `届次待核_飞檐走壁__gitee__wild-azu__wall-climbing-vehicle` | https://gitee.com/wild-azu/wall-climbing-vehicle |
+
+<!-- collect 20261128_053411_219923 -->
+| · | 待核/链 | `届次待核_飞檐走壁__github__1A762__smartcar` | https://github.com/1A762/smartcar |
+
+<!-- collect 20261128_053411_219923 -->
+| · | 待核/链 | `届次待核_飞檐走壁__github__xigua862__SMARTCAR2` | https://github.com/xigua862/SMARTCAR2 |
+
+<!-- collect 20261128_053411_219923 -->
+| · | 待核/链 | `届次待核_飞檐走壁__github__zx115__VoltRiders` | https://github.com/zx115/VoltRiders |

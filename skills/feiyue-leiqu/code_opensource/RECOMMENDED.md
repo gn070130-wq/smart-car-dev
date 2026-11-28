@@ -25,3 +25,5 @@
 - （搜集入库）[https://gitee.com/woll-to/leap-over-the-minefield---solo.camera](https://gitee.com/woll-to/leap-over-the-minefield---solo.camera) — verdict=`accept_meta`，完整树可本机再 clone
 
 - （搜集入库）[https://gitee.com/Viny22/smart_car](https://gitee.com/Viny22/smart_car) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://github.com/ZhangStudyLife/HDUASC-SmartCar-21st-FlyOverMinefield](https://github.com/ZhangStudyLife/HDUASC-SmartCar-21st-FlyOverMinefield) — verdict=`accept_meta`，完整树可本机再 clone

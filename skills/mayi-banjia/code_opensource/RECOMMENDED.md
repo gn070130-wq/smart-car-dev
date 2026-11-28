@@ -21,3 +21,7 @@
 - （搜集入库）[https://gitee.com/virgostudios/mybj-u3d](https://gitee.com/virgostudios/mybj-u3d) — verdict=`accept_meta`，完整树可本机再 clone
 
 - （搜集入库）[https://gitee.com/David--Xie/ants-moving-house-rental](https://gitee.com/David--Xie/ants-moving-house-rental) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://github.com/lwxbzjqmz/auto_label_tool](https://github.com/lwxbzjqmz/auto_label_tool) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://github.com/wangxuanxiang/21st_SmartCar_mybj_OpenSource](https://github.com/wangxuanxiang/21st_SmartCar_mybj_OpenSource) — verdict=`accept_meta`，完整树可本机再 clone
