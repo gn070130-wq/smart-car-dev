@@ -13,3 +13,5 @@
 - （搜集入库）[https://github.com/PAULWOW1/Ackermann-Steering-Vehicle-Control](https://github.com/PAULWOW1/Ackermann-Steering-Vehicle-Control) — verdict=`accept_meta`，完整树可本机再 clone
 
 - （搜集入库）[https://github.com/rokkieluo/PaddleSeg_guide](https://github.com/rokkieluo/PaddleSeg_guide) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://gitee.com/bjsstech/SASU-ICAR-Match2024-Kits](https://gitee.com/bjsstech/SASU-ICAR-Match2024-Kits) — verdict=`accept_meta`，完整树可本机再 clone

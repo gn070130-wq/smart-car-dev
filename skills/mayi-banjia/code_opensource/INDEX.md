@@ -42,3 +42,18 @@
 
 <!-- collect 20261128_053411_219923 -->
 | · | 待核/链 | `届次待核_蚂蚁搬家__github__wangxuanxiang__21st_SmartCar_mybj_OpenSource` | https://github.com/wangxuanxiang/21st_SmartCar_mybj_OpenSource |
+
+<!-- collect 20261128_054216_606678 -->
+| · | 待核/链 | `届次待核_蚂蚁搬家__gitee__the-21st-smart-car-jing-si-a__big-blue-bird` | https://gitee.com/the-21st-smart-car-jing-si-a/big-blue-bird |
+
+<!-- collect 20261128_054216_606678 -->
+| · | 待核/链 | `届次待核_蚂蚁搬家__gitee__the-21st-smart-car-jing-si-a__dual-drive-motor` | https://gitee.com/the-21st-smart-car-jing-si-a/dual-drive-motor |
+
+<!-- collect 20261128_054216_606678 -->
+| · | 待核/链 | `届次待核_蚂蚁搬家__gitee__wsgwz0412__znc` | https://gitee.com/wsgwz0412/znc |
+
+<!-- collect 20261128_054216_606678 -->
+| · | 待核/链 | `届次待核_蚂蚁搬家__github__gn070130-wq__SmartCar_Ant2026` | https://github.com/gn070130-wq/SmartCar_Ant2026 |
+
+<!-- collect 20261128_054216_606678 -->
+| · | 待核/链 | `届次待核_蚂蚁搬家__github__shy121306-ui__MYPY` | https://github.com/shy121306-ui/MYPY |

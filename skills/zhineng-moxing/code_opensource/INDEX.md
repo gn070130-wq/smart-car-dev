@@ -19,3 +19,6 @@
 
 <!-- collect 20261128_051958 -->
 | · | 待核/链 | `届次待核_智能模型__github__rokkieluo__PaddleSeg_guide` | https://github.com/rokkieluo/PaddleSeg_guide |
+
+<!-- collect 20261128_065053_996043 -->
+| · | 待核/链 | `届次待核_智能模型__gitee__bjsstech__SASU-ICAR-Match2024-Kits` | https://gitee.com/bjsstech/SASU-ICAR-Match2024-Kits |

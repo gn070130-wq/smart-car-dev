@@ -65,3 +65,9 @@
 
 <!-- collect 20261128_053748_813057 -->
 | · | 待核/链 | `届次待核_飞檐走壁__web__wjg2004__project_sulktubf` | https://oshwhub.com/wjg2004/project_sulktubf |
+
+<!-- collect 20261128_054216_606678 -->
+| · | 待核/链 | `届次待核_飞檐走壁__gitee__aur0r4__Project_smartcar_21` | https://gitee.com/aur0r4/Project_smartcar_21 |
+
+<!-- collect 20261128_054216_606678 -->
+| · | 待核/链 | `届次待核_飞檐走壁__gitee__manlian921__zhang_guoqing_vs_jay_chou` | https://gitee.com/manlian921/zhang_guoqing_vs_jay_chou |

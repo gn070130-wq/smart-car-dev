@@ -59,3 +59,18 @@
 
 <!-- collect 20261128_053411_219923 -->
 | · | 待核/链 | `届次待核_走马观碑__github__CoConutMilkSoy__ZouMaGuanBei` | https://github.com/CoConutMilkSoy/ZouMaGuanBei |
+
+<!-- collect 20261128_054216_606678 -->
+| · | 待核/链 | `届次待核_走马观碑__gitee__zailuxuxing__stele` | https://gitee.com/zailuxuxing/stele |
+
+<!-- collect 20261128_065055_652236 -->
+| · | 待核/链 | `届次待核_走马观碑__github__LiXXRZ__Smart-Car-Competition` | https://github.com/LiXXRZ/Smart-Car-Competition |
+
+<!-- collect 20261128_065055_652236 -->
+| · | 待核/链 | `届次待核_走马观碑__github__feng111775__smartcar-learning` | https://github.com/feng111775/smartcar-learning |
+
+<!-- collect 20261128_065055_652236 -->
+| · | 待核/链 | `届次待核_走马观碑__gitee__winter-blossom-qi__star-link-frontier` | https://gitee.com/winter-blossom-qi/star-link-frontier |
+
+<!-- collect 20261128_065055_652236 -->
+| · | 待核/链 | `届次待核_走马观碑__gitee__Wuwu129__SmartCar_99Pai_OpenSource` | https://gitee.com/Wuwu129/SmartCar_99Pai_OpenSource |

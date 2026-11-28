@@ -49,3 +49,6 @@
 
 <!-- collect 20261128_053534_471899 -->
 | · | 待核/链 | `届次待核_智慧医疗__github__ZHUI-MO__xunguang-rdk-x5-medical-robot` | https://github.com/ZHUI-MO/xunguang-rdk-x5-medical-robot |
+
+<!-- collect 20261128_054216_606678 -->
+| · | 待核/链 | `届次待核_智慧医疗__github__dzb182233__zhiliandui` | https://github.com/dzb182233/zhiliandui |

@@ -25,3 +25,13 @@
 - （搜集入库）[https://github.com/lwxbzjqmz/auto_label_tool](https://github.com/lwxbzjqmz/auto_label_tool) — verdict=`accept_meta`，完整树可本机再 clone
 
 - （搜集入库）[https://github.com/wangxuanxiang/21st_SmartCar_mybj_OpenSource](https://github.com/wangxuanxiang/21st_SmartCar_mybj_OpenSource) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://gitee.com/the-21st-smart-car-jing-si-a/big-blue-bird](https://gitee.com/the-21st-smart-car-jing-si-a/big-blue-bird) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://gitee.com/the-21st-smart-car-jing-si-a/dual-drive-motor](https://gitee.com/the-21st-smart-car-jing-si-a/dual-drive-motor) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://gitee.com/wsgwz0412/znc](https://gitee.com/wsgwz0412/znc) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://github.com/gn070130-wq/SmartCar_Ant2026](https://github.com/gn070130-wq/SmartCar_Ant2026) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://github.com/shy121306-ui/MYPY](https://github.com/shy121306-ui/MYPY) — verdict=`accept_meta`，完整树可本机再 clone

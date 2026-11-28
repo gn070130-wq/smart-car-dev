@@ -49,3 +49,6 @@
 
 <!-- collect 20261128_053411_219923 -->
 | · | 待核/链 | `届次待核_疯狂电路__github__hxq060807__JBD_2026_Crazy_Circuit` | https://github.com/hxq060807/JBD_2026_Crazy_Circuit |
+
+<!-- collect 20261128_054216_606678 -->
+| · | 待核/链 | `届次待核_疯狂电路__gitee__x2576080434__fengkuangdianluwansai` | https://gitee.com/x2576080434/fengkuangdianluwansai |

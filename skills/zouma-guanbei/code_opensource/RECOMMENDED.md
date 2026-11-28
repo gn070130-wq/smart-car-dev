@@ -43,3 +43,13 @@
 - （搜集入库）[https://github.com/chning6/smart_car_loogson](https://github.com/chning6/smart_car_loogson) — verdict=`accept_meta`，完整树可本机再 clone
 
 - （搜集入库）[https://github.com/CoConutMilkSoy/ZouMaGuanBei](https://github.com/CoConutMilkSoy/ZouMaGuanBei) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://gitee.com/zailuxuxing/stele](https://gitee.com/zailuxuxing/stele) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://github.com/LiXXRZ/Smart-Car-Competition](https://github.com/LiXXRZ/Smart-Car-Competition) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://github.com/feng111775/smartcar-learning](https://github.com/feng111775/smartcar-learning) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://gitee.com/winter-blossom-qi/star-link-frontier](https://gitee.com/winter-blossom-qi/star-link-frontier) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://gitee.com/Wuwu129/SmartCar_99Pai_OpenSource](https://gitee.com/Wuwu129/SmartCar_99Pai_OpenSource) — verdict=`accept_meta`，完整树可本机再 clone

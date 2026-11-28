@@ -51,3 +51,6 @@
 
 <!-- collect 20261128_053536_080110 -->
 | · | 待核/链 | `届次待核_飞跃雷区__github__ZhangStudyLife__HDUASC-SmartCar-21st-FlyOverMinefield` | https://github.com/ZhangStudyLife/HDUASC-SmartCar-21st-FlyOverMinefield |
+
+<!-- collect 20261128_054216_606678 -->
+| · | 待核/链 | `届次待核_飞跃雷区__gitee__hecatefake__21th_cyt4bb7_3core` | https://gitee.com/hecatefake/21th_cyt4bb7_3core |

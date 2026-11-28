@@ -27,3 +27,5 @@
 - （搜集入库）[https://gitee.com/Viny22/smart_car](https://gitee.com/Viny22/smart_car) — verdict=`accept_meta`，完整树可本机再 clone
 
 - （搜集入库）[https://github.com/ZhangStudyLife/HDUASC-SmartCar-21st-FlyOverMinefield](https://github.com/ZhangStudyLife/HDUASC-SmartCar-21st-FlyOverMinefield) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://gitee.com/hecatefake/21th_cyt4bb7_3core](https://gitee.com/hecatefake/21th_cyt4bb7_3core) — verdict=`accept_meta`，完整树可本机再 clone
