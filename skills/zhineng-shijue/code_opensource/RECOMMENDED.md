@@ -19,3 +19,5 @@
 - （搜集入库）[https://github.com/Hey9990/SmartCar-VR-DatasetGenerator](https://github.com/Hey9990/SmartCar-VR-DatasetGenerator) — verdict=`accept_meta`，完整树可本机再 clone
 
 - （搜集入库）[https://gitee.com/aiml3ssb0t/AStar](https://gitee.com/aiml3ssb0t/AStar) — verdict=`accept_meta`，完整树可本机再 clone
+- （搜集入库）[https://oshwhub.com/manwhatcanyousay/project_irwicoit](https://oshwhub.com/manwhatcanyousay/project_irwicoit) — verdict=`accept_meta`，完整树可本机再 clone
+- （搜集入库）[https://oshwhub.com/luojiaxin666/project_aglwsscb](https://oshwhub.com/luojiaxin666/project_aglwsscb) — verdict=`accept_meta`，完整树可本机再 clone

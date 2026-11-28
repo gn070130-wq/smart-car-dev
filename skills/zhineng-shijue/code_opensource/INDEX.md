@@ -24,3 +24,9 @@
 
 <!-- collect 20261128_052242 -->
 | · | 待核/链 | `届次待核_人工智能视觉__gitee__aiml3ssb0t__AStar` | https://gitee.com/aiml3ssb0t/AStar |
+
+<!-- collect web -->
+| · | 待核/链 | `届次待核_智能视觉__oshwhub__manwhatcanyousay__project_irwicoit` | https://oshwhub.com/manwhatcanyousay/project_irwicoit |
+
+<!-- collect web -->
+| · | 待核/链 | `届次待核_智能视觉__oshwhub__luojiaxin666__project_aglwsscb` | https://oshwhub.com/luojiaxin666/project_aglwsscb |
