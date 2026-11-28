@@ -1,11 +1,15 @@
 ---
 name: smart-car-dev
-description: "智能车竞赛统一技能仓：开发调试（巡线/PID/LADRC/NCNN/TFLite）、九赛道知识库、算法灌入与DL优化。结合走马观碑报告与多仓库解析，以及 skills/ 下国赛组别全文。不用于普通汽车维修。"
+description: >-
+  智能车竞赛统一技能仓：开发调试（巡线/PID/LADRC/NCNN/TFLite）、竞速十一组+创意组知识库、
+  算法灌入与DL优化、逐飞/CYT4BB7/LS2K/RKNN板级文档与generated可编译stub。
+  结合走马观碑报告与多仓库解析，以及 skills/ 下国赛组别。不用于普通汽车维修。
 ---
 
 # 智能车开发与调试（统一仓）
 
-**权威源**：本 GitHub 仓库。本机不需保存全文，按任务打开 `skills/` 或本文件 `references/`。
+**权威源**：本 GitHub 仓库（https://github.com/gn070130-wq/smart-car-dev）。  
+按任务打开 `skills/`、`generated/` 或本文件旁 `references/`。
 
 把用户的车模、当前工程和实测数据作为实施依据；把参赛报告与固定版本开源解析作为可追溯方案库。完成当前问题所需的代码、诊断和验证，不只罗列算法名称。默认用中文解释，保留工程原有命名和语言。
 
@@ -13,11 +17,14 @@ description: "智能车竞赛统一技能仓：开发调试（巡线/PID/LADRC/N
 
 | 任务 | 打开 |
 |------|------|
-| 组别知识（雁过/单车/飞跃/疯狂/卡丁/轮腿/蚂蚁/模型/视觉） | [skills/smartcar-competition/SKILL.md](skills/smartcar-competition/SKILL.md) → 对应子目录 |
-| 算法总表、代码模板、DL/量化优化 | [skills/smartcar-ml-optimize/SKILL.md](skills/smartcar-ml-optimize/SKILL.md) |
-| 改工程、调参、日志、NCNN/TFLite、走马观碑开源 | 下文「按任务读取资料」+ `references/` + `scripts/` |
+| 未定组别 / 竞速+创意分流 | [skills/smartcar-competition/SKILL.md](skills/smartcar-competition/SKILL.md) |
+| 赛道搭建/改代码 | 对应 `skills/<赛道>/SKILL.md` → SCAFFOLD→RECOMMENDED→refs |
+| **Skill→可本地编译代码** | [skills/smart-car-dev/refs/COMPILE_READY_WORKFLOW.md](skills/smart-car-dev/refs/COMPILE_READY_WORKFLOW.md) |
+| 算法总表、代码模板、DL/量化 | [skills/smartcar-ml-optimize/SKILL.md](skills/smartcar-ml-optimize/SKILL.md) |
+| 逐飞/ADS/双核/LS2K/RKNN 上板 | [skills/smart-car-dev/refs/BOARD_TEMPLATES.md](skills/smart-car-dev/refs/BOARD_TEMPLATES.md) 等 |
+| 改工程、调参、日志、NCNN/TFLite、走马开源 | 下文「按任务读取资料」+ `references/` + `scripts/` |
 
-九赛道与总控正文均在 `skills/`，与本仓根目录调试能力一体维护。
+赛道目录说明：[skills/README.md](skills/README.md)。可编译示例在仓库根 [generated/](generated/)。
 
 ## 先确定当前工程
 
@@ -46,6 +53,8 @@ description: "智能车竞赛统一技能仓：开发调试（巡线/PID/LADRC/N
 | 比较本批13仓库、集合结构/算法、审查有效性与代码问题 | [多仓库入口](references/multi-repo/overview.md) |
 | 深度学习模型接入、输入输出契约、NCNN/TFLite调用验证 | [模型运行与验证](references/multi-repo/model-runtime.md) |
 | 直接读取已安装源码、模型、SDK或原始报告，离线查看完整工程 | [离线源码与完整附件](references/offline-sources.md) |
+| 惯导/平衡、算法代码索引 | [IMU](skills/smart-car-dev/refs/IMU_INS_PLAYBOOK.md) / [索引](skills/smart-car-dev/refs/ALGORITHMS_CODE_INDEX.md) |
+| CYT4BB7 双核 / 龙芯 / RKNN | [双核](skills/smart-car-dev/refs/CYT4BB7_DUAL_CORE.md) / [LS2K](skills/smart-car-dev/refs/LS2K_LINUX_BOARD.md) / [RKNN](skills/smart-car-dev/refs/RKNN_DEPLOY.md) |
 
 只加载当前问题需要的主题。检索报告时先按主题选队伍，再查看命中上下文；不要把全部正文一次加载。
 
