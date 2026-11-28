@@ -10,3 +10,6 @@
 | ★ | 完整 | `21届_单车定向__github__YYDW-i__Intelligent-bike` | 598 |
 | ★ | 完整 | `21届_单车定向__github__Amy-hub-creator__21-` | 23 |
 |  | 偏薄 | `21届_单车定向__github__glc652__Smart_Car_Bike_N` | 2 |
+
+<!-- collect 20261128_051959 -->
+| · | 待核/链 | `届次待核_单车定向__github__fluidheart__TC264-Bicycle-Directional-Car` | https://github.com/fluidheart/TC264-Bicycle-Directional-Car |
