@@ -4,7 +4,8 @@ description: >-
   智能车软件总控：按用户要求调取 Skill 知识，经大模型分析生成可本地编译的代码；
   含摄像头循迹、元素状态机、电磁中线、Stanley/PP、TOF/编码器/红外/IMU。
   用户提到智能车、写代码、本地编译、调Skill、大模型分析落码、赛题、循迹、PVC、
-  推荐算法时必须使用；优先 refs/COMPILE_READY_WORKFLOW.md。
+  推荐算法、持续搜集开源、评估入库、选择性上传时必须使用；
+  落码优先 refs/COMPILE_READY_WORKFLOW.md；搜集上传优先 refs/CONTINUOUS_INGEST.md。
 ---
 
 # smart-car-dev · Skill + 大模型 → 可编译代码
@@ -43,6 +44,7 @@ description: >-
 | 龙芯 LS2K | `refs/LS2K_LINUX_BOARD.md` |
 | RK3588/RKNN | `refs/RKNN_DEPLOY.md` |
 | 官方库本机镜像 | `board_libs/INDEX.md` |
+| **持续搜集→自评→选择性上传** | `refs/CONTINUOUS_INGEST.md` ★ |
 
 ## 示例工程
 
