@@ -11,3 +11,13 @@
 4. `21届_飞檐走壁__github__Jeans2__2026-smart-car-wall-climbing-electromagnetic`  · 完整 · 源码~205
 
 5. `届次待核_飞檐走壁__gitee__manlian921__con`  · 完整 · 源码~153
+
+- （搜集入库）[https://gitee.com/REGEAVFDRVGR/shyan_21th_electro_stc32g144k](https://gitee.com/REGEAVFDRVGR/shyan_21th_electro_stc32g144k) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://gitee.com/HUTINGPENG/smart-vehicles](https://gitee.com/HUTINGPENG/smart-vehicles) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://gitee.com/hulangyoung/car](https://gitee.com/hulangyoung/car) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://gitee.com/ning-wenjian/100g-wall-climbing-mini-car](https://gitee.com/ning-wenjian/100g-wall-climbing-mini-car) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://gitee.com/tezwaa/SYSU_YXS](https://gitee.com/tezwaa/SYSU_YXS) — verdict=`accept_meta`，完整树可本机再 clone

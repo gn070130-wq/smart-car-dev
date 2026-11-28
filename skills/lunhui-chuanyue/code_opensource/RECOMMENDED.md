@@ -10,3 +10,13 @@
 
 算法与双核：`../refs/FULL_SUMMARY.md`、`../refs/ALGORITHMS.md`  
 真机：`../../smart-car-dev/refs/CYT4BB7_DUAL_CORE.md`、`BOARD_TEMPLATES.md`
+
+- （搜集入库）[https://github.com/Run1234567/JLNU_SmartCar_TwoLeg](https://github.com/Run1234567/JLNU_SmartCar_TwoLeg) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://gitee.com/bxqnc/smartcar-21-wheel-leg](https://gitee.com/bxqnc/smartcar-21-wheel-leg) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://gitee.com/suyunxing/CYT2BL3_double_foc_driver](https://gitee.com/suyunxing/CYT2BL3_double_foc_driver) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://gitee.com/suyunxing/smart-car](https://gitee.com/suyunxing/smart-car) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://gitee.com/suijioawan/Intelligent-Vehicle-Competition](https://gitee.com/suijioawan/Intelligent-Vehicle-Competition) — verdict=`accept_meta`，完整树可本机再 clone

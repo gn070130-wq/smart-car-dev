@@ -26,3 +26,18 @@
 |  | 完整 | `届次待核_飞檐走壁__github__Mirror695__Run-on-walls-and-leap-over-eaves` | 96 |
 |  | 完整 | `届次待核_飞檐走壁__github__tutu911__21_MiniSmartCar_V2_0` | 90 |
 |  | 偏薄 | `届次待核_飞檐走壁__gitee__manlian921__news_project` | 4 |
+
+<!-- collect 20261128_045616 -->
+| · | 待核/链 | `届次待核_飞檐走壁__gitee__REGEAVFDRVGR__shyan_21th_electro_stc32g144k` | https://gitee.com/REGEAVFDRVGR/shyan_21th_electro_stc32g144k |
+
+<!-- collect 20261128_045616 -->
+| · | 待核/链 | `届次待核_飞檐走壁__gitee__HUTINGPENG__smart-vehicles` | https://gitee.com/HUTINGPENG/smart-vehicles |
+
+<!-- collect 20261128_045616 -->
+| · | 待核/链 | `届次待核_飞檐走壁__gitee__hulangyoung__car` | https://gitee.com/hulangyoung/car |
+
+<!-- collect 20261128_045616 -->
+| · | 待核/链 | `届次待核_飞檐走壁__gitee__ning-wenjian__100g-wall-climbing-mini-car` | https://gitee.com/ning-wenjian/100g-wall-climbing-mini-car |
+
+<!-- collect 20261128_045616 -->
+| · | 待核/链 | `届次待核_飞檐走壁__gitee__tezwaa__SYSU_YXS` | https://gitee.com/tezwaa/SYSU_YXS |
