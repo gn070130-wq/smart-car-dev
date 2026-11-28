@@ -11,3 +11,17 @@
 4. `21届_走马观碑__gitee__HElla12312__2026-smart-car-competition`  · 完整 · 源码~212
 
 5. `21届_走马观碑__github__IcksLin__Abandoned`  · 完整 · 源码~110
+
+- （搜集入库）[https://gitee.com/DongYuZhe2005/Loongson_2K300_301_LIB](https://gitee.com/DongYuZhe2005/Loongson_2K300_301_LIB) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://gitee.com/chao-8xx/car](https://gitee.com/chao-8xx/car) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://gitee.com/duteryan/seekfree_-ls2-k0300_-opensource_-library](https://gitee.com/duteryan/seekfree_-ls2-k0300_-opensource_-library) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://gitee.com/wjlai/test](https://gitee.com/wjlai/test) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://gitee.com/vvsakivv/LS2K0300](https://gitee.com/vvsakivv/LS2K0300) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://gitee.com/zhaoymmmmmm/smartcarcode21th](https://gitee.com/zhaoymmmmmm/smartcarcode21th) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://gitee.com/zyly2033/loongson_2k300_lib](https://gitee.com/zyly2033/loongson_2k300_lib) — verdict=`accept_meta`，完整树可本机再 clone

@@ -11,3 +11,24 @@
 | ★ | 完整 | `21届_走马观碑__github__IcksLin__Abandoned` | 110 |
 |  | 完整 | `届次待核_走马观碑__github__DWDROME__loongson-smart-car` | 55 |
 |  | 完整 | `21届_走马观碑__github__starco2025__smartcar-zmgb` | 21 |
+
+<!-- collect 20261128_045919 -->
+| · | 待核/链 | `届次待核_走马观碑__gitee__DongYuZhe2005__Loongson_2K300_301_LIB` | https://gitee.com/DongYuZhe2005/Loongson_2K300_301_LIB |
+
+<!-- collect 20261128_045919 -->
+| · | 待核/链 | `届次待核_走马观碑__gitee__chao-8xx__car` | https://gitee.com/chao-8xx/car |
+
+<!-- collect 20261128_045919 -->
+| · | 待核/链 | `届次待核_走马观碑__gitee__duteryan__seekfree_-ls2-k0300_-opensource_-library` | https://gitee.com/duteryan/seekfree_-ls2-k0300_-opensource_-library |
+
+<!-- collect 20261128_045919 -->
+| · | 待核/链 | `届次待核_走马观碑__gitee__wjlai__test` | https://gitee.com/wjlai/test |
+
+<!-- collect 20261128_045919 -->
+| · | 待核/链 | `届次待核_走马观碑__gitee__vvsakivv__LS2K0300` | https://gitee.com/vvsakivv/LS2K0300 |
+
+<!-- collect 20261128_045919 -->
+| · | 待核/链 | `届次待核_走马观碑__gitee__zhaoymmmmmm__smartcarcode21th` | https://gitee.com/zhaoymmmmmm/smartcarcode21th |
+
+<!-- collect 20261128_045919 -->
+| · | 待核/链 | `届次待核_走马观碑__gitee__zyly2033__loongson_2k300_lib` | https://gitee.com/zyly2033/loongson_2k300_lib |
