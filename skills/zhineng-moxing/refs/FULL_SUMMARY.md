@@ -1,13 +1,24 @@
-# 智能模型 · 完整汇总
+# 智能模型 · 报告级知识摘要
 
-## 架构
-`摄像头 → RK3588 NPU(YOLO/分割/OCR) → UART → TC264(PID/电机舵机)`
+流程不变。算力侧常见 **RK3588 NPU**；车控侧常 **TC264** 等经 UART。
 
-## 逻辑文件
-`npu_infer_* / yolo_* / seg_* / uart_proto_* / steer_pid_* / speed_pid_* / calib_*`
+## 软件链路
 
-## 算法
-检测、分割、量化、偏差提取、串级/PID、标定、上下位机协议。
+```text
+摄像头 → RK3588(YOLO/分割/OCR, RKNN)
+→ 偏差/目标帧 UART → 下位机 PID/电机舵机
+```
+
+## 本机对照仓
+
+1. `X-SmartCar-AI-Model-Multitask` — 多任务  
+2. `PaddleYOLO-RKNN` — 检测→RKNN  
+3. `USTB_21stModel_MapEditor` — 地图工具  
+
+部署要点见总控：`../../smart-car-dev/refs/RKNN_DEPLOY.md`（不改现有 COMPILE 流程，仅增文档）。
 
 ## 风险
-推理超时掉帧、量化漏检、串口阻塞控制、阿克曼高速失稳。
+
+推理超时掉帧、量化漏检、串口阻塞控制环、高速失稳。
+
+算法卡：`ALGORITHMS.md`。

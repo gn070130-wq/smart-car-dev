@@ -1,24 +1,19 @@
 ---
 name: lunhui-chuanyue
 description: >-
-  全国大学生智能汽车竞赛「轮腿穿越」完整内置知识库。含 CYT4BB 双核、轮腿机构、
-  IMU 平衡串级、关节逆解、室外越障/绕桩/排雷。用户提到轮腿穿越、轮腿、平衡轮腿、
-  CYT4、台阶越障、双轮平衡室外时必须使用；直接读本目录 refs/ 与 corpus/。
+  竞速组「轮腿穿越」技能。本地开源 + 报告 refs/corpus。触发：轮腿穿越、轮腿、平衡。
+  用户提到轮腿相关必须使用；按 SCAFFOLD→RECOMMENDED→refs。
 ---
 
-# 轮腿穿越 Skill（全文已安装）
+# 轮腿穿越（竞速组）
 
-## 内置路径
-| 路径 | 用途 |
-|------|------|
-| `refs/*` | 摘要/索引/算法/风险/信号/日志 |
-| `corpus/` | 报告正文 |
+本地仓见 `code_opensource/INDEX.md`。报告：`refs/FULL_SUMMARY.md`、`refs/ALGORITHMS.md`。
 
-## 赛道摘要
-室外轮腿复合；**CYT4** 双核；**平衡优先**；腿 IK + 元素抬腿/跳跃；视觉辅助绕桩排雷。
+1. `code_opensource/SCAFFOLD.md`
+2. `code_opensource/RECOMMENDED.md`
+3. `refs/FULL_SUMMARY.md` → `refs/ALGORITHMS.md`
+4. `../smart-car-dev/refs/CYT4BB7_DUAL_CORE.md` · `SEEKFREE_BOARDS.md` · `IMU_INS_PLAYBOOK.md`
 
-## 调试顺序
-IMU 零偏 → 原地平衡 → 低速直线 → 转向 → 腿高/IK 限位 → 元素策略 → 室外光照
+## 提问要算法与结构时
 
-## 开发模式
-已开启。
+先读 `../smart-car-dev/refs/QUESTION_TO_ARCHITECTURE.md`，再结合本赛道 RECOMMENDED/ANALYSIS。

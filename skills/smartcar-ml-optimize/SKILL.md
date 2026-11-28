@@ -1,57 +1,55 @@
 ---
 name: smartcar-ml-optimize
 description: >-
-  智能车竞赛「大模型+深度学习」算法学习与优化助手。已灌入九赛道报告提炼的算法总表、
-  赛道接口地图、代码模板与 DL 部署经验，用于后续调用完善代码。用户提到大模型优化、
-  深度学习调优、YOLO、分割、量化、RKNN、NPU、算法学习、完善代码、按已学算法写模块时必须使用；
-  先读本 skill 的 refs 灌入库，再打开对应赛道 skill。
+  智能车算法推荐与模块灌入：V/P/C/S 算法总表、赛道默认链路、代码模板 T1–T8、
+  YOLO/NCNN/量化部署。用户提到推荐算法、算法ID、按赛题写代码、代码结构模块、
+  YOLO、分割、RKNN、NPU、完善代码、按已学算法写模块时必须使用；与 smart-car-dev 的
+  FROM_PROBLEM_TO_CODE / QUESTION_TO_ARCHITECTURE 配合，负责算法选型与模板落码。
 ---
 
-# 智能车 · 大模型 + 深度学习算法优化 Skill
+# 算法推荐 + 模板落码
 
-已将上传文档学到的内容 **灌入** 本 skill，供后续直接调用写/改完善代码。  
-飞檐走壁 / 走马观碑不在安装范围。
+## 与提问流程的分工
 
-## 灌入库（写代码必读）
+| 环节 | 谁负责 |
+|------|--------|
+| 听懂问题、可编译落码 | `smart-car-dev` → `COMPILE_READY_WORKFLOW.md` |
+| 听懂问题、输出整套结构 | `smart-car-dev` → `QUESTION_TO_ARCHITECTURE.md` |
+| 算法 ID / 默认链 / 模板代码 | **本 skill** `refs/` |
+| YOLO/分割等**模型训练脚本** | **本 skill** `workflow.md` / `DL_FROM_CORPUS.md` |
+| 赛道报告证据 | 各赛道 `refs/` + `corpus/` |
+
+## 灌入库（必读）
 
 | 文件 | 用途 |
 |------|------|
-| `refs/INGESTED_ALGORITHMS.md` | 九赛道算法总表 V/P/C/S + DL 链 |
-| `refs/TRACK_ALGORITHM_MAP.md` | 赛道默认模块链与接口 |
-| `refs/CODE_TEMPLATES.md` | 可替换代码模板 T1–T8 |
-| `refs/DL_FROM_CORPUS.md` | 报告侧 DL/NPU/混合策略 |
+| `refs/INGESTED_ALGORITHMS.md` | 算法总表 V/P/C/S |
+| `refs/TRACK_ALGORITHM_MAP.md` | 赛道默认模块链 |
+| `refs/CODE_TEMPLATES.md` | T1–T8 可粘贴模板 |
+| `refs/DL_FROM_CORPUS.md` | DL/NPU 策略 |
+| `refs/dl-playbook.md` | 检测分割量化速查 |
 | `refs/workflow.md` | 学习→优化→部署 |
-| `refs/dl-playbook.md` | 检测/分割/量化速查 |
-| `refs/INTEGRATION_SMART_CAR_DEV.md` | 与 GitHub `smart-car-dev` 整合分工 |
 
-证据不足时再读并列赛道 `../<track>/refs/` 与 `corpus/`。  
-工程调试 / NCNN·TFLite / 走马观碑开源解析 → `../smart-car-dev/`。
+## 强制步骤（写/荐算法时）
 
-## 调用写代码时的强制步骤
-
-1. 判定组别 → 打开 `TRACK_ALGORITHM_MAP.md` 对应链  
-2. 从 `INGESTED_ALGORITHMS.md` 取算法 ID（如 V06、C04）  
-3. 用 `CODE_TEMPLATES.md` 对应模板改写成用户工程语言/接口  
-4. DL 相关读 `DL_FROM_CORPUS.md`：异步推理、新鲜度、量化回归  
-5. 输出【原始代码 → 修改后 → 说明 → 测试】；无原码则给可粘贴模块 + 假设接口  
-6. 约束：控制环非阻塞；限幅；超时安全；关键点调试打印  
-
-## 快速改版 vs 长期
-
-- **快速**：阈值/conf/imgsz/NMS、PID、门控、超时、投票窗口  
-- **长期**：解耦 DetectTarget 接口、推理队列、录包回归、状态机规范化  
+1. 定组别 → `TRACK_ALGORITHM_MAP` 默认链  
+2. 展开 `INGESTED_ALGORITHMS` 每个 ID（必选/可选/不建议）  
+3. 需要结构时提醒走 `../smart-car-dev/refs/QUESTION_TO_ARCHITECTURE.md`  
+4. 落码用 `CODE_TEMPLATES`；DL 读异步推理与新鲜度  
+5. 输出【算法表】+【模块】；有工程则【原→改→说明→测试】  
 
 ## 输出模板
 
 ```
 【组别】…
-【算法ID】V../P../C../S..（出自 INGESTED_ALGORITHMS）
-【现状→目标】…
-【方案】快速 / 长期
-【代码】原→改→说明→测试
-【风险】算力/延迟/赛场故障
+【算法推荐】
+| 优先级 | ID | 名称 | 理由 | 关键参数 | 风险 |
+【默认链路】V..→P..→C..→S..
+【建议目录/接口】（或指向 SOFTWARE_SKELETON）
+【模板】T.. 改写为用户语言
+【测试】…
 ```
 
-## 九赛道并列路径
+## 约束
 
-`yanguo-liuhen` · `danche-dingxiang` · `feiyue-leiqu` · `fengkuang-dianlu` · `kading-kuaipao` · `lunhui-chuanyue` · `mayi-banjia` · `zhineng-moxing` · `zhineng-shijue` · `smart-car-dev`
+控制环非阻塞；推理异步；限幅；超时安全态；关键点可打日志。

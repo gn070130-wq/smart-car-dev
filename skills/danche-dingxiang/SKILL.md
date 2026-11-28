@@ -1,46 +1,56 @@
 ---
 name: danche-dingxiang
 description: >-
-  全国大学生智能汽车竞赛「单车定向」完整内置知识库。含 N1 车模、TC264、IMU 惯导、横滚平衡串级、
-  Pure Pursuit/Stanley/杜宾斯、FOC、调参与翻车排查、算法伪代码。用户提到单车定向、N1、八字、
-  绕锥、平衡车、惯导、TC264、Stanley、航位推算时必须使用；直接读本目录 refs/ 与 corpus/，
-  不要要求用户打开外部知识库文件夹。
+  全国大学生智能汽车竞赛「单车定向」完整技能：本地开源工程 + 报告知识 + 从零搭建软件清单。
+  用于搭建/改写智能车软件（感知、状态机、控制环、执行器安全、日志）。
+  触发：单车定向、自行车、N1、八字、绕锥、Stanley。用户提到单车定向或要写/改该组代码时必须使用；
+  按 SCAFFOLD→RECOMMENDED→ANALYSIS→refs 顺序执行。
 ---
 
-# 单车定向 Skill（全文已安装）
+# 单车定向 · 可搭建软件 Skill
 
-## 内置路径（本 skill 目录内）
+## 调用顺序（强制）
+0. 提问要算法/结构 → `../smart-car-dev/refs/QUESTION_TO_ARCHITECTURE.md`
 
-| 文件 | 用途 |
-|------|------|
-| `refs/LEARNING_SUMMARY.md` | 学习摘要 |
-| `refs/INDEX.md` | 检索索引 D1–D9 / B1–B12 |
-| `refs/FILE_STRUCTURE.md` | 工程文件与依赖 |
-| `refs/ALGORITHMS.md` | 算法拆解 + 可写代码模板 |
-| `refs/COMPARE_AND_OPT.md` | 对比、优化、国赛风险、调参顺序 |
-| `refs/DEEP_NOTES.md` / `MINE_SIGNALS.md` | 长文与关键词 |
-| `corpus/*.txt` | 47 份参赛报告正文 |
 
-回答前优先 Read 上述 refs；需要证据再搜 corpus。
+1. `code_opensource/SCAFFOLD.md` — 从零搭建检查清单  
+2. `code_opensource/RECOMMENDED.md` — 选对照/脚手架工程  
+3. `code_opensource/ANALYSIS.md` — 软件结构与模块划分  
+4. `refs/FULL_SUMMARY.md` + `refs/ALGORITHMS.md` — 报告级算法与赛场经验  
 
-## 赛道摘要
+5. 需要模板/算法 ID → `../smartcar-ml-optimize/refs/`  
+6. 调试现象 → `../smart-car-dev/refs/debug-playbook.md`
 
-- 组别：单车定向；车模 **N1**；室外直线/八字/草地坡道绕锥；禁负压辅助平衡  
-- 硬件：多 **TC264** + FOC(CYT2BL3) + BDS3620 + BDS300 + IMU + 磁编  
-- 软件：`姿态EKF → INS → 寻迹 →（平衡优先）舵机+UART电机`  
-- 主锚报告思路：中北破晓（`Attitude.c`/`imu.c`/`balance.c`/`car_control.c`）
+本地已挂接 `refs/` + `corpus/`（报告知识）。
 
-## 控制优先级（必须遵守）
+## 默认软件栈
 
-1. 横滚平衡环不倒  
-2. 速度环  
-3. 寻迹/航向  
-4. 显示与日志必须降频，禁止拖垮控制周期  
+姿态/转向 + Stanley/纯跟踪 + 锥桶/八字任务状态机
 
-## 调参默认顺序
+## 推荐对照仓
 
-静态 IMU → 架空舵机/电机/UART → 低速只开平衡 → 采样轨迹写 Flash → IMU_Go → Pure Pursuit → 分科目速度表  
+- `21届_单车定向__gitee__xceline566__motorcycle`
+- `21届_单车定向__github__Z-car__ZJX_21_Bike`
+- `21届_单车定向__github__YYDW-i__Intelligent-bike`
+- `届次待核_单车定向__gitee__kunpeng666__smartcar`
+- `21届_单车定向__github__Amy-hub-creator__21-`
 
-## 用户点名展开
+完整度索引：`code_opensource/INDEX.md`（共 6 仓，完整 5）
 
-`展开 B6` / `写平衡环` / `对比 Stanley` / `排查低速倒` → 读 `refs/ALGORITHMS.md` 或 `COMPARE_AND_OPT.md` 对应节作答。
+## 改代码 / 搭模块输出格式
+
+```
+【组别】单车定向
+【任务】搭建 | 改模块 | 调参 | 修 bug
+【对照仓】…
+【算法/模块】感知 / 规划状态机 / 转向环 / 速度环 / 执行器 / 日志
+【原→改→说明→测试】
+【风险】算力、延迟、丢线、饱和、安全互锁
+```
+
+## 硬约束
+
+- 控制环非阻塞；推理异步；图像要有新鲜度/超时保护  
+- 速度/PWM/舵机必须限幅；上电默认安全态  
+- 优先改 `user`/`code`/`app`/`perception`/`control`，少动厂商底层库  
+- 无用户工程时：按 SCAFFOLD 给出可粘贴目录树 + 主循环骨架 + 模块接口  

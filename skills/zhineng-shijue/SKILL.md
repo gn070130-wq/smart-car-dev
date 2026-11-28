@@ -1,15 +1,57 @@
 ---
 name: zhineng-shijue
 description: >-
-  全国大学生智能汽车竞赛「智能视觉/人工智能视觉」完整内置知识库。含 RT1064、麦轮全向、
-  俯视建图、A*、推箱子求解、双视觉状态机。用户提到智能视觉、人工智能视觉、推箱子、
-  虚实结合、RT1064 视觉导航时必须使用；直接读本目录 refs/ 与 corpus/。
+  全国大学生智能汽车竞赛「智能视觉」完整技能：本地开源工程 + 报告知识 + 从零搭建软件清单。
+  用于搭建/改写智能车软件（感知、状态机、控制环、执行器安全、日志）。
+  触发：智能视觉、推箱子、RT1064、YOLO、NCNN、建图。用户提到智能视觉或要写/改该组代码时必须使用；
+  按 SCAFFOLD→RECOMMENDED→ANALYSIS→refs 顺序执行。
 ---
 
-# 智能视觉 Skill（全文已安装）
+# 智能视觉 · 可搭建软件 Skill
 
-内置：`refs/` + `corpus/`
+## 调用顺序（强制）
+0. 提问要算法/结构 → `../smart-car-dev/refs/QUESTION_TO_ARCHITECTURE.md`
 
-摘要：建图规划 + 推箱任务 + 麦轮控制；常配合 HIL。  
-调试：透视标定 → 栅格 → A* → 对位 PID → 推箱引擎 → 实车迁移。  
-开发模式已开启。
+
+1. `code_opensource/SCAFFOLD.md` — 从零搭建检查清单  
+2. `code_opensource/RECOMMENDED.md` — 选对照/脚手架工程  
+3. `code_opensource/ANALYSIS.md` — 软件结构与模块划分  
+4. `refs/FULL_SUMMARY.md` + `refs/ALGORITHMS.md` + `corpus/`（若有）  
+   RT1064 库 → `../smart-car-dev/board_libs/seekfree_RT1064_Library`  
+
+5. 需要模板/算法 ID → `../smartcar-ml-optimize/refs/`  
+6. 调试现象 → `../smart-car-dev/refs/debug-playbook.md`
+
+本地已挂接 `refs/` + `corpus/`（报告知识）。
+
+## 默认软件栈
+
+RT1064/同类 + 检测/分割推理 + 地图/路径 + 动作任务
+
+## 推荐对照仓
+
+- `21届_人工智能视觉__github__Hey9990__SmartCar-21AIVision`
+- `21届_人工智能视觉__gitee__hbbss2__smu-21th-smart-car-vision`
+- `21届_人工智能视觉__gitee__leo-lzx__visual-group`
+- `21届_人工智能视觉__github__Surfersunny__SmartcarRaceIntelligentVision`
+- `21届_人工智能视觉__gitee__aiml3ssb0t__Jupiter`
+
+完整度索引：`code_opensource/INDEX.md`（共 7 仓，完整 5）
+
+## 改代码 / 搭模块输出格式
+
+```
+【组别】智能视觉
+【任务】搭建 | 改模块 | 调参 | 修 bug
+【对照仓】…
+【算法/模块】感知 / 规划状态机 / 转向环 / 速度环 / 执行器 / 日志
+【原→改→说明→测试】
+【风险】算力、延迟、丢线、饱和、安全互锁
+```
+
+## 硬约束
+
+- 控制环非阻塞；推理异步；图像要有新鲜度/超时保护  
+- 速度/PWM/舵机必须限幅；上电默认安全态  
+- 优先改 `user`/`code`/`app`/`perception`/`control`，少动厂商底层库  
+- 无用户工程时：按 SCAFFOLD 给出可粘贴目录树 + 主循环骨架 + 模块接口  

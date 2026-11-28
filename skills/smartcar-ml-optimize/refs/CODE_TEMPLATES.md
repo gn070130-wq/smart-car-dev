@@ -100,3 +100,24 @@ switch(state){
 ```
 
 测试：强制超时能退出；禁止非法跳转。
+
+## T9–T12 外设模块（完整实现见总控）
+
+TOF / 编码器 / 红外灯板 / 电感 / 按键 的完整 `.h/.c` 在：
+
+`../smart-car-dev/refs/MODULES_BSP.md`
+
+陀螺仪 / IMU / 惯导：
+
+`../smart-car-dev/refs/IMU_INS_PLAYBOOK.md`
+
+| 模板 | 模块 | 算法锚点 |
+|------|------|----------|
+| T9 | TOF 测距 + 新鲜度 | 避障 / 跟停 |
+| T10 | 编码器测速里程 | P01 |
+| T11 | 红外灯板加权中线 | V03 类 |
+| T12 | IMU 零偏+互补 | P02/P03 |
+| T13 | 摄像头循迹全链路 | `../smart-car-dev/refs/VISION_LINE_PIPELINE.md` |
+| T14 | 元素状态机 | `../smart-car-dev/refs/ELEMENT_FSM_LIBRARY.md` |
+| T15 | 电磁中线 | `../smart-car-dev/refs/ELECTRO_MIDLINE.md` |
+| T16 | Stanley / Pure Pursuit | `../smart-car-dev/refs/STANLEY_PURE_PURSUIT.md` |

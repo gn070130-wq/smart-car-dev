@@ -21,3 +21,6 @@ venv/
 !assets/upstream/**/*.pt
 !assets/upstream/**/*.pth
 /assets/upstream-archives/
+generated/**/build/
+**/board_libs/seekfree_*/
+PUSH.md

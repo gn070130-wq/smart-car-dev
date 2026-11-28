@@ -1,15 +1,23 @@
-# 智能视觉 · 完整汇总
+# 智能视觉 · 报告级知识摘要
 
-## 架构
-`俯视建图视觉 + 第一人称视觉 → 栅格/A* / 推箱求解 → 状态机 → 麦轮逆解+PID（RT1064）`
+流程不变。主控常见 **RT1064**；虚实结合/HIL 常见。
 
-常配合虚实结合/HIL。
+## 软件链路
 
-## 逻辑文件
-`map_vision_* / fpv_vision_* / a_star_* / sokoban_* / omni_pid_* / fsm_*`
+```text
+俯视建图视觉 + 第一人称视觉
+→ 栅格/A* / 推箱求解
+→ 状态机 → 麦轮逆解 + PID
+```
 
-## 算法
-透视、颜色分割、栅格地图、A*、推箱引擎、分类投票滤波、麦轮运动学、串级 PID。
+## 模块习惯
+
+- `map_vision_*` / `fpv_vision_*` / `a_star_*` / `sokoban_*` / `omni_pid_*` / `fsm_*`  
+- 板库：`../../smart-car-dev/board_libs/seekfree_RT1064_Library`  
+- 循迹子问题可复用 `VISION_LINE_PIPELINE.md`
 
 ## 风险
-地图透视误差、推箱无解/卡死、双视觉不同步、仿真到实车迁移。
+
+透视误差、推箱无解/卡死、双视觉不同步、仿真到实车迁移。
+
+对照：`code_opensource/RECOMMENDED.md`；算法：`ALGORITHMS.md`。

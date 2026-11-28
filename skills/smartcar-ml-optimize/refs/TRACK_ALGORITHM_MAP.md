@@ -43,7 +43,33 @@
 - 链：`V08→P07→P08→S01→C05→C01` + `V09`  
 - 接口：`grid,path,box_plan → omni_cmd`
 
+## 飞檐走壁 `feiyan-zoubi`
+- 链：`P02→C03/C01→S01` + `S05`（吸附/电磁/倾覆保护）  
+- 接口：`imu,enc,current → pitch/speed_cmd → motor；mode_fsm`
+
+## 走马观碑 `zouma-guanbei`
+- 链：`V06/V10→P07→S01→C01` + `S03`  
+- 接口：`frame → text/pose/stamp → nav_goal → chassis_cmd`
+
+## 智慧医疗 `zhihui-yiliao`（创意）
+- 链：`V06/VLM→P06→C05→S01→S03`  
+- 接口：ROS2 常见 `detect → navigate → manipulate/chassis`
+
+## 智慧工厂 `zhihui-gongchang`（创意）
+- 链：`V01/V05→S01(环岛/锥桶/灯)→C01/C02`  
+- 接口：`line_err, traffic_state → steer,speed`
+
+## 智慧救援/农场/城市 `zhihui-*`
+- 链：感知目标 → `S01` 任务 → 底盘 `C01/C05`；缺资料用 SOFTWARE_SKELETON  
+- 接口：按具体传感器声明假设
+
 ## 缺工程树时的写法
 1. 用本表逻辑模块给出 `.c/.h` 或 `.py` 片段  
 2. 注明假设：`frame_hz`、`uart_hz`、坐标系  
 3. 用户贴真实工程后，再改名对齐并补测试
+
+## 用户提问时
+强制走 `../smart-car-dev/refs/QUESTION_TO_ARCHITECTURE.md`：先推荐算法 ID，再给整套目录/数据流/接口。
+
+完整可粘贴实现索引：`../smart-car-dev/refs/ALGORITHMS_CODE_INDEX.md`
+（循迹全链路 / 元素 FSM / 电磁中线 / Stanley·PP）。

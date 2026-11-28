@@ -1,0 +1,13 @@
+# 卡丁快跑 · 开源索引（竞速组）
+
+- 仓库数：7 · 完整：7
+
+| ★ | 完整度 | 目录 | 源码 |
+|---|--------|------|------|
+| ★ | 完整 | `21届_卡丁快跑__github__RyanChenJH__SmartCar` | 3592 |
+| ★ | 完整 | `21届_卡丁快跑__gitee__why137a__cading-code` | 1254 |
+| ★ | 完整 | `21届_卡丁快跑__gitee__wmysj__oh-free-loop` | 723 |
+| ★ | 完整 | `21届_卡丁快跑__github__Yusei-YK__Polaris-Kart-TC387` | 702 |
+| ★ | 完整 | `届次待核_卡丁快跑__gitee__pantainnm__kart-run-version-control` | 636 |
+|  | 完整 | `21届_卡丁快跑__gitee__muanlin__the-21th-kart-race` | 606 |
+|  | 完整 | `届次待核_卡丁快跑__github__rundongCopernicus__car_fast` | 604 |

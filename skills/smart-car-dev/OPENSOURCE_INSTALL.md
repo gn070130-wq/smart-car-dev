@@ -1,0 +1,190 @@
+# 开源比赛代码安装摘要
+
+- OK: 55
+- SKIP(exists): 112
+- FAIL: 10
+- TOTAL attempted: 177
+
+各赛道见 `../<skill>/code_opensource/INDEX.md`
+
+# 开源工程安装日志
+
+- selected: 177
+
+- OK `21届_人工智能模型__gitee__rokkieluo__PaddleSeg_guide_for_xsmartcar` <- https://gitee.com/rokkieluo/PaddleSeg_guide_for_xsmartcar
+- FAIL Command '['C:\\Program Files\\Git\\bin\\git.exe', 'clone', '--depth', '1', '--single-branch', 'https://github.com/Dengdxx/PaddleYOLO-RKNN', 'C:\\Users\\LENOVO\\Desktop\\智能车skill\\.cursor\\skills\\zhineng-moxing\\code_opensource\\21届_人工智能模型__github__Dengdxx__PaddleYOLO-RKNN']' timed out after 180 seconds `21届_人工智能模型__github__Dengdxx__PaddleYOLO-RKNN` <- https://github.com/Dengdxx/PaddleYOLO-RKNN
+- OK `21届_人工智能模型__github__USTBSmartCar__USTB_21stModel_MapEditor` <- https://github.com/USTBSmartCar/USTB_21stModel_MapEditor
+- FAIL 2110) Updating files:  99% (2104/2110) Updating files: 100% (2110/2110) Updating files: 100% (2110/2110), done. fatal: unable to checkout working tree warning: Clone succeeded, but checkout failed. You can inspect what was checked out with 'git status' and retry with 'git restore --source=HEAD :/'   `21届_人工智能模型__github__cozylove-girl__X-SmartCar-AI-Model-Multitask` <- https://github.com/cozylove-girl/X-SmartCar-AI-Model-Multitask
+- OK `21届_人工智能模型__github__rokkieluo__PaddleSeg_guide` <- https://github.com/rokkieluo/PaddleSeg_guide
+- OK `21届_人工智能视觉__gitee__aiml3ssb0t__Jupiter` <- https://gitee.com/aiml3ssb0t/Jupiter
+- OK `21届_人工智能视觉__gitee__leo-lzx__visual-group` <- https://gitee.com/leo-lzx/visual-group
+- OK `21届_人工智能视觉__gitee__hbbss2__smu-21th-smart-car-vision` <- https://gitee.com/hbbss2/smu-21th-smart-car-vision
+- OK `届次待核_人工智能视觉__gitee__meng-dong-liu-liu-liu-liu__21smcar` <- https://gitee.com/meng-dong-liu-liu-liu-liu/21smcar
+- OK `21届_人工智能视觉__gitee__oyc521__smart-ycar` <- https://gitee.com/oyc521/smart-ycar
+- FAIL Cloning into 'C:\Users\LENOVO\Desktop\智能车skill\.cursor\skills\zhineng-shijue\code_opensource\21届_人工智能视觉__github__Hey9990__SmartCar-21AIVision'... fatal: early EOF  `21届_人工智能视觉__github__Hey9990__SmartCar-21AIVision` <- https://github.com/Hey9990/SmartCar-21AIVision
+- OK `21届_人工智能视觉__github__Surfersunny__SmartcarRaceIntelligentVision` <- https://github.com/Surfersunny/SmartcarRaceIntelligentVision
+- OK `21届_单车定向__gitee__xceline566__motorcycle` <- https://gitee.com/xceline566/motorcycle
+- SKIP exists `届次待核_单车定向__gitee__kunpeng666__smartcar` <- https://gitee.com/kunpeng666/smartcar
+- OK `21届_单车定向__github__Amy-hub-creator__21-` <- https://github.com/Amy-hub-creator/21-
+- OK `21届_单车定向__github__YYDW-i__Intelligent-bike` <- https://github.com/YYDW-i/Intelligent-bike
+- SKIP exists `21届_单车定向__github__Z-car__ZJX_21_Bike` <- https://github.com/Z-car/ZJX_21_Bike
+- FAIL 'CYT2BL3_Brushless_Driver_Project-master/E02_TC264/E02_07_foc_double_driver_demo/Debug/libraries/infineon_libraries/Infra/Platform': Filename too long warning: Clone succeeded, but checkout failed. You can inspect what was checked out with 'git status' and retry with 'git restore --source=HEAD :/'   `21届_单车定向__github__glc652__Smart_Car_Bike_N` <- https://github.com/glc652/Smart_Car_Bike_N
+- SKIP exists `21届_卡丁快跑__gitee__why137a__cading-code` <- https://gitee.com/why137a/cading-code
+- SKIP exists `届次待核_卡丁快跑__gitee__pantainnm__kart-run-version-control` <- https://gitee.com/pantainnm/kart-run-version-control
+- SKIP exists `21届_卡丁快跑__gitee__wmysj__oh-free-loop` <- https://gitee.com/wmysj/oh-free-loop
+- SKIP exists `21届_卡丁快跑__gitee__muanlin__the-21th-kart-race` <- https://gitee.com/muanlin/the-21th-kart-race
+- SKIP exists `21届_卡丁快跑__github__RyanChenJH__SmartCar` <- https://github.com/RyanChenJH/SmartCar
+- OK `21届_卡丁快跑__github__Yusei-YK__Polaris-Kart-TC387` <- https://github.com/Yusei-YK/Polaris-Kart-TC387
+- SKIP exists `届次待核_卡丁快跑__github__rundongCopernicus__car_fast` <- https://github.com/rundongCopernicus/car_fast
+- SKIP exists `21届_疯狂电路__gitee__chunxun-seeking-rain__tc364` <- https://gitee.com/chunxun-seeking-rain/tc364
+- FAIL ate directory at 'ZhuMeng_10/.metadata/.plugins/org.eclipse.core.resources/.projects/Seekfree_TC264_Opensource_Library/.indexes/99': Filename too long warning: Clone succeeded, but checkout failed. You can inspect what was checked out with 'git status' and retry with 'git restore --source=HEAD :/'   `21届_疯狂电路__gitee__qinnnnnnnnnnn__the-21st-smart-vehicles` <- https://gitee.com/qinnnnnnnnnnn/the-21st-smart-vehicles
+- OK `21届_疯狂电路__gitee__ren-peiju__crazy-circuit_21th` <- https://gitee.com/ren-peiju/crazy-circuit_21th
+- SKIP exists `21届_疯狂电路__gitee__sandcarving-netizens__soberup_2026` <- https://gitee.com/sandcarving-netizens/soberup_2026
+- SKIP exists `届次待核_疯狂电路__gitee__baichuan0528__SkewEye-CrookedWheel` <- https://gitee.com/baichuan0528/SkewEye-CrookedWheel
+- OK `21届_疯狂电路__gitee__l-f-yang__fei` <- https://gitee.com/l-f-yang/fei
+- SKIP exists `21届_疯狂电路__gitee__sleepallnigeh__21jiezhinengchefengkuangdianlu` <- https://gitee.com/sleepallnigeh/21jiezhinengchefengkuangdianlu
+- SKIP exists `21届_疯狂电路__gitee__somebody_liang__fengkuangdianlu` <- https://gitee.com/somebody_liang/fengkuangdianlu
+- OK `21届_疯狂电路__gitee__sabella__21jiezhinengchefengkuangdianlu` <- https://gitee.com/sabella/21jiezhinengchefengkuangdianlu
+- FAIL 4_Routine testing/SPI WIFI/Seekfree_TC264_Opensource_Library/libraries/infineon_libraries/iLLD/TC26B/Tricore/Ccu6/TimerWithTrigger': Filename too long warning: Clone succeeded, but checkout failed. You can inspect what was checked out with 'git status' and retry with 'git restore --source=HEAD :/'   `21届_疯狂电路__github__1580481317__TC264` <- https://github.com/1580481317/TC264
+- SKIP exists `21届_疯狂电路__github__D-zzZzz__-` <- https://github.com/D-zzZzz/-
+- OK `21届_疯狂电路__github__FENJIN560__BUPT_smartcar_fengkuangdianlu` <- https://github.com/FENJIN560/BUPT_smartcar_fengkuangdianlu
+- OK `21届_疯狂电路__github__LDZ061224__2026_Crazy_Circuit_Example` <- https://github.com/LDZ061224/2026_Crazy_Circuit_Example
+- OK `21届_疯狂电路__github__Little-Master-fun__CrazyCircuit` <- https://github.com/Little-Master-fun/CrazyCircuit
+- OK `21届_疯狂电路__github__Theliangyue__fengkuangdianlu` <- https://github.com/Theliangyue/fengkuangdianlu
+- OK `21届_疯狂电路__github__ZHOUYHANG__21d_crazy_e` <- https://github.com/ZHOUYHANG/21d_crazy_e
+- OK `21届_疯狂电路__github__dedehorse__21th-smart-car-three-cascade-loop` <- https://github.com/dedehorse/21th-smart-car-three-cascade-loop
+- OK `21届_疯狂电路__github__dedehorse__21th-smart-car-vofa` <- https://github.com/dedehorse/21th-smart-car-vofa
+- OK `21届_疯狂电路__github__fangyangyang565__crazy_car500` <- https://github.com/fangyangyang565/crazy_car500
+- OK `21届_疯狂电路__github__hxq060807__JBD_2026_Crazy_Circuit` <- https://github.com/hxq060807/JBD_2026_Crazy_Circuit
+- OK `21届_疯狂电路__github__lizhi98__MacroCar` <- https://github.com/lizhi98/MacroCar
+- OK `届次待核_疯狂电路__github__rukiacytch-ai__Zhi_NengChe` <- https://github.com/rukiacytch-ai/Zhi_NengChe
+- SKIP exists `届次待核_疯狂电路__github__rukiacytch1023__-` <- https://github.com/rukiacytch1023/-
+- OK `21届_疯狂电路__github__xiazhuo123456789__fengkuangdianluwansai` <- https://github.com/xiazhuo123456789/fengkuangdianluwansai
+- SKIP exists `21届_疯狂电路__github__yuhao2236__crazy_circuit_volt_plus` <- https://github.com/yuhao2236/crazy_circuit_volt_plus
+- SKIP exists `21届_蚂蚁搬家__gitee__the-21st-smart-car-jing-si-a__bbb-groups-warehouse` <- https://gitee.com/the-21st-smart-car-jing-si-a/bbb-groups-warehouse
+- SKIP exists `届次待核_蚂蚁搬家__gitee__mirrors__Antmove` <- https://gitee.com/mirrors/Antmove
+- SKIP exists `届次待核_蚂蚁搬家__gitee__Sena0623__ant` <- https://gitee.com/Sena0623/ant
+- SKIP exists `届次待核_蚂蚁搬家__gitee__Sena0623__smartcar_rx` <- https://gitee.com/Sena0623/smartcar_rx
+- SKIP exists `21届_蚂蚁搬家__gitee__a-straight-line__2026-smart-car` <- https://gitee.com/a-straight-line/2026-smart-car
+- OK `届次待核_蚂蚁搬家__gitee__dzxs---ant-moving__snow-creek` <- https://gitee.com/dzxs---ant-moving/snow-creek
+- SKIP exists `21届_蚂蚁搬家__gitee__cao-haibin__21jieironaniuyingjiankaiyuan` <- https://gitee.com/cao-haibin/21jieironaniuyingjiankaiyuan
+- OK `21届_飞跃雷区__gitee__cao-haibin__21jieironaniuyingjiankaiyuan` <- https://gitee.com/cao-haibin/21jieironaniuyingjiankaiyuan
+- SKIP exists `届次待核_蚂蚁搬家__gitee__kinglongfun__crush-shooting` <- https://gitee.com/kinglongfun/crush-shooting
+- OK `届次待核_蚂蚁搬家__gitee__zhaodanfeng_2__mayi-kuaishou` <- https://gitee.com/zhaodanfeng_2/mayi-kuaishou
+- SKIP exists `届次待核_蚂蚁搬家__gitee__virgostudios__mybj-u3d` <- https://gitee.com/virgostudios/mybj-u3d
+- OK `届次待核_蚂蚁搬家__gitee__David--Xie__ants-moving-house-rental` <- https://gitee.com/David--Xie/ants-moving-house-rental
+- OK `届次待核_蚂蚁搬家__gitee__David--Xie__ants-moving-fe` <- https://gitee.com/David--Xie/ants-moving-fe
+- OK `21届_蚂蚁搬家__gitee__kouyafu__eleven_team` <- https://gitee.com/kouyafu/eleven_team
+- OK `届次待核_蚂蚁搬家__gitee__wudx__aliyun_fc_webman` <- https://gitee.com/wudx/aliyun_fc_webman
+- OK `届次待核_蚂蚁搬家__gitee__wudx__easy-php-web` <- https://gitee.com/wudx/easy-php-web
+- OK `届次待核_蚂蚁搬家__gitee__wudx__koa2_main` <- https://gitee.com/wudx/koa2_main
+- OK `届次待核_蚂蚁搬家__gitee__wudx__mock_trade` <- https://gitee.com/wudx/mock_trade
+- SKIP exists `届次待核_蚂蚁搬家__gitee__wudx__ridicule` <- https://gitee.com/wudx/ridicule
+- SKIP exists `届次待核_蚂蚁搬家__gitee__djd_712__Architecture2` <- https://gitee.com/djd_712/Architecture2
+- OK `届次待核_蚂蚁搬家__gitee__djd_712__Architecture` <- https://gitee.com/djd_712/Architecture
+- OK `届次待核_蚂蚁搬家__gitee__djd_712__dfdf` <- https://gitee.com/djd_712/dfdf
+- SKIP exists `21届_蚂蚁搬家__github__Jjjzzh__2026SmartCar` <- https://github.com/Jjjzzh/2026SmartCar
+- OK `21届_蚂蚁搬家__github__LanternCX__SmartCar2026-TransportCar` <- https://github.com/LanternCX/SmartCar2026-TransportCar
+- SKIP exists `21届_蚂蚁搬家__github__dongtianbu__2026SmartCarAntMoving` <- https://github.com/dongtianbu/2026SmartCarAntMoving
+- OK `21届_蚂蚁搬家__github__equality-ops__Ant_house_moving` <- https://github.com/equality-ops/Ant_house_moving
+- OK `21届_蚂蚁搬家__github__gn070130-wq__SmartCar_Ant2026` <- https://github.com/gn070130-wq/SmartCar_Ant2026
+- SKIP exists `21届_蚂蚁搬家__github__jirencai__ants_smartcar` <- https://github.com/jirencai/ants_smartcar
+- OK `21届_蚂蚁搬家__github__qkkkb__Ant_home_21` <- https://github.com/qkkkb/Ant_home_21
+- FAIL ce\21届_走马观碑__gitee__damon3964__smart2026'... error: RPC failed; curl 56 schannel: server closed abruptly (missing close_notify) error: 20892 bytes of body are still expected fetch-pack: unexpected disconnect while reading sideband packet fatal: early EOF fatal: fetch-pack: invalid index-pack output  `21届_走马观碑__gitee__damon3964__smart2026` <- https://gitee.com/damon3964/smart2026
+- OK `21届_走马观碑__gitee__HElla12312__2026-smart-car-competition` <- https://gitee.com/HElla12312/2026-smart-car-competition
+- FAIL Cloning into 'C:\Users\LENOVO\Desktop\智能车skill\.cursor\skills\zouma-guanbei\code_opensource\21届_走马观碑__gitee__wuwusama__SmartCar_99Pai_OpenSource'... fatal: early EOF  `21届_走马观碑__gitee__wuwusama__SmartCar_99Pai_OpenSource` <- https://gitee.com/wuwusama/SmartCar_99Pai_OpenSource
+- OK `届次待核_走马观碑__gitee__amireux_fish__Loognson` <- https://gitee.com/amireux_fish/Loognson
+- SKIP exists `21届_走马观碑__gitee__chao-8xx__car` <- https://gitee.com/chao-8xx/car
+- SKIP exists `21届_走马观碑__gitee__duteryan__seekfree_-ls2-k0300_-opensource_-library` <- https://gitee.com/duteryan/seekfree_-ls2-k0300_-opensource_-library
+- SKIP exists `21届_走马观碑__gitee__wjlai__test` <- https://gitee.com/wjlai/test
+- SKIP exists `届次待核_走马观碑__gitee__vvsakivv__LS2K0300` <- https://gitee.com/vvsakivv/LS2K0300
+- SKIP exists `21届_走马观碑__gitee__zhaoymmmmmm__smartcarcode21th` <- https://gitee.com/zhaoymmmmmm/smartcarcode21th
+- SKIP exists `届次待核_走马观碑__gitee__dry-flipping-the-sky__THL001` <- https://gitee.com/dry-flipping-the-sky/THL001
+- SKIP exists `21届_走马观碑__github__1841400365__smartcar` <- https://github.com/1841400365/smartcar
+- SKIP exists `21届_走马观碑__github__CoConutMilkSoy__ZouMaGuanBei` <- https://github.com/CoConutMilkSoy/ZouMaGuanBei
+- SKIP exists `届次待核_走马观碑__github__DWDROME__loongson-smart-car` <- https://github.com/DWDROME/loongson-smart-car
+- SKIP exists `届次待核_走马观碑__github__EKaiChiu__SmartCarRace_Zoumaguanbei_DaydreamBeliever` <- https://github.com/EKaiChiu/SmartCarRace_Zoumaguanbei_DaydreamBeliever
+- SKIP exists `21届_走马观碑__github__HaliFax-Desk__SmartCar21-Loongson` <- https://github.com/HaliFax-Desk/SmartCar21-Loongson
+- SKIP exists `21届_走马观碑__github__IcksLin__Abandoned` <- https://github.com/IcksLin/Abandoned
+- SKIP exists `21届_走马观碑__github__YannicYang__SmartCar_VirtualMachine` <- https://github.com/YannicYang/SmartCar_VirtualMachine
+- SKIP exists `21届_走马观碑__github__starco2025__smartcar-zmgb` <- https://github.com/starco2025/smartcar-zmgb
+- SKIP exists `21届_轮腿穿越__gitee__bxqnc__smartcar-21-wheel-leg` <- https://gitee.com/bxqnc/smartcar-21-wheel-leg
+- SKIP exists `21届_轮腿穿越__gitee__suyunxing__smart-car` <- https://gitee.com/suyunxing/smart-car
+- SKIP exists `21届_轮腿穿越__gitee__ASDFAASDFWE__balanced_wheel_leg_car` <- https://gitee.com/ASDFAASDFWE/balanced_wheel_leg_car
+- SKIP exists `届次待核_轮腿穿越__gitee__search-high-and-low__wheel-leg-information` <- https://gitee.com/search-high-and-low/wheel-leg-information
+- SKIP exists `21届_轮腿穿越__gitee__suijioawan__Intelligent-Vehicle-Competition` <- https://gitee.com/suijioawan/Intelligent-Vehicle-Competition
+- SKIP exists `届次待核_轮腿穿越__github__Gjyguy__Store` <- https://github.com/Gjyguy/Store
+- SKIP exists `21届_轮腿穿越__github__Run1234567__JLNU_SmartCar_TwoLeg` <- https://github.com/Run1234567/JLNU_SmartCar_TwoLeg
+- SKIP exists `届次待核_轮腿穿越__github__lingkonglengfeng__-------` <- https://github.com/lingkonglengfeng/-------
+- SKIP exists `届次待核_雁过留痕__gitee__CNUACM__coding` <- https://gitee.com/CNUACM/coding
+- SKIP exists `21届_雁过留痕__gitee__ch053n__yglh_-project` <- https://gitee.com/ch053n/yglh_-project
+- SKIP exists `21届_雁过留痕__gitee__zzzzsmash__test1_0_0` <- https://gitee.com/zzzzsmash/test1.0.0
+- SKIP exists `届次待核_雁过留痕__gitee__bjfu-huang-haiming__hhmKeZhouQiuJian` <- https://gitee.com/bjfu-huang-haiming/hhmKeZhouQiuJian
+- SKIP exists `届次待核_雁过留痕__gitee__wangsongjie666__stc32-g_-intelligent-car` <- https://gitee.com/wangsongjie666/stc32-g_-intelligent-car
+- SKIP exists `21届_雁过留痕__gitee__han0408__smart-car-2026` <- https://gitee.com/han0408/smart-car-2026
+- SKIP exists `届次待核_雁过留痕__gitee__xie-kehan__yanguoliuhen` <- https://gitee.com/xie-kehan/yanguoliuhen
+- SKIP exists `届次待核_雁过留痕__gitee__yangqingyin__yan-guo-leave-a-trace-project` <- https://gitee.com/yangqingyin/yan-guo-leave-a-trace-project
+- SKIP exists `21届_雁过留痕__github__3724989-create__STC144_Car` <- https://github.com/3724989-create/STC144_Car
+- SKIP exists `21届_雁过留痕__github__BiliLBD__USTB_Swan` <- https://github.com/BiliLBD/USTB_Swan
+- SKIP exists `21届_雁过留痕__github__Retard-cpu__21Car` <- https://github.com/Retard-cpu/21Car
+- SKIP exists `21届_雁过留痕__github__Simon20060610__21-_21th-Smart-Car-Competition_STC32` <- https://github.com/Simon20060610/21-_21th-Smart-Car-Competition_STC32
+- SKIP exists `21届_雁过留痕__github__ZORE-dlfd__21st-smart-car-yan-guo-liu-hen-8of10-2_6mps` <- https://github.com/ZORE-dlfd/21st-smart-car-yan-guo-liu-hen-8of10-2.6mps
+- SKIP exists `21届_雁过留痕__github__baixiaoe3__what-passes-leaves-a-trace` <- https://github.com/baixiaoe3/what-passes-leaves-a-trace
+- SKIP exists `届次待核_雁过留痕__github__davidliuk__trace-note` <- https://github.com/davidliuk/trace-note
+- FAIL fatal: destination path 'C:\Users\LENOVO\Desktop\智能车skill\.cursor\skills\yanguo-liuhen\code_opensource\届次待核_雁过留痕__github__laorange__sillage-blog' already exists and is not an empty directory.  `届次待核_雁过留痕__github__laorange__sillage-blog` <- https://github.com/laorange/sillage-blog
+- OK `21届_雁过留痕__github__nzkzs__smartcarrace` <- https://github.com/nzkzs/smartcarrace
+- SKIP exists `21届_雁过留痕__github__yunvfeng__smart-car` <- https://github.com/yunvfeng/smart-car
+- SKIP exists `21届_飞檐走壁__gitee__gyjkg__smartcar_2026` <- https://gitee.com/gyjkg/smartcar_2026
+- SKIP exists `届次待核_飞檐走壁__gitee__HUTINGPENG__smart-vehicles` <- https://gitee.com/HUTINGPENG/smart-vehicles
+- SKIP exists `21届_飞檐走壁__gitee__REGEAVFDRVGR__shyan_21th_electro_stc32g144k` <- https://gitee.com/REGEAVFDRVGR/shyan_21th_electro_stc32g144k
+- SKIP exists `届次待核_飞檐走壁__gitee__tezwaa__SYSU_YXS` <- https://gitee.com/tezwaa/SYSU_YXS
+- SKIP exists `届次待核_飞檐走壁__gitee__hc556__flying-eaves-and-wall-code` <- https://gitee.com/hc556/flying-eaves-and-wall-code
+- SKIP exists `21届_飞檐走壁__gitee__hulangyoung__car` <- https://gitee.com/hulangyoung/car
+- SKIP exists `21届_飞檐走壁__gitee__ning-wenjian__100g-wall-climbing-mini-car` <- https://gitee.com/ning-wenjian/100g-wall-climbing-mini-car
+- OK `21届_飞檐走壁__gitee__yechaoyueabcABC__guc_smartcar` <- https://gitee.com/yechaoyueabcABC/guc_smartcar
+- SKIP exists `届次待核_飞檐走壁__gitee__W1512__smart-car` <- https://gitee.com/W1512/smart-car
+- SKIP exists `21届_飞檐走壁__gitee__mtdj__smartcar-code-hub` <- https://gitee.com/mtdj/smartcar-code-hub
+- SKIP exists `21届_飞檐走壁__gitee__ctk12235__seekfree_-stc32-g12-k128` <- https://gitee.com/ctk12235/seekfree_-stc32-g12-k128
+- SKIP exists `届次待核_飞檐走壁__gitee__null_mian__smart-car-defies-gravity` <- https://gitee.com/null_mian/smart-car-defies-gravity
+- SKIP exists `届次待核_飞檐走壁__gitee__UZZRMFYZB__collaborative-edition` <- https://gitee.com/UZZRMFYZB/collaborative-edition
+- OK `21届_飞檐走壁__gitee__AAA_bin__fyzb` <- https://gitee.com/AAA_bin/fyzb
+- SKIP exists `届次待核_飞檐走壁__gitee__menghuian__intelligent-car-competition` <- https://gitee.com/menghuian/intelligent-car-competition
+- SKIP exists `21届_飞檐走壁__gitee__arknightssss__21st-smart-car-acrobatics-team` <- https://gitee.com/arknightssss/21st-smart-car-acrobatics-team
+- SKIP exists `21届_飞檐走壁__gitee__xue-jiangbin__smartcar` <- https://gitee.com/xue-jiangbin/smartcar
+- OK `21届_飞檐走壁__gitee__wild-azu__wall-climbing-vehicle` <- https://gitee.com/wild-azu/wall-climbing-vehicle
+- SKIP exists `届次待核_飞檐走壁__gitee__manlian921__con` <- https://gitee.com/manlian921/con
+- SKIP exists `届次待核_飞檐走壁__gitee__manlian921__moon` <- https://gitee.com/manlian921/moon
+- SKIP exists `届次待核_飞檐走壁__gitee__manlian921__suns` <- https://gitee.com/manlian921/suns
+- SKIP exists `届次待核_飞檐走壁__gitee__manlian921__zhang_guoqing_vs_jay_chou` <- https://gitee.com/manlian921/zhang_guoqing_vs_jay_chou
+- SKIP exists `届次待核_飞檐走壁__gitee__manlian921__news_project` <- https://gitee.com/manlian921/news_project
+- OK `21届_飞檐走壁__github__1A762__smartcar` <- https://github.com/1A762/smartcar
+- SKIP exists `21届_飞檐走壁__github__Jeans2__2026-smart-car-wall-climbing-electromagnetic` <- https://github.com/Jeans2/2026-smart-car-wall-climbing-electromagnetic
+- OK `届次待核_飞檐走壁__github__Mirror695__Run-on-walls-and-leap-over-eaves` <- https://github.com/Mirror695/Run-on-walls-and-leap-over-eaves
+- SKIP exists `21届_飞檐走壁__github__liugenbujing__miniature-electromagnetic-car` <- https://github.com/liugenbujing/miniature-electromagnetic-car
+- OK `21届_飞檐走壁__github__lveraicc__smartcar-21-electromagnetic-wall-riding` <- https://github.com/lveraicc/smartcar-21-electromagnetic-wall-riding
+- SKIP exists `届次待核_飞檐走壁__github__tutu911__-_AI8051U_V1_0` <- https://github.com/tutu911/-_AI8051U_V1.0
+- SKIP exists `届次待核_飞檐走壁__github__tutu911__21_MiniSmartCar_V2_0` <- https://github.com/tutu911/21_MiniSmartCar_V2.0
+- SKIP exists `21届_飞檐走壁__github__xigua862__SMARTCAR2` <- https://github.com/xigua862/SMARTCAR2
+- SKIP exists `21届_飞檐走壁__github__zx115__VoltRiders` <- https://github.com/zx115/VoltRiders
+- SKIP exists `21届_飞跃雷区__gitee__mei-zhanhao__uav-dual-camera-firmware` <- https://gitee.com/mei-zhanhao/uav-dual-camera-firmware
+- SKIP exists `届次待核_飞跃雷区__gitee__xzy521030__21car_fly` <- https://gitee.com/xzy521030/21car_fly
+- SKIP exists `21届_飞跃雷区__gitee__hecatefake__21st-smartcar-flying-minefield` <- https://gitee.com/hecatefake/21st-smartcar-flying-minefield
+- OK `21届_飞跃雷区__gitee__woll-to__leap-over-the-minefield---solo_camera` <- https://gitee.com/woll-to/leap-over-the-minefield---solo.camera
+- SKIP exists `届次待核_飞跃雷区__gitee__woll-to__leap-over-the-minefield---flight-controller` <- https://gitee.com/woll-to/leap-over-the-minefield---flight-controller
+- SKIP exists `21届_飞跃雷区__gitee__woll-to__leap-over-the-minefield---esc` <- https://gitee.com/woll-to/leap-over-the-minefield---esc
+- SKIP exists `21届_飞跃雷区__gitee__woll-to__leap-over-the-minefield---car` <- https://gitee.com/woll-to/leap-over-the-minefield---car
+- SKIP exists `21届_飞跃雷区__gitee__namesssss__smart_car` <- https://gitee.com/namesssss/smart_car
+- OK `届次待核_飞跃雷区__gitee__Viny22__smart_car` <- https://gitee.com/Viny22/smart_car
+- SKIP exists `21届_飞跃雷区__gitee__wuqiuOvO__leiqu` <- https://gitee.com/wuqiuOvO/leiqu
+- SKIP exists `21届_飞跃雷区__gitee__feiyueleiqu__car` <- https://gitee.com/feiyueleiqu/car
+- FAIL Command '['C:\\Program Files\\Git\\bin\\git.exe', 'clone', '--depth', '1', '--single-branch', 'https://gitee.com/feiyueleiqu/drone-code', 'C:\\Users\\LENOVO\\Desktop\\智能车skill\\.cursor\\skills\\feiyue-leiqu\\code_opensource\\21届_飞跃雷区__gitee__feiyueleiqu__drone-code']' timed out after 180 seconds `21届_飞跃雷区__gitee__feiyueleiqu__drone-code` <- https://gitee.com/feiyueleiqu/drone-code
+- SKIP exists `届次待核_飞跃雷区__github__11111season__smart_car` <- https://github.com/11111season/smart_car
+- SKIP exists `届次待核_飞跃雷区__github__BaiYouShiWo__AutoPilot_FeiYueLeiQu` <- https://github.com/BaiYouShiWo/AutoPilot_FeiYueLeiQu
+- SKIP exists `届次待核_飞跃雷区__github__BaiYouShiWo__AutoPilot_FeiYueLeiQu_GCS` <- https://github.com/BaiYouShiWo/AutoPilot_FeiYueLeiQu_GCS
+- SKIP exists `届次待核_飞跃雷区__github__BaiYouShiWo__AutoPilot_FeiYueLeiQu_Vision` <- https://github.com/BaiYouShiWo/AutoPilot_FeiYueLeiQu_Vision
+- SKIP exists `21届_飞跃雷区__github__HecateFake__21st-smartcar-flying-minefield` <- https://github.com/HecateFake/21st-smartcar-flying-minefield
+- SKIP exists `21届_飞跃雷区__github__Squirrelll985__image_emulator` <- https://github.com/Squirrelll985/image_emulator
+- SKIP exists `21届_飞跃雷区__github__hina-lover520__diansai-2025-DJTU` <- https://github.com/hina-lover520/diansai-2025-DJTU
+- SKIP exists `21届_飞跃雷区__github__mikumiku02__21st-leap-over-the-minefield` <- https://github.com/mikumiku02/21st-leap-over-the-minefield
+- SKIP exists `届次待核_飞跃雷区__github__mikumiku02__leap-over-the-minefield` <- https://github.com/mikumiku02/leap-over-the-minefield
+- SKIP exists `21届_飞跃雷区__github__wuqiu-c__21_smartCar_feiyueleiqu` <- https://github.com/wuqiu-c/21_smartCar_feiyueleiqu

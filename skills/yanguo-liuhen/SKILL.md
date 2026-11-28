@@ -1,53 +1,56 @@
 ---
 name: yanguo-liuhen
 description: >-
-  全国大学生智能汽车竞赛「雁过留痕」完整内置知识库。含 STC32、MT9V034、边线/状态机、
-  PID/模糊/纯跟踪、差速、激光打靶、专科+本科报告语料。用户提到雁过留痕、激光打靶、
-  循迹 PID、环岛十字、STC32、神眼/总钻风时必须使用；直接读本目录 refs/、corpus/、
-  corpus_benke/，不要要求用户打开外部文件夹。
+  全国大学生智能汽车竞赛「雁过留痕」完整技能：本地开源工程 + 报告知识 + 从零搭建软件清单。
+  用于搭建/改写智能车软件（感知、状态机、控制环、执行器安全、日志）。
+  触发：雁过留痕、激光打靶、STC32、神眼、总钻风、紫外激光。用户提到雁过留痕或要写/改该组代码时必须使用；
+  按 SCAFFOLD→RECOMMENDED→ANALYSIS→refs 顺序执行。
 ---
 
-# 雁过留痕 Skill（全文已安装）
+# 雁过留痕 · 可搭建软件 Skill
 
-## 内置路径（本 skill 目录内）
+## 调用顺序（强制）
+0. 提问要算法/结构 → `../smart-car-dev/refs/QUESTION_TO_ARCHITECTURE.md`
 
-| 路径 | 用途 |
-|------|------|
-| `refs/FULL_SUMMARY.md` | 任务清单完整汇总（架构/算法/对比/评估） |
-| `refs/LEARNING_SUMMARY.md` | 学习摘要 |
-| `refs/INDEX.md` | 检索索引 A1–A12 / Y1–Y11 |
-| `refs/COMPARE_AND_GAPS.md` | 对比与优化 |
-| `refs/reference-architecture.md` | 软件/硬件架构 |
-| `refs/reference-pid-control.md` | PID/纯跟踪/差速 |
-| `refs/reference-vision-elements.md` | 视觉与元素状态机 |
-| `refs/reference-laser-task.md` | 激光打靶安全逻辑 |
-| `refs/corpus-index.md` | 专科精读优先级 |
-| `refs/anchor_湖文孔明九队.md` | 主锚完整报告 |
-| `refs/team_cards/` | 队卡 |
-| `refs/DEEP_READ_*.md` | 深扫总表 |
-| `corpus/` | 专科 9 队正文 |
-| `corpus_benke/` | 本科报告正文 |
-| `scripts/` | 提取/挖掘脚本 |
 
-## 赛道摘要
+1. `code_opensource/SCAFFOLD.md` — 从零搭建检查清单  
+2. `code_opensource/RECOMMENDED.md` — 选对照/脚手架工程  
+3. `code_opensource/ANALYSIS.md` — 软件结构与模块划分  
+4. `refs/FULL_SUMMARY.md` + `refs/ALGORITHMS.md` — 报告级算法与赛场经验  
 
-- 组别：雁过留痕；室内 PVC；循迹 + **紫外激光留痕**  
-- 硬件：多 **STC32G144K** + MT9V034/总钻风 + 双编码器 + IMU + 多路激光 + 常配涵道  
-- 流水线：帧完成 → 阈值/边线/中线 → 元素状态机 → 转向(PD/模糊/纯跟踪) → 增量速度 PID+差速 → 激光脉冲  
+5. 需要模板/算法 ID → `../smartcar-ml-optimize/refs/`  
+6. 调试现象 → `../smart-car-dev/refs/debug-playbook.md`
 
-## 默认选型
+本地已挂接 `refs/` + `corpus/`（报告知识）。
 
-| 环 | 默认 |
-|----|------|
-| 转向 | 偏差 PD + 二次 P ± IMU 阻尼；或纯跟踪+舵机闭环 |
-| 速度 | 增量式 PI/PID + 差速 |
-| 激光 | 默认全关、单路互锁、ms 脉冲 |
-| 元素 | 跨帧状态机 + 里程/帧计数退出 |
+## 默认软件栈
 
-## 调试顺序
+STC32 + MT9V034 + 边线/中线 + 元素状态机 + 转向PD + 速度PID + 激光互锁
 
-相机/阈值 → 边线 → 舵机中位 → 编码器极性 → 低速 PD → 元素表速 → 激光安全 → 再提速  
+## 推荐对照仓
 
-## 用户点名展开
+- `21届_雁过留痕__github__Retard-cpu__21Car`
+- `21届_雁过留痕__github__yunvfeng__smart-car`
+- `21届_雁过留痕__github__BiliLBD__USTB_Swan`
+- `21届_雁过留痕__gitee__zzzzsmash__test1_0_0`
+- `21届_雁过留痕__gitee__han0408__smart-car-2026`
 
-读对应 `refs/reference-*.md` 或 `refs/INDEX.md` 编号；需要原文搜 `corpus/` / `corpus_benke/`。
+完整度索引：`code_opensource/INDEX.md`（共 17 仓，完整 13）
+
+## 改代码 / 搭模块输出格式
+
+```
+【组别】雁过留痕
+【任务】搭建 | 改模块 | 调参 | 修 bug
+【对照仓】…
+【算法/模块】感知 / 规划状态机 / 转向环 / 速度环 / 执行器 / 日志
+【原→改→说明→测试】
+【风险】算力、延迟、丢线、饱和、安全互锁
+```
+
+## 硬约束
+
+- 控制环非阻塞；推理异步；图像要有新鲜度/超时保护  
+- 速度/PWM/舵机必须限幅；上电默认安全态  
+- 优先改 `user`/`code`/`app`/`perception`/`control`，少动厂商底层库  
+- 无用户工程时：按 SCAFFOLD 给出可粘贴目录树 + 主循环骨架 + 模块接口  

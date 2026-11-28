@@ -1,55 +1,55 @@
 ---
 name: feiyue-leiqu
 description: >-
-  全国大学生智能汽车竞赛「飞跃雷区」完整内置知识库。含系留飞行器+地面车、CYT4BB7/TRAVEO、
-  信标连通域视觉、飞控串级 PID、高度 ADRC/EKF、麦轮/Y全向轧灯、有线 UART/RS-485。
-  用户提到飞跃雷区、系留、轧灯、信标灯、麦轮轧灭、光流 ToF、空地协同时必须使用；
-  直接读本目录 refs/ 与 corpus/，不要要求用户打开外部知识库文件夹。
+  全国大学生智能汽车竞赛「飞跃雷区」完整技能：本地开源工程 + 报告知识 + 从零搭建软件清单。
+  用于搭建/改写智能车软件（感知、状态机、控制环、执行器安全、日志）。
+  触发：飞跃雷区、无人机、飞控、系留、轧灯、双机。用户提到飞跃雷区或要写/改该组代码时必须使用；
+  按 SCAFFOLD→RECOMMENDED→ANALYSIS→refs 顺序执行。
 ---
 
-# 飞跃雷区 Skill（全文已安装）
+# 飞跃雷区 · 可搭建软件 Skill
 
-## 内置路径（本 skill 目录内）
+## 调用顺序（强制）
+0. 提问要算法/结构 → `../smart-car-dev/refs/QUESTION_TO_ARCHITECTURE.md`
 
-| 路径 | 用途 |
-|------|------|
-| `refs/FULL_SUMMARY.md` | 架构/算法/对比/风险完整汇总 |
-| `refs/LEARNING_SUMMARY.md` | 学习摘要 |
-| `refs/INDEX.md` | 检索索引 F1–F10 / A1–A10 |
-| `refs/ALGORITHMS.md` | 算法卡 |
-| `refs/FILE_STRUCTURE.md` | 逻辑工程结构 |
-| `refs/COMPARE_AND_RISKS.md` | 方案对比与竞赛风险 |
-| `refs/DEEP_NOTES.md` | 深读笔记 |
-| `refs/MINE_SIGNALS.md` | 语料信号总表 |
-| `refs/INGEST_LOG.md` | 接收解析日志 |
-| `corpus/` | 45 份报告正文 |
 
-## 赛道摘要
+1. `code_opensource/SCAFFOLD.md` — 从零搭建检查清单  
+2. `code_opensource/RECOMMENDED.md` — 选对照/脚手架工程  
+3. `code_opensource/ANALYSIS.md` — 软件结构与模块划分  
+4. `refs/` + `corpus/` — 报告级算法与赛场经验（若有）  
+5. 需要模板/算法 ID → `../smartcar-ml-optimize/refs/`  
+6. 调试现象 → `../smart-car-dev/refs/debug-playbook.md`
 
-- 组别：飞跃雷区；室内信标灯分批点亮  
-- 系统：**悬停飞行器**（感知）+ **地面车**（轧灭）+ **≤1.5 m 系留**（供电+有线数据；任务禁无线）  
-- 主控常见 **CYT4BB7/TRAVEO** 多核；电调 AI8051/STC32；视觉 MT9V03X 单/多目  
-- 流水线：视觉连通域 → 飞控串级/高度水平 → 系留帧下发 → 车运动学+轮速环 → 轧灯  
+本地已挂接 `refs/` + `corpus/`（报告知识）。
 
-## 默认选型
+## 默认软件栈
 
-| 环 | 默认 |
-|----|------|
-| 信标 | 阈值+连通域质心+面积打分 |
-| 姿态 | 串级 PID（角→角速度） |
-| 高度 | ToF + PID/EKF；扰动大用 ADRC |
-| 水平 | 像素误差→平面速度（随高度标定） |
-| 车 | 麦轮/Y全向逆解 + 轮速 PID |
-| 通信 | UART/RS-485 + CRC + 新鲜度超时 |
+车端控制 + 飞控/视觉联动 + 任务时序 + 安全降落/超时
 
-## 调试顺序
+## 推荐对照仓
 
-曝光/阈值 → 单灯质心稳定 → 飞控悬停 → 系留通信 CRC → 车开环跟点 → 轮速环 → 联调轧灯 → 多灯/批次 → 系留扰动与急停  
+- `21届_飞跃雷区__gitee__wuqiuOvO__leiqu`
+- `21届_飞跃雷区__github__wuqiu-c__21_smartCar_feiyueleiqu`
+- `21届_飞跃雷区__gitee__mei-zhanhao__uav-dual-camera-firmware`
+- `21届_飞跃雷区__gitee__hecatefake__21st-smartcar-flying-minefield`
+- `21届_飞跃雷区__github__HecateFake__21st-smartcar-flying-minefield`
 
-## 开发模式
+完整度索引：`code_opensource/INDEX.md`（共 22 仓，完整 19）
 
-可补代码/重构/修 bug；给可替换片段 + 改动说明 + 测试。优先非阻塞、限幅、过期保护。
+## 改代码 / 搭模块输出格式
 
-## 用户点名展开
+```
+【组别】飞跃雷区
+【任务】搭建 | 改模块 | 调参 | 修 bug
+【对照仓】…
+【算法/模块】感知 / 规划状态机 / 转向环 / 速度环 / 执行器 / 日志
+【原→改→说明→测试】
+【风险】算力、延迟、丢线、饱和、安全互锁
+```
 
-读 `refs/INDEX.md` 编号或 `refs/ALGORITHMS.md`；原文搜 `corpus/`。
+## 硬约束
+
+- 控制环非阻塞；推理异步；图像要有新鲜度/超时保护  
+- 速度/PWM/舵机必须限幅；上电默认安全态  
+- 优先改 `user`/`code`/`app`/`perception`/`control`，少动厂商底层库  
+- 无用户工程时：按 SCAFFOLD 给出可粘贴目录树 + 主循环骨架 + 模块接口  

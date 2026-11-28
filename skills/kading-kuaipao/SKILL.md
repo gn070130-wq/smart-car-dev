@@ -1,26 +1,56 @@
 ---
 name: kading-kuaipao
 description: >-
-  全国大学生智能汽车竞赛「卡丁快跑」完整内置知识库（专科+本科）。含 TC387/TC264、
-  阿克曼转向闭环、CTE 录径回放、视觉跟随、语音灯光、多科目状态机；含宛陵能行源码树。
-  用户提到卡丁快跑、卡丁车、CTE、录径、语音灯光、TC387 时必须使用；直接读本目录
-  refs/、corpus/、code_tree/，不要要求打开外部文件夹。
+  全国大学生智能汽车竞赛「卡丁快跑」完整技能：本地开源工程 + 报告知识 + 从零搭建软件清单。
+  用于搭建/改写智能车软件（感知、状态机、控制环、执行器安全、日志）。
+  触发：卡丁快跑、卡丁、CTE、TC387、竞速。用户提到卡丁快跑或要写/改该组代码时必须使用；
+  按 SCAFFOLD→RECOMMENDED→ANALYSIS→refs 顺序执行。
 ---
 
-# 卡丁快跑 Skill（全文已安装）
+# 卡丁快跑 · 可搭建软件 Skill
 
-## 内置路径
-| 路径 | 用途 |
-|------|------|
-| `refs/*` | 摘要/索引/算法/风险/信号/日志 |
-| `corpus/` | 专科+本科报告 |
-| `code_tree/` | TC387 开源锚点（若已同步） |
+## 调用顺序（强制）
+0. 提问要算法/结构 → `../smart-car-dev/refs/QUESTION_TO_ARCHITECTURE.md`
 
-## 赛道摘要
-载人卡丁智能化：跟随 / 录径回放 / 语音灯光科目；主控常见 **TC387**；转向常为电机+绝对编码器 PID。
 
-## 调试顺序
-转向编码器中位 → 速度环 → 录径采样距 → CTE 增益 → 视觉跟随 → 语音指令表 → 科目 FSM
+1. `code_opensource/SCAFFOLD.md` — 从零搭建检查清单  
+2. `code_opensource/RECOMMENDED.md` — 选对照/脚手架工程  
+3. `code_opensource/ANALYSIS.md` — 软件结构与模块划分  
+4. `refs/FULL_SUMMARY.md` + `refs/ALGORITHMS.md` + `corpus/` — 报告级经验  
+5. 需要模板/算法 ID → `../smartcar-ml-optimize/refs/`  
+6. 调试现象 → `../smart-car-dev/refs/debug-playbook.md`  
+7. TC387 库 → `../smart-car-dev/board_libs/seekfree_TC387_Library`
 
-## 开发模式
-已开启。
+本地：`refs/` + `corpus/`；宛陵 km13 见 FULL_SUMMARY 路径说明（含仓库根 `knowledge_base_kading/`）。
+
+## 默认软件栈
+
+TC387 + 视觉/电磁 CTE + 横向控制 + 速度规划
+
+## 推荐对照仓
+
+- `21届_卡丁快跑__github__RyanChenJH__SmartCar`
+- `21届_卡丁快跑__gitee__why137a__cading-code`
+- `21届_卡丁快跑__github__Yusei-YK__Polaris-Kart-TC387`
+- `21届_卡丁快跑__gitee__wmysj__oh-free-loop`
+- `届次待核_卡丁快跑__gitee__pantainnm__kart-run-version-control`
+
+完整度索引：`code_opensource/INDEX.md`（共 7 仓，完整 7）
+
+## 改代码 / 搭模块输出格式
+
+```
+【组别】卡丁快跑
+【任务】搭建 | 改模块 | 调参 | 修 bug
+【对照仓】…
+【算法/模块】感知 / 规划状态机 / 转向环 / 速度环 / 执行器 / 日志
+【原→改→说明→测试】
+【风险】算力、延迟、丢线、饱和、安全互锁
+```
+
+## 硬约束
+
+- 控制环非阻塞；推理异步；图像要有新鲜度/超时保护  
+- 速度/PWM/舵机必须限幅；上电默认安全态  
+- 优先改 `user`/`code`/`app`/`perception`/`control`，少动厂商底层库  
+- 无用户工程时：按 SCAFFOLD 给出可粘贴目录树 + 主循环骨架 + 模块接口  
