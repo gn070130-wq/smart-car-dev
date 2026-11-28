@@ -1,14 +1,17 @@
 # 智慧救援（创意）· 知识摘要
 
-流程不变。对照仓：`code_opensource/`（如 `2026_smartcar_YLR8`）。
-
 ## 软件链路
 
 ```text
-目标检测/测距 → 任务 FSM(接近/作业/撤离)
-→ 底盘 C05 → 安全 S03
-可选：机械臂/推杆作执行器，独立状态子机
+多传感感知 → rescue_fsm S01 → 导航 → 底盘 C01/C05 → S03
 ```
 
-缺细则时：先按 `SOFTWARE_SKELETON` 搭感知→决策→执行三层，再对照推荐仓目录改节点名。  
-算法：`ALGORITHMS.md`。
+## 模块习惯
+
+- `sense_*` / `rescue_fsm_*` / `nav_*` / `chassis_*`  
+- ROS2：`CREATIVE_ROS2_SKELETON.md`  
+- 对照：`ting5619/2026_smartcar_YLR8`（RECOMMENDED）
+
+## 风险
+
+误报目标、地形与倾覆；先定点导航再叠搜救。

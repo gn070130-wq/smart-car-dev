@@ -45,13 +45,16 @@ description: >-
 | RK3588/RKNN | `refs/RKNN_DEPLOY.md` |
 | 官方库本机镜像 | `board_libs/INDEX.md` |
 | **持续搜集→自评→选择性上传** | `refs/CONTINUOUS_INGEST.md` ★ |
+| 创意组 ROS2 骨架 | `refs/CREATIVE_ROS2_SKELETON.md` |
 
 ## 示例工程
 
 - `generated/pvc_line_track/`（PVC 循迹，`build_host.bat`）
 - `generated/board_seekfree_stub/`（逐飞单核通用）
-- `generated/board_tc264_stub/` / `board_stc32_stub/` / `board_rt1064_stub/`（分板壳）
+- `generated/board_tc264_stub/` / `board_tc387_stub/` / `board_stc32_stub/` / `board_rt1064_stub/`（分板壳）
 - `generated/board_cyt4bb7_stub/`（CYT4BB7 双核 IPC 示意）
+- `generated/board_ls2k_host_stub/` / `board_rknn_host_stub/`（走马 Linux / 模型异步推理桥）
+- `generated/creative_ros2_ws/`（创意组最小 ROS2 包骨架）
 
 ## 写码还要读
 

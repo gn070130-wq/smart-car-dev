@@ -30,5 +30,6 @@ description: >-
 - 报告级：`refs/FULL_SUMMARY.md`、`refs/ALGORITHMS.md`（有则优先）  
 - 开源元数据：`code_opensource/{SCAFFOLD,RECOMMENDED,INDEX,ANALYSIS}.md`  
 - 完整开源树：本机 Cursor 工作区对应 skill 的 `code_opensource/`（Git 默认只存元数据）  
-- 可编译/上板：`../smart-car-dev/refs/COMPILE_READY_WORKFLOW.md`、`BOARD_TEMPLATES.md`  
+- 可编译/上板：`../smart-car-dev/refs/COMPILE_READY_WORKFLOW.md`、`BOARD_TEMPLATES.md`
+- 创意 ROS2：`../smart-car-dev/refs/CREATIVE_ROS2_SKELETON.md`
 - 仓库说明：`../README.md`（skills 目录总表）

@@ -1,0 +1,4 @@
+mission_fsm:
+  ros__parameters: {}
+simple_nav:
+  ros__parameters: {}

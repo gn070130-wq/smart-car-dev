@@ -14,7 +14,8 @@ RK3588/RKNN → **`RKNN_DEPLOY.md`**（智能模型）
 
 ```text
 board_seekfree_stub/   # 通用
-board_tc264_stub/      # TC264 + ADS
+board_tc264_stub/      # TC264 + ADS（电磁/单车）
+board_tc387_stub/      # TC387 + ADS（卡丁快跑）
 board_stc32_stub/      # STC32（雁过/飞檐）
 board_rt1064_stub/     # RT1064（智能视觉）
   app/main.c, isr_tick.c
@@ -40,7 +41,7 @@ board_cyt4bb7_stub/
 |------|-----|----------------------|
 | 轮腿 | CYT4BB7 | `seekfree_CYT4BB7_Library` |
 | 电磁/单车 | TC264/TC364 | `seekfree_TC264_Library` / `TC364` |
-| 卡丁 | TC387 | `seekfree_TC387_Library` |
+| 卡丁 | TC387 | `seekfree_TC387_Library`（stub：`generated/board_tc387_stub`） |
 | 视觉 | RT1064 | `seekfree_RT1064_Library` |
 | 雁过/飞檐 | STC32G144 / G12K | `seekfree_STC32G144…` / `STC32G12K…` |
 | 无刷 FOC | CYT2BL3 | `seekfree_CYT2BL3_Library` |
@@ -54,7 +55,16 @@ board_cyt4bb7_stub/
 4. 节拍放 PIT；主循环只做显示与低优先级  
 5. 上电默认：电机 0、舵机中位、风机关、激光关  
 
+### C. Linux / NPU 桥（host 可编译示意）
+
+```text
+board_ls2k_host_stub/   # 走马：识碑任务 → cmd → 底盘（见 LS2K_LINUX_BOARD.md）
+board_rknn_host_stub/   # 模型：异步推理 stamp/新鲜度 → 差速（见 RKNN_DEPLOY.md）
+```
+
+创意组 ROS2 目录：`CREATIVE_ROS2_SKELETON.md`（非 C stub）。
+
 ## 与 COMPILE_READY 关系
 
 - 先在 `generated/board_*_stub` 用 stub HAL **本地编过**  
-- 再迁 IAR/ADS/Keil；对照赛道 `code_opensource/RECOMMENDED.md`  
+- 再迁 IAR/ADS/Keil/Linux；对照赛道 `code_opensource/RECOMMENDED.md`  

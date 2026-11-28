@@ -57,7 +57,8 @@
 | `CYT4BB7_DUAL_CORE` | 双核 |
 | `LS2K_LINUX_BOARD` / `RKNN_DEPLOY` | 龙芯 / NPU |
 | `IMU_INS_PLAYBOOK` | 惯导平衡 |
-| `generated/board_*_stub`、`pvc_line_track` | host 可编译壳 |
+| `generated/board_*_stub`、`pvc_line_track` | host 可编译壳（含 TC387 / LS2K / RKNN 桥） |
+| `refs/CREATIVE_ROS2_SKELETON.md` | 创意组 ROS2 从零骨架 |
 | 本机 `board_libs/` | 逐飞官方库全文（Git 仅 INDEX） |
 
 ## 强制调用顺序（赛道）

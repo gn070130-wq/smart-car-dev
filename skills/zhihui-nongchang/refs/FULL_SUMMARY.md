@@ -1,18 +1,18 @@
 # 智慧农场（创意）· 知识摘要
 
-流程不变。公开整车代码极少。
-
-## 本机对照
-
-- 稀疏入库：`code_opensource/21届_智慧农场__github__indulgeuuu-del__smart_farm_models`（脚本/配置/部署壳，**无** datasets）  
-- 车控仍用 `SOFTWARE_SKELETON` + 任务 FSM  
-
 ## 软件链路
 
 ```text
-作物/路径感知(V) → 任务 S01（巡垄/作业点）
-→ 底盘 C05 → S03
-模型训练/导出可参考该仓 scripts/configs/deploy
+垄行/作物感知 → farm_fsm S01 → 底盘 C05 → S03
+（模型可选，异步部署）
 ```
 
-注意 Windows 勿全量 clone datasets（路径过长）；需要数据时在上游按文档单独取。
+## 模块习惯
+
+- `row_sense` / `farm_fsm` / `control`  
+- 模型脚本可对照 RECOMMENDED 的 models 仓  
+- 骨架：`SOFTWARE_SKELETON` + `CREATIVE_ROS2_SKELETON`
+
+## 风险
+
+打滑与域偏移；先沿垄，再作业机构。
