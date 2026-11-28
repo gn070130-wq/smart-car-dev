@@ -29,3 +29,11 @@
 - （搜集入库）[https://github.com/xigua862/SMARTCAR2](https://github.com/xigua862/SMARTCAR2) — verdict=`accept_meta`，完整树可本机再 clone
 
 - （搜集入库）[https://github.com/zx115/VoltRiders](https://github.com/zx115/VoltRiders) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://oshwhub.com/draconis/project_lqwpzyno](https://oshwhub.com/draconis/project_lqwpzyno) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://gitee.com/seekfree/STC32G144K246_100Pin_Library](https://gitee.com/seekfree/STC32G144K246_100Pin_Library) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://oshwhub.com/ifdefine/project_aximioux](https://oshwhub.com/ifdefine/project_aximioux) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://oshwhub.com/wjg2004/project_sulktubf](https://oshwhub.com/wjg2004/project_sulktubf) — verdict=`accept_meta`，完整树可本机再 clone

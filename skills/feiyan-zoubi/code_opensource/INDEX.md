@@ -53,3 +53,15 @@
 
 <!-- collect 20261128_053411_219923 -->
 | · | 待核/链 | `届次待核_飞檐走壁__github__zx115__VoltRiders` | https://github.com/zx115/VoltRiders |
+
+<!-- collect 20261128_053748_813057 -->
+| · | 待核/链 | `届次待核_飞檐走壁__web__draconis__project_lqwpzyno` | https://oshwhub.com/draconis/project_lqwpzyno |
+
+<!-- collect 20261128_053748_813057 -->
+| · | 待核/链 | `届次待核_飞檐走壁__gitee__seekfree__STC32G144K246_100Pin_Library` | https://gitee.com/seekfree/STC32G144K246_100Pin_Library |
+
+<!-- collect 20261128_053748_813057 -->
+| · | 待核/链 | `届次待核_飞檐走壁__web__ifdefine__project_aximioux` | https://oshwhub.com/ifdefine/project_aximioux |
+
+<!-- collect 20261128_053748_813057 -->
+| · | 待核/链 | `届次待核_飞檐走壁__web__wjg2004__project_sulktubf` | https://oshwhub.com/wjg2004/project_sulktubf |

@@ -33,3 +33,12 @@
 
 <!-- collect 20261128_052242 -->
 | · | 待核/链 | `届次待核_轮腿穿越__github__Gjyguy__Store` | https://github.com/Gjyguy/Store |
+
+<!-- collect 20261128_053747_978371 -->
+| · | 待核/链 | `届次待核_轮腿穿越__web__cbp666__project_hpcxdnxi` | https://oshwhub.com/cbp666/project_hpcxdnxi |
+
+<!-- collect 20261128_053747_978371 -->
+| · | 待核/链 | `届次待核_轮腿穿越__web__peri001__project_xexvtuij` | https://oshwhub.com/peri001/project_xexvtuij |
+
+<!-- collect 20261128_053747_978371 -->
+| · | 待核/链 | `届次待核_轮腿穿越__web__ytc0729__project_iwcnunoy` | https://oshwhub.com/ytc0729/project_iwcnunoy |

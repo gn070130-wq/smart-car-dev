@@ -21,3 +21,5 @@
 - （搜集入库）[https://github.com/ZORE-dlfd/21st-smart-car-yan-guo-liu-hen-8of10-2.6mps](https://github.com/ZORE-dlfd/21st-smart-car-yan-guo-liu-hen-8of10-2.6mps) — verdict=`accept_meta`，完整树可本机再 clone
 
 - （搜集入库）[https://github.com/Lscyzq/HFK_STC32G144K](https://github.com/Lscyzq/HFK_STC32G144K) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://gitee.com/seekfree/STC32G144K246_100Pin_Library](https://gitee.com/seekfree/STC32G144K246_100Pin_Library) — verdict=`accept_meta`，完整树可本机再 clone

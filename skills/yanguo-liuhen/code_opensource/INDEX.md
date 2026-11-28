@@ -32,3 +32,6 @@
 
 <!-- collect 20261128_053411_219923 -->
 | · | 待核/链 | `届次待核_雁过留痕__github__Lscyzq__HFK_STC32G144K` | https://github.com/Lscyzq/HFK_STC32G144K |
+
+<!-- collect 20261128_053749_631188 -->
+| · | 待核/链 | `届次待核_雁过留痕__gitee__seekfree__STC32G144K246_100Pin_Library` | https://gitee.com/seekfree/STC32G144K246_100Pin_Library |

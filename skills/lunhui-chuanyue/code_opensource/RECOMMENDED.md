@@ -24,3 +24,9 @@
 - （搜集入库）[https://gitee.com/search-high-and-low/wheel-leg-information](https://gitee.com/search-high-and-low/wheel-leg-information) — verdict=`accept_meta`，完整树可本机再 clone
 
 - （搜集入库）[https://github.com/Gjyguy/Store](https://github.com/Gjyguy/Store) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://oshwhub.com/cbp666/project_hpcxdnxi](https://oshwhub.com/cbp666/project_hpcxdnxi) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://oshwhub.com/peri001/project_xexvtuij](https://oshwhub.com/peri001/project_xexvtuij) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://oshwhub.com/ytc0729/project_iwcnunoy](https://oshwhub.com/ytc0729/project_iwcnunoy) — verdict=`accept_meta`，完整树可本机再 clone
