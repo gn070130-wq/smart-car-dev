@@ -4,7 +4,7 @@ description: >-
   全国大学生智能汽车竞赛「走马观碑」完整技能：本地开源工程 + 报告知识 + 从零搭建软件清单。
   用于搭建/改写智能车软件（感知、状态机、控制环、执行器安全、日志）。
   触发：走马观碑、龙芯、LS2K、石碑、碑文。用户提到走马观碑或要写/改该组代码时必须使用；
-  按 SCAFFOLD→RECOMMENDED→ANALYSIS→refs 顺序执行。
+  按 SCAFFOLD→RECOMMENDED→ANALYSIS→refs/FULL_SUMMARY 顺序执行。
 ---
 
 # 走马观碑 · 可搭建软件 Skill
@@ -23,6 +23,16 @@ description: >-
 7. 龙芯/LS2K 解析 → `../smart-car-dev/references/repos/`（如 `ls2k0300`、`loognson`）+ `../smart-car-dev/refs/LS2K_LINUX_BOARD.md`
 
 本地报告知识在 `refs/`；多仓解析在总控 `smart-car-dev/references/`（本 skill 无独立 `corpus/` 目录）。
+
+## 知识与对照位置
+
+- 报告级：`refs/FULL_SUMMARY.md`、`refs/ALGORITHMS.md`（有则优先）  
+- 开源元数据：`code_opensource/{SCAFFOLD,RECOMMENDED,INDEX,ANALYSIS}.md`  
+- 完整开源树：本机 Cursor 工作区对应 skill 的 `code_opensource/`（Git 默认只存元数据）  
+- 可编译/上板：`../smart-car-dev/refs/COMPILE_READY_WORKFLOW.md`、`BOARD_TEMPLATES.md`  
+- 仓库说明：`../README.md`（skills 目录总表）  
+- 板级：LS2K/Linux → `LS2K_LINUX_BOARD.md`
+
 
 ## 默认软件栈
 

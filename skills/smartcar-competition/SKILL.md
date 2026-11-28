@@ -46,3 +46,5 @@ description: >-
 结构骨架：`../smart-car-dev/refs/SOFTWARE_SKELETON.md`  
 可编译流程：`../smart-car-dev/refs/COMPILE_READY_WORKFLOW.md`  
 板级：`../smart-car-dev/refs/BOARD_TEMPLATES.md` · 使用指南：`../smart-car-dev/PERFECT_SKILL_GUIDE.md`
+
+可编译示例：仓库根 `generated/`（见 `../README.md`）。

@@ -4,7 +4,7 @@ description: >-
   全国大学生智能汽车竞赛「蚂蚁搬家」完整技能：本地开源工程 + 报告知识 + 从零搭建软件清单。
   用于搭建/改写智能车软件（感知、状态机、控制环、执行器安全、日志）。
   触发：蚂蚁搬家、搬运、OpenART、RT1021、机械臂、推杆。用户提到蚂蚁搬家或要写/改该组代码时必须使用；
-  按 SCAFFOLD→RECOMMENDED→ANALYSIS→refs 顺序执行。
+  按 SCAFFOLD→RECOMMENDED→ANALYSIS→refs/FULL_SUMMARY 顺序执行。
 ---
 
 # 蚂蚁搬家 · 可搭建软件 Skill
@@ -20,7 +20,16 @@ description: >-
 5. 需要模板/算法 ID → `../smartcar-ml-optimize/refs/`  
 6. 调试现象 → `../smart-car-dev/refs/debug-playbook.md`
 
-本地已挂接 `refs/` + `corpus/`（报告知识）。
+
+## 知识与对照位置
+
+- 报告级：`refs/FULL_SUMMARY.md`、`refs/ALGORITHMS.md`（有则优先）  
+- 开源元数据：`code_opensource/{SCAFFOLD,RECOMMENDED,INDEX,ANALYSIS}.md`  
+- 完整开源树：本机 Cursor 工作区对应 skill 的 `code_opensource/`（Git 默认只存元数据）  
+- 可编译/上板：`../smart-car-dev/refs/COMPILE_READY_WORKFLOW.md`、`BOARD_TEMPLATES.md`  
+- 仓库说明：`../README.md`（skills 目录总表）  
+- 板级：视规则 STC/RT 等 → `BOARD_TEMPLATES.md`
+
 
 ## 默认软件栈
 

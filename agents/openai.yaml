@@ -1,4 +1,4 @@
 interface:
   display_name: "智能车开发与调试"
-  short_description: "结合53份报告及多仓库源码，支持算法审查、整套重构、调车与模型调用验证"
-  default_prompt: "使用 $smart-car-dev，结合当前工程、车模配置和日志，分析问题并完成智能车代码修改与验证。"
+  short_description: "竞速十一组+创意组；可编译 stub、逐飞/LS2K/RKNN 板级文档；报告与多仓解析、调车与模型验证"
+  default_prompt: "使用 $smart-car-dev，结合当前工程与 skills/ 赛道知识，按 COMPILE_READY 或 SCAFFOLD 完成分析、改码与验证。"

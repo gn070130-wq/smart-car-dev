@@ -4,7 +4,7 @@ description: >-
   全国大学生智能汽车竞赛「卡丁快跑」完整技能：本地开源工程 + 报告知识 + 从零搭建软件清单。
   用于搭建/改写智能车软件（感知、状态机、控制环、执行器安全、日志）。
   触发：卡丁快跑、卡丁、CTE、TC387、竞速。用户提到卡丁快跑或要写/改该组代码时必须使用；
-  按 SCAFFOLD→RECOMMENDED→ANALYSIS→refs 顺序执行。
+  按 SCAFFOLD→RECOMMENDED→ANALYSIS→refs/FULL_SUMMARY 顺序执行。
 ---
 
 # 卡丁快跑 · 可搭建软件 Skill
@@ -22,6 +22,16 @@ description: >-
 7. TC387 库 → `../smart-car-dev/board_libs/seekfree_TC387_Library`
 
 本地：`refs/` + `corpus/`；宛陵 km13 见 FULL_SUMMARY 路径说明（含仓库根 `knowledge_base_kading/`）。
+
+## 知识与对照位置
+
+- 报告级：`refs/FULL_SUMMARY.md`、`refs/ALGORITHMS.md`（有则优先）  
+- 开源元数据：`code_opensource/{SCAFFOLD,RECOMMENDED,INDEX,ANALYSIS}.md`  
+- 完整开源树：本机 Cursor 工作区对应 skill 的 `code_opensource/`（Git 默认只存元数据）  
+- 可编译/上板：`../smart-car-dev/refs/COMPILE_READY_WORKFLOW.md`、`BOARD_TEMPLATES.md`  
+- 仓库说明：`../README.md`（skills 目录总表）  
+- 板级：TC387 → `seekfree_TC387_Library`（本机 board_libs）
+
 
 ## 默认软件栈
 
