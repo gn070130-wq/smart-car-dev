@@ -36,3 +36,12 @@
 
 <!-- collect 20261128_051604 -->
 | · | 待核/链 | `届次待核_飞跃雷区__gitee__namelesstech__maplepilot_infineon_cyt2bl3` | https://gitee.com/namelesstech/maplepilot_infineon_cyt2bl3 |
+
+<!-- collect 20261128_052242 -->
+| · | 待核/链 | `届次待核_飞跃雷区__github__RoseQueenJL__fly-leiqu-aircraft` | https://github.com/RoseQueenJL/fly-leiqu-aircraft |
+
+<!-- collect 20261128_052242 -->
+| · | 待核/链 | `届次待核_飞跃雷区__gitee__woll-to__leap-over-the-minefield---solo.camera` | https://gitee.com/woll-to/leap-over-the-minefield---solo.camera |
+
+<!-- collect 20261128_052242 -->
+| · | 待核/链 | `届次待核_飞跃雷区__gitee__Viny22__smart_car` | https://gitee.com/Viny22/smart_car |

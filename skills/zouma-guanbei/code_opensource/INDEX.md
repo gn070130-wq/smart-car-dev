@@ -32,3 +32,18 @@
 
 <!-- collect 20261128_045919 -->
 | · | 待核/链 | `届次待核_走马观碑__gitee__zyly2033__loongson_2k300_lib` | https://gitee.com/zyly2033/loongson_2k300_lib |
+
+<!-- collect 20261128_052242 -->
+| · | 待核/链 | `届次待核_走马观碑__gitee__dry-flipping-the-sky__THL001` | https://gitee.com/dry-flipping-the-sky/THL001 |
+
+<!-- collect 20261128_052242 -->
+| · | 待核/链 | `届次待核_走马观碑__github__1841400365__smartcar` | https://github.com/1841400365/smartcar |
+
+<!-- collect 20261128_052242 -->
+| · | 待核/链 | `届次待核_走马观碑__github__EKaiChiu__SmartCarRace_Zoumaguanbei_DaydreamBeliever` | https://github.com/EKaiChiu/SmartCarRace_Zoumaguanbei_DaydreamBeliever |
+
+<!-- collect 20261128_052242 -->
+| · | 待核/链 | `届次待核_走马观碑__github__HaliFax-Desk__SmartCar21-Loongson` | https://github.com/HaliFax-Desk/SmartCar21-Loongson |
+
+<!-- collect 20261128_052242 -->
+| · | 待核/链 | `届次待核_走马观碑__github__YannicYang__SmartCar_VirtualMachine` | https://github.com/YannicYang/SmartCar_VirtualMachine |

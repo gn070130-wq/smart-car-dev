@@ -19,3 +19,9 @@
 - （搜集入库）[https://gitee.com/Lufree-li/lufree_crazy_car](https://gitee.com/Lufree-li/lufree_crazy_car) — verdict=`accept_meta`，完整树可本机再 clone
 
 - （搜集入库）[https://gitee.com/eecosky/fkdl](https://gitee.com/eecosky/fkdl) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://github.com/FENJIN560/BUPT_smartcar_fengkuangdianlu](https://github.com/FENJIN560/BUPT_smartcar_fengkuangdianlu) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://github.com/Theliangyue/fengkuangdianlu](https://github.com/Theliangyue/fengkuangdianlu) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://github.com/fangyangyang565/crazy_car500](https://github.com/fangyangyang565/crazy_car500) — verdict=`accept_meta`，完整树可本机再 clone

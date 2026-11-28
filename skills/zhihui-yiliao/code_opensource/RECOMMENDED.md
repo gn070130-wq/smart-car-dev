@@ -23,3 +23,11 @@
 - （搜集入库）[https://github.com/Yuxuan051216/Imtelligent-car-competition-QR-code-recognition](https://github.com/Yuxuan051216/Imtelligent-car-competition-QR-code-recognition) — verdict=`accept_meta`，完整树可本机再 clone
 
 - （搜集入库）[https://github.com/hanyexingchen/znc](https://github.com/hanyexingchen/znc) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://github.com/kexinren805-bit/dev_ws](https://github.com/kexinren805-bit/dev_ws) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://github.com/tttttaaa-art/-](https://github.com/tttttaaa-art/-) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://github.com/vtacstro/c](https://github.com/vtacstro/c) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://github.com/xiejiasheng666/-X5](https://github.com/xiejiasheng666/-X5) — verdict=`accept_meta`，完整树可本机再 clone

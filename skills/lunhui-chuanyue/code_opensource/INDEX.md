@@ -27,3 +27,9 @@
 
 <!-- collect 20261128_045355 -->
 | · | 待核/链 | `届次待核_轮腿穿越__gitee__suijioawan__Intelligent-Vehicle-Competition` | https://gitee.com/suijioawan/Intelligent-Vehicle-Competition |
+
+<!-- collect 20261128_052242 -->
+| · | 待核/链 | `届次待核_轮腿穿越__gitee__search-high-and-low__wheel-leg-information` | https://gitee.com/search-high-and-low/wheel-leg-information |
+
+<!-- collect 20261128_052242 -->
+| · | 待核/链 | `届次待核_轮腿穿越__github__Gjyguy__Store` | https://github.com/Gjyguy/Store |

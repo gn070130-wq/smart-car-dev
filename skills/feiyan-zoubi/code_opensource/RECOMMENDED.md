@@ -21,3 +21,5 @@
 - （搜集入库）[https://gitee.com/ning-wenjian/100g-wall-climbing-mini-car](https://gitee.com/ning-wenjian/100g-wall-climbing-mini-car) — verdict=`accept_meta`，完整树可本机再 clone
 
 - （搜集入库）[https://gitee.com/tezwaa/SYSU_YXS](https://gitee.com/tezwaa/SYSU_YXS) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://gitee.com/wild-azu/wall-climbing-vehicle](https://gitee.com/wild-azu/wall-climbing-vehicle) — verdict=`accept_meta`，完整树可本机再 clone

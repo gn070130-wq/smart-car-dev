@@ -31,3 +31,15 @@
 
 <!-- collect 20261128_052029 -->
 | · | 待核/链 | `届次待核_智慧医疗__github__hanyexingchen__znc` | https://github.com/hanyexingchen/znc |
+
+<!-- collect 20261128_052242 -->
+| · | 待核/链 | `届次待核_智慧医疗__github__kexinren805-bit__dev_ws` | https://github.com/kexinren805-bit/dev_ws |
+
+<!-- collect 20261128_052242 -->
+| · | 待核/链 | `届次待核_智慧医疗__github__tttttaaa-art__-` | https://github.com/tttttaaa-art/- |
+
+<!-- collect 20261128_052242 -->
+| · | 待核/链 | `届次待核_智慧医疗__github__vtacstro__c` | https://github.com/vtacstro/c |
+
+<!-- collect 20261128_052242 -->
+| · | 待核/链 | `届次待核_智慧医疗__github__xiejiasheng666__-X5` | https://github.com/xiejiasheng666/-X5 |

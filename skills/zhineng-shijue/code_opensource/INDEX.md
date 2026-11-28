@@ -18,3 +18,9 @@
 
 <!-- collect 20261128_051602 -->
 | · | 待核/链 | `届次待核_智能视觉__github__Hey9990__SmartCar-VR-DatasetGenerator` | https://github.com/Hey9990/SmartCar-VR-DatasetGenerator |
+
+<!-- collect 20261128_052242 -->
+| · | 待核/链 | `届次待核_智能视觉__gitee__aiml3ssb0t__AStar` | https://gitee.com/aiml3ssb0t/AStar |
+
+<!-- collect 20261128_052242 -->
+| · | 待核/链 | `届次待核_人工智能视觉__gitee__aiml3ssb0t__AStar` | https://gitee.com/aiml3ssb0t/AStar |

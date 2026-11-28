@@ -15,3 +15,7 @@
 - （搜集入库）[https://gitee.com/wangsongjie666/stc32-g_-intelligent-car](https://gitee.com/wangsongjie666/stc32-g_-intelligent-car) — verdict=`accept_meta`，完整树可本机再 clone
 
 - （搜集入库）[https://gitee.com/yangqingyin/yan-guo-leave-a-trace-project](https://gitee.com/yangqingyin/yan-guo-leave-a-trace-project) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://gitee.com/zzzzsmash/test1.0.0](https://gitee.com/zzzzsmash/test1.0.0) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://github.com/ZORE-dlfd/21st-smart-car-yan-guo-liu-hen-8of10-2.6mps](https://github.com/ZORE-dlfd/21st-smart-car-yan-guo-liu-hen-8of10-2.6mps) — verdict=`accept_meta`，完整树可本机再 clone

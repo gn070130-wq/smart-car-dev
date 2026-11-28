@@ -23,3 +23,9 @@
 
 <!-- collect 20261128_050508 -->
 | · | 待核/链 | `届次待核_雁过留痕__gitee__yangqingyin__yan-guo-leave-a-trace-project` | https://gitee.com/yangqingyin/yan-guo-leave-a-trace-project |
+
+<!-- collect 20261128_052242 -->
+| · | 待核/链 | `届次待核_雁过留痕__gitee__zzzzsmash__test1.0.0` | https://gitee.com/zzzzsmash/test1.0.0 |
+
+<!-- collect 20261128_052242 -->
+| · | 待核/链 | `届次待核_雁过留痕__github__ZORE-dlfd__21st-smart-car-yan-guo-liu-hen-8of10-2.6mps` | https://github.com/ZORE-dlfd/21st-smart-car-yan-guo-liu-hen-8of10-2.6mps |

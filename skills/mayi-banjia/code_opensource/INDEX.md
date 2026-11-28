@@ -30,3 +30,9 @@
 
 <!-- collect 20261128_051603 -->
 | · | 待核/链 | `届次待核_蚂蚁搬家__gitee__dzxs---ant-moving__snow-creek` | https://gitee.com/dzxs---ant-moving/snow-creek |
+
+<!-- collect 20261128_052242 -->
+| · | 待核/链 | `届次待核_蚂蚁搬家__gitee__virgostudios__mybj-u3d` | https://gitee.com/virgostudios/mybj-u3d |
+
+<!-- collect 20261128_052242 -->
+| · | 待核/链 | `届次待核_蚂蚁搬家__gitee__David--Xie__ants-moving-house-rental` | https://gitee.com/David--Xie/ants-moving-house-rental |

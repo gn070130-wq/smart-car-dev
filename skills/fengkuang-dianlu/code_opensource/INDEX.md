@@ -34,3 +34,12 @@
 
 <!-- collect 20261128_050509 -->
 | · | 待核/链 | `届次待核_疯狂电路__gitee__eecosky__fkdl` | https://gitee.com/eecosky/fkdl |
+
+<!-- collect 20261128_052242 -->
+| · | 待核/链 | `届次待核_疯狂电路__github__FENJIN560__BUPT_smartcar_fengkuangdianlu` | https://github.com/FENJIN560/BUPT_smartcar_fengkuangdianlu |
+
+<!-- collect 20261128_052242 -->
+| · | 待核/链 | `届次待核_疯狂电路__github__Theliangyue__fengkuangdianlu` | https://github.com/Theliangyue/fengkuangdianlu |
+
+<!-- collect 20261128_052242 -->
+| · | 待核/链 | `届次待核_疯狂电路__github__fangyangyang565__crazy_car500` | https://github.com/fangyangyang565/crazy_car500 |

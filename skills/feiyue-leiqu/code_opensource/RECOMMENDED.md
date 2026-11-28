@@ -19,3 +19,9 @@
 - （搜集入库）[https://gitee.com/xzy521030/21car_fly](https://gitee.com/xzy521030/21car_fly) — verdict=`accept_meta`，完整树可本机再 clone
 
 - （搜集入库）[https://gitee.com/namelesstech/maplepilot_infineon_cyt2bl3](https://gitee.com/namelesstech/maplepilot_infineon_cyt2bl3) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://github.com/RoseQueenJL/fly-leiqu-aircraft](https://github.com/RoseQueenJL/fly-leiqu-aircraft) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://gitee.com/woll-to/leap-over-the-minefield---solo.camera](https://gitee.com/woll-to/leap-over-the-minefield---solo.camera) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://gitee.com/Viny22/smart_car](https://gitee.com/Viny22/smart_car) — verdict=`accept_meta`，完整树可本机再 clone

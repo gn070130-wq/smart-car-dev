@@ -25,3 +25,13 @@
 - （搜集入库）[https://gitee.com/zhaoymmmmmm/smartcarcode21th](https://gitee.com/zhaoymmmmmm/smartcarcode21th) — verdict=`accept_meta`，完整树可本机再 clone
 
 - （搜集入库）[https://gitee.com/zyly2033/loongson_2k300_lib](https://gitee.com/zyly2033/loongson_2k300_lib) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://gitee.com/dry-flipping-the-sky/THL001](https://gitee.com/dry-flipping-the-sky/THL001) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://github.com/1841400365/smartcar](https://github.com/1841400365/smartcar) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://github.com/EKaiChiu/SmartCarRace_Zoumaguanbei_DaydreamBeliever](https://github.com/EKaiChiu/SmartCarRace_Zoumaguanbei_DaydreamBeliever) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://github.com/HaliFax-Desk/SmartCar21-Loongson](https://github.com/HaliFax-Desk/SmartCar21-Loongson) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://github.com/YannicYang/SmartCar_VirtualMachine](https://github.com/YannicYang/SmartCar_VirtualMachine) — verdict=`accept_meta`，完整树可本机再 clone

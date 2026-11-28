@@ -17,3 +17,7 @@
 - （搜集入库）[https://gitee.com/cao-haibin/21jieironaniuyingjiankaiyuan](https://gitee.com/cao-haibin/21jieironaniuyingjiankaiyuan) — verdict=`accept_meta`，完整树可本机再 clone
 
 - （搜集入库）[https://gitee.com/dzxs---ant-moving/snow-creek](https://gitee.com/dzxs---ant-moving/snow-creek) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://gitee.com/virgostudios/mybj-u3d](https://gitee.com/virgostudios/mybj-u3d) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://gitee.com/David--Xie/ants-moving-house-rental](https://gitee.com/David--Xie/ants-moving-house-rental) — verdict=`accept_meta`，完整树可本机再 clone

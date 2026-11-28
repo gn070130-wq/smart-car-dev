@@ -11,3 +11,9 @@
 | ★ | 完整 | `届次待核_卡丁快跑__gitee__pantainnm__kart-run-version-control` | 636 |
 |  | 完整 | `21届_卡丁快跑__gitee__muanlin__the-21th-kart-race` | 606 |
 |  | 完整 | `届次待核_卡丁快跑__github__rundongCopernicus__car_fast` | 604 |
+
+<!-- collect 20261128_052242 -->
+| · | 待核/链 | `届次待核_卡丁快跑__gitee__vvsakivv__kadingche` | https://gitee.com/vvsakivv/kadingche |
+
+<!-- collect 20261128_052242 -->
+| · | 待核/链 | `届次待核_卡丁快跑__gitee__sjdkj__djtu_carding_car` | https://gitee.com/sjdkj/djtu_carding_car |

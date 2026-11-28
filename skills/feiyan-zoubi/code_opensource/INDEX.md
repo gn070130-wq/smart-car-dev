@@ -41,3 +41,6 @@
 
 <!-- collect 20261128_045616 -->
 | · | 待核/链 | `届次待核_飞檐走壁__gitee__tezwaa__SYSU_YXS` | https://gitee.com/tezwaa/SYSU_YXS |
+
+<!-- collect 20261128_052242 -->
+| · | 待核/链 | `届次待核_飞檐走壁__gitee__wild-azu__wall-climbing-vehicle` | https://gitee.com/wild-azu/wall-climbing-vehicle |

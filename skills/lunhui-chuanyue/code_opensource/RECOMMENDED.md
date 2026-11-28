@@ -20,3 +20,7 @@
 - （搜集入库）[https://gitee.com/suyunxing/smart-car](https://gitee.com/suyunxing/smart-car) — verdict=`accept_meta`，完整树可本机再 clone
 
 - （搜集入库）[https://gitee.com/suijioawan/Intelligent-Vehicle-Competition](https://gitee.com/suijioawan/Intelligent-Vehicle-Competition) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://gitee.com/search-high-and-low/wheel-leg-information](https://gitee.com/search-high-and-low/wheel-leg-information) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://github.com/Gjyguy/Store](https://github.com/Gjyguy/Store) — verdict=`accept_meta`，完整树可本机再 clone
