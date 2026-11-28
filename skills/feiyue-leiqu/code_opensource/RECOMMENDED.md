@@ -29,3 +29,5 @@
 - （搜集入库）[https://github.com/ZhangStudyLife/HDUASC-SmartCar-21st-FlyOverMinefield](https://github.com/ZhangStudyLife/HDUASC-SmartCar-21st-FlyOverMinefield) — verdict=`accept_meta`，完整树可本机再 clone
 
 - （搜集入库）[https://gitee.com/hecatefake/21th_cyt4bb7_3core](https://gitee.com/hecatefake/21th_cyt4bb7_3core) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://oshwhub.com/dlyj/project_sspzvpjw](https://oshwhub.com/dlyj/project_sspzvpjw) — verdict=`accept_meta`，飞跃雷区国亚硬件

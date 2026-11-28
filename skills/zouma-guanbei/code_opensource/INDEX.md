@@ -77,3 +77,6 @@
 
 <!-- collect web -->
 | · | 待核/链 | `届次待核_走马观碑__oshwhub__xiangwu__project_cqbkxtph` | https://oshwhub.com/xiangwu/project_cqbkxtph |
+
+<!-- collect 20261128_072329_260375 -->
+| · | 待核/链 | `届次待核_走马观碑__github__xuxwww__smartcar_seekfree_lib` | https://github.com/xuxwww/smartcar_seekfree_lib |

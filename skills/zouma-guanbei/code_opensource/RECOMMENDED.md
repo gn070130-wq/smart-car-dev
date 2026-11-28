@@ -54,3 +54,5 @@
 
 - （搜集入库）[https://gitee.com/Wuwu129/SmartCar_99Pai_OpenSource](https://gitee.com/Wuwu129/SmartCar_99Pai_OpenSource) — verdict=`accept_meta`，完整树可本机再 clone
 - （搜集入库）[https://oshwhub.com/xiangwu/project_cqbkxtph](https://oshwhub.com/xiangwu/project_cqbkxtph) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://github.com/xuxwww/smartcar_seekfree_lib](https://github.com/xuxwww/smartcar_seekfree_lib) — verdict=`accept_meta`，完整树可本机再 clone

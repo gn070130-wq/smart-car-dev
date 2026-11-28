@@ -20,3 +20,7 @@
 
 - （搜集入库）[https://gitee.com/beijing-keyu---jiangxi/KEYU_SmartCar21_KartRacing3DPrintParts](https://gitee.com/beijing-keyu---jiangxi/KEYU_SmartCar21_KartRacing3DPrintParts) — verdict=`accept_meta`，完整树可本机再 clone
 - （搜集入库）[https://oshwhub.com/smh012/project_twylhxov](https://oshwhub.com/smh012/project_twylhxov) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://gitee.com/FAHDSFGA/car-race-fast](https://gitee.com/FAHDSFGA/car-race-fast) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://gitee.com/FAHDSFGA/color-block-recognition](https://gitee.com/FAHDSFGA/color-block-recognition) — verdict=`accept_meta`，完整树可本机再 clone

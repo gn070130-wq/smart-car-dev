@@ -55,3 +55,9 @@
 
 <!-- collect web -->
 | · | 待核/链 | `届次待核_疯狂电路__oshwhub__l-f-y__project_qooamotu` | https://oshwhub.com/l-f-y/project_qooamotu |
+
+<!-- collect web_oshwhub -->
+| · | 待核/链 | `届次待核_疯狂电路__oshwhub__qinnnnnnnnnnnn__project_jfwjytkv` | https://oshwhub.com/qinnnnnnnnnnnn/project_jfwjytkv |
+
+<!-- collect web_oshwhub -->
+| · | 待核/链 | `届次待核_疯狂电路__oshwhub__loratadine__project_mtcsdfcl` | https://oshwhub.com/loratadine/project_mtcsdfcl |

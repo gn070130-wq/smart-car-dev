@@ -54,3 +54,6 @@
 
 <!-- collect 20261128_054216_606678 -->
 | · | 待核/链 | `届次待核_飞跃雷区__gitee__hecatefake__21th_cyt4bb7_3core` | https://gitee.com/hecatefake/21th_cyt4bb7_3core |
+
+<!-- collect web_oshwhub -->
+| · | 待核/链 | `届次待核_飞跃雷区__oshwhub__dlyj__project_sspzvpjw` | https://oshwhub.com/dlyj/project_sspzvpjw |

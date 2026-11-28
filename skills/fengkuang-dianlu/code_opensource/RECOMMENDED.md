@@ -32,3 +32,7 @@
 
 - （搜集入库）[https://gitee.com/x2576080434/fengkuangdianluwansai](https://gitee.com/x2576080434/fengkuangdianluwansai) — verdict=`accept_meta`，完整树可本机再 clone
 - （搜集入库）[https://oshwhub.com/l-f-y/project_qooamotu](https://oshwhub.com/l-f-y/project_qooamotu) — verdict=`accept_meta`，完整树可本机再 clone
+
+- （搜集入库）[https://oshwhub.com/qinnnnnnnnnnnn/project_jfwjytkv](https://oshwhub.com/qinnnnnnnnnnnn/project_jfwjytkv) — verdict=`accept_meta`，疯狂电路缩微硬件页
+
+- （搜集入库）[https://oshwhub.com/loratadine/project_mtcsdfcl](https://oshwhub.com/loratadine/project_mtcsdfcl) — verdict=`accept_meta`，台院疯电七队硬件

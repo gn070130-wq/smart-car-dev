@@ -26,3 +26,9 @@
 
 <!-- collect web -->
 | · | 待核/链 | `届次待核_卡丁快跑__oshwhub__smh012__project_twylhxov` | https://oshwhub.com/smh012/project_twylhxov |
+
+<!-- collect 20261128_072509_653193 -->
+| · | 待核/链 | `届次待核_卡丁快跑__gitee__FAHDSFGA__car-race-fast` | https://gitee.com/FAHDSFGA/car-race-fast |
+
+<!-- collect 20261128_072509_653193 -->
+| · | 待核/链 | `届次待核_卡丁快跑__gitee__FAHDSFGA__color-block-recognition` | https://gitee.com/FAHDSFGA/color-block-recognition |

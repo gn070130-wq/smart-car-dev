@@ -48,3 +48,6 @@
 
 <!-- collect web -->
 | · | 待核/链 | `届次待核_轮腿穿越__oshwhub__bt2005__project_qyjwaaob` | https://oshwhub.com/bt2005/project_qyjwaaob |
+
+<!-- collect 20261128_072509_653193 -->
+| · | 待核/链 | `届次待核_轮腿穿越__gitee__lq-tech__cyt4bb7` | https://gitee.com/lq-tech/cyt4bb7 |

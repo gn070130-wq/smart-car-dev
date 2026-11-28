@@ -28,3 +28,6 @@
 
 <!-- collect 20261128_065347_052583 -->
 | · | 待核/链 | `届次待核_智能模型__github__Y0un__tag_detect` | https://github.com/Y0un/tag_detect |
+
+<!-- collect 20261128_072509_653193 -->
+| · | 待核/链 | `届次待核_智能模型__gitee__lq-tech__lq-lightweight-classification-model` | https://gitee.com/lq-tech/lq-lightweight-classification-model |
