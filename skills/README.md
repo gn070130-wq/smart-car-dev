@@ -73,3 +73,12 @@
 - `IMU_INS_PLAYBOOK.md` / `ALGORITHMS_CODE_INDEX.md` — 惯导与算法索引  
 
 使用指南副本：`skills/smart-car-dev/PERFECT_SKILL_GUIDE.md`
+
+## 持续搜集 → 自评 → 选择性上传
+
+本机工作区脚本：`_kb_raw/collect/`（见 `smart-car-dev/refs/CONTINUOUS_INGEST.md`）。
+
+1. `collect_discover.py` 从 `discovery.json` 抽新候选  
+2. `collect_evaluate.py` 出评估报告；**你**改 `decisions` 的 verdict  
+3. `collect_apply.py` 只写入 accept 项的 INDEX/摘要并同步本仓 `skills/`  
+4. 再 `git push`（仍不默认上传完整开源/`board_libs`）

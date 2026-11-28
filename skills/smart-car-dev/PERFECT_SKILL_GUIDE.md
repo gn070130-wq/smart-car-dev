@@ -63,3 +63,8 @@
 ## 强制调用顺序（赛道）
 
 `SCAFFOLD` → `RECOMMENDED` → `ANALYSIS` → `refs/FULL_SUMMARY` + `ALGORITHMS` →（需要时）ml-optimize / COMPILE_READY
+
+## 持续搜集（可选）
+
+见 `refs/CONTINUOUS_INGEST.md`：`collect_discover` → `collect_evaluate`（你改 decisions）→ `collect_apply` → push GitHub。  
+默认不上大体积开源树；只选择性同步元数据/摘要。
