@@ -22,3 +22,15 @@
 |  | 偏薄 | `21届_疯狂电路__gitee__l-f-yang__fei` | 4 |
 |  | 偏薄 | `21届_疯狂电路__gitee__qinnnnnnnnnnn__the-21st-smart-vehicles` | 2 |
 |  | 偏薄 | `21届_疯狂电路__github__xiazhuo123456789__fengkuangdianluwansai` | 1 |
+
+<!-- collect 20261128_050509 -->
+| · | 待核/链 | `届次待核_疯狂电路__gitee__baichuan0528__SkewEye-CrookedWheel` | https://gitee.com/baichuan0528/SkewEye-CrookedWheel |
+
+<!-- collect 20261128_050509 -->
+| · | 待核/链 | `届次待核_疯狂电路__gitee__somebody_liang__fengkuangdianlu` | https://gitee.com/somebody_liang/fengkuangdianlu |
+
+<!-- collect 20261128_050509 -->
+| · | 待核/链 | `届次待核_疯狂电路__gitee__Lufree-li__lufree_crazy_car` | https://gitee.com/Lufree-li/lufree_crazy_car |
+
+<!-- collect 20261128_050509 -->
+| · | 待核/链 | `届次待核_疯狂电路__gitee__eecosky__fkdl` | https://gitee.com/eecosky/fkdl |

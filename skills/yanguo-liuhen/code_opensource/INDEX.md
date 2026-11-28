@@ -17,3 +17,9 @@
 |  | 完整 | `21届_雁过留痕__github__3724989-create__STC144_Car` | 102 |
 |  | 完整 | `21届_雁过留痕__github__baixiaoe3__what-passes-leaves-a-trace` | 83 |
 |  | 完整 | `届次待核_雁过留痕__github__laorange__sillage-blog` | 7 |
+
+<!-- collect 20261128_050508 -->
+| · | 待核/链 | `届次待核_雁过留痕__gitee__wangsongjie666__stc32-g_-intelligent-car` | https://gitee.com/wangsongjie666/stc32-g_-intelligent-car |
+
+<!-- collect 20261128_050508 -->
+| · | 待核/链 | `届次待核_雁过留痕__gitee__yangqingyin__yan-guo-leave-a-trace-project` | https://gitee.com/yangqingyin/yan-guo-leave-a-trace-project |
